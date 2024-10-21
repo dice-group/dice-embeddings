@@ -16,6 +16,7 @@ Functions
    dicee.static_funcs.timeit
    dicee.static_funcs.save_pickle
    dicee.static_funcs.load_pickle
+   dicee.static_funcs.load_term_mapping
    dicee.static_funcs.select_model
    dicee.static_funcs.load_model
    dicee.static_funcs.load_model_ensemble
@@ -65,6 +66,8 @@ Module Contents
 .. py:function:: save_pickle(*, data: object = None, file_path=str)
 
 .. py:function:: load_pickle(file_path=str)
+
+.. py:function:: load_term_mapping(file_path=str)
 
 .. py:function:: select_model(args: dict, is_continual_training: bool = None, storage_path: str = None)
 

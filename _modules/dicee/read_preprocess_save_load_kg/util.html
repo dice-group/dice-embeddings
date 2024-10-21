@@ -214,28 +214,26 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Load and Preprocess via Polars &quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;*** Reading </span><span class="si">{</span><span class="n">data_path</span><span class="si">}</span><span class="s1"> with Polars ***&#39;</span><span class="p">)</span>
     <span class="c1"># (1) Load the data.</span>
-    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span><span class="c1">#data_path[-3:] in [&quot;.tar.gz&quot;,&#39;txt&#39;, &#39;csv&#39;]:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Reading with polars.read_csv with sep **t** ...&#39;</span><span class="p">)</span>
-        <span class="c1"># TODO: if byte_pair_encoding=True, we should not use &quot;\s+&quot; as seperator I guess</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="n">polars</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span>
-                             <span class="n">has_header</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                             <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                             <span class="n">n_rows</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">read_only_few</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">read_only_few</span><span class="p">,</span>
-                             <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
-                             <span class="n">dtypes</span><span class="o">=</span><span class="p">[</span><span class="n">polars</span><span class="o">.</span><span class="n">Utf8</span><span class="p">],</span>  <span class="c1"># str</span>
-                             <span class="n">new_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;subject&#39;</span><span class="p">,</span> <span class="s1">&#39;relation&#39;</span><span class="p">,</span> <span class="s1">&#39;object&#39;</span><span class="p">],</span>
-                             <span class="n">separator</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># \s+ doesn&#39;t work for polars</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">read_only_few</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">df</span> <span class="o">=</span> <span class="n">polars</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="n">use_pyarrow</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">df</span> <span class="o">=</span> <span class="n">polars</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="n">n_rows</span><span class="o">=</span><span class="n">read_only_few</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Reading with polars.read_csv with sep **t** ...&#39;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">polars</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span>
+                         <span class="n">has_header</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">n_rows</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">read_only_few</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">read_only_few</span><span class="p">,</span>
+                         <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+                         <span class="n">dtypes</span><span class="o">=</span><span class="p">[</span><span class="n">polars</span><span class="o">.</span><span class="n">String</span><span class="p">],</span>
+                         <span class="n">new_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;subject&#39;</span><span class="p">,</span> <span class="s1">&#39;relation&#39;</span><span class="p">,</span> <span class="s1">&#39;object&#39;</span><span class="p">],</span>
+                         <span class="n">separator</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># \s+ doesn&#39;t work for polars</span>
+    <span class="c1"># parquet usage deprecated.</span>
+    <span class="c1">#if read_only_few is None:</span>
+    <span class="c1">#    df = polars.read_parquet(data_path, use_pyarrow=True)</span>
+    <span class="c1">#else:</span>
+    <span class="c1">#    df = polars.read_parquet(data_path, n_rows=read_only_few)</span>
+    <span class="c1">#</span>
     <span class="c1"># (2) Sample from (1).</span>
     <span class="k">if</span> <span class="n">sample_triples_ratio</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Subsampling </span><span class="si">{</span><span class="n">sample_triples_ratio</span><span class="si">}</span><span class="s1"> of input data </span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">frac</span><span class="o">=</span><span class="n">sample_triples_ratio</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-
     <span class="c1"># (3) Type heuristic prediction: If KG is an RDF KG, remove all triples where subject is not &lt;?&gt;.</span>
     <span class="n">h</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">head</span><span class="p">()</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span>
     <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="s2">&quot;subject&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;&lt;&#39;</span><span class="p">))</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="s2">&quot;relation&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;&lt;&#39;</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>

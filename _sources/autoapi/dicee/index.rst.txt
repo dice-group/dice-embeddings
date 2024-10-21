@@ -103,6 +103,7 @@ Functions
    dicee.timeit
    dicee.save_pickle
    dicee.load_pickle
+   dicee.load_term_mapping
    dicee.select_model
    dicee.load_model
    dicee.load_model_ensemble
@@ -132,6 +133,7 @@ Functions
    dicee.mapping_from_first_two_cols_to_third
    dicee.timeit
    dicee.load_pickle
+   dicee.load_term_mapping
    dicee.reload_dataset
    dicee.construct_dataset
 
@@ -2018,6 +2020,8 @@ Package Contents
 
 .. py:function:: load_pickle(file_path=str)
 
+.. py:function:: load_term_mapping(file_path=str)
+
 .. py:function:: select_model(args: dict, is_continual_training: bool = None, storage_path: str = None)
 
 .. py:function:: load_model(path_of_experiment_folder: str, model_name='model.pt', verbose=0) -> Tuple[object, Tuple[dict, dict]]
@@ -2648,6 +2652,8 @@ Package Contents
 
 .. py:function:: load_pickle(file_path=str)
 
+.. py:function:: load_term_mapping(file_path=str)
+
 .. py:function:: reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, label_smoothing_rate)
 
    Reload the files from disk to construct the Pytorch dataset
@@ -3066,7 +3072,7 @@ Package Contents
 
 
 
-.. py:class:: KvsSampleDataset(train_set: numpy.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0)
+.. py:class:: KvsSampleDataset(train_set_idx: numpy.ndarray, entity_idxs, relation_idxs, form, store=None, neg_ratio=None, label_smoothing_rate: float = 0.0)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
@@ -3101,15 +3107,19 @@ Package Contents
 
 
    .. py:attribute:: train_data
+      :value: None
+
+
+
+   .. py:attribute:: train_target
+      :value: None
+
+
+
+   .. py:attribute:: neg_ratio
 
 
    .. py:attribute:: num_entities
-
-
-   .. py:attribute:: num_relations
-
-
-   .. py:attribute:: neg_sample_ratio
 
 
    .. py:attribute:: label_smoothing_rate
@@ -3123,7 +3133,7 @@ Package Contents
    .. py:attribute:: store
 
 
-   .. py:attribute:: train_target
+   .. py:attribute:: max_num_of_classes
 
 
    .. py:method:: __len__()

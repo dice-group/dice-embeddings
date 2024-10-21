@@ -155,13 +155,13 @@
 </li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.train_data"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.train_data</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.train_target"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.train_target</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.neg_ratio"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.neg_ratio</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.num_entities"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.num_entities</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.num_relations"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.num_relations</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.neg_sample_ratio"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.neg_sample_ratio</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.label_smoothing_rate"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.label_smoothing_rate</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.collate_fn"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.collate_fn</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.store"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.store</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.train_target"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.train_target</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.max_num_of_classes"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.max_num_of_classes</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.__len__"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.__len__()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.__getitem__()</span></code></a></li>
 </ul>
@@ -834,7 +834,7 @@ negative samples, with label smoothing applied.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.dataset_classes.KvsSampleDataset">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.dataset_classes.</span></span><span class="sig-name descname"><span class="pre">KvsSampleDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_entities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_relations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_sample_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_smoothing_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/dataset_classes.html#KvsSampleDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.KvsSampleDataset" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.dataset_classes.</span></span><span class="sig-name descname"><span class="pre">KvsSampleDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_set_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relation_idxs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_smoothing_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/dataset_classes.html#KvsSampleDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.KvsSampleDataset" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
 <blockquote>
 <div><dl class="simple">
@@ -874,22 +874,22 @@ new_y contains</p>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.dataset_classes.KvsSampleDataset.train_data">
-<span class="sig-name descname"><span class="pre">train_data</span></span><a class="headerlink" href="#dicee.dataset_classes.KvsSampleDataset.train_data" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">train_data</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.dataset_classes.KvsSampleDataset.train_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.dataset_classes.KvsSampleDataset.train_target">
+<span class="sig-name descname"><span class="pre">train_target</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.dataset_classes.KvsSampleDataset.train_target" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.dataset_classes.KvsSampleDataset.neg_ratio">
+<span class="sig-name descname"><span class="pre">neg_ratio</span></span><a class="headerlink" href="#dicee.dataset_classes.KvsSampleDataset.neg_ratio" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.dataset_classes.KvsSampleDataset.num_entities">
 <span class="sig-name descname"><span class="pre">num_entities</span></span><a class="headerlink" href="#dicee.dataset_classes.KvsSampleDataset.num_entities" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.dataset_classes.KvsSampleDataset.num_relations">
-<span class="sig-name descname"><span class="pre">num_relations</span></span><a class="headerlink" href="#dicee.dataset_classes.KvsSampleDataset.num_relations" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.dataset_classes.KvsSampleDataset.neg_sample_ratio">
-<span class="sig-name descname"><span class="pre">neg_sample_ratio</span></span><a class="headerlink" href="#dicee.dataset_classes.KvsSampleDataset.neg_sample_ratio" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -908,8 +908,8 @@ new_y contains</p>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.dataset_classes.KvsSampleDataset.train_target">
-<span class="sig-name descname"><span class="pre">train_target</span></span><a class="headerlink" href="#dicee.dataset_classes.KvsSampleDataset.train_target" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.dataset_classes.KvsSampleDataset.max_num_of_classes">
+<span class="sig-name descname"><span class="pre">max_num_of_classes</span></span><a class="headerlink" href="#dicee.dataset_classes.KvsSampleDataset.max_num_of_classes" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">

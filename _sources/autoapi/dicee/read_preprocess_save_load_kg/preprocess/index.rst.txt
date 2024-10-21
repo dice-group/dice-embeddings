@@ -68,6 +68,6 @@ Module Contents
 
 
 
-   .. py:method:: remove_triples_from_train_with_condition()
+   .. py:method:: dept_remove_triples_from_train_with_condition()
 
 

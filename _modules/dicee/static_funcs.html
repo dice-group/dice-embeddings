@@ -106,7 +106,7 @@
 <span class="kn">from</span> <span class="nn">.models.base_model</span> <span class="kn">import</span> <span class="n">BaseKGE</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
-
+<span class="kn">import</span> <span class="nn">polars</span> <span class="k">as</span> <span class="nn">pl</span>
 <span class="kn">import</span> <span class="nn">requests</span>
 
 <div class="viewcode-block" id="create_recipriocal_triples">
@@ -196,6 +196,15 @@
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="load_term_mapping">
+<a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.load_term_mapping">[docs]</a>
+<span class="k">def</span> <span class="nf">load_term_mapping</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">load_pickle</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="n">file_path</span><span class="o">+</span><span class="s2">&quot;.p&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;python file not found</span><span class="se">\t</span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2"> with .p extension&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pl</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file_path</span> <span class="o">+</span> <span class="s2">&quot;.csv&quot;</span><span class="p">)</span></div>
 
 
 <span class="c1"># @TODO: Could these funcs can be merged?</span>

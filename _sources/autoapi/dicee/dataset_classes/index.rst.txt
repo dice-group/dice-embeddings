@@ -452,7 +452,7 @@ Module Contents
 
 
 
-.. py:class:: KvsSampleDataset(train_set: numpy.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0)
+.. py:class:: KvsSampleDataset(train_set_idx: numpy.ndarray, entity_idxs, relation_idxs, form, store=None, neg_ratio=None, label_smoothing_rate: float = 0.0)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
@@ -487,15 +487,19 @@ Module Contents
 
 
    .. py:attribute:: train_data
+      :value: None
+
+
+
+   .. py:attribute:: train_target
+      :value: None
+
+
+
+   .. py:attribute:: neg_ratio
 
 
    .. py:attribute:: num_entities
-
-
-   .. py:attribute:: num_relations
-
-
-   .. py:attribute:: neg_sample_ratio
 
 
    .. py:attribute:: label_smoothing_rate
@@ -509,7 +513,7 @@ Module Contents
    .. py:attribute:: store
 
 
-   .. py:attribute:: train_target
+   .. py:attribute:: max_num_of_classes
 
 
    .. py:method:: __len__()
