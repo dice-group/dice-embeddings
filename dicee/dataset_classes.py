@@ -7,7 +7,7 @@ import torch
 import pytorch_lightning as pl
 from typing import List, Tuple, Union
 from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
-from .static_funcs import timeit, load_pickle
+from .static_funcs import timeit, load_pickle, load_term_mapping
 
 
 @timeit
@@ -16,8 +16,8 @@ def reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, l
     return construct_dataset(train_set=np.load(path + '/train_set.npy'),
                              valid_set=None,
                              test_set=None,
-                             entity_to_idx=load_pickle(file_path=path + '/entity_to_idx.p'),
-                             relation_to_idx=load_pickle(file_path=path + '/relation_to_idx.p'),
+                             entity_to_idx=load_term_mapping(file_path=path + '/entity_to_idx'),
+                             relation_to_idx=load_term_mapping(file_path=path + '/relation_to_idx'),
                              form_of_labelling=form_of_labelling,
                              scoring_technique=scoring_technique, neg_ratio=neg_ratio,
                              label_smoothing_rate=label_smoothing_rate)

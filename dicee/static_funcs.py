@@ -16,7 +16,7 @@ import psutil
 from .models.base_model import BaseKGE
 import pickle
 from collections import defaultdict
-
+import polars as pl
 import requests
 
 def create_recipriocal_triples(x):
@@ -86,6 +86,12 @@ def load_pickle(file_path=str):
     with open(file_path, 'rb') as f:
         return pickle.load(f)
 
+def load_term_mapping(file_path=str):
+    try:
+        return load_pickle(file_path=file_path+".p")
+    except FileNotFoundError:
+        print(f"python file not found\t{file_path} with .p extension")
+    return pl.read_csv(file_path + ".csv")
 
 # @TODO: Could these funcs can be merged?
 def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None):
