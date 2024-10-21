@@ -56,7 +56,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--trainer", type=str, default='PL',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP'],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
-    parser.add_argument('--scoring_technique', default="AllvsAll",
+    parser.add_argument('--scoring_technique', default="KvsSample",
                         help="Training technique for knowledge graph embedding model",
                         choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "1vsSample", "KvsSample"])
     parser.add_argument('--neg_ratio', type=int, default=10,
