@@ -82,9 +82,6 @@ Package Contents
 
 
 
-   .. py:method:: dept_remove_triples_from_train_with_condition()
-
-
 .. py:class:: LoadSaveToDisk(kg)
 
    .. py:attribute:: kg
