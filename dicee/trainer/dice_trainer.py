@@ -213,6 +213,7 @@ class DICE_Trainer:
                                           label_smoothing_rate=self.args.label_smoothing_rate,
                                           byte_pair_encoding=self.args.byte_pair_encoding,
                                           block_size=self.args.block_size)
+        # TODO: No need to keep the data in memory
         if self.args.eval_model is None:
             del dataset.train_set
             gc.collect()
