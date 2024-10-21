@@ -132,7 +132,6 @@ Functions
    dicee.download_pretrained_model
    dicee.mapping_from_first_two_cols_to_third
    dicee.timeit
-   dicee.load_pickle
    dicee.load_term_mapping
    dicee.reload_dataset
    dicee.construct_dataset
@@ -2649,8 +2648,6 @@ Package Contents
 .. py:function:: mapping_from_first_two_cols_to_third(train_set_idx)
 
 .. py:function:: timeit(func)
-
-.. py:function:: load_pickle(file_path=str)
 
 .. py:function:: load_term_mapping(file_path=str)
 
