@@ -148,7 +148,6 @@ class PreprocessKG:
                 # print(self.kg.enc.decode(x))
                 triples.extend(x)
             self.kg.train_set = np.array(triples)
-
         else:
             """No need to do anything. We create datasets for other models in the pyorch dataset construction"""
             # @TODO: Either we should move the all pytorch dataset construciton into here
@@ -162,6 +161,10 @@ class PreprocessKG:
             if self.kg.test_set is not None:
                 self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
                                                            num=max(self.kg.num_entities, self.kg.num_relations))
+        # No need to keep the raw data in memory
+        self.kg.raw_train_set = None
+        self.kg.raw_valid_set = None
+        self.kg.raw_test_set  = None
 
     @staticmethod
     def __replace_values_df(df: pd.DataFrame = None, f=None) -> Union[
@@ -471,7 +474,7 @@ class PreprocessKG:
         self.kg.relation_to_idx = {k: i for i, k in enumerate(ordered_list)}
         del ordered_list
 
-    def remove_triples_from_train_with_condition(self):
+    def dept_remove_triples_from_train_with_condition(self):
         if None:
             # self.kg.min_freq_for_vocab is not
             assert isinstance(self.kg.min_freq_for_vocab, int)
