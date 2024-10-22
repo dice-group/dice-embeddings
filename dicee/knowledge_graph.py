@@ -82,14 +82,6 @@ class KG:
             LoadSaveToDisk(kg=self).save()
         else:
             LoadSaveToDisk(kg=self).load()
-        train_set_shape=self.train_set.shape
-        train_set_dtype=self.train_set.dtype
-
-        fp = np.memmap(self.path_for_serialization + '/memory_map_train_set.npy', dtype=train_set_dtype, mode='w+', shape=train_set_shape)
-        fp[:] = self.train_set[:]
-        self.train_set=fp
-        del fp
-
         assert len(self.train_set) > 0, "Training set is empty"
         self._describe()
 

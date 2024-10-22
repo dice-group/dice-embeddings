@@ -1,9 +1,7 @@
 import lightning as pl
 
 import gc
-
 from typing import Union
-
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
 from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb
@@ -17,7 +15,7 @@ import pandas as pd
 import copy
 from typing import List, Tuple
 from ..knowledge_graph import KG
-
+import numpy as np
 
 def initialize_trainer(args, callbacks):
     if args.trainer == 'torchCPUTrainer':
@@ -199,6 +197,15 @@ class DICE_Trainer:
     @timeit
     def initialize_dataset(self, dataset: KG, form_of_labelling) -> torch.utils.data.Dataset:
         print('Initializing Dataset...', end='\t')
+        train_set_shape=dataset.train_set.shape
+        train_set_dtype=dataset.train_set.dtype
+
+        fp = np.memmap(dataset.path_for_serialization + '/memory_map_train_set.npy', dtype=train_set_dtype, mode='w+', shape=train_set_shape)
+        fp[:] = dataset.train_set[:]
+        dataset.train_set=fp
+        del fp
+
+
         train_dataset = construct_dataset(train_set=dataset.train_set,
                                           valid_set=dataset.valid_set,
                                           test_set=dataset.test_set,
