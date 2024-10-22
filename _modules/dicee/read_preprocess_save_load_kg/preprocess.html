@@ -255,10 +255,13 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">test_set</span> <span class="o">=</span> <span class="n">numpy_data_type_changer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">test_set</span><span class="p">,</span>
                                                            <span class="n">num</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">num_relations</span><span class="p">))</span>
-        <span class="c1"># No need to keep the raw data in memory</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span>  <span class="o">=</span> <span class="kc">None</span></div>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">byte_pair_encoding</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="c1"># No need to keep the raw data in memory</span>
+            <span class="c1"># TODO: If BPE used, no need to clearn data for the time being,.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span>  <span class="o">=</span> <span class="kc">None</span></div>
 
 
     <span class="nd">@staticmethod</span>
@@ -463,7 +466,7 @@
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;*** Preprocessing Train Data:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1"> with Polars ***&#39;</span><span class="p">)</span>
 
         <span class="c1"># (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_reciprical</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_reciprocal</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
             <span class="k">def</span> <span class="nf">adding_reciprocal_triples</span><span class="p">():</span>
 <span class="w">                </span><span class="sd">&quot;&quot;&quot; Add reciprocal triples &quot;&quot;&quot;</span>
                 <span class="c1"># (1.1) Add reciprocal triples into training set</span>

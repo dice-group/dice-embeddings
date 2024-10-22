@@ -15,7 +15,7 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: KG(dataset_dir: str = None, byte_pair_encoding: bool = False, padding: bool = False, add_noise_rate: float = None, sparql_endpoint: str = None, path_single_kg: str = None, path_for_deserialization: str = None, add_reciprical: bool = None, eval_model: str = None, read_only_few: int = None, sample_triples_ratio: float = None, path_for_serialization: str = None, entity_to_idx=None, relation_to_idx=None, backend=None, training_technique: str = None)
+.. py:class:: KG(dataset_dir: str = None, byte_pair_encoding: bool = False, padding: bool = False, add_noise_rate: float = None, sparql_endpoint: str = None, path_single_kg: str = None, path_for_deserialization: str = None, add_reciprocal: bool = None, eval_model: str = None, read_only_few: int = None, sample_triples_ratio: float = None, path_for_serialization: str = None, entity_to_idx=None, relation_to_idx=None, backend=None, training_technique: str = None)
 
    Knowledge Graph
 
@@ -53,7 +53,7 @@ Module Contents
    .. py:attribute:: path_for_deserialization
 
 
-   .. py:attribute:: add_reciprical
+   .. py:attribute:: add_reciprocal
 
 
    .. py:attribute:: eval_model
