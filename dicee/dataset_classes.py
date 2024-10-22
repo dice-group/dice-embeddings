@@ -607,6 +607,7 @@ class NegSampleDataset(torch.utils.data.Dataset):
         # TLDL; replace Python objects with non-refcounted representations such as Pandas, Numpy or PyArrow objects
         self.neg_sample_ratio = torch.tensor(
             neg_sample_ratio)
+        print("from numpy to torch")
         self.train_set = torch.from_numpy(train_set).unsqueeze(1)
         self.length = len(self.train_set)
         self.num_entities = torch.tensor(num_entities)
@@ -666,16 +667,17 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
        torch.utils.data.Dataset
        """
 
-    @timeit
     def __init__(self, train_set: np.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1,
                  label_smoothing_rate: float = 0.0):
         assert isinstance(train_set, np.ndarray)
         # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
         # TLDL; replace Python objects with non-refcounted representations such as Pandas, Numpy or PyArrow objects
+        
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.neg_sample_ratio = torch.tensor(
             neg_sample_ratio)  # 0 Implies that we do not add negative samples. This is needed during testing and validation
-        self.train_set = torch.from_numpy(train_set)
+        #self.train_set = torch.from_numpy(train_set)
+        self.train_set = train_set
         assert num_entities >= max(self.train_set[:, 0]) and num_entities >= max(self.train_set[:, 2])
         self.length = len(self.train_set)
         self.num_entities = torch.tensor(num_entities)
@@ -685,7 +687,7 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
         return self.length
 
     def __getitem__(self, idx):
-        return self.train_set[idx]
+        return torch.from_numpy(self.train_set[idx])
 
     def collate_fn(self, batch: List[torch.Tensor]):
         batch = torch.stack(batch, dim=0)
