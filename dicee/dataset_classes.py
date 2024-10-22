@@ -242,23 +242,21 @@ class OnevsAllDataset(torch.utils.data.Dataset):
        torch.utils.data.Dataset
        """
 
-    def __init__(self, train_set_idx: np.ndarray, entity_idxs):
+    def __init__(self, train_set_idx: np.memmap, entity_idxs):
         super().__init__()
         assert isinstance(train_set_idx, np.ndarray)
         assert len(train_set_idx) > 0
-        self.train_data = torch.LongTensor(train_set_idx)
+        self.train_data = train_set_idx
         self.target_dim = len(entity_idxs)
         self.collate_fn = None
-
     def __len__(self):
         return len(self.train_data)
 
     def __getitem__(self, idx):
         y_vec = torch.zeros(self.target_dim)
-        y_vec[self.train_data[idx, 2]] = 1
-        return self.train_data[idx, :2], y_vec
-
-
+        triple= torch.from_numpy(self.train_data[idx].copy()).long()
+        y_vec[triple[2]] = 1
+        return triple[:2], y_vec
 class KvsAll(torch.utils.data.Dataset):
     """ Creates a dataset for KvsAll training by inheriting from torch.utils.data.Dataset.
     Let D denote a dataset for KvsAll training and be defined as D:= {(x,y)_i}_i ^N, where

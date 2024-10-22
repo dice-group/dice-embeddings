@@ -31,7 +31,6 @@ class ReadFromDisk:
                                                    backend=self.kg.backend)
             if self.kg.add_noise_rate:
                 self.add_noisy_triples_into_training()
-
             self.kg.raw_valid_set = None
             self.kg.raw_test_set = None
         elif self.kg.sparql_endpoint is not None:

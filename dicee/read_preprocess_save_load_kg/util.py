@@ -113,7 +113,6 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
     """ Load and Preprocess via Polars """
     print(f'*** Reading {data_path} with Polars ***')
     # (1) Load the data.
-    print('Reading with polars.read_csv with sep **t** ...')
     df = polars.read_csv(data_path,
                          has_header=False,
                          low_memory=False,
@@ -122,12 +121,6 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
                          dtypes=[polars.String],
                          new_columns=['subject', 'relation', 'object'],
                          separator=" ")  # \s+ doesn't work for polars
-    # parquet usage deprecated.
-    #if read_only_few is None:
-    #    df = polars.read_parquet(data_path, use_pyarrow=True)
-    #else:
-    #    df = polars.read_parquet(data_path, n_rows=read_only_few)
-    #
     # (2) Sample from (1).
     if sample_triples_ratio:
         print(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')
