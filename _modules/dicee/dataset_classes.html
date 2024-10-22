@@ -370,14 +370,13 @@
 <span class="sd">       torch.utils.data.Dataset</span>
 <span class="sd">       &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">entity_idxs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">,</span> <span class="n">entity_idxs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_set_idx</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_set_idx</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">train_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">train_set_idx</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_data</span> <span class="o">=</span> <span class="n">train_set_idx</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target_dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">entity_idxs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">collate_fn</span> <span class="o">=</span> <span class="kc">None</span>
-
 <div class="viewcode-block" id="OnevsAllDataset.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.OnevsAllDataset.__len__">[docs]</a>
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -388,11 +387,10 @@
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.OnevsAllDataset.__getitem__">[docs]</a>
     <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="n">y_vec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_dim</span><span class="p">)</span>
-        <span class="n">y_vec</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">],</span> <span class="n">y_vec</span></div>
+        <span class="n">triple</span><span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+        <span class="n">y_vec</span><span class="p">[</span><span class="n">triple</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">triple</span><span class="p">[:</span><span class="mi">2</span><span class="p">],</span> <span class="n">y_vec</span></div>
 </div>
-
-
 
 <div class="viewcode-block" id="KvsAll">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.KvsAll">[docs]</a>

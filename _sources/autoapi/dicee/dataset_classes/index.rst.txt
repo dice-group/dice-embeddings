@@ -173,7 +173,7 @@ Module Contents
    .. py:method:: __getitem__(idx)
 
 
-.. py:class:: OnevsAllDataset(train_set_idx: numpy.ndarray, entity_idxs)
+.. py:class:: OnevsAllDataset(train_set_idx: numpy.memmap, entity_idxs)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 

@@ -214,7 +214,6 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Load and Preprocess via Polars &quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;*** Reading </span><span class="si">{</span><span class="n">data_path</span><span class="si">}</span><span class="s1"> with Polars ***&#39;</span><span class="p">)</span>
     <span class="c1"># (1) Load the data.</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Reading with polars.read_csv with sep **t** ...&#39;</span><span class="p">)</span>
     <span class="n">df</span> <span class="o">=</span> <span class="n">polars</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span>
                          <span class="n">has_header</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                          <span class="n">low_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -223,12 +222,6 @@
                          <span class="n">dtypes</span><span class="o">=</span><span class="p">[</span><span class="n">polars</span><span class="o">.</span><span class="n">String</span><span class="p">],</span>
                          <span class="n">new_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;subject&#39;</span><span class="p">,</span> <span class="s1">&#39;relation&#39;</span><span class="p">,</span> <span class="s1">&#39;object&#39;</span><span class="p">],</span>
                          <span class="n">separator</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">)</span>  <span class="c1"># \s+ doesn&#39;t work for polars</span>
-    <span class="c1"># parquet usage deprecated.</span>
-    <span class="c1">#if read_only_few is None:</span>
-    <span class="c1">#    df = polars.read_parquet(data_path, use_pyarrow=True)</span>
-    <span class="c1">#else:</span>
-    <span class="c1">#    df = polars.read_parquet(data_path, n_rows=read_only_few)</span>
-    <span class="c1">#</span>
     <span class="c1"># (2) Sample from (1).</span>
     <span class="k">if</span> <span class="n">sample_triples_ratio</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Subsampling </span><span class="si">{</span><span class="n">sample_triples_ratio</span><span class="si">}</span><span class="s1"> of input data </span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
