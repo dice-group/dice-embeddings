@@ -166,11 +166,12 @@ class NodeTrainer:
                 source, targets = self.extract_input_outputs(z)
                 batch_loss = self._run_batch(source, targets)
                 epoch_loss += batch_loss
-                tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
-                if i > 0:
-                    tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={epoch_loss / i:.5f}")
-                else:
-                    tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
+                if hasattr(tqdm_bar, 'set_description_str'):
+                    tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
+                    if i > 0:
+                        tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={epoch_loss / i:.5f}")
+                    else:
+                        tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
             avg_epoch_loss = epoch_loss / len(self.train_dataset_loader)
 
             if self.local_rank == self.global_rank == 0:
