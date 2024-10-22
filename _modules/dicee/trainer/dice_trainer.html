@@ -91,9 +91,7 @@
 <span></span><span class="kn">import</span> <span class="nn">lightning</span> <span class="k">as</span> <span class="nn">pl</span>
 
 <span class="kn">import</span> <span class="nn">gc</span>
-
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
-
 <span class="kn">from</span> <span class="nn">dicee.models.base_model</span> <span class="kn">import</span> <span class="n">BaseKGE</span>
 <span class="kn">from</span> <span class="nn">dicee.static_funcs</span> <span class="kn">import</span> <span class="n">select_model</span>
 <span class="kn">from</span> <span class="nn">dicee.callbacks</span> <span class="kn">import</span> <span class="n">ASWA</span><span class="p">,</span> <span class="n">Eval</span><span class="p">,</span> <span class="n">KronE</span><span class="p">,</span> <span class="n">PrintCallback</span><span class="p">,</span> <span class="n">AccumulateEpochLossCallback</span><span class="p">,</span> <span class="n">Perturb</span>
@@ -107,7 +105,7 @@
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 <span class="kn">from</span> <span class="nn">..knowledge_graph</span> <span class="kn">import</span> <span class="n">KG</span>
-
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <div class="viewcode-block" id="initialize_trainer">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.initialize_trainer">[docs]</a>
@@ -311,6 +309,15 @@
     <span class="nd">@timeit</span>
     <span class="k">def</span> <span class="nf">initialize_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">KG</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing Dataset...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">train_set_shape</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">train_set</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">train_set_dtype</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">train_set</span><span class="o">.</span><span class="n">dtype</span>
+
+        <span class="n">fp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">path_for_serialization</span> <span class="o">+</span> <span class="s1">&#39;/memory_map_train_set.npy&#39;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">train_set_dtype</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w+&#39;</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">train_set_shape</span><span class="p">)</span>
+        <span class="n">fp</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">train_set</span><span class="p">[:]</span>
+        <span class="n">dataset</span><span class="o">.</span><span class="n">train_set</span><span class="o">=</span><span class="n">fp</span>
+        <span class="k">del</span> <span class="n">fp</span>
+
+
         <span class="n">train_dataset</span> <span class="o">=</span> <span class="n">construct_dataset</span><span class="p">(</span><span class="n">train_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span>
                                           <span class="n">valid_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">valid_set</span><span class="p">,</span>
                                           <span class="n">test_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">test_set</span><span class="p">,</span>

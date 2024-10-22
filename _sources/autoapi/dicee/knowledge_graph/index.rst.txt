@@ -125,18 +125,6 @@ Module Contents
 
 
 
-   .. py:attribute:: train_set_shape
-
-
-   .. py:attribute:: train_set_dtype
-
-
-   .. py:attribute:: fp
-
-
-   .. py:attribute:: train_set
-
-
    .. py:property:: entities_str
       :type: List
 
