@@ -235,13 +235,13 @@ class PreprocessKG:
         assert isinstance(self.kg.raw_train_set, pd.DataFrame)
         assert self.kg.raw_train_set.columns.tolist() == ['subject', 'relation', 'object']
         # (1)  Add recipriocal or noisy triples into raw_train_set, raw_valid_set, raw_test_set
-        self.kg.raw_train_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprical,
+        self.kg.raw_train_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
                                                           eval_model=self.kg.eval_model,
                                                           df=self.kg.raw_train_set, info="Train")
-        self.kg.raw_valid_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprical,
+        self.kg.raw_valid_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
                                                           eval_model=self.kg.eval_model,
                                                           df=self.kg.raw_valid_set, info="Validation")
-        self.kg.raw_test_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprical,
+        self.kg.raw_test_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
                                                          eval_model=self.kg.eval_model,
                                                          df=self.kg.raw_test_set, info="Test")
         # (2) Transformation from DataFrame to list of tuples.
@@ -309,13 +309,13 @@ class PreprocessKG:
         None
         """
         # (1)  Add recipriocal or noisy triples.
-        self.kg.raw_train_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprical,
+        self.kg.raw_train_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
                                                           eval_model=self.kg.eval_model,
                                                           df=self.kg.raw_train_set, info="Train")
-        self.kg.raw_valid_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprical,
+        self.kg.raw_valid_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
                                                           eval_model=self.kg.eval_model,
                                                           df=self.kg.raw_valid_set, info="Validation")
-        self.kg.raw_test_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprical,
+        self.kg.raw_test_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
                                                          eval_model=self.kg.eval_model,
                                                          df=self.kg.raw_test_set, info="Test")
 
