@@ -21,8 +21,6 @@ class LoadSaveToDisk:
             save_pickle(data=self.kg.ordered_bpe_entities, file_path=self.kg.path_for_serialization + '/ordered_bpe_entities.p')
             save_pickle(data=self.kg.ordered_bpe_relations, file_path=self.kg.path_for_serialization + '/ordered_bpe_relations.p')
         else:
-            # TODO:CD: Stop using pickle
-            assert isinstance(self.kg.entity_to_idx)==isinstance(self.kg.relation_to_idx)
             assert isinstance(self.kg.train_set, np.ndarray)
             # (1) Save dictionary mappings into disk
             if isinstance(self.kg.entity_to_idx, dict):

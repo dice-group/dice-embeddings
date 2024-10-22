@@ -161,10 +161,13 @@ class PreprocessKG:
             if self.kg.test_set is not None:
                 self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
                                                            num=max(self.kg.num_entities, self.kg.num_relations))
-        # No need to keep the raw data in memory
-        self.kg.raw_train_set = None
-        self.kg.raw_valid_set = None
-        self.kg.raw_test_set  = None
+
+        if self.kg.byte_pair_encoding is False:
+            # No need to keep the raw data in memory
+            # TODO: If BPE used, no need to clearn data for the time being,.
+            self.kg.raw_train_set = None
+            self.kg.raw_valid_set = None
+            self.kg.raw_test_set  = None
 
     @staticmethod
     def __replace_values_df(df: pd.DataFrame = None, f=None) -> Union[
@@ -357,7 +360,7 @@ class PreprocessKG:
         print(f'*** Preprocessing Train Data:{self.kg.raw_train_set.shape} with Polars ***')
 
         # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
-        if self.kg.add_reciprical and self.kg.eval_model:
+        if self.kg.add_reciprocal and self.kg.eval_model:
             def adding_reciprocal_triples():
                 """ Add reciprocal triples """
                 # (1.1) Add reciprocal triples into training set

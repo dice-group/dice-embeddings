@@ -56,7 +56,7 @@ class Execute:
                 add_noise_rate=self.args.add_noise_rate,
                 sparql_endpoint=self.args.sparql_endpoint,
                 path_single_kg=self.args.path_single_kg,
-                add_reciprical=self.args.apply_reciprical_or_noise,
+                add_reciprocal=self.args.apply_reciprical_or_noise,
                 eval_model=self.args.eval_model,
                 read_only_few=self.args.read_only_few,
                 sample_triples_ratio=self.args.sample_triples_ratio,
