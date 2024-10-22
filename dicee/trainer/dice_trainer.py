@@ -165,7 +165,7 @@ class DICE_Trainer:
         self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
         model, form_of_labelling = self.initialize_or_load_model()
         assert form_of_labelling in ['EntityPrediction', 'RelationPrediction', 'Pyke']
-        assert self.args.scoring_technique in ["AllvsAll",'1vsSample', '1vsAll', 'KvsAll', 'NegSample']
+        assert self.args.scoring_technique in ["AllvsAll","KvsSample" ,"1vsSample", "1vsAll", "KvsAll", "NegSample"]
         train_loader = self.initialize_dataloader(
             reload_dataset(path=self.storage_path, form_of_labelling=form_of_labelling,
                            scoring_technique=self.args.scoring_technique,
@@ -213,6 +213,7 @@ class DICE_Trainer:
                                           label_smoothing_rate=self.args.label_smoothing_rate,
                                           byte_pair_encoding=self.args.byte_pair_encoding,
                                           block_size=self.args.block_size)
+        # TODO: No need to keep the data in memory
         if self.args.eval_model is None:
             del dataset.train_set
             gc.collect()

@@ -21,16 +21,14 @@ class LoadSaveToDisk:
             save_pickle(data=self.kg.ordered_bpe_entities, file_path=self.kg.path_for_serialization + '/ordered_bpe_entities.p')
             save_pickle(data=self.kg.ordered_bpe_relations, file_path=self.kg.path_for_serialization + '/ordered_bpe_relations.p')
         else:
-            # TODO:CD: Stop using pickle
-            assert type(self.kg.entity_to_idx)==type(self.kg.relation_to_idx)
             assert isinstance(self.kg.train_set, np.ndarray)
             # (1) Save dictionary mappings into disk
             if isinstance(self.kg.entity_to_idx, dict):
                 save_pickle(data=self.kg.entity_to_idx, file_path=self.kg.path_for_serialization + '/entity_to_idx.p')
                 save_pickle(data=self.kg.relation_to_idx, file_path=self.kg.path_for_serialization + '/relation_to_idx.p')
             else:
-                self.kg.entity_to_idx.write_csv(file="entity_to_idx.csv", include_header=True)
-                self.kg.entity_to_idx.write_csv(file="relation_to_idx.csv", include_header=True)
+                self.kg.entity_to_idx.write_csv(file=self.kg.path_for_serialization + "/entity_to_idx.csv", include_header=True)
+                self.kg.entity_to_idx.write_csv(file=self.kg.path_for_serialization + "/relation_to_idx.csv", include_header=True)
 
             save_numpy_ndarray(data=self.kg.train_set, file_path=self.kg.path_for_serialization + '/train_set.npy')
             if self.kg.valid_set is not None:

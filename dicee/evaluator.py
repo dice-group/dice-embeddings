@@ -346,11 +346,6 @@ class Evaluator:
         import tiktoken
 
         enc = tiktoken.get_encoding("gpt2")
-
-        ranks = []
-        # Hit range
-        hits_range = [i for i in range(1, 11)]
-        hits = {i: [] for i in hits_range}
         if info and self.during_training is False:
             print(info + ':', end=' ')
         # Iterate over integer indexed triples in mini batch fashion
@@ -456,7 +451,7 @@ class Evaluator:
                                                    valid_set=valid_set,
                                                    test_set=test_set,
                                                    trained_model=trained_model)
-        elif self.args.scoring_technique in ["AllvsAll",'KvsAll', '1vsSample', '1vsAll']:
+        elif self.args.scoring_technique in ["AllvsAll",'KvsAll', '1vsSample', "KvsSample", '1vsAll']:
             self.eval_with_vs_all(train_set=train_set,
                                   valid_set=valid_set,
                                   test_set=test_set,
