@@ -12,6 +12,7 @@ from .evaluator import Evaluator
 from .static_preprocess_funcs import preprocesses_input_args
 from .trainer import DICE_Trainer
 from .static_funcs import timeit, continual_training_setup_executor, read_or_load_kg, load_json, store,create_experiment_folder
+import numpy as np
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
@@ -54,17 +55,7 @@ class Execute:
         else:
             # Create a single directory containing KGE and all related data
             if self.args.path_to_store_single_run:
-                # () If the folder exist, we can assume that, memory map is already available,
-                # Therefore, we can skip the part of reading the KG again
-                if os.path.isdir(self.args.path_to_store_single_run):
-                    # if the path exist, then we assume that we in the multi-GPU training mode
-                    # Therefore, we would like to skip the reading and preprocessing an input data simulatnouly
-                    # for each evailable GPU (e.g. read and index input KG # GPU-1 times simultanously)
-                    self.multi_gpu_ddp_training_mode=True
-                else:
-                    os.makedirs(self.args.path_to_store_single_run, exist_ok=False)
-                    self.multi_gpu_ddp_training_mode=False
-
+                os.makedirs(self.args.path_to_store_single_run, exist_ok=True)
                 self.args.full_storage_path = self.args.path_to_store_single_run
             else:
                 # Create a parent and subdirectory.
@@ -226,7 +217,20 @@ class Execute:
         print(f"Start time:{datetime.datetime.now()}")
         # (1) Loading the Data
         #  Load the indexed data from disk or read a raw data from disk into knowledge_graph attribute
-        if self.multi_gpu_ddp_training_mode is False:
+        if os.path.exists(self.args.path_to_store_single_run+"/memory_map_train_set.npy"):
+            # Read the JSON file
+            with open(self.args.path_to_store_single_run+'/memory_map_details.json', 'r') as file_descriptor:
+                memory_map_details = json.load(file_descriptor)    
+            self.knowledge_graph = np.memmap(self.args.path_to_store_single_run + '/memory_map_train_set.npy', dtype=memory_map_details["dtype"], mode='r', shape=tuple(memory_map_details["shape"]))
+            print(self.knowledge_graph[:10])
+
+            self.args.num_entities = memory_map_details["num_entities"]
+            self.args.num_relations = memory_map_details["num_relations"]
+            self.args.num_tokens = None
+            self.args.max_length_subword_tokens = None
+            self.args.ordered_bpe_entities = None 
+
+        else:
             self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
             if self.is_continual_training is False:
                 self.args.num_entities = self.knowledge_graph.num_entities
@@ -237,13 +241,16 @@ class Execute:
                 self.report['num_train_triples'] = len(self.knowledge_graph.train_set)
                 self.report['num_entities'] = self.knowledge_graph.num_entities
                 self.report['num_relations'] = self.knowledge_graph.num_relations
-                self.report['num_relations'] = self.knowledge_graph.num_relations
-                self.report[
-                    'max_length_subword_tokens'] = self.knowledge_graph.max_length_subword_tokens if self.knowledge_graph.max_length_subword_tokens else None
+                self.report['max_length_subword_tokens'] = self.knowledge_graph.max_length_subword_tokens if self.knowledge_graph.max_length_subword_tokens else None
                 self.report['runtime_kg_loading'] = time.time() - self.start_time
-        else:
-            # TODO:Ideally we only need to load the memory map.
-            self.knowledge_graph=self.args.full_storage_path
+
+                data={"shape":tuple(self.knowledge_graph.train_set.shape),"dtype":self.knowledge_graph.train_set.dtype.str,
+                      "num_entities":self.knowledge_graph.num_entities,"num_relations":self.knowledge_graph.num_relations}
+                with open(self.args.full_storage_path + '/memory_map_details.json', 'w') as file_descriptor:
+                    json.dump(data, file_descriptor, indent=4)
+                print("DEEEEMIRRR\n")
+                
+                print(self.knowledge_graph.train_set[:10])
         # (2) Create an evaluator object.
         self.evaluator = Evaluator(args=self.args)
         # (3) Create a trainer object.

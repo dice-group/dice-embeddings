@@ -120,7 +120,7 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
                          columns=[0, 1, 2],
                          dtypes=[polars.String],
                          new_columns=['subject', 'relation', 'object'],
-                         separator="\t")  # \s+ doesn't work for polars
+                         separator=" ")  # \s+ doesn't work for polars
     # (2) Sample from (1).
     if sample_triples_ratio:
         print(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')

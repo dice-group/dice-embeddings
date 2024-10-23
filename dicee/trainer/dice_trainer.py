@@ -1,5 +1,5 @@
 import lightning as pl
-
+import polars
 import gc
 from typing import Union
 from dicee.models.base_model import BaseKGE
@@ -16,6 +16,13 @@ import copy
 from typing import List, Tuple
 from ..knowledge_graph import KG
 import numpy as np
+
+
+
+
+def load_term_mapping(file_path=str):
+    return polars.read_csv(file_path + ".csv")
+
 
 def initialize_trainer(args, callbacks):
     if args.trainer == 'torchCPUTrainer':
@@ -223,11 +230,25 @@ class DICE_Trainer:
                 del dataset.train_set
                 gc.collect()
         else:
-            raise NotImplementedError("We need to select the data type and shape!")
+            train_dataset = construct_dataset(train_set=self.trainer.dataset,
+                                              valid_set=None,
+                                              test_set=None,
+                                              train_target_indices=None,#self.trainer.dataset.train_target_indices,
+                                              target_dim=None,#self.trainer.dataset.target_dim,
+                                              ordered_bpe_entities=None,#self.trainer.dataset.ordered_bpe_entities,
+                                              entity_to_idx=load_term_mapping(file_path=self.args.path_to_store_single_run + "/entity_to_idx"),#self.trainer.dataset.entity_to_idx,
+                                              relation_to_idx=load_term_mapping(file_path=self.args.path_to_store_single_run + "/relation_to_idx"),#self.trainer.dataset.relation_to_idx,
+                                              form_of_labelling=self.trainer.form_of_labelling,
+                                              scoring_technique=self.args.scoring_technique,
+                                              neg_ratio=self.args.neg_ratio,
+                                              label_smoothing_rate=self.args.label_smoothing_rate,
+                                              byte_pair_encoding=self.args.byte_pair_encoding,
+                                              block_size=self.args.block_size)
+
 
         return train_dataset
 
-    def start(self, knowledge_graph: Union[KG,str]) -> Tuple[BaseKGE, str]:
+    def start(self, knowledge_graph: Union[KG,np.memmap]) -> Tuple[BaseKGE, str]:
         """
 
         in DDP setup, we need to load the memory map of already read/index KG.
@@ -235,6 +256,7 @@ class DICE_Trainer:
         """
         """ Train selected model via the selected training strategy """
         print('------------------- Train -------------------')
+        assert isinstance(knowledge_graph, np.memmap) or isinstance(knowledge_graph, KG)
         if self.args.num_folds_for_cv == 0:
             # Initialize Trainer
             self.trainer: Union[TorchTrainer, TorchDDPTrainer, pl.Trainer]
