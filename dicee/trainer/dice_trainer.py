@@ -1,6 +1,5 @@
 import lightning as pl
 import polars
-import gc
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
@@ -300,7 +299,7 @@ class DICE_Trainer:
             train_set_for_i_th_fold, test_set_for_i_th_fold = dataset.train_set[train_index], dataset.train_set[
                 test_index]
 
-            trainer.fit(model, train_dataloaders=self.initialize_dataloader(
+            trainer.fit(model, train_dataloaders=self.init_dataloader(
                 construct_dataset(train_set=train_set_for_i_th_fold,
                                   entity_to_idx=dataset.entity_to_idx,
                                   relation_to_idx=dataset.relation_to_idx,

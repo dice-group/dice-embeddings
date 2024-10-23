@@ -11,7 +11,7 @@ from .evaluator import Evaluator
 # Avoid
 from .static_preprocess_funcs import preprocesses_input_args
 from .trainer import DICE_Trainer
-from .static_funcs import timeit, continual_training_setup_executor, read_or_load_kg, load_json, store, create_experiment_folder
+from .static_funcs import timeit, read_or_load_kg, load_json, store, create_experiment_folder
 import numpy as np
 
 logging.getLogger('pytorch_lightning').setLevel(0)

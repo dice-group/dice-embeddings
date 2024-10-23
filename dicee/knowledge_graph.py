@@ -3,8 +3,6 @@ from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveTo
 import sys
 import pandas as pd
 import polars as pl
-import numpy as np
-from .read_preprocess_save_load_kg.util import load_numpy_ndarray
 class KG:
     """ Knowledge Graph """
 
