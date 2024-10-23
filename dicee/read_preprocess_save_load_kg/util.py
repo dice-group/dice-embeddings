@@ -109,8 +109,9 @@ def timeit(func):
 
 
 @timeit
-def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None) -> polars.DataFrame:
+def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator:str=None) -> polars.DataFrame:
     """ Load and Preprocess via Polars """
+    assert separator is not None, "separator cannot be None"
     print(f'*** Reading {data_path} with Polars ***')
     # (1) Load the data.
     df = polars.read_csv(data_path,
@@ -120,7 +121,7 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
                          columns=[0, 1, 2],
                          dtypes=[polars.String],
                          new_columns=['subject', 'relation', 'object'],
-                         separator=" ")  # \s+ doesn't work for polars
+                         separator=separator)  # \s+ doesn't work for polars
     # (2) Sample from (1).
     if sample_triples_ratio:
         print(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')
@@ -135,13 +136,13 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
 
 
 @timeit
-def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None):
+def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None,separator:str=None):
+    assert separator is not None, "separator cannot be None"
     print(f'*** Reading {data_path} with Pandas ***')
     if data_path[-3:] in [".nt","ttl", 'txt', 'csv', 'zst']:
         print('Reading with pandas.read_csv with sep ** s+ ** ...')
-        # TODO: if byte_pair_encoding=True, we should not use "\s+" as seperator I guess
         df = pd.read_csv(data_path,
-                         sep="\s+",
+                         sep=separator,#"\s+",
                          header=None,
                          nrows=None if read_only_few is None else read_only_few,
                          usecols=[0, 1, 2],
@@ -171,8 +172,9 @@ def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio:
 
 
 def read_from_disk(data_path: str, read_only_few: int = None,
-                   sample_triples_ratio: float = None, backend=None):
-    assert backend
+                   sample_triples_ratio: float = None, backend:str=None,separator:str=None):
+    assert backend is not None, "backend cannot be None"
+    assert separator is not None, f"separator cannot be None. Currently {separator}"
     # If path exits
     if glob.glob(data_path):
         # (1) Detect data format
@@ -180,20 +182,15 @@ def read_from_disk(data_path: str, read_only_few: int = None,
         if dformat in ["ttl", "owl", "turtle", "rdf/xml"] and backend != "rdflib":
             raise RuntimeError(
                 f"Data with **{dformat}** format cannot be read via --backend pandas or polars. Use --backend rdflib")
-
         if backend == 'pandas':
-            return read_with_pandas(data_path, read_only_few, sample_triples_ratio)
+            return read_with_pandas(data_path, read_only_few, sample_triples_ratio, separator)
         elif backend == 'polars':
-            return read_with_polars(data_path, read_only_few, sample_triples_ratio)
+            return read_with_polars(data_path, read_only_few, sample_triples_ratio, separator)
         elif backend == "rdflib":
             # Lazy import
             from rdflib import Graph
-
-            try:
-                assert dformat in ["ttl", "owl", "nt", "turtle", "rdf/xml", "n3", " n-triples"]
-            except AssertionError:
-                raise AssertionError(f"--backend {backend} and dataformat **{dformat}** is not matching. "
-                                     f"Use --backend pandas")
+            assert dformat in ["ttl", "owl", "nt", "turtle", "rdf/xml", "n3", " n-triples"],\
+                f"--backend {backend} and dataformat **{dformat}** is not matching. Use --backend pandas"
             return pd.DataFrame(data=[(str(s), str(p), str(o)) for s, p, o in Graph().parse(data_path)],
                                 columns=['subject', 'relation', 'object'], dtype=str)
         else:

@@ -18,7 +18,7 @@ class KG:
                  add_reciprocal: bool = None, eval_model: str = None,
                  read_only_few: int = None, sample_triples_ratio: float = None,
                  path_for_serialization: str = None,
-                 entity_to_idx=None, relation_to_idx=None, backend=None, training_technique: str = None):
+                 entity_to_idx=None, relation_to_idx=None, backend=None, training_technique: str = None, separator:str=None):
         """
         :param dataset_dir: A path of a folder containing train.txt, valid.txt, test.text
         :param byte_pair_encoding: Apply Byte pair encoding.
@@ -73,6 +73,7 @@ class KG:
         self.target_dim = None
         self.train_target_indices = None
         self.ordered_bpe_entities = None
+        self.separator=separator
 
         if self.path_for_deserialization is None:
             # Read a knowledge graph into memory
@@ -84,6 +85,7 @@ class KG:
         else:
             LoadSaveToDisk(kg=self).load()
         assert len(self.train_set) > 0, "Training set is empty"
+        self.description_of_input=None
         self.describe()
         if self.entity_to_idx is not None:
             assert isinstance(self.entity_to_idx, dict) or isinstance(self.entity_to_idx,

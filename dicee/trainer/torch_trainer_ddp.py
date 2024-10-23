@@ -61,7 +61,6 @@ class TorchDDPTrainer(AbstractTrainer):
                                           collate_fn=kwargs['train_dataloaders'].dataset.collate_fn,
                                           sampler=torch.utils.data.distributed.DistributedSampler(
                                               train_dataset_loader.dataset))
-
         # (3) Start NodeTrainer.
         NodeTrainer(self, model, train_dataset_loader, self.callbacks, self.attributes.num_epochs).train()
         torch.distributed.destroy_process_group()
@@ -89,6 +88,9 @@ class NodeTrainer:
         self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[self.local_rank], output_device=self.local_rank)
         self.num_epochs = num_epochs
         self.loss_history = []
+        # TODO: CD: This should be given as an input param
+        ptdtype = {'float32': torch.float32, 'bfloat16': torch.bfloat16, 'float16': torch.float16}["bfloat16"]
+        self.ctx = torch.amp.autocast(device_type="cuda",dtype=ptdtype)
 
     def _load_snapshot(self, snapshot_path):
         raise NotImplementedError
@@ -108,9 +110,10 @@ class NodeTrainer:
 
         """
         self.optimizer.zero_grad()
-        output = self.model(source)
-        loss = self.loss_func(output, targets)
-        batch_loss = loss.item()
+        with self.ctx:
+            output = self.model(source)
+            loss = self.loss_func(output, targets)
+            batch_loss = loss.item()
         loss.backward()
         self.optimizer.step()
         return batch_loss

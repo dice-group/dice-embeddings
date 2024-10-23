@@ -11,7 +11,7 @@ from .evaluator import Evaluator
 # Avoid
 from .static_preprocess_funcs import preprocesses_input_args
 from .trainer import DICE_Trainer
-from .static_funcs import timeit, continual_training_setup_executor, read_or_load_kg, load_json, store,create_experiment_folder
+from .static_funcs import timeit, continual_training_setup_executor, read_or_load_kg, load_json, store, create_experiment_folder
 import numpy as np
 
 logging.getLogger('pytorch_lightning').setLevel(0)
@@ -33,6 +33,8 @@ class Execute:
         seed_everything(args.random_seed, workers=True)
         # (3) Set the continual training flag
         self.is_continual_training = continuous_training
+        # TODO:  self.storage_path vs self.args.full_storage_path. One of them is redudandant.
+        self.storage_path=None
         # (4) Create an experiment folder or use the previous one
         self.continual_training_setup_executor()
         # (5) A variable is initialized for pytorch lightning trainer or DICE_Trainer()
@@ -42,11 +44,10 @@ class Execute:
         self.knowledge_graph = None
         # (7) Store few data in memory for numerical results, e.g. runtime, H@1 etc.
         self.report = dict()
-        # (8) Create an object to carry out link prediction evaluations
-        self.evaluator = None  # e.g. Evaluator(self)
+        # (8) Create an object to carry out link prediction evaluations,  e.g. Evaluator(self)
+        self.evaluator = None
         # (9) Execution start time
         self.start_time = None
-        self.multi_gpu_ddp_training_mode=False
 
     def continual_training_setup_executor(self) -> None:
         if self.is_continual_training:
@@ -190,6 +191,7 @@ class Execute:
 
     def write_report(self) -> None:
         """ Report training related information in a report.json file """
+        # @TODO: Move to static funcs
         # Report total runtime.
         self.report['Runtime'] = time.time() - self.start_time
         print(f"Total Runtime: {self.report['Runtime']:.3f} seconds")
@@ -217,19 +219,20 @@ class Execute:
         print(f"Start time:{datetime.datetime.now()}")
         # (1) Loading the Data
         #  Load the indexed data from disk or read a raw data from disk into knowledge_graph attribute
-        if os.path.exists(self.args.path_to_store_single_run+"/memory_map_train_set.npy"):
+        if self.args.path_to_store_single_run and os.path.exists(self.args.path_to_store_single_run+"/memory_map_train_set.npy"):
             # Read the JSON file
             with open(self.args.path_to_store_single_run+'/memory_map_details.json', 'r') as file_descriptor:
                 memory_map_details = json.load(file_descriptor)    
-            self.knowledge_graph = np.memmap(self.args.path_to_store_single_run + '/memory_map_train_set.npy', dtype=memory_map_details["dtype"], mode='r', shape=tuple(memory_map_details["shape"]))
-            print(self.knowledge_graph[:10])
-
+            self.knowledge_graph = np.memmap(self.args.path_to_store_single_run + '/memory_map_train_set.npy',
+                                             mode='r',
+                                             dtype=memory_map_details["dtype"],
+                                             shape=tuple(memory_map_details["shape"]))
+            #
             self.args.num_entities = memory_map_details["num_entities"]
             self.args.num_relations = memory_map_details["num_relations"]
             self.args.num_tokens = None
             self.args.max_length_subword_tokens = None
-            self.args.ordered_bpe_entities = None 
-
+            self.args.ordered_bpe_entities = None
         else:
             self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
             if self.is_continual_training is False:
@@ -243,14 +246,12 @@ class Execute:
                 self.report['num_relations'] = self.knowledge_graph.num_relations
                 self.report['max_length_subword_tokens'] = self.knowledge_graph.max_length_subword_tokens if self.knowledge_graph.max_length_subword_tokens else None
                 self.report['runtime_kg_loading'] = time.time() - self.start_time
-
-                data={"shape":tuple(self.knowledge_graph.train_set.shape),"dtype":self.knowledge_graph.train_set.dtype.str,
-                      "num_entities":self.knowledge_graph.num_entities,"num_relations":self.knowledge_graph.num_relations}
+                data={"shape":tuple(self.knowledge_graph.train_set.shape),
+                      "dtype":self.knowledge_graph.train_set.dtype.str,
+                      "num_entities":self.knowledge_graph.num_entities,
+                      "num_relations":self.knowledge_graph.num_relations}
                 with open(self.args.full_storage_path + '/memory_map_details.json', 'w') as file_descriptor:
                     json.dump(data, file_descriptor, indent=4)
-                print("DEEEEMIRRR\n")
-                
-                print(self.knowledge_graph.train_set[:10])
         # (2) Create an evaluator object.
         self.evaluator = Evaluator(args=self.args)
         # (3) Create a trainer object.
