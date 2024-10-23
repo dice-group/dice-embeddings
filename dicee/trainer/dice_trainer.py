@@ -186,7 +186,7 @@ class DICE_Trainer:
         return model, form_of_labelling
 
     @timeit
-    def initialize_dataloader(self, dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader:
+    def init_dataloader(self, dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader:
         print('Initializing Dataloader...', end='\t')
         # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
         # https://github.com/pytorch/pytorch/issues/13246#issuecomment-905703662
@@ -195,41 +195,46 @@ class DICE_Trainer:
                                            num_workers=self.args.num_core, persistent_workers=False)
 
     @timeit
-    def initialize_dataset(self, dataset: KG, form_of_labelling) -> torch.utils.data.Dataset:
+    def init_dataset(self) -> torch.utils.data.Dataset:
         print('Initializing Dataset...', end='\t')
-        train_set_shape=dataset.train_set.shape
-        train_set_dtype=dataset.train_set.dtype
+        if isinstance(self.trainer.dataset,KG):
+            train_set_shape=self.trainer.dataset.train_set.shape
+            train_set_dtype=self.trainer.dataset.train_set.dtype
+            fp = np.memmap(self.trainer.dataset.path_for_serialization + '/memory_map_train_set.npy', dtype=train_set_dtype, mode='w+', shape=train_set_shape)
+            fp[:] = self.trainer.dataset.train_set[:]
+            self.trainer.dataset.train_set=fp
+            del fp
+            train_dataset = construct_dataset(train_set=self.trainer.dataset.train_set,
+                                              valid_set=self.trainer.dataset.valid_set,
+                                              test_set=self.trainer.dataset.test_set,
+                                              train_target_indices=self.trainer.dataset.train_target_indices,
+                                              target_dim=self.trainer.dataset.target_dim,
+                                              ordered_bpe_entities=self.trainer.dataset.ordered_bpe_entities,
+                                              entity_to_idx=self.trainer.dataset.entity_to_idx,
+                                              relation_to_idx=self.trainer.dataset.relation_to_idx,
+                                              form_of_labelling=self.trainer.form_of_labelling,
+                                              scoring_technique=self.args.scoring_technique,
+                                              neg_ratio=self.args.neg_ratio,
+                                              label_smoothing_rate=self.args.label_smoothing_rate,
+                                              byte_pair_encoding=self.args.byte_pair_encoding,
+                                              block_size=self.args.block_size)
+            # TODO: No need to keep the data in memory
+            if self.args.eval_model is None:
+                del dataset.train_set
+                gc.collect()
+        else:
+            raise NotImplementedError("We need to select the data type and shape!")
 
-        fp = np.memmap(dataset.path_for_serialization + '/memory_map_train_set.npy', dtype=train_set_dtype, mode='w+', shape=train_set_shape)
-        fp[:] = dataset.train_set[:]
-        dataset.train_set=fp
-        del fp
-
-
-        train_dataset = construct_dataset(train_set=dataset.train_set,
-                                          valid_set=dataset.valid_set,
-                                          test_set=dataset.test_set,
-                                          train_target_indices=dataset.train_target_indices,
-                                          target_dim=dataset.target_dim,
-                                          ordered_bpe_entities=dataset.ordered_bpe_entities,
-                                          entity_to_idx=dataset.entity_to_idx,
-                                          relation_to_idx=dataset.relation_to_idx,
-                                          form_of_labelling=form_of_labelling,
-                                          scoring_technique=self.args.scoring_technique,
-                                          neg_ratio=self.args.neg_ratio,
-                                          label_smoothing_rate=self.args.label_smoothing_rate,
-                                          byte_pair_encoding=self.args.byte_pair_encoding,
-                                          block_size=self.args.block_size)
-        # TODO: No need to keep the data in memory
-        if self.args.eval_model is None:
-            del dataset.train_set
-            gc.collect()
         return train_dataset
 
-    def start(self, knowledge_graph: KG) -> Tuple[BaseKGE, str]:
+    def start(self, knowledge_graph: Union[KG,str]) -> Tuple[BaseKGE, str]:
+        """
+
+        in DDP setup, we need to load the memory map of already read/index KG.
+        Ther
+        """
         """ Train selected model via the selected training strategy """
         print('------------------- Train -------------------')
-
         if self.args.num_folds_for_cv == 0:
             # Initialize Trainer
             self.trainer: Union[TorchTrainer, TorchDDPTrainer, pl.Trainer]
@@ -239,8 +244,7 @@ class DICE_Trainer:
             self.trainer.evaluator = self.evaluator
             self.trainer.dataset = knowledge_graph
             self.trainer.form_of_labelling = form_of_labelling
-            self.trainer.fit(model, train_dataloaders=self.initialize_dataloader(
-                self.initialize_dataset(knowledge_graph, form_of_labelling)))
+            self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
             return model, form_of_labelling
         else:
             return self.k_fold_cross_validation(knowledge_graph)

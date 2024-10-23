@@ -36,13 +36,14 @@ class KG:
         :param training_technique
         """
         self.dataset_dir = dataset_dir
+        self.sparql_endpoint = sparql_endpoint
+        self.path_single_kg = path_single_kg
+
         self.byte_pair_encoding = byte_pair_encoding
         self.ordered_shaped_bpe_tokens = None
-        self.sparql_endpoint = sparql_endpoint
         self.add_noise_rate = add_noise_rate
         self.num_entities = None
         self.num_relations = None
-        self.path_single_kg = path_single_kg
         self.path_for_deserialization = path_for_deserialization
         self.add_reciprocal = add_reciprocal
         self.eval_model = eval_model
@@ -83,8 +84,7 @@ class KG:
         else:
             LoadSaveToDisk(kg=self).load()
         assert len(self.train_set) > 0, "Training set is empty"
-        self._describe()
-
+        self.describe()
         if self.entity_to_idx is not None:
             assert isinstance(self.entity_to_idx, dict) or isinstance(self.entity_to_idx,
                                                                       pl.DataFrame), f"entity_to_idx must be a dict or a polars DataFrame: {type(self.entity_to_idx)}"
@@ -96,8 +96,8 @@ class KG:
                 print(f"No inverse mapping created as self.entity_to_idx is not a type of dictionary but {type(self.entity_to_idx)}\n"
                       f"Backend might be selected as polars")
 
-    def _describe(self) -> None:
-        self.description_of_input = f'\n------------------- Description of Dataset {self.dataset_dir} -------------------'
+    def describe(self) -> None:
+        self.description_of_input = f'\n------------------- Description of Dataset {self.dataset_dir if isinstance(self.dataset_dir, str) else self.sparql_endpoint if isinstance(self.sparql_endpoint, str) else self.path_single_kg} -------------------'
         if self.byte_pair_encoding:
             self.description_of_input += f'\nNumber of tokens:{self.num_tokens}' \
                                          f'\nNumber of max sequence of sub-words: {self.max_length_subword_tokens}' \

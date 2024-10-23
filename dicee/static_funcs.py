@@ -355,22 +355,23 @@ def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.Data
     assert num_triples + num_noisy_triples == len(train_set)
     return train_set
 
-
 def read_or_load_kg(args, cls):
     print('*** Read or Load Knowledge Graph  ***')
     start_time = time.time()
     kg = cls(dataset_dir=args.dataset_dir,
              byte_pair_encoding=args.byte_pair_encoding,
+             padding=True if args.byte_pair_encoding and args.model != "BytE" else False,
              add_noise_rate=args.add_noise_rate,
              sparql_endpoint=args.sparql_endpoint,
              path_single_kg=args.path_single_kg,
-             add_reciprical=args.apply_reciprical_or_noise,
+             add_reciprocal=args.apply_reciprical_or_noise,
              eval_model=args.eval_model,
              read_only_few=args.read_only_few,
              sample_triples_ratio=args.sample_triples_ratio,
              path_for_serialization=args.full_storage_path,
              path_for_deserialization=args.path_experiment_folder if hasattr(args, 'path_experiment_folder') else None,
-             backend=args.backend)
+             backend=args.backend,
+             training_technique=args.scoring_technique)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     # (2) Share some info about data for easy access.
     print(kg.description_of_input)
@@ -528,19 +529,14 @@ def create_experiment_folder(folder_name='Experiments'):
 
 
 def continual_training_setup_executor(executor) -> None:
-    """
-    storage_path:str A path leading to a parent directory, where a subdirectory containing KGE related data
-
-    full_storage_path:str A path leading to a subdirectory containing KGE related data
-
-    """
+    # TODO:CD:Deprecate it
     if executor.is_continual_training:
         # (4.1) If it is continual, then store new models on previous path.
         executor.storage_path = executor.args.full_storage_path
     else:
         # Create a single directory containing KGE and all related data
         if executor.args.path_to_store_single_run:
-            os.makedirs(executor.args.path_to_store_single_run, exist_ok=True)
+            os.makedirs(executor.args.path_to_store_single_run, exist_ok=False)
             executor.args.full_storage_path = executor.args.path_to_store_single_run
         else:
             # Create a parent and subdirectory.

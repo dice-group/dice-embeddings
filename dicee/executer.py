@@ -6,13 +6,12 @@ from types import SimpleNamespace
 import os
 import datetime
 from pytorch_lightning import seed_everything
-
-from dicee.knowledge_graph import KG
-from dicee.evaluator import Evaluator
+from .knowledge_graph import KG
+from .evaluator import Evaluator
 # Avoid
-from dicee.static_preprocess_funcs import preprocesses_input_args
-from dicee.trainer import DICE_Trainer
-from dicee.static_funcs import timeit, continual_training_setup_executor, read_or_load_kg, load_json, store
+from .static_preprocess_funcs import preprocesses_input_args
+from .trainer import DICE_Trainer
+from .static_funcs import timeit, continual_training_setup_executor, read_or_load_kg, load_json, store,create_experiment_folder
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
@@ -34,7 +33,7 @@ class Execute:
         # (3) Set the continual training flag
         self.is_continual_training = continuous_training
         # (4) Create an experiment folder or use the previous one
-        continual_training_setup_executor(self)
+        self.continual_training_setup_executor()
         # (5) A variable is initialized for pytorch lightning trainer or DICE_Trainer()
         self.trainer = None
         self.trained_model = None
@@ -46,8 +45,36 @@ class Execute:
         self.evaluator = None  # e.g. Evaluator(self)
         # (9) Execution start time
         self.start_time = None
+        self.multi_gpu_ddp_training_mode=False
 
-    def read_or_load_kg(self):
+    def continual_training_setup_executor(self) -> None:
+        if self.is_continual_training:
+            # () We continue the training, then we store new models on previous path.
+            self.storage_path = self.args.full_storage_path
+        else:
+            # Create a single directory containing KGE and all related data
+            if self.args.path_to_store_single_run:
+                # () If the folder exist, we can assume that, memory map is already available,
+                # Therefore, we can skip the part of reading the KG again
+                if os.path.isdir(self.args.path_to_store_single_run):
+                    # if the path exist, then we assume that we in the multi-GPU training mode
+                    # Therefore, we would like to skip the reading and preprocessing an input data simulatnouly
+                    # for each evailable GPU (e.g. read and index input KG # GPU-1 times simultanously)
+                    self.multi_gpu_ddp_training_mode=True
+                else:
+                    os.makedirs(self.args.path_to_store_single_run, exist_ok=False)
+                    self.multi_gpu_ddp_training_mode=False
+
+                self.args.full_storage_path = self.args.path_to_store_single_run
+            else:
+                # Create a parent and subdirectory.
+                self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
+            self.storage_path = self.args.full_storage_path
+            with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
+                temp = vars(self.args)
+                json.dump(temp, file_descriptor, indent=3)
+
+    def dept_read_or_load_kg(self):
         print('*** Read or Load Knowledge Graph  ***')
         start_time = time.time()
         kg = KG(dataset_dir=self.args.dataset_dir,
@@ -84,9 +111,6 @@ class Execute:
         None
 
         """
-        # (1) Read & Preprocess & Index & Serialize Input Data.
-        self.knowledge_graph = self.read_or_load_kg()
-
         # (2) Store the stats and share parameters
         self.args.num_entities = self.knowledge_graph.num_entities
         self.args.num_relations = self.knowledge_graph.num_relations
@@ -101,19 +125,6 @@ class Execute:
             'max_length_subword_tokens'] = self.knowledge_graph.max_length_subword_tokens if self.knowledge_graph.max_length_subword_tokens else None
 
         self.report['runtime_kg_loading'] = time.time() - self.start_time
-
-    def load_indexed_data(self) -> None:
-        """ Load the indexed data from disk into memory
-
-        Parameter
-        ----------
-
-        Return
-        ----------
-        None
-
-        """
-        self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
 
     @timeit
     def save_trained_model(self) -> None:
@@ -215,7 +226,24 @@ class Execute:
         print(f"Start time:{datetime.datetime.now()}")
         # (1) Loading the Data
         #  Load the indexed data from disk or read a raw data from disk into knowledge_graph attribute
-        self.load_indexed_data() if self.is_continual_training else self.read_preprocess_index_serialize_data()
+        if self.multi_gpu_ddp_training_mode is False:
+            self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
+            if self.is_continual_training is False:
+                self.args.num_entities = self.knowledge_graph.num_entities
+                self.args.num_relations = self.knowledge_graph.num_relations
+                self.args.num_tokens = self.knowledge_graph.num_tokens
+                self.args.max_length_subword_tokens = self.knowledge_graph.max_length_subword_tokens
+                self.args.ordered_bpe_entities = self.knowledge_graph.ordered_bpe_entities
+                self.report['num_train_triples'] = len(self.knowledge_graph.train_set)
+                self.report['num_entities'] = self.knowledge_graph.num_entities
+                self.report['num_relations'] = self.knowledge_graph.num_relations
+                self.report['num_relations'] = self.knowledge_graph.num_relations
+                self.report[
+                    'max_length_subword_tokens'] = self.knowledge_graph.max_length_subword_tokens if self.knowledge_graph.max_length_subword_tokens else None
+                self.report['runtime_kg_loading'] = time.time() - self.start_time
+        else:
+            # TODO:Ideally we only need to load the memory map.
+            self.knowledge_graph=self.args.full_storage_path
         # (2) Create an evaluator object.
         self.evaluator = Evaluator(args=self.args)
         # (3) Create a trainer object.
