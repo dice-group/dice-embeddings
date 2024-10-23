@@ -15,12 +15,18 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: KG(dataset_dir: str = None, byte_pair_encoding: bool = False, padding: bool = False, add_noise_rate: float = None, sparql_endpoint: str = None, path_single_kg: str = None, path_for_deserialization: str = None, add_reciprocal: bool = None, eval_model: str = None, read_only_few: int = None, sample_triples_ratio: float = None, path_for_serialization: str = None, entity_to_idx=None, relation_to_idx=None, backend=None, training_technique: str = None)
+.. py:class:: KG(dataset_dir: str = None, byte_pair_encoding: bool = False, padding: bool = False, add_noise_rate: float = None, sparql_endpoint: str = None, path_single_kg: str = None, path_for_deserialization: str = None, add_reciprocal: bool = None, eval_model: str = None, read_only_few: int = None, sample_triples_ratio: float = None, path_for_serialization: str = None, entity_to_idx=None, relation_to_idx=None, backend=None, training_technique: str = None, separator: str = None)
 
    Knowledge Graph
 
 
    .. py:attribute:: dataset_dir
+
+
+   .. py:attribute:: sparql_endpoint
+
+
+   .. py:attribute:: path_single_kg
 
 
    .. py:attribute:: byte_pair_encoding
@@ -29,9 +35,6 @@ Module Contents
    .. py:attribute:: ordered_shaped_bpe_tokens
       :value: None
 
-
-
-   .. py:attribute:: sparql_endpoint
 
 
    .. py:attribute:: add_noise_rate
@@ -45,9 +48,6 @@ Module Contents
    .. py:attribute:: num_relations
       :value: None
 
-
-
-   .. py:attribute:: path_single_kg
 
 
    .. py:attribute:: path_for_deserialization
@@ -123,6 +123,17 @@ Module Contents
    .. py:attribute:: ordered_bpe_entities
       :value: None
 
+
+
+   .. py:attribute:: separator
+
+
+   .. py:attribute:: description_of_input
+      :value: None
+
+
+
+   .. py:method:: describe() -> None
 
 
    .. py:property:: entities_str

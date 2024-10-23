@@ -17,12 +17,15 @@ Functions
 
 .. autoapisummary::
 
+   dicee.trainer.dice_trainer.load_term_mapping
    dicee.trainer.dice_trainer.initialize_trainer
    dicee.trainer.dice_trainer.get_callbacks
 
 
 Module Contents
 ---------------
+
+.. py:function:: load_term_mapping(file_path=str)
 
 .. py:function:: initialize_trainer(args, callbacks)
 
@@ -100,15 +103,16 @@ Module Contents
    .. py:method:: initialize_or_load_model()
 
 
-   .. py:method:: initialize_dataloader(dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader
+   .. py:method:: init_dataloader(dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader
 
 
-   .. py:method:: initialize_dataset(dataset: dicee.knowledge_graph.KG, form_of_labelling) -> torch.utils.data.Dataset
+   .. py:method:: init_dataset() -> torch.utils.data.Dataset
 
 
-   .. py:method:: start(knowledge_graph: dicee.knowledge_graph.KG) -> Tuple[dicee.models.base_model.BaseKGE, str]
+   .. py:method:: start(knowledge_graph: Union[dicee.knowledge_graph.KG, numpy.memmap]) -> Tuple[dicee.models.base_model.BaseKGE, str]
 
-      Train selected model via the selected training strategy
+      in DDP setup, we need to load the memory map of already read/index KG.
+      Ther
 
 
 

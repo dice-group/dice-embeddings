@@ -2103,12 +2103,6 @@ Package Contents
 
 .. py:function:: continual_training_setup_executor(executor) -> None
 
-   storage_path:str A path leading to a parent directory, where a subdirectory containing KGE related data
-
-   full_storage_path:str A path leading to a subdirectory containing KGE related data
-
-
-
 .. py:function:: exponential_function(x: numpy.ndarray, lam: float, ascending_order=True) -> torch.FloatTensor
 
 .. py:function:: load_numpy(path) -> numpy.ndarray
@@ -2203,15 +2197,16 @@ Package Contents
    .. py:method:: initialize_or_load_model()
 
 
-   .. py:method:: initialize_dataloader(dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader
+   .. py:method:: init_dataloader(dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader
 
 
-   .. py:method:: initialize_dataset(dataset: dicee.knowledge_graph.KG, form_of_labelling) -> torch.utils.data.Dataset
+   .. py:method:: init_dataset() -> torch.utils.data.Dataset
 
 
-   .. py:method:: start(knowledge_graph: dicee.knowledge_graph.KG) -> Tuple[dicee.models.base_model.BaseKGE, str]
+   .. py:method:: start(knowledge_graph: Union[dicee.knowledge_graph.KG, numpy.memmap]) -> Tuple[dicee.models.base_model.BaseKGE, str]
 
-      Train selected model via the selected training strategy
+      in DDP setup, we need to load the memory map of already read/index KG.
+      Ther
 
 
 
@@ -2536,6 +2531,11 @@ Package Contents
    .. py:attribute:: is_continual_training
 
 
+   .. py:attribute:: storage_path
+      :value: None
+
+
+
    .. py:attribute:: trainer
       :value: None
 
@@ -2564,7 +2564,10 @@ Package Contents
 
 
 
-   .. py:method:: read_or_load_kg()
+   .. py:method:: continual_training_setup_executor() -> None
+
+
+   .. py:method:: dept_read_or_load_kg()
 
 
    .. py:method:: read_preprocess_index_serialize_data() -> None
@@ -2573,17 +2576,6 @@ Package Contents
 
       (1) Read or load the data from disk into memory.
       (2) Store the statistics of the data.
-
-      Parameter
-      ----------
-
-      :rtype: None
-
-
-
-   .. py:method:: load_indexed_data() -> None
-
-      Load the indexed data from disk into memory
 
       Parameter
       ----------

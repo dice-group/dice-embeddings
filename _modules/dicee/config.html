@@ -142,6 +142,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pandas&quot;</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Backend to read, process, and index input knowledge graph. pandas, polars and rdflib available&quot;&quot;&quot;</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">separator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;\s+&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;separator for extracting head, relation and tail from a triple&quot;&quot;&quot;</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;torchCPUTrainer&#39;</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Trainer for knowledge graph embedding model&quot;&quot;&quot;</span>
 

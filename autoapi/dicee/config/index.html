@@ -90,6 +90,7 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.gpus"><code class="docutils literal notranslate"><span class="pre">Namespace.gpus</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.callbacks"><code class="docutils literal notranslate"><span class="pre">Namespace.callbacks</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.backend"><code class="docutils literal notranslate"><span class="pre">Namespace.backend</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.separator"><code class="docutils literal notranslate"><span class="pre">Namespace.separator</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.trainer"><code class="docutils literal notranslate"><span class="pre">Namespace.trainer</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.scoring_technique"><code class="docutils literal notranslate"><span class="pre">Namespace.scoring_technique</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.neg_ratio"><code class="docutils literal notranslate"><span class="pre">Namespace.neg_ratio</span></code></a></li>
@@ -294,6 +295,12 @@ string representation.</p>
 <dt class="sig sig-object py" id="dicee.config.Namespace.backend">
 <span class="sig-name descname"><span class="pre">backend</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'pandas'</span></em><a class="headerlink" href="#dicee.config.Namespace.backend" title="Link to this definition"></a></dt>
 <dd><p>Backend to read, process, and index input knowledge graph. pandas, polars and rdflib available</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.config.Namespace.separator">
+<span class="sig-name descname"><span class="pre">separator</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\\s+'</span></em><a class="headerlink" href="#dicee.config.Namespace.separator" title="Link to this definition"></a></dt>
+<dd><p>separator for extracting head, relation and tail from a triple</p>
 </dd></dl>
 
 <dl class="py attribute">

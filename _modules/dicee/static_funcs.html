@@ -493,7 +493,6 @@
     <span class="k">return</span> <span class="n">train_set</span></div>
 
 
-
 <div class="viewcode-block" id="read_or_load_kg">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.read_or_load_kg">[docs]</a>
 <span class="k">def</span> <span class="nf">read_or_load_kg</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
@@ -501,16 +500,19 @@
     <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
     <span class="n">kg</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">dataset_dir</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="p">,</span>
              <span class="n">byte_pair_encoding</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">byte_pair_encoding</span><span class="p">,</span>
+             <span class="n">padding</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">byte_pair_encoding</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">!=</span> <span class="s2">&quot;BytE&quot;</span> <span class="k">else</span> <span class="kc">False</span><span class="p">,</span>
              <span class="n">add_noise_rate</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">add_noise_rate</span><span class="p">,</span>
              <span class="n">sparql_endpoint</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="p">,</span>
              <span class="n">path_single_kg</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span><span class="p">,</span>
-             <span class="n">add_reciprical</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">apply_reciprical_or_noise</span><span class="p">,</span>
+             <span class="n">add_reciprocal</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">apply_reciprical_or_noise</span><span class="p">,</span>
              <span class="n">eval_model</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">,</span>
              <span class="n">read_only_few</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">read_only_few</span><span class="p">,</span>
              <span class="n">sample_triples_ratio</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">sample_triples_ratio</span><span class="p">,</span>
              <span class="n">path_for_serialization</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span>
              <span class="n">path_for_deserialization</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">path_experiment_folder</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s1">&#39;path_experiment_folder&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-             <span class="n">backend</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">backend</span><span class="p">)</span>
+             <span class="n">backend</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">backend</span><span class="p">,</span>
+             <span class="n">training_technique</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="p">,</span>
+             <span class="n">separator</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">separator</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Preprocessing took: </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> seconds&#39;</span><span class="p">)</span>
     <span class="c1"># (2) Share some info about data for easy access.</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">kg</span><span class="o">.</span><span class="n">description_of_input</span><span class="p">)</span>
@@ -701,19 +703,14 @@
 <div class="viewcode-block" id="continual_training_setup_executor">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.continual_training_setup_executor">[docs]</a>
 <span class="k">def</span> <span class="nf">continual_training_setup_executor</span><span class="p">(</span><span class="n">executor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    storage_path:str A path leading to a parent directory, where a subdirectory containing KGE related data</span>
-
-<span class="sd">    full_storage_path:str A path leading to a subdirectory containing KGE related data</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO:CD:Deprecate it</span>
     <span class="k">if</span> <span class="n">executor</span><span class="o">.</span><span class="n">is_continual_training</span><span class="p">:</span>
         <span class="c1"># (4.1) If it is continual, then store new models on previous path.</span>
         <span class="n">executor</span><span class="o">.</span><span class="n">storage_path</span> <span class="o">=</span> <span class="n">executor</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># Create a single directory containing KGE and all related data</span>
         <span class="k">if</span> <span class="n">executor</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span><span class="p">:</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">executor</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">executor</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="n">executor</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">=</span> <span class="n">executor</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Create a parent and subdirectory.</span>

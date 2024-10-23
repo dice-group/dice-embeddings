@@ -151,12 +151,6 @@ Module Contents
 
 .. py:function:: continual_training_setup_executor(executor) -> None
 
-   storage_path:str A path leading to a parent directory, where a subdirectory containing KGE related data
-
-   full_storage_path:str A path leading to a subdirectory containing KGE related data
-
-
-
 .. py:function:: exponential_function(x: numpy.ndarray, lam: float, ascending_order=True) -> torch.FloatTensor
 
 .. py:function:: load_numpy(path) -> numpy.ndarray

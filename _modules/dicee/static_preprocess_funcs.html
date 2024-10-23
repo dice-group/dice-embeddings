@@ -134,9 +134,7 @@
     <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">weight_decay</span> <span class="o">&gt;=</span> <span class="mf">0.0</span>
     <span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">lr</span>
     <span class="n">args</span><span class="o">.</span><span class="n">deterministic</span> <span class="o">=</span> <span class="kc">True</span>
-
     <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">init_param</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;xavier_normal&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
-
     <span class="c1"># No need to eval. Investigate runtime performance</span>
     <span class="n">args</span><span class="o">.</span><span class="n">check_val_every_n_epoch</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">6</span>  <span class="c1"># ,i.e., no eval</span>
     <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">add_noise_rate</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">add_noise_rate</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
@@ -146,10 +144,8 @@
                                    <span class="s1">&#39;train_val_test&#39;</span><span class="p">]</span>
     <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unexpected input for eval_model ***</span><span class="se">\t</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="si">}</span><span class="se">\t</span><span class="s1">***&#39;</span><span class="p">)</span>
-
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="o">==</span> <span class="s1">&#39;None&#39;</span><span class="p">:</span>
         <span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="o">=</span> <span class="kc">None</span>
-
     <span class="c1"># reciprocal checking</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;AllvsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;1vsSample&quot;</span><span class="p">,</span> <span class="s2">&quot;KvsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;1vsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;KvsSample&quot;</span><span class="p">]:</span>
         <span class="n">args</span><span class="o">.</span><span class="n">apply_reciprical_or_noise</span> <span class="o">=</span> <span class="kc">True</span>
@@ -157,7 +153,6 @@
         <span class="n">args</span><span class="o">.</span><span class="n">apply_reciprical_or_noise</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unexpected input for scoring_technique </span><span class="se">\t</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">sample_triples_ratio</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="mf">1.0</span> <span class="o">&gt;=</span> <span class="n">args</span><span class="o">.</span><span class="n">sample_triples_ratio</span> <span class="o">&gt;=</span> <span class="mf">0.0</span>
     <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">backend</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;pandas&quot;</span><span class="p">,</span> <span class="s2">&quot;polars&quot;</span><span class="p">,</span> <span class="s2">&quot;rdflib&quot;</span><span class="p">]</span>

@@ -92,6 +92,12 @@ Module Contents
 
 
 
+   .. py:attribute:: ptdtype
+
+
+   .. py:attribute:: ctx
+
+
    .. py:method:: extract_input_outputs(z: list)
 
 

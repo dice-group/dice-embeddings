@@ -93,14 +93,14 @@ Module Contents
 
 .. py:function:: timeit(func)
 
-.. py:function:: read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None) -> polars.DataFrame
+.. py:function:: read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator: str = None) -> polars.DataFrame
 
    Load and Preprocess via Polars
 
 
-.. py:function:: read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None)
+.. py:function:: read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator: str = None)
 
-.. py:function:: read_from_disk(data_path: str, read_only_few: int = None, sample_triples_ratio: float = None, backend=None)
+.. py:function:: read_from_disk(data_path: str, read_only_few: int = None, sample_triples_ratio: float = None, backend: str = None, separator: str = None)
 
 .. py:function:: read_from_triple_store(endpoint: str = None)
 

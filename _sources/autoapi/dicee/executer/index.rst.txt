@@ -31,6 +31,11 @@ Module Contents
    .. py:attribute:: is_continual_training
 
 
+   .. py:attribute:: storage_path
+      :value: None
+
+
+
    .. py:attribute:: trainer
       :value: None
 
@@ -59,7 +64,10 @@ Module Contents
 
 
 
-   .. py:method:: read_or_load_kg()
+   .. py:method:: continual_training_setup_executor() -> None
+
+
+   .. py:method:: dept_read_or_load_kg()
 
 
    .. py:method:: read_preprocess_index_serialize_data() -> None
@@ -68,17 +76,6 @@ Module Contents
 
       (1) Read or load the data from disk into memory.
       (2) Store the statistics of the data.
-
-      Parameter
-      ----------
-
-      :rtype: None
-
-
-
-   .. py:method:: load_indexed_data() -> None
-
-      Load the indexed data from disk into memory
 
       Parameter
       ----------
