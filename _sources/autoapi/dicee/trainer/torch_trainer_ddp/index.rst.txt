@@ -98,6 +98,9 @@ Module Contents
    .. py:attribute:: ctx
 
 
+   .. py:attribute:: scaler
+
+
    .. py:method:: extract_input_outputs(z: list)
 
 
