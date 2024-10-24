@@ -245,18 +245,21 @@ class DICE_Trainer:
 
     def start(self, knowledge_graph: Union[KG,np.memmap]) -> Tuple[BaseKGE, str]:
         """
+        Start the training
+
+        (1) Initialize Trainer
+        (2) Initialize or load a pretrained KGE model
 
         in DDP setup, we need to load the memory map of already read/index KG.
         Ther
         """
         """ Train selected model via the selected training strategy """
         print('------------------- Train -------------------')
-        assert isinstance(knowledge_graph, np.memmap) or isinstance(knowledge_graph, KG)
+        assert isinstance(knowledge_graph, np.memmap) or isinstance(knowledge_graph, KG), \
+            f"knowledge_graph must be an instance of KG or np.memmap. Currently {type(knowledge_graph)}"
         if self.args.num_folds_for_cv == 0:
-            # Initialize Trainer
             self.trainer: Union[TorchTrainer, TorchDDPTrainer, pl.Trainer]
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
-            # Initialize or load model
             model, form_of_labelling = self.initialize_or_load_model()
             self.trainer.evaluator = self.evaluator
             self.trainer.dataset = knowledge_graph

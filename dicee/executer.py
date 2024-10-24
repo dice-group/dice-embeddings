@@ -8,7 +8,6 @@ import datetime
 from pytorch_lightning import seed_everything
 from .knowledge_graph import KG
 from .evaluator import Evaluator
-# Avoid
 from .static_preprocess_funcs import preprocesses_input_args
 from .trainer import DICE_Trainer
 from .static_funcs import timeit, read_or_load_kg, load_json, store, create_experiment_folder
@@ -33,10 +32,8 @@ class Execute:
         seed_everything(args.random_seed, workers=True)
         # (3) Set the continual training flag
         self.is_continual_training = continuous_training
-        # TODO:  self.storage_path vs self.args.full_storage_path. One of them is redudandant.
-        self.storage_path=None
         # (4) Create an experiment folder or use the previous one
-        self.continual_training_setup_executor()
+        self.setup_executor()
         # (5) A variable is initialized for pytorch lightning trainer or DICE_Trainer()
         self.trainer = None
         self.trained_model = None
@@ -49,24 +46,20 @@ class Execute:
         # (9) Execution start time
         self.start_time = None
 
-    def continual_training_setup_executor(self) -> None:
-        if self.is_continual_training:
-            # () We continue the training, then we store new models on previous path.
-            self.storage_path = self.args.full_storage_path
-        else:
+    def setup_executor(self) -> None:
+        if self.is_continual_training is False:
             # Create a single directory containing KGE and all related data
             if self.args.path_to_store_single_run:
                 os.makedirs(self.args.path_to_store_single_run, exist_ok=True)
                 self.args.full_storage_path = self.args.path_to_store_single_run
             else:
-                # Create a parent and subdirectory.
                 self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
-            self.storage_path = self.args.full_storage_path
+
             with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
                 temp = vars(self.args)
                 json.dump(temp, file_descriptor, indent=3)
 
-    def read_preprocess_index_serialize_data(self) -> None:
+    def dept_read_preprocess_index_serialize_data(self) -> None:
         """ Read & Preprocess & Index & Serialize Input Data
 
         (1) Read or load the data from disk into memory.
@@ -123,18 +116,18 @@ class Execute:
             store(trainer=self.trainer,
                   trained_model=self.trained_model,
                   model_name='model',
-                  full_storage_path=self.storage_path,
+                  full_storage_path=self.args.full_storage_path,#self.storage_path,
                   save_embeddings_as_csv=self.args.save_embeddings_as_csv)
         else:
             store(trainer=self.trainer,
                   trained_model=self.trained_model,
                   model_name='model_' + str(datetime.datetime.now()),
-                  full_storage_path=self.storage_path, save_embeddings_as_csv=self.args.save_embeddings_as_csv)
+                  full_storage_path=self.args.full_storage_path,#self.storage_path,
+                  save_embeddings_as_csv=self.args.save_embeddings_as_csv)
 
-        self.report['path_experiment_folder'] = self.storage_path
+        self.report['path_experiment_folder'] = self.args.full_storage_path#self.storage_path
         self.report['num_entities'] = self.args.num_entities
         self.report['num_relations'] = self.args.num_relations
-        self.report['path_experiment_folder'] = self.storage_path
 
     def end(self, form_of_labelling: str) -> dict:
         """
@@ -194,17 +187,16 @@ class Execute:
         """
         self.start_time = time.time()
         print(f"Start time:{datetime.datetime.now()}")
-        # (1) Loading the Data
-        #  Load the indexed data from disk or read a raw data from disk into knowledge_graph attribute
+        # (1) Reload the memory-map of index knowledge graph stored as a numpy ndarray.
         if self.args.path_to_store_single_run and os.path.exists(self.args.path_to_store_single_run+"/memory_map_train_set.npy"):
-            # Read the JSON file
+            # (1.1) Read information about memory-map of KG.
             with open(self.args.path_to_store_single_run+'/memory_map_details.json', 'r') as file_descriptor:
-                memory_map_details = json.load(file_descriptor)    
+                memory_map_details = json.load(file_descriptor)
+            # TODO: Perhaps create a memory mapped KG ?
             self.knowledge_graph = np.memmap(self.args.path_to_store_single_run + '/memory_map_train_set.npy',
                                              mode='r',
                                              dtype=memory_map_details["dtype"],
                                              shape=tuple(memory_map_details["shape"]))
-            #
             self.args.num_entities = memory_map_details["num_entities"]
             self.args.num_relations = memory_map_details["num_relations"]
             self.args.num_tokens = None
@@ -234,7 +226,7 @@ class Execute:
         # (3) Create a trainer object.
         self.trainer = DICE_Trainer(args=self.args,
                                     is_continual_training=self.is_continual_training,
-                                    storage_path=self.storage_path,
+                                    storage_path=self.args.full_storage_path,
                                     evaluator=self.evaluator)
         # (4) Start the training
         self.trained_model, form_of_labelling = self.trainer.start(knowledge_graph=self.knowledge_graph)
@@ -292,7 +284,8 @@ class ContinuousExecute(Execute):
 
         """
         # (1)
-        self.trainer = DICE_Trainer(args=self.args, is_continual_training=True,
+        self.trainer = DICE_Trainer(args=self.args,
+                                    is_continual_training=True,
                                     storage_path=self.args.continual_learning)
         # (2)
         self.trained_model, form_of_labelling = self.trainer.continual_start()
