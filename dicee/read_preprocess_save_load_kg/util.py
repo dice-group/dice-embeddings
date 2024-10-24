@@ -114,14 +114,17 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
     assert separator is not None, "separator cannot be None"
     print(f'*** Reading {data_path} with Polars ***')
     # (1) Load the data.
-    df = polars.read_csv(data_path,
-                         has_header=False,
-                         low_memory=False,
-                         n_rows=None if read_only_few is None else read_only_few,
-                         columns=[0, 1, 2],
-                         dtypes=[polars.String],
-                         new_columns=['subject', 'relation', 'object'],
-                         separator=separator)  # \s+ doesn't work for polars
+    try:
+        df = polars.read_csv(data_path,
+                             has_header=False,
+                             low_memory=False,
+                             n_rows=None if read_only_few is None else read_only_few,
+                             columns=[0, 1, 2],
+                             dtypes=[polars.String],
+                             new_columns=['subject', 'relation', 'object'],
+                             separator=separator)
+    except ValueError as err:
+        raise ValueError(f"{err}\nYou may want to use a different separator.")
     # (2) Sample from (1).
     if sample_triples_ratio:
         print(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')
