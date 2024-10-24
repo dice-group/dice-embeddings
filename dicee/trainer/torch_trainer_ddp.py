@@ -84,13 +84,14 @@ class NodeTrainer:
         self.train_dataset_loader = train_dataset_loader
         self.loss_func = model.loss
         self.callbacks = callbacks
-        self.model = torch.compile(model,mode="reduce-overhead").to(self.local_rank)
-        self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[self.local_rank], output_device=self.local_rank)
+        self.model = torch.compile(model).to(self.local_rank)
+        self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[self.local_rank])#, output_device=self.local_rank)
         self.num_epochs = num_epochs
         self.loss_history = []
         # TODO: CD: This should be given as an input param
-        ptdtype = {'float32': torch.float32, 'bfloat16': torch.bfloat16, 'float16': torch.float16}["bfloat16"]
+        ptdtype = {'float32': torch.float32, 'bfloat16': torch.bfloat16, 'float16': torch.float16}["float16"]
         self.ctx = torch.amp.autocast(device_type="cuda",dtype=ptdtype)
+        self.scaler = torch.amp.GradScaler("cuda",enabled=True)
 
     def _load_snapshot(self, snapshot_path):
         raise NotImplementedError
@@ -109,23 +110,27 @@ class NodeTrainer:
         batch loss
 
         """
-        self.optimizer.zero_grad()
         with self.ctx:
             output = self.model(source)
             loss = self.loss_func(output, targets)
             batch_loss = loss.item()
-        loss.backward()
-        self.optimizer.step()
+        self.scaler.scale(loss).backward()
+        self.scaler.step(self.optimizer)
+        self.scaler.update()
+        # flush the gradients as soon as we can, no need for this memory anymore
+        self.optimizer.zero_grad(set_to_none=True)
         return batch_loss
 
     def extract_input_outputs(self, z: list):
+        # pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)
         if len(z) == 2:
             x_batch, y_batch = z
-            return x_batch.to(self.local_rank), y_batch.to(self.local_rank)
+            # pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)
+            x_batch, y_batch = x_batch.pin_memory().to(self.local_rank, non_blocking=True), y_batch.pin_memory().to(self.local_rank, non_blocking=True)
+            return x_batch, y_batch
         elif len(z) == 3:
             x_batch, y_idx_batch, y_batch, = z
-            x_batch, y_idx_batch, y_batch = x_batch.to(self.local_rank), y_idx_batch.to(self.local_rank), y_batch.to(
-                self.local_rank)
+            x_batch, y_batch,y_idx_batch = x_batch.pin_memory().to(self.local_rank, non_blocking=True), y_batch.pin_memory().to(self.local_rank, non_blocking=True),y_idx_batch.pin_memory().to(self.local_rank, non_blocking=True)
             return (x_batch, y_idx_batch), y_batch
         else:
             raise ValueError('Unexpected batch shape..')
@@ -162,7 +167,8 @@ class NodeTrainer:
         """
         for epoch in (tqdm_bar := make_iterable_verbose(range(self.num_epochs),
                                                       verbose=self.local_rank == self.global_rank == 0,
-                                                      position=0, leave=True)):
+                                                      position=0,
+                                                        leave=True)):
             self.train_dataset_loader.sampler.set_epoch(epoch)
             epoch_loss = 0
             for i, z in enumerate(self.train_dataset_loader):
@@ -175,6 +181,7 @@ class NodeTrainer:
                         tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={epoch_loss / i:.5f}")
                     else:
                         tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
+
             avg_epoch_loss = epoch_loss / len(self.train_dataset_loader)
 
             if self.local_rank == self.global_rank == 0:
