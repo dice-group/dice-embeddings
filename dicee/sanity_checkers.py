@@ -80,20 +80,11 @@ def validate_knowledge_graph(args):
 
 
 def sanity_checking_with_arguments(args):
-    try:
-        assert args.embedding_dim > 0
-    except AssertionError:
-        raise AssertionError(f'embedding_dim must be strictly positive. Currently:{args.embedding_dim}')
-
-    if args.scoring_technique not in ["AllvsAll", "1vsSample", "KvsSample","KvsAll", "NegSample", "1vsAll", "Pyke", "Sentence"]:
-        raise KeyError(f'Invalid training strategy => {args.scoring_technique}.')
-
-    assert args.learning_rate > 0
+    assert args.embedding_dim > 0,f"embedding_dim must be strictly positive. Currently:{args.embedding_dim}"
+    assert args.scoring_technique in ["AllvsAll", "1vsSample", "KvsSample","KvsAll", "NegSample", "1vsAll","Pyke", "Sentence"], f"Invalid training strategy => {args.scoring_technique}."
+    assert args.learning_rate > 0, f"Learning rate must be greater than 0. Currently:{args.learning_rate}"
     if args.num_folds_for_cv is None:
         args.num_folds_for_cv = 0
-    try:
-        assert args.num_folds_for_cv >= 0
-    except AssertionError:
-        raise AssertionError(f'num_folds_for_cv can not be negative. Currently:{args.num_folds_for_cv}')
+    assert args.num_folds_for_cv >= 0,f"num_folds_for_cv can not be negative. Currently:{args.num_folds_for_cv}"
     validate_knowledge_graph(args)
 

@@ -118,7 +118,7 @@ Under the hood, dicee executes the run.py script and uses [lightning](https://li
 # (1)
 dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 # (2)
-CUDA_VISIBLE_DEVICES=0,1 python dicee/scripts/run.py --trainer PL --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
+CUDA_VISIBLE_DEVICES=0,1 dicee --trainer PL --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 ```
 Similarly, models can be easily trained with torchrun
 ```bash
@@ -141,13 +141,13 @@ _:1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07
 <http://www.benchmark.org/family#hasChild> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
 <http://www.benchmark.org/family#hasParent> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
 ```
-**Continual Training:** the training phase of a pretrained model can be resumed.
+**Continual Training:** the training phase of a pretrained model can be resumed. The model will saved in the same directory ``` --continual_learning "KeciFamilyRun"```.
 ```bash
-dicee --continual_learning KeciFamilyRun --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --path_to_store_single_run KeciFamilyRun --backend rdflib --eval_model None
+dicee --continual_learning "KeciFamilyRun" --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --backend rdflib --eval_model None
 ```
 
 **Apart from n-triples or standard link prediction dataset formats, we support ["owl", "nt", "turtle", "rdf/xml", "n3"]***.
-Moreover, a KGE model can be also trained  by providing **an endpoint of a triple store**.
+Moreover, a KGE model can be also trained  by providing **an endpoint of a triple store**. 
 ```bash
 dicee --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Keci
 ```

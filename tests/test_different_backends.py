@@ -28,4 +28,5 @@ class TestBackends:
         args = Namespace()
         args.dataset_dir = 'KGs/UMLS'
         args.backend = 'polars'
+        args.separator="	"
         Execute(args).start()
