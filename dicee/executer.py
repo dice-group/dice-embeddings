@@ -66,29 +66,6 @@ class Execute:
                 temp = vars(self.args)
                 json.dump(temp, file_descriptor, indent=3)
 
-    def dept_read_or_load_kg(self):
-        print('*** Read or Load Knowledge Graph  ***')
-        start_time = time.time()
-        kg = KG(dataset_dir=self.args.dataset_dir,
-                byte_pair_encoding=self.args.byte_pair_encoding,
-                padding=True if self.args.byte_pair_encoding and self.args.model != "BytE" else False,
-                add_noise_rate=self.args.add_noise_rate,
-                sparql_endpoint=self.args.sparql_endpoint,
-                path_single_kg=self.args.path_single_kg,
-                add_reciprocal=self.args.apply_reciprical_or_noise,
-                eval_model=self.args.eval_model,
-                read_only_few=self.args.read_only_few,
-                sample_triples_ratio=self.args.sample_triples_ratio,
-                path_for_serialization=self.args.full_storage_path,
-                path_for_deserialization=self.args.path_experiment_folder if hasattr(self.args,
-                                                                                     'path_experiment_folder') else None,
-                backend=self.args.backend,
-                training_technique=self.args.scoring_technique)
-        print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
-        # (2) Share some info about data for easy access.
-        print(kg.description_of_input)
-        return kg
-
     def read_preprocess_index_serialize_data(self) -> None:
         """ Read & Preprocess & Index & Serialize Input Data
 
@@ -235,23 +212,23 @@ class Execute:
             self.args.ordered_bpe_entities = None
         else:
             self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
-            if self.is_continual_training is False:
-                self.args.num_entities = self.knowledge_graph.num_entities
-                self.args.num_relations = self.knowledge_graph.num_relations
-                self.args.num_tokens = self.knowledge_graph.num_tokens
-                self.args.max_length_subword_tokens = self.knowledge_graph.max_length_subword_tokens
-                self.args.ordered_bpe_entities = self.knowledge_graph.ordered_bpe_entities
-                self.report['num_train_triples'] = len(self.knowledge_graph.train_set)
-                self.report['num_entities'] = self.knowledge_graph.num_entities
-                self.report['num_relations'] = self.knowledge_graph.num_relations
-                self.report['max_length_subword_tokens'] = self.knowledge_graph.max_length_subword_tokens if self.knowledge_graph.max_length_subword_tokens else None
-                self.report['runtime_kg_loading'] = time.time() - self.start_time
-                data={"shape":tuple(self.knowledge_graph.train_set.shape),
-                      "dtype":self.knowledge_graph.train_set.dtype.str,
-                      "num_entities":self.knowledge_graph.num_entities,
-                      "num_relations":self.knowledge_graph.num_relations}
-                with open(self.args.full_storage_path + '/memory_map_details.json', 'w') as file_descriptor:
-                    json.dump(data, file_descriptor, indent=4)
+            self.args.num_entities = self.knowledge_graph.num_entities
+            self.args.num_relations = self.knowledge_graph.num_relations
+            self.args.num_tokens = self.knowledge_graph.num_tokens
+            self.args.max_length_subword_tokens = self.knowledge_graph.max_length_subword_tokens
+            self.args.ordered_bpe_entities = self.knowledge_graph.ordered_bpe_entities
+            self.report['num_train_triples'] = len(self.knowledge_graph.train_set)
+            self.report['num_entities'] = self.knowledge_graph.num_entities
+            self.report['num_relations'] = self.knowledge_graph.num_relations
+            self.report['max_length_subword_tokens'] = self.knowledge_graph.max_length_subword_tokens if self.knowledge_graph.max_length_subword_tokens else None
+            self.report['runtime_kg_loading'] = time.time() - self.start_time
+            data={"shape":tuple(self.knowledge_graph.train_set.shape),
+                  "dtype":self.knowledge_graph.train_set.dtype.str,
+                  "num_entities":self.knowledge_graph.num_entities,
+                  "num_relations":self.knowledge_graph.num_relations}
+            with open(self.args.full_storage_path + '/memory_map_details.json', 'w') as file_descriptor:
+                json.dump(data, file_descriptor, indent=4)
+
         # (2) Create an evaluator object.
         self.evaluator = Evaluator(args=self.args)
         # (3) Create a trainer object.
