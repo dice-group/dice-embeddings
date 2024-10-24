@@ -470,15 +470,14 @@
 <li class="toctree-l3"><a class="reference internal" href="#dicee.Execute"><code class="docutils literal notranslate"><span class="pre">Execute</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.args"><code class="docutils literal notranslate"><span class="pre">Execute.args</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.is_continual_training"><code class="docutils literal notranslate"><span class="pre">Execute.is_continual_training</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.storage_path"><code class="docutils literal notranslate"><span class="pre">Execute.storage_path</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.trainer"><code class="docutils literal notranslate"><span class="pre">Execute.trainer</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.trained_model"><code class="docutils literal notranslate"><span class="pre">Execute.trained_model</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.knowledge_graph"><code class="docutils literal notranslate"><span class="pre">Execute.knowledge_graph</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.report"><code class="docutils literal notranslate"><span class="pre">Execute.report</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.evaluator"><code class="docutils literal notranslate"><span class="pre">Execute.evaluator</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.start_time"><code class="docutils literal notranslate"><span class="pre">Execute.start_time</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.continual_training_setup_executor"><code class="docutils literal notranslate"><span class="pre">Execute.continual_training_setup_executor()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.read_preprocess_index_serialize_data"><code class="docutils literal notranslate"><span class="pre">Execute.read_preprocess_index_serialize_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.setup_executor"><code class="docutils literal notranslate"><span class="pre">Execute.setup_executor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.dept_read_preprocess_index_serialize_data"><code class="docutils literal notranslate"><span class="pre">Execute.dept_read_preprocess_index_serialize_data()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.save_trained_model"><code class="docutils literal notranslate"><span class="pre">Execute.save_trained_model()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.end"><code class="docutils literal notranslate"><span class="pre">Execute.end()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.write_report"><code class="docutils literal notranslate"><span class="pre">Execute.write_report()</span></code></a></li>
@@ -3477,7 +3476,12 @@ Evaluate multi hop query answering on different query types</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.DICE_Trainer.start">
 <span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knowledge_graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><span class="pre">dicee.knowledge_graph.KG</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">numpy.memmap</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><span class="pre">dicee.models.base_model.BaseKGE</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.DICE_Trainer.start" title="Link to this definition"></a></dt>
-<dd><p>in DDP setup, we need to load the memory map of already read/index KG.
+<dd><p>Start the training</p>
+<ol class="arabic simple">
+<li><p>Initialize Trainer</p></li>
+<li><p>Initialize or load a pretrained KGE model</p></li>
+</ol>
+<p>in DDP setup, we need to load the memory map of already read/index KG.
 Ther</p>
 </dd></dl>
 
@@ -3799,11 +3803,6 @@ orall r in R f(e,r,x)</p>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.Execute.storage_path">
-<span class="sig-name descname"><span class="pre">storage_path</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.Execute.storage_path" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.Execute.trainer">
 <span class="sig-name descname"><span class="pre">trainer</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.Execute.trainer" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -3834,13 +3833,13 @@ orall r in R f(e,r,x)</p>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.Execute.continual_training_setup_executor">
-<span class="sig-name descname"><span class="pre">continual_training_setup_executor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../_modules/dicee/executer.html#Execute.continual_training_setup_executor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.Execute.continual_training_setup_executor" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.Execute.setup_executor">
+<span class="sig-name descname"><span class="pre">setup_executor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../_modules/dicee/executer.html#Execute.setup_executor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.Execute.setup_executor" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.Execute.read_preprocess_index_serialize_data">
-<span class="sig-name descname"><span class="pre">read_preprocess_index_serialize_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../_modules/dicee/executer.html#Execute.read_preprocess_index_serialize_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.Execute.read_preprocess_index_serialize_data" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.Execute.dept_read_preprocess_index_serialize_data">
+<span class="sig-name descname"><span class="pre">dept_read_preprocess_index_serialize_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../_modules/dicee/executer.html#Execute.dept_read_preprocess_index_serialize_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.Execute.dept_read_preprocess_index_serialize_data" title="Link to this definition"></a></dt>
 <dd><p>Read &amp; Preprocess &amp; Index &amp; Serialize Input Data</p>
 <ol class="arabic simple">
 <li><p>Read or load the data from disk into memory.</p></li>

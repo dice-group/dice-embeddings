@@ -363,18 +363,21 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.DICE_Trainer.start">[docs]</a>
     <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knowledge_graph</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">KG</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">BaseKGE</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Start the training</span>
+
+<span class="sd">        (1) Initialize Trainer</span>
+<span class="sd">        (2) Initialize or load a pretrained KGE model</span>
 
 <span class="sd">        in DDP setup, we need to load the memory map of already read/index KG.</span>
 <span class="sd">        Ther</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Train selected model via the selected training strategy &quot;&quot;&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;------------------- Train -------------------&#39;</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">knowledge_graph</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">knowledge_graph</span><span class="p">,</span> <span class="n">KG</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">knowledge_graph</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">knowledge_graph</span><span class="p">,</span> <span class="n">KG</span><span class="p">),</span> \
+            <span class="sa">f</span><span class="s2">&quot;knowledge_graph must be an instance of KG or np.memmap. Currently </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">knowledge_graph</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_folds_for_cv</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c1"># Initialize Trainer</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TorchTrainer</span><span class="p">,</span> <span class="n">TorchDDPTrainer</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">Trainer</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialize_trainer</span><span class="p">(</span><span class="n">callbacks</span><span class="o">=</span><span class="n">get_callbacks</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
-            <span class="c1"># Initialize or load model</span>
             <span class="n">model</span><span class="p">,</span> <span class="n">form_of_labelling</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialize_or_load_model</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluator</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">knowledge_graph</span>

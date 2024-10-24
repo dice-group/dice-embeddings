@@ -2205,6 +2205,11 @@ Package Contents
 
    .. py:method:: start(knowledge_graph: Union[dicee.knowledge_graph.KG, numpy.memmap]) -> Tuple[dicee.models.base_model.BaseKGE, str]
 
+      Start the training
+
+      (1) Initialize Trainer
+      (2) Initialize or load a pretrained KGE model
+
       in DDP setup, we need to load the memory map of already read/index KG.
       Ther
 
@@ -2531,11 +2536,6 @@ Package Contents
    .. py:attribute:: is_continual_training
 
 
-   .. py:attribute:: storage_path
-      :value: None
-
-
-
    .. py:attribute:: trainer
       :value: None
 
@@ -2564,10 +2564,10 @@ Package Contents
 
 
 
-   .. py:method:: continual_training_setup_executor() -> None
+   .. py:method:: setup_executor() -> None
 
 
-   .. py:method:: read_preprocess_index_serialize_data() -> None
+   .. py:method:: dept_read_preprocess_index_serialize_data() -> None
 
       Read & Preprocess & Index & Serialize Input Data
 

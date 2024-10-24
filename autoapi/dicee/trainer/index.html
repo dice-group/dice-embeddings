@@ -253,7 +253,12 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.start">
 <span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knowledge_graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><span class="pre">dicee.knowledge_graph.KG</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">numpy.memmap</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><span class="pre">dicee.models.base_model.BaseKGE</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.DICE_Trainer.start" title="Link to this definition"></a></dt>
-<dd><p>in DDP setup, we need to load the memory map of already read/index KG.
+<dd><p>Start the training</p>
+<ol class="arabic simple">
+<li><p>Initialize Trainer</p></li>
+<li><p>Initialize or load a pretrained KGE model</p></li>
+</ol>
+<p>in DDP setup, we need to load the memory map of already read/index KG.
 Ther</p>
 </dd></dl>
 

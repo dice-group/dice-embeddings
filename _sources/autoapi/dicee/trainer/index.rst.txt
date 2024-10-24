@@ -106,6 +106,11 @@ Package Contents
 
    .. py:method:: start(knowledge_graph: Union[dicee.knowledge_graph.KG, numpy.memmap]) -> Tuple[dicee.models.base_model.BaseKGE, str]
 
+      Start the training
+
+      (1) Initialize Trainer
+      (2) Initialize or load a pretrained KGE model
+
       in DDP setup, we need to load the memory map of already read/index KG.
       Ther
 

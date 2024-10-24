@@ -98,7 +98,6 @@
 <span class="kn">from</span> <span class="nn">pytorch_lightning</span> <span class="kn">import</span> <span class="n">seed_everything</span>
 <span class="kn">from</span> <span class="nn">.knowledge_graph</span> <span class="kn">import</span> <span class="n">KG</span>
 <span class="kn">from</span> <span class="nn">.evaluator</span> <span class="kn">import</span> <span class="n">Evaluator</span>
-<span class="c1"># Avoid</span>
 <span class="kn">from</span> <span class="nn">.static_preprocess_funcs</span> <span class="kn">import</span> <span class="n">preprocesses_input_args</span>
 <span class="kn">from</span> <span class="nn">.trainer</span> <span class="kn">import</span> <span class="n">DICE_Trainer</span>
 <span class="kn">from</span> <span class="nn">.static_funcs</span> <span class="kn">import</span> <span class="n">timeit</span><span class="p">,</span> <span class="n">read_or_load_kg</span><span class="p">,</span> <span class="n">load_json</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">create_experiment_folder</span>
@@ -125,10 +124,8 @@
         <span class="n">seed_everything</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">random_seed</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="c1"># (3) Set the continual training flag</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_continual_training</span> <span class="o">=</span> <span class="n">continuous_training</span>
-        <span class="c1"># TODO:  self.storage_path vs self.args.full_storage_path. One of them is redudandant.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span><span class="o">=</span><span class="kc">None</span>
         <span class="c1"># (4) Create an experiment folder or use the previous one</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">continual_training_setup_executor</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_executor</span><span class="p">()</span>
         <span class="c1"># (5) A variable is initialized for pytorch lightning trainer or DICE_Trainer()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trained_model</span> <span class="o">=</span> <span class="kc">None</span>
@@ -141,29 +138,25 @@
         <span class="c1"># (9) Execution start time</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="Execute.continual_training_setup_executor">
-<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute.continual_training_setup_executor">[docs]</a>
-    <span class="k">def</span> <span class="nf">continual_training_setup_executor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_continual_training</span><span class="p">:</span>
-            <span class="c1"># () We continue the training, then we store new models on previous path.</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span>
-        <span class="k">else</span><span class="p">:</span>
+<div class="viewcode-block" id="Execute.setup_executor">
+<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute.setup_executor">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_executor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_continual_training</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
             <span class="c1"># Create a single directory containing KGE and all related data</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span><span class="p">:</span>
                 <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Create a parent and subdirectory.</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">=</span> <span class="n">create_experiment_folder</span><span class="p">(</span><span class="n">folder_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">storage_path</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span>
+
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/configuration.json&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_descriptor</span><span class="p">:</span>
                 <span class="n">temp</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
                 <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="n">file_descriptor</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="Execute.read_preprocess_index_serialize_data">
-<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute.read_preprocess_index_serialize_data">[docs]</a>
-    <span class="k">def</span> <span class="nf">read_preprocess_index_serialize_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="Execute.dept_read_preprocess_index_serialize_data">
+<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute.dept_read_preprocess_index_serialize_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">dept_read_preprocess_index_serialize_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Read &amp; Preprocess &amp; Index &amp; Serialize Input Data</span>
 
 <span class="sd">        (1) Read or load the data from disk into memory.</span>
@@ -223,18 +216,18 @@
             <span class="n">store</span><span class="p">(</span><span class="n">trainer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="p">,</span>
                   <span class="n">trained_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trained_model</span><span class="p">,</span>
                   <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;model&#39;</span><span class="p">,</span>
-                  <span class="n">full_storage_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span><span class="p">,</span>
+                  <span class="n">full_storage_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span><span class="c1">#self.storage_path,</span>
                   <span class="n">save_embeddings_as_csv</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">save_embeddings_as_csv</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">store</span><span class="p">(</span><span class="n">trainer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="p">,</span>
                   <span class="n">trained_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trained_model</span><span class="p">,</span>
                   <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;model_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()),</span>
-                  <span class="n">full_storage_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span><span class="p">,</span> <span class="n">save_embeddings_as_csv</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">save_embeddings_as_csv</span><span class="p">)</span>
+                  <span class="n">full_storage_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span><span class="c1">#self.storage_path,</span>
+                  <span class="n">save_embeddings_as_csv</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">save_embeddings_as_csv</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;path_experiment_folder&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;path_experiment_folder&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="c1">#self.storage_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;num_entities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_entities</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;num_relations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_relations</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;path_experiment_folder&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;num_relations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_relations</span></div>
 
 
 <div class="viewcode-block" id="Execute.end">
@@ -303,17 +296,16 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Start time:</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="c1"># (1) Loading the Data</span>
-        <span class="c1">#  Load the indexed data from disk or read a raw data from disk into knowledge_graph attribute</span>
+        <span class="c1"># (1) Reload the memory-map of index knowledge graph stored as a numpy ndarray.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span><span class="o">+</span><span class="s2">&quot;/memory_map_train_set.npy&quot;</span><span class="p">):</span>
-            <span class="c1"># Read the JSON file</span>
+            <span class="c1"># (1.1) Read information about memory-map of KG.</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span><span class="o">+</span><span class="s1">&#39;/memory_map_details.json&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_descriptor</span><span class="p">:</span>
-                <span class="n">memory_map_details</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_descriptor</span><span class="p">)</span>    
+                <span class="n">memory_map_details</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_descriptor</span><span class="p">)</span>
+            <span class="c1"># TODO: Perhaps create a memory mapped KG ?</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span> <span class="o">+</span> <span class="s1">&#39;/memory_map_train_set.npy&#39;</span><span class="p">,</span>
                                              <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span>
                                              <span class="n">dtype</span><span class="o">=</span><span class="n">memory_map_details</span><span class="p">[</span><span class="s2">&quot;dtype&quot;</span><span class="p">],</span>
                                              <span class="n">shape</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">memory_map_details</span><span class="p">[</span><span class="s2">&quot;shape&quot;</span><span class="p">]))</span>
-            <span class="c1">#</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="n">memory_map_details</span><span class="p">[</span><span class="s2">&quot;num_entities&quot;</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="n">memory_map_details</span><span class="p">[</span><span class="s2">&quot;num_relations&quot;</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_tokens</span> <span class="o">=</span> <span class="kc">None</span>
@@ -343,7 +335,7 @@
         <span class="c1"># (3) Create a trainer object.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="n">DICE_Trainer</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
                                     <span class="n">is_continual_training</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">is_continual_training</span><span class="p">,</span>
-                                    <span class="n">storage_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span><span class="p">,</span>
+                                    <span class="n">storage_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span>
                                     <span class="n">evaluator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">evaluator</span><span class="p">)</span>
         <span class="c1"># (4) Start the training</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">knowledge_graph</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="p">)</span>
@@ -407,7 +399,8 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (1)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="n">DICE_Trainer</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">is_continual_training</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="n">DICE_Trainer</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
+                                    <span class="n">is_continual_training</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                     <span class="n">storage_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">continual_learning</span><span class="p">)</span>
         <span class="c1"># (2)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">continual_start</span><span class="p">()</span>
