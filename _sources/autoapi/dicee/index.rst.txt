@@ -2567,9 +2567,6 @@ Package Contents
    .. py:method:: continual_training_setup_executor() -> None
 
 
-   .. py:method:: dept_read_or_load_kg()
-
-
    .. py:method:: read_preprocess_index_serialize_data() -> None
 
       Read & Preprocess & Index & Serialize Input Data
