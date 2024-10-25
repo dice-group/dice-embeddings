@@ -693,7 +693,7 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
         size_of_batch, _ = batch.shape
         assert size_of_batch > 0
         label = torch.ones((size_of_batch,)) - self.label_smoothing_rate
-        corr_entities = torch.randint(0, high=self.num_entities, size=(size_of_batch * self.neg_sample_ratio,))
+        corr_entities = torch.randint(0, high=self.num_entities, size=(size_of_batch * self.neg_sample_ratio,),dtype=torch.long)
         if torch.rand(1) >= 0.5:
             # corrupt head
             r_head_corr = r.repeat(self.neg_sample_ratio, )
