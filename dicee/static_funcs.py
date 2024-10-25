@@ -167,16 +167,15 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
             with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
                 entity_to_idx = pickle.load(f)
         except FileNotFoundError:
-            # TODO: CD: We do not need to keep the mapping in memory
-            entity_to_idx = load_json(path_of_experiment_folder + '/entity_to_idx.json')
+            entity_to_idx = { v["entity"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv",index_col=0).to_dict(orient='index').items()}
+
         try:
             # TODO:CD: Deprecate the pickle usage for data serialization.
             # TODO: CD: We do not need to keep the mapping in memory
             with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
                 relation_to_idx = pickle.load(f)
         except FileNotFoundError:
-            # TODO: CD: We do not need to keep the mapping in memory
-            relation_to_idx = load_json(path_of_experiment_folder + '/relation_to_idx.json')
+            relation_to_idx = { v["relation"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv",index_col=0).to_dict(orient='index').items()}
         if verbose > 0:
             print(f'Done! It took {time.time() - start_time:.4f}')
         return model, (entity_to_idx, relation_to_idx)
@@ -234,10 +233,14 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, Tuple[
     print('Loading entity and relation indexes...', end=' ')
     # TODO: CD: We do not need to keep the mapping in memory
     # TODO:CD: Deprecate the pickle usage for data serialization.
-    with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
-        entity_to_idx = pickle.load(f)
-    with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
-        relation_to_idx = pickle.load(f)
+
+    entity_to_idx = {v["entity"]: k for k, v in
+                     pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv", index_col=0).to_dict(
+                         orient='index').items()}
+    relation_to_idx = {v["relation"]: k for k, v in
+                     pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv", index_col=0).to_dict(
+                         orient='index').items()}
+
     assert isinstance(entity_to_idx, dict)
     assert isinstance(relation_to_idx, dict)
     print(f'Done! It took {time.time() - start_time:.4f}')

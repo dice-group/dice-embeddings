@@ -229,14 +229,19 @@ class DICE_Trainer:
                                               byte_pair_encoding=self.args.byte_pair_encoding,
                                               block_size=self.args.block_size)
         else:
+            if self.args.continual_learning:
+                path = self.args.continual_learning
+            else:
+                path = self.args.path_to_store_single_run
+
             train_dataset = construct_dataset(train_set=self.trainer.dataset,
                                               valid_set=None,
                                               test_set=None,
-                                              train_target_indices=None,#self.trainer.dataset.train_target_indices,
-                                              target_dim=None,#self.trainer.dataset.target_dim,
-                                              ordered_bpe_entities=None,#self.trainer.dataset.ordered_bpe_entities,
-                                              entity_to_idx=load_term_mapping(file_path=self.args.path_to_store_single_run + "/entity_to_idx"),#self.trainer.dataset.entity_to_idx,
-                                              relation_to_idx=load_term_mapping(file_path=self.args.path_to_store_single_run + "/relation_to_idx"),#self.trainer.dataset.relation_to_idx,
+                                              train_target_indices=None,
+                                              target_dim=None,
+                                              ordered_bpe_entities=None,
+                                              entity_to_idx={v["entity"]:k for k,v in pd.read_csv(f"{path}/entity_to_idx.csv",index_col=0).to_dict(orient='index').items()},
+                                              relation_to_idx={v["relation"]:k for k,v in pd.read_csv(f"{path}/relation_to_idx.csv",index_col=0).to_dict(orient='index').items()},
                                               form_of_labelling=self.trainer.form_of_labelling,
                                               scoring_technique=self.args.scoring_technique,
                                               neg_ratio=self.args.neg_ratio,

@@ -394,8 +394,7 @@ class AllvsAll(torch.utils.data.Dataset):
                  label_smoothing_rate=0.0):
         super().__init__()
         assert len(train_set_idx) > 0
-        assert isinstance(train_set_idx, np.memmap)
-        assert isinstance(train_set_idx, np.ndarray)
+        assert isinstance(train_set_idx, np.memmap) or isinstance(train_set_idx, np.ndarray)
         self.train_data = None
         self.train_target = None
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)

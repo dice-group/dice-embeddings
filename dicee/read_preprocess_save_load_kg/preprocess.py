@@ -325,7 +325,7 @@ class PreprocessKG:
 
         dataset_sanity_checking(self.kg.train_set, self.kg.num_entities, self.kg.num_relations)
         if self.kg.raw_valid_set is not None:
-            self.kg.valid_set = index_triples_with_pandas(self.kg.raw_valid_set, self.kg.entity_to_idx,
+            self.kg.valid_set = pandas_dataframe_indexer(self.kg.raw_valid_set, self.kg.entity_to_idx,
                                                           self.kg.relation_to_idx)
             self.kg.valid_set = self.kg.valid_set.values
             dataset_sanity_checking(self.kg.valid_set, self.kg.num_entities, self.kg.num_relations)
@@ -333,7 +333,7 @@ class PreprocessKG:
                                                         num=max(self.kg.num_entities, self.kg.num_relations))
 
         if self.kg.raw_test_set is not None:
-            self.kg.test_set = index_triples_with_pandas(self.kg.raw_test_set, self.kg.entity_to_idx,
+            self.kg.test_set = pandas_dataframe_indexer(self.kg.raw_test_set, self.kg.entity_to_idx,
                                                          self.kg.relation_to_idx)
             # To numpy
             self.kg.test_set = self.kg.test_set.values
