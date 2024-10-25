@@ -109,6 +109,7 @@ class BaseKGELightning(pl.LightningModule):
                                                        weight_decay=self.weight_decay)
         else:
             raise KeyError()
+        print(self.selected_optimizer)
         return self.selected_optimizer
 
 
