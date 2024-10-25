@@ -686,7 +686,7 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
         return self.length
 
     def __getitem__(self, idx):
-        return torch.from_numpy(self.train_set[idx])
+        return torch.from_numpy(self.train_set[idx].copy())
 
     def collate_fn(self, batch: List[torch.Tensor]):
         batch = torch.stack(batch, dim=0)
