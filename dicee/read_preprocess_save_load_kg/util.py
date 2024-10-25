@@ -9,7 +9,8 @@ import pickle
 import os
 import psutil
 import requests
-
+from typing import Tuple
+import pandas as pd
 def polars_dataframe_indexer(df_polars:polars.DataFrame, idx_entity:polars.DataFrame, idx_relation:polars.DataFrame)->polars.DataFrame:
     """
      Replaces 'subject', 'relation', and 'object' columns in the input Polars DataFrame with their corresponding index values
@@ -79,6 +80,63 @@ def polars_dataframe_indexer(df_polars:polars.DataFrame, idx_entity:polars.DataF
     # Step 4: Select the desired columns
     df_final = df_final.select([polars.col("subject"), polars.col("relation"), polars.col("object")])
     return df_final
+
+
+def pandas_dataframe_indexer(df_pandas: pd.DataFrame, idx_entity: pd.DataFrame, idx_relation: pd.DataFrame) -> pd.DataFrame:
+    """
+    Replaces 'subject', 'relation', and 'object' columns in the input Pandas DataFrame with their corresponding index values
+    from the entity and relation index DataFrames.
+
+    Parameters:
+    -----------
+    df_pandas : pd.DataFrame
+        The input Pandas DataFrame containing columns: 'subject', 'relation', and 'object'.
+
+    idx_entity : pd.DataFrame
+        A Pandas DataFrame that contains the mapping between entity names and their corresponding indices.
+        Must have columns: 'entity' and 'index'.
+
+    idx_relation : pd.DataFrame
+        A Pandas DataFrame that contains the mapping between relation names and their corresponding indices.
+        Must have columns: 'relation' and 'index'.
+
+    Returns:
+    --------
+    pd.DataFrame
+        A DataFrame with the 'subject', 'relation', and 'object' columns replaced by their corresponding indices.
+    """
+    assert isinstance(df_pandas, pd.DataFrame)
+    assert isinstance(idx_entity, pd.DataFrame)
+    assert isinstance(idx_relation, pd.DataFrame)
+
+    # Create a dictionary that maps entities to their indices
+    entity_to_index = pd.Series(idx_entity.index, index=idx_entity['entity']).to_dict()
+    df_pandas['subject'] = df_pandas['subject'].map(entity_to_index)
+    df_pandas['object'] = df_pandas['object'].map(entity_to_index)
+    del entity_to_index
+    relation_to_index = pd.Series(idx_relation.index, index=idx_relation['relation']).to_dict()
+    df_pandas['relation'] = df_pandas['relation'].map(relation_to_index)
+    del relation_to_index
+    return df_pandas
+
+def dept_index_triples_with_pandas(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pd.core.frame.DataFrame:
+    """
+    :param train_set: pandas dataframe
+    :param entity_to_idx: a mapping from str to integer index
+    :param relation_to_idx: a mapping from str to integer index
+    :param num_core: number of cores to be used
+    :return: indexed triples, i.e., pandas dataframe
+    """
+    n, d = train_set.shape
+    train_set['subject'] = train_set['subject'].apply(lambda x: entity_to_idx.get(x))
+    train_set['relation'] = train_set['relation'].apply(lambda x: relation_to_idx.get(x))
+    train_set['object'] = train_set['object'].apply(lambda x: entity_to_idx.get(x))
+    # train_set = train_set.dropna(inplace=True)
+    if isinstance(train_set, pd.core.frame.DataFrame):
+        assert (n, d) == train_set.shape
+    else:
+        raise KeyError('Wrong type training data')
+    return train_set
 
 def apply_reciprical_or_noise(add_reciprical: bool, eval_model: str, df: object = None, info: str = None):
     """ (1) Add reciprocal triples (2) Add noisy triples """
@@ -175,7 +233,8 @@ def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio:
 
 
 def read_from_disk(data_path: str, read_only_few: int = None,
-                   sample_triples_ratio: float = None, backend:str=None,separator:str=None):
+                   sample_triples_ratio: float = None, backend:str=None,separator:str=None)\
+        ->Tuple[polars.DataFrame,pd.DataFrame]:
     assert backend is not None, "backend cannot be None"
     assert separator is not None, f"separator cannot be None. Currently {separator}"
     # If path exits
@@ -374,25 +433,6 @@ def create_recipriocal_triples(x):
         x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
         x['subject'].to_frame(name='object'))], ignore_index=True)
 
-
-def index_triples_with_pandas(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pd.core.frame.DataFrame:
-    """
-    :param train_set: pandas dataframe
-    :param entity_to_idx: a mapping from str to integer index
-    :param relation_to_idx: a mapping from str to integer index
-    :param num_core: number of cores to be used
-    :return: indexed triples, i.e., pandas dataframe
-    """
-    n, d = train_set.shape
-    train_set['subject'] = train_set['subject'].apply(lambda x: entity_to_idx.get(x))
-    train_set['relation'] = train_set['relation'].apply(lambda x: relation_to_idx.get(x))
-    train_set['object'] = train_set['object'].apply(lambda x: entity_to_idx.get(x))
-    # train_set = train_set.dropna(inplace=True)
-    if isinstance(train_set, pd.core.frame.DataFrame):
-        assert (n, d) == train_set.shape
-    else:
-        raise KeyError('Wrong type training data')
-    return train_set
 
 
 def dataset_sanity_checking(train_set: np.ndarray, num_entities: int, num_relations: int) -> None:

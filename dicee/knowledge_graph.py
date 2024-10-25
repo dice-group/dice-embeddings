@@ -85,9 +85,12 @@ class KG:
         assert len(self.train_set) > 0, "Training set is empty"
         self.description_of_input=None
         self.describe()
+
+
+        # TODO: Simplfy
         if self.entity_to_idx is not None:
-            assert isinstance(self.entity_to_idx, dict) or isinstance(self.entity_to_idx,
-                                                                      pl.DataFrame), f"entity_to_idx must be a dict or a polars DataFrame: {type(self.entity_to_idx)}"
+            assert isinstance(self.entity_to_idx, dict) or isinstance(self.entity_to_idx, pd.DataFrame) or isinstance(self.entity_to_idx,
+                                                                      pl.DataFrame), f"entity_to_idx must be a dict or a pandas/polars DataFrame: {type(self.entity_to_idx)}"
 
             if isinstance(self.entity_to_idx, dict):
                 self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}

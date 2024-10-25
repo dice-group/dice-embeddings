@@ -150,7 +150,7 @@ class DICE_Trainer:
         for i in range(torch.cuda.device_count()):
             print(torch.cuda.get_device_name(i))
 
-    def continual_start(self):
+    def continual_start(self,knowledge_graph):
         """
         (1) Initialize training.
         (2) Load model
@@ -168,14 +168,12 @@ class DICE_Trainer:
 
         self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
         model, form_of_labelling = self.initialize_or_load_model()
-        assert form_of_labelling in ['EntityPrediction', 'RelationPrediction', 'Pyke']
-        assert self.args.scoring_technique in ["AllvsAll","KvsSample" ,"1vsSample", "1vsAll", "KvsAll", "NegSample"]
-        train_loader = self.init_dataloader(
-            reload_dataset(path=self.storage_path, form_of_labelling=form_of_labelling,
-                           scoring_technique=self.args.scoring_technique,
-                           neg_ratio=self.args.neg_ratio,
-                           label_smoothing_rate=self.args.label_smoothing_rate))
-        self.trainer.fit(model, train_dataloaders=train_loader)
+        # TODO: Here we need to load memory pag
+
+        self.trainer.evaluator = self.evaluator
+        self.trainer.dataset = knowledge_graph
+        self.trainer.form_of_labelling = form_of_labelling
+        self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
         return model, form_of_labelling
 
     @timeit
@@ -204,12 +202,18 @@ class DICE_Trainer:
     def init_dataset(self) -> torch.utils.data.Dataset:
         print('Initializing Dataset...', end='\t')
         if isinstance(self.trainer.dataset,KG):
+            # Create a memory map of training dataset to reduce the memory usage
             train_set_shape=self.trainer.dataset.train_set.shape
             train_set_dtype=self.trainer.dataset.train_set.dtype
-            fp = np.memmap(self.trainer.dataset.path_for_serialization + '/memory_map_train_set.npy', dtype=train_set_dtype, mode='w+', shape=train_set_shape)
-            fp[:] = self.trainer.dataset.train_set[:]
-            self.trainer.dataset.train_set=fp
-            del fp
+            path_memory_map=self.trainer.dataset.path_for_serialization + '/memory_map_train_set.npy'
+            memmap_kg = np.memmap(path_memory_map, dtype=train_set_dtype, mode='w+', shape=train_set_shape)
+            memmap_kg[:] = self.trainer.dataset.train_set[:]
+            memmap_kg[:].flush()
+            del memmap_kg
+            self.trainer.dataset.train_se = np.memmap(path_memory_map,
+                                             mode='r',
+                                             dtype=train_set_dtype,
+                                             shape=train_set_shape)
             train_dataset = construct_dataset(train_set=self.trainer.dataset.train_set,
                                               valid_set=self.trainer.dataset.valid_set,
                                               test_set=self.trainer.dataset.test_set,
@@ -251,7 +255,6 @@ class DICE_Trainer:
         (2) Initialize or load a pretrained KGE model
 
         in DDP setup, we need to load the memory map of already read/index KG.
-        Ther
         """
         """ Train selected model via the selected training strategy """
         print('------------------- Train -------------------')

@@ -192,7 +192,6 @@ class Execute:
             # (1.1) Read information about memory-map of KG.
             with open(self.args.path_to_store_single_run+'/memory_map_details.json', 'r') as file_descriptor:
                 memory_map_details = json.load(file_descriptor)
-            # TODO: Perhaps create a memory mapped KG ?
             self.knowledge_graph = np.memmap(self.args.path_to_store_single_run + '/memory_map_train_set.npy',
                                              mode='r',
                                              dtype=memory_map_details["dtype"],
@@ -288,7 +287,22 @@ class ContinuousExecute(Execute):
                                     is_continual_training=True,
                                     storage_path=self.args.continual_learning)
         # (2)
-        self.trained_model, form_of_labelling = self.trainer.continual_start()
+
+        assert os.path.exists(f"{self.args.continual_learning}/memory_map_train_set.npy")
+        # (1) Reload the memory-map of index knowledge graph stored as a numpy ndarray.
+        with open(f"{self.args.continual_learning}/memory_map_details.json", 'r') as file_descriptor:
+            memory_map_details = json.load(file_descriptor)
+        knowledge_graph = np.memmap(f"{self.args.continual_learning}/memory_map_train_set.npy",
+                                         mode='r',
+                                         dtype=memory_map_details["dtype"],
+                                         shape=tuple(memory_map_details["shape"]))
+        self.args.num_entities = memory_map_details["num_entities"]
+        self.args.num_relations = memory_map_details["num_relations"]
+        self.args.num_tokens = None
+        self.args.max_length_subword_tokens = None
+        self.args.ordered_bpe_entities = None
+
+        self.trained_model, form_of_labelling = self.trainer.continual_start(knowledge_graph)
 
         # (5) Store trained model.
         self.save_trained_model()

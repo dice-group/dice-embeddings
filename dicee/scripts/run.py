@@ -12,6 +12,8 @@ def get_default_arguments(description=None):
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
                         help="An endpoint of a triple store, e.g. 'http://localhost:3030/mutagenesis/'. ")
+    # TODO: Deprecate --path_single_kg
+    # TODO: --dataset_dir either be a single KG file or a folder.
     parser.add_argument("--path_single_kg", type=str, default=None,#"/home/cdemir/Desktop/Softwares/dice-embeddings/dice.nt",
                         help="Path of a file corresponding to the input knowledge graph")
     # Saved files related arguments
