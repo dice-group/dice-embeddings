@@ -10,7 +10,7 @@ import os
 import psutil
 import requests
 from typing import Tuple
-import pandas as pd
+
 def polars_dataframe_indexer(df_polars:polars.DataFrame, idx_entity:polars.DataFrame, idx_relation:polars.DataFrame)->polars.DataFrame:
     """
      Replaces 'subject', 'relation', and 'object' columns in the input Polars DataFrame with their corresponding index values
