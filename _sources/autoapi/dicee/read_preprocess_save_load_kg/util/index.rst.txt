@@ -10,6 +10,8 @@ Functions
 .. autoapisummary::
 
    dicee.read_preprocess_save_load_kg.util.polars_dataframe_indexer
+   dicee.read_preprocess_save_load_kg.util.pandas_dataframe_indexer
+   dicee.read_preprocess_save_load_kg.util.dept_index_triples_with_pandas
    dicee.read_preprocess_save_load_kg.util.apply_reciprical_or_noise
    dicee.read_preprocess_save_load_kg.util.timeit
    dicee.read_preprocess_save_load_kg.util.read_with_polars
@@ -26,7 +28,6 @@ Functions
    dicee.read_preprocess_save_load_kg.util.save_pickle
    dicee.read_preprocess_save_load_kg.util.load_pickle
    dicee.read_preprocess_save_load_kg.util.create_recipriocal_triples
-   dicee.read_preprocess_save_load_kg.util.index_triples_with_pandas
    dicee.read_preprocess_save_load_kg.util.dataset_sanity_checking
 
 
@@ -86,6 +87,39 @@ Module Contents
    4. Select only the 'subject', 'relation', and 'object' columns to return the final result.
 
 
+.. py:function:: pandas_dataframe_indexer(df_pandas: pandas.DataFrame, idx_entity: pandas.DataFrame, idx_relation: pandas.DataFrame) -> pandas.DataFrame
+
+   Replaces 'subject', 'relation', and 'object' columns in the input Pandas DataFrame with their corresponding index values
+   from the entity and relation index DataFrames.
+
+   Parameters:
+   -----------
+   df_pandas : pd.DataFrame
+       The input Pandas DataFrame containing columns: 'subject', 'relation', and 'object'.
+
+   idx_entity : pd.DataFrame
+       A Pandas DataFrame that contains the mapping between entity names and their corresponding indices.
+       Must have columns: 'entity' and 'index'.
+
+   idx_relation : pd.DataFrame
+       A Pandas DataFrame that contains the mapping between relation names and their corresponding indices.
+       Must have columns: 'relation' and 'index'.
+
+   Returns:
+   --------
+   pd.DataFrame
+       A DataFrame with the 'subject', 'relation', and 'object' columns replaced by their corresponding indices.
+
+
+.. py:function:: dept_index_triples_with_pandas(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pandas.core.frame.DataFrame
+
+   :param train_set: pandas dataframe
+   :param entity_to_idx: a mapping from str to integer index
+   :param relation_to_idx: a mapping from str to integer index
+   :param num_core: number of cores to be used
+   :return: indexed triples, i.e., pandas dataframe
+
+
 .. py:function:: apply_reciprical_or_noise(add_reciprical: bool, eval_model: str, df: object = None, info: str = None)
 
    (1) Add reciprocal triples (2) Add noisy triples
@@ -100,7 +134,7 @@ Module Contents
 
 .. py:function:: read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator: str = None)
 
-.. py:function:: read_from_disk(data_path: str, read_only_few: int = None, sample_triples_ratio: float = None, backend: str = None, separator: str = None)
+.. py:function:: read_from_disk(data_path: str, read_only_few: int = None, sample_triples_ratio: float = None, backend: str = None, separator: str = None) -> Tuple[polars.DataFrame, pandas.DataFrame]
 
 .. py:function:: read_from_triple_store(endpoint: str = None)
 
@@ -141,15 +175,6 @@ Module Contents
    Add inverse triples into dask dataframe
    :param x:
    :return:
-
-
-.. py:function:: index_triples_with_pandas(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pandas.core.frame.DataFrame
-
-   :param train_set: pandas dataframe
-   :param entity_to_idx: a mapping from str to integer index
-   :param relation_to_idx: a mapping from str to integer index
-   :param num_core: number of cores to be used
-   :return: indexed triples, i.e., pandas dataframe
 
 
 .. py:function:: dataset_sanity_checking(train_set: numpy.ndarray, num_entities: int, num_relations: int) -> None

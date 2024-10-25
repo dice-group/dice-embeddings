@@ -104,6 +104,8 @@
                              <span class="s2">&quot;,e.g., KGs/UMLS&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--sparql_endpoint&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;An endpoint of a triple store, e.g. &#39;http://localhost:3030/mutagenesis/&#39;. &quot;</span><span class="p">)</span>
+    <span class="c1"># TODO: Deprecate --path_single_kg</span>
+    <span class="c1"># TODO: --dataset_dir either be a single KG file or a folder.</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--path_single_kg&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="c1">#&quot;/home/cdemir/Desktop/Softwares/dice-embeddings/dice.nt&quot;,</span>
                         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path of a file corresponding to the input knowledge graph&quot;</span><span class="p">)</span>
     <span class="c1"># Saved files related arguments</span>

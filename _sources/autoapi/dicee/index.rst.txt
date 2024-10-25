@@ -2173,7 +2173,7 @@ Package Contents
 
 
 
-   .. py:method:: continual_start()
+   .. py:method:: continual_start(knowledge_graph)
 
       (1) Initialize training.
       (2) Load model
@@ -2211,7 +2211,6 @@ Package Contents
       (2) Initialize or load a pretrained KGE model
 
       in DDP setup, we need to load the memory map of already read/index KG.
-      Ther
 
 
 
