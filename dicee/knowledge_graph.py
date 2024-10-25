@@ -3,8 +3,6 @@ from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveTo
 import sys
 import pandas as pd
 import polars as pl
-import numpy as np
-from .read_preprocess_save_load_kg.util import load_numpy_ndarray
 class KG:
     """ Knowledge Graph """
 
@@ -18,7 +16,7 @@ class KG:
                  add_reciprocal: bool = None, eval_model: str = None,
                  read_only_few: int = None, sample_triples_ratio: float = None,
                  path_for_serialization: str = None,
-                 entity_to_idx=None, relation_to_idx=None, backend=None, training_technique: str = None):
+                 entity_to_idx=None, relation_to_idx=None, backend=None, training_technique: str = None, separator:str=None):
         """
         :param dataset_dir: A path of a folder containing train.txt, valid.txt, test.text
         :param byte_pair_encoding: Apply Byte pair encoding.
@@ -36,13 +34,14 @@ class KG:
         :param training_technique
         """
         self.dataset_dir = dataset_dir
+        self.sparql_endpoint = sparql_endpoint
+        self.path_single_kg = path_single_kg
+
         self.byte_pair_encoding = byte_pair_encoding
         self.ordered_shaped_bpe_tokens = None
-        self.sparql_endpoint = sparql_endpoint
         self.add_noise_rate = add_noise_rate
         self.num_entities = None
         self.num_relations = None
-        self.path_single_kg = path_single_kg
         self.path_for_deserialization = path_for_deserialization
         self.add_reciprocal = add_reciprocal
         self.eval_model = eval_model
@@ -72,6 +71,7 @@ class KG:
         self.target_dim = None
         self.train_target_indices = None
         self.ordered_bpe_entities = None
+        self.separator=separator
 
         if self.path_for_deserialization is None:
             # Read a knowledge graph into memory
@@ -83,11 +83,14 @@ class KG:
         else:
             LoadSaveToDisk(kg=self).load()
         assert len(self.train_set) > 0, "Training set is empty"
-        self._describe()
+        self.description_of_input=None
+        self.describe()
 
+
+        # TODO: Simplfy
         if self.entity_to_idx is not None:
-            assert isinstance(self.entity_to_idx, dict) or isinstance(self.entity_to_idx,
-                                                                      pl.DataFrame), f"entity_to_idx must be a dict or a polars DataFrame: {type(self.entity_to_idx)}"
+            assert isinstance(self.entity_to_idx, dict) or isinstance(self.entity_to_idx, pd.DataFrame) or isinstance(self.entity_to_idx,
+                                                                      pl.DataFrame), f"entity_to_idx must be a dict or a pandas/polars DataFrame: {type(self.entity_to_idx)}"
 
             if isinstance(self.entity_to_idx, dict):
                 self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
@@ -96,8 +99,8 @@ class KG:
                 print(f"No inverse mapping created as self.entity_to_idx is not a type of dictionary but {type(self.entity_to_idx)}\n"
                       f"Backend might be selected as polars")
 
-    def _describe(self) -> None:
-        self.description_of_input = f'\n------------------- Description of Dataset {self.dataset_dir} -------------------'
+    def describe(self) -> None:
+        self.description_of_input = f'\n------------------- Description of Dataset {self.dataset_dir if isinstance(self.dataset_dir, str) else self.sparql_endpoint if isinstance(self.sparql_endpoint, str) else self.path_single_kg} -------------------'
         if self.byte_pair_encoding:
             self.description_of_input += f'\nNumber of tokens:{self.num_tokens}' \
                                          f'\nNumber of max sequence of sub-words: {self.max_length_subword_tokens}' \

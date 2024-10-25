@@ -4,8 +4,6 @@ import argparse
 
 def get_default_arguments(description=None):
     """ Extends pytorch_lightning Trainer's arguments with ours """
-    # From "pytorch-lightning==1.6.4" to "lightning>=2.1.3",  'Trainer' has no attribute 'add_argparse_args'
-    # parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     parser = argparse.ArgumentParser(add_help=False)
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Knowledge graph related arguments
@@ -14,19 +12,23 @@ def get_default_arguments(description=None):
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
                         help="An endpoint of a triple store, e.g. 'http://localhost:3030/mutagenesis/'. ")
-    parser.add_argument("--path_single_kg", type=str, default=None,
+    # TODO: Deprecate --path_single_kg
+    # TODO: --dataset_dir either be a single KG file or a folder.
+    parser.add_argument("--path_single_kg", type=str, default=None,#"/home/cdemir/Desktop/Softwares/dice-embeddings/dice.nt",
                         help="Path of a file corresponding to the input knowledge graph")
     # Saved files related arguments
-    parser.add_argument("--path_to_store_single_run", type=str, default=None,
+    parser.add_argument("--path_to_store_single_run", type=str, default=None,#"DBpedia",
                         help="A single directory created that contains related data about embeddings.")
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="A directory named with time of execution under --storage_path "
                              "that contains related data about embeddings.")
     parser.add_argument("--save_embeddings_as_csv", action="store_true",
                         help="A flag for saving embeddings in csv file.")
-    parser.add_argument("--backend", type=str, default="polars",
+    parser.add_argument("--backend", type=str, default="pandas",
                         choices=["pandas", "polars", "rdflib"],
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
+    parser.add_argument("--separator", type=str, default="\s+",
+                        help='Pandas \s+, t for \t polars works with the last two.')
     # Model related arguments
     parser.add_argument("--model", type=str,
                         default="Keci",

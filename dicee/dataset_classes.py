@@ -244,9 +244,7 @@ class OnevsAllDataset(torch.utils.data.Dataset):
 
     def __init__(self, train_set_idx: np.ndarray, entity_idxs):
         super().__init__()
-        assert isinstance(train_set_idx, np.memmap)
-
-        assert isinstance(train_set_idx, np.ndarray)
+        assert isinstance(train_set_idx, np.memmap) or isinstance(train_set_idx, np.ndarray)
         assert len(train_set_idx) > 0
         self.train_data = train_set_idx
         self.target_dim = len(entity_idxs)
@@ -300,8 +298,7 @@ class KvsAll(torch.utils.data.Dataset):
                  label_smoothing_rate: float = 0.0):
         super().__init__()
         assert len(train_set_idx) > 0
-        assert isinstance(train_set_idx, np.memmap)
-        assert isinstance(train_set_idx, np.ndarray)
+        assert isinstance(train_set_idx, np.memmap) or isinstance(train_set_idx, np.ndarray)
         self.train_data = None
         self.train_target = None
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
@@ -397,8 +394,7 @@ class AllvsAll(torch.utils.data.Dataset):
                  label_smoothing_rate=0.0):
         super().__init__()
         assert len(train_set_idx) > 0
-        assert isinstance(train_set_idx, np.memmap)
-        assert isinstance(train_set_idx, np.ndarray)
+        assert isinstance(train_set_idx, np.memmap) or isinstance(train_set_idx, np.ndarray)
         self.train_data = None
         self.train_target = None
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
@@ -689,7 +685,7 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
         return self.length
 
     def __getitem__(self, idx):
-        return torch.from_numpy(self.train_set[idx])
+        return torch.from_numpy(self.train_set[idx].copy())
 
     def collate_fn(self, batch: List[torch.Tensor]):
         batch = torch.stack(batch, dim=0)

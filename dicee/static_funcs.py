@@ -167,16 +167,15 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
             with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
                 entity_to_idx = pickle.load(f)
         except FileNotFoundError:
-            # TODO: CD: We do not need to keep the mapping in memory
-            entity_to_idx = load_json(path_of_experiment_folder + '/entity_to_idx.json')
+            entity_to_idx = { v["entity"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv",index_col=0).to_dict(orient='index').items()}
+
         try:
             # TODO:CD: Deprecate the pickle usage for data serialization.
             # TODO: CD: We do not need to keep the mapping in memory
             with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
                 relation_to_idx = pickle.load(f)
         except FileNotFoundError:
-            # TODO: CD: We do not need to keep the mapping in memory
-            relation_to_idx = load_json(path_of_experiment_folder + '/relation_to_idx.json')
+            relation_to_idx = { v["relation"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv",index_col=0).to_dict(orient='index').items()}
         if verbose > 0:
             print(f'Done! It took {time.time() - start_time:.4f}')
         return model, (entity_to_idx, relation_to_idx)
@@ -234,10 +233,14 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, Tuple[
     print('Loading entity and relation indexes...', end=' ')
     # TODO: CD: We do not need to keep the mapping in memory
     # TODO:CD: Deprecate the pickle usage for data serialization.
-    with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
-        entity_to_idx = pickle.load(f)
-    with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
-        relation_to_idx = pickle.load(f)
+
+    entity_to_idx = {v["entity"]: k for k, v in
+                     pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv", index_col=0).to_dict(
+                         orient='index').items()}
+    relation_to_idx = {v["relation"]: k for k, v in
+                     pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv", index_col=0).to_dict(
+                         orient='index').items()}
+
     assert isinstance(entity_to_idx, dict)
     assert isinstance(relation_to_idx, dict)
     print(f'Done! It took {time.time() - start_time:.4f}')
@@ -355,22 +358,24 @@ def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.Data
     assert num_triples + num_noisy_triples == len(train_set)
     return train_set
 
-
 def read_or_load_kg(args, cls):
     print('*** Read or Load Knowledge Graph  ***')
     start_time = time.time()
     kg = cls(dataset_dir=args.dataset_dir,
              byte_pair_encoding=args.byte_pair_encoding,
+             padding=True if args.byte_pair_encoding and args.model != "BytE" else False,
              add_noise_rate=args.add_noise_rate,
              sparql_endpoint=args.sparql_endpoint,
              path_single_kg=args.path_single_kg,
-             add_reciprical=args.apply_reciprical_or_noise,
+             add_reciprocal=args.apply_reciprical_or_noise,
              eval_model=args.eval_model,
              read_only_few=args.read_only_few,
              sample_triples_ratio=args.sample_triples_ratio,
              path_for_serialization=args.full_storage_path,
              path_for_deserialization=args.path_experiment_folder if hasattr(args, 'path_experiment_folder') else None,
-             backend=args.backend)
+             backend=args.backend,
+             training_technique=args.scoring_technique,
+             separator=args.separator)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     # (2) Share some info about data for easy access.
     print(kg.description_of_input)
@@ -528,19 +533,14 @@ def create_experiment_folder(folder_name='Experiments'):
 
 
 def continual_training_setup_executor(executor) -> None:
-    """
-    storage_path:str A path leading to a parent directory, where a subdirectory containing KGE related data
-
-    full_storage_path:str A path leading to a subdirectory containing KGE related data
-
-    """
+    # TODO:CD:Deprecate it
     if executor.is_continual_training:
         # (4.1) If it is continual, then store new models on previous path.
         executor.storage_path = executor.args.full_storage_path
     else:
         # Create a single directory containing KGE and all related data
         if executor.args.path_to_store_single_run:
-            os.makedirs(executor.args.path_to_store_single_run, exist_ok=True)
+            os.makedirs(executor.args.path_to_store_single_run, exist_ok=False)
             executor.args.full_storage_path = executor.args.path_to_store_single_run
         else:
             # Create a parent and subdirectory.

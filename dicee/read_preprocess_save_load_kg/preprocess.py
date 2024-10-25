@@ -1,6 +1,6 @@
 import pandas as pd
 import polars as pl
-from .util import timeit, index_triples_with_pandas, dataset_sanity_checking
+from .util import timeit, pandas_dataframe_indexer, dataset_sanity_checking
 from dicee.static_funcs import numpy_data_type_changer
 from .util import get_er_vocab, get_re_vocab, get_ee_vocab, create_constraints, apply_reciprical_or_noise, polars_dataframe_indexer
 import numpy as np
@@ -38,6 +38,9 @@ class PreprocessKG:
         else:
             raise KeyError(f'{self.kg.backend} not found')
 
+        # TODO: Still we keep the raw and index data in memory
+        # print(self.kg.raw_train_set)
+        # print(self.kg.train_set)
         if self.kg.eval_model:
             if self.kg.byte_pair_encoding:
                 data = []
@@ -58,6 +61,7 @@ class PreprocessKG:
             self.kg.re_vocab = executor.submit(get_re_vocab, data, self.kg.path_for_serialization + '/re_vocab.p')
             self.kg.ee_vocab = executor.submit(get_ee_vocab, data, self.kg.path_for_serialization + '/ee_vocab.p')
 
+            # TODO: Deprecate it
             self.kg.constraints = executor.submit(create_constraints, self.kg.train_set,
                                                   self.kg.path_for_serialization + '/constraints.p')
             self.kg.domain_constraints_per_rel, self.kg.range_constraints_per_rel = None, None
@@ -65,7 +69,7 @@ class PreprocessKG:
         # string containing
         assert isinstance(self.kg.raw_train_set, pd.DataFrame) or isinstance(self.kg.raw_train_set, pl.DataFrame)
 
-        print("Creating dataset...")
+        # print("Creating dataset...")
         if self.kg.byte_pair_encoding and self.kg.padding:
             assert isinstance(self.kg.train_set, list)
             assert isinstance(self.kg.train_set[0], tuple)
@@ -149,25 +153,12 @@ class PreprocessKG:
                 triples.extend(x)
             self.kg.train_set = np.array(triples)
         else:
-            """No need to do anything. We create datasets for other models in the pyorch dataset construction"""
-            # @TODO: Either we should move the all pytorch dataset construciton into here
-            # Or we should move the byte pair encoding data into
-            print('Finding suitable integer type for the index...')
-            self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
-                                                        num=max(self.kg.num_entities, self.kg.num_relations))
-            if self.kg.valid_set is not None:
-                self.kg.valid_set = numpy_data_type_changer(self.kg.valid_set,
-                                                            num=max(self.kg.num_entities, self.kg.num_relations))
-            if self.kg.test_set is not None:
-                self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
-                                                           num=max(self.kg.num_entities, self.kg.num_relations))
-
-        if self.kg.byte_pair_encoding is False:
             # No need to keep the raw data in memory
             # TODO: If BPE used, no need to clearn data for the time being,.
             self.kg.raw_train_set = None
             self.kg.raw_valid_set = None
             self.kg.raw_test_set  = None
+
 
     @staticmethod
     def __replace_values_df(df: pd.DataFrame = None, f=None) -> Union[
@@ -324,16 +315,17 @@ class PreprocessKG:
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
 
         # (3) Index datasets
-        self.kg.train_set = index_triples_with_pandas(self.kg.raw_train_set,
+        self.kg.train_set = pandas_dataframe_indexer(self.kg.raw_train_set,
                                                       self.kg.entity_to_idx,
                                                       self.kg.relation_to_idx)
         assert isinstance(self.kg.train_set, pd.core.frame.DataFrame)
         self.kg.train_set = self.kg.train_set.values
         self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
                                                     num=max(self.kg.num_entities, self.kg.num_relations))
+
         dataset_sanity_checking(self.kg.train_set, self.kg.num_entities, self.kg.num_relations)
         if self.kg.raw_valid_set is not None:
-            self.kg.valid_set = index_triples_with_pandas(self.kg.raw_valid_set, self.kg.entity_to_idx,
+            self.kg.valid_set = pandas_dataframe_indexer(self.kg.raw_valid_set, self.kg.entity_to_idx,
                                                           self.kg.relation_to_idx)
             self.kg.valid_set = self.kg.valid_set.values
             dataset_sanity_checking(self.kg.valid_set, self.kg.num_entities, self.kg.num_relations)
@@ -341,7 +333,7 @@ class PreprocessKG:
                                                         num=max(self.kg.num_entities, self.kg.num_relations))
 
         if self.kg.raw_test_set is not None:
-            self.kg.test_set = index_triples_with_pandas(self.kg.raw_test_set, self.kg.entity_to_idx,
+            self.kg.test_set = pandas_dataframe_indexer(self.kg.raw_test_set, self.kg.entity_to_idx,
                                                          self.kg.relation_to_idx)
             # To numpy
             self.kg.test_set = self.kg.test_set.values
@@ -444,13 +436,7 @@ class PreprocessKG:
                     => the index is integer and
                     => a single column is string (e.g. URI)
         """
-        try:
-            assert isinstance(self.kg.raw_train_set, pd.DataFrame)
-        except AssertionError:
-            raise AssertionError
-            print(type(self.kg.raw_train_set))
-            print('HEREE')
-            exit(1)
+        assert isinstance(self.kg.raw_train_set, pd.DataFrame)
         assert isinstance(self.kg.raw_valid_set, pd.DataFrame) or self.kg.raw_valid_set is None
         assert isinstance(self.kg.raw_test_set, pd.DataFrame) or self.kg.raw_test_set is None
 
@@ -468,9 +454,13 @@ class PreprocessKG:
         # ravel('K') => Return a contiguous flattened array.
         # ‘K’ means to read the elements in the order they occur in memory,
         # except for reversing the data when strides are negative.
-        ordered_list = pd.unique(df_str_kg[['subject', 'object']].values.ravel('K')).tolist()
-        self.kg.entity_to_idx = {k: i for i, k in enumerate(ordered_list)}
+        # ordered_list = pd.unique(df_str_kg[['subject', 'object']].values.ravel('K')).tolist()
+        # self.kg.entity_to_idx = {k: i for i, k in enumerate(ordered_list)}
+        # Instead of dict, storing it in a pandas dataframe
+        self.kg.entity_to_idx=pd.concat((df_str_kg['subject'],df_str_kg['object'])).to_frame("entity").drop_duplicates(keep="first",ignore_index=True)
         # 5. Create a bijection mapping  from relations to integer indexes.
-        ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K')).tolist()
-        self.kg.relation_to_idx = {k: i for i, k in enumerate(ordered_list)}
-        del ordered_list
+        # ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K')).tolist()
+        # self.kg.relation_to_idx = {k: i for i, k in enumerate(ordered_list)}
+        self.kg.relation_to_idx = df_str_kg['relation'].to_frame("relation").drop_duplicates(keep="first", ignore_index=True)
+
+        # del ordered_list
