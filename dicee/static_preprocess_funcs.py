@@ -44,11 +44,8 @@ def preprocesses_input_args(args):
     args.check_val_every_n_epoch = 10 ** 6  # ,i.e., no eval
     assert args.add_noise_rate is None or isinstance(args.add_noise_rate, float)
     args.logger = False
-    try:
-        assert args.eval_model in [None, 'None', 'train', 'val', 'test', 'train_val', 'train_test', 'val_test',
-                                   'train_val_test']
-    except AssertionError:
-        raise AssertionError(f'Unexpected input for eval_model ***\t{args.eval_model}\t***')
+    assert args.eval_model in [None, 'None', 'train', 'val', 'test', 'train_val', 'train_test', 'val_test',
+                                   'train_val_test'], f'Unexpected input for eval_model ***\t{args.eval_model}\t***'
     if args.eval_model == 'None':
         args.eval_model = None
     # reciprocal checking

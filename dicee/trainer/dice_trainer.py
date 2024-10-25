@@ -6,7 +6,7 @@ from dicee.static_funcs import select_model
 from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb
 from dicee.dataset_classes import construct_dataset
 from .torch_trainer import TorchTrainer
-from .torch_trainer_ddp import TorchDDPTrainer
+from .torch_trainer_ddp import TorchDDPTrainer, MP
 from ..static_funcs import timeit
 import os
 import torch
@@ -27,6 +27,10 @@ def initialize_trainer(args, callbacks):
     if args.trainer == 'torchCPUTrainer':
         print('Initializing TorchTrainer CPU Trainer...', end='\t')
         return TorchTrainer(args, callbacks=callbacks)
+    if args.trainer == 'MP':
+        print('Initializing MPTrainer...', end='\t')
+        return MP(args, callbacks=callbacks)
+
     elif args.trainer == 'torchDDP':
         if torch.cuda.is_available():
             print('Initializing TorchDDPTrainer GPU', end='\t')
@@ -34,6 +38,7 @@ def initialize_trainer(args, callbacks):
         else:
             print('Initializing TorchTrainer CPU Trainer', end='\t')
             return TorchTrainer(args, callbacks=callbacks)
+
     elif args.trainer == 'PL':
         print('Initializing Pytorch-lightning Trainer', end='\t')
         kwargs = vars(args)
@@ -81,8 +86,7 @@ def initialize_trainer(args, callbacks):
                           detect_anomaly=False,
                           barebones=False)
     else:
-        print('Initialize TorchTrainer CPU Trainer', end='\t')
-        return TorchTrainer(args, callbacks=callbacks)
+        raise KeyError("Please choose a valid trainer from ['MP','torchDDP', 'torchCPUTrainer', 'PL']")
 
 
 def get_callbacks(args):
@@ -112,6 +116,35 @@ def get_callbacks(args):
             raise RuntimeError(f'Incorrect callback:{k}')
     return callbacks
 
+class EnsembleKGE:
+    def __init__(self, models):
+        self.models = models
+    def __iter__(self):
+        return (i for i in self.models)
+    def __call__(self, *args, **kwargs):
+        # Call each model in the ensemble with the provided arguments
+        results = None
+        for model in self.models:
+            if results is None:
+                results=model(*args, **kwargs)
+            else:
+                results += model(*args, **kwargs)
+        return results/len(self.models)
+
+    def __getattr__(self, name):
+        # Create a function that will call the same attribute/method on each model
+        def method(*args, **kwargs):
+            results = []
+            for model in self.models:
+                attr = getattr(model, name)
+                if callable(attr):
+                    # If it's a method, call it with provided arguments
+                    results.append(attr(*args, **kwargs))
+                else:
+                    # If it's an attribute, just get its value
+                    results.append(attr)
+            return results
+        return method
 
 class DICE_Trainer:
     """
@@ -266,13 +299,17 @@ class DICE_Trainer:
         assert isinstance(knowledge_graph, np.memmap) or isinstance(knowledge_graph, KG), \
             f"knowledge_graph must be an instance of KG or np.memmap. Currently {type(knowledge_graph)}"
         if self.args.num_folds_for_cv == 0:
-            self.trainer: Union[TorchTrainer, TorchDDPTrainer, pl.Trainer]
+            self.trainer: Union[MP, TorchTrainer, TorchDDPTrainer, pl.Trainer]
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
             model, form_of_labelling = self.initialize_or_load_model()
             self.trainer.evaluator = self.evaluator
             self.trainer.dataset = knowledge_graph
             self.trainer.form_of_labelling = form_of_labelling
             self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
+
+            if isinstance(self.trainer, MP):
+                model=EnsembleKGE(self.trainer.get_ensemble())
+
             return model, form_of_labelling
         else:
             return self.k_fold_cross_validation(knowledge_graph)
