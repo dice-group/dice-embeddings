@@ -4,6 +4,7 @@ from typing import Iterable
 from dicee.abstracts import AbstractTrainer
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+import copy
 
 torch.set_float32_matmul_precision('high')
 
@@ -188,7 +189,6 @@ class NodeTrainer:
                 self.model.module.loss_history.append(avg_epoch_loss)
                 for c in self.callbacks:
                     c.on_train_epoch_end(self.trainer, self.model.module)
-import copy
 
 class MP(AbstractTrainer):
 
@@ -205,19 +205,6 @@ class MP(AbstractTrainer):
 
         for i in model:
             self.on_fit_start(self, i)
-
-        """
-        # (1) Run the fit the start callback.
-        optimizers=[]
-        for i in range(torch.cuda.device_count()):
-            i_model=copy.deepcopy(model)
-            i_model.to(torch.device(f"cuda:{i}"))
-            i_model = torch.compile(i_model)
-            optimizers.append(i_model.configure_optimizers())
-            self.models.append(i_model)
-            self.on_fit_start(self, i_model)
-        """
-
         ptdtype = {'float32': torch.float32, 'bfloat16': torch.bfloat16, 'float16': torch.float16}["float16"]
         ctx = torch.amp.autocast(device_type="cuda",dtype=ptdtype)
         scaler = torch.amp.GradScaler("cuda",enabled=True)
@@ -227,22 +214,26 @@ class MP(AbstractTrainer):
                                                       verbose=True,position=0,
                                                         leave=True)):
             epoch_loss = 0
+            # TODO: Compute the number of batches to display this info
+            num_of_batches=len(kwargs['train_dataloaders'])
             for i, z in enumerate(kwargs['train_dataloaders']):
                 source, targets = self.extract_input_outputs(z)
 
                 yhat = None
 
-                # yhat= model(source)
-
-
                 for kge_model in model:
-                    if yhat is None:
-                        yhat = kge_model(source.to(kge_model.device)).to("cpu")
+                    if isinstance(source, tuple):
+                        source = tuple(t.to(kge_model.device) for t in source)
                     else:
-                        yhat+= kge_model(source.to(kge_model.device)).to("cpu")
+                        source = source.to(kge_model.device)
 
-                yhat/=len(model)
-                loss=torch.nn.functional.binary_cross_entropy_with_logits(yhat, targets)
+                    if yhat is None:
+                        yhat = kge_model(source).to("cpu")
+                    else:
+                        yhat+= kge_model(source).to("cpu")
+
+                yhat /=len(model)
+                loss = torch.nn.functional.binary_cross_entropy_with_logits(yhat, targets)
 
                 loss.backward()
                 for opt in model.optimizers:
@@ -253,7 +244,7 @@ class MP(AbstractTrainer):
                 if hasattr(tqdm_bar, 'set_description_str'):
                     tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
                     if i > 0:
-                        tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={epoch_loss / i:.5f}")
+                        tqdm_bar.set_postfix_str(f"batch={i} | {num_of_batches}, loss_step={batch_loss:.5f}, loss_epoch={epoch_loss / i:.5f}")
                     else:
                         tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
 
