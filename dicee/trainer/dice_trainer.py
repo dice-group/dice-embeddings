@@ -6,7 +6,8 @@ from dicee.static_funcs import select_model
 from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb
 from dicee.dataset_classes import construct_dataset
 from .torch_trainer import TorchTrainer
-from .torch_trainer_ddp import TorchDDPTrainer, MP
+from .torch_trainer_ddp import TorchDDPTrainer
+from .model_parallelism import MP
 from ..static_funcs import timeit
 import os
 import torch
@@ -37,6 +38,7 @@ class EnsembleKGE:
 
     def __len__(self):
         return len(self.models)
+
     def __call__(self, *args, **kwargs):
         # Forward
         results = None
@@ -62,7 +64,8 @@ class EnsembleKGE:
             return results
         return method
 
-
+    def __str__(self):
+        return f"EnsembleKGE of {len(self.models)} {self.models[0]}"
 
 def load_term_mapping(file_path=str):
     return polars.read_csv(file_path + ".csv")

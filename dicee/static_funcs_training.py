@@ -1,7 +1,14 @@
 import torch
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Iterable
 import numpy as np
 from tqdm import tqdm
+
+def make_iterable_verbose(iterable_object, verbose, desc="Default", position=None, leave=True) -> Iterable:
+    if verbose:
+        return tqdm(iterable_object, desc=desc, position=position, leave=leave)
+    else:
+        return iterable_object
+
 
 def evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List],
                 info='Eval Starts'):
