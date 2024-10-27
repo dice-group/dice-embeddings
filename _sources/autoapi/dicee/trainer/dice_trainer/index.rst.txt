@@ -9,6 +9,7 @@ Classes
 
 .. autoapisummary::
 
+   dicee.trainer.dice_trainer.EnsembleKGE
    dicee.trainer.dice_trainer.DICE_Trainer
 
 
@@ -24,6 +25,36 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:class:: EnsembleKGE(model)
+
+   
+
+
+   .. py:attribute:: models
+      :value: []
+
+
+
+   .. py:attribute:: optimizers
+      :value: []
+
+
+
+   .. py:method:: __iter__()
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __call__(*args, **kwargs)
+
+
+   .. py:method:: __getattr__(name)
+
+
+   .. py:method:: __str__()
+
 
 .. py:function:: load_term_mapping(file_path=str)
 

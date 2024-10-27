@@ -1,0 +1,46 @@
+dicee.trainer.model_parallelism
+===============================
+
+.. py:module:: dicee.trainer.model_parallelism
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   dicee.trainer.model_parallelism.MP
+
+
+Module Contents
+---------------
+
+.. py:class:: MP(args, callbacks)
+
+   Bases: :py:obj:`dicee.abstracts.AbstractTrainer`
+
+
+   Abstract class for Trainer class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+   args : str
+       ?
+
+   callbacks: list
+           ?
+
+
+   .. py:method:: get_ensemble()
+
+
+   .. py:method:: fit(*args, **kwargs)
+
+      Train model
+
+
+
+   .. py:method:: extract_input_outputs(z: list)
+
+

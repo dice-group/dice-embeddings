@@ -4,18 +4,6 @@ dicee
 .. py:module:: dicee
 
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 1
-
-   /autoapi/dicee/models/index
-   /autoapi/dicee/read_preprocess_save_load_kg/index
-   /autoapi/dicee/scripts/index
-   /autoapi/dicee/trainer/index
-
-
 Submodules
 ----------
 
@@ -33,11 +21,15 @@ Submodules
    /autoapi/dicee/executer/index
    /autoapi/dicee/knowledge_graph/index
    /autoapi/dicee/knowledge_graph_embeddings/index
+   /autoapi/dicee/models/index
    /autoapi/dicee/query_generator/index
+   /autoapi/dicee/read_preprocess_save_load_kg/index
    /autoapi/dicee/sanity_checkers/index
+   /autoapi/dicee/scripts/index
    /autoapi/dicee/static_funcs/index
    /autoapi/dicee/static_funcs_training/index
    /autoapi/dicee/static_preprocess_funcs/index
+   /autoapi/dicee/trainer/index
 
 
 Attributes
@@ -1420,9 +1412,6 @@ Package Contents
 
 
 
-   .. py:attribute:: shallom_width
-
-
    .. py:attribute:: shallom
 
 
@@ -1698,9 +1687,6 @@ Package Contents
 
 
    .. py:attribute:: lm_head
-
-
-   .. py:attribute:: weight
 
 
    .. py:method:: loss_function(yhat_batch, y_batch)
@@ -2943,9 +2929,6 @@ Package Contents
    .. py:attribute:: target_dim
 
 
-   .. py:attribute:: store
-
-
    .. py:method:: __len__()
 
 
@@ -3113,9 +3096,6 @@ Package Contents
    .. py:attribute:: collate_fn
       :value: None
 
-
-
-   .. py:attribute:: store
 
 
    .. py:attribute:: max_num_of_classes

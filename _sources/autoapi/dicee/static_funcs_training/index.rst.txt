@@ -9,6 +9,7 @@ Functions
 
 .. autoapisummary::
 
+   dicee.static_funcs_training.make_iterable_verbose
    dicee.static_funcs_training.evaluate_lp
    dicee.static_funcs_training.evaluate_bpe_lp
    dicee.static_funcs_training.efficient_zero_grad
@@ -16,6 +17,8 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:function:: make_iterable_verbose(iterable_object, verbose, desc='Default', position=None, leave=True) -> Iterable
 
 .. py:function:: evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info='Eval Starts')
 

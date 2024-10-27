@@ -9,11 +9,99 @@ Classes
 
 .. autoapisummary::
 
+   dicee.trainer.torch_trainer.xMP
    dicee.trainer.torch_trainer.TorchTrainer
 
 
 Module Contents
 ---------------
+
+.. py:class:: xMP(args, callbacks)
+
+   Bases: :py:obj:`dicee.abstracts.AbstractTrainer`
+
+
+   Abstract class for Trainer class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+   args : str
+       ?
+
+   callbacks: list
+           ?
+
+
+   .. py:attribute:: loss_function
+      :value: None
+
+
+
+   .. py:attribute:: optimizer
+      :value: None
+
+
+
+   .. py:attribute:: model
+      :value: None
+
+
+
+   .. py:attribute:: train_dataloaders
+      :value: None
+
+
+
+   .. py:attribute:: training_step
+      :value: None
+
+
+
+   .. py:attribute:: available_gpus
+
+
+   .. py:attribute:: process
+
+
+   .. py:method:: fit(*args, train_dataloaders, **kwargs) -> None
+
+       Training starts
+
+       Arguments
+      ----------
+      args:tuple
+      (BASEKGE,)
+      kwargs:Tuple
+          empty dictionary
+      :rtype: batch loss (float)
+
+
+
+   .. py:method:: forward_backward_update(x_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor
+
+       Compute forward, loss, backward, and parameter update
+
+       Arguments
+      ----------
+      x_batch:(torch.Tensor) mini-batch inputs
+      y_batch:(torch.Tensor) mini-batch outputs
+
+      :rtype: batch loss (float)
+
+
+
+   .. py:method:: extract_input_outputs_set_device(batch: list) -> Tuple
+
+       Construct inputs and outputs from a batch of inputs with outputs From a batch of inputs and put
+
+       Arguments
+      ----------
+      batch: (list) mini-batch inputs on CPU
+
+      :rtype: (tuple) mini-batch on select device
+
+
 
 .. py:class:: TorchTrainer(args, callbacks)
 

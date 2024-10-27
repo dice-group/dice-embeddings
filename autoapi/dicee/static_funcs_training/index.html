@@ -64,7 +64,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">dicee</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../index.html#subpackages">Subpackages</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="../__main__/index.html">dicee.__main__</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html">dicee.abstracts</a></li>
@@ -77,12 +76,16 @@
 <li class="toctree-l3"><a class="reference internal" href="../executer/index.html">dicee.executer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../models/index.html">dicee.models</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../query_generator/index.html">dicee.query_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../sanity_checkers/index.html">dicee.sanity_checkers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../scripts/index.html">dicee.scripts</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../static_funcs/index.html">dicee.static_funcs</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">dicee.static_funcs_training</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs_training.make_iterable_verbose"><code class="docutils literal notranslate"><span class="pre">make_iterable_verbose()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs_training.evaluate_lp"><code class="docutils literal notranslate"><span class="pre">evaluate_lp()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs_training.evaluate_bpe_lp"><code class="docutils literal notranslate"><span class="pre">evaluate_bpe_lp()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs_training.efficient_zero_grad"><code class="docutils literal notranslate"><span class="pre">efficient_zero_grad()</span></code></a></li>
@@ -91,6 +94,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../static_preprocess_funcs/index.html">dicee.static_preprocess_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../trainer/index.html">dicee.trainer</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
@@ -132,13 +136,16 @@
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs_training.evaluate_lp" title="dicee.static_funcs_training.evaluate_lp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_lp</span></code></a>(model, triple_idx, num_entities, er_vocab, ...)</p></td>
-<td><p>Evaluate model in a standard link prediction task</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs_training.evaluate_bpe_lp" title="dicee.static_funcs_training.evaluate_bpe_lp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_bpe_lp</span></code></a>(model, triple_idx, ...[, info])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs_training.make_iterable_verbose" title="dicee.static_funcs_training.make_iterable_verbose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_iterable_verbose</span></code></a>(→ Iterable)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs_training.efficient_zero_grad" title="dicee.static_funcs_training.efficient_zero_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">efficient_zero_grad</span></code></a>(model)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs_training.evaluate_lp" title="dicee.static_funcs_training.evaluate_lp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_lp</span></code></a>(model, triple_idx, num_entities, er_vocab, ...)</p></td>
+<td><p>Evaluate model in a standard link prediction task</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs_training.evaluate_bpe_lp" title="dicee.static_funcs_training.evaluate_bpe_lp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_bpe_lp</span></code></a>(model, triple_idx, ...[, info])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs_training.efficient_zero_grad" title="dicee.static_funcs_training.efficient_zero_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">efficient_zero_grad</span></code></a>(model)</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -146,6 +153,11 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.static_funcs_training.make_iterable_verbose">
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs_training.</span></span><span class="sig-name descname"><span class="pre">make_iterable_verbose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterable_object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span></span></span><a class="reference internal" href="../../../_modules/dicee/static_funcs_training.html#make_iterable_verbose"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.static_funcs_training.make_iterable_verbose" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs_training.evaluate_lp">
 <span class="sig-prename descclassname"><span class="pre">dicee.static_funcs_training.</span></span><span class="sig-name descname"><span class="pre">evaluate_lp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triple_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_entities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">er_vocab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">re_vocab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Eval</span> <span class="pre">Starts'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/static_funcs_training.html#evaluate_lp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.static_funcs_training.evaluate_lp" title="Link to this definition"></a></dt>

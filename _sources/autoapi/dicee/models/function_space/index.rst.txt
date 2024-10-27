@@ -130,11 +130,6 @@ Module Contents
 
 
 
-   .. py:attribute:: tuned_embedding_dim
-      :value: False
-
-
-
    .. py:attribute:: k
 
 

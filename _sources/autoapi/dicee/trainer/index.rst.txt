@@ -11,6 +11,7 @@ Submodules
    :maxdepth: 1
 
    /autoapi/dicee/trainer/dice_trainer/index
+   /autoapi/dicee/trainer/model_parallelism/index
    /autoapi/dicee/trainer/torch_trainer/index
    /autoapi/dicee/trainer/torch_trainer_ddp/index
 

@@ -88,9 +88,6 @@ Module Contents
 
 
 
-   .. py:attribute:: shallom_width
-
-
    .. py:attribute:: shallom
 
 

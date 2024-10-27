@@ -990,9 +990,6 @@ Package Contents
 
 
 
-   .. py:attribute:: shallom_width
-
-
    .. py:attribute:: shallom
 
 
@@ -3538,11 +3535,6 @@ Package Contents
 
    .. py:attribute:: n_layers
       :value: 3
-
-
-
-   .. py:attribute:: tuned_embedding_dim
-      :value: False
 
 
 

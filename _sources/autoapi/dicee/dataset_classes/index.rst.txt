@@ -338,9 +338,6 @@ Module Contents
    .. py:attribute:: target_dim
 
 
-   .. py:attribute:: store
-
-
    .. py:method:: __len__()
 
 
@@ -508,9 +505,6 @@ Module Contents
    .. py:attribute:: collate_fn
       :value: None
 
-
-
-   .. py:attribute:: store
 
 
    .. py:attribute:: max_num_of_classes

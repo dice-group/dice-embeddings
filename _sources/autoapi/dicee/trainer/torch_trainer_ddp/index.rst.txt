@@ -92,9 +92,6 @@ Module Contents
 
 
 
-   .. py:attribute:: ptdtype
-
-
    .. py:attribute:: ctx
 
 

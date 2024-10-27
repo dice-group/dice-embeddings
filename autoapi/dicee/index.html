@@ -25,7 +25,7 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="dicee.models" href="models/index.html" />
+    <link rel="next" title="dicee.__main__" href="__main__/index.html" />
     <link rel="prev" title="Dicee Manual" href="../../usage/main.html" /> 
 </head>
 
@@ -65,13 +65,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">dicee</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="models/index.html">dicee.models</a></li>
-<li class="toctree-l3"><a class="reference internal" href="read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
-<li class="toctree-l3"><a class="reference internal" href="scripts/index.html">dicee.scripts</a></li>
-<li class="toctree-l3"><a class="reference internal" href="trainer/index.html">dicee.trainer</a></li>
-</ul>
-</li>
 <li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="__main__/index.html">dicee.__main__</a></li>
 <li class="toctree-l3"><a class="reference internal" href="abstracts/index.html">dicee.abstracts</a></li>
@@ -84,11 +77,15 @@
 <li class="toctree-l3"><a class="reference internal" href="executer/index.html">dicee.executer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="knowledge_graph/index.html">dicee.knowledge_graph</a></li>
 <li class="toctree-l3"><a class="reference internal" href="knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="models/index.html">dicee.models</a></li>
 <li class="toctree-l3"><a class="reference internal" href="query_generator/index.html">dicee.query_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
 <li class="toctree-l3"><a class="reference internal" href="sanity_checkers/index.html">dicee.sanity_checkers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="scripts/index.html">dicee.scripts</a></li>
 <li class="toctree-l3"><a class="reference internal" href="static_funcs/index.html">dicee.static_funcs</a></li>
 <li class="toctree-l3"><a class="reference internal" href="static_funcs_training/index.html">dicee.static_funcs_training</a></li>
 <li class="toctree-l3"><a class="reference internal" href="static_preprocess_funcs/index.html">dicee.static_preprocess_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="trainer/index.html">dicee.trainer</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#attributes">Attributes</a></li>
@@ -292,7 +289,6 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.Shallom"><code class="docutils literal notranslate"><span class="pre">Shallom</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Shallom.name"><code class="docutils literal notranslate"><span class="pre">Shallom.name</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dicee.Shallom.shallom_width"><code class="docutils literal notranslate"><span class="pre">Shallom.shallom_width</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Shallom.shallom"><code class="docutils literal notranslate"><span class="pre">Shallom.shallom</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Shallom.get_embeddings"><code class="docutils literal notranslate"><span class="pre">Shallom.get_embeddings()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Shallom.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">Shallom.forward_k_vs_all()</span></code></a></li>
@@ -338,7 +334,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.topk"><code class="docutils literal notranslate"><span class="pre">BytE.topk</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.transformer"><code class="docutils literal notranslate"><span class="pre">BytE.transformer</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.lm_head"><code class="docutils literal notranslate"><span class="pre">BytE.lm_head</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.weight"><code class="docutils literal notranslate"><span class="pre">BytE.weight</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.loss_function"><code class="docutils literal notranslate"><span class="pre">BytE.loss_function()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.forward"><code class="docutils literal notranslate"><span class="pre">BytE.forward()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.generate"><code class="docutils literal notranslate"><span class="pre">BytE.generate()</span></code></a></li>
@@ -543,7 +538,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#dicee.AllvsAll.label_smoothing_rate"><code class="docutils literal notranslate"><span class="pre">AllvsAll.label_smoothing_rate</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.AllvsAll.collate_fn"><code class="docutils literal notranslate"><span class="pre">AllvsAll.collate_fn</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.AllvsAll.target_dim"><code class="docutils literal notranslate"><span class="pre">AllvsAll.target_dim</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dicee.AllvsAll.store"><code class="docutils literal notranslate"><span class="pre">AllvsAll.store</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.AllvsAll.__len__"><code class="docutils literal notranslate"><span class="pre">AllvsAll.__len__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.AllvsAll.__getitem__"><code class="docutils literal notranslate"><span class="pre">AllvsAll.__getitem__()</span></code></a></li>
 </ul>
@@ -572,7 +566,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.num_entities"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.num_entities</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.label_smoothing_rate"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.label_smoothing_rate</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.collate_fn"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.collate_fn</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.store"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.store</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.max_num_of_classes"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.max_num_of_classes</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.__len__"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.__len__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.__getitem__()</span></code></a></li>
@@ -678,17 +671,6 @@
              
   <section id="module-dicee">
 <span id="dicee"></span><h1>dicee<a class="headerlink" href="#module-dicee" title="Link to this heading"></a></h1>
-<section id="subpackages">
-<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="models/index.html">dicee.models</a></li>
-<li class="toctree-l1"><a class="reference internal" href="read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
-<li class="toctree-l1"><a class="reference internal" href="scripts/index.html">dicee.scripts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="trainer/index.html">dicee.trainer</a></li>
-</ul>
-</div>
-</section>
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
@@ -704,11 +686,15 @@
 <li class="toctree-l1"><a class="reference internal" href="executer/index.html">dicee.executer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="knowledge_graph/index.html">dicee.knowledge_graph</a></li>
 <li class="toctree-l1"><a class="reference internal" href="knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/index.html">dicee.models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="query_generator/index.html">dicee.query_generator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sanity_checkers/index.html">dicee.sanity_checkers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripts/index.html">dicee.scripts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="static_funcs/index.html">dicee.static_funcs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="static_funcs_training/index.html">dicee.static_funcs_training</a></li>
 <li class="toctree-l1"><a class="reference internal" href="static_preprocess_funcs/index.html">dicee.static_preprocess_funcs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trainer/index.html">dicee.trainer</a></li>
 </ul>
 </div>
 </section>
@@ -2458,11 +2444,6 @@ Given a batch of head entities and relations =&gt; shape (size of batch,| Entiti
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.Shallom.shallom_width">
-<span class="sig-name descname"><span class="pre">shallom_width</span></span><a class="headerlink" href="#dicee.Shallom.shallom_width" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.Shallom.shallom">
 <span class="sig-name descname"><span class="pre">shallom</span></span><a class="headerlink" href="#dicee.Shallom.shallom" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -2787,11 +2768,6 @@ evaluation mode.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.BytE.lm_head">
 <span class="sig-name descname"><span class="pre">lm_head</span></span><a class="headerlink" href="#dicee.BytE.lm_head" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.BytE.weight">
-<span class="sig-name descname"><span class="pre">weight</span></span><a class="headerlink" href="#dicee.BytE.weight" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -4290,11 +4266,6 @@ y: denotes a multi-label vector in [0,1]^{<a href="#id56"><span class="problemat
 <span class="sig-name descname"><span class="pre">target_dim</span></span><a class="headerlink" href="#dicee.AllvsAll.target_dim" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.AllvsAll.store">
-<span class="sig-name descname"><span class="pre">store</span></span><a class="headerlink" href="#dicee.AllvsAll.store" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.AllvsAll.__len__">
 <span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/dataset_classes.html#AllvsAll.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.AllvsAll.__len__" title="Link to this definition"></a></dt>
@@ -4527,11 +4498,6 @@ new_y contains</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.KvsSampleDataset.collate_fn">
 <span class="sig-name descname"><span class="pre">collate_fn</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.KvsSampleDataset.collate_fn" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.KvsSampleDataset.store">
-<span class="sig-name descname"><span class="pre">store</span></span><a class="headerlink" href="#dicee.KvsSampleDataset.store" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -5098,7 +5064,7 @@ and getting queries and answers in return
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="../../usage/main.html" class="btn btn-neutral float-left" title="Dicee Manual" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="models/index.html" class="btn btn-neutral float-right" title="dicee.models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="__main__/index.html" class="btn btn-neutral float-right" title="dicee.__main__" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -92,9 +92,6 @@ Module Contents
    .. py:attribute:: lm_head
 
 
-   .. py:attribute:: weight
-
-
    .. py:method:: loss_function(yhat_batch, y_batch)
 
       :param yhat_batch:
@@ -447,9 +444,6 @@ Module Contents
 
 
    .. py:attribute:: lm_head
-
-
-   .. py:attribute:: weight
 
 
    .. py:method:: get_num_params(non_embedding=True)

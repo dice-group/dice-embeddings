@@ -145,12 +145,6 @@ Module Contents
    Trained model is noted with the current time.
 
 
-   .. py:attribute:: previous_args
-
-
-   .. py:attribute:: args
-
-
    .. py:method:: continual_start() -> dict
 
       Start Continual Training

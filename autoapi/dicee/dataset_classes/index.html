@@ -64,7 +64,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">dicee</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../index.html#subpackages">Subpackages</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="../__main__/index.html">dicee.__main__</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html">dicee.abstracts</a></li>
@@ -131,7 +130,6 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.AllvsAll.label_smoothing_rate"><code class="docutils literal notranslate"><span class="pre">AllvsAll.label_smoothing_rate</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.AllvsAll.collate_fn"><code class="docutils literal notranslate"><span class="pre">AllvsAll.collate_fn</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.AllvsAll.target_dim"><code class="docutils literal notranslate"><span class="pre">AllvsAll.target_dim</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.AllvsAll.store"><code class="docutils literal notranslate"><span class="pre">AllvsAll.store</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.AllvsAll.__len__"><code class="docutils literal notranslate"><span class="pre">AllvsAll.__len__()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.AllvsAll.__getitem__"><code class="docutils literal notranslate"><span class="pre">AllvsAll.__getitem__()</span></code></a></li>
 </ul>
@@ -160,7 +158,6 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.num_entities"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.num_entities</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.label_smoothing_rate"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.label_smoothing_rate</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.collate_fn"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.collate_fn</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.store"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.store</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.max_num_of_classes"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.max_num_of_classes</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.__len__"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.__len__()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.KvsSampleDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.__getitem__()</span></code></a></li>
@@ -210,11 +207,15 @@
 <li class="toctree-l3"><a class="reference internal" href="../executer/index.html">dicee.executer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../models/index.html">dicee.models</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../query_generator/index.html">dicee.query_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../sanity_checkers/index.html">dicee.sanity_checkers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../scripts/index.html">dicee.scripts</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../static_funcs/index.html">dicee.static_funcs</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../static_funcs_training/index.html">dicee.static_funcs_training</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../static_preprocess_funcs/index.html">dicee.static_preprocess_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../trainer/index.html">dicee.trainer</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
@@ -663,11 +664,6 @@ y: denotes a multi-label vector in [0,1]^{<a href="#id14"><span class="problemat
 <span class="sig-name descname"><span class="pre">target_dim</span></span><a class="headerlink" href="#dicee.dataset_classes.AllvsAll.target_dim" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.dataset_classes.AllvsAll.store">
-<span class="sig-name descname"><span class="pre">store</span></span><a class="headerlink" href="#dicee.dataset_classes.AllvsAll.store" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.dataset_classes.AllvsAll.__len__">
 <span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/dataset_classes.html#AllvsAll.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.AllvsAll.__len__" title="Link to this definition"></a></dt>
@@ -900,11 +896,6 @@ new_y contains</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.dataset_classes.KvsSampleDataset.collate_fn">
 <span class="sig-name descname"><span class="pre">collate_fn</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.dataset_classes.KvsSampleDataset.collate_fn" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.dataset_classes.KvsSampleDataset.store">
-<span class="sig-name descname"><span class="pre">store</span></span><a class="headerlink" href="#dicee.dataset_classes.KvsSampleDataset.store" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">

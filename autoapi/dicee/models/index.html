@@ -26,7 +26,7 @@
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="dicee.models.base_model" href="base_model/index.html" />
-    <link rel="prev" title="dicee" href="../index.html" /> 
+    <link rel="prev" title="dicee.knowledge_graph_embeddings" href="../knowledge_graph_embeddings/index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -65,7 +65,18 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">dicee</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="../index.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../__main__/index.html">dicee.__main__</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html">dicee.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analyse_experiments/index.html">dicee.analyse_experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../callbacks/index.html">dicee.callbacks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../config/index.html">dicee.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataset_classes/index.html">dicee.dataset_classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../eval_static_funcs/index.html">dicee.eval_static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../evaluator/index.html">dicee.evaluator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../executer/index.html">dicee.executer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">dicee.models</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a><ul>
 <li class="toctree-l5"><a class="reference internal" href="base_model/index.html">dicee.models.base_model</a></li>
@@ -209,7 +220,6 @@
 </li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.models.Shallom"><code class="docutils literal notranslate"><span class="pre">Shallom</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.Shallom.name"><code class="docutils literal notranslate"><span class="pre">Shallom.name</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Shallom.shallom_width"><code class="docutils literal notranslate"><span class="pre">Shallom.shallom_width</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.Shallom.shallom"><code class="docutils literal notranslate"><span class="pre">Shallom.shallom</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.Shallom.get_embeddings"><code class="docutils literal notranslate"><span class="pre">Shallom.get_embeddings()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.Shallom.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">Shallom.forward_k_vs_all()</span></code></a></li>
@@ -664,7 +674,6 @@
 <li class="toctree-l5"><a class="reference internal" href="#dicee.models.FMult2"><code class="docutils literal notranslate"><span class="pre">FMult2</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.FMult2.name"><code class="docutils literal notranslate"><span class="pre">FMult2.name</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.FMult2.n_layers"><code class="docutils literal notranslate"><span class="pre">FMult2.n_layers</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.models.FMult2.tuned_embedding_dim"><code class="docutils literal notranslate"><span class="pre">FMult2.tuned_embedding_dim</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.FMult2.k"><code class="docutils literal notranslate"><span class="pre">FMult2.k</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.FMult2.n"><code class="docutils literal notranslate"><span class="pre">FMult2.n</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.FMult2.score_func"><code class="docutils literal notranslate"><span class="pre">FMult2.score_func</span></code></a></li>
@@ -722,12 +731,16 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="../query_generator/index.html">dicee.query_generator</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sanity_checkers/index.html">dicee.sanity_checkers</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../scripts/index.html">dicee.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../static_funcs/index.html">dicee.static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../static_funcs_training/index.html">dicee.static_funcs_training</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../static_preprocess_funcs/index.html">dicee.static_preprocess_funcs</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../trainer/index.html">dicee.trainer</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../index.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#classes">Classes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#functions">Functions</a></li>
@@ -1943,11 +1956,6 @@ Multi-relational Data
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.Shallom.name">
 <span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Shallom'</span></em><a class="headerlink" href="#dicee.models.Shallom.name" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.Shallom.shallom_width">
-<span class="sig-name descname"><span class="pre">shallom_width</span></span><a class="headerlink" href="#dicee.models.Shallom.shallom_width" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -5091,11 +5099,6 @@ evaluation mode.</p>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.FMult2.tuned_embedding_dim">
-<span class="sig-name descname"><span class="pre">tuned_embedding_dim</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.models.FMult2.tuned_embedding_dim" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.FMult2.k">
 <span class="sig-name descname"><span class="pre">k</span></span><a class="headerlink" href="#dicee.models.FMult2.k" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -5424,7 +5427,7 @@ Output: Tensor with shape (mxn)</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../index.html" class="btn btn-neutral float-left" title="dicee" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../knowledge_graph_embeddings/index.html" class="btn btn-neutral float-left" title="dicee.knowledge_graph_embeddings" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="base_model/index.html" class="btn btn-neutral float-right" title="dicee.models.base_model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
