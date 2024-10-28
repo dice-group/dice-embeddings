@@ -2,7 +2,7 @@ import pandas as pd
 import polars as pl
 from .util import timeit, pandas_dataframe_indexer, dataset_sanity_checking
 from dicee.static_funcs import numpy_data_type_changer
-from .util import get_er_vocab, get_re_vocab, get_ee_vocab, create_constraints, apply_reciprical_or_noise, polars_dataframe_indexer
+from .util import get_er_vocab, get_re_vocab, get_ee_vocab, apply_reciprical_or_noise, polars_dataframe_indexer
 import numpy as np
 import concurrent
 from typing import List, Tuple
