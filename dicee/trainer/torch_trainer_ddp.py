@@ -166,6 +166,7 @@ class NodeTrainer:
         -------
 
         """
+        num_of_batches=len(self.train_dataset_loader)
         for epoch in (tqdm_bar := make_iterable_verbose(range(self.num_epochs),
                                                       verbose=self.local_rank == self.global_rank == 0,
                                                       position=0,
@@ -179,11 +180,11 @@ class NodeTrainer:
                 if hasattr(tqdm_bar, 'set_description_str'):
                     tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
                     if i > 0:
-                        tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={epoch_loss / i:.5f}")
+                        tqdm_bar.set_postfix_str(f"batch={i} | {num_of_batches}, loss_step={batch_loss:.5f}, loss_epoch={epoch_loss / i:.5f}")
                     else:
                         tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
 
-            avg_epoch_loss = epoch_loss / len(self.train_dataset_loader)
+            avg_epoch_loss = epoch_loss / num_of_batches
 
             if self.local_rank == self.global_rank == 0:
                 self.model.module.loss_history.append(avg_epoch_loss)
