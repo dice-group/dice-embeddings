@@ -75,18 +75,12 @@ def initialize_trainer(args, callbacks):
     if args.trainer == 'torchCPUTrainer':
         print('Initializing TorchTrainer CPU Trainer...', end='\t')
         return TorchTrainer(args, callbacks=callbacks)
-    if args.trainer == 'MP':
+    elif args.trainer == 'MP':
         print('Initializing MPTrainer...', end='\t')
         return MP(args, callbacks=callbacks)
-
     elif args.trainer == 'torchDDP':
-        if torch.cuda.is_available():
-            print('Initializing TorchDDPTrainer GPU', end='\t')
-            return TorchDDPTrainer(args, callbacks=callbacks)
-        else:
-            print('Initializing TorchTrainer CPU Trainer', end='\t')
-            return TorchTrainer(args, callbacks=callbacks)
-
+        assert torch.cuda.is_available()
+        print('Initializing TorchDDPTrainer GPU', end='\t')
     elif args.trainer == 'PL':
         print('Initializing Pytorch-lightning Trainer', end='\t')
         kwargs = vars(args)
@@ -134,7 +128,10 @@ def initialize_trainer(args, callbacks):
                           detect_anomaly=False,
                           barebones=False)
     else:
-        raise KeyError("Please choose a valid trainer from ['MP','torchDDP', 'torchCPUTrainer', 'PL']")
+        print('Initializing TorchTrainer CPU Trainer...', end='\t')
+        return TorchTrainer(args, callbacks=callbacks)
+
+
 
 
 def get_callbacks(args):

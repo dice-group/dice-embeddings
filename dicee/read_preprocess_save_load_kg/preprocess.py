@@ -61,11 +61,6 @@ class PreprocessKG:
             self.kg.re_vocab = executor.submit(get_re_vocab, data, self.kg.path_for_serialization + '/re_vocab.p')
             self.kg.ee_vocab = executor.submit(get_ee_vocab, data, self.kg.path_for_serialization + '/ee_vocab.p')
 
-            # TODO: Deprecate it
-            self.kg.constraints = executor.submit(create_constraints, self.kg.train_set,
-                                                  self.kg.path_for_serialization + '/constraints.p')
-            self.kg.domain_constraints_per_rel, self.kg.range_constraints_per_rel = None, None
-
         # string containing
         assert isinstance(self.kg.raw_train_set, pd.DataFrame) or isinstance(self.kg.raw_train_set, pl.DataFrame)
 
