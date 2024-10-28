@@ -4,7 +4,6 @@ from typing import Iterable
 from dicee.abstracts import AbstractTrainer
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-import copy
 
 torch.set_float32_matmul_precision('high')
 

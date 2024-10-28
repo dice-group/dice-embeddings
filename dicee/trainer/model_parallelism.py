@@ -1,8 +1,5 @@
-import os
 import torch
-from typing import Iterable
 from ..abstracts import AbstractTrainer
-from torch.utils.data import DataLoader
 from ..static_funcs_training import make_iterable_verbose
 
 class MP(AbstractTrainer):

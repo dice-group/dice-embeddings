@@ -61,7 +61,6 @@ class xMP(AbstractTrainer):
         model, = args
 
         import torch
-        import torch.nn as nn
         import copy
 
         self.models=[]
@@ -128,8 +127,6 @@ class xMP(AbstractTrainer):
            -------
            batch loss (float)
        """
-
-        yhat_batch=self.training_step_forward_only(x_batch)
         batch_loss = self.training_step(batch=(x_batch, y_batch))
         batch_loss.backward()
         self.optimizer.step()
