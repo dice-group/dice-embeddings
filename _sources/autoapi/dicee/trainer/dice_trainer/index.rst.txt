@@ -58,7 +58,7 @@ Module Contents
 
 .. py:function:: load_term_mapping(file_path=str)
 
-.. py:function:: initialize_trainer(args, callbacks)
+.. py:function:: initialize_trainer(args, callbacks) -> dicee.trainer.torch_trainer.TorchTrainer | dicee.trainer.model_parallelism.MP | dicee.trainer.torch_trainer_ddp.TorchDDPTrainer | lightning.Trainer
 
 .. py:function:: get_callbacks(args)
 
@@ -125,7 +125,7 @@ Module Contents
 
 
 
-   .. py:method:: initialize_trainer(callbacks: List) -> lightning.Trainer
+   .. py:method:: initialize_trainer(callbacks: List) -> lightning.Trainer | dicee.trainer.model_parallelism.MP | dicee.trainer.torch_trainer.TorchTrainer | dicee.trainer.torch_trainer_ddp.TorchDDPTrainer
 
       Initialize Trainer from input arguments
 
