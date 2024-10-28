@@ -32,6 +32,7 @@ class BaseKGELightning(pl.LightningModule):
             yhat_batch = self.forward((x_batch,y_select))
         else:
             raise RuntimeError("Invalid batch received.")
+
         loss_batch = self.loss_function(yhat_batch, y_batch)
         self.training_step_outputs.append(loss_batch.item())
         self.log("loss",

@@ -304,7 +304,12 @@ def store(trainer,
     assert len(model_name) > 1
 
     # (1) Save pytorch model in trained_model .
-    save_checkpoint_model(model=trained_model, path=full_storage_path + f'/{model_name}.pt')
+    if hasattr(trained_model,"is_ensemble"):
+        for i,kge in enumerate(trained_model):
+            torch.save(kge.state_dict(), full_storage_path + f'/{model_name}_{i}.pt')
+    else:
+        save_checkpoint_model(model=trained_model, path=full_storage_path + f'/{model_name}.pt')
+
     if save_embeddings_as_csv:
         entity_emb, relation_ebm = trained_model.get_embeddings()
         # TODO: CD: We do not need to keep the mapping in memory

@@ -119,24 +119,6 @@ def pandas_dataframe_indexer(df_pandas: pd.DataFrame, idx_entity: pd.DataFrame, 
     del relation_to_index
     return df_pandas
 
-def dept_index_triples_with_pandas(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pd.core.frame.DataFrame:
-    """
-    :param train_set: pandas dataframe
-    :param entity_to_idx: a mapping from str to integer index
-    :param relation_to_idx: a mapping from str to integer index
-    :param num_core: number of cores to be used
-    :return: indexed triples, i.e., pandas dataframe
-    """
-    n, d = train_set.shape
-    train_set['subject'] = train_set['subject'].apply(lambda x: entity_to_idx.get(x))
-    train_set['relation'] = train_set['relation'].apply(lambda x: relation_to_idx.get(x))
-    train_set['object'] = train_set['object'].apply(lambda x: entity_to_idx.get(x))
-    # train_set = train_set.dropna(inplace=True)
-    if isinstance(train_set, pd.core.frame.DataFrame):
-        assert (n, d) == train_set.shape
-    else:
-        raise KeyError('Wrong type training data')
-    return train_set
 
 def apply_reciprical_or_noise(add_reciprical: bool, eval_model: str, df: object = None, info: str = None):
     """ (1) Add reciprocal triples (2) Add noisy triples """
