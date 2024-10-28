@@ -188,18 +188,12 @@
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s1">&#39;torchCPUTrainer&#39;</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing TorchTrainer CPU Trainer...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">TorchTrainer</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="n">callbacks</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s1">&#39;MP&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s1">&#39;MP&#39;</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing MPTrainer...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">MP</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="n">callbacks</span><span class="p">)</span>
-
     <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s1">&#39;torchDDP&#39;</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing TorchDDPTrainer GPU&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">TorchDDPTrainer</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="n">callbacks</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing TorchTrainer CPU Trainer&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">TorchTrainer</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="n">callbacks</span><span class="p">)</span>
-
+        <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing TorchDDPTrainer GPU&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s1">&#39;PL&#39;</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing Pytorch-lightning Trainer&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
@@ -247,7 +241,10 @@
                           <span class="n">detect_anomaly</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                           <span class="n">barebones</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Please choose a valid trainer from [&#39;MP&#39;,&#39;torchDDP&#39;, &#39;torchCPUTrainer&#39;, &#39;PL&#39;]&quot;</span><span class="p">)</span></div>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing TorchTrainer CPU Trainer...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">TorchTrainer</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="n">callbacks</span><span class="p">)</span></div>
+
+
 
 
 

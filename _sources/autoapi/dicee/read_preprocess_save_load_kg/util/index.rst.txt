@@ -11,7 +11,6 @@ Functions
 
    dicee.read_preprocess_save_load_kg.util.polars_dataframe_indexer
    dicee.read_preprocess_save_load_kg.util.pandas_dataframe_indexer
-   dicee.read_preprocess_save_load_kg.util.dept_index_triples_with_pandas
    dicee.read_preprocess_save_load_kg.util.apply_reciprical_or_noise
    dicee.read_preprocess_save_load_kg.util.timeit
    dicee.read_preprocess_save_load_kg.util.read_with_polars
@@ -109,15 +108,6 @@ Module Contents
    --------
    pd.DataFrame
        A DataFrame with the 'subject', 'relation', and 'object' columns replaced by their corresponding indices.
-
-
-.. py:function:: dept_index_triples_with_pandas(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pandas.core.frame.DataFrame
-
-   :param train_set: pandas dataframe
-   :param entity_to_idx: a mapping from str to integer index
-   :param relation_to_idx: a mapping from str to integer index
-   :param num_core: number of cores to be used
-   :return: indexed triples, i.e., pandas dataframe
 
 
 .. py:function:: apply_reciprical_or_noise(add_reciprical: bool, eval_model: str, df: object = None, info: str = None)

@@ -215,27 +215,6 @@
     <span class="k">return</span> <span class="n">df_pandas</span></div>
 
 
-<div class="viewcode-block" id="dept_index_triples_with_pandas">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.dept_index_triples_with_pandas">[docs]</a>
-<span class="k">def</span> <span class="nf">dept_index_triples_with_pandas</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">entity_to_idx</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">relation_to_idx</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    :param train_set: pandas dataframe</span>
-<span class="sd">    :param entity_to_idx: a mapping from str to integer index</span>
-<span class="sd">    :param relation_to_idx: a mapping from str to integer index</span>
-<span class="sd">    :param num_core: number of cores to be used</span>
-<span class="sd">    :return: indexed triples, i.e., pandas dataframe</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">train_set</span><span class="o">.</span><span class="n">shape</span>
-    <span class="n">train_set</span><span class="p">[</span><span class="s1">&#39;subject&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">train_set</span><span class="p">[</span><span class="s1">&#39;subject&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">entity_to_idx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-    <span class="n">train_set</span><span class="p">[</span><span class="s1">&#39;relation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">train_set</span><span class="p">[</span><span class="s1">&#39;relation&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">relation_to_idx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-    <span class="n">train_set</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">train_set</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">entity_to_idx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-    <span class="c1"># train_set = train_set.dropna(inplace=True)</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span> <span class="o">==</span> <span class="n">train_set</span><span class="o">.</span><span class="n">shape</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s1">&#39;Wrong type training data&#39;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">train_set</span></div>
-
 
 <div class="viewcode-block" id="apply_reciprical_or_noise">
 <a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.apply_reciprical_or_noise">[docs]</a>
