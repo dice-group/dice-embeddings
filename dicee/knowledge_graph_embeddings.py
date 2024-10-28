@@ -1,3 +1,4 @@
+import os.path
 from typing import List, Tuple, Set, Iterable, Dict, Union
 import torch
 from torch import optim
@@ -18,6 +19,8 @@ from .static_funcs_training import evaluate_lp
 import numpy as np
 import sys
 import traceback
+import rdflib
+import torch.nn.functional as F
 
 
 class KGE(BaseInteractiveKGE):
@@ -1619,10 +1622,101 @@ class KGE(BaseInteractiveKGE):
             f"On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple:.3f}"
         )
 
-    def train_literals(self, path, rel_to_predict = []):
+    def train_literals(self, path:str=None,num_epochs:int=1000,lr:int=0.1):
         "Funtion to train regression model for literals with pre-trained Embeddings"
+        assert os.path.isfile(path), f"Path is not lead to a file see {path}"
+        # Read a KG.
+        g = rdflib.Graph().parse(path)
+        # Extract unique data properties without brackets
+        data_property_to_idx={v:i for i, v in enumerate((i.n3()[1:-1] for i in g.predicates(unique=True) if "type" not in i.n3()))}
+        X,y=[], []
+        # Construct the training data.
+        for s,p,o in g:
+            if isinstance(o, rdflib.term.Literal):
+                X.append((self.entity_to_idx[s.n3()[1:-1]], data_property_to_idx[p.n3()[1:-1]]))
+                y.append(float(o.toPython()))
+            else:
+                "We are only interested in data properties"
+                continue
+        X=torch.LongTensor(X)
+        y=torch.FloatTensor(y)
+        # TODO:Refactoring needed.
+        class LiteralEmbeddings(torch.nn.Module):
+            def __init__(self,entity_embeddings=None,num_of_data_properties:int=None):
+                super().__init__()
+                self.pretrained_entity_embeddings = torch.nn.Embedding.from_pretrained(entity_embeddings,freeze=True)
 
-        self.literal_KG = KG(path_single_kg=path, backend="rdflib")
+                self.data_property_embeddings=torch.nn.Embedding(num_embeddings=num_of_data_properties,
+                                                   embedding_dim=self.pretrained_entity_embeddings.embedding_dim)
+                self.fc1 = torch.nn.Linear(in_features=self.pretrained_entity_embeddings.embedding_dim*2,
+                                              out_features=self.pretrained_entity_embeddings.embedding_dim*2,bias=True)
+
+                self.fc2 = torch.nn.Linear(in_features=self.pretrained_entity_embeddings.embedding_dim*2,out_features=1,bias=True)
+
+            def forward(self,x):
+                entity_idx, relation_idx=x[:,0],x[:,1]
+                head_entity_embeddings=self.pretrained_entity_embeddings(entity_idx)
+                relation_embeddings=self.data_property_embeddings(relation_idx)
+                tuple_embeddings = torch.concat((head_entity_embeddings, relation_embeddings),dim=1)
+                # Residual connection.
+                out1=F.relu(self.fc1(tuple_embeddings))
+                out2=self.fc2(out1+tuple_embeddings)
+                return out2.flatten()
+
+        model = LiteralEmbeddings(entity_embeddings=self.model.entity_embeddings.weight,num_of_data_properties=len(data_property_to_idx))
+        model.train()
+        optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
+        for i in range(num_epochs):
+            yhat = model.forward(X)
+            loss=F.mse_loss(yhat,y)
+            if i%100==0:
+                print(loss.item(),yhat.detach().mean())
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad(set_to_none=True)
+
+        model.eval()
+        print("Eval")
+        for s,p,o in g:
+            if isinstance(o, rdflib.term.Literal):
+
+                str_subject=s.n3()[1:-1]
+                str_predicate=p.n3()[1:-1]
+                numerical_literal=o.toPython()
+
+                x= torch.LongTensor([self.entity_to_idx[str_subject], data_property_to_idx[str_predicate]]).reshape(1,2)
+                with torch.no_grad():
+                    print(f"Triple: {str_subject},{str_predicate}, {numerical_literal}\tPrediction:{model.forward(x)}")
+            else:
+                "We are only interested in data properties"
+                continue
+
+        """
+        
+        kg = KG(path_single_kg=path, backend="rdflib")
+        # Unique relations
+        unique_relations_str = kg.relations_str
+        # Iterate over relations
+        for rel in unique_relations_str:
+            # Extract relation index
+            rel_idx = kg.relation_to_idx[rel]
+            # Extract triples containing the given relation
+            filtered_rows = kg.train_set[kg.train_set[:, 1] == rel_idx]
+
+            print(filtered_rows)
+
+            exit(1)
+            h_idx=filtered_rows[:,0]
+
+            # TODO: CD: We need to find a more generic approach
+            t_idx=filtered_rows[:,2].astype(float)
+            print("###")
+            print(h_idx)
+            print(rel_idx)
+            print(t_idx)
+
+        exit(1)
+
         self.weight_dict  = {}
         dataset = self.literal_KG
         for rel in dataset.relations_str:
@@ -1668,9 +1762,9 @@ class KGE(BaseInteractiveKGE):
                     # if epoch % 10 == 0:
                     #     print(f'for relation {rel_name}, Epoch {epoch+1}/{epochs}, Loss: {loss.item()}')
             self.weight_dict[rel] = weights
-                
-     
+        """
 
+    """
     def predict_literals(self, h, r):
         "Funtion to predict literals using pre-trained KGE models"
         h_embed = self.get_entity_embeddings([h])[0]
@@ -1678,3 +1772,5 @@ class KGE(BaseInteractiveKGE):
         prod_sum = torch.sum(h_embed * w)
         literal_value = prod_sum.item()
         return literal_value
+
+    """
