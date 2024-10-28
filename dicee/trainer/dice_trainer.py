@@ -71,16 +71,17 @@ def load_term_mapping(file_path=str):
     return polars.read_csv(file_path + ".csv")
 
 
-def initialize_trainer(args, callbacks):
+def initialize_trainer(args, callbacks)->TorchTrainer | MP | TorchDDPTrainer | pl.Trainer:
     if args.trainer == 'torchCPUTrainer':
         print('Initializing TorchTrainer CPU Trainer...', end='\t')
-        return TorchTrainer(args, callbacks=callbacks)
+        trainer = TorchTrainer(args, callbacks=callbacks)
     elif args.trainer == 'MP':
         print('Initializing MPTrainer...', end='\t')
-        return MP(args, callbacks=callbacks)
+        trainer= MP(args, callbacks=callbacks)
     elif args.trainer == 'torchDDP':
         assert torch.cuda.is_available()
         print('Initializing TorchDDPTrainer GPU', end='\t')
+        trainer = TorchDDPTrainer(args, callbacks=callbacks)
     elif args.trainer == 'PL':
         print('Initializing Pytorch-lightning Trainer', end='\t')
         kwargs = vars(args)
@@ -114,7 +115,7 @@ def initialize_trainer(args, callbacks):
         default_root_dir: Optional[_PATH] = None,)
         """
         # @TODO: callbacks need to be ad
-        return pl.Trainer(accelerator=kwargs.get("accelerator", "auto"),
+        trainer= pl.Trainer(accelerator=kwargs.get("accelerator", "auto"),
                           strategy=kwargs.get("strategy", "auto"),
                           num_nodes=kwargs.get("num_nodes", 1),
                           precision=kwargs.get("precision", None),
@@ -129,8 +130,9 @@ def initialize_trainer(args, callbacks):
                           barebones=False)
     else:
         print('Initializing TorchTrainer CPU Trainer...', end='\t')
-        return TorchTrainer(args, callbacks=callbacks)
-
+        trainer = TorchTrainer(args, callbacks=callbacks)
+    assert trainer is not None
+    return trainer
 
 
 
@@ -225,7 +227,7 @@ class DICE_Trainer:
         return model, form_of_labelling
 
     @timeit
-    def initialize_trainer(self, callbacks: List) -> pl.Trainer:
+    def initialize_trainer(self, callbacks: List) -> pl.Trainer | MP | TorchTrainer | TorchDDPTrainer:
         """ Initialize Trainer from input arguments """
         return initialize_trainer(self.args, callbacks)
 
@@ -316,6 +318,7 @@ class DICE_Trainer:
         if self.args.num_folds_for_cv == 0:
             self.trainer: Union[MP, TorchTrainer, TorchDDPTrainer, pl.Trainer]
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
+
             model, form_of_labelling = self.initialize_or_load_model()
             self.trainer.evaluator = self.evaluator
             self.trainer.dataset = knowledge_graph

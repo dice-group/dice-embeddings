@@ -98,9 +98,18 @@ acquired_abnormality    location_of     experimental_model_of_disease
 anatomical_abnormality  manifestation_of        physiologic_function
 alga    isa     entity
 ```
-A KGE model can also be trained from the command line
+A KGE model can be trained with a state-of-the-art training technique from the command line
 ```bash
-dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
+# CPU training
+dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" --trainer torchCPUTrainer
+# Distributed Data Parallelism
+dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" --trainer PL
+# Model Parallelism
+dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" --trainer MP
+# Distributed Data Parallelism in native torch
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" --trainer torchDDP --scoring_technique KvsAll
+
+
 ```
 dicee automatically detects available GPUs and trains a model with distributed data parallels technique.
 You can choose a suitable backend for your knowledge graph ```--backend pandas | polars  | rdflib ```.
