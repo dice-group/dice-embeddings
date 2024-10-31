@@ -314,9 +314,10 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_eval_setting</span><span class="p">:</span>
             <span class="c1"># ADD this info back</span>
             <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_eval_setting</span>
-
-        <span class="n">param_ensemble</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/aswa.pt&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">))</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">param_ensemble</span><span class="p">)</span></div>
+        
+        <span class="k">if</span> <span class="n">trainer</span><span class="o">.</span><span class="n">global_rank</span><span class="o">==</span><span class="n">trainer</span><span class="o">.</span><span class="n">local_rank</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="n">param_ensemble</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/aswa.pt&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">))</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">param_ensemble</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ASWA.compute_mrr">
@@ -401,6 +402,10 @@
 <div class="viewcode-block" id="ASWA.on_train_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA.on_train_epoch_end">[docs]</a>
     <span class="k">def</span> <span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="p">(</span><span class="n">trainer</span><span class="o">.</span><span class="n">global_rank</span> <span class="o">==</span> <span class="n">trainer</span><span class="o">.</span><span class="n">local_rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
         <span class="c1"># (1) Increment epoch counter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">epoch_count</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="c1"># (2) Save the given eval setting if it is not saved.</span>
