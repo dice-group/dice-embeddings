@@ -380,7 +380,7 @@ Observations: A severe overfitting. ASWA improves the generalization better than
 
 </details>
 
-#### FB15k-237 ####
+#### WN18RR ####
 
 <details> <summary> To see the results </summary>
 
@@ -389,6 +389,54 @@ Observations: A severe overfitting. ASWA improves the generalization better than
 #### UMLS ####
 
 <details> <summary> To see the results </summary>
+
+
+|                       |       |   MRR | Hits@1 | Hits@3 | Hits@10 |
+|-----------------------|-------|------:|-------:|-------:|--------:|
+| ComplEx-KvsAll        | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll        | val   | 0.684 |  0.557 |  0.771 |   0.928 |
+| ComplEx-KvsAll        | test  | 0.680 |  0.563 |  0.750 |   0.918 |
+| ComplEx-AllvsAll      | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-AllvsAll      | val   | 0.771 |  0.670 |  0.847 |   0.949 |
+| ComplEx-AllvsAll      | test  | 0.778 |  0.678 |  0.850 |   0.957 |
+| ComplEx-KvsAll-SWA    | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll-SWA    | val   | 0.762 |  0.666 |  0.825 |   0.941 |
+| ComplEx-KvsAll-SWA    | test  | 0.757 |  0.653 |  0.833 |   0.939 |
+| ComplEx-AllvsAll-SWA  | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-AllvsAll-SWA  | val   | 0.817 |  0.736 |  0.879 |   0.953 |
+| ComplEx-AllvsAll-SWA  | test  | 0.827 |  0.748 |  0.883 |   0.967 |
+| ComplEx-KvsAll-ASWA   | train | 0.998 |  0.997 |  0.999 |   1.000 |
+| ComplEx-KvsAll-ASWA   | val   | 0.799 |  0.712 |  0.863 |   0.946 |
+| ComplEx-KvsAll-ASWA   | test  | 0.804 |  0.720 |  0.866 |   0.948 |
+| ComplEx-AllvsAll-ASWA | train | 0.998 |  0.997 |  0.998 |   0.999 |
+| ComplEx-AllvsAll-ASWA | val   | 0.879 |  0.824 |  0.926 |   0.964 |
+| ComplEx-AllvsAll-ASWA | test  | 0.877 |  0.819 |  0.924 |   0.971 |
+| Keci-KvsAll           | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll           | val   | 0.538 |  0.401 |  0.595 |   0.829 |
+| Keci-KvsAll           | test  | 0.543 |  0.411 |  0.610 |   0.815 |
+| Keci-AllvsAll         | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-AllvsAll         | val   | 0.672 |  0.556 |  0.742 |   0.909 |
+| Keci-AllvsAll         | test  | 0.684 |  0.567 |  0.759 |   0.914 |
+| Keci-KvsAll-SWA       | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll-SWA       | val   | 0.633 |  0.509 |  0.705 |   0.877 |
+| Keci-KvsAll-SWA       | test  | 0.628 |  0.498 |  0.710 |   0.868 |
+| Keci-AllvsAll-SWA     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-AllvsAll-SWA     | val   | 0.697 |  0.584 |  0.770 |   0.911 |
+| Keci-AllvsAll-SWA     | test  | 0.711 |  0.606 |  0.775 |   0.921 |
+| Keci-KvsAll-ASWA      | train | 0.996 |  0.993 |  0.999 |   1.000 |
+| Keci-KvsAll-ASWA      | val   | 0.767 |  0.668 |  0.836 |   0.944 |
+| Keci-KvsAll-ASWA      | test  | 0.762 |  0.660 |  0.830 |   0.949 |
+| Keci-AllvsAll-ASWA    | train | 0.998 |  0.997 |  0.999 |   1.000 |
+| Keci-AllvsAll-ASWA    | val   | 0.852 |  0.793 |  0.896 |   0.955 |
+| Keci-AllvsAll-ASWA    | test  | 0.848 |  0.787 |  0.886 |   0.951 |
+
+
+
+```--embedding_dim 256 --num_epochs 300 --batch_size 1024 --optim Adam 0.1``` leading to 58.1K params.
+Observations: 
++ A severe overfitting. 
++ AllvsAll improves the generalization more than KvsAll does
++ ASWA improves the generalization more than SWA does
 
 ```bash
 dicee --dataset_dir "KGs/UMLS" --model "Keci" --p 0 --q 1 --trainer "PL" --scoring_technique "KvsSample" --embedding_dim 256 --num_epochs 100 --batch_size 32 --num_core 10
