@@ -86,18 +86,15 @@ class KG:
         self.description_of_input=None
         self.describe()
 
-
-        # TODO: Simplfy
         if self.entity_to_idx is not None:
             assert isinstance(self.entity_to_idx, dict) or isinstance(self.entity_to_idx, pd.DataFrame) or isinstance(self.entity_to_idx,
                                                                       pl.DataFrame), f"entity_to_idx must be a dict or a pandas/polars DataFrame: {type(self.entity_to_idx)}"
-
+            # TODO:CD: Why do we need to create this inverse mapping at this point?
             if isinstance(self.entity_to_idx, dict):
                 self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
                 self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
             else:
-                print(f"No inverse mapping created as self.entity_to_idx is not a type of dictionary but {type(self.entity_to_idx)}\n"
-                      f"Backend might be selected as polars")
+                pass
 
     def describe(self) -> None:
         self.description_of_input = f'\n------------------- Description of Dataset {self.dataset_dir if isinstance(self.dataset_dir, str) else self.sparql_endpoint if isinstance(self.sparql_endpoint, str) else self.path_single_kg} -------------------'

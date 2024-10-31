@@ -26,6 +26,8 @@ class AbstractTrainer:
         self.attributes = args
         self.callbacks = callbacks
         self.is_global_zero = True
+        self.global_rank=0
+        self.local_rank = 0
         # Set True to use Model summary callback of pl.
         torch.manual_seed(self.attributes.random_seed)
         torch.cuda.manual_seed_all(self.attributes.random_seed)
