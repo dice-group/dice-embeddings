@@ -43,6 +43,16 @@ Module Contents
 
 
 
+   .. py:attribute:: global_rank
+      :value: 0
+
+
+
+   .. py:attribute:: local_rank
+      :value: 0
+
+
+
    .. py:attribute:: strategy
       :value: None
 
