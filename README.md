@@ -329,6 +329,7 @@ mure.predict_topk(h=["Mongolia"],r=["isLocatedIn"],topk=3)
 from dicee import KGE
 KGE(path='...').deploy(share=True,top_k=10)
 ```
+
 </details>
 
 <details> <summary> To see the interface of the webservice</summary>
@@ -338,10 +339,10 @@ KGE(path='...').deploy(share=True,top_k=10)
 
 ## Link Prediction Benchmarks
 
-## Link Prediction Results
 In the below, we provide a brief overview of the link prediction results. Results are sorted in descending order of the size of the respective dataset.
 
 #### YAGO3-10 ####
+
 <details> <summary> To see the results </summary>
 
 |                    |       |   MRR | Hits@1 | Hits@3 | Hits@10 |
@@ -379,9 +380,15 @@ Observations: A severe overfitting. ASWA improves the generalization better than
 
 </details>
 
+#### FB15k-237 ####
 
+<details> <summary> To see the results </summary>
 
+</details>
 
+#### UMLS ####
+
+<details> <summary> To see the results </summary>
 
 ```bash
 dicee --dataset_dir "KGs/UMLS" --model "Keci" --p 0 --q 1 --trainer "PL" --scoring_technique "KvsSample" --embedding_dim 256 --num_epochs 100 --batch_size 32 --num_core 10
@@ -466,8 +473,7 @@ CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --model "Keci" --p 0 --q 1
 # {'H@1': 0.8494704992435703, 'H@3': 0.9334341906202723, 'H@10': 0.9667170953101362, 'MRR': 0.8959156201718665}
 ```
 
-
-```
+</details>
 
 ## Docker
 <details> <summary> Details</summary>
