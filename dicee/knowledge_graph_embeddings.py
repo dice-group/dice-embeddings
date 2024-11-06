@@ -21,6 +21,8 @@ import sys
 import traceback
 import rdflib
 import torch.nn.functional as F
+from sklearn.metrics import mean_absolute_error
+from collections import defaultdict
 
 
 class KGE(BaseInteractiveKGE):
@@ -1622,141 +1624,215 @@ class KGE(BaseInteractiveKGE):
             f"On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple:.3f}"
         )
 
-    def train_literals(self, path:str=None,num_epochs:int=1000,lr:int=0.1):
-        "Funtion to train regression model for literals with pre-trained Embeddings"
-        assert os.path.isfile(path), f"Path is not lead to a file see {path}"
-        # Read a KG.
-        g = rdflib.Graph().parse(path)
-        # Extract unique data properties without brackets
-        data_property_to_idx={v:i for i, v in enumerate((i.n3()[1:-1] for i in g.predicates(unique=True) if "type" not in i.n3()))}
-        X,y=[], []
-        # Construct the training data.
-        for s,p,o in g:
-            if isinstance(o, rdflib.term.Literal):
-                X.append((self.entity_to_idx[s.n3()[1:-1]], data_property_to_idx[p.n3()[1:-1]]))
-                y.append(float(o.toPython()))
-            else:
-                "We are only interested in data properties"
-                continue
-        X=torch.LongTensor(X)
-        y=torch.FloatTensor(y)
+    def train_literals(
+        self,
+        file_path: str = None,
+        num_epochs: int = 1000,
+        lr: int = 0.01,
+        train_rel: list = None,
+    ):
+        "Function to train regression model for literals with pre-trained Embeddings"
+
+        assert os.path.isfile(file_path), f"Path is not lead to a file see {file_path}"
+        heads, relations, tails = [], [], []
+        unique_relations = set()
+
+        ## TODOs : make sure the triples have literal tails
+
+        with open(file_path, "r") as file:
+            for line in file:
+                head, relation, tail = line.strip().split()
+
+                # Filter based on pre-trained entity index
+                if head in self.entity_to_idx and relation in train_rel:
+                    heads.append(head)
+                    relations.append(relation)
+                    tails.append(float(tail))
+
+                    unique_relations.add(relation)
+
+        # Map each unique relation to a unique index
+        self.data_property_to_idx = {
+            relation: idx for idx, relation in enumerate(unique_relations)
+        }
+        head_idx = [self.entity_to_idx[head] for head in heads]
+        rel_idx = [self.data_property_to_idx[rel] for rel in relations]
+        y_train = torch.FloatTensor(tails)
+        X_train = torch.LongTensor(list(zip(head_idx, rel_idx)))
+
         # TODO:Refactoring needed.
         class LiteralEmbeddings(torch.nn.Module):
-            def __init__(self,entity_embeddings=None,num_of_data_properties:int=None):
+            def __init__(
+                self, entity_embeddings=None, num_of_data_properties: int = None
+            ):
                 super().__init__()
-                self.pretrained_entity_embeddings = torch.nn.Embedding.from_pretrained(entity_embeddings,freeze=True)
+                self.pretrained_entity_embeddings = torch.nn.Embedding.from_pretrained(
+                    entity_embeddings, freeze=True
+                )
+                self.embeddings_dim = self.pretrained_entity_embeddings.embedding_dim
 
-                self.data_property_embeddings=torch.nn.Embedding(num_embeddings=num_of_data_properties,
-                                                   embedding_dim=self.pretrained_entity_embeddings.embedding_dim)
-                self.fc1 = torch.nn.Linear(in_features=self.pretrained_entity_embeddings.embedding_dim*2,
-                                              out_features=self.pretrained_entity_embeddings.embedding_dim*2,bias=True)
+                self.data_property_embeddings = torch.nn.Embedding(
+                    num_embeddings=num_of_data_properties,
+                    embedding_dim=self.embeddings_dim,
+                )
+                self.fc1 = torch.nn.Linear(
+                    in_features=self.embeddings_dim * 2,
+                    out_features=self.embeddings_dim * 2,
+                    bias=True,
+                )
 
-                self.fc2 = torch.nn.Linear(in_features=self.pretrained_entity_embeddings.embedding_dim*2,out_features=1,bias=True)
+                self.fc2 = torch.nn.Linear(
+                    in_features=self.embeddings_dim * 2,
+                    out_features=1,
+                    bias=True,
+                )
 
-            def forward(self,x):
-                entity_idx, relation_idx=x[:,0],x[:,1]
-                head_entity_embeddings=self.pretrained_entity_embeddings(entity_idx)
-                relation_embeddings=self.data_property_embeddings(relation_idx)
-                tuple_embeddings = torch.concat((head_entity_embeddings, relation_embeddings),dim=1)
+            def forward(self, x):
+                entity_idx, relation_idx = x[:, 0], x[:, 1]
+                head_entity_embeddings = self.pretrained_entity_embeddings(entity_idx)
+                relation_embeddings = self.data_property_embeddings(relation_idx)
+                tuple_embeddings = torch.concat(
+                    (head_entity_embeddings, relation_embeddings), dim=1
+                )
                 # Residual connection.
-                out1=F.relu(self.fc1(tuple_embeddings))
-                out2=self.fc2(out1+tuple_embeddings)
+                out1 = F.relu(self.fc1(tuple_embeddings))
+                out2 = self.fc2(out1 + tuple_embeddings)
                 return out2.flatten()
 
-        model = LiteralEmbeddings(entity_embeddings=self.model.entity_embeddings.weight,num_of_data_properties=len(data_property_to_idx))
-        model.train()
-        optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
+        self.literal_model = LiteralEmbeddings(
+            entity_embeddings=self.model.entity_embeddings.weight,
+            num_of_data_properties=len(self.data_property_to_idx),
+        )
+        self.literal_model.train()
+        optimizer = torch.optim.AdamW(self.literal_model.parameters(), lr=lr)
         for i in range(num_epochs):
-            yhat = model.forward(X)
-            loss=F.mse_loss(yhat,y)
-            if i%100==0:
-                print(loss.item(),yhat.detach().mean())
+            yhat = self.literal_model.forward(X_train)
+            loss = F.mse_loss(yhat, y_train)
+            if i % 100 == 0:
+                print(
+                    f"Epoch {i+1}/{num_epochs} - Loss: {loss.item():.4f}, Mean Prediction: {yhat.detach().mean().item():.4f}"
+                )
+
             loss.backward()
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
 
-        model.eval()
-        print("Eval")
-        for s,p,o in g:
-            if isinstance(o, rdflib.term.Literal):
+    def predict_literals(self, h: Union[str, List[str]], r: Union[str, List[str]]):
 
-                str_subject=s.n3()[1:-1]
-                str_predicate=p.n3()[1:-1]
-                numerical_literal=o.toPython()
+        h = [h] if isinstance(h, str) else h
+        r = [r] if isinstance(r, str) else r
+        assert len(h) == len(r)
 
-                x= torch.LongTensor([self.entity_to_idx[str_subject], data_property_to_idx[str_predicate]]).reshape(1,2)
-                with torch.no_grad():
-                    print(f"Triple: {str_subject},{str_predicate}, {numerical_literal}\tPrediction:{model.forward(x)}")
-            else:
-                "We are only interested in data properties"
-                continue
+        x = torch.LongTensor(
+            [
+                (self.entity_to_idx[h_item], self.data_property_to_idx[r_item])
+                for h_item, r_item in zip(h, r)
+            ]
+        )
 
-        """
-        
-        kg = KG(path_single_kg=path, backend="rdflib")
-        # Unique relations
-        unique_relations_str = kg.relations_str
-        # Iterate over relations
-        for rel in unique_relations_str:
-            # Extract relation index
-            rel_idx = kg.relation_to_idx[rel]
-            # Extract triples containing the given relation
-            filtered_rows = kg.train_set[kg.train_set[:, 1] == rel_idx]
+        # x = torch.LongTensor([self.entity_to_idx[h], self.data_property_to_idx[r]]).reshape(1,2)
+        self.literal_model.eval()
+        with torch.no_grad():
+            pred = (self.literal_model.forward(x)).tolist()
+            # print(f"Prediction for Triple: {h},{r},\tPrediction:{pred}")
+        return pred
 
-            print(filtered_rows)
+    def evaluate_literal_prediction(
+        self, file_path: str = None, train_rel: list = None
+    ):
+        assert os.path.isfile(file_path), f"Path is not lead to a file see {file_path}"
+        # Initialize a dictionary to group heads and tails by relation
+        relation_groups = defaultdict(lambda: {"heads": [], "tails": []})
 
-            exit(1)
-            h_idx=filtered_rows[:,0]
+        with open(file_path, "r") as file:
+            for line in file:
+                head, relation, tail = line.strip().split()
 
-            # TODO: CD: We need to find a more generic approach
-            t_idx=filtered_rows[:,2].astype(float)
-            print("###")
-            print(h_idx)
-            print(rel_idx)
-            print(t_idx)
+                # Filter based on pre-trained entity index
+                if head in self.entity_to_idx and relation in train_rel:
+                    relation_groups[relation]["heads"].append(head)
+                    relation_groups[relation]["tails"].append(float(tail))
+
+        # Initialize results dictionary
+        results = {}
+
+        # Iterate over each relation to calculate MSE
+        for rels, group in relation_groups.items():
+            h = group["heads"]
+            r = [rels] * len(h)
+            y_true = torch.FloatTensor(group["tails"])
+            y_pred = self.predict_literals(h=h, r=r)
+            mse = mean_absolute_error(y_true, y_pred)
+            results[rels] = mse
+
+        return results
+
+    """
+    
+    kg = KG(path_single_kg=path, backend="rdflib")
+    # Unique relations
+    unique_relations_str = kg.relations_str
+    # Iterate over relations
+    for rel in unique_relations_str:
+        # Extract relation index
+        rel_idx = kg.relation_to_idx[rel]
+        # Extract triples containing the given relation
+        filtered_rows = kg.train_set[kg.train_set[:, 1] == rel_idx]
+
+        print(filtered_rows)
 
         exit(1)
+        h_idx=filtered_rows[:,0]
 
-        self.weight_dict  = {}
-        dataset = self.literal_KG
-        for rel in dataset.relations_str:
-            rel_name =rel.split(sep="#")[-1]
-            if rel_name in rel_to_predict:
-                rel_idx = dataset.relation_to_idx[rel]
-                filtered_rows = dataset.train_set[dataset.train_set[:, 1] == rel_idx]
-                h_idx, _, t_indx = filtered_rows.T.tolist()
-                head_entites = [dataset.idx_to_entity[idx] for idx in h_idx]
-                literal_values = [float(dataset.idx_to_entity[idx]) for idx in t_indx]
-                inputs  = self.get_entity_embeddings(head_entites)
-                assert len(inputs) == len(literal_values)
-                weights = torch.randn(inputs.shape[1], requires_grad=True)
-                y = torch.tensor([int(x) for x in literal_values])
+        # TODO: CD: We need to find a more generic approach
+        t_idx=filtered_rows[:,2].astype(float)
+        print("###")
+        print(h_idx)
+        print(rel_idx)
+        print(t_idx)
 
-                learning_rate = 0.1
-                epochs = 100
-                losses = []
-                loss_fn = MSELoss()
-                for epoch in range(epochs):
-                    # Zero the gradients from previous iteration
-                    if weights.grad is not None:
-                        weights.grad.zero_()
+    exit(1)
 
-                    product = inputs * weights # Dot product of weights and inputs
-                    yhat = product.sum(dim=1)
-            
-                    loss = loss_fn(yhat, y.float())
+    self.weight_dict  = {}
+    dataset = self.literal_KG
+    for rel in dataset.relations_str:
+        rel_name =rel.split(sep="#")[-1]
+        if rel_name in rel_to_predict:
+            rel_idx = dataset.relation_to_idx[rel]
+            filtered_rows = dataset.train_set[dataset.train_set[:, 1] == rel_idx]
+            h_idx, _, t_indx = filtered_rows.T.tolist()
+            head_entites = [dataset.idx_to_entity[idx] for idx in h_idx]
+            literal_values = [float(dataset.idx_to_entity[idx]) for idx in t_indx]
+            inputs  = self.get_entity_embeddings(head_entites)
+            assert len(inputs) == len(literal_values)
+            weights = torch.randn(inputs.shape[1], requires_grad=True)
+            y = torch.tensor([int(x) for x in literal_values])
 
-                    loss.backward()
+            learning_rate = 0.1
+            epochs = 100
+            losses = []
+            loss_fn = MSELoss()
+            for epoch in range(epochs):
+                # Zero the gradients from previous iteration
+                if weights.grad is not None:
+                    weights.grad.zero_()
 
-                    with torch.no_grad(): 
-                        weights -= learning_rate * weights.grad
+                product = inputs * weights # Dot product of weights and inputs
+                yhat = product.sum(dim=1)
+        
+                loss = loss_fn(yhat, y.float())
 
-                    # # Step 8: Store and print the loss for tracking
-                    losses.append(loss.item())
-                    # if epoch % 10 == 0:
-                    #     print(f'for relation {rel_name}, Epoch {epoch+1}/{epochs}, Loss: {loss.item()}')
-            self.weight_dict[rel] = weights
-        """
+                loss.backward()
+
+                with torch.no_grad(): 
+                    weights -= learning_rate * weights.grad
+
+                # # Step 8: Store and print the loss for tracking
+                losses.append(loss.item())
+                # if epoch % 10 == 0:
+                #     print(f'for relation {rel_name}, Epoch {epoch+1}/{epochs}, Loss: {loss.item()}')
+        self.weight_dict[rel] = weights
+    """
 
     """
     def predict_literals(self, h, r):
@@ -1767,4 +1843,59 @@ class KGE(BaseInteractiveKGE):
         literal_value = prod_sum.item()
         return literal_value
 
+    """
+    """
+    g = rdflib.Graph().parse(path)
+        # Extract unique data properties without brackets
+        self.data_property_to_idx = {
+            v: i
+            for i, v in enumerate(
+                (
+                    i.n3()[1:-1]
+                    for i in g.predicates(unique=True)
+                    if "type" not in i.n3()
+                )
+            )
+        }
+        X, y = [], []
+        # Construct the training data.
+        data_list = []
+        for s, p, o in g:
+            if isinstance(o, rdflib.term.Literal):
+                X.append(
+                    (
+                        self.entity_to_idx[s.n3()[1:-1]],
+                        self.data_property_to_idx[p.n3()[1:-1]],
+                    )
+                )
+                y.append(float(o.toPython()))
+                data_list.append((s.n3()[1:-1], p.n3()[1:-1]))
+            else:
+                "We are only interested in data properties"
+                continue
+    
+    # from sklearn.metrics import mean_absolute_error
+
+        # self.literal_model.eval()
+        # with torch.no_grad():
+        #     y_pred = self.literal_model.forward(X_test)
+        # loss_item = mean_absolute_error(y_pred, y_test)
+        # print("Loss : ", loss_item)
+        # print("Eval")
+        # for s, p, o in g:
+        #     if isinstance(o, rdflib.term.Literal):
+
+        #         str_subject = s.n3()[1:-1]
+        #         str_predicate = p.n3()[1:-1]
+        #         numerical_literal = o.toPython()
+        #         pred = self.predict_literals(str_subject, str_predicate)
+        #         print(
+        #             f"Triple: {str_subject},{str_predicate}, {numerical_literal}\tPrediction:{round(pred[0],3)}"
+        #         )
+        #         # x= torch.LongTensor([self.entity_to_idx[str_subject], self.data_property_to_idx[str_predicate]]).reshape(1,2)
+        #         # with torch.no_grad():
+        #         #     print(f"Triple: {str_subject},{str_predicate}, {numerical_literal}\tPrediction:{round((self.literal_model.forward(x)).item(),3)}")
+        #     else:
+        #         "We are only interested in data properties"
+        #         continue
     """
