@@ -369,27 +369,66 @@ In the below, we provide a brief overview of the link prediction results. Result
 ```--embedding_dim 256 --num_epochs 300 --batch_size 1024 --optim Adam 0.1``` leading to 31.6M params.
 Observations: A severe overfitting. ASWA improves the generalization better than SWA.
 
+</details>
 
 #### FB15k-237 ####
 
+<details> <summary> To see the results </summary>
+
 |                    |       |   MRR | Hits@1 | Hits@3 | Hits@10 |
 |--------------------|-------|------:|-------:|-------:|--------:|
-| Keci-KvsAll-SWA    | train |     x |      x |      x |       x |
-| Keci-KvsAll-SWA    | val   |     x |      x |      x |       x |
-| Keci-KvsAll-SWA    | test  |     x |      x |      x |       x |
+| ComplEx-KvsAll     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll     | val   | 0.197 |  0.140 |  0.211 |   0.307 |
+| ComplEx-KvsAll     | test  | 0.192 |  0.137 |  0.204 |   0.300 |
+| ComplEx-KvsAll-SWA | train | 0.911 |  0.875 |  0.938 |   0.970 |
+| ComplEx-KvsAll-SWA | val   | 0.169 |  0.121 |  0.178 |   0.264 |
+| ComplEx-KvsAll-SWA | test  | 0.166 |  0.118 |  0.176 |   0.261 |
+| ComplEx-KvsAll-ASWA | train | 0.780 | 0.719 | 0.822  |   0.886 |
+| ComplEx-KvsAll-ASWA | val   | 0.220 | 0.158 | 0.240  |   0.342 |
+| ComplEx-KvsAll-ASWA | test  | 0.217 | 0.155 |  0.234 |   0.337 |
+| Keci-KvsAll        | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll        | val   | 0.158 |  0.107 |  0.166 |   0.259 |
+| Keci-KvsAll        | test  | 0.155 |  0.105 |  0.162 |   0.253 |
+| Keci-KvsAll-SWA    | train | 0.941 |  0.909 |  0.967 |   0.990 |
+| Keci-KvsAll-SWA    | val   | 0.188 |  0.133 |  0.200 |   0.298 |
+| Keci-KvsAll-SWA    | test  | 0.183 |  0.128 |  0.195 |   0.292 |
+| Keci-KvsAll-ASWA   | train | 0.745 |  0.666 |  0.799 |   0.886 |
+| Keci-KvsAll-ASWA   | val   | 0.221 |  0.158 |  0.237 |   0.346 |
+| Keci-KvsAll-ASWA   | test  | 0.216 |  0.153 |  0.233 |   0.342 |
 
 </details>
+
 
 #### WN18RR ####
 
 <details> <summary> To see the results </summary>
+
+|                    |       |   MRR | Hits@1 | Hits@3 | Hits@10 |
+|--------------------|-------|------:|-------:|-------:|--------:|
+| ComplEx-KvsAll     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll     | val   | 0.346 |  0.337 |  0.353 |   0.359 |
+| ComplEx-KvsAll     | test  | 0.343 |  0.333 |  0.349 |   0.357 |
+| ComplEx-KvsAll-SWA | train | 0.335 |  0.242 |  0.365 |   0.522 |
+| ComplEx-KvsAll-SWA | val   | 0.014 |  0.004 |  0.013 |   0.029 |
+| ComplEx-KvsAll-SWA | test  | 0.018 |  0.007 |  0.017 |   0.036 |
+| ComplEx-KvsAll-ASWA | train | 0.999 | 0.999 | 0.999  |   0.999 |
+| ComplEx-KvsAll-ASWA | val   | 0.352 | 0.348 | 0.355  |   0.359 |
+| ComplEx-KvsAll-ASWA | test  | 0.348 | 0.342 |  0.351 |   0.355 |
+| Keci-KvsAll        | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll        | val   | 0.316 |  0.296 |  0.331 |   0.352 |
+| Keci-KvsAll        | test  | 0.308 |  0.285 |  0.326 |   0.346 |
+| Keci-KvsAll-SWA    | train | 0.608 |  0.516 |  0.657 |   0.787 |
+| Keci-KvsAll-SWA    | val   | 0.069 |  0.038 |  0.073 |   0.130 |
+| Keci-KvsAll-SWA    | test  | 0.061 |  0.032 |  0.064 |   0.119 |
+| Keci-KvsAll-ASWA   | train | 0.951 |  0.916 |  0.985 |   0.997 |
+| Keci-KvsAll-ASWA   | val   | 0.356 |  0.353 |  0.356 |   0.360 |
+| Keci-KvsAll-ASWA   | test  | 0.350 |  0.347 |  0.350 |   0.355 |
 
 </details>
 
 #### UMLS ####
 
 <details> <summary> To see the results </summary>
-
 
 |                       |       |   MRR | Hits@1 | Hits@3 | Hits@10 |
 |-----------------------|-------|------:|-------:|-------:|--------:|
