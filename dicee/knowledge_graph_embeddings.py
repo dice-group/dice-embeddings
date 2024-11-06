@@ -1753,17 +1753,16 @@ class KGE(BaseInteractiveKGE):
                     relation_groups[relation]["heads"].append(head)
                     relation_groups[relation]["tails"].append(float(tail))
 
-        # Initialize results dictionary
         results = {}
 
-        # Iterate over each relation to calculate MSE
+        # Iterate over each relation to calculate MEA
         for rels, group in relation_groups.items():
             h = group["heads"]
             r = [rels] * len(h)
             y_true = torch.FloatTensor(group["tails"])
             y_pred = self.predict_literals(h=h, r=r)
-            mse = mean_absolute_error(y_true, y_pred)
-            results[rels] = mse
+            mea = mean_absolute_error(y_true, y_pred)
+            results[rels] = mea
 
         return results
 
