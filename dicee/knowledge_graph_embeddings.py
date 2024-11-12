@@ -2,11 +2,9 @@ import os.path
 from typing import List, Tuple, Set, Iterable, Dict, Union
 import torch
 from torch import optim
-from torch.nn import MSELoss
 from torch.utils.data import DataLoader
 from .abstracts import BaseInteractiveKGE
 from .dataset_classes import TriplePredictionDataset
-from .knowledge_graph import KG
 from .static_funcs import (
     random_prediction,
     deploy_triple_prediction,
@@ -17,9 +15,9 @@ from .static_funcs import (
 )
 from .static_funcs_training import evaluate_lp
 import numpy as np
+import pandas as pd
 import sys
 import traceback
-import rdflib
 import torch.nn.functional as F
 from sklearn.metrics import mean_absolute_error
 from collections import defaultdict
@@ -1631,36 +1629,48 @@ class KGE(BaseInteractiveKGE):
         lr: int = 0.01,
         train_rel: list = None,
     ):
-        "Function to train regression model for literals with pre-trained Embeddings"
+        "Function to train regression model for literals with pre-trained KG-Embeddings"
 
         assert os.path.isfile(file_path), f"Path is not lead to a file see {file_path}"
-        heads, relations, tails = [], [], []
-        unique_relations = set()
 
         ## TODOs : make sure the triples have literal tails
 
-        with open(file_path, "r") as file:
-            for line in file:
-                head, relation, tail = line.strip().split()
+        df = pd.read_csv(
+            file_path, sep="\t", header=None, names=["head", "relation", "tail"]
+        )
+        df = df[df["head"].isin(self.entity_to_idx) & df["relation"].isin(train_rel)]
+        df["tail"] = df["tail"].astype(float)
 
-                # Filter based on pre-trained entity index
-                if head in self.entity_to_idx and relation in train_rel:
-                    heads.append(head)
-                    relations.append(relation)
-                    tails.append(float(tail))
-
-                    unique_relations.add(relation)
-
-        # Map each unique relation to a unique index
+        unique_relations = df["relation"].unique()
         self.data_property_to_idx = {
             relation: idx for idx, relation in enumerate(unique_relations)
         }
-        head_idx = [self.entity_to_idx[head] for head in heads]
-        rel_idx = [self.data_property_to_idx[rel] for rel in relations]
-        y_train = torch.FloatTensor(tails)
-        X_train = torch.LongTensor(list(zip(head_idx, rel_idx)))
 
-        # TODO:Refactoring needed.
+        df["head_idx"] = df["head"].map(self.entity_to_idx)
+        df["rel_idx"] = df["relation"].map(self.data_property_to_idx)
+
+        # Calculate normalization parameters for each relation group
+        self.normalization_params = {}
+        for relation in unique_relations:
+            group_data = df.loc[df["relation"] == relation, "tail"]
+            mean = group_data.mean()
+            std = group_data.std()
+            self.normalization_params[relation] = {"mean": mean, "std": std}
+
+        # Normalize the tail values using the stored parameters
+        df["normalized_tail"] = df.apply(
+            lambda row: (
+                row["tail"] - self.normalization_params[row["relation"]]["mean"]
+            )
+            / self.normalization_params[row["relation"]]["std"],
+            axis=1,
+        )
+
+        # Convert normalized tails and indices into PyTorch tensors
+        y_train = torch.FloatTensor(df["normalized_tail"].tolist())
+        X_train = torch.LongTensor(df[["head_idx", "rel_idx"]].values)
+
+        # # TODO:Refactoring needed.
         class LiteralEmbeddings(torch.nn.Module):
             def __init__(
                 self, entity_embeddings=None, num_of_data_properties: int = None
@@ -1740,8 +1750,9 @@ class KGE(BaseInteractiveKGE):
     def evaluate_literal_prediction(
         self, file_path: str = None, train_rel: list = None
     ):
-        assert os.path.isfile(file_path), f"Path is not lead to a file see {file_path}"
-        # Initialize a dictionary to group heads and tails by relation
+        assert os.path.isfile(
+            file_path
+        ), f"Path does not lead to a file see {file_path}"
         relation_groups = defaultdict(lambda: {"heads": [], "tails": []})
 
         with open(file_path, "r") as file:
@@ -1761,7 +1772,13 @@ class KGE(BaseInteractiveKGE):
             r = [rels] * len(h)
             y_true = torch.FloatTensor(group["tails"])
             y_pred = self.predict_literals(h=h, r=r)
-            mea = mean_absolute_error(y_true, y_pred)
+            mean, std = (
+                self.normalization_params[rels]["mean"],
+                self.normalization_params[rels]["std"],
+            )
+
+            y_pred_scaled = [data * std + mean for data in y_pred]
+            mea = mean_absolute_error(y_true, y_pred_scaled)
             results[rels] = mea
 
         return results
