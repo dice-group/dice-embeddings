@@ -10,10 +10,11 @@ from .static_funcs_training import evaluate_lp
 import numpy as np
 import sys
 
-
 # import gradio as gr
 
 import traceback
+
+
 class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
@@ -21,6 +22,13 @@ class KGE(BaseInteractiveKGE):
                  model_name=None,
                  apply_semantic_constraint=False):
         super().__init__(path=path, url=url, construct_ensemble=construct_ensemble, model_name=model_name)
+
+    def __str__(self):
+        return "KGE | " + str(self.model)
+
+    def to(self, device: str) -> None:
+        assert "cpu" in device or "cuda" in device, "Device must be either cpu or cuda"
+        self.model.to(device)
 
     def get_transductive_entity_embeddings(self,
                                            indices: Union[torch.LongTensor, List[str]],
@@ -118,9 +126,6 @@ class KGE(BaseInteractiveKGE):
             counter += 1
             print(self.enc.decode(tokens), end=f"\t {score}\n")
 
-    def __str__(self):
-        return "KGE | " + str(self.model)
-
     # given a string, return is bpe encoded embeddings
     def eval_lp_performance(self, dataset=List[Tuple[str, str, str]], filtered=True):
         assert isinstance(dataset, list) and len(dataset) > 0
@@ -175,6 +180,7 @@ class KGE(BaseInteractiveKGE):
         x = torch.stack((head_entity,
                          relation.repeat(self.num_entities, ),
                          tail_entity.repeat(self.num_entities, )), dim=1)
+        x = x.to(self.model.device)
         return self.model(x)
 
     def predict_missing_relations(self, head_entity: Union[List[str], str],
@@ -283,6 +289,7 @@ class KGE(BaseInteractiveKGE):
             x = torch.stack((head_entity.repeat(self.num_entities, ),
                              relation.repeat(self.num_entities, ),
                              tail_entity), dim=1)
+        x = x.to(self.model.device)
         return self.model(x)
 
     def predict(self, *, h: Union[List[str], str] = None, r: Union[List[str], str] = None,
@@ -483,6 +490,7 @@ class KGE(BaseInteractiveKGE):
             raise NotImplementedError()
         else:
             with torch.no_grad():
+                x = x.to(self.model.device)
                 if logits:
                     return self.model(x)
                 else:
@@ -1202,6 +1210,7 @@ class KGE(BaseInteractiveKGE):
         # (5) Eval
         self.set_model_eval_mode()
         with torch.no_grad():
+            x = x.to(self.model.device)
             outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
             print(f"Eval Mode:\tLoss:{loss.item()}")
