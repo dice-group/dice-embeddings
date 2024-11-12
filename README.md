@@ -353,9 +353,9 @@ In the below, we provide a brief overview of the link prediction results. Result
 | ComplEx-KvsAll-SWA | train | 0.998 |  0.997 |  1.000 |   1.000 |
 | ComplEx-KvsAll-SWA | val   | 0.345 |  0.279 |  0.372 |   0.474 |
 | ComplEx-KvsAll-SWA | test  | 0.341 |  0.272 |  0.374 |   0.474 |
-| ComplEx-KvsAll-SWA | train |     x |      x |      x |       x |
-| ComplEx-KvsAll-SWA | val   |     x |      x |      x |       x |
-| ComplEx-KvsAll-SWA | test  |     x |      x |      x |       x |
+| ComplEx-KvsAll-ASWA | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll-ASWA | val   | 0.404 |  0.335 |  0.448 |   0.531 |
+| ComplEx-KvsAll-ASWA | test  | 0.398 |  0.325 |  0.449 |   0.530 |
 | Keci-KvsAll        | train | 1.000 |  1.000 |  1.000 |   1.000 |
 | Keci-KvsAll        | val   | 0.337 |  0.268 |  0.370 |   0.468 |
 | Keci-KvsAll        | test  | 0.343 |  0.274 |  0.376 |   0.343 |
