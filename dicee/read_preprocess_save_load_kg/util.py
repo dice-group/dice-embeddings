@@ -156,7 +156,7 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
     # (1) Load the data.
     #try:
     if ".zst" in data_path:
-        df= polars.read_csv(data_path)
+        df= polars.read_csv(data_path,n_rows=None if read_only_few is None else read_only_few)
     else:
         df = polars.read_csv(data_path,
                              has_header=False,
