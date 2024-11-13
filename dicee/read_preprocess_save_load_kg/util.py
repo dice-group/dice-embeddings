@@ -154,7 +154,10 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
     assert separator is not None, "separator cannot be None"
     print(f'*** Reading {data_path} with Polars ***')
     # (1) Load the data.
-    try:
+    #try:
+    if ".zst" in data_path:
+        df= polars.read_csv(data_path,n_rows=None if read_only_few is None else read_only_few)
+    else:
         df = polars.read_csv(data_path,
                              has_header=False,
                              low_memory=False,
@@ -163,8 +166,8 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
                              dtypes=[polars.String],
                              new_columns=['subject', 'relation', 'object'],
                              separator=separator)
-    except ValueError as err:
-        raise ValueError(f"{err}\nYou may want to use a different separator.")
+    #except ValueError as err:
+    #    raise ValueError(f"{err}\nYou may want to use a different separator.")
     # (2) Sample from (1).
     if sample_triples_ratio:
         print(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')
