@@ -122,6 +122,7 @@ Functions
    dicee.download_file
    dicee.download_files_from_url
    dicee.download_pretrained_model
+   dicee.write_csv_from_model_parallel
    dicee.mapping_from_first_two_cols_to_third
    dicee.timeit
    dicee.load_term_mapping
@@ -2110,6 +2111,11 @@ Package Contents
 
 
 .. py:function:: download_pretrained_model(url: str) -> str
+
+.. py:function:: write_csv_from_model_parallel(path: str) -> None
+
+   Create
+
 
 .. py:class:: DICE_Trainer(args, is_continual_training, storage_path, evaluator=None)
 

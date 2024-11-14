@@ -884,6 +884,49 @@
         <span class="n">download_files_from_url</span><span class="p">(</span><span class="n">url_to_download_from</span><span class="p">,</span> <span class="n">destination_folder</span><span class="o">=</span><span class="n">dir_name</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">dir_name</span></div>
 
+
+<div class="viewcode-block" id="write_csv_from_model_parallel">
+<a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.write_csv_from_model_parallel">[docs]</a>
+<span class="k">def</span> <span class="nf">write_csv_from_model_parallel</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create&quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="s2">&quot;Path does not exist&quot;</span>
+
+    <span class="c1"># Detect files that start with model_ and end with .pt</span>
+    <span class="n">model_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;model_&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.pt&quot;</span><span class="p">)]</span>
+    <span class="n">model_files</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>  <span class="c1"># Sort to maintain order if necessary (e.g., model_0.pt, model_1.pt)</span>
+
+    <span class="n">entity_csv_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;entity_embeddings.csv&quot;</span><span class="p">)</span>
+    <span class="n">relation_csv_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;relation_embeddings.csv&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Process each model file</span>
+    <span class="k">for</span> <span class="n">model_file</span> <span class="ow">in</span> <span class="n">model_files</span><span class="p">:</span>
+        <span class="n">model_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">model_file</span><span class="p">)</span>
+        <span class="c1"># Load model</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+        <span class="c1"># Assuming model has a get_embeddings method</span>
+        <span class="n">entity_emb</span><span class="p">,</span> <span class="n">relation_emb</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;_orig_mod.entity_embeddings.weight&quot;</span><span class="p">],</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;_orig_mod.relation_embeddings.weight&quot;</span><span class="p">]</span>
+        <span class="c1"># Convert to numpy</span>
+        <span class="n">entity_emb</span> <span class="o">=</span> <span class="n">entity_emb</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">relation_emb</span> <span class="o">=</span> <span class="n">relation_emb</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+        <span class="c1"># Write or append to CSV</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">entity_csv_path</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">relation_csv_path</span><span class="p">):</span>
+            <span class="c1"># If CSV files do not exist, create them</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">entity_emb</span><span class="p">)</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">entity_csv_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">relation_emb</span><span class="p">)</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">relation_csv_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># If CSV files exist, concatenate to the existing rows</span>
+            <span class="n">existing_entity_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">entity_csv_path</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+            <span class="n">existing_relation_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">relation_csv_path</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+            <span class="c1"># Concatenate along the columns (axis=1)</span>
+            <span class="n">new_entity_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">existing_entity_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">entity_emb</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">new_relation_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">existing_relation_df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">relation_emb</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="c1"># Write the updated data back to the CSV files</span>
+            <span class="n">new_entity_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">entity_csv_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">new_relation_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">relation_csv_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
 </pre></div>
 
            </div>
