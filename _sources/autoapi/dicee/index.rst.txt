@@ -123,6 +123,7 @@ Functions
    dicee.download_files_from_url
    dicee.download_pretrained_model
    dicee.write_csv_from_model_parallel
+   dicee.from_pretrained_model_write_embeddings_into_csv
    dicee.mapping_from_first_two_cols_to_third
    dicee.timeit
    dicee.load_term_mapping
@@ -2116,6 +2117,8 @@ Package Contents
 
    Create
 
+
+.. py:function:: from_pretrained_model_write_embeddings_into_csv(path: str) -> None
 
 .. py:class:: DICE_Trainer(args, is_continual_training, storage_path, evaluator=None)
 

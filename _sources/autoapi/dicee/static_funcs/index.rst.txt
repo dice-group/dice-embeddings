@@ -44,6 +44,7 @@ Functions
    dicee.static_funcs.download_files_from_url
    dicee.static_funcs.download_pretrained_model
    dicee.static_funcs.write_csv_from_model_parallel
+   dicee.static_funcs.from_pretrained_model_write_embeddings_into_csv
 
 
 Module Contents
@@ -178,4 +179,6 @@ Module Contents
 
    Create
 
+
+.. py:function:: from_pretrained_model_write_embeddings_into_csv(path: str) -> None
 

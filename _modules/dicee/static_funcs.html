@@ -108,6 +108,7 @@
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
 <span class="kn">import</span> <span class="nn">polars</span> <span class="k">as</span> <span class="nn">pl</span>
 <span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">csv</span>
 
 <div class="viewcode-block" id="create_recipriocal_triples">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.create_recipriocal_triples">[docs]</a>
@@ -446,27 +447,18 @@
 
     <span class="k">if</span> <span class="n">save_embeddings_as_csv</span><span class="p">:</span>
         <span class="n">entity_emb</span><span class="p">,</span> <span class="n">relation_ebm</span> <span class="o">=</span> <span class="n">trained_model</span><span class="o">.</span><span class="n">get_embeddings</span><span class="p">()</span>
-        <span class="c1"># TODO: CD: We do not need to keep the mapping in memory</span>
-        <span class="c1"># TODO:CD: Deprecate the pickle usage for data serialization.</span>
-        <span class="n">entity_to_idx</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/entity_to_idx.p&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">))</span>
-        <span class="n">entity_str</span> <span class="o">=</span> <span class="n">entity_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-        <span class="c1"># Ensure that the ordering is correct.</span>
-        <span class="k">assert</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">entity_str</span><span class="p">)))</span> <span class="o">==</span> <span class="nb">list</span><span class="p">(</span><span class="n">entity_to_idx</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-        <span class="n">save_embeddings</span><span class="p">(</span><span class="n">entity_emb</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">indexes</span><span class="o">=</span><span class="n">entity_str</span><span class="p">,</span>
-                        <span class="n">path</span><span class="o">=</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">trained_model</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_entity_embeddings.csv&#39;</span><span class="p">)</span>
-        <span class="k">del</span> <span class="n">entity_to_idx</span><span class="p">,</span> <span class="n">entity_str</span><span class="p">,</span> <span class="n">entity_emb</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Saving entity embeddings...&quot;</span><span class="p">)</span>
+        <span class="n">entity</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">full_storage_path</span><span class="si">}</span><span class="s2">/entity_to_idx.csv&quot;</span><span class="p">,</span><span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="s2">&quot;entity&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">entity</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">is_monotonic_increasing</span>
+        <span class="n">save_embeddings</span><span class="p">(</span><span class="n">entity_emb</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">indexes</span><span class="o">=</span><span class="n">entity</span><span class="o">.</span><span class="n">to_list</span><span class="p">(),</span> <span class="n">path</span><span class="o">=</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">trained_model</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_entity_embeddings.csv&#39;</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">entity</span><span class="p">,</span> <span class="n">entity_emb</span>
         <span class="k">if</span> <span class="n">relation_ebm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># TODO: CD: We do not need to keep the mapping in memory</span>
-            <span class="c1"># TODO:CD: Deprecate the pickle usage for data serialization.</span>
-            <span class="n">relation_to_idx</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/relation_to_idx.p&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">))</span>
-            <span class="n">relations_str</span> <span class="o">=</span> <span class="n">relation_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-
-            <span class="n">save_embeddings</span><span class="p">(</span><span class="n">relation_ebm</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">indexes</span><span class="o">=</span><span class="n">relations_str</span><span class="p">,</span>
-                            <span class="n">path</span><span class="o">=</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">trained_model</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_relation_embeddings.csv&#39;</span><span class="p">)</span>
-            <span class="k">del</span> <span class="n">relation_ebm</span><span class="p">,</span> <span class="n">relations_str</span><span class="p">,</span> <span class="n">relation_to_idx</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Saving relation embeddings...&quot;</span><span class="p">)</span>
+            <span class="n">relations</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">full_storage_path</span><span class="si">}</span><span class="s2">/relation_to_idx.csv&quot;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="s2">&quot;relation&quot;</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="n">relations</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">is_monotonic_increasing</span>
+            <span class="n">save_embeddings</span><span class="p">(</span><span class="n">relation_ebm</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">indexes</span><span class="o">=</span><span class="n">relations</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">trained_model</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_relation_embeddings.csv&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">pass</span></div>
-
 
 
 <div class="viewcode-block" id="add_noisy_triples">
@@ -926,6 +918,65 @@
             <span class="c1"># Write the updated data back to the CSV files</span>
             <span class="n">new_entity_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">entity_csv_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="n">new_relation_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">relation_csv_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="from_pretrained_model_write_embeddings_into_csv">
+<a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.from_pretrained_model_write_embeddings_into_csv">[docs]</a>
+<span class="k">def</span> <span class="nf">from_pretrained_model_write_embeddings_into_csv</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="s2">&quot;Path does not exist&quot;</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">load_json</span><span class="p">(</span><span class="n">path</span> <span class="o">+</span> <span class="s1">&#39;/configuration.json&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;trainer&quot;</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;MP&quot;</span><span class="p">:</span>
+        <span class="n">write_csv_from_model_parallel</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">entity_csv_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_entity_embeddings.csv&quot;</span><span class="p">)</span>
+        <span class="n">relation_csv_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">_relation_embeddings.csv&quot;</span><span class="p">)</span>
+        <span class="c1"># Load model</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;model.pt&quot;</span><span class="p">))</span>
+        <span class="c1"># Assuming model has a get_embeddings method</span>
+        <span class="n">entity_emb</span><span class="p">,</span> <span class="n">relation_emb</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;entity_embeddings.weight&quot;</span><span class="p">],</span> <span class="n">model</span><span class="p">[</span><span class="s2">&quot;relation_embeddings.weight&quot;</span><span class="p">]</span>
+        <span class="n">str_entity</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">/entity_to_idx.csv&quot;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="s2">&quot;entity&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">str_entity</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">is_monotonic_increasing</span>
+        <span class="n">str_entity</span><span class="o">=</span><span class="n">str_entity</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+        <span class="c1"># Write entity embeddings with headers and indices</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">entity_csv_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="c1"># Add header (e.g., &quot;&quot;, &quot;0&quot;, &quot;1&quot;, ..., &quot;N&quot;)</span>
+            <span class="n">headers</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">entity_emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">))]</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">headers</span><span class="p">)</span>
+            <span class="c1"># Add rows with index</span>
+            <span class="k">for</span> <span class="n">i_row</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">row</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">str_entity</span><span class="p">,</span><span class="n">entity_emb</span><span class="p">)):</span>
+                <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="n">name</span><span class="p">]</span> <span class="o">+</span> <span class="n">row</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+        <span class="n">str_relations</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">/relation_to_idx.csv&quot;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="s2">&quot;relation&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="n">str_relations</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">is_monotonic_increasing</span>
+
+        <span class="c1"># Write relation embeddings with headers and indices</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">relation_csv_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="c1"># Add header (e.g., &quot;&quot;, &quot;0&quot;, &quot;1&quot;, ..., &quot;N&quot;)</span>
+            <span class="n">headers</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">relation_emb</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">))]</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="n">headers</span><span class="p">)</span>
+            <span class="c1"># Add rows with index</span>
+            <span class="k">for</span> <span class="n">i_row</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">str_relations</span><span class="p">,</span><span class="n">relation_emb</span><span class="p">)):</span>
+                <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="n">name</span><span class="p">]</span><span class="o">+</span> <span class="n">row</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    </span>
+<span class="sd">    # Write entity embeddings directly to CSV</span>
+<span class="sd">    with open(entity_csv_path, &quot;w&quot;) as f:</span>
+<span class="sd">        for row in entity_emb:</span>
+<span class="sd">            f.write(&quot;,&quot;.join(map(str, row.tolist())) + &quot;\n&quot;)</span>
+
+<span class="sd">    # Write relation embeddings directly to CSV</span>
+<span class="sd">    with open(relation_csv_path, &quot;w&quot;) as f:</span>
+<span class="sd">        for row in relation_emb:</span>
+<span class="sd">            f.write(&quot;,&quot;.join(map(str, row.tolist())) + &quot;\n&quot;)</span>
+
+<span class="sd">    # Convert to numpy</span>
+<span class="sd">    pd.DataFrame(entity_emb.numpy()).to_csv(entity_csv_path, index=True, header=False)</span>
+<span class="sd">    # If CSV files do not exist, create them</span>
+<span class="sd">    pd.DataFrame(relation_emb.numpy()).to_csv(relation_csv_path, index=True, header=False)</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
 
 </pre></div>
 
