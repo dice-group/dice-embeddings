@@ -18,6 +18,7 @@ import pickle
 from collections import defaultdict
 import polars as pl
 import requests
+import csv
 
 def create_recipriocal_triples(x):
     """
@@ -312,27 +313,18 @@ def store(trainer,
 
     if save_embeddings_as_csv:
         entity_emb, relation_ebm = trained_model.get_embeddings()
-        # TODO: CD: We do not need to keep the mapping in memory
-        # TODO:CD: Deprecate the pickle usage for data serialization.
-        entity_to_idx = pickle.load(open(full_storage_path + '/entity_to_idx.p', 'rb'))
-        entity_str = entity_to_idx.keys()
-        # Ensure that the ordering is correct.
-        assert list(range(0, len(entity_str))) == list(entity_to_idx.values())
-        save_embeddings(entity_emb.numpy(), indexes=entity_str,
-                        path=full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
-        del entity_to_idx, entity_str, entity_emb
+        print("Saving entity embeddings...")
+        entity=pd.read_csv(f"{full_storage_path}/entity_to_idx.csv",index_col=0)["entity"]
+        assert entity.index.is_monotonic_increasing
+        save_embeddings(entity_emb.numpy(), indexes=entity.to_list(), path=full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
+        del entity, entity_emb
         if relation_ebm is not None:
-            # TODO: CD: We do not need to keep the mapping in memory
-            # TODO:CD: Deprecate the pickle usage for data serialization.
-            relation_to_idx = pickle.load(open(full_storage_path + '/relation_to_idx.p', 'rb'))
-            relations_str = relation_to_idx.keys()
-
-            save_embeddings(relation_ebm.numpy(), indexes=relations_str,
-                            path=full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
-            del relation_ebm, relations_str, relation_to_idx
+            print("Saving relation embeddings...")
+            relations = pd.read_csv(f"{full_storage_path}/relation_to_idx.csv", index_col=0)["relation"]
+            assert relations.index.is_monotonic_increasing
+            save_embeddings(relation_ebm.numpy(), indexes=relations, path=full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
         else:
             pass
-
 
 def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.DataFrame:
     """
@@ -732,3 +724,59 @@ def write_csv_from_model_parallel(path: str) -> None:
             # Write the updated data back to the CSV files
             new_entity_df.to_csv(entity_csv_path, index=False, header=False)
             new_relation_df.to_csv(relation_csv_path, index=False, header=False)
+
+def from_pretrained_model_write_embeddings_into_csv(path: str) -> None:
+    """ """
+    assert os.path.exists(path), "Path does not exist"
+    config = load_json(path + '/configuration.json')
+    if config["trainer"]=="MP":
+        write_csv_from_model_parallel(path)
+    else:
+        entity_csv_path = os.path.join(path, f"{config['model']}_entity_embeddings.csv")
+        relation_csv_path = os.path.join(path, f"{config['model']}_relation_embeddings.csv")
+        # Load model
+        model = torch.load(os.path.join(path, "model.pt"))
+        # Assuming model has a get_embeddings method
+        entity_emb, relation_emb = model["entity_embeddings.weight"], model["relation_embeddings.weight"]
+        str_entity = pd.read_csv(f"{path}/entity_to_idx.csv", index_col=0)["entity"]
+        assert str_entity.index.is_monotonic_increasing
+        str_entity=str_entity.to_list()
+        # Write entity embeddings with headers and indices
+        with open(entity_csv_path, "w", newline="") as f:
+            writer = csv.writer(f)
+            # Add header (e.g., "", "0", "1", ..., "N")
+            headers = [""] + [f"{i}" for i in range(entity_emb.size(1))]
+            writer.writerow(headers)
+            # Add rows with index
+            for i_row, (name,row) in enumerate(zip(str_entity,entity_emb)):
+                writer.writerow([name] + row.tolist())
+        str_relations = pd.read_csv(f"{path}/relation_to_idx.csv", index_col=0)["relation"]
+        assert str_relations.index.is_monotonic_increasing
+
+        # Write relation embeddings with headers and indices
+        with open(relation_csv_path, "w", newline="") as f:
+            writer = csv.writer(f)
+            # Add header (e.g., "", "0", "1", ..., "N")
+            headers = [""] + [f"{i}" for i in range(relation_emb.size(1))]
+            writer.writerow(headers)
+            # Add rows with index
+            for i_row, (name, row) in enumerate(zip(str_relations,relation_emb)):
+                writer.writerow([name]+ row.tolist())
+
+    """
+    
+    # Write entity embeddings directly to CSV
+    with open(entity_csv_path, "w") as f:
+        for row in entity_emb:
+            f.write(",".join(map(str, row.tolist())) + "\n")
+
+    # Write relation embeddings directly to CSV
+    with open(relation_csv_path, "w") as f:
+        for row in relation_emb:
+            f.write(",".join(map(str, row.tolist())) + "\n")
+
+    # Convert to numpy
+    pd.DataFrame(entity_emb.numpy()).to_csv(entity_csv_path, index=True, header=False)
+    # If CSV files do not exist, create them
+    pd.DataFrame(relation_emb.numpy()).to_csv(relation_csv_path, index=True, header=False)
+    """
