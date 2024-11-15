@@ -692,3 +692,43 @@ def download_pretrained_model(url: str) -> str:
         os.mkdir(dir_name)
         download_files_from_url(url_to_download_from, destination_folder=dir_name)
     return dir_name
+
+def write_csv_from_model_parallel(path: str) -> None:
+    """Create"""
+    assert os.path.exists(path), "Path does not exist"
+
+    # Detect files that start with model_ and end with .pt
+    model_files = [f for f in os.listdir(path) if f.startswith("model_") and f.endswith(".pt")]
+    model_files.sort()  # Sort to maintain order if necessary (e.g., model_0.pt, model_1.pt)
+
+    entity_csv_path = os.path.join(path, "entity_embeddings.csv")
+    relation_csv_path = os.path.join(path, "relation_embeddings.csv")
+
+    # Process each model file
+    for model_file in model_files:
+        model_path = os.path.join(path, model_file)
+        # Load model
+        model = torch.load(model_path)
+        # Assuming model has a get_embeddings method
+        entity_emb, relation_emb = model["_orig_mod.entity_embeddings.weight"], model["_orig_mod.relation_embeddings.weight"]
+        # Convert to numpy
+        entity_emb = entity_emb.numpy()
+        relation_emb = relation_emb.numpy()
+
+        # Write or append to CSV
+        if not os.path.exists(entity_csv_path) or not os.path.exists(relation_csv_path):
+            # If CSV files do not exist, create them
+            pd.DataFrame(entity_emb).to_csv(entity_csv_path, index=True, header=False)
+            pd.DataFrame(relation_emb).to_csv(relation_csv_path, index=True, header=False)
+        else:
+            # If CSV files exist, concatenate to the existing rows
+            existing_entity_df = pd.read_csv(entity_csv_path, header=None)
+            existing_relation_df = pd.read_csv(relation_csv_path, header=None)
+
+            # Concatenate along the columns (axis=1)
+            new_entity_df = pd.concat([existing_entity_df, pd.DataFrame(entity_emb)], axis=1)
+            new_relation_df = pd.concat([existing_relation_df, pd.DataFrame(relation_emb)], axis=1)
+
+            # Write the updated data back to the CSV files
+            new_entity_df.to_csv(entity_csv_path, index=False, header=False)
+            new_relation_df.to_csv(relation_csv_path, index=False, header=False)
