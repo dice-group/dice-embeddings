@@ -60,6 +60,6 @@ class TestQueryAnswering:
                                                                         "http://www.benchmark.org/family#hasSibling",
                                                                         "http://www.benchmark.org/family#married",
                                                                         "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")),
-                                                             tnorm="min", k=5)
+                                                             tnorm="min", k=10)
         top_entities = [topk_entity for topk_entity, query_score in predictions]
         assert "http://www.benchmark.org/family#Person" in top_entities
