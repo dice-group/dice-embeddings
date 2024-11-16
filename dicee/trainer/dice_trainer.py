@@ -323,8 +323,8 @@ class DICE_Trainer:
             self.trainer.evaluator = self.evaluator
             self.trainer.dataset = knowledge_graph
             self.trainer.form_of_labelling = form_of_labelling
-            if isinstance(self.trainer, MP):
-                model=EnsembleKGE(model)
+            # if isinstance(self.trainer, MP):
+            #    model=EnsembleKGE(model)
             self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
 
 
