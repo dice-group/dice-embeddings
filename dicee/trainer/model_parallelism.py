@@ -11,6 +11,20 @@ from torch.distributed.tensor.parallel import (
     parallelize_module,
     ColwiseParallel,
     RowwiseParallel,
+    SequenceParallel
+)
+
+from torch.distributed._tensor import Shard
+
+from torch.distributed.device_mesh import init_device_mesh
+from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+from torch.distributed._tensor import Shard, Replicate
+from torch.distributed.tensor.parallel import (
+    parallelize_module,
+    ColwiseParallel,
+    RowwiseParallel,
+    PrepareModuleInput,
+    SequenceParallel
 )
 
 
@@ -31,41 +45,35 @@ class MP(AbstractTrainer):
         # (1) Run the fit the start callback.
         self.on_fit_start(self, model)
         # (2) Setup DDP.
-        #torch.distributed.init_process_group(backend="nccl")
-
-
-        # create a device mesh based on the given world_size.
-        _world_size = int(os.environ["WORLD_SIZE"])
-
-        device_mesh = init_device_mesh(device_type="cuda", mesh_shape=(_world_size,))
-        _rank = device_mesh.get_rank()      
-        
-        # create model and move it to GPU.  Init_device_mesh has already assigned gpu ids...
-        model = model.to("cuda")
-
-        # Custom parallelization plan for the model
-        model = parallelize_module(
-            module=model,
-            device_mesh=device_mesh,
-            parallelize_plan={
-                "entity_embeddings": ColwiseParallel(),
-                "relation_embeddings": ColwiseParallel()})
         optimizer = model.configure_optimizers()
-
+        num_gpus = torch.cuda.device_count()
         for epoch in (tqdm_bar := make_iterable_verbose(range(self.attributes.num_epochs),
                                                         verbose=True, position=0, leave=True)):
             epoch_loss = 0
             num_of_batches = len(kwargs['train_dataloaders'])
-            for i, z in enumerate(kwargs['train_dataloaders']):
-                source, targets = self.extract_input_outputs(z)
-                yhat = model(source)
-                
-                loss = torch.nn.functional.binary_cross_entropy_with_logits(yhat, targets)
+            for i, (x_batch, y_batch) in enumerate(kwargs['train_dataloaders']):
+                # Define a large batch into small batches
+                x_splits = torch.chunk(x_batch, num_gpus)
+                y_splits = torch.chunk(y_batch, num_gpus)
+
+                # Forward pass. We need to paralelize it
+                gpu_losses=[]
+                for gpu_id, (x_split, y_split) in enumerate(zip(x_splits, y_splits)):
+                    y_split = y_split.to(f"cuda:{gpu_id}")
+                    h_emb, r_emb, t_emb = model.get_triple_representation(x_split)
+                    h_emb, r_emb,t_emb = h_emb.pin_memory().to(f"cuda:{gpu_id}", non_blocking=True), r_emb.pin_memory().to(f"cuda:{gpu_id}", non_blocking=True), t_emb.pin_memory().to(f"cuda:{gpu_id}", non_blocking=True)
+                    yhat = model.score(h_emb, r_emb, t_emb)
+                    gpu_losses.append(torch.nn.functional.binary_cross_entropy_with_logits(yhat, y_split).cpu())
+
+                loss=sum(gpu_losses)/len(gpu_losses)
+
                 loss.backward()
+                batch_loss = loss.item() 
                 optimizer.step()
                 optimizer.zero_grad(set_to_none=True)
-                batch_loss = loss.item()
+                
                 epoch_loss += batch_loss
+                
                 if hasattr(tqdm_bar, 'set_description_str'):
                     tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
                     if i > 0:
@@ -79,11 +87,11 @@ class MP(AbstractTrainer):
         if len(z) == 2:
             x_batch, y_batch = z
             # pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)
-            x_batch, y_batch = x_batch.to("cuda", non_blocking=True), y_batch.pin_memory().to("cuda", non_blocking=True)
+            #x_batch, y_batch = x_batch.to("cuda", non_blocking=True), y_batch.pin_memory().to("cuda", non_blocking=True)
             return x_batch, y_batch
         elif len(z) == 3:
             x_batch, y_idx_batch, y_batch, = z
-            x_batch, y_batch,y_idx_batch = x_batch.pin_memory().to("cuda", non_blocking=True), y_batch.pin_memory().to("cuda", non_blocking=True),y_idx_batch.pin_memory().to("cuda", non_blocking=True)
+            #x_batch, y_batch,y_idx_batch = x_batch.pin_memory().to("cuda", non_blocking=True), y_batch.pin_memory().to("cuda", non_blocking=True),y_idx_batch.pin_memory().to("cuda", non_blocking=True)
             return (x_batch, y_idx_batch), y_batch
         else:
             raise ValueError('Unexpected batch shape..')
