@@ -2,33 +2,42 @@ import torch
 import copy
 
 class EnsembleKGE:
-    def __init__(self, model):
+    def __init__(self, seed_model):
         self.models = []
-        self.optimizers=[]
-
+        self.optimizers = []
+        self.loss_history = []
         for i in range(torch.cuda.device_count()):
-            i_model=copy.deepcopy(model)
+            i_model=copy.deepcopy(seed_model)
             i_model.to(torch.device(f"cuda:{i}"))
             i_model = torch.compile(i_model)
             self.optimizers.append(i_model.configure_optimizers())
             self.models.append(i_model)
-
+        
     def __iter__(self):
         return (i for i in self.models)
 
     def __len__(self):
         return len(self.models)
 
-    def __call__(self, *args, **kwargs):
-        # Forward
-        results = None
-        for model in self.models:
-            if results is None:
-                results=model(*args, **kwargs)
-            else:
-                results += model(*args, **kwargs)
-        return results/len(self.models)
+    def __call__(self,x_batch):
+        for opt in self.optimizers:
+            opt.zero_grad()
 
+        yhat=None
+        for gpu_id, model in enumerate(self.models):
+            # Move batch into the GPU where the i.th model resides
+            x_batch=x_batch.to(f"cuda:{gpu_id}")
+            if yhat is None:
+                yhat=model(x_batch)
+            else:
+                yhat+=model(x_batch).to("cuda:0")
+        return yhat/len(self.models)
+    
+    def step(self):
+        for opt in self.optimizers:
+            opt.step()
+    
+    """
     def __getattr__(self, name):
         # Create a function that will call the same attribute/method on each model
         def method(*args, **kwargs):
@@ -43,6 +52,6 @@ class EnsembleKGE:
                     results.append(attr)
             return results
         return method
-
+    """
     def __str__(self):
         return f"EnsembleKGE of {len(self.models)} {self.models[0]}"
