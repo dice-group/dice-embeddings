@@ -7,7 +7,7 @@ from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLos
 from dicee.dataset_classes import construct_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
-from .model_parallelism import MP
+from .model_parallelism import TensorParallel
 from ..static_funcs import timeit
 import os
 import torch
@@ -17,67 +17,17 @@ from typing import List, Tuple
 from ..knowledge_graph import KG
 import numpy as np
 
-
-class EnsembleKGE:
-    """
-
-    """
-    def __init__(self, model):
-        self.models = []
-        self.optimizers=[]
-
-        for i in range(torch.cuda.device_count()):
-            i_model=copy.deepcopy(model)
-            i_model.to(torch.device(f"cuda:{i}"))
-            i_model = torch.compile(i_model)
-            self.optimizers.append(i_model.configure_optimizers())
-            self.models.append(i_model)
-
-    def __iter__(self):
-        return (i for i in self.models)
-
-    def __len__(self):
-        return len(self.models)
-
-    def __call__(self, *args, **kwargs):
-        # Forward
-        results = None
-        for model in self.models:
-            if results is None:
-                results=model(*args, **kwargs)
-            else:
-                results += model(*args, **kwargs)
-        return results/len(self.models)
-
-    def __getattr__(self, name):
-        # Create a function that will call the same attribute/method on each model
-        def method(*args, **kwargs):
-            results = []
-            for model in self.models:
-                attr = getattr(model, name)
-                if callable(attr):
-                    # If it's a method, call it with provided arguments
-                    results.append(attr(*args, **kwargs))
-                else:
-                    # If it's an attribute, just get its value
-                    results.append(attr)
-            return results
-        return method
-
-    def __str__(self):
-        return f"EnsembleKGE of {len(self.models)} {self.models[0]}"
-
 def load_term_mapping(file_path=str):
     return polars.read_csv(file_path + ".csv")
 
 
-def initialize_trainer(args, callbacks)->TorchTrainer | MP | TorchDDPTrainer | pl.Trainer:
+def initialize_trainer(args, callbacks)->TorchTrainer | TensorParallel | TorchDDPTrainer | pl.Trainer:
     if args.trainer == 'torchCPUTrainer':
         print('Initializing TorchTrainer CPU Trainer...', end='\t')
         trainer = TorchTrainer(args, callbacks=callbacks)
-    elif args.trainer == 'MP':
-        print('Initializing MPTrainer...', end='\t')
-        trainer= MP(args, callbacks=callbacks)
+    elif args.trainer == 'TP':
+        print('Initializing TensorParallel...', end='\t')
+        trainer= TensorParallel(args, callbacks=callbacks)
     elif args.trainer == 'torchDDP':
         assert torch.cuda.is_available()
         print('Initializing TorchDDPTrainer GPU', end='\t')
@@ -227,7 +177,7 @@ class DICE_Trainer:
         return model, form_of_labelling
 
     @timeit
-    def initialize_trainer(self, callbacks: List) -> pl.Trainer | MP | TorchTrainer | TorchDDPTrainer:
+    def initialize_trainer(self, callbacks: List) -> pl.Trainer | TensorParallel | TorchTrainer | TorchDDPTrainer:
         """ Initialize Trainer from input arguments """
         return initialize_trainer(self.args, callbacks)
 
@@ -316,15 +266,12 @@ class DICE_Trainer:
         assert isinstance(knowledge_graph, np.memmap) or isinstance(knowledge_graph, KG), \
             f"knowledge_graph must be an instance of KG or np.memmap. Currently {type(knowledge_graph)}"
         if self.args.num_folds_for_cv == 0:
-            self.trainer: Union[MP, TorchTrainer, TorchDDPTrainer, pl.Trainer]
+            self.trainer: Union[TensorParallel, TorchTrainer, TorchDDPTrainer, pl.Trainer]
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
-
             model, form_of_labelling = self.initialize_or_load_model()
             self.trainer.evaluator = self.evaluator
             self.trainer.dataset = knowledge_graph
             self.trainer.form_of_labelling = form_of_labelling
-            # if isinstance(self.trainer, MP):
-            #    model=EnsembleKGE(model)
             self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
 
 

@@ -55,8 +55,8 @@ def get_default_arguments(description=None):
                         default={},
                         help='{"PPE":{ "last_percent_to_consider": 10}}'
                              '"Perturb": {"level": "out", "ratio": 0.2, "method": "RN", "scaler": 0.3}')
-    parser.add_argument("--trainer", type=str, default='MP',
-                        choices=['torchCPUTrainer', 'PL', 'torchDDP', "MP"],
+    parser.add_argument("--trainer", type=str, default='TP',
+                        choices=['torchCPUTrainer', 'PL', 'torchDDP', "TP"],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only), MP (Model Paralelisim)')
     parser.add_argument('--scoring_technique', default="KvsSample",
                         help="Training technique for knowledge graph embedding model",

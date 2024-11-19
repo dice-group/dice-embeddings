@@ -8,7 +8,7 @@ import torch.distributed as dist
 from ..models.ensemble import EnsembleKGE
 import copy
 
-class MP(AbstractTrainer):
+class TensorParallel(AbstractTrainer):
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
         self.models=[]
@@ -20,10 +20,11 @@ class MP(AbstractTrainer):
         """ Train model        """
         assert len(args) == 1
         seed_model, = args
-        # () TODO: Send ensemble_model
-        self.on_fit_start(self, seed_model)
         # () Init. ensemble model
         ensemble_model=EnsembleKGE(seed_model)
+        # () TODO: Send ensemble_model
+        self.on_fit_start(self, ensemble_model)
+
         # () Number of available GPUs
         assert torch.cuda.device_count()== len(ensemble_model)
 
@@ -57,7 +58,7 @@ class MP(AbstractTrainer):
                     else:
                         tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
             ensemble_model.loss_history.append(epoch_loss)
-        
+        # @TODO: Ensure that the model is saved correctly and tested!
         self.on_fit_end(self, ensemble_model)
     
     def batchwisefit(self, *args, **kwargs):
