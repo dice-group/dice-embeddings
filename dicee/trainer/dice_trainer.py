@@ -8,6 +8,7 @@ from dicee.dataset_classes import construct_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
 from .model_parallelism import TensorParallel
+from ..models.ensemble import EnsembleKGE
 from ..static_funcs import timeit
 import os
 import torch
@@ -272,7 +273,13 @@ class DICE_Trainer:
             self.trainer.evaluator = self.evaluator
             self.trainer.dataset = knowledge_graph
             self.trainer.form_of_labelling = form_of_labelling
-            self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
+            # TODO: Later, maybe we should write a callback to save the models in disk
+
+            if isinstance(self.trainer, TensorParallel):
+                model = self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
+                assert isinstance(model,EnsembleKGE)
+            else:
+                self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
 
 
             return model, form_of_labelling
