@@ -16,6 +16,7 @@ import copy
 from typing import List, Tuple
 from ..knowledge_graph import KG
 import numpy as np
+from ..read_preprocess_save_load_kg.util import save_numpy_ndarray
 
 
 class EnsembleKGE:
@@ -365,6 +366,7 @@ class DICE_Trainer:
             train_set_for_i_th_fold, test_set_for_i_th_fold = dataset.train_set[train_index], dataset.train_set[
                 test_index]
 
+            save_numpy_ndarray(data=test_set_for_i_th_fold, file_path=f'{self.args.full_storage_path}/test_set_{ith}_fold.npy')
             trainer.fit(model, train_dataloaders=self.init_dataloader(
                 construct_dataset(train_set=train_set_for_i_th_fold,
                                   entity_to_idx=dataset.entity_to_idx,
@@ -382,6 +384,8 @@ class DICE_Trainer:
         self.evaluator.report = eval_folds.to_dict()
         print(eval_folds)
         print(eval_folds.describe())
+        eval_folds.to_csv(f'{self.args.full_storage_path}/kfold_results.csv', index=False)
+        eval_folds.describe().to_csv(f'{self.args.full_storage_path}/kfold_result_stats.csv')
         # results = {'H@1': eval_folds['H@1'].mean(), 'H@3': eval_folds['H@3'].mean(), 'H@10': eval_folds['H@10'].mean(),
         #           'MRR': eval_folds['MRR'].mean()}
         # print(f'KFold Cross Validation Results: {results}')
