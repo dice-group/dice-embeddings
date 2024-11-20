@@ -1,6 +1,11 @@
 import torch
 import copy
 
+import torch._dynamo
+
+torch._dynamo.config.suppress_errors = True
+
+
 class EnsembleKGE:
     def __init__(self, seed_model):
         self.models = []
@@ -9,9 +14,14 @@ class EnsembleKGE:
         for i in range(torch.cuda.device_count()):
             i_model=copy.deepcopy(seed_model)
             i_model.to(torch.device(f"cuda:{i}"))
-            i_model = torch.compile(i_model)
+            # TODO: Why we cant send the compile model to cpu ?
+            # i_model = torch.compile(i_model)
             self.optimizers.append(i_model.configure_optimizers())
             self.models.append(i_model)
+        # Maybe use the original model's name ?
+        self.name="TP_"+self.models[0].name
+        self.train_mode=True
+
     def named_children(self):
         return self.models[0].named_children()
     @property
@@ -22,9 +32,10 @@ class EnsembleKGE:
         return self.models[0]._trainer
 
     def parameters(self):
-        return self.models[0].parameters()
+        return [ x  for i in self.models for x in i.parameters()]
+        # return self.models[0].parameters()
     def modules(self):
-        return self.models[0].modules()
+        return [x for i in self.models for x in i.modules()]
 
     def __iter__(self):
         return (i for i in self.models)
@@ -32,21 +43,46 @@ class EnsembleKGE:
     def __len__(self):
         return len(self.models)
 
+    def eval(self):
+        for model in self.models:
+            model.eval()
+        self.train_mode=False
+    def to(self,device):
+        for i in range(len(self.models)):
+            if device == "cpu":
+                self.models[i].cpu()
+            else:
+                raise NotImplementedError
+
+
+    def mem_of_model(self):
+        mem_of_ensemble={'EstimatedSizeMB': 0, 'NumParam': 0}
+        for i in self.models:
+            for k,v in i.mem_of_model().items():
+                mem_of_ensemble[k] += v
+        return mem_of_ensemble
     def __call__(self,x_batch):
-        for opt in self.optimizers:
-            opt.zero_grad()
-        yhat=None
-        for gpu_id, model in enumerate(self.models):
-            # Move batch into the GPU where the i.th model resides
-            if isinstance(x_batch, tuple):
-                x_batch=(x_batch[0].to(f"cuda:{gpu_id}"),x_batch[1].to(f"cuda:{gpu_id}"))
-            else:
-                x_batch=x_batch.to(f"cuda:{gpu_id}")
-            if yhat is None:
-                yhat=model(x_batch)
-            else:
-                yhat+=model(x_batch).to("cuda:0")
-        return yhat/len(self.models)
+
+        if self.train_mode is False:
+            yhat=0
+            for gpu_id, model in enumerate(self.models):
+                yhat += model(x_batch)
+            return yhat / len(self.models)
+        else:
+            for opt in self.optimizers:
+                opt.zero_grad()
+            yhat=None
+            for gpu_id, model in enumerate(self.models):
+                # Move batch into the GPU where the i.th model resides
+                if isinstance(x_batch, tuple):
+                    x_batch=(x_batch[0].to(f"cuda:{gpu_id}"),x_batch[1].to(f"cuda:{gpu_id}"))
+                else:
+                    x_batch=x_batch.to(f"cuda:{gpu_id}")
+                if yhat is None:
+                    yhat=model(x_batch)
+                else:
+                    yhat+=model(x_batch).to("cuda:0")
+            return yhat/len(self.models)
     
     def step(self):
         for opt in self.optimizers:
