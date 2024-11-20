@@ -21,13 +21,9 @@ class TensorParallel(AbstractTrainer):
         assert len(args) == 1
         seed_model, = args
         # () Init. ensemble model
-        ensemble_model=EnsembleKGE(seed_model)
-        # () TODO: Send ensemble_model
+        ensemble_model = EnsembleKGE(seed_model)
         self.on_fit_start(self, ensemble_model)
-
-        # () Number of available GPUs
         assert torch.cuda.device_count()== len(ensemble_model)
-
         for epoch in (tqdm_bar := make_iterable_verbose(range(self.attributes.num_epochs),
                                                         verbose=True, position=0, leave=True)):
             epoch_loss = 0
@@ -46,10 +42,9 @@ class TensorParallel(AbstractTrainer):
                 loss.backward()
                 # Parameter update.
                 ensemble_model.step()
-                # Report he batch and epoch losses.
+                # Report the batch and epoch losses.
                 batch_loss = loss.item()
                 epoch_loss += batch_loss
-
                 if hasattr(tqdm_bar, 'set_description_str'):
                     tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
                     if i > 0:
@@ -58,9 +53,10 @@ class TensorParallel(AbstractTrainer):
                     else:
                         tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
             ensemble_model.loss_history.append(epoch_loss)
-        # @TODO: Ensure that the model is saved correctly and tested!
         self.on_fit_end(self, ensemble_model)
-    
+        # TODO: Later, maybe we should write a callback to save the models in disk
+        return ensemble_model
+
     def batchwisefit(self, *args, **kwargs):
         """ Train model        """
         assert len(args) == 1
