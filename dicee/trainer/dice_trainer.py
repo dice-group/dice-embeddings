@@ -6,7 +6,7 @@ from typing import Union
 
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb
+from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb, RelativeEpochLossCallback
 from dicee.dataset_classes import construct_dataset, reload_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
@@ -67,7 +67,7 @@ def initialize_trainer(args, callbacks):
                           strategy=kwargs.get("strategy", "auto"),
                           num_nodes=kwargs.get("num_nodes", 1),
                           precision=kwargs.get("precision", None),
-                          logger=kwargs.get("logger", None),
+                          logger=kwargs.get("logger", True),
                           callbacks=callbacks,
                           fast_dev_run=kwargs.get("fast_dev_run", False),
                           max_epochs=kwargs["num_epochs"],
@@ -86,7 +86,8 @@ def get_callbacks(args):
     callbacks = [
         pl.pytorch.callbacks.ModelSummary(),
         PrintCallback(),
-        AccumulateEpochLossCallback(path=args.full_storage_path)
+        AccumulateEpochLossCallback(path=args.full_storage_path),
+        # RelativeEpochLossCallback(),
     ]
     if args.swa:
         callbacks.append(pl.pytorch.callbacks.StochasticWeightAveraging(swa_lrs=args.lr, swa_epoch_start=1))

@@ -484,3 +484,79 @@ class Perturb(AbstractCallback):
                 raise NotImplementedError(f"{self.level}")
         else:
             raise RuntimeError(f"--level is given as {self.level}!")
+
+class RelativeEpochLossCallback(AbstractCallback):
+    """Monitors the relative epoch loss during training and implements early stopping
+    when the loss is near zero or exhibits minimal change over a specified number of epochs.
+
+    Parameters
+    ----------
+    min_delta : float, optional
+        Minimum relative epoch loss change to continue training. Default is 0.01.
+    threshold : float, optional
+        Threshold for stopping training when relative loss is close to zero. Default is 1e-3.
+    initial_epochs : int, optional
+        Initial number of epochs. Default is 1000.
+    patience : int, optional
+        Number of consecutive epochs with minimal change to wait before stopping. Default is 5.
+    change_threshold : float, optional
+        Threshold for minimal change in loss to consider stopping. Default is 1e-4.
+
+    Attributes
+    ----------
+    first_epoch_loss : float or None
+        Loss value from the first epoch. Initialized as None.
+    loss_history : list of float
+        History of loss values for recent epochs.
+    """
+    def __init__(self, min_delta=0.01, threshold=0.01, initial_epochs=10000, patience=5, change_threshold=0.001):
+        super().__init__()
+        self.min_delta = min_delta
+        self.threshold = threshold
+        self.initial_epochs = initial_epochs
+        self.patience = patience
+        self.change_threshold = change_threshold
+        self.first_epoch_loss = None
+        self.loss_history = []
+
+    def on_train_epoch_end(self, trainer, pl_module):
+        current_epoch_loss = trainer.callback_metrics.get("loss_epoch")
+
+        if current_epoch_loss is None:
+            raise ValueError("Metric 'loss_epoch' is not found in the logs. Ensure it is logged.")
+
+        current_epoch_loss = current_epoch_loss.item()
+
+        # Set the initial epoch loss
+        if self.first_epoch_loss is None:
+            self.first_epoch_loss = current_epoch_loss
+
+        # Calculate relative epoch loss
+        relative_loss = current_epoch_loss / self.first_epoch_loss
+
+        # Log relative loss
+        # trainer.logger.log_metrics({"relative_loss": relative_loss}, step=trainer.current_epoch)
+
+        # Append current loss to history
+        self.loss_history.append(current_epoch_loss)
+
+        # Check if loss is near zero and change is minimal
+        if len(self.loss_history) > self.patience:
+            recent_losses = self.loss_history[-self.patience:]
+            loss_changes = [abs(recent_losses[i] - recent_losses[i - 1]) for i in range(1, len(recent_losses))]
+            if all(change < self.change_threshold for change in loss_changes) and current_epoch_loss < self.threshold:
+                trainer.should_stop = True
+                print(f"Stopping training at epoch {trainer.current_epoch} due to minimal loss change.")
+
+        # Early stopping condition based on relative loss
+        if relative_loss <= self.threshold:
+            trainer.should_stop = True
+            print(f"Stopping training at epoch {trainer.current_epoch} as relative loss is near zero.")
+
+        # Dynamically adjust max epochs
+        if trainer.current_epoch < self.initial_epochs and relative_loss > self.min_delta:
+            trainer.fit_loop.min_epochs += 1
+            trainer.fit_loop.max_epochs += 1
+            print(f"Adjusting min_epochs to {trainer.fit_loop.min_epochs}")
+            
+        return super().on_train_batch_end(trainer, pl_module)
