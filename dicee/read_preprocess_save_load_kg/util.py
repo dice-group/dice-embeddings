@@ -125,7 +125,9 @@ def apply_reciprical_or_noise(add_reciprical: bool, eval_model: str, df: object 
     # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
     if add_reciprical and eval_model:
         if df is not None:
-            print(f'Adding reciprocal triples to {info}, e.g. KG:= (s, p, o) union (o, p_inverse, s)')
+            print(
+                f"Adding reciprocal triples to {info}, e.g. KG:= (s, p, o) union (o, p_inverse, s)"
+            )
             return create_recipriocal_triples(df)
         else:
             return None
@@ -141,8 +143,9 @@ def timeit(func):
         end_time = time.perf_counter()
         total_time = end_time - start_time
         print(
-            f'{func.__name__} took {total_time:.4f} seconds '
-            f'| Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
+            f"{func.__name__} took {total_time:.4f} seconds "
+            f"| Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB"
+        )
         return result
 
     return timeit_wrapper
@@ -170,14 +173,17 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
     #    raise ValueError(f"{err}\nYou may want to use a different separator.")
     # (2) Sample from (1).
     if sample_triples_ratio:
-        print(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')
+        print(f"Subsampling {sample_triples_ratio} of input data {df.shape}...")
         df = df.sample(frac=sample_triples_ratio)
         print(df.shape)
     # (3) Type heuristic prediction: If KG is an RDF KG, remove all triples where subject is not <?>.
     h = df.head().to_pandas()
-    if sum(h["subject"].str.startswith('<')) + sum(h["relation"].str.startswith('<')) > 2:
-        print('Removing triples with literal values...')
-        df = df.filter(polars.col("object").str.starts_with('<'))
+    if (
+        sum(h["subject"].str.startswith("<")) + sum(h["relation"].str.startswith("<"))
+        > 2
+    ):
+        print("Removing triples with literal values...")
+        df = df.filter(polars.col("object").str.starts_with("<"))
     return df
 
 
@@ -195,25 +201,29 @@ def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio:
                          names=['subject', 'relation', 'object'],
                          dtype=str)
     else:
-        df = pd.read_parquet(data_path, engine='pyarrow')
+        df = pd.read_parquet(data_path, engine="pyarrow")
         # (2)a Read only few if it is asked.
         if isinstance(read_only_few, int):
             if read_only_few > 0:
-                print(f'Reading only few input data {read_only_few}...')
+                print(f"Reading only few input data {read_only_few}...")
                 df = df.head(read_only_few)
-                print('Done !\n')
+                print("Done !\n")
     # (3) Read only sample
     if sample_triples_ratio:
-        print(f'Subsampling {sample_triples_ratio} of input data...')
+        print(f"Subsampling {sample_triples_ratio} of input data...")
         df = df.sample(frac=sample_triples_ratio)
-        print('Done !\n')
-    if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) > 2:
+        print("Done !\n")
+    if (
+        sum(df.head()["subject"].str.startswith("<"))
+        + sum(df.head()["relation"].str.startswith("<"))
+        > 2
+    ):
         # (4) Drop Rows/triples with double or boolean: Example preprocessing
         # Drop of object does not start with **<**.
         # Specifying na to be False instead of NaN.
-        print('Removing triples with literal values...')
-        df = df[df["object"].str.startswith('<', na=False)]
-        print('Done !\n')
+        print("Removing triples with literal values...")
+        df = df[df["object"].str.startswith("<", na=False)]
+        print("Done !\n")
     return df
 
 
@@ -225,7 +235,7 @@ def read_from_disk(data_path: str, read_only_few: int = None,
     # If path exits
     if glob.glob(data_path):
         # (1) Detect data format
-        dformat = data_path[data_path.find(".") + 1:]
+        dformat = data_path[data_path.find(".") + 1 :]
         if dformat in ["ttl", "owl", "turtle", "rdf/xml"] and backend != "rdflib":
             raise RuntimeError(
                 f"Data with **{dformat}** format cannot be read via --backend pandas or polars. Use --backend rdflib")
@@ -241,23 +251,33 @@ def read_from_disk(data_path: str, read_only_few: int = None,
             return pd.DataFrame(data=[(str(s), str(p), str(o)) for s, p, o in Graph().parse(data_path)],
                                 columns=['subject', 'relation', 'object'], dtype=str)
         else:
-            raise RuntimeError(f'--backend {backend} and {data_path} is not matching')
+            raise RuntimeError(f"--backend {backend} and {data_path} is not matching")
     else:
-        print(f'{data_path} could not found!')
+        print(f"{data_path} could not found!")
         return None
 
 
 def read_from_triple_store(endpoint: str = None):
-    """ Read triples from triple store into pandas dataframe """
+    """Read triples from triple store into pandas dataframe"""
     assert endpoint is not None
     assert isinstance(endpoint, str)
-    query = """SELECT ?subject ?predicate ?object WHERE {  ?subject ?predicate ?object}"""
-    response = requests.post(endpoint, data={'query': query})
+    query = (
+        """SELECT ?subject ?predicate ?object WHERE {  ?subject ?predicate ?object}"""
+    )
+    response = requests.post(endpoint, data={"query": query})
     assert response.ok
     # Generator
-    triples = ([triple['subject']['value'], triple['predicate']['value'], triple['object']['value']] for triple in
-               response.json()['results']['bindings'])
-    return pd.DataFrame(data=triples, index=None, columns=["subject", "relation", "object"], dtype=str)
+    triples = (
+        [
+            triple["subject"]["value"],
+            triple["predicate"]["value"],
+            triple["object"]["value"],
+        ]
+        for triple in response.json()["results"]["bindings"]
+    )
+    return pd.DataFrame(
+        data=triples, index=None, columns=["subject", "relation", "object"], dtype=str
+    )
 
 
 def get_er_vocab(data, file_path: str = None):
@@ -308,7 +328,7 @@ def create_constraints(triples, file_path: str = None):
     domain_constraints_per_rel = dict()
     set_of_entities = set()
     set_of_relations = set()
-    for (e1, p, e2) in triples:
+    for e1, p, e2 in triples:
         range_constraints_per_rel.setdefault(p, set()).add(e2)
         domain_constraints_per_rel.setdefault(p, set()).add(e1)
         set_of_entities.add(e1)
@@ -316,86 +336,112 @@ def create_constraints(triples, file_path: str = None):
         set_of_entities.add(e2)
 
     for rel in set_of_relations:
-        range_constraints_per_rel[rel] = list(set_of_entities - range_constraints_per_rel[rel])
-        domain_constraints_per_rel[rel] = list(set_of_entities - domain_constraints_per_rel[rel])
+        range_constraints_per_rel[rel] = list(
+            set_of_entities - range_constraints_per_rel[rel]
+        )
+        domain_constraints_per_rel[rel] = list(
+            set_of_entities - domain_constraints_per_rel[rel]
+        )
 
     if file_path:
-        save_pickle(data=(domain_constraints_per_rel, range_constraints_per_rel), file_path=file_path)
+        save_pickle(
+            data=(domain_constraints_per_rel, range_constraints_per_rel),
+            file_path=file_path,
+        )
     return domain_constraints_per_rel, range_constraints_per_rel
 
 
 @timeit
 def load_with_pandas(self) -> None:
-    """ Deserialize data """
-    print(f'Deserialization Path: {self.kg.deserialize_flag}\n')
+    """Deserialize data"""
+    print(f"Deserialization Path: {self.kg.deserialize_flag}\n")
     start_time = time.time()
-    print('[1 / 4] Deserializing compressed entity integer mapping...')
-    self.kg.entity_to_idx = pd.read_parquet(self.kg.deserialize_flag + '/entity_to_idx.gzip')
-    print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+    print("[1 / 4] Deserializing compressed entity integer mapping...")
+    self.kg.entity_to_idx = pd.read_parquet(
+        self.kg.deserialize_flag + "/entity_to_idx.gzip"
+    )
+    print(f"Done !\t{time.time() - start_time:.3f} seconds\n")
     self.kg.num_entities = len(self.kg.entity_to_idx)
 
-    print('[2 / ] Deserializing compressed relation integer mapping...')
+    print("[2 / ] Deserializing compressed relation integer mapping...")
     start_time = time.time()
-    self.kg.relation_to_idx = pd.read_parquet(self.kg.deserialize_flag + '/relation_to_idx.gzip')
-    print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+    self.kg.relation_to_idx = pd.read_parquet(
+        self.kg.deserialize_flag + "/relation_to_idx.gzip"
+    )
+    print(f"Done !\t{time.time() - start_time:.3f} seconds\n")
 
     self.kg.num_relations = len(self.kg.relation_to_idx)
     print(
-        '[3 / 4] Converting integer and relation mappings '
-        'from from pandas dataframe to dictionaries for an easy access...',
+        "[3 / 4] Converting integer and relation mappings "
+        "from from pandas dataframe to dictionaries for an easy access...",
     )
     start_time = time.time()
-    self.kg.entity_to_idx = self.kg.entity_to_idx.to_dict()['entity']
-    self.kg.relation_to_idx = self.kg.relation_to_idx.to_dict()['relation']
-    print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+    self.kg.entity_to_idx = self.kg.entity_to_idx.to_dict()["entity"]
+    self.kg.relation_to_idx = self.kg.relation_to_idx.to_dict()["relation"]
+    print(f"Done !\t{time.time() - start_time:.3f} seconds\n")
     # 10. Serialize (9).
-    print('[4 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
+    print(
+        "[4 / 4] Deserializing integer mapped data and mapping it to numpy ndarray..."
+    )
     start_time = time.time()
-    self.kg.train_set = pd.read_parquet(self.kg.deserialize_flag + '/idx_train_df.gzip').values
-    print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+    self.kg.train_set = pd.read_parquet(
+        self.kg.deserialize_flag + "/idx_train_df.gzip"
+    ).values
+    print(f"Done !\t{time.time() - start_time:.3f} seconds\n")
     try:
-        print('[5 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
-        self.kg.valid_set = pd.read_parquet(self.kg.deserialize_flag + '/idx_valid_df.gzip').values
-        print('Done!\n')
+        print(
+            "[5 / 4] Deserializing integer mapped data and mapping it to numpy ndarray..."
+        )
+        self.kg.valid_set = pd.read_parquet(
+            self.kg.deserialize_flag + "/idx_valid_df.gzip"
+        ).values
+        print("Done!\n")
     except FileNotFoundError:
-        print('No valid data found!\n')
+        print("No valid data found!\n")
         self.kg.valid_set = None  # pd.DataFrame()
 
     try:
-        print('[6 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
-        self.kg.test_set = pd.read_parquet(self.kg.deserialize_flag + '/idx_test_df.gzip').values
-        print('Done!\n')
+        print(
+            "[6 / 4] Deserializing integer mapped data and mapping it to numpy ndarray..."
+        )
+        self.kg.test_set = pd.read_parquet(
+            self.kg.deserialize_flag + "/idx_test_df.gzip"
+        ).values
+        print("Done!\n")
     except FileNotFoundError:
-        print('No test data found\n')
+        print("No test data found\n")
         self.kg.test_set = None
 
     if self.kg.eval_model:
         if self.kg.valid_set is not None and self.kg.test_set is not None:
             # 16. Create a bijection mapping from subject-relation pairs to tail entities.
-            data = np.concatenate([self.kg.train_set, self.kg.valid_set, self.kg.test_set])
+            data = np.concatenate(
+                [self.kg.train_set, self.kg.valid_set, self.kg.test_set]
+            )
         else:
             data = self.kg.train_set
-        print('[7 / 4] Creating er,re, and ee type vocabulary for evaluation...')
+        print("[7 / 4] Creating er,re, and ee type vocabulary for evaluation...")
         start_time = time.time()
         self.kg.er_vocab = get_er_vocab(data)
         self.kg.re_vocab = get_re_vocab(data)
         # 17. Create a bijection mapping from subject-object pairs to relations.
         self.kg.ee_vocab = get_ee_vocab(data)
-        self.kg.domain_constraints_per_rel, self.kg.range_constraints_per_rel = create_constraints(
-            self.kg.train_set)
-        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+        self.kg.domain_constraints_per_rel, self.kg.range_constraints_per_rel = (
+            create_constraints(self.kg.train_set)
+        )
+        print(f"Done !\t{time.time() - start_time:.3f} seconds\n")
 
 
 def save_numpy_ndarray(*, data: np.ndarray, file_path: str):
     n, d = data.shape
     assert n > 0
     assert d == 3
-    with open(file_path, 'wb') as f:
+    with open(file_path, "wb") as f:
         np.save(f, data)
 
 
 def load_numpy_ndarray(*, file_path: str):
-    with open(file_path, 'rb') as f:
+    with open(file_path, "rb") as f:
         return np.load(f)
 
 
@@ -404,7 +450,7 @@ def save_pickle(*, data: object, file_path=str):
 
 
 def load_pickle(*, file_path=str):
-    with open(file_path, 'rb') as f:
+    with open(file_path, "rb") as f:
         return pickle.load(f)
 
 
@@ -414,13 +460,22 @@ def create_recipriocal_triples(x):
     :param x:
     :return:
     """
-    return pd.concat([x, x['object'].to_frame(name='subject').join(
-        x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
-        x['subject'].to_frame(name='object'))], ignore_index=True)
+    return pd.concat(
+        [
+            x,
+            x["object"]
+            .to_frame(name="subject")
+            .join(x["relation"].map(lambda x: x + "_inverse").to_frame(name="relation"))
+            .join(x["subject"].to_frame(name="object")),
+        ],
+        ignore_index=True,
+    )
 
 
 
-def dataset_sanity_checking(train_set: np.ndarray, num_entities: int, num_relations: int) -> None:
+def dataset_sanity_checking(
+    train_set: np.ndarray, num_entities: int, num_relations: int
+) -> None:
     """
 
     :param train_set:
@@ -434,20 +489,24 @@ def dataset_sanity_checking(train_set: np.ndarray, num_entities: int, num_relati
     try:
         assert n > 0
     except AssertionError:
-        raise AssertionError('Size of the training dataset must be greater than 0.')
+        raise AssertionError("Size of the training dataset must be greater than 0.")
 
     try:
-        assert num_entities >= max(train_set[:, 0]) and num_entities >= max(train_set[:, 2])
+        assert num_entities >= max(train_set[:, 0]) and num_entities >= max(
+            train_set[:, 2]
+        )
     except AssertionError:
         raise AssertionError(
-            f'Entity Indexing Error:\n'
-            f'Max ID of a subject or object entity in train set:'
-            f'{max(train_set[:, 0])} or {max(train_set[:, 2])} is greater than num_entities:{num_entities}')
+            f"Entity Indexing Error:\n"
+            f"Max ID of a subject or object entity in train set:"
+            f"{max(train_set[:, 0])} or {max(train_set[:, 2])} is greater than num_entities:{num_entities}"
+        )
     try:
         assert num_relations >= max(train_set[:, 1])
     except AssertionError:
         print(
-            f'Relation Indexing Error:\n'
-            f'Max ID of a relation in train set:{max(train_set[:, 1])} is greater than num_entities:{num_relations}')
+            f"Relation Indexing Error:\n"
+            f"Max ID of a relation in train set:{max(train_set[:, 1])} is greater than num_entities:{num_relations}"
+        )
     # 13. Sanity checking: data types
     assert isinstance(train_set[0], np.ndarray)
