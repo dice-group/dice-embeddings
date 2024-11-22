@@ -43,13 +43,13 @@ def evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re
                          torch.tensor(r).repeat(num_entities, ),
                          all_entities), dim=1)
 
-        predictions_tails = model.forward_triples(x)
+        predictions_tails = model(x)
         x = torch.stack((all_entities,
                          torch.tensor(r).repeat(num_entities, ),
                          torch.tensor(t).repeat(num_entities)
                          ), dim=1)
 
-        predictions_heads = model.forward_triples(x)
+        predictions_heads = model(x)
         del x
 
         # 3. Computed filtered ranks for missing tail entities.
