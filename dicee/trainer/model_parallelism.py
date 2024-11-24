@@ -104,11 +104,10 @@ class TensorParallel(AbstractTrainer):
                                                         num_workers=self.attributes.num_core,
                                                         collate_fn=train_dataloader.dataset.collate_fn,
                                                         pin_memory=False,
-                                                        drop_last=True,
+                                                        drop_last=False,
                                                         timeout=0,
                                                         worker_init_fn=None,
                                                         persistent_workers=False)
-
         num_of_batches = len(train_dataloader)
         # () Start training.
         for epoch in (tqdm_bar := make_iterable_verbose(range(self.attributes.num_epochs),
@@ -116,7 +115,7 @@ class TensorParallel(AbstractTrainer):
             epoch_loss = 0
             # () Iterate over batches.
             for i, z in enumerate(train_dataloader):
-                batch_loss = self.forward_backward_update_loss(z,ensemble_model)
+                batch_loss = forward_backward_update_loss(z,ensemble_model)
                 epoch_loss += batch_loss
 
                 if hasattr(tqdm_bar, 'set_description_str'):
