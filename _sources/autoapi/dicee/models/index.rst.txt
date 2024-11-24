@@ -14,6 +14,7 @@ Submodules
    /autoapi/dicee/models/clifford/index
    /autoapi/dicee/models/complex/index
    /autoapi/dicee/models/dualE/index
+   /autoapi/dicee/models/ensemble/index
    /autoapi/dicee/models/function_space/index
    /autoapi/dicee/models/octonion/index
    /autoapi/dicee/models/pykeen_models/index

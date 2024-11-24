@@ -89,6 +89,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../dice_trainer/index.html">dicee.trainer.dice_trainer</a></li>
 <li class="toctree-l5 current"><a class="current reference internal" href="#">dicee.trainer.model_parallelism</a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
 </ul>
 </li>
@@ -142,17 +143,48 @@
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.model_parallelism.MP" title="dicee.trainer.model_parallelism.MP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MP</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.model_parallelism.TensorParallel" title="dicee.trainer.model_parallelism.TensorParallel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TensorParallel</span></code></a></p></td>
 <td><p>Abstract class for Trainer class for knowledge graph embedding models</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.model_parallelism.extract_input_outputs" title="dicee.trainer.model_parallelism.extract_input_outputs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_input_outputs</span></code></a>(z[, device])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.trainer.model_parallelism.find_good_batch_size" title="dicee.trainer.model_parallelism.find_good_batch_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_good_batch_size</span></code></a>(train_loader, ensemble_model[, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.model_parallelism.forward_backward_update_loss" title="dicee.trainer.model_parallelism.forward_backward_update_loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward_backward_update_loss</span></code></a>(z, ensemble_model)</p></td>
+<td><p></p></td>
 </tr>
 </tbody>
 </table>
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.extract_input_outputs">
+<span class="sig-prename descclassname"><span class="pre">dicee.trainer.model_parallelism.</span></span><span class="sig-name descname"><span class="pre">extract_input_outputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#extract_input_outputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.extract_input_outputs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.find_good_batch_size">
+<span class="sig-prename descclassname"><span class="pre">dicee.trainer.model_parallelism.</span></span><span class="sig-name descname"><span class="pre">find_good_batch_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_available_gpu_memory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#find_good_batch_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.find_good_batch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.forward_backward_update_loss">
+<span class="sig-prename descclassname"><span class="pre">dicee.trainer.model_parallelism.</span></span><span class="sig-name descname"><span class="pre">forward_backward_update_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#forward_backward_update_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.forward_backward_update_loss" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py class">
-<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.MP">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.trainer.model_parallelism.</span></span><span class="sig-name descname"><span class="pre">MP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#MP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.MP" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.TensorParallel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.trainer.model_parallelism.</span></span><span class="sig-name descname"><span class="pre">TensorParallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#TensorParallel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.TensorParallel" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../../abstracts/index.html#dicee.abstracts.AbstractTrainer" title="dicee.abstracts.AbstractTrainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractTrainer</span></code></a></p>
 <p>Abstract class for Trainer class for knowledge graph embedding models</p>
 <section id="parameter">
@@ -163,21 +195,33 @@
 <dt>callbacks: list</dt><dd><p>?</p>
 </dd>
 </dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.MP.get_ensemble">
-<span class="sig-name descname"><span class="pre">get_ensemble</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#MP.get_ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.MP.get_ensemble" title="Link to this definition"></a></dt>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.TensorParallel.models">
+<span class="sig-name descname"><span class="pre">models</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.trainer.model_parallelism.TensorParallel.models" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.MP.fit">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#MP.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.MP.fit" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.TensorParallel.get_ensemble">
+<span class="sig-name descname"><span class="pre">get_ensemble</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#TensorParallel.get_ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.TensorParallel.get_ensemble" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.TensorParallel.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#TensorParallel.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.TensorParallel.fit" title="Link to this definition"></a></dt>
 <dd><p>Train model</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.MP.extract_input_outputs">
-<span class="sig-name descname"><span class="pre">extract_input_outputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#MP.extract_input_outputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.MP.extract_input_outputs" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.TensorParallel.batchwisefit">
+<span class="sig-name descname"><span class="pre">batchwisefit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#TensorParallel.batchwisefit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.TensorParallel.batchwisefit" title="Link to this definition"></a></dt>
+<dd><p>Train model</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.TensorParallel.torch_buggy_fit">
+<span class="sig-name descname"><span class="pre">torch_buggy_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#TensorParallel.torch_buggy_fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.TensorParallel.torch_buggy_fit" title="Link to this definition"></a></dt>
+<dd><p>Train model</p>
+</dd></dl>
 
 </section>
 </dd></dl>
