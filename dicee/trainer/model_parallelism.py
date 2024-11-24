@@ -7,44 +7,118 @@ import torch.nn as nn
 import torch.distributed as dist
 from ..models.ensemble import EnsembleKGE
 import copy
+from typing import Tuple
+
+def extract_input_outputs(z: list, device=None):
+    # pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)
+    if len(z) == 2:
+        x_batch, y_batch = z
+        # pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)
+        if device:
+            x_batch, y_batch = x_batch.to(device, non_blocking=True), y_batch.pin_memory().to(device,
+                                                                                              non_blocking=True)
+        return x_batch, y_batch
+    elif len(z) == 3:
+        x_batch, y_idx_batch, y_batch, = z
+        if device:
+            x_batch, y_batch, y_idx_batch = x_batch.pin_memory().to(device,
+                                                                    non_blocking=True), y_batch.pin_memory().to(
+                device, non_blocking=True), y_idx_batch.pin_memory().to(device, non_blocking=True)
+        return (x_batch, y_idx_batch), y_batch
+    else:
+        raise ValueError('Unexpected batch shape..')
+
+def find_good_batch_size(train_loader,ensemble_model,max_available_gpu_memory:float=0.05):
+    batch_size=train_loader.batch_size
+    print("Automatic batch size finding")
+    for n in range(200):
+        train_dataloaders = torch.utils.data.DataLoader(train_loader.dataset,
+                                                            batch_size=batch_size,
+                                                            shuffle=True,
+                                                            sampler=None,
+                                                            batch_sampler=None,
+                                                            num_workers=0,
+                                                            collate_fn=train_loader.dataset.collate_fn,
+                                                            pin_memory=False, drop_last=False,
+                                                            timeout=0,
+                                                            worker_init_fn=None,
+                                                            persistent_workers=False)
+        loss=None
+        for i, z in enumerate(train_dataloaders):
+            loss = forward_backward_update_loss(z,ensemble_model)
+            break
+        global_free_memory, total_memory = torch.cuda.mem_get_info()
+        available_gpu_memory = global_free_memory / total_memory
+        print(f"Random Batch Loss: {loss}\tAvail. GPU Memory:{available_gpu_memory}%\tBatch Size:{batch_size}")
+        # (1) Stepping criterion
+        if available_gpu_memory > max_available_gpu_memory and batch_size < len(train_loader.dataset) :
+            batch_size+=batch_size
+        else:
+            return batch_size
+
+    raise RuntimeError("What to do next?")
+
+def forward_backward_update_loss(z:Tuple, ensemble_model):
+    # () Get the i-th batch of data points.
+    x_batch, y_batch = extract_input_outputs(z)
+    # () Move the batch of labels into the master GPU : GPU-0
+    y_batch = y_batch.to("cuda:0")
+    # () Forward Pass on the batch. Yhat located on the master GPU.
+    yhat = ensemble_model(x_batch)
+    # () Compute the loss
+    loss = torch.nn.functional.binary_cross_entropy_with_logits(yhat, y_batch)
+    # () Compute the gradient of the loss w.r.t. parameters.
+    loss.backward()
+    # () Parameter update.
+    ensemble_model.step()
+    # () Report the batch and epoch losses.
+    batch_loss = loss.item()
+    # () Accumulate batch loss
+    return batch_loss
 
 class TensorParallel(AbstractTrainer):
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
         self.models=[]
-
     def get_ensemble(self):
         return self.models
-    
+
     def fit(self, *args, **kwargs):
         """ Train model        """
         assert len(args) == 1
         seed_model, = args
-        # () Init. ensemble model
+        # () Init. ensemble model.
         ensemble_model = EnsembleKGE(seed_model)
+        # () Run on_fit_start callbacks.
         self.on_fit_start(self, ensemble_model)
+        # () Sanity checking
         assert torch.cuda.device_count()== len(ensemble_model)
+        # ()
+        train_dataloader = kwargs['train_dataloaders']
+        # ()
+        train_dataloader = torch.utils.data.DataLoader(train_dataloader.dataset,
+                                                        batch_size=find_good_batch_size(train_dataloader, ensemble_model),
+                                                        shuffle=True,
+                                                        sampler=None,
+                                                        batch_sampler=None,
+                                                        num_workers=self.attributes.num_core,
+                                                        collate_fn=train_dataloader.dataset.collate_fn,
+                                                        pin_memory=False,
+                                                        drop_last=True,
+                                                        timeout=0,
+                                                        worker_init_fn=None,
+                                                        persistent_workers=False)
+
+        num_of_batches = len(train_dataloader)
+        # () Start training.
         for epoch in (tqdm_bar := make_iterable_verbose(range(self.attributes.num_epochs),
                                                         verbose=True, position=0, leave=True)):
             epoch_loss = 0
-            num_of_batches = len(kwargs['train_dataloaders'])
-            # Iterate over batches
-            for i, z in enumerate(kwargs['train_dataloaders']):
-                # Get the i-th batch of data points.
-                x_batch, y_batch = self.extract_input_outputs(z)
-                # Move the batch of labels into the master GPU : GPU-0 
-                y_batch = y_batch.to("cuda:0")
-                # Forward Pass on the batch. Yhat located on the master GPU.
-                yhat = ensemble_model(x_batch)
-                # Compute the loss
-                loss = torch.nn.functional.binary_cross_entropy_with_logits(yhat, y_batch)
-                # Compute the gradient of the loss w.r.t. parameters.
-                loss.backward()
-                # Parameter update.
-                ensemble_model.step()
-                # Report the batch and epoch losses.
-                batch_loss = loss.item()
+            # () Iterate over batches.
+            for i, z in enumerate(train_dataloader):
+                batch_loss = self.forward_backward_update_loss(z,ensemble_model)
                 epoch_loss += batch_loss
+
                 if hasattr(tqdm_bar, 'set_description_str'):
                     tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
                     if i > 0:
@@ -53,6 +127,7 @@ class TensorParallel(AbstractTrainer):
                     else:
                         tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
             ensemble_model.loss_history.append(epoch_loss)
+
         self.on_fit_end(self, ensemble_model)
         # TODO: Later, maybe we should write a callback to save the models in disk
         return ensemble_model
@@ -102,7 +177,6 @@ class TensorParallel(AbstractTrainer):
                     else:
                         tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
 
-
     def torch_buggy_fit(self, *args, **kwargs):
         """ Train model        """
         assert len(args) == 1
@@ -132,7 +206,7 @@ class TensorParallel(AbstractTrainer):
             for i, z in enumerate(kwargs['train_dataloaders']):
                 optimizer.zero_grad()
                 # () Get batch and move it on GPUs .
-                inputs,targets = self.extract_input_outputs(z,device)
+                inputs,targets = extract_input_outputs(z,device)
                 # () Predict .
                 yhats = model(inputs)   
                 # () TODO: Pytorch Bug https://github.com/pytorch/pytorch/issues/58005 .
@@ -158,19 +232,3 @@ class TensorParallel(AbstractTrainer):
         torch.distributed.destroy_process_group()
         # () .
         self.on_fit_end(self, model)
-
-    def extract_input_outputs(self, z: list,device=None):
-        # pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)
-        if len(z) == 2:
-            x_batch, y_batch = z
-            # pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)
-            if device:
-                x_batch, y_batch = x_batch.to(device, non_blocking=True), y_batch.pin_memory().to(device, non_blocking=True)
-            return x_batch, y_batch
-        elif len(z) == 3:
-            x_batch, y_idx_batch, y_batch, = z
-            if device:
-                x_batch, y_batch,y_idx_batch = x_batch.pin_memory().to(device, non_blocking=True), y_batch.pin_memory().to(device, non_blocking=True),y_idx_batch.pin_memory().to(device, non_blocking=True)
-            return (x_batch, y_idx_batch), y_batch
-        else:
-            raise ValueError('Unexpected batch shape..')
