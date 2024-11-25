@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 # Dev version :pip3 install -e .["dev"]
 
 _deps = [
-    "torch>=2.2.0",
+    "torch>=2.5.1",
     "lightning>=2.1.3",
     "pandas>=2.1.0",
     "numpy==1.26.4",

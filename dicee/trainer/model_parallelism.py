@@ -29,9 +29,11 @@ def extract_input_outputs(z: list, device=None):
         raise ValueError('Unexpected batch shape..')
 
 def find_good_batch_size(train_loader,ensemble_model,max_available_gpu_memory:float=0.05):
+    # () Initial batch size
     batch_size=train_loader.batch_size
     print("Automatic batch size finding")
     for n in range(200):
+        # () Initialize a dataloader with a current batch_size
         train_dataloaders = torch.utils.data.DataLoader(train_loader.dataset,
                                                             batch_size=batch_size,
                                                             shuffle=True,
@@ -49,14 +51,15 @@ def find_good_batch_size(train_loader,ensemble_model,max_available_gpu_memory:fl
             break
         global_free_memory, total_memory = torch.cuda.mem_get_info()
         available_gpu_memory = global_free_memory / total_memory
-        print(f"Random Batch Loss: {loss}\tAvail. GPU Memory:{available_gpu_memory}%\tBatch Size:{batch_size}")
-        # (1) Stepping criterion
+        print(f"Random Batch Loss: {loss}\tUsed GPU Memory:{available_gpu_memory} %\tBatch Size:{batch_size}")
+        # () Stepping criterion
         if available_gpu_memory > max_available_gpu_memory and batch_size < len(train_loader.dataset) :
+            # Increment the current batch size
             batch_size+=batch_size
         else:
             return batch_size
 
-    raise RuntimeError("What to do next?")
+    raise RuntimeError("The computation should be here!")
 
 def forward_backward_update_loss(z:Tuple, ensemble_model):
     # () Get the i-th batch of data points.
