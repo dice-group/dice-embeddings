@@ -25,7 +25,7 @@
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="dicee.models.base_model" href="base_model/index.html" />
+    <link rel="next" title="dicee.models.adopt" href="adopt/index.html" />
     <link rel="prev" title="dicee.knowledge_graph_embeddings" href="../knowledge_graph_embeddings/index.html" /> 
 </head>
 
@@ -79,6 +79,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">dicee.models</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="adopt/index.html">dicee.models.adopt</a></li>
 <li class="toctree-l5"><a class="reference internal" href="base_model/index.html">dicee.models.base_model</a></li>
 <li class="toctree-l5"><a class="reference internal" href="clifford/index.html">dicee.models.clifford</a></li>
 <li class="toctree-l5"><a class="reference internal" href="complex/index.html">dicee.models.complex</a></li>
@@ -96,6 +97,12 @@
 <li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#package-contents">Package Contents</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.models.ADOPT"><code class="docutils literal notranslate"><span class="pre">ADOPT</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.ADOPT.clip_lambda"><code class="docutils literal notranslate"><span class="pre">ADOPT.clip_lambda</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.ADOPT.__setstate__"><code class="docutils literal notranslate"><span class="pre">ADOPT.__setstate__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.ADOPT.step"><code class="docutils literal notranslate"><span class="pre">ADOPT.step()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.models.BaseKGELightning"><code class="docutils literal notranslate"><span class="pre">BaseKGELightning</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.BaseKGELightning.training_step_outputs"><code class="docutils literal notranslate"><span class="pre">BaseKGELightning.training_step_outputs</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.BaseKGELightning.mem_of_model"><code class="docutils literal notranslate"><span class="pre">BaseKGELightning.mem_of_model()</span></code></a></li>
@@ -781,6 +788,7 @@
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="adopt/index.html">dicee.models.adopt</a></li>
 <li class="toctree-l1"><a class="reference internal" href="base_model/index.html">dicee.models.base_model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="clifford/index.html">dicee.models.clifford</a></li>
 <li class="toctree-l1"><a class="reference internal" href="complex/index.html">dicee.models.complex</a></li>
@@ -800,40 +808,10 @@
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.BaseKGELightning" title="dicee.models.BaseKGELightning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGELightning</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.ADOPT" title="dicee.models.ADOPT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ADOPT</span></code></a></p></td>
+<td><p>Base class for all optimizers.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id176" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.DistMult" title="dicee.models.DistMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DistMult</span></code></a></p></td>
-<td><p>Embedding Entities and Relations for Learning and Inference in Knowledge Bases</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.TransE" title="dicee.models.TransE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransE</span></code></a></p></td>
-<td><p>Translating Embeddings for Modeling</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.Shallom" title="dicee.models.Shallom"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shallom</span></code></a></p></td>
-<td><p>A shallow neural model for relation prediction (<a class="reference external" href="https://arxiv.org/abs/2101.09090">https://arxiv.org/abs/2101.09090</a>)</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.Pyke" title="dicee.models.Pyke"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pyke</span></code></a></p></td>
-<td><p>A Physical Embedding Model for Knowledge Graphs</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.ConEx" title="dicee.models.ConEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConEx</span></code></a></p></td>
-<td><p>Convolutional ComplEx Knowledge Graph Embeddings</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.AConEx" title="dicee.models.AConEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConEx</span></code></a></p></td>
-<td><p>Additive Convolutional ComplEx Knowledge Graph Embeddings</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.ComplEx" title="dicee.models.ComplEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ComplEx</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.BaseKGELightning" title="dicee.models.BaseKGELightning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGELightning</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
@@ -842,14 +820,32 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#id176" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.QMult" title="dicee.models.QMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QMult</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.ConvQ" title="dicee.models.ConvQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvQ</span></code></a></p></td>
-<td><p>Convolutional Quaternion Knowledge Graph Embeddings</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.DistMult" title="dicee.models.DistMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DistMult</span></code></a></p></td>
+<td><p>Embedding Entities and Relations for Learning and Inference in Knowledge Bases</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.AConvQ" title="dicee.models.AConvQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConvQ</span></code></a></p></td>
-<td><p>Additive Convolutional Quaternion Knowledge Graph Embeddings</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.TransE" title="dicee.models.TransE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransE</span></code></a></p></td>
+<td><p>Translating Embeddings for Modeling</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.Shallom" title="dicee.models.Shallom"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shallom</span></code></a></p></td>
+<td><p>A shallow neural model for relation prediction (<a class="reference external" href="https://arxiv.org/abs/2101.09090">https://arxiv.org/abs/2101.09090</a>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.Pyke" title="dicee.models.Pyke"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pyke</span></code></a></p></td>
+<td><p>A Physical Embedding Model for Knowledge Graphs</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.ConEx" title="dicee.models.ConEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConEx</span></code></a></p></td>
+<td><p>Convolutional ComplEx Knowledge Graph Embeddings</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.AConEx" title="dicee.models.AConEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConEx</span></code></a></p></td>
+<td><p>Additive Convolutional ComplEx Knowledge Graph Embeddings</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.ComplEx" title="dicee.models.ComplEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ComplEx</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
@@ -857,49 +853,64 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#id176" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.OMult" title="dicee.models.OMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OMult</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.QMult" title="dicee.models.QMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QMult</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.ConvO" title="dicee.models.ConvO"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvO</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.ConvQ" title="dicee.models.ConvQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvQ</span></code></a></p></td>
+<td><p>Convolutional Quaternion Knowledge Graph Embeddings</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.AConvQ" title="dicee.models.AConvQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConvQ</span></code></a></p></td>
+<td><p>Additive Convolutional Quaternion Knowledge Graph Embeddings</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.AConvO" title="dicee.models.AConvO"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConvO</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#id176" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.OMult" title="dicee.models.OMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OMult</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.ConvO" title="dicee.models.ConvO"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvO</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.AConvO" title="dicee.models.AConvO"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConvO</span></code></a></p></td>
 <td><p>Additive Convolutional Octonion Knowledge Graph Embeddings</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.Keci" title="dicee.models.Keci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keci</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.Keci" title="dicee.models.Keci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keci</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.KeciBase" title="dicee.models.KeciBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KeciBase</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.KeciBase" title="dicee.models.KeciBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KeciBase</span></code></a></p></td>
 <td><p>Without learning dimension scaling</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.DeCaL" title="dicee.models.DeCaL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeCaL</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.DeCaL" title="dicee.models.DeCaL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeCaL</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.PykeenKGE" title="dicee.models.PykeenKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PykeenKGE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.PykeenKGE" title="dicee.models.PykeenKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PykeenKGE</span></code></a></p></td>
 <td><p>A class for using knowledge graph embedding models implemented in Pykeen</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.FMult" title="dicee.models.FMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FMult</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.FMult" title="dicee.models.FMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FMult</span></code></a></p></td>
 <td><p>Learning Knowledge Neural Graphs</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.GFMult" title="dicee.models.GFMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GFMult</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.GFMult" title="dicee.models.GFMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GFMult</span></code></a></p></td>
 <td><p>Learning Knowledge Neural Graphs</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.FMult2" title="dicee.models.FMult2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FMult2</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.FMult2" title="dicee.models.FMult2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FMult2</span></code></a></p></td>
 <td><p>Learning Knowledge Neural Graphs</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.LFMult1" title="dicee.models.LFMult1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFMult1</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.LFMult1" title="dicee.models.LFMult1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFMult1</span></code></a></p></td>
 <td><p>Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.LFMult" title="dicee.models.LFMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFMult</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.LFMult" title="dicee.models.LFMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFMult</span></code></a></p></td>
 <td><p>Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.DualE" title="dicee.models.DualE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DualE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.DualE" title="dicee.models.DualE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DualE</span></code></a></p></td>
 <td><p>Dual Quaternion Knowledge Graph Embeddings (<a class="reference external" href="https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657">https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657</a>)</p></td>
 </tr>
 </tbody>
@@ -926,6 +937,51 @@
 </section>
 <section id="package-contents">
 <h2>Package Contents<a class="headerlink" href="#package-contents" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.ADOPT">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">ADOPT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.optim.optimizer.ParamsT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">torch.Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(0.9,</span> <span class="pre">0.9999)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip_lambda</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">lambda</span> <span class="pre">step:</span> <span class="pre">...</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_decay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decouple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">foreach</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maximize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">capturable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">differentiable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fused</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/adopt.html#ADOPT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ADOPT" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.optim.optimizer.Optimizer</span></code></p>
+<p>Base class for all optimizers.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Parameters need to be specified as collections that have a deterministic
+ordering that is consistent between runs. Examples of objects that don’t
+satisfy those properties are sets and iterators over values of dictionaries.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> (<em>iterable</em>) – an iterable of <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code> s or
+<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code> s. Specifies what Tensors should be optimized.</p></li>
+<li><p><strong>defaults</strong> – (dict): a dict containing default values of optimization
+options (used when a parameter group doesn’t specify them).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.ADOPT.clip_lambda">
+<span class="sig-name descname"><span class="pre">clip_lambda</span></span><a class="headerlink" href="#dicee.models.ADOPT.clip_lambda" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.ADOPT.__setstate__">
+<span class="sig-name descname"><span class="pre">__setstate__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/adopt.html#ADOPT.__setstate__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ADOPT.__setstate__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.ADOPT.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">closure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/adopt.html#ADOPT.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ADOPT.step" title="Link to this definition"></a></dt>
+<dd><p>Perform a single optimization step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>closure</strong> (<em>Callable</em><em>, </em><em>optional</em>) – A closure that reevaluates the model
+and returns the loss.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.BaseKGELightning">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">BaseKGELightning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGELightning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.BaseKGELightning" title="Link to this definition"></a></dt>
@@ -5430,7 +5486,7 @@ Output: Tensor with shape (mxn)</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="../knowledge_graph_embeddings/index.html" class="btn btn-neutral float-left" title="dicee.knowledge_graph_embeddings" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="base_model/index.html" class="btn btn-neutral float-right" title="dicee.models.base_model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="adopt/index.html" class="btn btn-neutral float-right" title="dicee.models.adopt" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
