@@ -19,7 +19,7 @@ import pandas as pd
 import sys
 import traceback
 import torch.nn.functional as F
-from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 from collections import defaultdict
 
 
@@ -1673,7 +1673,10 @@ class KGE(BaseInteractiveKGE):
         # # TODO:Refactoring needed.
         class LiteralEmbeddings(torch.nn.Module):
             def __init__(
-                self, entity_embeddings=None, num_of_data_properties: int = None
+                self,
+                entity_embeddings=None,
+                num_of_data_properties: int = None,
+                dropout: float = 0.3,
             ):
                 super().__init__()
                 self.pretrained_entity_embeddings = torch.nn.Embedding.from_pretrained(
@@ -1697,6 +1700,8 @@ class KGE(BaseInteractiveKGE):
                     bias=True,
                 )
 
+                self.dropout = torch.nn.Dropout(p=dropout)
+
             def forward(self, x):
                 entity_idx, relation_idx = x[:, 0], x[:, 1]
                 head_entity_embeddings = self.pretrained_entity_embeddings(entity_idx)
@@ -1706,6 +1711,7 @@ class KGE(BaseInteractiveKGE):
                 )
                 # Residual connection.
                 out1 = F.relu(self.fc1(tuple_embeddings))
+                out1 = self.dropout(out1)
                 out2 = self.fc2(out1 + tuple_embeddings)
                 return out2.flatten()
 
@@ -1714,10 +1720,10 @@ class KGE(BaseInteractiveKGE):
             num_of_data_properties=len(self.data_property_to_idx),
         )
         self.literal_model.train()
-        optimizer = torch.optim.AdamW(self.literal_model.parameters(), lr=lr)
+        optimizer = torch.optim.Adam(self.literal_model.parameters(), lr=lr)
         for i in range(num_epochs):
             yhat = self.literal_model.forward(X_train)
-            loss = F.mse_loss(yhat, y_train)
+            loss = F.l1_loss(yhat, y_train)
             if i % 100 == 0:
                 print(
                     f"Epoch {i+1}/{num_epochs} - Loss: {loss.item():.4f}, Mean Prediction: {yhat.detach().mean().item():.4f}"
@@ -1764,10 +1770,10 @@ class KGE(BaseInteractiveKGE):
                     relation_groups[relation]["heads"].append(head)
                     relation_groups[relation]["tails"].append(float(tail))
 
-        results = {}
-
+        mea_results, rmse_results = {}, {}
         # Iterate over each relation to calculate MEA
         for rels, group in relation_groups.items():
+
             h = group["heads"]
             r = [rels] * len(h)
             y_true = torch.FloatTensor(group["tails"])
@@ -1779,9 +1785,11 @@ class KGE(BaseInteractiveKGE):
 
             y_pred_scaled = [data * std + mean for data in y_pred]
             mea = mean_absolute_error(y_true, y_pred_scaled)
-            results[rels] = mea
+            rmse = root_mean_squared_error(y_true, y_pred_scaled)
+            mea_results[rels] = mea
+            rmse_results[rels] = rmse
 
-        return results
+        return mea_results, rmse_results
 
     """
     
