@@ -46,12 +46,17 @@ def find_good_batch_size(train_loader,ensemble_model,max_available_gpu_memory:fl
             break
         global_free_memory, total_memory = torch.cuda.mem_get_info()
         available_gpu_memory = global_free_memory / total_memory
-        print(f"Random Batch Loss: {loss}\tUsed GPU Memory:{available_gpu_memory} %\tBatch Size:{batch_size}")
+        print(f"Random Batch Loss: {loss}\tFree/Total GPU Memory: {available_gpu_memory}\tBatch Size:{batch_size}")
         # () Stepping criterion
         if available_gpu_memory > max_available_gpu_memory and batch_size < len(train_loader.dataset) :
             # Increment the current batch size
             batch_size+=batch_size
         else:
+            if batch_size >= len(train_loader.dataset):
+                print("Batch size equals to the training dataset size")
+            else:
+                print(f"Max GPU memory used\tFree/Total GPU Memory:{available_gpu_memory}")
+
             return batch_size
 
     raise RuntimeError("The computation should be here!")
