@@ -7,21 +7,21 @@ import torch
 from torch import Tensor
 
 from torch.optim.optimizer import (
-    _capturable_doc,
+    _capturable_doc, # noqa: F401
     _default_to_fused_or_foreach,
     _device_dtype_check_for_fused,
-    _differentiable_doc,
+    _differentiable_doc, # noqa: F401
     _disable_dynamo_if_unsupported,
-    _foreach_doc,
-    _fused_doc,
+    _foreach_doc, # noqa: F401
+    _fused_doc, # noqa: F401
     _get_capturable_supported_devices,
     _get_scalar_dtype,
-    _get_value,
-    _maximize_doc,
-    _stack_if_compiling,
+    _get_value, # noqa: F401
+    _maximize_doc, # noqa: F401
+    _stack_if_compiling, # noqa: F401
     _use_grad_for_differentiable,
     _view_as_real,
-    DeviceDict,
+    DeviceDict, # noqa: F401
     Optimizer,
     ParamsT,
 )
@@ -508,7 +508,7 @@ def adopt(
         raise RuntimeError("torch.jit.script not supported with fused optimizers")
 
     if fused and not torch.jit.is_scripting():
-        func = _fused_adopt
+        func = _fused_adopt # noqa: F821
     elif foreach and not torch.jit.is_scripting():
         func = _multi_tensor_adopt
     else:

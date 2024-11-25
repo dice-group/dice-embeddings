@@ -1,12 +1,7 @@
 import torch
 from ..abstracts import AbstractTrainer
 from ..static_funcs_training import make_iterable_verbose
-import os
-import sys
-import torch.nn as nn
-import torch.distributed as dist
 from ..models.ensemble import EnsembleKGE
-import copy
 from typing import Tuple
 
 def extract_input_outputs(z: list, device=None):
@@ -133,9 +128,9 @@ class TensorParallel(AbstractTrainer):
         self.on_fit_end(self, ensemble_model)
         # TODO: Later, maybe we should write a callback to save the models in disk
         return ensemble_model
-
+    """
+    
     def batchwisefit(self, *args, **kwargs):
-        """ Train model        """
         assert len(args) == 1
         model, = args
         # (1) Run the fit the start callback.
@@ -180,7 +175,6 @@ class TensorParallel(AbstractTrainer):
                         tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
 
     def torch_buggy_fit(self, *args, **kwargs):
-        """ Train model        """
         assert len(args) == 1
         model, = args
         # () Run the fit the start callback.
@@ -234,3 +228,4 @@ class TensorParallel(AbstractTrainer):
         torch.distributed.destroy_process_group()
         # () .
         self.on_fit_end(self, model)
+    """

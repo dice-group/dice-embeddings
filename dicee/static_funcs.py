@@ -19,6 +19,7 @@ from collections import defaultdict
 import polars as pl
 import requests
 import csv
+from .models.ensemble import EnsembleKGE
 
 def create_recipriocal_triples(x):
     """
@@ -274,7 +275,7 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
         raise TypeError('Int64?')
     return train_set
 
-from .models.ensemble import EnsembleKGE
+
 def save_checkpoint_model(model, path: str) -> None:
     """ Store Pytorch model into disk"""
     if isinstance(model, BaseKGE):
