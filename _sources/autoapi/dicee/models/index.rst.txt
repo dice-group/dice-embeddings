@@ -10,10 +10,12 @@ Submodules
 .. toctree::
    :maxdepth: 1
 
+   /autoapi/dicee/models/adopt/index
    /autoapi/dicee/models/base_model/index
    /autoapi/dicee/models/clifford/index
    /autoapi/dicee/models/complex/index
    /autoapi/dicee/models/dualE/index
+   /autoapi/dicee/models/ensemble/index
    /autoapi/dicee/models/function_space/index
    /autoapi/dicee/models/octonion/index
    /autoapi/dicee/models/pykeen_models/index
@@ -28,6 +30,7 @@ Classes
 
 .. autoapisummary::
 
+   dicee.models.ADOPT
    dicee.models.BaseKGELightning
    dicee.models.BaseKGE
    dicee.models.IdentityClass
@@ -77,6 +80,41 @@ Functions
 
 Package Contents
 ----------------
+
+.. py:class:: ADOPT(params: torch.optim.optimizer.ParamsT, lr: Union[float, torch.Tensor] = 0.001, betas: Tuple[float, float] = (0.9, 0.9999), eps: float = 1e-06, clip_lambda: Optional[Callable[[int], float]] = lambda step: step**0.25, weight_decay: float = 0.0, decouple: bool = False, *, foreach: Optional[bool] = None, maximize: bool = False, capturable: bool = False, differentiable: bool = False, fused: Optional[bool] = None)
+
+   Bases: :py:obj:`torch.optim.optimizer.Optimizer`
+
+
+   Base class for all optimizers.
+
+   .. warning::
+       Parameters need to be specified as collections that have a deterministic
+       ordering that is consistent between runs. Examples of objects that don't
+       satisfy those properties are sets and iterators over values of dictionaries.
+
+   :param params: an iterable of :class:`torch.Tensor` s or
+                  :class:`dict` s. Specifies what Tensors should be optimized.
+   :type params: iterable
+   :param defaults: (dict): a dict containing default values of optimization
+                    options (used when a parameter group doesn't specify them).
+
+
+   .. py:attribute:: clip_lambda
+
+
+   .. py:method:: __setstate__(state)
+
+
+   .. py:method:: step(closure=None)
+
+      Perform a single optimization step.
+
+      :param closure: A closure that reevaluates the model
+                      and returns the loss.
+      :type closure: Callable, optional
+
+
 
 .. py:class:: BaseKGELightning(*args, **kwargs)
 

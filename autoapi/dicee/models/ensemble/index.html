@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>dicee.models.dualE &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+  <title>dicee.models.ensemble &mdash; DICE Embeddings 0.1.3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8775fe07" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
@@ -24,8 +24,8 @@
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
-    <link rel="next" title="dicee.models.ensemble" href="../ensemble/index.html" />
-    <link rel="prev" title="dicee.models.complex" href="../complex/index.html" /> 
+    <link rel="next" title="dicee.models.function_space" href="../function_space/index.html" />
+    <link rel="prev" title="dicee.models.dualE" href="../dualE/index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -82,12 +82,12 @@
 <li class="toctree-l5"><a class="reference internal" href="../base_model/index.html">dicee.models.base_model</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../clifford/index.html">dicee.models.clifford</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../complex/index.html">dicee.models.complex</a></li>
-<li class="toctree-l5 current"><a class="current reference internal" href="#">dicee.models.dualE</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="../dualE/index.html">dicee.models.dualE</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">dicee.models.ensemble</a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
 </ul>
 </li>
-<li class="toctree-l5"><a class="reference internal" href="../ensemble/index.html">dicee.models.ensemble</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../function_space/index.html">dicee.models.function_space</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../octonion/index.html">dicee.models.octonion</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../pykeen_models/index.html">dicee.models.pykeen_models</a></li>
@@ -136,9 +136,9 @@
       <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../index.html">dicee</a></li>
           <li class="breadcrumb-item"><a href="../index.html">dicee.models</a></li>
-      <li class="breadcrumb-item active">dicee.models.dualE</li>
+      <li class="breadcrumb-item active">dicee.models.ensemble</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../../../../_sources/autoapi/dicee/models/dualE/index.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../../../_sources/autoapi/dicee/models/ensemble/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -146,14 +146,14 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-dicee.models.dualE">
-<span id="dicee-models-duale"></span><h1>dicee.models.dualE<a class="headerlink" href="#module-dicee.models.dualE" title="Link to this heading"></a></h1>
+  <section id="module-dicee.models.ensemble">
+<span id="dicee-models-ensemble"></span><h1>dicee.models.ensemble<a class="headerlink" href="#module-dicee.models.ensemble" title="Link to this heading"></a></h1>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.dualE.DualE" title="dicee.models.dualE.DualE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DualE</span></code></a></p></td>
-<td><p>Dual Quaternion Knowledge Graph Embeddings (<a class="reference external" href="https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657">https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657</a>)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.ensemble.EnsembleKGE" title="dicee.models.ensemble.EnsembleKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EnsembleKGE</span></code></a></p></td>
+<td><p></p></td>
 </tr>
 </tbody>
 </table>
@@ -161,79 +161,92 @@
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
 <dl class="py class">
-<dt class="sig sig-object py" id="dicee.models.dualE.DualE">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.dualE.</span></span><span class="sig-name descname"><span class="pre">DualE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/dualE.html#DualE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.dualE.DualE" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
-<p>Dual Quaternion Knowledge Graph Embeddings (<a class="reference external" href="https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657">https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657</a>)</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.dualE.DualE.name">
-<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'DualE'</span></em><a class="headerlink" href="#dicee.models.dualE.DualE.name" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.ensemble.</span></span><span class="sig-name descname"><span class="pre">EnsembleKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/ensemble.html#EnsembleKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE" title="Link to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.models">
+<span class="sig-name descname"><span class="pre">models</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.models" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.dualE.DualE.entity_embeddings">
-<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.dualE.DualE.entity_embeddings" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.optimizers">
+<span class="sig-name descname"><span class="pre">optimizers</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.optimizers" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.dualE.DualE.relation_embeddings">
-<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.dualE.DualE.relation_embeddings" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.loss_history">
+<span class="sig-name descname"><span class="pre">loss_history</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.loss_history" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.dualE.DualE.num_ent">
-<span class="sig-name descname"><span class="pre">num_ent</span></span><a class="headerlink" href="#dicee.models.dualE.DualE.num_ent" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.train_mode">
+<span class="sig-name descname"><span class="pre">train_mode</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.train_mode" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.dualE.DualE.kvsall_score">
-<span class="sig-name descname"><span class="pre">kvsall_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e_1_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_2_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_3_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_4_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_5_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_6_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_7_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_8_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_1_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_2_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_3_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_4_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_5_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_6_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_7_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_8_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_8</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/dualE.html#DualE.kvsall_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.dualE.DualE.kvsall_score" title="Link to this definition"></a></dt>
-<dd><p>KvsAll scoring function</p>
-<section id="input">
-<h3>Input<a class="headerlink" href="#input" title="Link to this heading"></a></h3>
-<p>x: torch.LongTensor with (n, ) shape</p>
-</section>
-<section id="output">
-<h3>Output<a class="headerlink" href="#output" title="Link to this heading"></a></h3>
-<p>torch.FloatTensor with (n) shape</p>
-</section>
-</dd></dl>
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.named_children">
+<span class="sig-name descname"><span class="pre">named_children</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/ensemble.html#EnsembleKGE.named_children"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.named_children" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.example_input_array">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">example_input_array</span></span><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.example_input_array" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.dualE.DualE.forward_triples">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/dualE.html#DualE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.dualE.DualE.forward_triples" title="Link to this definition"></a></dt>
-<dd><p>Negative Sampling forward pass:</p>
-<section id="id1">
-<h3>Input<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
-<p>x: torch.LongTensor with (n, ) shape</p>
-</section>
-<section id="id2">
-<h3>Output<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
-<p>torch.FloatTensor with (n) shape</p>
-</section>
-</dd></dl>
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/ensemble.html#EnsembleKGE.parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.parameters" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.dualE.DualE.forward_k_vs_all">
-<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/dualE.html#DualE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.dualE.DualE.forward_k_vs_all" title="Link to this definition"></a></dt>
-<dd><p>KvsAll forward pass</p>
-<section id="id3">
-<h3>Input<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
-<p>x: torch.LongTensor with (n, ) shape</p>
-</section>
-<section id="id4">
-<h3>Output<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
-<p>torch.FloatTensor with (n) shape</p>
-</section>
-</dd></dl>
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.modules">
+<span class="sig-name descname"><span class="pre">modules</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/ensemble.html#EnsembleKGE.modules"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.modules" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.dualE.DualE.T">
-<span class="sig-name descname"><span class="pre">T</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/dualE.html#DualE.T"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.dualE.DualE.T" title="Link to this definition"></a></dt>
-<dd><p>Transpose function</p>
-<p>Input: Tensor with shape (nxm)
-Output: Tensor with shape (mxn)</p>
-</dd></dl>
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.__iter__">
+<span class="sig-name descname"><span class="pre">__iter__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/ensemble.html#EnsembleKGE.__iter__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.__iter__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/ensemble.html#EnsembleKGE.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.__len__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.eval">
+<span class="sig-name descname"><span class="pre">eval</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/ensemble.html#EnsembleKGE.eval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.eval" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.to">
+<span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/ensemble.html#EnsembleKGE.to"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.to" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.mem_of_model">
+<span class="sig-name descname"><span class="pre">mem_of_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/ensemble.html#EnsembleKGE.mem_of_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.mem_of_model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.__call__">
+<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_batch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/ensemble.html#EnsembleKGE.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.__call__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/ensemble.html#EnsembleKGE.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.step" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.ensemble.EnsembleKGE.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/ensemble.html#EnsembleKGE.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ensemble.EnsembleKGE.__str__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -244,8 +257,8 @@ Output: Tensor with shape (mxn)</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../complex/index.html" class="btn btn-neutral float-left" title="dicee.models.complex" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../ensemble/index.html" class="btn btn-neutral float-right" title="dicee.models.ensemble" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../dualE/index.html" class="btn btn-neutral float-left" title="dicee.models.dualE" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../function_space/index.html" class="btn btn-neutral float-right" title="dicee.models.function_space" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

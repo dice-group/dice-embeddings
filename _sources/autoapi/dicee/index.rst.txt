@@ -66,6 +66,7 @@ Classes
    dicee.PykeenKGE
    dicee.BytE
    dicee.BaseKGE
+   dicee.EnsembleKGE
    dicee.DICE_Trainer
    dicee.KGE
    dicee.Execute
@@ -1988,6 +1989,67 @@ Package Contents
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
 
 
+.. py:class:: EnsembleKGE(seed_model)
+
+   .. py:attribute:: models
+      :value: []
+
+
+
+   .. py:attribute:: optimizers
+      :value: []
+
+
+
+   .. py:attribute:: loss_history
+      :value: []
+
+
+
+   .. py:attribute:: name
+
+
+   .. py:attribute:: train_mode
+      :value: True
+
+
+
+   .. py:method:: named_children()
+
+
+   .. py:property:: example_input_array
+
+
+   .. py:method:: parameters()
+
+
+   .. py:method:: modules()
+
+
+   .. py:method:: __iter__()
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: eval()
+
+
+   .. py:method:: to(device)
+
+
+   .. py:method:: mem_of_model()
+
+
+   .. py:method:: __call__(x_batch)
+
+
+   .. py:method:: step()
+
+
+   .. py:method:: __str__()
+
+
 .. py:function:: create_recipriocal_triples(x)
 
    Add inverse triples into dask dataframe
@@ -2183,7 +2245,7 @@ Package Contents
 
 
 
-   .. py:method:: initialize_trainer(callbacks: List) -> lightning.Trainer | dicee.trainer.model_parallelism.MP | dicee.trainer.torch_trainer.TorchTrainer | dicee.trainer.torch_trainer_ddp.TorchDDPTrainer
+   .. py:method:: initialize_trainer(callbacks: List) -> lightning.Trainer | dicee.trainer.model_parallelism.TensorParallel | dicee.trainer.torch_trainer.TorchTrainer | dicee.trainer.torch_trainer_ddp.TorchDDPTrainer
 
       Initialize Trainer from input arguments
 

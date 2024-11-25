@@ -97,7 +97,8 @@
 <span class="kn">from</span> <span class="nn">dicee.dataset_classes</span> <span class="kn">import</span> <span class="n">construct_dataset</span>
 <span class="kn">from</span> <span class="nn">.torch_trainer</span> <span class="kn">import</span> <span class="n">TorchTrainer</span>
 <span class="kn">from</span> <span class="nn">.torch_trainer_ddp</span> <span class="kn">import</span> <span class="n">TorchDDPTrainer</span>
-<span class="kn">from</span> <span class="nn">.model_parallelism</span> <span class="kn">import</span> <span class="n">MP</span>
+<span class="kn">from</span> <span class="nn">.model_parallelism</span> <span class="kn">import</span> <span class="n">TensorParallel</span>
+<span class="kn">from</span> <span class="nn">..models.ensemble</span> <span class="kn">import</span> <span class="n">EnsembleKGE</span>
 <span class="kn">from</span> <span class="nn">..static_funcs</span> <span class="kn">import</span> <span class="n">timeit</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">torch</span>
@@ -106,74 +107,6 @@
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 <span class="kn">from</span> <span class="nn">..knowledge_graph</span> <span class="kn">import</span> <span class="n">KG</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
-
-<div class="viewcode-block" id="EnsembleKGE">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.EnsembleKGE">[docs]</a>
-<span class="k">class</span> <span class="nc">EnsembleKGE</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="o">=</span><span class="p">[]</span>
-
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()):</span>
-            <span class="n">i_model</span><span class="o">=</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-            <span class="n">i_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
-            <span class="n">i_model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">i_model</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i_model</span><span class="o">.</span><span class="n">configure_optimizers</span><span class="p">())</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i_model</span><span class="p">)</span>
-
-<div class="viewcode-block" id="EnsembleKGE.__iter__">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.EnsembleKGE.__iter__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="EnsembleKGE.__len__">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.EnsembleKGE.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="EnsembleKGE.__call__">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.EnsembleKGE.__call__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="c1"># Forward</span>
-        <span class="n">results</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">results</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">results</span><span class="o">=</span><span class="n">model</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">results</span> <span class="o">+=</span> <span class="n">model</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">results</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="EnsembleKGE.__getattr__">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.EnsembleKGE.__getattr__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-        <span class="c1"># Create a function that will call the same attribute/method on each model</span>
-        <span class="k">def</span> <span class="nf">method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-            <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">:</span>
-                <span class="n">attr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">attr</span><span class="p">):</span>
-                    <span class="c1"># If it&#39;s a method, call it with provided arguments</span>
-                    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attr</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># If it&#39;s an attribute, just get its value</span>
-                    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">results</span>
-        <span class="k">return</span> <span class="n">method</span></div>
-
-
-<div class="viewcode-block" id="EnsembleKGE.__str__">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.EnsembleKGE.__str__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;EnsembleKGE of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span></div>
-</div>
-
 
 <div class="viewcode-block" id="load_term_mapping">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.load_term_mapping">[docs]</a>
@@ -184,13 +117,13 @@
 
 <div class="viewcode-block" id="initialize_trainer">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.initialize_trainer">[docs]</a>
-<span class="k">def</span> <span class="nf">initialize_trainer</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">TorchTrainer</span> <span class="o">|</span> <span class="n">MP</span> <span class="o">|</span> <span class="n">TorchDDPTrainer</span> <span class="o">|</span> <span class="n">pl</span><span class="o">.</span><span class="n">Trainer</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">initialize_trainer</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">TorchTrainer</span> <span class="o">|</span> <span class="n">TensorParallel</span> <span class="o">|</span> <span class="n">TorchDDPTrainer</span> <span class="o">|</span> <span class="n">pl</span><span class="o">.</span><span class="n">Trainer</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s1">&#39;torchCPUTrainer&#39;</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing TorchTrainer CPU Trainer...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="n">trainer</span> <span class="o">=</span> <span class="n">TorchTrainer</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="n">callbacks</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s1">&#39;MP&#39;</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing MPTrainer...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="n">trainer</span><span class="o">=</span> <span class="n">MP</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="n">callbacks</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s1">&#39;TP&#39;</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing TensorParallel...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">trainer</span><span class="o">=</span> <span class="n">TensorParallel</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="n">callbacks</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s1">&#39;torchDDP&#39;</span><span class="p">:</span>
         <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing TorchDDPTrainer GPU&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -351,7 +284,7 @@
 <div class="viewcode-block" id="DICE_Trainer.initialize_trainer">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.DICE_Trainer.initialize_trainer">[docs]</a>
     <span class="nd">@timeit</span>
-    <span class="k">def</span> <span class="nf">initialize_trainer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">:</span> <span class="n">List</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pl</span><span class="o">.</span><span class="n">Trainer</span> <span class="o">|</span> <span class="n">MP</span> <span class="o">|</span> <span class="n">TorchTrainer</span> <span class="o">|</span> <span class="n">TorchDDPTrainer</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">initialize_trainer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">:</span> <span class="n">List</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pl</span><span class="o">.</span><span class="n">Trainer</span> <span class="o">|</span> <span class="n">TensorParallel</span> <span class="o">|</span> <span class="n">TorchTrainer</span> <span class="o">|</span> <span class="n">TorchDDPTrainer</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Initialize Trainer from input arguments &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">initialize_trainer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">)</span></div>
 
@@ -452,16 +385,19 @@
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">knowledge_graph</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">knowledge_graph</span><span class="p">,</span> <span class="n">KG</span><span class="p">),</span> \
             <span class="sa">f</span><span class="s2">&quot;knowledge_graph must be an instance of KG or np.memmap. Currently </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">knowledge_graph</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_folds_for_cv</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">MP</span><span class="p">,</span> <span class="n">TorchTrainer</span><span class="p">,</span> <span class="n">TorchDDPTrainer</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">Trainer</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorParallel</span><span class="p">,</span> <span class="n">TorchTrainer</span><span class="p">,</span> <span class="n">TorchDDPTrainer</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">Trainer</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialize_trainer</span><span class="p">(</span><span class="n">callbacks</span><span class="o">=</span><span class="n">get_callbacks</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
-
             <span class="n">model</span><span class="p">,</span> <span class="n">form_of_labelling</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialize_or_load_model</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluator</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">knowledge_graph</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">form_of_labelling</span> <span class="o">=</span> <span class="n">form_of_labelling</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="p">,</span> <span class="n">MP</span><span class="p">):</span>
-                <span class="n">model</span><span class="o">=</span><span class="n">EnsembleKGE</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">train_dataloaders</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">init_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">init_dataset</span><span class="p">()))</span>
+            <span class="c1"># TODO: Later, maybe we should write a callback to save the models in disk</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="p">,</span> <span class="n">TensorParallel</span><span class="p">):</span>
+                <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">train_dataloaders</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">init_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">init_dataset</span><span class="p">()))</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span><span class="n">EnsembleKGE</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">train_dataloaders</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">init_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">init_dataset</span><span class="p">()))</span>
 
 
             <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">form_of_labelling</span>
