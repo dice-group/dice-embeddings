@@ -1,11 +1,6 @@
 import torch
 import copy
 
-import torch._dynamo
-
-torch._dynamo.config.suppress_errors = True
-
-
 class EnsembleKGE:
     def __init__(self, seed_model):
         self.models = []
