@@ -23,11 +23,13 @@ def extract_input_outputs(z: list, device=None):
     else:
         raise ValueError('Unexpected batch shape..')
 
-def find_good_batch_size(train_loader,ensemble_model,max_available_gpu_memory:float=0.05):
+def find_good_batch_size(train_loader,ensemble_model,max_available_gpu_memory:float=0.1):
     # () Initial batch size
     batch_size=train_loader.batch_size
+    first_batch_size = train_loader.batch_size
+
     print("Automatic batch size finding")
-    for n in range(200):
+    while True:
         # () Initialize a dataloader with a current batch_size
         train_dataloaders = torch.utils.data.DataLoader(train_loader.dataset,
                                                             batch_size=batch_size,
@@ -50,7 +52,7 @@ def find_good_batch_size(train_loader,ensemble_model,max_available_gpu_memory:fl
         # () Stepping criterion
         if available_gpu_memory > max_available_gpu_memory and batch_size < len(train_loader.dataset) :
             # Increment the current batch size
-            batch_size+=batch_size
+            batch_size+=first_batch_size
         else:
             if batch_size >= len(train_loader.dataset):
                 print("Batch size equals to the training dataset size")
