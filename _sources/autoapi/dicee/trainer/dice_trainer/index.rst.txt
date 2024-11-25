@@ -9,6 +9,7 @@ Classes
 
 .. autoapisummary::
 
+   dicee.trainer.dice_trainer.EnsembleKGE
    dicee.trainer.dice_trainer.DICE_Trainer
 
 
@@ -25,9 +26,39 @@ Functions
 Module Contents
 ---------------
 
+.. py:class:: EnsembleKGE(model)
+
+   
+
+
+   .. py:attribute:: models
+      :value: []
+
+
+
+   .. py:attribute:: optimizers
+      :value: []
+
+
+
+   .. py:method:: __iter__()
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __call__(*args, **kwargs)
+
+
+   .. py:method:: __getattr__(name)
+
+
+   .. py:method:: __str__()
+
+
 .. py:function:: load_term_mapping(file_path=str)
 
-.. py:function:: initialize_trainer(args, callbacks) -> dicee.trainer.torch_trainer.TorchTrainer | dicee.trainer.model_parallelism.TensorParallel | dicee.trainer.torch_trainer_ddp.TorchDDPTrainer | lightning.Trainer
+.. py:function:: initialize_trainer(args, callbacks) -> dicee.trainer.torch_trainer.TorchTrainer | dicee.trainer.model_parallelism.MP | dicee.trainer.torch_trainer_ddp.TorchDDPTrainer | lightning.Trainer
 
 .. py:function:: get_callbacks(args)
 
@@ -94,7 +125,7 @@ Module Contents
 
 
 
-   .. py:method:: initialize_trainer(callbacks: List) -> lightning.Trainer | dicee.trainer.model_parallelism.TensorParallel | dicee.trainer.torch_trainer.TorchTrainer | dicee.trainer.torch_trainer_ddp.TorchDDPTrainer
+   .. py:method:: initialize_trainer(callbacks: List) -> lightning.Trainer | dicee.trainer.model_parallelism.MP | dicee.trainer.torch_trainer.TorchTrainer | dicee.trainer.torch_trainer_ddp.TorchDDPTrainer
 
       Initialize Trainer from input arguments
 

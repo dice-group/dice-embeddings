@@ -142,7 +142,10 @@
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.torch_trainer.TorchTrainer" title="dicee.trainer.torch_trainer.TorchTrainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TorchTrainer</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.torch_trainer.xMP" title="dicee.trainer.torch_trainer.xMP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">xMP</span></code></a></p></td>
+<td><p>Abstract class for Trainer class for knowledge graph embedding models</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.trainer.torch_trainer.TorchTrainer" title="dicee.trainer.torch_trainer.TorchTrainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TorchTrainer</span></code></a></p></td>
 <td><p>TorchTrainer for using single GPU or multi CPUs on a single node</p></td>
 </tr>
 </tbody>
@@ -150,6 +153,103 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.xMP">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.trainer.torch_trainer.</span></span><span class="sig-name descname"><span class="pre">xMP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer.html#xMP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer.xMP" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../../abstracts/index.html#dicee.abstracts.AbstractTrainer" title="dicee.abstracts.AbstractTrainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractTrainer</span></code></a></p>
+<p>Abstract class for Trainer class for knowledge graph embedding models</p>
+<section id="parameter">
+<h3>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>args<span class="classifier">str</span></dt><dd><p>?</p>
+</dd>
+<dt>callbacks: list</dt><dd><p>?</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.xMP.loss_function">
+<span class="sig-name descname"><span class="pre">loss_function</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.trainer.torch_trainer.xMP.loss_function" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.xMP.optimizer">
+<span class="sig-name descname"><span class="pre">optimizer</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.trainer.torch_trainer.xMP.optimizer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.xMP.model">
+<span class="sig-name descname"><span class="pre">model</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.trainer.torch_trainer.xMP.model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.xMP.train_dataloaders">
+<span class="sig-name descname"><span class="pre">train_dataloaders</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.trainer.torch_trainer.xMP.train_dataloaders" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.xMP.training_step">
+<span class="sig-name descname"><span class="pre">training_step</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.trainer.torch_trainer.xMP.training_step" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.xMP.available_gpus">
+<span class="sig-name descname"><span class="pre">available_gpus</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer.xMP.available_gpus" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.xMP.process">
+<span class="sig-name descname"><span class="pre">process</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer.xMP.process" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.xMP.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_dataloaders</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer.html#xMP.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer.xMP.fit" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Training starts</p>
+<p>Arguments</p>
+</div></blockquote>
+<dl class="simple">
+<dt>kwargs:Tuple</dt><dd><p>empty dictionary</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>batch loss (float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.xMP.forward_backward_update">
+<span class="sig-name descname"><span class="pre">forward_backward_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer.html#xMP.forward_backward_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer.xMP.forward_backward_update" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Compute forward, loss, backward, and parameter update</p>
+<p>Arguments</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>batch loss (float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.xMP.extract_input_outputs_set_device">
+<span class="sig-name descname"><span class="pre">extract_input_outputs_set_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span></span></span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer.html#xMP.extract_input_outputs_set_device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer.xMP.extract_input_outputs_set_device" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Construct inputs and outputs from a batch of inputs with outputs From a batch of inputs and put</p>
+<p>Arguments</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(tuple) mini-batch on select device</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.trainer.torch_trainer.TorchTrainer">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.trainer.torch_trainer.</span></span><span class="sig-name descname"><span class="pre">TorchTrainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer.html#TorchTrainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer" title="Link to this definition"></a></dt>

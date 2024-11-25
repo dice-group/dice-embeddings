@@ -143,7 +143,10 @@
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.dice_trainer.DICE_Trainer" title="dicee.trainer.dice_trainer.DICE_Trainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DICE_Trainer</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.dice_trainer.EnsembleKGE" title="dicee.trainer.dice_trainer.EnsembleKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EnsembleKGE</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.trainer.dice_trainer.DICE_Trainer" title="dicee.trainer.dice_trainer.DICE_Trainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DICE_Trainer</span></code></a></p></td>
 <td><p>DICE_Trainer implement</p></td>
 </tr>
 </tbody>
@@ -167,6 +170,46 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.trainer.dice_trainer.EnsembleKGE">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.trainer.dice_trainer.</span></span><span class="sig-name descname"><span class="pre">EnsembleKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/dice_trainer.html#EnsembleKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.dice_trainer.EnsembleKGE" title="Link to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.dice_trainer.EnsembleKGE.models">
+<span class="sig-name descname"><span class="pre">models</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.trainer.dice_trainer.EnsembleKGE.models" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.dice_trainer.EnsembleKGE.optimizers">
+<span class="sig-name descname"><span class="pre">optimizers</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.trainer.dice_trainer.EnsembleKGE.optimizers" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.trainer.dice_trainer.EnsembleKGE.__iter__">
+<span class="sig-name descname"><span class="pre">__iter__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/dice_trainer.html#EnsembleKGE.__iter__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.dice_trainer.EnsembleKGE.__iter__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.trainer.dice_trainer.EnsembleKGE.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/dice_trainer.html#EnsembleKGE.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.dice_trainer.EnsembleKGE.__len__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.trainer.dice_trainer.EnsembleKGE.__call__">
+<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/dice_trainer.html#EnsembleKGE.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.dice_trainer.EnsembleKGE.__call__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.trainer.dice_trainer.EnsembleKGE.__getattr__">
+<span class="sig-name descname"><span class="pre">__getattr__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/dice_trainer.html#EnsembleKGE.__getattr__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.dice_trainer.EnsembleKGE.__getattr__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.trainer.dice_trainer.EnsembleKGE.__str__">
+<span class="sig-name descname"><span class="pre">__str__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/dice_trainer.html#EnsembleKGE.__str__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.dice_trainer.EnsembleKGE.__str__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.trainer.dice_trainer.load_term_mapping">
 <span class="sig-prename descclassname"><span class="pre">dicee.trainer.dice_trainer.</span></span><span class="sig-name descname"><span class="pre">load_term_mapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/dice_trainer.html#load_term_mapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.dice_trainer.load_term_mapping" title="Link to this definition"></a></dt>
@@ -174,7 +217,7 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.trainer.dice_trainer.initialize_trainer">
-<span class="sig-prename descclassname"><span class="pre">dicee.trainer.dice_trainer.</span></span><span class="sig-name descname"><span class="pre">initialize_trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer" title="dicee.trainer.torch_trainer.TorchTrainer"><span class="pre">dicee.trainer.torch_trainer.TorchTrainer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../model_parallelism/index.html#dicee.trainer.model_parallelism.TensorParallel" title="dicee.trainer.model_parallelism.TensorParallel"><span class="pre">dicee.trainer.model_parallelism.TensorParallel</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.TorchDDPTrainer" title="dicee.trainer.torch_trainer_ddp.TorchDDPTrainer"><span class="pre">dicee.trainer.torch_trainer_ddp.TorchDDPTrainer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">lightning.Trainer</span></span></span><a class="reference internal" href="../../../../_modules/dicee/trainer/dice_trainer.html#initialize_trainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.dice_trainer.initialize_trainer" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">dicee.trainer.dice_trainer.</span></span><span class="sig-name descname"><span class="pre">initialize_trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer" title="dicee.trainer.torch_trainer.TorchTrainer"><span class="pre">dicee.trainer.torch_trainer.TorchTrainer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../model_parallelism/index.html#dicee.trainer.model_parallelism.MP" title="dicee.trainer.model_parallelism.MP"><span class="pre">dicee.trainer.model_parallelism.MP</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.TorchDDPTrainer" title="dicee.trainer.torch_trainer_ddp.TorchDDPTrainer"><span class="pre">dicee.trainer.torch_trainer_ddp.TorchDDPTrainer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">lightning.Trainer</span></span></span><a class="reference internal" href="../../../../_modules/dicee/trainer/dice_trainer.html#initialize_trainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.dice_trainer.initialize_trainer" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -255,7 +298,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.trainer.dice_trainer.DICE_Trainer.initialize_trainer">
-<span class="sig-name descname"><span class="pre">initialize_trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callbacks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">lightning.Trainer</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../model_parallelism/index.html#dicee.trainer.model_parallelism.TensorParallel" title="dicee.trainer.model_parallelism.TensorParallel"><span class="pre">dicee.trainer.model_parallelism.TensorParallel</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer" title="dicee.trainer.torch_trainer.TorchTrainer"><span class="pre">dicee.trainer.torch_trainer.TorchTrainer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.TorchDDPTrainer" title="dicee.trainer.torch_trainer_ddp.TorchDDPTrainer"><span class="pre">dicee.trainer.torch_trainer_ddp.TorchDDPTrainer</span></a></span></span><a class="reference internal" href="../../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.initialize_trainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.dice_trainer.DICE_Trainer.initialize_trainer" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialize_trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callbacks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">lightning.Trainer</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../model_parallelism/index.html#dicee.trainer.model_parallelism.MP" title="dicee.trainer.model_parallelism.MP"><span class="pre">dicee.trainer.model_parallelism.MP</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer" title="dicee.trainer.torch_trainer.TorchTrainer"><span class="pre">dicee.trainer.torch_trainer.TorchTrainer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.TorchDDPTrainer" title="dicee.trainer.torch_trainer_ddp.TorchDDPTrainer"><span class="pre">dicee.trainer.torch_trainer_ddp.TorchDDPTrainer</span></a></span></span><a class="reference internal" href="../../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.initialize_trainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.dice_trainer.DICE_Trainer.initialize_trainer" title="Link to this definition"></a></dt>
 <dd><p>Initialize Trainer from input arguments</p>
 </dd></dl>
 

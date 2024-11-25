@@ -9,29 +9,13 @@ Classes
 
 .. autoapisummary::
 
-   dicee.trainer.model_parallelism.TensorParallel
-
-
-Functions
----------
-
-.. autoapisummary::
-
-   dicee.trainer.model_parallelism.extract_input_outputs
-   dicee.trainer.model_parallelism.find_good_batch_size
-   dicee.trainer.model_parallelism.forward_backward_update_loss
+   dicee.trainer.model_parallelism.MP
 
 
 Module Contents
 ---------------
 
-.. py:function:: extract_input_outputs(z: list, device=None)
-
-.. py:function:: find_good_batch_size(train_loader, ensemble_model, max_available_gpu_memory: float = 0.05)
-
-.. py:function:: forward_backward_update_loss(z: Tuple, ensemble_model)
-
-.. py:class:: TensorParallel(args, callbacks)
+.. py:class:: MP(args, callbacks)
 
    Bases: :py:obj:`dicee.abstracts.AbstractTrainer`
 
@@ -48,11 +32,6 @@ Module Contents
            ?
 
 
-   .. py:attribute:: models
-      :value: []
-
-
-
    .. py:method:: get_ensemble()
 
 
@@ -60,5 +39,8 @@ Module Contents
 
       Train model
 
+
+
+   .. py:method:: extract_input_outputs(z: list)
 
 
