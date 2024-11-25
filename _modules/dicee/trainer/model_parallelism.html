@@ -141,12 +141,17 @@
             <span class="k">break</span>
         <span class="n">global_free_memory</span><span class="p">,</span> <span class="n">total_memory</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">mem_get_info</span><span class="p">()</span>
         <span class="n">available_gpu_memory</span> <span class="o">=</span> <span class="n">global_free_memory</span> <span class="o">/</span> <span class="n">total_memory</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Random Batch Loss: </span><span class="si">{</span><span class="n">loss</span><span class="si">}</span><span class="se">\t</span><span class="s2">Used GPU Memory:</span><span class="si">{</span><span class="n">available_gpu_memory</span><span class="si">}</span><span class="s2"> %</span><span class="se">\t</span><span class="s2">Batch Size:</span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Random Batch Loss: </span><span class="si">{</span><span class="n">loss</span><span class="si">}</span><span class="se">\t</span><span class="s2">Free/Total GPU Memory: </span><span class="si">{</span><span class="n">available_gpu_memory</span><span class="si">}</span><span class="se">\t</span><span class="s2">Batch Size:</span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="c1"># () Stepping criterion</span>
         <span class="k">if</span> <span class="n">available_gpu_memory</span> <span class="o">&gt;</span> <span class="n">max_available_gpu_memory</span> <span class="ow">and</span> <span class="n">batch_size</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span> <span class="p">:</span>
             <span class="c1"># Increment the current batch size</span>
             <span class="n">batch_size</span><span class="o">+=</span><span class="n">batch_size</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">batch_size</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Batch size equals to the training dataset size&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Max GPU memory used</span><span class="se">\t</span><span class="s2">Free/Total GPU Memory:</span><span class="si">{</span><span class="n">available_gpu_memory</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
             <span class="k">return</span> <span class="n">batch_size</span>
 
     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;The computation should be here!&quot;</span><span class="p">)</span></div>
