@@ -42,9 +42,9 @@ def get_default_arguments(description=None):
                         help="Available knowledge graph embedding models. "
                              "To use other knowledge graph embedding models available in python, e.g.,"
                              "**Pykeen_BoxE** and add this into choices")
-    parser.add_argument('--optim', type=str, default='Adam',
+    parser.add_argument('--optim', type=str, default='Adopt',
                         help='An optimizer',
-                        choices=['Adam', 'AdamW', 'SGD',"NAdam", "Adagrad", "ASGD"])
+                        choices=['Adam', 'AdamW', 'SGD',"NAdam", "Adagrad", "ASGD", "Adopt"])
     parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
@@ -55,8 +55,8 @@ def get_default_arguments(description=None):
                         default={},
                         help='{"PPE":{ "last_percent_to_consider": 10}}'
                              '"Perturb": {"level": "out", "ratio": 0.2, "method": "RN", "scaler": 0.3}')
-    parser.add_argument("--trainer", type=str, default='MP',
-                        choices=['torchCPUTrainer', 'PL', 'torchDDP', "MP"],
+    parser.add_argument("--trainer", type=str, default='TP',
+                        choices=['torchCPUTrainer', 'PL', 'torchDDP', "TP"],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only), MP (Model Paralelisim)')
     parser.add_argument('--scoring_technique', default="KvsSample",
                         help="Training technique for knowledge graph embedding model",

@@ -19,6 +19,7 @@ from collections import defaultdict
 import polars as pl
 import requests
 import csv
+from .models.ensemble import EnsembleKGE
 
 def create_recipriocal_triples(x):
     """
@@ -284,6 +285,10 @@ def save_checkpoint_model(model, path: str) -> None:
             print(e)
             print(model.name)
             print('Could not save the model correctly')
+    elif isinstance(model, EnsembleKGE):
+        for i, partial_model in enumerate(model):
+            new_path=path.replace("model.pt",f"model_partial_{i}.pt")
+            torch.save(partial_model.state_dict(), new_path)
     else:
         torch.save(model.model.state_dict(), path)
 
@@ -303,13 +308,7 @@ def store(trainer,
     assert full_storage_path is not None
     assert isinstance(model_name, str)
     assert len(model_name) > 1
-
-    # (1) Save pytorch model in trained_model .
-    if hasattr(trained_model,"is_ensemble"):
-        for i,kge in enumerate(trained_model):
-            torch.save(kge.state_dict(), full_storage_path + f'/{model_name}_{i}.pt')
-    else:
-        save_checkpoint_model(model=trained_model, path=full_storage_path + f'/{model_name}.pt')
+    save_checkpoint_model(model=trained_model, path=full_storage_path + f'/{model_name}.pt')
 
     if save_embeddings_as_csv:
         entity_emb, relation_ebm = trained_model.get_embeddings()

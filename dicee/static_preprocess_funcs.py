@@ -61,7 +61,7 @@ def preprocesses_input_args(args):
     sanity_checking_with_arguments(args)
     if args.model == 'Shallom':
         args.scoring_technique = 'KvsAll'
-    # TODO: we need need to define as "NONE ?
+
     if args.normalization == 'None':
         args.normalization = None
     assert args.normalization in [None, 'LayerNorm', 'BatchNorm1d']
