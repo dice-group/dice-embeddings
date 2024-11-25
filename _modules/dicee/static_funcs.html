@@ -109,6 +109,7 @@
 <span class="kn">import</span> <span class="nn">polars</span> <span class="k">as</span> <span class="nn">pl</span>
 <span class="kn">import</span> <span class="nn">requests</span>
 <span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">from</span> <span class="nn">.models.ensemble</span> <span class="kn">import</span> <span class="n">EnsembleKGE</span>
 
 <div class="viewcode-block" id="create_recipriocal_triples">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.create_recipriocal_triples">[docs]</a>
@@ -403,7 +404,7 @@
     <span class="k">return</span> <span class="n">train_set</span></div>
 
 
-<span class="kn">from</span> <span class="nn">.models.ensemble</span> <span class="kn">import</span> <span class="n">EnsembleKGE</span>
+
 <div class="viewcode-block" id="save_checkpoint_model">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.save_checkpoint_model">[docs]</a>
 <span class="k">def</span> <span class="nf">save_checkpoint_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>

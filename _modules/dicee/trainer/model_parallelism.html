@@ -91,12 +91,7 @@
 <span></span><span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">..abstracts</span> <span class="kn">import</span> <span class="n">AbstractTrainer</span>
 <span class="kn">from</span> <span class="nn">..static_funcs_training</span> <span class="kn">import</span> <span class="n">make_iterable_verbose</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">import</span> <span class="nn">torch.distributed</span> <span class="k">as</span> <span class="nn">dist</span>
 <span class="kn">from</span> <span class="nn">..models.ensemble</span> <span class="kn">import</span> <span class="n">EnsembleKGE</span>
-<span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
 
 <div class="viewcode-block" id="extract_input_outputs">
@@ -240,113 +235,107 @@
         <span class="c1"># TODO: Later, maybe we should write a callback to save the models in disk</span>
         <span class="k">return</span> <span class="n">ensemble_model</span></div>
 
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    </span>
+<span class="sd">    def batchwisefit(self, *args, **kwargs):</span>
+<span class="sd">        assert len(args) == 1</span>
+<span class="sd">        model, = args</span>
+<span class="sd">        # (1) Run the fit the start callback.</span>
+<span class="sd">        self.on_fit_start(self, model)</span>
+<span class="sd">        # (2) Setup DDP.</span>
+<span class="sd">        optimizer = model.configure_optimizers()</span>
+<span class="sd">        num_gpus = torch.cuda.device_count()</span>
+<span class="sd">        for epoch in (tqdm_bar := make_iterable_verbose(range(self.attributes.num_epochs),</span>
+<span class="sd">                                                        verbose=True, position=0, leave=True)):</span>
+<span class="sd">            epoch_loss = 0</span>
+<span class="sd">            num_of_batches = len(kwargs[&#39;train_dataloaders&#39;])</span>
+<span class="sd">            for i, (x_batch, y_batch) in enumerate(kwargs[&#39;train_dataloaders&#39;]):</span>
+<span class="sd">                # Define a large batch into small batches</span>
+<span class="sd">                x_splits = torch.chunk(x_batch, num_gpus)</span>
+<span class="sd">                y_splits = torch.chunk(y_batch, num_gpus)</span>
 
-<div class="viewcode-block" id="TensorParallel.batchwisefit">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.TensorParallel.batchwisefit">[docs]</a>
-    <span class="k">def</span> <span class="nf">batchwisefit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; Train model        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
-        <span class="n">model</span><span class="p">,</span> <span class="o">=</span> <span class="n">args</span>
-        <span class="c1"># (1) Run the fit the start callback.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
-        <span class="c1"># (2) Setup DDP.</span>
-        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">configure_optimizers</span><span class="p">()</span>
-        <span class="n">num_gpus</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="p">(</span><span class="n">tqdm_bar</span> <span class="o">:=</span> <span class="n">make_iterable_verbose</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">),</span>
-                                                        <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
-            <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">num_of_batches</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;train_dataloaders&#39;</span><span class="p">])</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;train_dataloaders&#39;</span><span class="p">]):</span>
-                <span class="c1"># Define a large batch into small batches</span>
-                <span class="n">x_splits</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="n">x_batch</span><span class="p">,</span> <span class="n">num_gpus</span><span class="p">)</span>
-                <span class="n">y_splits</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">chunk</span><span class="p">(</span><span class="n">y_batch</span><span class="p">,</span> <span class="n">num_gpus</span><span class="p">)</span>
+<span class="sd">                # Forward pass. We need to paralelize it</span>
+<span class="sd">                gpu_losses = []</span>
+<span class="sd">                for gpu_id, (x_split, y_split) in enumerate(zip(x_splits, y_splits)):</span>
+<span class="sd">                    y_split = y_split.to(f&quot;cuda:{gpu_id}&quot;)</span>
+<span class="sd">                    h_emb, r_emb, t_emb = model.get_triple_representation(x_split)</span>
+<span class="sd">                    h_emb, r_emb, t_emb = h_emb.pin_memory().to(f&quot;cuda:{gpu_id}&quot;,</span>
+<span class="sd">                                                                non_blocking=True), r_emb.pin_memory().to(f&quot;cuda:{gpu_id}&quot;, non_blocking=True), t_emb.pin_memory().to(f&quot;cuda:{gpu_id}&quot;, non_blocking=True)</span>
+<span class="sd">                    yhat = model.score(h_emb, r_emb, t_emb)</span>
+<span class="sd">                    gpu_losses.append(torch.nn.functional.binary_cross_entropy_with_logits(yhat, y_split).to(&quot;cuda:0&quot;))</span>
 
-                <span class="c1"># Forward pass. We need to paralelize it</span>
-                <span class="n">gpu_losses</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="k">for</span> <span class="n">gpu_id</span><span class="p">,</span> <span class="p">(</span><span class="n">x_split</span><span class="p">,</span> <span class="n">y_split</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x_splits</span><span class="p">,</span> <span class="n">y_splits</span><span class="p">)):</span>
-                    <span class="n">y_split</span> <span class="o">=</span> <span class="n">y_split</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">gpu_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="n">h_emb</span><span class="p">,</span> <span class="n">r_emb</span><span class="p">,</span> <span class="n">t_emb</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">x_split</span><span class="p">)</span>
-                    <span class="n">h_emb</span><span class="p">,</span> <span class="n">r_emb</span><span class="p">,</span> <span class="n">t_emb</span> <span class="o">=</span> <span class="n">h_emb</span><span class="o">.</span><span class="n">pin_memory</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">gpu_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                                                                <span class="n">non_blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">r_emb</span><span class="o">.</span><span class="n">pin_memory</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">gpu_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">t_emb</span><span class="o">.</span><span class="n">pin_memory</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">gpu_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                    <span class="n">yhat</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">h_emb</span><span class="p">,</span> <span class="n">r_emb</span><span class="p">,</span> <span class="n">t_emb</span><span class="p">)</span>
-                    <span class="n">gpu_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">binary_cross_entropy_with_logits</span><span class="p">(</span><span class="n">yhat</span><span class="p">,</span> <span class="n">y_split</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">))</span>
+<span class="sd">                loss = sum(gpu_losses) / len(gpu_losses)</span>
 
-                <span class="n">loss</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">gpu_losses</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">gpu_losses</span><span class="p">)</span>
+<span class="sd">                loss.backward()</span>
+<span class="sd">                batch_loss = loss.item()</span>
+<span class="sd">                optimizer.step()</span>
+<span class="sd">                optimizer.zero_grad(set_to_none=True)</span>
 
-                <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
-                <span class="n">batch_loss</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-                <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
-                <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">(</span><span class="n">set_to_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="sd">                epoch_loss += batch_loss</span>
 
-                <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">batch_loss</span>
+<span class="sd">                if hasattr(tqdm_bar, &#39;set_description_str&#39;):</span>
+<span class="sd">                    tqdm_bar.set_description_str(f&quot;Epoch:{epoch + 1}&quot;)</span>
+<span class="sd">                    if i &gt; 0:</span>
+<span class="sd">                        tqdm_bar.set_postfix_str(</span>
+<span class="sd">                            f&quot;batch={i} | {num_of_batches}, loss_step={batch_loss:.5f}, loss_epoch={epoch_loss / i:.5f}&quot;)</span>
+<span class="sd">                    else:</span>
+<span class="sd">                        tqdm_bar.set_postfix_str(f&quot;loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}&quot;)</span>
 
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">tqdm_bar</span><span class="p">,</span> <span class="s1">&#39;set_description_str&#39;</span><span class="p">):</span>
-                    <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_description_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epoch:</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_postfix_str</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;batch=</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">num_of_batches</span><span class="si">}</span><span class="s2">, loss_step=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, loss_epoch=</span><span class="si">{</span><span class="n">epoch_loss</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">i</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_postfix_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loss_step=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, loss_epoch=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="TensorParallel.torch_buggy_fit">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.TensorParallel.torch_buggy_fit">[docs]</a>
-    <span class="k">def</span> <span class="nf">torch_buggy_fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; Train model        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
-        <span class="n">model</span><span class="p">,</span> <span class="o">=</span> <span class="n">args</span>
-        <span class="c1"># () Run the fit the start callback.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
-        <span class="c1"># () Init Process Group with NCCL.</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">init_process_group</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="s2">&quot;nccl&quot;</span><span class="p">)</span>
-        <span class="c1"># () Get Rank and World Size.</span>
-        <span class="n">rank</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">get_rank</span><span class="p">()</span>
-        <span class="n">world_size</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">get_world_size</span><span class="p">()</span>
-        <span class="c1"># () Reinitialize Rank based on manuel seed rank.</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> 
-        <span class="n">model</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-        <span class="c1"># () .</span>
-        <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;cuda:</span><span class="si">{</span><span class="n">rank</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-        <span class="c1"># () .</span>
-        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">configure_optimizers</span><span class="p">()</span>
-        <span class="c1"># () .</span>
-        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="p">(</span><span class="n">tqdm_bar</span> <span class="o">:=</span> <span class="n">make_iterable_verbose</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">),</span>
-                                                        <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
-            <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">num_of_batches</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;train_dataloaders&#39;</span><span class="p">])</span>
-            <span class="c1"># () .</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;train_dataloaders&#39;</span><span class="p">]):</span>
-                <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
-                <span class="c1"># () Get batch and move it on GPUs .</span>
-                <span class="n">inputs</span><span class="p">,</span><span class="n">targets</span> <span class="o">=</span> <span class="n">extract_input_outputs</span><span class="p">(</span><span class="n">z</span><span class="p">,</span><span class="n">device</span><span class="p">)</span>
-                <span class="c1"># () Predict .</span>
-                <span class="n">yhats</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>   
-                <span class="c1"># () TODO: Pytorch Bug https://github.com/pytorch/pytorch/issues/58005 .</span>
-                <span class="n">dist</span><span class="o">.</span><span class="n">all_reduce</span><span class="p">(</span><span class="n">yhats</span><span class="p">,</span><span class="n">op</span><span class="o">=</span><span class="n">dist</span><span class="o">.</span><span class="n">ReduceOp</span><span class="o">.</span><span class="n">SUM</span><span class="p">)</span>
-                <span class="c1"># () Compute loss .</span>
-                <span class="n">loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">binary_cross_entropy_with_logits</span><span class="p">(</span><span class="n">yhats</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
-                <span class="c1"># () Backward .</span>
-                <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
-                <span class="c1"># () .</span>
-                <span class="n">batch_loss</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-                <span class="c1"># () .</span>
-                <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
-                <span class="c1"># () .</span>
-                <span class="n">epoch_loss</span> <span class="o">+=</span><span class="n">batch_loss</span>
-                <span class="c1"># () .</span>
-                <span class="k">if</span> <span class="n">rank</span><span class="o">==</span><span class="mi">0</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">tqdm_bar</span><span class="p">,</span> <span class="s1">&#39;set_description_str&#39;</span><span class="p">):</span>
-                    <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_description_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epoch:</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                        <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_postfix_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;batch=</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">num_of_batches</span><span class="si">}</span><span class="s2">, loss_step=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, loss_epoch=</span><span class="si">{</span><span class="n">epoch_loss</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">i</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_postfix_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loss_step=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, loss_epoch=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="c1"># () .</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">destroy_process_group</span><span class="p">()</span>
-        <span class="c1"># () .</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span></div>
-</div>
+<span class="sd">    def torch_buggy_fit(self, *args, **kwargs):</span>
+<span class="sd">        assert len(args) == 1</span>
+<span class="sd">        model, = args</span>
+<span class="sd">        # () Run the fit the start callback.</span>
+<span class="sd">        self.on_fit_start(self, model)</span>
+<span class="sd">        # () Init Process Group with NCCL.</span>
+<span class="sd">        torch.distributed.init_process_group(backend=&quot;nccl&quot;)</span>
+<span class="sd">        # () Get Rank and World Size.</span>
+<span class="sd">        rank = dist.get_rank()</span>
+<span class="sd">        world_size = dist.get_world_size()</span>
+<span class="sd">        # () Reinitialize Rank based on manuel seed rank.</span>
+<span class="sd">        torch.manual_seed(rank)</span>
+<span class="sd">        model.param_init(model.entity_embeddings.weight.data) </span>
+<span class="sd">        model.param_init(model.relation_embeddings.weight.data)</span>
+<span class="sd">        # () .</span>
+<span class="sd">        device = torch.device(f&#39;cuda:{rank}&#39;)</span>
+<span class="sd">        model.to(device)</span>
+<span class="sd">        # () .</span>
+<span class="sd">        optimizer = model.configure_optimizers()</span>
+<span class="sd">        # () .</span>
+<span class="sd">        for epoch in (tqdm_bar := make_iterable_verbose(range(self.attributes.num_epochs),</span>
+<span class="sd">                                                        verbose=True, position=0, leave=True)):</span>
+<span class="sd">            epoch_loss = 0</span>
+<span class="sd">            num_of_batches = len(kwargs[&#39;train_dataloaders&#39;])</span>
+<span class="sd">            # () .</span>
+<span class="sd">            for i, z in enumerate(kwargs[&#39;train_dataloaders&#39;]):</span>
+<span class="sd">                optimizer.zero_grad()</span>
+<span class="sd">                # () Get batch and move it on GPUs .</span>
+<span class="sd">                inputs,targets = extract_input_outputs(z,device)</span>
+<span class="sd">                # () Predict .</span>
+<span class="sd">                yhats = model(inputs)   </span>
+<span class="sd">                # () TODO: Pytorch Bug https://github.com/pytorch/pytorch/issues/58005 .</span>
+<span class="sd">                dist.all_reduce(yhats,op=dist.ReduceOp.SUM)</span>
+<span class="sd">                # () Compute loss .</span>
+<span class="sd">                loss = torch.nn.functional.binary_cross_entropy_with_logits(yhats, targets)</span>
+<span class="sd">                # () Backward .</span>
+<span class="sd">                loss.backward()</span>
+<span class="sd">                # () .</span>
+<span class="sd">                batch_loss = loss.item()</span>
+<span class="sd">                # () .</span>
+<span class="sd">                optimizer.step()</span>
+<span class="sd">                # () .</span>
+<span class="sd">                epoch_loss +=batch_loss</span>
+<span class="sd">                # () .</span>
+<span class="sd">                if rank==0 and hasattr(tqdm_bar, &#39;set_description_str&#39;):</span>
+<span class="sd">                    tqdm_bar.set_description_str(f&quot;Epoch:{epoch + 1}&quot;)</span>
+<span class="sd">                    if i &gt; 0:</span>
+<span class="sd">                        tqdm_bar.set_postfix_str(f&quot;batch={i} | {num_of_batches}, loss_step={batch_loss:.5f}, loss_epoch={epoch_loss / i:.5f}&quot;)</span>
+<span class="sd">                    else:</span>
+<span class="sd">                        tqdm_bar.set_postfix_str(f&quot;loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}&quot;)</span>
+<span class="sd">        # () .</span>
+<span class="sd">        torch.distributed.destroy_process_group()</span>
+<span class="sd">        # () .</span>
+<span class="sd">        self.on_fit_end(self, model)</span>
+<span class="sd">    &quot;&quot;&quot;</span></div>
 
 </pre></div>
 
