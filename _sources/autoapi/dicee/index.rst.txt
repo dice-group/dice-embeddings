@@ -2047,6 +2047,11 @@ Package Contents
    .. py:method:: step()
 
 
+   .. py:method:: get_embeddings()
+      :abstractmethod:
+
+
+
    .. py:method:: __str__()
 
 
