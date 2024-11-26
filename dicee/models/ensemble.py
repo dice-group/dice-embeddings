@@ -82,6 +82,9 @@ class EnsembleKGE:
     def step(self):
         for opt in self.optimizers:
             opt.step()
+
+    def get_embeddings(self):
+        raise NotImplementedError("Not yet Implemented")
     
     """
     def __getattr__(self, name):
