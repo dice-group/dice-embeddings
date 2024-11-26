@@ -2048,8 +2048,6 @@ Package Contents
 
 
    .. py:method:: get_embeddings()
-      :abstractmethod:
-
 
 
    .. py:method:: __str__()
