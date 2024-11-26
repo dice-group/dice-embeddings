@@ -29,8 +29,8 @@ def find_good_batch_size(train_loader,ensemble_model, max_available_gpu_memory:f
     if batch_size >= len(train_loader.dataset):
         return batch_size
     first_batch_size = train_loader.batch_size
-
-    print("Automatic batch size finding")
+    num_datapoints=len(train_loader.dataset)
+    print(f"Increment the batch size by {first_batch_size} until the Free/Total GPU memory is reached to {1-max_available_gpu_memory} or batch_size={num_datapoints} is achieved.")
     while True:
         # () Initialize a dataloader with a current batch_size
         train_dataloaders = torch.utils.data.DataLoader(train_loader.dataset,
@@ -52,15 +52,16 @@ def find_good_batch_size(train_loader,ensemble_model, max_available_gpu_memory:f
             avg_global_free_memory.append(global_free_memory / total_memory)
             if i==3:
                 break
-
         avg_global_free_memory=sum(avg_global_free_memory)/len(avg_global_free_memory)
         print(f"Random Batch Loss: {loss}\tFree/Total GPU Memory: {avg_global_free_memory}\tBatch Size:{batch_size}")
-        # () Stepping criterion
-        if avg_global_free_memory > max_available_gpu_memory and batch_size < len(train_loader.dataset) :
-            # Increment the current batch size
-            batch_size+=first_batch_size
+        if avg_global_free_memory > max_available_gpu_memory and batch_size < num_datapoints :
+            if batch_size+first_batch_size <= num_datapoints:
+                batch_size+=first_batch_size
+            else:
+                batch_size=num_datapoints
         else:
-            if batch_size >= len(train_loader.dataset):
+            assert batch_size<=num_datapoints
+            if batch_size == num_datapoints:
                 print("Batch size equals to the training dataset size")
             else:
                 print(f"Max GPU memory used\tFree/Total GPU Memory:{avg_global_free_memory}")
@@ -88,6 +89,7 @@ class TensorParallel(AbstractTrainer):
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
         self.models=[]
+
     def get_ensemble(self):
         return self.models
 
@@ -104,18 +106,20 @@ class TensorParallel(AbstractTrainer):
         # ()
         train_dataloader = kwargs['train_dataloaders']
         # ()
-        train_dataloader = torch.utils.data.DataLoader(train_dataloader.dataset,
-                                                        batch_size=find_good_batch_size(train_dataloader, ensemble_model),
-                                                        shuffle=True,
-                                                        sampler=None,
-                                                        batch_sampler=None,
-                                                        num_workers=self.attributes.num_core,
-                                                        collate_fn=train_dataloader.dataset.collate_fn,
-                                                        pin_memory=False,
-                                                        drop_last=False,
-                                                        timeout=0,
-                                                        worker_init_fn=None,
-                                                        persistent_workers=False)
+        if self.attributes.auto_batch_finding:
+            train_dataloader = torch.utils.data.DataLoader(train_dataloader.dataset,
+                                                            batch_size=find_good_batch_size(train_dataloader, ensemble_model),
+                                                            shuffle=True,
+                                                            sampler=None,
+                                                            batch_sampler=None,
+                                                            num_workers=self.attributes.num_core,
+                                                            collate_fn=train_dataloader.dataset.collate_fn,
+                                                            pin_memory=False,
+                                                            drop_last=False,
+                                                            timeout=0,
+                                                            worker_init_fn=None,
+                                                            persistent_workers=False)
+
         num_of_batches = len(train_dataloader)
         # () Start training.
         for epoch in (tqdm_bar := make_iterable_verbose(range(self.attributes.num_epochs),
