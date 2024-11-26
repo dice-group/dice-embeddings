@@ -2,9 +2,6 @@ import numpy as np
 import torch
 import datetime
 from typing import Tuple, List
-
-from matplotlib.font_manager import json_load
-
 from .models import Pyke, DistMult, KeciBase, Keci, TransE, DeCaL, DualE,\
     ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom, LFMult
 from .models.pykeen_models import PykeenKGE
@@ -690,7 +687,6 @@ def download_pretrained_model(url: str) -> str:
 def write_csv_from_model_parallel(path: str) :
     """Create"""
     assert os.path.exists(path), "Path does not exist"
-    model_name=json_load(path+"/configuration.json")["model"]
     # Detect files that start with model_ and end with .pt
     model_files = [f for f in os.listdir(path) if f.startswith("model_") and f.endswith(".pt")]
     model_files.sort()  # Sort to maintain order if necessary (e.g., model_0.pt, model_1.pt)

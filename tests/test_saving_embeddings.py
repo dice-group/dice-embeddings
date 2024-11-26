@@ -2,6 +2,7 @@ import pytest
 from dicee.static_funcs import from_pretrained_model_write_embeddings_into_csv
 from dicee.executer import Execute
 from dicee.config import Namespace
+import torch
 
 class TestSavingEmbeddings:
     def test_saving_embeddings(self):
