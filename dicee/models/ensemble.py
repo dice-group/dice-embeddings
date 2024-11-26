@@ -1,11 +1,6 @@
 import torch
 import copy
 
-import torch._dynamo
-
-torch._dynamo.config.suppress_errors = True
-
-
 class EnsembleKGE:
     def __init__(self, seed_model):
         self.models = []
@@ -13,13 +8,13 @@ class EnsembleKGE:
         self.loss_history = []
         for i in range(torch.cuda.device_count()):
             i_model=copy.deepcopy(seed_model)
-            i_model.to(torch.device(f"cuda:{i}"))
             # TODO: Why we cant send the compile model to cpu ?
-            # i_model = torch.compile(i_model)
+            i_model = torch.compile(i_model)
+            i_model.to(torch.device(f"cuda:{i}"))
             self.optimizers.append(i_model.configure_optimizers())
             self.models.append(i_model)
         # Maybe use the original model's name ?
-        self.name="TP_"+self.models[0].name
+        self.name=self.models[0].name
         self.train_mode=True
 
     def named_children(self):
@@ -87,7 +82,25 @@ class EnsembleKGE:
     def step(self):
         for opt in self.optimizers:
             opt.step()
-    
+
+    def get_embeddings(self):
+        entity_embeddings=[]
+        relation_embeddings=[]
+        # () Iterate
+        for trained_model in self.models:
+            entity_emb, relation_ebm = trained_model.get_embeddings()
+            entity_embeddings.append(entity_emb)
+            if relation_ebm is not None:
+                relation_embeddings.append(relation_ebm)
+        # () Concat the embedding vectors horizontally.
+        entity_embeddings=torch.cat(entity_embeddings,dim=1)
+        if relation_embeddings:
+            relation_embeddings=torch.cat(relation_embeddings,dim=1)
+        else:
+            relation_embeddings=None
+
+        return entity_embeddings, relation_embeddings
+
     """
     def __getattr__(self, name):
         # Create a function that will call the same attribute/method on each model
