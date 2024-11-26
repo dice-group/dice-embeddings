@@ -2178,7 +2178,7 @@ Package Contents
 
 .. py:function:: download_pretrained_model(url: str) -> str
 
-.. py:function:: write_csv_from_model_parallel(path: str) -> None
+.. py:function:: write_csv_from_model_parallel(path: str)
 
    Create
 
