@@ -2,6 +2,9 @@ import numpy as np
 import torch
 import datetime
 from typing import Tuple, List
+
+from matplotlib.font_manager import json_load
+
 from .models import Pyke, DistMult, KeciBase, Keci, TransE, DeCaL, DualE,\
     ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom, LFMult
 from .models.pykeen_models import PykeenKGE
@@ -684,16 +687,16 @@ def download_pretrained_model(url: str) -> str:
         download_files_from_url(url_to_download_from, destination_folder=dir_name)
     return dir_name
 
-def write_csv_from_model_parallel(path: str) -> None:
+def write_csv_from_model_parallel(path: str) :
     """Create"""
     assert os.path.exists(path), "Path does not exist"
-
+    model_name=json_load(path+"/configuration.json")["model"]
     # Detect files that start with model_ and end with .pt
     model_files = [f for f in os.listdir(path) if f.startswith("model_") and f.endswith(".pt")]
     model_files.sort()  # Sort to maintain order if necessary (e.g., model_0.pt, model_1.pt)
 
-    entity_csv_path = os.path.join(path, "entity_embeddings.csv")
-    relation_csv_path = os.path.join(path, "relation_embeddings.csv")
+    entity_embeddings=[]
+    relation_embeddings=[]
 
     # Process each model file
     for model_file in model_files:
@@ -702,65 +705,50 @@ def write_csv_from_model_parallel(path: str) -> None:
         model = torch.load(model_path)
         # Assuming model has a get_embeddings method
         entity_emb, relation_emb = model["_orig_mod.entity_embeddings.weight"], model["_orig_mod.relation_embeddings.weight"]
-        # Convert to numpy
-        entity_emb = entity_emb.numpy()
-        relation_emb = relation_emb.numpy()
+        entity_embeddings.append(entity_emb)
+        relation_embeddings.append(relation_emb)
 
-        # Write or append to CSV
-        if not os.path.exists(entity_csv_path) or not os.path.exists(relation_csv_path):
-            # If CSV files do not exist, create them
-            pd.DataFrame(entity_emb).to_csv(entity_csv_path, index=True, header=False)
-            pd.DataFrame(relation_emb).to_csv(relation_csv_path, index=True, header=False)
-        else:
-            # If CSV files exist, concatenate to the existing rows
-            existing_entity_df = pd.read_csv(entity_csv_path, header=None)
-            existing_relation_df = pd.read_csv(relation_csv_path, header=None)
+    return torch.cat(entity_embeddings, dim=1), torch.cat(relation_embeddings, dim=1)
 
-            # Concatenate along the columns (axis=1)
-            new_entity_df = pd.concat([existing_entity_df, pd.DataFrame(entity_emb)], axis=1)
-            new_relation_df = pd.concat([existing_relation_df, pd.DataFrame(relation_emb)], axis=1)
-
-            # Write the updated data back to the CSV files
-            new_entity_df.to_csv(entity_csv_path, index=False, header=False)
-            new_relation_df.to_csv(relation_csv_path, index=False, header=False)
 
 def from_pretrained_model_write_embeddings_into_csv(path: str) -> None:
     """ """
     assert os.path.exists(path), "Path does not exist"
     config = load_json(path + '/configuration.json')
-    if config["trainer"]=="MP":
-        write_csv_from_model_parallel(path)
+    entity_csv_path = os.path.join(path, f"{config['model']}_entity_embeddings.csv")
+    relation_csv_path = os.path.join(path, f"{config['model']}_relation_embeddings.csv")
+
+    if config["trainer"]=="TP":
+        entity_emb, relation_emb = write_csv_from_model_parallel(path)
     else:
-        entity_csv_path = os.path.join(path, f"{config['model']}_entity_embeddings.csv")
-        relation_csv_path = os.path.join(path, f"{config['model']}_relation_embeddings.csv")
         # Load model
         model = torch.load(os.path.join(path, "model.pt"))
         # Assuming model has a get_embeddings method
         entity_emb, relation_emb = model["entity_embeddings.weight"], model["relation_embeddings.weight"]
-        str_entity = pd.read_csv(f"{path}/entity_to_idx.csv", index_col=0)["entity"]
-        assert str_entity.index.is_monotonic_increasing
-        str_entity=str_entity.to_list()
-        # Write entity embeddings with headers and indices
-        with open(entity_csv_path, "w", newline="") as f:
-            writer = csv.writer(f)
-            # Add header (e.g., "", "0", "1", ..., "N")
-            headers = [""] + [f"{i}" for i in range(entity_emb.size(1))]
-            writer.writerow(headers)
-            # Add rows with index
-            for i_row, (name,row) in enumerate(zip(str_entity,entity_emb)):
-                writer.writerow([name] + row.tolist())
-        str_relations = pd.read_csv(f"{path}/relation_to_idx.csv", index_col=0)["relation"]
-        assert str_relations.index.is_monotonic_increasing
+    str_entity = pd.read_csv(f"{path}/entity_to_idx.csv", index_col=0)["entity"]
+    assert str_entity.index.is_monotonic_increasing
+    str_entity=str_entity.to_list()
+    # Write entity embeddings with headers and indices
+    with open(entity_csv_path, "w", newline="") as f:
+        writer = csv.writer(f)
+        # Add header (e.g., "", "0", "1", ..., "N")
+        headers = [""] + [f"{i}" for i in range(entity_emb.size(1))]
+        writer.writerow(headers)
+        # Add rows with index
+        for i_row, (name,row) in enumerate(zip(str_entity,entity_emb)):
+            writer.writerow([name] + row.tolist())
+    str_relations = pd.read_csv(f"{path}/relation_to_idx.csv", index_col=0)["relation"]
+    assert str_relations.index.is_monotonic_increasing
 
-        # Write relation embeddings with headers and indices
-        with open(relation_csv_path, "w", newline="") as f:
-            writer = csv.writer(f)
-            # Add header (e.g., "", "0", "1", ..., "N")
-            headers = [""] + [f"{i}" for i in range(relation_emb.size(1))]
-            writer.writerow(headers)
-            # Add rows with index
-            for i_row, (name, row) in enumerate(zip(str_relations,relation_emb)):
-                writer.writerow([name]+ row.tolist())
+    # Write relation embeddings with headers and indices
+    with open(relation_csv_path, "w", newline="") as f:
+        writer = csv.writer(f)
+        # Add header (e.g., "", "0", "1", ..., "N")
+        headers = [""] + [f"{i}" for i in range(relation_emb.size(1))]
+        writer.writerow(headers)
+        # Add rows with index
+        for i_row, (name, row) in enumerate(zip(str_relations,relation_emb)):
+            writer.writerow([name]+ row.tolist())
 
     """
     
