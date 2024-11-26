@@ -177,7 +177,6 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">label_smoothing_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-
         <span class="bp">self</span><span class="o">.</span><span class="n">num_core</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of CPUs to be used in the mini-batch loading process&quot;&quot;&quot;</span>
 
@@ -230,6 +229,9 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">continual_learning</span><span class="o">=</span><span class="kc">None</span>
         <span class="s2">&quot;Path of a pretrained model size of LLM&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">auto_batch_finding</span><span class="o">=</span><span class="kc">False</span>
+        <span class="s2">&quot;A flag for using auto batch finding&quot;</span>
 
 <div class="viewcode-block" id="Namespace.__iter__">
 <a class="viewcode-back" href="../../autoapi/dicee/config/index.html#dicee.config.Namespace.__iter__">[docs]</a>

@@ -382,6 +382,13 @@ Module Contents
       Path of a pretrained model size of LLM
 
 
+   .. py:attribute:: auto_batch_finding
+      :value: False
+
+
+      A flag for using auto batch finding
+
+
    .. py:method:: __iter__()
 
 
