@@ -9,7 +9,7 @@ class EnsembleKGE:
         for i in range(torch.cuda.device_count()):
             i_model=copy.deepcopy(seed_model)
             # TODO: Why we cant send the compile model to cpu ?
-            i_model = torch.compile(i_model)
+            #i_model = torch.compile(i_model)
             i_model.to(torch.device(f"cuda:{i}"))
             self.optimizers.append(i_model.configure_optimizers())
             self.models.append(i_model)
