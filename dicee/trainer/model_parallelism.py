@@ -77,7 +77,7 @@ def find_good_batch_size(train_loader,tp_ensemble_model):
                     return batch_sizes_and_mem_usages,True
                         
         except torch.OutOfMemoryError:
-            print(f"torch.OutOfMemoryError caught!")
+            print("torch.OutOfMemoryError caught!")
             return batch_sizes_and_mem_usages, False
 
     history_batch_sizes_and_mem_usages=[]
