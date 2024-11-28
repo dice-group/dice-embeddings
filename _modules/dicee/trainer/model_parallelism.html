@@ -93,6 +93,7 @@
 <span class="kn">from</span> <span class="nn">..static_funcs_training</span> <span class="kn">import</span> <span class="n">make_iterable_verbose</span>
 <span class="kn">from</span> <span class="nn">..models.ensemble</span> <span class="kn">import</span> <span class="n">EnsembleKGE</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+<span class="kn">import</span> <span class="nn">time</span>
 
 <div class="viewcode-block" id="extract_input_outputs">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.extract_input_outputs">[docs]</a>
@@ -116,72 +117,104 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unexpected batch shape..&#39;</span><span class="p">)</span></div>
 
 
+
 <div class="viewcode-block" id="find_good_batch_size">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.find_good_batch_size">[docs]</a>
-<span class="k">def</span> <span class="nf">find_good_batch_size</span><span class="p">(</span><span class="n">train_loader</span><span class="p">,</span><span class="n">ensemble_model</span><span class="p">,</span> <span class="n">max_available_gpu_memory</span><span class="p">:</span><span class="nb">float</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">find_good_batch_size</span><span class="p">(</span><span class="n">train_loader</span><span class="p">,</span><span class="n">tp_ensemble_model</span><span class="p">):</span>
     <span class="c1"># () Initial batch size</span>
-    <span class="n">batch_size</span><span class="o">=</span><span class="n">train_loader</span><span class="o">.</span><span class="n">batch_size</span>
-    <span class="k">if</span> <span class="n">batch_size</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">batch_size</span>
-    <span class="n">first_batch_size</span> <span class="o">=</span> <span class="n">train_loader</span><span class="o">.</span><span class="n">batch_size</span>
-    <span class="n">num_datapoints</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Increment the batch size by </span><span class="si">{</span><span class="n">first_batch_size</span><span class="si">}</span><span class="s2"> until the Free/Total GPU memory is reached to </span><span class="si">{</span><span class="mi">1</span><span class="o">-</span><span class="n">max_available_gpu_memory</span><span class="si">}</span><span class="s2"> or batch_size=</span><span class="si">{</span><span class="n">num_datapoints</span><span class="si">}</span><span class="s2"> is achieved.&quot;</span><span class="p">)</span>
-    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-        <span class="c1"># () Initialize a dataloader with a current batch_size</span>
-        <span class="n">train_dataloaders</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
-                                                            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
-                                                            <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                                            <span class="n">sampler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                                                            <span class="n">batch_sampler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                                                            <span class="n">num_workers</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                                            <span class="n">collate_fn</span><span class="o">=</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">collate_fn</span><span class="p">,</span>
-                                                            <span class="n">pin_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">drop_last</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                                                            <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                                            <span class="n">worker_init_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                                                            <span class="n">persistent_workers</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">loss</span><span class="o">=</span><span class="kc">None</span>
-        <span class="n">avg_global_free_memory</span><span class="o">=</span><span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_dataloaders</span><span class="p">):</span>
-            <span class="n">loss</span> <span class="o">=</span> <span class="n">forward_backward_update_loss</span><span class="p">(</span><span class="n">z</span><span class="p">,</span><span class="n">ensemble_model</span><span class="p">)</span>
-            <span class="n">global_free_memory</span><span class="p">,</span> <span class="n">total_memory</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">mem_get_info</span><span class="p">()</span>
-            <span class="n">avg_global_free_memory</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">global_free_memory</span> <span class="o">/</span> <span class="n">total_memory</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">i</span><span class="o">==</span><span class="mi">3</span><span class="p">:</span>
-                <span class="k">break</span>
-        <span class="n">avg_global_free_memory</span><span class="o">=</span><span class="nb">sum</span><span class="p">(</span><span class="n">avg_global_free_memory</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">avg_global_free_memory</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Random Batch Loss: </span><span class="si">{</span><span class="n">loss</span><span class="si">}</span><span class="se">\t</span><span class="s2">Free/Total GPU Memory: </span><span class="si">{</span><span class="n">avg_global_free_memory</span><span class="si">}</span><span class="se">\t</span><span class="s2">Batch Size:</span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">avg_global_free_memory</span> <span class="o">&gt;</span> <span class="n">max_available_gpu_memory</span> <span class="ow">and</span> <span class="n">batch_size</span> <span class="o">&lt;</span> <span class="n">num_datapoints</span> <span class="p">:</span>
-            <span class="k">if</span> <span class="n">batch_size</span><span class="o">+</span><span class="n">first_batch_size</span> <span class="o">&lt;=</span> <span class="n">num_datapoints</span><span class="p">:</span>
-                <span class="n">batch_size</span><span class="o">+=</span><span class="n">first_batch_size</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">batch_size</span><span class="o">=</span><span class="n">num_datapoints</span>
+    <span class="n">initial_batch_size</span><span class="o">=</span><span class="n">train_loader</span><span class="o">.</span><span class="n">batch_size</span>
+    <span class="n">training_dataset_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">initial_batch_size</span> <span class="o">&gt;=</span> <span class="n">training_dataset_size</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">training_dataset_size</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of training data points:&quot;</span><span class="p">,</span><span class="n">training_dataset_size</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">increase_batch_size_until_cuda_out_of_memory</span><span class="p">(</span><span class="n">ensemble_model</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span><span class="n">delta</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">delta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;delta must be positive integer&quot;</span>
+        <span class="n">batch_sizes_and_mem_usages</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">num_datapoints</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">start_time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="c1"># () Initialize a dataloader with a current batch_size</span>
+                <span class="n">train_dataloaders</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
+                                                                <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+                                                                <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                                                <span class="n">sampler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                <span class="n">batch_sampler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                <span class="n">num_workers</span><span class="o">=</span><span class="n">train_loader</span><span class="o">.</span><span class="n">num_workers</span><span class="p">,</span>
+                                                                <span class="n">collate_fn</span><span class="o">=</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">collate_fn</span><span class="p">,</span>
+                                                                <span class="n">pin_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                                <span class="n">drop_last</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                                <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                                                <span class="n">worker_init_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                <span class="n">persistent_workers</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                
+                <span class="n">batch_loss</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batch_of_training_data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_dataloaders</span><span class="p">):</span>
+                    <span class="n">batch_loss</span> <span class="o">=</span> <span class="n">forward_backward_update_loss</span><span class="p">(</span><span class="n">batch_of_training_data</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
+                    <span class="k">break</span>
+                
+                <span class="n">global_free_memory</span><span class="p">,</span> <span class="n">total_memory</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">mem_get_info</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span>
+                <span class="n">percentage_used_gpu_memory</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_memory</span> <span class="o">-</span> <span class="n">global_free_memory</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_memory</span>
+                <span class="n">rt</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start_time</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Random Batch Loss: </span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">0.4</span><span class="si">}</span><span class="se">\t</span><span class="s2">GPU Usage: </span><span class="si">{</span><span class="n">percentage_used_gpu_memory</span><span class="si">:</span><span class="s2">0.3</span><span class="si">}</span><span class="se">\t</span><span class="s2">Runtime: </span><span class="si">{</span><span class="n">rt</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\t</span><span class="s2">Batch Size: </span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                <span class="n">global_free_memory</span><span class="p">,</span> <span class="n">total_memory</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">mem_get_info</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span>
+                <span class="n">percentage_used_gpu_memory</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_memory</span> <span class="o">-</span> <span class="n">global_free_memory</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_memory</span>
+                
+                <span class="c1"># Store the batch size and the runtime</span>
+                <span class="n">batch_sizes_and_mem_usages</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">rt</span><span class="p">))</span>
+                
+                <span class="k">if</span> <span class="n">batch_size</span> <span class="o">&lt;</span> <span class="n">num_datapoints</span><span class="p">:</span>
+                    <span class="c1"># Increase the batch size.</span>
+                    <span class="n">batch_size</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">batch_size</span> <span class="o">/</span> <span class="n">delta</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">batch_sizes_and_mem_usages</span><span class="p">,</span><span class="kc">True</span>
+                        
+        <span class="k">except</span> <span class="n">torch</span><span class="o">.</span><span class="n">OutOfMemoryError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;torch.OutOfMemoryError caught!&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">batch_sizes_and_mem_usages</span><span class="p">,</span> <span class="kc">False</span>
+
+    <span class="n">history_batch_sizes_and_mem_usages</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="n">initial_batch_size</span>
+
+    <span class="k">for</span> <span class="n">delta</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">result</span><span class="p">,</span><span class="n">flag</span><span class="o">=</span> <span class="n">increase_batch_size_until_cuda_out_of_memory</span><span class="p">(</span><span class="n">tp_ensemble_model</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span><span class="n">delta</span><span class="o">=</span><span class="n">delta</span><span class="p">)</span>
+        
+        <span class="n">history_batch_sizes_and_mem_usages</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_rt</span> <span class="o">=</span> <span class="n">history_batch_sizes_and_mem_usages</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">batch_size</span><span class="o">&lt;=</span><span class="n">num_datapoints</span>
-            <span class="k">if</span> <span class="n">batch_size</span> <span class="o">==</span> <span class="n">num_datapoints</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Batch size equals to the training dataset size&quot;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Max GPU memory used</span><span class="se">\t</span><span class="s2">Free/Total GPU Memory:</span><span class="si">{</span><span class="n">avg_global_free_memory</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">batch_size</span></div>
+            <span class="c1"># CUDA ERROR Observed </span>
+            <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_rt</span><span class="o">=</span><span class="n">history_batch_sizes_and_mem_usages</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">batch_size</span><span class="o">&gt;=</span><span class="n">training_dataset_size</span><span class="p">:</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">training_dataset_size</span>
+            <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+    <span class="k">return</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_rt</span></div>
+
 
 
 <div class="viewcode-block" id="forward_backward_update_loss">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.forward_backward_update_loss">[docs]</a>
-<span class="k">def</span> <span class="nf">forward_backward_update_loss</span><span class="p">(</span><span class="n">z</span><span class="p">:</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">):</span>
-    <span class="c1"># () Get the i-th batch of data points.</span>
+<span class="k">def</span> <span class="nf">forward_backward_update_loss</span><span class="p">(</span><span class="n">z</span><span class="p">:</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">float</span><span class="p">:</span>
+    <span class="c1"># () Get a random batch of data points (z).</span>
     <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">extract_input_outputs</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
-    <span class="c1"># () Move the batch of labels into the master GPU : GPU-0</span>
+    <span class="c1"># () Move the batch of labels into the master GPU : GPU-0.</span>
     <span class="n">y_batch</span> <span class="o">=</span> <span class="n">y_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span>
-    <span class="c1"># () Forward Pass on the batch. Yhat located on the master GPU.</span>
+    <span class="c1"># () Forward pas on the batch of input data points (yhat on the master GPU).</span>
     <span class="n">yhat</span> <span class="o">=</span> <span class="n">ensemble_model</span><span class="p">(</span><span class="n">x_batch</span><span class="p">)</span>
-    <span class="c1"># () Compute the loss</span>
+    <span class="c1"># () Compute the loss.</span>
     <span class="n">loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">binary_cross_entropy_with_logits</span><span class="p">(</span><span class="n">yhat</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
     <span class="c1"># () Compute the gradient of the loss w.r.t. parameters.</span>
     <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
     <span class="c1"># () Parameter update.</span>
     <span class="n">ensemble_model</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
-    <span class="c1"># () Report the batch and epoch losses.</span>
-    <span class="n">batch_loss</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-    <span class="c1"># () Accumulate batch loss</span>
-    <span class="k">return</span> <span class="n">batch_loss</span></div>
+    <span class="k">return</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="TensorParallel">
@@ -209,12 +242,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
         <span class="c1"># () Sanity checking</span>
         <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()</span><span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">ensemble_model</span><span class="p">)</span>
-        <span class="c1"># ()</span>
+        <span class="c1"># () Get DataLoader</span>
         <span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;train_dataloaders&#39;</span><span class="p">]</span>
-        <span class="c1"># ()</span>
+        <span class="c1"># () Find a batch size so that available GPU memory is *almost* fully used.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">auto_batch_finding</span><span class="p">:</span>
+            <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_rt</span><span class="o">=</span><span class="n">find_good_batch_size</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
+
             <span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">train_dataloader</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
-                                                            <span class="n">batch_size</span><span class="o">=</span><span class="n">find_good_batch_size</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">),</span>
+                                                            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
                                                             <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                                                             <span class="n">sampler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                                             <span class="n">batch_sampler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -225,17 +260,24 @@
                                                             <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                                                             <span class="n">worker_init_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                                             <span class="n">persistent_workers</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">batch_rt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">expected_training_time</span><span class="o">=</span><span class="n">batch_rt</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">num_epochs</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Exp.Training Runtime: </span><span class="si">{</span><span class="n">expected_training_time</span><span class="o">/</span><span class="mi">60</span><span class="w"> </span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> in mins</span><span class="se">\t</span><span class="s2">|</span><span class="se">\t</span><span class="s2">Batch Size:</span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="se">\t</span><span class="s2">|</span><span class="se">\t</span><span class="s2">Batch RT:</span><span class="si">{</span><span class="n">batch_rt</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\t</span><span class="s2">|</span><span class="se">\t</span><span class="s2"> # of batches:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">)</span><span class="si">}</span><span class="se">\t</span><span class="s2">|</span><span class="se">\t</span><span class="s2"># of epochs:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">num_epochs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
+        <span class="c1"># () Number of batches to reach a single epoch.</span>
         <span class="n">num_of_batches</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">)</span>
         <span class="c1"># () Start training.</span>
         <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="p">(</span><span class="n">tqdm_bar</span> <span class="o">:=</span> <span class="n">make_iterable_verbose</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">),</span>
                                                         <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
+            <span class="c1"># () Accumulate the batch losses.</span>
             <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="c1"># () Iterate over batches.</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">):</span>
+                <span class="c1"># () Forward, Loss, Backward, and Update on a given batch of data points.</span>
                 <span class="n">batch_loss</span> <span class="o">=</span> <span class="n">forward_backward_update_loss</span><span class="p">(</span><span class="n">z</span><span class="p">,</span><span class="n">ensemble_model</span><span class="p">)</span>
+                <span class="c1"># () Accumulate the batch losses to compute the epoch loss.</span>
                 <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">batch_loss</span>
-
+                <span class="c1"># if verbose=TRue, show info.</span>
                 <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">tqdm_bar</span><span class="p">,</span> <span class="s1">&#39;set_description_str&#39;</span><span class="p">):</span>
                     <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_description_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epoch:</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -243,12 +285,14 @@
                             <span class="sa">f</span><span class="s2">&quot;batch=</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">num_of_batches</span><span class="si">}</span><span class="s2">, loss_step=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, loss_epoch=</span><span class="si">{</span><span class="n">epoch_loss</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">i</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_postfix_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loss_step=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, loss_epoch=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># Store the epoch loss</span>
             <span class="n">ensemble_model</span><span class="o">.</span><span class="n">loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_loss</span><span class="p">)</span>
-
+        <span class="c1"># Run on_fit_end callbacks after the training is done.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
         <span class="c1"># TODO: Later, maybe we should write a callback to save the models in disk</span>
         <span class="k">return</span> <span class="n">ensemble_model</span></div>
 
+<span class="w">    </span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    </span>
 <span class="sd">    def batchwisefit(self, *args, **kwargs):</span>

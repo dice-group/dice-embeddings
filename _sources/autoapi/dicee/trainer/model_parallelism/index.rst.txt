@@ -27,9 +27,9 @@ Module Contents
 
 .. py:function:: extract_input_outputs(z: list, device=None)
 
-.. py:function:: find_good_batch_size(train_loader, ensemble_model, max_available_gpu_memory: float = 0.1)
+.. py:function:: find_good_batch_size(train_loader, tp_ensemble_model)
 
-.. py:function:: forward_backward_update_loss(z: Tuple, ensemble_model)
+.. py:function:: forward_backward_update_loss(z: Tuple, ensemble_model) -> float
 
 .. py:class:: TensorParallel(args, callbacks)
 

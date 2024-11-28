@@ -127,11 +127,11 @@
 
     <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The dataset_dir and sparql_endpoint arguments &#39;</span>
-                  <span class="sa">f</span><span class="s1">&#39;must be None if path_single_kg is given.&#39;</span>
-                  <span class="sa">f</span><span class="s1">&#39;***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="s1">***</span><span class="se">\n</span><span class="s1">&#39;</span>
-                  <span class="sa">f</span><span class="s1">&#39;***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="si">}</span><span class="s1">***</span><span class="se">\n</span><span class="s1">&#39;</span>
-                  <span class="sa">f</span><span class="s1">&#39;These two parameters are set to None.&#39;</span><span class="p">)</span>
+            <span class="c1">#print(f&#39;The dataset_dir and sparql_endpoint arguments &#39;</span>
+            <span class="c1">#      f&#39;must be None if path_single_kg is given.&#39;</span>
+            <span class="c1">#      f&#39;***{args.dataset_dir}***\n&#39;</span>
+            <span class="c1">#      f&#39;***{args.sparql_endpoint}***\n&#39;</span>
+            <span class="c1">#      f&#39;These two parameters are set to None.&#39;)</span>
             <span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -156,11 +156,11 @@
                 <span class="sa">f</span><span class="s2">&quot;Use --path_single_kg **folder/dataset.format**, if you have a single file.&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The sparql_endpoint and path_single_kg arguments &#39;</span>
-                  <span class="sa">f</span><span class="s1">&#39;must be None if dataset_dir is given.&#39;</span>
-                  <span class="sa">f</span><span class="s1">&#39;***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="si">}</span><span class="s1">***</span><span class="se">\n</span><span class="s1">&#39;</span>
-                  <span class="sa">f</span><span class="s1">&#39;***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span><span class="si">}</span><span class="s1">***</span><span class="se">\n</span><span class="s1">&#39;</span>
-                  <span class="sa">f</span><span class="s1">&#39;These two parameters are set to None.&#39;</span><span class="p">)</span>
+            <span class="c1">#print(f&#39;The sparql_endpoint and path_single_kg arguments &#39;</span>
+            <span class="c1">#      f&#39;must be None if dataset_dir is given.&#39;</span>
+            <span class="c1">#      f&#39;***{args.sparql_endpoint}***\n&#39;</span>
+            <span class="c1">#      f&#39;***{args.path_single_kg}***\n&#39;</span>
+            <span class="c1">#      f&#39;These two parameters are set to None.&#39;)</span>
             <span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="o">=</span> <span class="kc">None</span>
 
