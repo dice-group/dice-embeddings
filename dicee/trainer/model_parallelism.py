@@ -23,7 +23,7 @@ def extract_input_outputs(z: list, device=None):
     else:
         raise ValueError('Unexpected batch shape..')
 
-def find_good_batch_size(train_loader,ensemble_model, max_available_gpu_memory:float=0.1):
+def find_good_batch_size(train_loader,ensemble_model, max_available_gpu_memory:float=0.20):
     # () Initial batch size
     batch_size=train_loader.batch_size
     if batch_size >= len(train_loader.dataset):
@@ -49,18 +49,17 @@ def find_good_batch_size(train_loader,ensemble_model, max_available_gpu_memory:f
         for i, z in enumerate(train_dataloaders):
             loss = forward_backward_update_loss(z,ensemble_model)
             global_free_memory, total_memory = torch.cuda.mem_get_info()
-            avg_global_free_memory.append(global_free_memory / total_memory)
-            if i==3:
-                break
-        avg_global_free_memory=sum(avg_global_free_memory)/len(avg_global_free_memory)
+            break
+        
+        avg_global_free_memory= global_free_memory / total_memory
+        
         print(f"Random Batch Loss: {loss}\tFree/Total GPU Memory: {avg_global_free_memory}\tBatch Size:{batch_size}")
         if avg_global_free_memory > max_available_gpu_memory and batch_size < num_datapoints :
-            if batch_size+first_batch_size <= num_datapoints:
-                batch_size+=first_batch_size
+            if batch_size <= num_datapoints:
+                batch_size+=batch_size
             else:
                 batch_size=num_datapoints
         else:
-            assert batch_size<=num_datapoints
             if batch_size == num_datapoints:
                 print("Batch size equals to the training dataset size")
             else:
