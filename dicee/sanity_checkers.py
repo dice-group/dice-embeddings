@@ -32,11 +32,11 @@ def validate_knowledge_graph(args):
 
     elif args.path_single_kg is not None:
         if args.sparql_endpoint is not None or args.path_single_kg is not None:
-            print(f'The dataset_dir and sparql_endpoint arguments '
-                  f'must be None if path_single_kg is given.'
-                  f'***{args.dataset_dir}***\n'
-                  f'***{args.sparql_endpoint}***\n'
-                  f'These two parameters are set to None.')
+            #print(f'The dataset_dir and sparql_endpoint arguments '
+            #      f'must be None if path_single_kg is given.'
+            #      f'***{args.dataset_dir}***\n'
+            #      f'***{args.sparql_endpoint}***\n'
+            #      f'These two parameters are set to None.')
             args.dataset_dir = None
             args.sparql_endpoint = None
 
@@ -61,11 +61,11 @@ def validate_knowledge_graph(args):
                 f"Use --path_single_kg **folder/dataset.format**, if you have a single file.")
 
         if args.sparql_endpoint is not None or args.path_single_kg is not None:
-            print(f'The sparql_endpoint and path_single_kg arguments '
-                  f'must be None if dataset_dir is given.'
-                  f'***{args.sparql_endpoint}***\n'
-                  f'***{args.path_single_kg}***\n'
-                  f'These two parameters are set to None.')
+            #print(f'The sparql_endpoint and path_single_kg arguments '
+            #      f'must be None if dataset_dir is given.'
+            #      f'***{args.sparql_endpoint}***\n'
+            #      f'***{args.path_single_kg}***\n'
+            #      f'These two parameters are set to None.')
             args.sparql_endpoint = None
             args.path_single_kg = None
 
