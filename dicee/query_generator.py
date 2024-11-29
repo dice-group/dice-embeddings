@@ -14,7 +14,7 @@ class QueryGenerator:
                  seed: int = 1,
                  gen_valid: bool = False,
                  gen_test: bool = True,
-                 mode: str = "train"):
+                 mode: str = "test"):
 
         self.train_path = train_path
         self.val_path = val_path
@@ -27,6 +27,8 @@ class QueryGenerator:
         self.max_ans_num = 1e6
 
         self.mode = mode
+        # OLD CODE
+        # self.mode = str
         self.ent2id = ent2id
         self.rel2id: Dict = rel2id
         self.ent_in: Dict = {}
@@ -123,7 +125,7 @@ class QueryGenerator:
                     tail_relation_to_heads.setdefault(t_id, {}).setdefault(r_id, set()).add(h_id)
                     head_relation_to_tails.setdefault(h_id, {}).setdefault(r_id, set()).add(t_id)
 
-                        
+                    # OLD CODE
                     # h, r, t = map(str, line.strip().split("\t"))
                     # tail_relation_to_heads[self.ent2id[t]][self.rel2id[r]].add(self.ent2id[h])
                     # head_relation_to_tails[self.ent2id[h]][self.rel2id[r]].add(self.ent2id[t])
@@ -537,6 +539,7 @@ class QueryGenerator:
             f"General structure is {query_struct} with name {query_type}. Number of queries generated: {len(tp_answers)}")
         return queries, tp_answers, fp_answers, fn_answers
     
+        # OLD CODE
         # train_tail_relation_to_heads, train_head_relation_to_tails = self.construct_graph(paths=[self.train_path])
         # val_tail_relation_to_heads, val_head_relation_to_tails = self.construct_graph(
         #     paths=[self.train_path, self.val_path])
