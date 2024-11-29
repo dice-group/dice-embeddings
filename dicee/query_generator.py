@@ -90,8 +90,15 @@ class QueryGenerator:
                     if not line or line.startswith('#'):
                         continue
 
-                    # Use shlex.split to correctly parse the line into tokens
-                    tokens = shlex.split(line)
+                    # Create a shlex lexer for the line
+                    lexer = shlex.shlex(line, posix=True)
+                    lexer.whitespace_split = True
+                    # Set the quote characters to only double quotes
+                    lexer.quotes = '"'
+                    lexer.commenters = ''  # Disable comment parsing
+
+                    # Split the line into tokens
+                    tokens = list(lexer)
 
                     # Check that the line ends with a period '.'
                     if tokens[-1] != '.':
@@ -109,6 +116,11 @@ class QueryGenerator:
                     # Check if t is a literal (starts and ends with double quotes)
                     if t.startswith('"') and t.endswith('"'):
                         continue  # Skip literals
+                    
+                    # Strip angle brackets from URIs if present
+                    h = h.strip('<>')
+                    r = r.strip('<>')
+                    t = t.strip('<>')
 
                     # Map to IDs
                     h_id = self.ent2id.get(h)
@@ -496,7 +508,7 @@ class QueryGenerator:
         
         if self.mode == "train":
             tail_relation_to_heads, head_relation_to_tails = self.construct_graph(paths=[self.train_path])
-            val_tail_relation_to_heads, val_head_relation_to_tails = {}, {}  # No validation data
+            val_tail_relation_to_heads, val_head_relation_to_tails = tail_relation_to_heads, head_relation_to_tails
         elif self.mode == 'valid':
             # Check if val_path is not empty
             if not self.val_path:
@@ -522,13 +534,13 @@ class QueryGenerator:
 
         # Ground the queries using the constructed graphs
         queries, tp_answers, fp_answers, fn_answers = self.ground_queries(
-            query_struct,
-            tail_relation_to_heads,
-            head_relation_to_tails,
-            val_tail_relation_to_heads,
-            val_head_relation_to_tails,
-            gen_num,
-            query_type
+            query_structure=query_struct,
+            ent_in=tail_relation_to_heads,
+            ent_out=head_relation_to_tails,
+            small_ent_in=val_tail_relation_to_heads,
+            small_ent_out=val_head_relation_to_tails,
+            gen_num=gen_num,
+            query_name=query_type
         )
         # @TODO: test_queries has keys that are tuple ,e.g. ('e', ('r',))
         # Yet, query structure defined as a list ['e', ['r']].
