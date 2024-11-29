@@ -6,8 +6,6 @@ import os
 import pickle
 from copy import deepcopy
 from .static_funcs import save_pickle, load_pickle
-import re
-
 
 class QueryGenerator:
     def __init__(self, train_path, val_path: str = None, test_path: str = None, ent2id: Dict = None, rel2id: Dict = None,
