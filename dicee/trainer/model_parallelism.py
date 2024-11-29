@@ -169,7 +169,7 @@ class TensorParallel(AbstractTrainer):
                                                             persistent_workers=False)
             if batch_rt is not None:
                 expected_training_time=batch_rt * len(train_dataloader) * self.attributes.num_epochs
-                print(f"Exp.Training Runtime: {expected_training_time/60 :.3f} in mins\t|\tBatch Size:{batch_size}\t|\tBatch RT:{batch_rt:.3f}\t|\t # of batches:{len(train_dataloader)}\t|\t# of epochs:{self.attributes.num_epochs}")
+                # print(f"Exp.Training Runtime: {expected_training_time/60 :.3f} in mins\t|\tBatch Size:{batch_size}\t|\tBatch RT:{batch_rt:.3f}\t|\t # of batches:{len(train_dataloader)}\t|\t# of epochs:{self.attributes.num_epochs}")
 
         # () Number of batches to reach a single epoch.
         num_of_batches = len(train_dataloader)
