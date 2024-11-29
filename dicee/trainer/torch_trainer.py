@@ -4,7 +4,7 @@ from dicee.abstracts import AbstractTrainer
 import time
 import os
 import psutil
-
+from tqdm import tqdm
 
 class TorchTrainer(AbstractTrainer):
     """
@@ -58,48 +58,6 @@ class TorchTrainer(AbstractTrainer):
         # (3) Loss Forward and Backward w.r.t the batch.
         return self.forward_backward_update(x_batch, y_batch)
 
-    def _run_epoch(self, epoch: int) -> float:
-        """
-            Iterate over the training dataset
-
-            Arguments
-           ----------
-           epoch:int
-           -------
-           average loss over the dataset
-       """
-        epoch_loss = 0
-        i = 0
-        construct_mini_batch_time = None
-        batch: list
-        for i, batch in enumerate(self.train_dataloaders):
-            # (1) Extract Input and Outputs and set them on the dice
-            x_batch, y_batch = self.extract_input_outputs_set_device(batch)
-            start_time = time.time()
-            if construct_mini_batch_time:
-                construct_mini_batch_time = start_time - construct_mini_batch_time
-            # (2) Forward-Backward-Update.
-            batch_loss = self._run_batch(i, x_batch, y_batch)
-            epoch_loss += batch_loss
-            if construct_mini_batch_time:
-                print(
-                    f"Epoch:{epoch + 1} "
-                    f"| Batch:{i + 1} "
-                    f"| Loss:{batch_loss:.10f} "
-                    f"| ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec "
-                    f"| BatchConst.:{construct_mini_batch_time:.2f}sec "
-                    f"| Mem. Usage {self.process.memory_info().rss / 1_000_000: .5}MB "
-                    f" ({psutil.virtual_memory().percent} %)")
-            else:
-                print(
-                    f"Epoch:{epoch + 1} "
-                    f"| Batch:{i + 1} "
-                    f"| Loss:{batch_loss} "
-                    f"| ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs "
-                    f"| Mem. Usage {self.process.memory_info().rss / 1_000_000: .5}MB ")
-            construct_mini_batch_time = time.time()
-        return epoch_loss / (i + 1)
-
     def fit(self, *args, train_dataloaders, **kwargs) -> None:
         """
             Training starts
@@ -130,13 +88,27 @@ class TorchTrainer(AbstractTrainer):
               f'| LearningRate:{self.model.learning_rate} '
               f'| BatchSize:{self.train_dataloaders.batch_size} '
               f'| EpochBatchsize:{len(train_dataloaders)}')
-        for epoch in range(self.attributes.max_epochs):
-            start_time = time.time()
 
-            avg_epoch_loss = self._run_epoch(epoch)
-            print(f"Epoch:{epoch + 1} "
-                  f"| Loss:{avg_epoch_loss:.8f} "
-                  f"| Runtime:{(time.time() - start_time) / 60:.3f} mins")
+        for epoch in (tqdm_bar := tqdm(range(self.attributes.max_epochs))):
+            epoch_loss = 0
+            i = 0
+            construct_mini_batch_time = None
+            batch: list
+            for i, batch in enumerate(self.train_dataloaders):
+                # (1) Extract Input and Outputs and set them on the dice
+                x_batch, y_batch = self.extract_input_outputs_set_device(batch)
+                start_time = time.time()
+                if construct_mini_batch_time:
+                    construct_mini_batch_time = start_time - construct_mini_batch_time
+                # (2) Forward-Backward-Update.
+                batch_loss = self._run_batch(i, x_batch, y_batch)
+                epoch_loss += batch_loss
+                tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
+                if i>0:
+                    tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={epoch_loss/i:.5f}")
+                else:
+                    tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
+            avg_epoch_loss = epoch_loss / len(self.train_dataloaders)
             """
             # Autobatch Finder: Double the current batch size if memory allows and repeat this process at mast 5 times.
             if self.attributes.auto_batch_finder and psutil.virtual_memory().percent < 30.0 and counter < 5:
@@ -205,4 +177,5 @@ class TorchTrainer(AbstractTrainer):
             return (x_batch, y_idx_batch), y_batch
         else:
             print(len(batch))
-            raise ValueError('Unexpected batch shape..')
+            print("Unexpected batch shape..")
+            raise RuntimeError

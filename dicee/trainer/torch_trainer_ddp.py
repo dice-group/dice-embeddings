@@ -1,17 +1,17 @@
 import os
 import torch
-import time
-from torch.nn.parallel import DistributedDataParallel as DDP
-
+from typing import Iterable
 from dicee.abstracts import AbstractTrainer
-from dicee.static_funcs_training import efficient_zero_grad
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
+torch.set_float32_matmul_precision('high')
 
-# DDP with gradiant accumulation https://gist.github.com/mcarilli/bf013d2d2f4b4dd21ade30c9b52d5e2e
-def print_peak_memory(prefix, device):
-    if device == 0:
-        print(f"{prefix}: {torch.cuda.max_memory_allocated(device) // 1e6}MB ")
+def make_iterable_verbose(iterable_object, verbose, desc="Default", position=None, leave=True) -> Iterable:
+    if verbose:
+        return tqdm(iterable_object, desc=desc, position=position, leave=leave)
+    else:
+        return iterable_object
 
 
 class TorchDDPTrainer(AbstractTrainer):
@@ -48,9 +48,7 @@ class TorchDDPTrainer(AbstractTrainer):
         model, = args
         # (1) Run the fit the start callback.
         self.on_fit_start(self, model)
-        print("DDP starts")
         # (2) Setup DDP.
-        print("NCCL is being initialized....")
         torch.distributed.init_process_group(backend="nccl")
         train_dataset_loader = kwargs['train_dataloaders']
         # (1) Create DATA LOADER.
@@ -63,11 +61,8 @@ class TorchDDPTrainer(AbstractTrainer):
                                           collate_fn=kwargs['train_dataloaders'].dataset.collate_fn,
                                           sampler=torch.utils.data.distributed.DistributedSampler(
                                               train_dataset_loader.dataset))
-
-        # (2) Initialize OPTIMIZER.
-        optimizer = model.configure_optimizers()
         # (3) Start NodeTrainer.
-        NodeTrainer(self, model, train_dataset_loader, optimizer, self.callbacks, self.attributes.num_epochs).train()
+        NodeTrainer(self, model, train_dataset_loader, self.callbacks, self.attributes.num_epochs).train()
         torch.distributed.destroy_process_group()
         self.on_fit_end(self, model)
 
@@ -77,39 +72,26 @@ class NodeTrainer:
                  trainer,
                  model: torch.nn.Module,
                  train_dataset_loader: DataLoader,
-                 optimizer: torch.optim.Optimizer,
                  callbacks,
                  num_epochs: int) -> None:
-        print("Initializing Node Trainer....")
         # (1) Trainer.
         self.trainer = trainer
         # (2) Local and Global Ranks.
         self.local_rank = int(os.environ["LOCAL_RANK"])
         self.global_rank = int(os.environ["RANK"])
+        self.optimizer = model.configure_optimizers()
         # (3) Send model to local trainer.
-        self.model = model.to(self.local_rank)
         self.train_dataset_loader = train_dataset_loader
-        self.loss_func = self.model.loss
-        self.optimizer = optimizer
+        self.loss_func = model.loss
         self.callbacks = callbacks
-        # (3) Wrap the model with DDP() along with GPU ID that model lives on.
-        print("Initializing device on",self.local_rank)
-        self.model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[self.local_rank],output_device=self.local_rank)
+        self.model = torch.compile(model).to(self.local_rank)
+        self.model = torch.nn.parallel.DistributedDataParallel(self.model, device_ids=[self.local_rank])#, output_device=self.local_rank)
         self.num_epochs = num_epochs
-        print("HEREEE")
-        print_peak_memory("Max memory allocated after creating DDP local local_rank:", self.local_rank)
-        print(f'Global Rank {self.global_rank}\t Local Rank:{self.local_rank}')
-        print(self.model)
-        print(self.optimizer)
-        print(f'Global:{self.global_rank}'
-              f' | Local:{self.local_rank}'
-              f' | NumOfDataPoints:{len(self.train_dataset_loader.dataset)}'
-              f' | NumOfEpochs:{self.num_epochs}'
-              f' | LearningRate:{self.model.module.learning_rate}'
-              f' | BatchSize:{self.train_dataset_loader.batch_size}'
-              f' | EpochBatchsize:{len(self.train_dataset_loader)}')
-
         self.loss_history = []
+        # TODO: CD: This should be given as an input param
+        ptdtype = {'float32': torch.float32, 'bfloat16': torch.bfloat16, 'float16': torch.float16}["float16"]
+        self.ctx = torch.amp.autocast(device_type="cuda",dtype=ptdtype)
+        self.scaler = torch.amp.GradScaler("cuda",enabled=True)
 
     def _load_snapshot(self, snapshot_path):
         raise NotImplementedError
@@ -128,22 +110,27 @@ class NodeTrainer:
         batch loss
 
         """
-        self.optimizer.zero_grad()
-        output = self.model(source)
-        loss = self.loss_func(output, targets)
-        batch_loss = loss.item()
-        loss.backward()
-        self.optimizer.step()
+        with self.ctx:
+            output = self.model(source)
+            loss = self.loss_func(output, targets)
+            batch_loss = loss.item()
+        self.scaler.scale(loss).backward()
+        self.scaler.step(self.optimizer)
+        self.scaler.update()
+        # flush the gradients as soon as we can, no need for this memory anymore
+        self.optimizer.zero_grad(set_to_none=True)
         return batch_loss
 
     def extract_input_outputs(self, z: list):
+        # pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)
         if len(z) == 2:
             x_batch, y_batch = z
-            return x_batch.to(self.local_rank), y_batch.to(self.local_rank)
+            # pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)
+            x_batch, y_batch = x_batch.pin_memory().to(self.local_rank, non_blocking=True), y_batch.pin_memory().to(self.local_rank, non_blocking=True)
+            return x_batch, y_batch
         elif len(z) == 3:
             x_batch, y_idx_batch, y_batch, = z
-            x_batch, y_idx_batch, y_batch = x_batch.to(self.local_rank), y_idx_batch.to(self.local_rank), y_batch.to(
-                self.local_rank)
+            x_batch, y_batch,y_idx_batch = x_batch.pin_memory().to(self.local_rank, non_blocking=True), y_batch.pin_memory().to(self.local_rank, non_blocking=True),y_idx_batch.pin_memory().to(self.local_rank, non_blocking=True)
             return (x_batch, y_idx_batch), y_batch
         else:
             raise ValueError('Unexpected batch shape..')
@@ -164,33 +151,10 @@ class NodeTrainer:
         self.train_dataset_loader.sampler.set_epoch(epoch)
         epoch_loss = 0
         i = 0
-        construct_mini_batch_time = None
         for i, z in enumerate(self.train_dataset_loader):
             source, targets = self.extract_input_outputs(z)
-            start_time = time.time()
-            if construct_mini_batch_time:
-                construct_mini_batch_time = start_time - construct_mini_batch_time
             batch_loss = self._run_batch(source, targets)
             epoch_loss += batch_loss
-            if True:  # self.local_rank == self.global_rank==0:
-                if construct_mini_batch_time:
-                    print(
-                        f"Global:{self.global_rank}"
-                        f" | Local:{self.local_rank}"
-                        f" | Epoch:{epoch + 1}"
-                        f" | Batch:{i + 1}"
-                        f" | Loss:{batch_loss}"
-                        f" | ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec"
-                        f" | BatchConst.:{construct_mini_batch_time:.2f}sec")
-                else:
-                    print(
-                        f"Global:{self.global_rank}"
-                        f" | Local:{self.local_rank}"
-                        f" | Epoch:{epoch + 1}"
-                        f" | Batch:{i + 1}"
-                        f" | Loss:{batch_loss}"
-                        f" | ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
-            construct_mini_batch_time = time.time()
         return epoch_loss / (i + 1)
 
     def train(self):
@@ -201,109 +165,27 @@ class NodeTrainer:
         -------
 
         """
-        for epoch in range(self.num_epochs):
-            start_time = time.time()
-            epoch_loss = self._run_epoch(epoch)
+        num_of_batches=len(self.train_dataset_loader)
+        for epoch in (tqdm_bar := make_iterable_verbose(range(self.num_epochs),
+                                                      verbose=self.local_rank == self.global_rank == 0,
+                                                      position=0,
+                                                        leave=True)):
+            self.train_dataset_loader.sampler.set_epoch(epoch)
+            epoch_loss = 0
+            for i, z in enumerate(self.train_dataset_loader):
+                source, targets = self.extract_input_outputs(z)
+                batch_loss = self._run_batch(source, targets)
+                epoch_loss += batch_loss
+                if hasattr(tqdm_bar, 'set_description_str'):
+                    tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
+                    if i > 0:
+                        tqdm_bar.set_postfix_str(f"batch={i} | {num_of_batches}, loss_step={batch_loss:.5f}, loss_epoch={epoch_loss / i:.5f}")
+                    else:
+                        tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
 
-            print(f"Global:{self.global_rank}"
-                  f" | Local:{self.local_rank}"
-                  f" | Epoch:{epoch + 1}"
-                  f" | Loss:{epoch_loss:.8f}"
-                  f" | Runtime:{(time.time() - start_time) / 60:.3f}mins")
+            avg_epoch_loss = epoch_loss / num_of_batches
 
-            if True:  # self.local_rank == self.global_rank == 0:
-                self.model.module.loss_history.append(epoch_loss)
+            if self.local_rank == self.global_rank == 0:
+                self.model.module.loss_history.append(avg_epoch_loss)
                 for c in self.callbacks:
                     c.on_train_epoch_end(self.trainer, self.model.module)
-
-
-class DDPTrainer:
-    def __init__(self,
-                 model: torch.nn.Module,
-                 train_dataset_loader: DataLoader,
-                 optimizer: torch.optim.Optimizer,
-                 gpu_id: int, callbacks, num_epochs) -> None:
-        self.gpu_id = gpu_id
-        self.model = model.to(gpu_id)
-        self.train_dataset_loader = train_dataset_loader
-        self.loss_func = self.model.loss
-        self.optimizer = optimizer
-        self.callbacks = callbacks
-        # (1) Wrap the model with DDP() along with GPU ID that model lives on.
-        self.model = DDP(model, device_ids=[gpu_id])
-        self.num_epochs = num_epochs
-        print_peak_memory("Max memory allocated after creating DDP:", gpu_id)
-        print('GPU:{self.gpu_id}')
-        print(self.model)
-        print(self.optimizer)
-        print(
-            f'NumOfDataPoints:{len(self.train_dataset_loader.dataset)}'
-            f'|NumOfEpochs:{self.num_epochs}'
-            f'|LearningRate:{self.model.module.learning_rate}'
-            f'|BatchSize:{self.train_dataset_loader.batch_size}'
-            f'|EpochBatchsize:{len(self.train_dataset_loader)}')
-
-        self.loss_history = []
-
-    def _run_batch(self, source, targets):
-        # (1) Zero the gradients.
-        # self.optimizer.zero_grad()
-        efficient_zero_grad(self.model)
-        output = self.model(source)
-        loss = self.loss_func(output, targets)
-        batch_loss = loss.item()
-        loss.backward()
-        self.optimizer.step()
-        # @TODO: Tips to decrease mem usage
-        #  https://github.com/pytorch/pytorch/issues/13246#issuecomment-905703662
-        #  torch.cuda.empty_cache()
-        return batch_loss
-
-    def extract_input_outputs(self, z: list):
-        if len(z) == 2:
-            x_batch, y_batch = z
-            return x_batch.to(self.gpu_id), y_batch.to(self.gpu_id)
-        elif len(z) == 3:
-            x_batch, y_idx_batch, y_batch, = z
-            x_batch, y_idx_batch, y_batch = x_batch.to(self.gpu_id), y_idx_batch.to(self.gpu_id), y_batch.to(
-                self.gpu_id)
-            return (x_batch, y_idx_batch), y_batch
-        else:
-            raise ValueError('Unexpected batch shape..')
-
-    def _run_epoch(self, epoch):
-        self.train_dataset_loader.sampler.set_epoch(epoch)
-        epoch_loss = 0
-        i = 0
-        construct_mini_batch_time = None
-        for i, z in enumerate(self.train_dataset_loader):
-            source, targets = self.extract_input_outputs(z)
-            start_time = time.time()
-            if construct_mini_batch_time:
-                construct_mini_batch_time = start_time - construct_mini_batch_time
-            batch_loss = self._run_batch(source, targets)
-            epoch_loss += batch_loss
-            if self.gpu_id == 0:
-                if construct_mini_batch_time:
-                    print(
-                        f"Epoch:{epoch + 1}|Batch:{i + 1}"
-                        f"|Loss:{batch_loss}"
-                        f"|ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec"
-                        f"|BatchConst.:{construct_mini_batch_time:.2f}sec")
-                else:
-                    print(
-                        f"Epoch:{epoch + 1}|Batch:{i + 1}"
-                        f"|Loss:{batch_loss}"
-                        f"|ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
-            construct_mini_batch_time = time.time()
-        return epoch_loss / (i + 1)
-
-    def train(self):
-        for epoch in range(self.num_epochs):
-            start_time = time.time()
-            epoch_loss = self._run_epoch(epoch)
-            if self.gpu_id == 0:
-                print(f"Epoch:{epoch + 1} | Loss:{epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f}mins")
-                self.model.module.loss_history.append(epoch_loss)
-                for c in self.callbacks:
-                    c.on_train_epoch_end(None, self.model.module)

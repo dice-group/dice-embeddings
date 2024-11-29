@@ -50,6 +50,9 @@ class Namespace(argparse.Namespace):
         self.backend: str = "pandas"
         """Backend to read, process, and index input knowledge graph. pandas, polars and rdflib available"""
 
+        self.separator: str = "\s+"
+        """separator for extracting head, relation and tail from a triple"""
+
         self.trainer: str = 'torchCPUTrainer'
         """Trainer for knowledge graph embedding model"""
 
@@ -81,7 +84,6 @@ class Namespace(argparse.Namespace):
         """ Not tested """
 
         self.label_smoothing_rate: float = 0.0
-
 
         self.num_core: int = 0
         """Number of CPUs to be used in the mini-batch loading process"""
@@ -135,6 +137,9 @@ class Namespace(argparse.Namespace):
 
         self.continual_learning=None
         "Path of a pretrained model size of LLM"
+
+        self.auto_batch_finding=False
+        "A flag for using auto batch finding"
 
     def __iter__(self):
         # Iterate

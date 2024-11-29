@@ -1,3 +1,11 @@
+[![Downloads](https://static.pepy.tech/badge/dicee)](https://pepy.tech/project/dicee)
+[![Downloads](https://img.shields.io/pypi/dm/dicee)](https://pypi.org/project/dicee/)
+[![Coverage](https://img.shields.io/badge/coverage-54%25-green)](https://dice-group.github.io/dice-embeddings/usage/main.html#coverage-report)
+[![Pypi](https://img.shields.io/badge/pypi-0.1.4-blue)](https://pypi.org/project/dicee/0.1.4/)
+[![Docs](https://img.shields.io/badge/documentation-0.1.4-yellow)](https://dice-group.github.io/dice-embeddings/index.html)
+
+![dicee_logo](docs/_static/images/dicee_logo.png)
+
 # DICE Embeddings: Hardware-agnostic Framework for Large-scale Knowledge Graph Embeddings
 
 Knowledge graph embedding research has mainly focused on learning continuous representations of knowledge graphs towards the link prediction problem. 
@@ -35,8 +43,9 @@ Deploy a pre-trained embedding model without writing a single line of code.
 ### Installation from Source
 ``` bash
 git clone https://github.com/dice-group/dice-embeddings.git
-conda create -n dice python=3.10.13 --no-default-packages && conda activate dice
-pip3 install -e .
+conda create -n dice python=3.10.13 --no-default-packages && conda activate dice && pip3 install -e .
+# or
+pip3 install -e .["dev"]
 ```
 or
 ```bash
@@ -58,16 +67,80 @@ python -m pytest -p no:warnings --ff # to run the failures first and then the re
 ## Knowledge Graph Embedding Models
 <details> <summary> To see available Models</summary>
 
-1. TransE, DistMult, ComplEx, ConEx, QMult, OMult, ConvO, ConvQ, Keci
-2. All 44 models available in https://github.com/pykeen/pykeen#models
+* ```--model Decal | Keci | DualE | ComplEx | QMult | OMult | ConvQ | ConvO | ConEx | TransE | DistMult | Shallom```
+* ```--model Pykeen_QuatE | Pykeen_Mure ``` all embedding models available in https://github.com/pykeen/pykeen#models can be selected.
 
-> For more, please refer to `examples`.
+Training and scoring techniques
+* ```--trainer torchCPUTrainer | PL | MP | torchDDP ```
+* ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample ```
+
 </details>
 
 ## How to Train
 <details> <summary> To see a code snippet </summary>
 
-To Train a KGE model (KECI) and evaluate it on the train, validation, and test sets of the UMLS benchmark dataset.
+#### Training Techniques
+
+A KGE model can be trained with a state-of-the-art training technique ```--trainer "torchCPUTrainer" | "PL" | "MP" | torchDDP ```
+```bash
+# CPU training
+dicee --dataset_dir "KGs/UMLS" --trainer "torchCPUTrainer" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
+# Distributed Data Parallelism
+dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
+# Model Parallelism
+dicee --dataset_dir "KGs/UMLS" --trainer "MP" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
+# Distributed Data Parallelism in native torch
+OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" --trainer "torchDDP" --scoring_technique KvsAll
+```
+A KGE model model can also be trained in multi-node multi-gpu DDP setting. 
+```bash
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10"
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10"
+```
+On large knowledge graphs, this configurations should be used.
+
+where the data is in the following form
+```bash
+$ head -3 KGs/UMLS/train.txt 
+acquired_abnormality    location_of     experimental_model_of_disease
+anatomical_abnormality  manifestation_of        physiologic_function
+alga    isa     entity
+
+$ head -3 KGs/YAGO3-10/valid.txt 
+Mikheil_Khutsishvili    playsFor        FC_Merani_Tbilisi
+Ebbw_Vale       isLocatedIn     Blaenau_Gwent
+Valenciennes    isLocatedIn     Nord-Pas-de-Calais
+```
+By default, ```--backend "pandas" --separator "\s+" ``` is used in ```pandas.read_csv(sep=args.separator)``` to obtain triples.
+You can choose a suitable backend for your knowledge graph ```--backend pandas | polars  | rdflib ```.
+On large knowledge graphs n-triples, ```--backend "polars" --separator " " ``` is a good option.
+**Apart from n-triples or standard link prediction dataset formats, we support ["owl", "nt", "turtle", "rdf/xml", "n3"]***.
+On other RDF knowledge graphs,  ```--backend "rdflib" ``` can be used. Note that knowledge graphs must not contain blank nodes or literals.
+Moreover, a KGE model can be also trained  by providing **an endpoint of a triple store**. 
+```bash
+dicee --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Keci
+```
+
+#### Scoring Techniques
+
+We have implemented state-of-the-art scoring techniques to train a KGE model ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample ```.
+```bash
+dicee --dataset_dir "KGs/YAGO3-10" --model Keci --trainer "torchCPUTrainer" --scoring_technique "NegSample" --neg_ratio 10 --num_epochs 10 --batch_size 10_000 --num_core 0 --eval_model None
+# Epoch:10: 100%|███████████| 10/10 [01:31<00:00,  9.11s/it, loss_step=0.09423, loss_epoch=0.07897]
+# Training Runtime: 1.520 minutes.
+dicee --dataset_dir "KGs/YAGO3-10" --model Keci --trainer "torchCPUTrainer" --scoring_technique "NegSample" --neg_ratio 10 --num_epochs 10 --batch_size 10_000 --num_core 10 --eval_model None
+# Epoch:10: 100%|███████████| 10/10 [00:58<00:00,  5.80s/it, loss_step=0.11909, loss_epoch=0.07991]
+# Training Runtime: 58.106 seconds.
+dicee --dataset_dir "KGs/YAGO3-10" --model Keci --trainer "torchCPUTrainer" --scoring_technique "NegSample" --neg_ratio 10 --num_epochs 10 --batch_size 10_000 --num_core 20 --eval_model None
+# Epoch:10: 100%|███████████| 10/10 [01:01<00:00,  6.16s/it, loss_step=0.10751, loss_epoch=0.06962]
+# Training Runtime: 1.029 minutes.
+dicee --dataset_dir "KGs/YAGO3-10" --model Keci --trainer "torchCPUTrainer" --scoring_technique "NegSample" --neg_ratio 10 --num_epochs 10 --batch_size 10_000 --num_core 50 --eval_model None
+# Epoch:10: 100%|███████████| 10/10 [01:08<00:00,  6.83s/it, loss_step=0.05347, loss_epoch=0.07003]
+# Training Runtime: 1.140 minutes.
+```
+Increasing the number of cores often (but not always) helps to decrease the runtimes on large knowledge graphs ```--num_core 4 --scoring_technique KvsSample | NegSample --neg_ratio 1``` 
+
+A KGE model can be also trained in a python script
 ```python
 from dicee.executer import Execute
 from dicee.config import Namespace
@@ -84,43 +157,9 @@ print(reports["Train"]["MRR"]) # => 0.9912
 print(reports["Test"]["MRR"]) # => 0.8155
 # See the Keci_UMLS folder embeddings and all other files
 ```
-where the data is in the following form
-```bash
-$ head -3 KGs/UMLS/train.txt 
-acquired_abnormality    location_of     experimental_model_of_disease
-anatomical_abnormality  manifestation_of        physiologic_function
-alga    isa     entity
-```
-A KGE model can also be trained from the command line
-```bash
-dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
-```
-dicee automatically detects available GPUs and trains a model with distributed data parallels technique.
-```bash
-# Train a model by only using the GPU-0
-CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
-# Train a model by only using GPU-1
-CUDA_VISIBLE_DEVICES=1 dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
-# Train a model by using all available GPUs
-dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
-```
-Under the hood, dicee executes the run.py script and uses [lightning](https://lightning.ai/) as a default trainer.
-```bash
-# Two equivalent executions
-# (1)
-dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
-# (2)
-CUDA_VISIBLE_DEVICES=0,1 python dicee/scripts/run.py --trainer PL --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
-```
-Similarly, models can be easily trained with torchrun
-```bash
-torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee/scripts/run.py --trainer torchDDP --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
-```
-You can also train a model in multi-node multi-gpu setting.
-```bash
-torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee/scripts/run.py --trainer torchDDP --dataset_dir KGs/UMLS
-torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula dicee/scripts/run.py --trainer torchDDP --dataset_dir KGs/UMLS
-```
+
+#### Continual Learning
+
 Train a KGE model by providing the path of a single file and store all parameters under newly created directory
 called `KeciFamilyRun`.
 ```bash
@@ -133,17 +172,13 @@ _:1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07
 <http://www.benchmark.org/family#hasChild> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
 <http://www.benchmark.org/family#hasParent> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
 ```
-**Continual Training:** the training phase of a pretrained model can be resumed.
+
+**Continual Training:** the training phase of a pretrained model can be resumed. The model will saved in the same directory ``` --continual_learning "KeciFamilyRun"```.
 ```bash
-dicee --continual_learning KeciFamilyRun --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --path_to_store_single_run KeciFamilyRun --backend rdflib --eval_model None
+dicee --continual_learning "KeciFamilyRun" --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --backend rdflib --eval_model None
 ```
 
-**Apart from n-triples or standard link prediction dataset formats, we support ["owl", "nt", "turtle", "rdf/xml", "n3"]***.
-Moreover, a KGE model can be also trained  by providing **an endpoint of a triple store**.
-```bash
-dicee --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Keci
-```
-For more, please refer to `examples`.
+
 </details>
 
 ## Creating an Embedding Vector Database 
@@ -296,10 +331,237 @@ mure.predict_topk(h=["Mongolia"],r=["isLocatedIn"],topk=3)
 from dicee import KGE
 KGE(path='...').deploy(share=True,top_k=10)
 ```
+
 </details>
 
 <details> <summary> To see the interface of the webservice</summary>
 <img src="dicee/lp.png" alt="Italian Trulli">
+</details>
+
+
+## Link Prediction Benchmarks
+
+In the below, we provide a brief overview of the link prediction results. Results are sorted in descending order of the size of the respective dataset.
+
+#### YAGO3-10 ####
+
+<details> <summary> To see the results </summary>
+
+|                    |       |   MRR | Hits@1 | Hits@3 | Hits@10 |
+|--------------------|-------|------:|-------:|-------:|--------:|
+| ComplEx-KvsAll     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll     | val   | 0.374 |  0.308 |  0.402 |   0.501 |
+| ComplEx-KvsAll     | test  | 0.372 |  0.302 |  0.404 |   0.505 |
+| ComplEx-KvsAll-SWA | train | 0.998 |  0.997 |  1.000 |   1.000 |
+| ComplEx-KvsAll-SWA | val   | 0.345 |  0.279 |  0.372 |   0.474 |
+| ComplEx-KvsAll-SWA | test  | 0.341 |  0.272 |  0.374 |   0.474 |
+| ComplEx-KvsAll-ASWA | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll-ASWA | val   | 0.404 |  0.335 |  0.448 |   0.531 |
+| ComplEx-KvsAll-ASWA | test  | 0.398 |  0.325 |  0.449 |   0.530 |
+| Keci-KvsAll        | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll        | val   | 0.337 |  0.268 |  0.370 |   0.468 |
+| Keci-KvsAll        | test  | 0.343 |  0.274 |  0.376 |   0.343 |
+| Keci-KvsAll-SWA    | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll-SWA    | val   | 0.325 |  0.253 |  0.358 |   0.459 |
+| Keci-KvsAll-SWA    | test  | 0.334 |  0.263 |  0.367 |   0.470 |
+| Keci-KvsAll-ASWA   | train | 0.978 |  0.969 |  0.985 |   0.991 |
+| Keci-KvsAll-ASWA   | val   | 0.400 |  0.324 |  0.439 |   0.540 |
+| Keci-KvsAll-ASWA   | test  | 0.394 |  0.317 |  0.439 |   0.539 |
+
+```--embedding_dim 256 --num_epochs 300 --batch_size 1024 --optim Adam 0.1``` leading to 31.6M params.
+Observations: A severe overfitting. ASWA improves the generalization better than SWA.
+
+</details>
+
+#### FB15k-237 ####
+
+<details> <summary> To see the results </summary>
+
+|                    |       |   MRR | Hits@1 | Hits@3 | Hits@10 |
+|--------------------|-------|------:|-------:|-------:|--------:|
+| ComplEx-KvsAll     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll     | val   | 0.197 |  0.140 |  0.211 |   0.307 |
+| ComplEx-KvsAll     | test  | 0.192 |  0.137 |  0.204 |   0.300 |
+| ComplEx-KvsAll-SWA | train | 0.911 |  0.875 |  0.938 |   0.970 |
+| ComplEx-KvsAll-SWA | val   | 0.169 |  0.121 |  0.178 |   0.264 |
+| ComplEx-KvsAll-SWA | test  | 0.166 |  0.118 |  0.176 |   0.261 |
+| ComplEx-KvsAll-ASWA | train | 0.780 | 0.719 | 0.822  |   0.886 |
+| ComplEx-KvsAll-ASWA | val   | 0.220 | 0.158 | 0.240  |   0.342 |
+| ComplEx-KvsAll-ASWA | test  | 0.217 | 0.155 |  0.234 |   0.337 |
+| Keci-KvsAll        | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll        | val   | 0.158 |  0.107 |  0.166 |   0.259 |
+| Keci-KvsAll        | test  | 0.155 |  0.105 |  0.162 |   0.253 |
+| Keci-KvsAll-SWA    | train | 0.941 |  0.909 |  0.967 |   0.990 |
+| Keci-KvsAll-SWA    | val   | 0.188 |  0.133 |  0.200 |   0.298 |
+| Keci-KvsAll-SWA    | test  | 0.183 |  0.128 |  0.195 |   0.292 |
+| Keci-KvsAll-ASWA   | train | 0.745 |  0.666 |  0.799 |   0.886 |
+| Keci-KvsAll-ASWA   | val   | 0.221 |  0.158 |  0.237 |   0.346 |
+| Keci-KvsAll-ASWA   | test  | 0.216 |  0.153 |  0.233 |   0.342 |
+
+</details>
+
+
+#### WN18RR ####
+
+<details> <summary> To see the results </summary>
+
+|                    |       |   MRR | Hits@1 | Hits@3 | Hits@10 |
+|--------------------|-------|------:|-------:|-------:|--------:|
+| ComplEx-KvsAll     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll     | val   | 0.346 |  0.337 |  0.353 |   0.359 |
+| ComplEx-KvsAll     | test  | 0.343 |  0.333 |  0.349 |   0.357 |
+| ComplEx-KvsAll-SWA | train | 0.335 |  0.242 |  0.365 |   0.522 |
+| ComplEx-KvsAll-SWA | val   | 0.014 |  0.004 |  0.013 |   0.029 |
+| ComplEx-KvsAll-SWA | test  | 0.018 |  0.007 |  0.017 |   0.036 |
+| ComplEx-KvsAll-ASWA | train | 0.999 | 0.999 | 0.999  |   0.999 |
+| ComplEx-KvsAll-ASWA | val   | 0.352 | 0.348 | 0.355  |   0.359 |
+| ComplEx-KvsAll-ASWA | test  | 0.348 | 0.342 |  0.351 |   0.355 |
+| Keci-KvsAll        | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll        | val   | 0.316 |  0.296 |  0.331 |   0.352 |
+| Keci-KvsAll        | test  | 0.308 |  0.285 |  0.326 |   0.346 |
+| Keci-KvsAll-SWA    | train | 0.608 |  0.516 |  0.657 |   0.787 |
+| Keci-KvsAll-SWA    | val   | 0.069 |  0.038 |  0.073 |   0.130 |
+| Keci-KvsAll-SWA    | test  | 0.061 |  0.032 |  0.064 |   0.119 |
+| Keci-KvsAll-ASWA   | train | 0.951 |  0.916 |  0.985 |   0.997 |
+| Keci-KvsAll-ASWA   | val   | 0.356 |  0.353 |  0.356 |   0.360 |
+| Keci-KvsAll-ASWA   | test  | 0.350 |  0.347 |  0.350 |   0.355 |
+
+</details>
+
+#### UMLS ####
+
+<details> <summary> To see the results </summary>
+
+|                       |       |   MRR | Hits@1 | Hits@3 | Hits@10 |
+|-----------------------|-------|------:|-------:|-------:|--------:|
+| ComplEx-KvsAll        | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll        | val   | 0.684 |  0.557 |  0.771 |   0.928 |
+| ComplEx-KvsAll        | test  | 0.680 |  0.563 |  0.750 |   0.918 |
+| ComplEx-AllvsAll      | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-AllvsAll      | val   | 0.771 |  0.670 |  0.847 |   0.949 |
+| ComplEx-AllvsAll      | test  | 0.778 |  0.678 |  0.850 |   0.957 |
+| ComplEx-KvsAll-SWA    | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll-SWA    | val   | 0.762 |  0.666 |  0.825 |   0.941 |
+| ComplEx-KvsAll-SWA    | test  | 0.757 |  0.653 |  0.833 |   0.939 |
+| ComplEx-AllvsAll-SWA  | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-AllvsAll-SWA  | val   | 0.817 |  0.736 |  0.879 |   0.953 |
+| ComplEx-AllvsAll-SWA  | test  | 0.827 |  0.748 |  0.883 |   0.967 |
+| ComplEx-KvsAll-ASWA   | train | 0.998 |  0.997 |  0.999 |   1.000 |
+| ComplEx-KvsAll-ASWA   | val   | 0.799 |  0.712 |  0.863 |   0.946 |
+| ComplEx-KvsAll-ASWA   | test  | 0.804 |  0.720 |  0.866 |   0.948 |
+| ComplEx-AllvsAll-ASWA | train | 0.998 |  0.997 |  0.998 |   0.999 |
+| ComplEx-AllvsAll-ASWA | val   | 0.879 |  0.824 |  0.926 |   0.964 |
+| ComplEx-AllvsAll-ASWA | test  | 0.877 |  0.819 |  0.924 |   0.971 |
+| Keci-KvsAll           | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll           | val   | 0.538 |  0.401 |  0.595 |   0.829 |
+| Keci-KvsAll           | test  | 0.543 |  0.411 |  0.610 |   0.815 |
+| Keci-AllvsAll         | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-AllvsAll         | val   | 0.672 |  0.556 |  0.742 |   0.909 |
+| Keci-AllvsAll         | test  | 0.684 |  0.567 |  0.759 |   0.914 |
+| Keci-KvsAll-SWA       | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll-SWA       | val   | 0.633 |  0.509 |  0.705 |   0.877 |
+| Keci-KvsAll-SWA       | test  | 0.628 |  0.498 |  0.710 |   0.868 |
+| Keci-AllvsAll-SWA     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-AllvsAll-SWA     | val   | 0.697 |  0.584 |  0.770 |   0.911 |
+| Keci-AllvsAll-SWA     | test  | 0.711 |  0.606 |  0.775 |   0.921 |
+| Keci-KvsAll-ASWA      | train | 0.996 |  0.993 |  0.999 |   1.000 |
+| Keci-KvsAll-ASWA      | val   | 0.767 |  0.668 |  0.836 |   0.944 |
+| Keci-KvsAll-ASWA      | test  | 0.762 |  0.660 |  0.830 |   0.949 |
+| Keci-AllvsAll-ASWA    | train | 0.998 |  0.997 |  0.999 |   1.000 |
+| Keci-AllvsAll-ASWA    | val   | 0.852 |  0.793 |  0.896 |   0.955 |
+| Keci-AllvsAll-ASWA    | test  | 0.848 |  0.787 |  0.886 |   0.951 |
+
+
+
+```--embedding_dim 256 --num_epochs 300 --batch_size 1024 --optim Adam 0.1``` leading to 58.1K params.
+Observations: 
++ A severe overfitting. 
++ AllvsAll improves the generalization more than KvsAll does
++ ASWA improves the generalization more than SWA does
+
+```bash
+dicee --dataset_dir "KGs/UMLS" --model "Keci" --p 0 --q 1 --trainer "PL" --scoring_technique "KvsSample" --embedding_dim 256 --num_epochs 100 --batch_size 32 --num_core 10
+# Epoch 99: 100%|███████████| 13/13 [00:00<00:00, 29.56it/s, loss_step=6.46e-6, loss_epoch=8.35e-6]
+# *** Save Trained Model ***
+# Evaluate Keci on Train set: Evaluate Keci on Train set
+# {'H@1': 1.0, 'H@3': 1.0, 'H@10': 1.0, 'MRR': 1.0}
+# Evaluate Keci on Validation set: Evaluate Keci on Validation set
+# {'H@1': 0.33358895705521474, 'H@3': 0.5253067484662577, 'H@10': 0.7576687116564417, 'MRR': 0.46992150194876076}
+# Evaluate Keci on Test set: Evaluate Keci on Test set
+# {'H@1': 0.3320726172465961, 'H@3': 0.5098335854765507, 'H@10': 0.7594553706505295, 'MRR': 0.4633434701052234}
+```
+Increasing cores increases the runtimes if there is a preprocessing step at the batch generation.
+```bash
+dicee --dataset_dir "KGs/UMLS" --model "Keci" --p 0 --q 1 --trainer "PL" --scoring_technique "KvsAll" --embedding_dim 256 --num_epochs 100 --batch_size 32
+# Epoch 99: 100%|██████████| 13/13 [00:00<00:00, 101.94it/s, loss_step=8.11e-6, loss_epoch=8.92e-6]
+# Evaluate Keci on Train set: Evaluate Keci on Train set
+# {'H@1': 1.0, 'H@3': 1.0, 'H@10': 1.0, 'MRR': 1.0}
+# Evaluate Keci on Validation set: Evaluate Keci on Validation set
+# {'H@1': 0.348159509202454, 'H@3': 0.5659509202453987, 'H@10': 0.7883435582822086, 'MRR': 0.4912162082105331}
+# Evaluate Keci on Test set: Evaluate Keci on Test set
+# {'H@1': 0.34568835098335854, 'H@3': 0.5544629349470499, 'H@10': 0.7776096822995462, 'MRR': 0.48692617590763265}
+```
+
+```bash
+dicee --dataset_dir "KGs/UMLS" --model "Keci" --p 0 --q 1 --trainer "PL" --scoring_technique "AllvsAll" --embedding_dim 256 --num_epochs 100 --batch_size 32
+# Epoch 99: 100%|██████████████| 98/98 [00:01<00:00, 88.95it/s, loss_step=0.000, loss_epoch=0.0655]
+# Evaluate Keci on Train set: Evaluate Keci on Train set
+# {'H@1': 0.9976993865030674, 'H@3': 0.9997124233128835, 'H@10': 0.9999041411042945, 'MRR': 0.9987183437408705}
+# Evaluate Keci on Validation set: Evaluate Keci on Validation set
+# {'H@1': 0.3197852760736196, 'H@3': 0.5398773006134969, 'H@10': 0.7714723926380368, 'MRR': 0.46912531544840963}
+# Evaluate Keci on Test set: Evaluate Keci on Test set
+# {'H@1': 0.329803328290469, 'H@3': 0.5711043872919819, 'H@10': 0.7934947049924357, 'MRR': 0.4858500337837166}
+```
+In KvsAll and AllvsAll, a single data point **z=(x,y)** corresponds to a tuple of input indices **x** and multi-label output vector **y**.
+**x** is a tuple of indices of a unique entity and relation pair.
+**y** contains a binary vector of size of the number of unique entities.
+
+To mitigate the rate of overfitting, many regularization techniques can be applied ,e.g.,
+Stochastic Weight Averaging (SWA), Adaptive Stochastic Weight Averaging (ASWA), or Dropout.
+Use ```--swa``` to apply Stochastic Weight Averaging
+```bash
+dicee --dataset_dir "KGs/UMLS" --model "Keci" --p 0 --q 1 --trainer "PL" --scoring_technique "KvsAll" --embedding_dim 256 --num_epochs 100 --batch_size 32 --swa
+# Epoch 99: 100%|███████████| 13/13 [00:00<00:00, 85.61it/s, loss_step=8.11e-6, loss_epoch=8.92e-6]
+# Evaluate Keci on Train set: Evaluate Keci on Train set
+# {'H@1': 1.0, 'H@3': 1.0, 'H@10': 1.0, 'MRR': 1.0}
+# Evaluate Keci on Validation set: Evaluate Keci on Validation set
+# {'H@1': 0.45858895705521474, 'H@3': 0.6510736196319018, 'H@10': 0.8458588957055214, 'MRR': 0.5845156794070833}
+# Evaluate Keci on Test set: Evaluate Keci on Test set
+# {'H@1': 0.4636913767019667, 'H@3': 0.651285930408472, 'H@10': 0.8456883509833586, 'MRR': 0.5877221440365971}
+# Total Runtime: 25.417 seconds
+```
+Use ```--adaptive_swa``` to apply Adaptive Stochastic Weight Averaging. Currently, ASWA should not be used with DDP on multi GPUs.
+We are working on it.
+```bash
+CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --model "Keci" --p 0 --q 1 --trainer "PL" --scoring_technique "KvsAll" --embedding_dim 256 --num_epochs 100 --batch_size 32 --adaptive_swa
+# Epoch 99: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 49/49 [00:00<00:00, 93.86it/s, loss_step=0.0978, loss_epoch=0.143]
+# Evaluate Keci on Train set: Evaluate Keci on Train set
+# {'H@1': 0.9974118098159509, 'H@3': 0.9992331288343558, 'H@10': 0.9996165644171779, 'MRR': 0.9983922084274367}
+# Evaluate Keci on Validation set: Evaluate Keci on Validation set
+# {'H@1': 0.7668711656441718, 'H@3': 0.8696319018404908, 'H@10': 0.9440184049079755, 'MRR': 0.828767705987023}
+# Evaluate Keci on Test set: Evaluate Keci on Test set
+#{'H@1': 0.7844175491679274, 'H@3': 0.8888048411497731, 'H@10': 0.9546142208774584, 'MRR': 0.8460991515345323}
+```
+```bash
+CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --model "Keci" --p 0 --q 1 --trainer "PL" --scoring_technique "KvsAll" --embedding_dim 256 --input_dropout_rate 0.1 --num_epochs 100 --batch_size 32 --adaptive_swa
+# Epoch 99: 100%|██████████████████████████████████████████████████████████| 49/49 [00:00<00:00, 93.49it/s, loss_step=0.600, loss_epoch=0.553]
+# Evaluate Keci on Train set: Evaluate Keci on Train set
+# {'H@1': 0.9970283742331288, 'H@3': 0.9992331288343558, 'H@10': 0.999808282208589, 'MRR': 0.9981489117237927}
+# Evaluate Keci on Validation set: Evaluate Keci on Validation set
+# {'H@1': 0.8473926380368099, 'H@3': 0.9049079754601227, 'H@10': 0.9470858895705522, 'MRR': 0.8839172788777631}
+# Evaluate Keci on Test set: Evaluate Keci on Test set
+# {'H@1': 0.8381240544629349, 'H@3': 0.9167927382753404, 'H@10': 0.9568835098335855, 'MRR': 0.8829572716873321}
+
+CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --model "Keci" --p 0 --q 1 --trainer "PL" --scoring_technique "KvsAll" --embedding_dim 256 --input_dropout_rate 0.2 --num_epochs 100 --batch_size 32 --adaptive_swa
+# Epoch 99: 100%|██████████████████████████████████████████████████████████| 49/49 [00:00<00:00, 94.43it/s, loss_step=0.108, loss_epoch=0.111]
+# Evaluate Keci on Train set: Evaluate Keci on Train set
+# {'H@1': 0.9818826687116564, 'H@3': 0.9942484662576687, 'H@10': 0.9972200920245399, 'MRR': 0.9885307022708297}
+# Evaluate Keci on Validation set: Evaluate Keci on Validation set
+# {'H@1': 0.8581288343558282, 'H@3': 0.9156441717791411, 'H@10': 0.9447852760736196, 'MRR': 0.8930935122236525}
+# Evaluate Keci on Test set: Evaluate Keci on Test set
+# {'H@1': 0.8494704992435703, 'H@3': 0.9334341906202723, 'H@10': 0.9667170953101362, 'MRR': 0.8959156201718665}
+```
+
 </details>
 
 ## Docker

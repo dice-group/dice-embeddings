@@ -160,10 +160,9 @@ def analyse(args):
     # print(df.columns)
     try:
         df_features = df[args.features]
-    except:
+    except KeyError:
         print(f"--features ({args.features}) is not a subset of {df.columns}")
-        exit(1)
-
+        raise KeyError
     print(df_features.to_latex(index=False, float_format="%.3f"))
     path_to_save = args.dir + '/summary.csv'
     df_features.to_csv(path_or_buf=path_to_save)

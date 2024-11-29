@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
+from .adopt import ADOPT
 
 class BaseKGELightning(pl.LightningModule):
     def __init__(self, *args, **kwargs):
@@ -22,8 +23,17 @@ class BaseKGELightning(pl.LightningModule):
         return {'EstimatedSizeMB': (num_params + buffer_size) / 1024 ** 2, 'NumParam': num_params}
 
     def training_step(self, batch, batch_idx=None):
-        x_batch, y_batch = batch
-        yhat_batch = self.forward(x_batch)
+        if len(batch)==2:
+            # Default
+            x_batch, y_batch = batch
+            yhat_batch = self.forward(x_batch)
+        elif len(batch)==3:
+            # KvsSample or 1vsSample
+            x_batch, y_select, y_batch = batch
+            yhat_batch = self.forward((x_batch,y_select))
+        else:
+            raise RuntimeError("Invalid batch received.")
+
         loss_batch = self.loss_function(yhat_batch, y_batch)
         self.training_step_outputs.append(loss_batch.item())
         self.log("loss",
@@ -82,9 +92,12 @@ class BaseKGELightning(pl.LightningModule):
             self.selected_optimizer = torch.optim.SGD(params=parameters, lr=self.learning_rate,
                                                       momentum=0, dampening=0, weight_decay=self.weight_decay,
                                                       nesterov=False)
+
         elif self.optimizer_name == 'Adam':
             self.selected_optimizer = torch.optim.Adam(parameters, lr=self.learning_rate,
                                                        weight_decay=self.weight_decay)
+        elif self.optimizer_name == 'Adopt':
+            self.selected_optimizer = ADOPT(parameters, lr=self.learning_rate)
         elif self.optimizer_name == 'AdamW':
             self.selected_optimizer = torch.optim.AdamW(parameters, lr=self.learning_rate,
                                                        weight_decay=self.weight_decay)
@@ -100,7 +113,8 @@ class BaseKGELightning(pl.LightningModule):
                                                        lr=self.learning_rate, lambd=0.0001, alpha=0.75,
                                                        weight_decay=self.weight_decay)
         else:
-            raise KeyError()
+            raise KeyError(f"{self.optimizer_name} is not found!")
+        print(self.selected_optimizer)
         return self.selected_optimizer
 
 
@@ -282,11 +296,8 @@ class BaseKGE(BaseKGELightning):
             self.normalizer_class = IdentityClass
         else:
             raise NotImplementedError()
-        if self.args.get("optim") in ['AdamW', 'Adam', 'SGD']:
-            self.optimizer_name = self.args['optim']
-        else:
-            print(f'--optim (***{self.args.get("optim")}***) not found')
-            self.optimizer_name = 'Adam'
+
+        self.optimizer_name = self.args['optim']
 
         if self.args.get("init_param") is None:
             self.param_init = IdentityClass

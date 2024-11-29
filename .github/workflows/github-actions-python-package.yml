@@ -22,8 +22,13 @@ jobs:
 
       - name: Lint with ruff
         run: |
-          ruff  --select=E501 --line-length=200 dicee/
+          ruff  check dicee/ --line-length=200
       - name: Test with pytest
         run: |
           wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate && unzip KGs.zip
           python -m pytest -p no:warnings -x
+      - name: Coverage report
+        run: |
+          pip install coverage
+          coverage run -m pytest -p no:warnings -x
+          coverage report -m 

@@ -26,6 +26,8 @@ class AbstractTrainer:
         self.attributes = args
         self.callbacks = callbacks
         self.is_global_zero = True
+        self.global_rank=0
+        self.local_rank = 0
         # Set True to use Model summary callback of pl.
         torch.manual_seed(self.attributes.random_seed)
         torch.cuda.manual_seed_all(self.attributes.random_seed)
@@ -178,20 +180,12 @@ class BaseInteractiveKGE:
             self.num_relations = len(self.relation_to_idx)
             self.entity_to_idx: dict
             self.relation_to_idx: dict
-            assert list(self.entity_to_idx.values()) == list(range(0, len(self.entity_to_idx)))
-            assert list(self.relation_to_idx.values()) == list(range(0, len(self.relation_to_idx)))
+            # 0, ....,
+            assert sorted(list(self.entity_to_idx.values())) == list(range(0, len(self.entity_to_idx)))
+            assert sorted(list(self.relation_to_idx.values())) == list(range(0, len(self.relation_to_idx)))
 
             self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
             self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
-
-        # See https://numpy.org/doc/stable/reference/generated/numpy.memmap.html
-        # @TODO: Ignore temporalryIf file exists
-        # if os.path.exists(self.path + '/train_set.npy'):
-        #    self.train_set = np.load(file=self.path + '/train_set.npy', mmap_mode='r')
-
-        # if apply_semantic_constraint:
-        #    (self.domain_constraints_per_rel, self.range_constraints_per_rel,
-        #     self.domain_per_rel, self.range_per_rel) = create_constraints(self.train_set)
 
     def get_eval_report(self) -> dict:
         return load_json(self.path + "/eval_report.json")
@@ -253,17 +247,6 @@ class BaseInteractiveKGE:
             padded_bpe_t.append(self.get_bpe_token_representation(str_o))
         return padded_bpe_h, padded_bpe_r, padded_bpe_t
 
-    def get_domain_of_relation(self, rel: str) -> List[str]:
-        x = [self.idx_to_entity[i] for i in self.domain_per_rel[self.relation_to_idx[rel]]]
-        res = set(x)
-        assert len(x) == len(res)
-        return res
-
-    def get_range_of_relation(self, rel: str) -> List[str]:
-        x = [self.idx_to_entity[i] for i in self.range_per_rel[self.relation_to_idx[rel]]]
-        res = set(x)
-        assert len(x) == len(res)
-        return res
 
     def set_model_train_mode(self) -> None:
         """

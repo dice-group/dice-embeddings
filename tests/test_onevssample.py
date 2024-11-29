@@ -16,7 +16,7 @@ class TestRegressionQmult:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.scoring_technique = 'KvsSample'
+        args.scoring_technique = '1vsSample'
         args.neg_ratio = 10
         args.num_folds_for_cv = 0
         args.eval_model = 'train_val_test'
@@ -43,7 +43,7 @@ class TestRegressionQmult:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.scoring_technique = 'KvsSample'
+        args.scoring_technique = '1vsSample'
         # size of entity vocabulary
         args.neg_ratio = 10
         args.weight_decay = 0.0

@@ -97,7 +97,7 @@ class Evaluator:
                                                                      trained_model=trained_model)
         elif self.args.scoring_technique in ["AllvsAll",
                                              "KvsAll",
-                                             'KvsSample',
+                                             '1vsSample',
                                              "1vsAll"] and self.args.byte_pair_encoding:
             if self.args.model != "BytE":
                 self.eval_with_bpe_vs_all(raw_train_set=dataset.raw_train_set,
@@ -116,7 +116,7 @@ class Evaluator:
                                                    valid_set=dataset.valid_set,
                                                    test_set=dataset.test_set,
                                                    trained_model=trained_model)
-        elif self.args.scoring_technique in ["AllvsAll", "KvsAll", 'KvsSample', "1vsAll"]:
+        elif self.args.scoring_technique in ["AllvsAll", "KvsAll", '1vsSample',"KvsSample", "1vsAll"]:
             self.eval_with_vs_all(train_set=dataset.train_set,
                                   valid_set=dataset.valid_set,
                                   test_set=dataset.test_set,
@@ -346,11 +346,6 @@ class Evaluator:
         import tiktoken
 
         enc = tiktoken.get_encoding("gpt2")
-
-        ranks = []
-        # Hit range
-        hits_range = [i for i in range(1, 11)]
-        hits = {i: [] for i in hits_range}
         if info and self.during_training is False:
             print(info + ':', end=' ')
         # Iterate over integer indexed triples in mini batch fashion
@@ -456,7 +451,7 @@ class Evaluator:
                                                    valid_set=valid_set,
                                                    test_set=test_set,
                                                    trained_model=trained_model)
-        elif self.args.scoring_technique in ["AllvsAll",'KvsAll', 'KvsSample', '1vsAll']:
+        elif self.args.scoring_technique in ["AllvsAll",'KvsAll', '1vsSample', "KvsSample", '1vsAll']:
             self.eval_with_vs_all(train_set=train_set,
                                   valid_set=valid_set,
                                   test_set=test_set,
@@ -474,7 +469,7 @@ class Evaluator:
             return self.evaluate_lp(trained_model, triple_idx,
                                     info=f'Evaluate {trained_model.name} on a given dataset', )
 
-        elif self.args.scoring_technique in ['KvsAll', 'KvsSample', '1vsAll', 'PvsAll', 'CCvsAll']:
+        elif self.args.scoring_technique in ['KvsAll', '1vsSample', '1vsAll', 'PvsAll', 'CCvsAll']:
             return self.evaluate_lp_k_vs_all(trained_model, triple_idx,
                                              info=f'Evaluate {trained_model.name} on a given dataset',
                                              form_of_labelling=form_of_labelling)
