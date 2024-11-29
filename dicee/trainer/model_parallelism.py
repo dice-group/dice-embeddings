@@ -26,17 +26,22 @@ def extract_input_outputs(z: list, device=None):
 
 
 def find_good_batch_size(train_loader,tp_ensemble_model):
-    # () Initial batch size
+    # () Initial batch size.
     initial_batch_size=train_loader.batch_size
+    # () # of training data points.
     training_dataset_size=len(train_loader.dataset)
+    # () Batch is large enough.
     if initial_batch_size >= training_dataset_size:
         return training_dataset_size, None
+    # () Log the number of training data points.
     print("Number of training data points:",training_dataset_size)
 
     def increase_batch_size_until_cuda_out_of_memory(ensemble_model, train_loader, batch_size,delta: int = None):
-        assert delta is not None, "delta must be positive integer"
+        assert delta is not None, "delta cannot be None."
+        assert isinstance(delta, int), "delta must be a positive integer."
+        # () Store the batch sizes and GPU memory usages in a tuple.
         batch_sizes_and_mem_usages = []
-        num_datapoints = len(train_loader.dataset)
+        # () Increase the batch size until a stopping criterion is reached.
         try:
             while True:
                 start_time=time.time()
@@ -62,22 +67,27 @@ def find_good_batch_size(train_loader,tp_ensemble_model):
                 global_free_memory, total_memory = torch.cuda.mem_get_info(device="cuda:0")
                 percentage_used_gpu_memory = (total_memory - global_free_memory) / total_memory
                 rt=time.time()-start_time
+
                 print(f"Random Batch Loss: {batch_loss:0.4}\tGPU Usage: {percentage_used_gpu_memory:0.3}\tRuntime: {rt:.3f}\tBatch Size: {batch_size}")
 
-                global_free_memory, total_memory = torch.cuda.mem_get_info(device="cuda:0")
-                percentage_used_gpu_memory = (total_memory - global_free_memory) / total_memory
-                
                 # Store the batch size and the runtime
                 batch_sizes_and_mem_usages.append((batch_size, rt))
                 
-                if batch_size < num_datapoints:
+                # ()
+                # https://github.com/pytorch/pytorch/issues/21819
+                # CD: as we reach close to 1.0 GPU memory usage, we observe RuntimeError: CUDA error: an illegal memory access was encountered.
+                # CD: To avoid this problem, we add the following condition as a temp solution.
+                if percentage_used_gpu_memory > 0.9:
+                    # Mimik out of memory error
+                    return batch_sizes_and_mem_usages, False
+                if batch_size < training_dataset_size:
                     # Increase the batch size.
                     batch_size += int(batch_size / delta)
                 else:
                     return batch_sizes_and_mem_usages,True
                         
-        except torch.OutOfMemoryError:
-            print("torch.OutOfMemoryError caught!")
+        except torch.OutOfMemoryError as e:
+            print(f"torch.OutOfMemoryError caught! {e}\n\n")
             return batch_sizes_and_mem_usages, False
 
     history_batch_sizes_and_mem_usages=[]
@@ -91,8 +101,11 @@ def find_good_batch_size(train_loader,tp_ensemble_model):
         if flag:
             batch_size, batch_rt = history_batch_sizes_and_mem_usages[-1]
         else:
+            assert len(history_batch_sizes_and_mem_usages)>2, "GPU memory errorin the first try"
             # CUDA ERROR Observed 
             batch_size, batch_rt=history_batch_sizes_and_mem_usages[-2]
+            # https://github.com/pytorch/pytorch/issues/21819
+            break
 
         if batch_size>=training_dataset_size:
             batch_size=training_dataset_size
