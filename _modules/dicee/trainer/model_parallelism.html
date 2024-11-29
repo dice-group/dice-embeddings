@@ -121,17 +121,22 @@
 <div class="viewcode-block" id="find_good_batch_size">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.find_good_batch_size">[docs]</a>
 <span class="k">def</span> <span class="nf">find_good_batch_size</span><span class="p">(</span><span class="n">train_loader</span><span class="p">,</span><span class="n">tp_ensemble_model</span><span class="p">):</span>
-    <span class="c1"># () Initial batch size</span>
+    <span class="c1"># () Initial batch size.</span>
     <span class="n">initial_batch_size</span><span class="o">=</span><span class="n">train_loader</span><span class="o">.</span><span class="n">batch_size</span>
+    <span class="c1"># () # of training data points.</span>
     <span class="n">training_dataset_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="c1"># () Batch is large enough.</span>
     <span class="k">if</span> <span class="n">initial_batch_size</span> <span class="o">&gt;=</span> <span class="n">training_dataset_size</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">training_dataset_size</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="c1"># () Log the number of training data points.</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of training data points:&quot;</span><span class="p">,</span><span class="n">training_dataset_size</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">increase_batch_size_until_cuda_out_of_memory</span><span class="p">(</span><span class="n">ensemble_model</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span><span class="n">delta</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="n">delta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;delta must be positive integer&quot;</span>
+        <span class="k">assert</span> <span class="n">delta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;delta cannot be None.&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="s2">&quot;delta must be a positive integer.&quot;</span>
+        <span class="c1"># () Store the batch sizes and GPU memory usages in a tuple.</span>
         <span class="n">batch_sizes_and_mem_usages</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">num_datapoints</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+        <span class="c1"># () Increase the batch size until a stopping criterion is reached.</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
                 <span class="n">start_time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -157,22 +162,27 @@
                 <span class="n">global_free_memory</span><span class="p">,</span> <span class="n">total_memory</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">mem_get_info</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span>
                 <span class="n">percentage_used_gpu_memory</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_memory</span> <span class="o">-</span> <span class="n">global_free_memory</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_memory</span>
                 <span class="n">rt</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start_time</span>
+
                 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Random Batch Loss: </span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">0.4</span><span class="si">}</span><span class="se">\t</span><span class="s2">GPU Usage: </span><span class="si">{</span><span class="n">percentage_used_gpu_memory</span><span class="si">:</span><span class="s2">0.3</span><span class="si">}</span><span class="se">\t</span><span class="s2">Runtime: </span><span class="si">{</span><span class="n">rt</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\t</span><span class="s2">Batch Size: </span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-                <span class="n">global_free_memory</span><span class="p">,</span> <span class="n">total_memory</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">mem_get_info</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span>
-                <span class="n">percentage_used_gpu_memory</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_memory</span> <span class="o">-</span> <span class="n">global_free_memory</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_memory</span>
-                
                 <span class="c1"># Store the batch size and the runtime</span>
                 <span class="n">batch_sizes_and_mem_usages</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">rt</span><span class="p">))</span>
                 
-                <span class="k">if</span> <span class="n">batch_size</span> <span class="o">&lt;</span> <span class="n">num_datapoints</span><span class="p">:</span>
+                <span class="c1"># ()</span>
+                <span class="c1"># https://github.com/pytorch/pytorch/issues/21819</span>
+                <span class="c1"># CD: as we reach close to 1.0 GPU memory usage, we observe RuntimeError: CUDA error: an illegal memory access was encountered.</span>
+                <span class="c1"># CD: To avoid this problem, we add the following condition as a temp solution.</span>
+                <span class="k">if</span> <span class="n">percentage_used_gpu_memory</span> <span class="o">&gt;</span> <span class="mf">0.9</span><span class="p">:</span>
+                    <span class="c1"># Mimik out of memory error</span>
+                    <span class="k">return</span> <span class="n">batch_sizes_and_mem_usages</span><span class="p">,</span> <span class="kc">False</span>
+                <span class="k">if</span> <span class="n">batch_size</span> <span class="o">&lt;</span> <span class="n">training_dataset_size</span><span class="p">:</span>
                     <span class="c1"># Increase the batch size.</span>
                     <span class="n">batch_size</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">batch_size</span> <span class="o">/</span> <span class="n">delta</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">return</span> <span class="n">batch_sizes_and_mem_usages</span><span class="p">,</span><span class="kc">True</span>
                         
-        <span class="k">except</span> <span class="n">torch</span><span class="o">.</span><span class="n">OutOfMemoryError</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;torch.OutOfMemoryError caught!&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">torch</span><span class="o">.</span><span class="n">OutOfMemoryError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;torch.OutOfMemoryError caught! </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">batch_sizes_and_mem_usages</span><span class="p">,</span> <span class="kc">False</span>
 
     <span class="n">history_batch_sizes_and_mem_usages</span><span class="o">=</span><span class="p">[]</span>
@@ -186,8 +196,11 @@
         <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
             <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_rt</span> <span class="o">=</span> <span class="n">history_batch_sizes_and_mem_usages</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">history_batch_sizes_and_mem_usages</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;GPU memory errorin the first try&quot;</span>
             <span class="c1"># CUDA ERROR Observed </span>
             <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_rt</span><span class="o">=</span><span class="n">history_batch_sizes_and_mem_usages</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+            <span class="c1"># https://github.com/pytorch/pytorch/issues/21819</span>
+            <span class="k">break</span>
 
         <span class="k">if</span> <span class="n">batch_size</span><span class="o">&gt;=</span><span class="n">training_dataset_size</span><span class="p">:</span>
             <span class="n">batch_size</span><span class="o">=</span><span class="n">training_dataset_size</span>
