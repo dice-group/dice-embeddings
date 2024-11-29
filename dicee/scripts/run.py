@@ -123,6 +123,9 @@ def get_default_arguments(description=None):
     parser.add_argument("--swa",
                         action="store_true",
                         help="Stochastic weight averaging")
+    parser.add_argument("--auto_batch_finding",
+                        action="store_true",
+                        help="Find a batch size fitting in GPUs. Only available for TP trainer")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
     parser.add_argument('--disable_checkpointing', action='store_true', help='Disable creation of checkpoints during training')

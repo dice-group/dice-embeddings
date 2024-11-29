@@ -85,7 +85,6 @@ class Namespace(argparse.Namespace):
 
         self.label_smoothing_rate: float = 0.0
 
-
         self.num_core: int = 0
         """Number of CPUs to be used in the mini-batch loading process"""
 
@@ -138,6 +137,9 @@ class Namespace(argparse.Namespace):
 
         self.continual_learning=None
         "Path of a pretrained model size of LLM"
+
+        self.auto_batch_finding=False
+        "A flag for using auto batch finding"
 
     def __iter__(self):
         # Iterate
