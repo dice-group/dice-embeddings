@@ -530,14 +530,33 @@ class QueryGenerator:
             gen_num,
             query_type
         )
-
-
         # @TODO: test_queries has keys that are tuple ,e.g. ('e', ('r',))
         # Yet, query structure defined as a list ['e', ['r']].
         # Fix this inconsistency
         print(
             f"General structure is {query_struct} with name {query_type}. Number of queries generated: {len(tp_answers)}")
         return queries, tp_answers, fp_answers, fn_answers
+    
+        # train_tail_relation_to_heads, train_head_relation_to_tails = self.construct_graph(paths=[self.train_path])
+        # val_tail_relation_to_heads, val_head_relation_to_tails = self.construct_graph(
+        #     paths=[self.train_path, self.val_path])
+        # # ?!
+        # valid_only_ent_in, valid_only_ent_out = self.construct_graph(paths=[self.val_path, self.test_path])
+
+        # test_tail_relation_to_heads, test_head_relation_to_tails = self.construct_graph(
+        #     paths=[self.train_path, self.val_path, self.test_path])
+        # # ?!
+        # test_only_ent_in, test_only_ent_out = self.construct_graph(paths=[self.test_path])
+        # self.mode = 'test'
+        # test_queries, test_tp_answers, test_fp_answers, test_fn_answers = self.ground_queries(
+        #     query_struct, test_tail_relation_to_heads, test_head_relation_to_tails, val_tail_relation_to_heads,
+        #     val_head_relation_to_tails, gen_num, query_type)
+        # # @TODO: test_queries has keys that are tuple ,e.g. ('e', ('r',))
+        # # Yet, query structure defined as a list ['e', ['r']].
+        # # Fix this inconsistency
+        # print(
+        #     f"General structure is {query_struct} with name {query_type}. Number of queries generated: {len(test_tp_answers)}")
+        # return test_queries, test_tp_answers, test_fp_answers, test_fn_answers
 
     def save_queries(self, query_type: str, gen_num: int, save_path: str):
         """
