@@ -115,6 +115,9 @@
 <span class="sd">    the filtered missing tail entity rank</span>
 <span class="sd">    :param model:</span>
 <span class="sd">    :param triple_idx:</span>
+<span class="sd">    :param num_entities:</span>
+<span class="sd">    :param er_vocab:</span>
+<span class="sd">    :param re_vocab:</span>
 <span class="sd">    :param info:</span>
 <span class="sd">    :param batch_size:</span>
 <span class="sd">    :param chunk_size:</span>
@@ -222,7 +225,7 @@
             <span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
             <span class="c1"># Predict scores for missing tails</span>
-            <span class="n">preds_tails</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">forward_triples</span><span class="p">(</span><span class="n">x_tails</span><span class="p">)</span>
+            <span class="n">preds_tails</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x_tails</span><span class="p">)</span>
             <span class="n">preds_tails</span> <span class="o">=</span> <span class="n">preds_tails</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size_current</span><span class="p">,</span> <span class="n">chunk_size_current</span><span class="p">)</span>
             <span class="n">predictions_tails</span><span class="p">[:,</span> <span class="n">chunk_start</span><span class="p">:</span><span class="n">chunk_end</span><span class="p">]</span> <span class="o">=</span> <span class="n">preds_tails</span>
             <span class="k">del</span> <span class="n">x_tails</span>
@@ -235,7 +238,7 @@
             <span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
             <span class="c1"># Predict scores for missing heads</span>
-            <span class="n">preds_heads</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">forward_triples</span><span class="p">(</span><span class="n">x_heads</span><span class="p">)</span>
+            <span class="n">preds_heads</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x_heads</span><span class="p">)</span>
             <span class="n">preds_heads</span> <span class="o">=</span> <span class="n">preds_heads</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size_current</span><span class="p">,</span> <span class="n">chunk_size_current</span><span class="p">)</span>
             <span class="n">predictions_heads</span><span class="p">[:,</span> <span class="n">chunk_start</span><span class="p">:</span><span class="n">chunk_end</span><span class="p">]</span> <span class="o">=</span> <span class="n">preds_heads</span>
             <span class="k">del</span> <span class="n">x_heads</span>
