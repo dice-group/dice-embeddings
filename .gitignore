@@ -1,6 +1,0 @@
-*.egg-info/
-KGs
-KGs.zip
-checkpoints
-Experiments
-__pycache__/
