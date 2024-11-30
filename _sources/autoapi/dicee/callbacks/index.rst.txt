@@ -296,6 +296,8 @@ Module Contents
 
 
    .. py:attribute:: val_aswa
+      :value: -1
+
 
 
    .. py:method:: on_fit_end(trainer, model)
@@ -367,6 +369,8 @@ Module Contents
 
 
    .. py:attribute:: epoch_ratio
+      :value: None
+
 
 
    .. py:attribute:: epoch_counter
@@ -499,18 +503,28 @@ Module Contents
 
 
    .. py:attribute:: level
+      :value: 'input'
+
 
 
    .. py:attribute:: ratio
+      :value: 0.0
+
 
 
    .. py:attribute:: method
+      :value: None
+
 
 
    .. py:attribute:: scaler
+      :value: None
+
 
 
    .. py:attribute:: frequency
+      :value: None
+
 
 
    .. py:method:: on_train_batch_start(trainer, model, batch, batch_idx)

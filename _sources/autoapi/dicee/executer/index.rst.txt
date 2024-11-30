@@ -29,6 +29,8 @@ Module Contents
 
 
    .. py:attribute:: is_continual_training
+      :value: False
+
 
 
    .. py:attribute:: trainer

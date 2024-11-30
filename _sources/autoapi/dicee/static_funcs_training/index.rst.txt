@@ -20,7 +20,7 @@ Module Contents
 
 .. py:function:: make_iterable_verbose(iterable_object, verbose, desc='Default', position=None, leave=True) -> Iterable
 
-.. py:function:: evaluate_lp(model, triple_idx, num_entities: int, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info='Eval Starts', batch_size=1024, chunk_size=1024)
+.. py:function:: evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info='Eval Starts', batch_size=128, chunk_size=1000)
 
    Evaluate model in a standard link prediction task
 
@@ -29,9 +29,6 @@ Module Contents
    the filtered missing tail entity rank
    :param model:
    :param triple_idx:
-   :param num_entities:
-   :param er_vocab:
-   :param re_vocab:
    :param info:
    :param batch_size:
    :param chunk_size:

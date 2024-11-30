@@ -27,12 +27,18 @@ Module Contents
 
 
    .. py:attribute:: gen_valid
+      :value: False
+
 
 
    .. py:attribute:: gen_test
+      :value: True
+
 
 
    .. py:attribute:: seed
+      :value: 1
+
 
 
    .. py:attribute:: max_ans_num
@@ -44,10 +50,14 @@ Module Contents
 
 
    .. py:attribute:: ent2id
+      :value: None
+
 
 
    .. py:attribute:: rel2id
       :type:  Dict
+      :value: None
+
 
 
    .. py:attribute:: ent_in

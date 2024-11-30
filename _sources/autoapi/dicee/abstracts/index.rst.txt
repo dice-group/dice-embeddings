@@ -153,9 +153,13 @@ Module Contents
 
 
    .. py:attribute:: construct_ensemble
+      :value: False
+
 
 
    .. py:attribute:: apply_semantic_constraint
+      :value: False
+
 
 
    .. py:attribute:: configs

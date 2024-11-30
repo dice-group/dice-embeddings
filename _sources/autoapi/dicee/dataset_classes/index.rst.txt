@@ -157,6 +157,8 @@ Module Contents
 
 
    .. py:attribute:: block_size
+      :value: 8
+
 
 
    .. py:attribute:: num_of_data_points
@@ -414,6 +416,8 @@ Module Contents
 
 
    .. py:attribute:: neg_sample_ratio
+      :value: None
+
 
 
    .. py:attribute:: label_smoothing_rate
@@ -494,6 +498,8 @@ Module Contents
 
 
    .. py:attribute:: neg_ratio
+      :value: None
+
 
 
    .. py:attribute:: num_entities

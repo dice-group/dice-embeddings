@@ -72,6 +72,8 @@ Module Contents
 
 
    .. py:attribute:: evaluator
+      :value: None
+
 
 
    .. py:attribute:: form_of_labelling

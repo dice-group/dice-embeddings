@@ -151,6 +151,16 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">ee_vocab</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
 
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        if isinstance(dataset.constraints, tuple):</span>
+<span class="sd">            self.domain_constraints_per_rel, self.range_constraints_per_rel = dataset.constraints</span>
+<span class="sd">        else:</span>
+<span class="sd">            try:</span>
+<span class="sd">                self.domain_constraints_per_rel, self.range_constraints_per_rel = dataset.constraints.result()</span>
+<span class="sd">            except RuntimeError:</span>
+<span class="sd">                print(&#39;Domain constraint exception occurred&#39;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">num_entities</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">num_relations</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">func_triple_to_bpe_representation</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">func_triple_to_bpe_representation</span>

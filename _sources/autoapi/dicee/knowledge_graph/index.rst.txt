@@ -21,15 +21,23 @@ Module Contents
 
 
    .. py:attribute:: dataset_dir
+      :value: None
+
 
 
    .. py:attribute:: sparql_endpoint
+      :value: None
+
 
 
    .. py:attribute:: path_single_kg
+      :value: None
+
 
 
    .. py:attribute:: byte_pair_encoding
+      :value: False
+
 
 
    .. py:attribute:: ordered_shaped_bpe_tokens
@@ -38,6 +46,8 @@ Module Contents
 
 
    .. py:attribute:: add_noise_rate
+      :value: None
+
 
 
    .. py:attribute:: num_entities
@@ -51,33 +61,53 @@ Module Contents
 
 
    .. py:attribute:: path_for_deserialization
+      :value: None
+
 
 
    .. py:attribute:: add_reciprocal
+      :value: None
+
 
 
    .. py:attribute:: eval_model
+      :value: None
+
 
 
    .. py:attribute:: read_only_few
+      :value: None
+
 
 
    .. py:attribute:: sample_triples_ratio
+      :value: None
+
 
 
    .. py:attribute:: path_for_serialization
+      :value: None
+
 
 
    .. py:attribute:: entity_to_idx
+      :value: None
+
 
 
    .. py:attribute:: relation_to_idx
+      :value: None
+
 
 
    .. py:attribute:: backend
+      :value: 'pandas'
+
 
 
    .. py:attribute:: training_technique
+      :value: None
+
 
 
    .. py:attribute:: idx_entity_to_bpe_shaped
@@ -95,6 +125,8 @@ Module Contents
 
 
    .. py:attribute:: padding
+      :value: False
+
 
 
    .. py:attribute:: dummy_id
@@ -126,6 +158,8 @@ Module Contents
 
 
    .. py:attribute:: separator
+      :value: None
+
 
 
    .. py:attribute:: description_of_input

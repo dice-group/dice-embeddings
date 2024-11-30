@@ -730,6 +730,8 @@ Package Contents
 
 
    .. py:attribute:: args
+      :value: None
+
 
 
    .. py:method:: __call__(x)
@@ -1720,6 +1722,8 @@ Package Contents
 
 
    .. py:attribute:: args
+      :value: None
+
 
 
    .. py:method:: __call__(x)
@@ -2209,6 +2213,8 @@ Package Contents
 
 
    .. py:attribute:: args
+      :value: None
+
 
 
    .. py:method:: __call__(x)
@@ -3786,6 +3792,8 @@ Package Contents
 
 
    .. py:attribute:: num_ent
+      :value: None
+
 
 
    .. py:method:: kvsall_score(e_1_h, e_2_h, e_3_h, e_4_h, e_5_h, e_6_h, e_7_h, e_8_h, e_1_t, e_2_t, e_3_t, e_4_t, e_5_t, e_6_t, e_7_t, e_8_t, r_1, r_2, r_3, r_4, r_5, r_6, r_7, r_8) -> torch.tensor

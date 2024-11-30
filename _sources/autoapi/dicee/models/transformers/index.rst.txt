@@ -247,6 +247,8 @@ Module Contents
 
 
    .. py:attribute:: flash
+      :value: True
+
 
 
    .. py:method:: forward(x)

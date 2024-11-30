@@ -102,13 +102,11 @@
         <span class="k">return</span> <span class="n">iterable_object</span></div>
 
 
-
 <div class="viewcode-block" id="evaluate_lp">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs_training/index.html#dicee.static_funcs_training.evaluate_lp">[docs]</a>
-<span class="k">def</span> <span class="nf">evaluate_lp</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span>
-                <span class="n">er_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span>
-                <span class="n">re_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span>
-                <span class="n">info</span><span class="o">=</span><span class="s1">&#39;Eval Starts&#39;</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">):</span>
+<span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">evaluate_lp</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">,</span> <span class="n">er_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span> <span class="n">re_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span>
+                <span class="n">info</span><span class="o">=</span><span class="s1">&#39;Eval Starts&#39;</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Evaluate model in a standard link prediction task</span>
 
@@ -117,9 +115,6 @@
 <span class="sd">    the filtered missing tail entity rank</span>
 <span class="sd">    :param model:</span>
 <span class="sd">    :param triple_idx:</span>
-<span class="sd">    :param num_entities:</span>
-<span class="sd">    :param er_vocab:</span>
-<span class="sd">    :param re_vocab:</span>
 <span class="sd">    :param info:</span>
 <span class="sd">    :param batch_size:</span>
 <span class="sd">    :param chunk_size:</span>
@@ -227,7 +222,7 @@
             <span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
             <span class="c1"># Predict scores for missing tails</span>
-            <span class="n">preds_tails</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x_tails</span><span class="p">)</span>
+            <span class="n">preds_tails</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">forward_triples</span><span class="p">(</span><span class="n">x_tails</span><span class="p">)</span>
             <span class="n">preds_tails</span> <span class="o">=</span> <span class="n">preds_tails</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size_current</span><span class="p">,</span> <span class="n">chunk_size_current</span><span class="p">)</span>
             <span class="n">predictions_tails</span><span class="p">[:,</span> <span class="n">chunk_start</span><span class="p">:</span><span class="n">chunk_end</span><span class="p">]</span> <span class="o">=</span> <span class="n">preds_tails</span>
             <span class="k">del</span> <span class="n">x_tails</span>
@@ -240,7 +235,7 @@
             <span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
             <span class="c1"># Predict scores for missing heads</span>
-            <span class="n">preds_heads</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x_heads</span><span class="p">)</span>
+            <span class="n">preds_heads</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">forward_triples</span><span class="p">(</span><span class="n">x_heads</span><span class="p">)</span>
             <span class="n">preds_heads</span> <span class="o">=</span> <span class="n">preds_heads</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size_current</span><span class="p">,</span> <span class="n">chunk_size_current</span><span class="p">)</span>
             <span class="n">predictions_heads</span><span class="p">[:,</span> <span class="n">chunk_start</span><span class="p">:</span><span class="n">chunk_end</span><span class="p">]</span> <span class="o">=</span> <span class="n">preds_heads</span>
             <span class="k">del</span> <span class="n">x_heads</span>
