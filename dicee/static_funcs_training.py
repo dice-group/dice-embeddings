@@ -9,7 +9,7 @@ def make_iterable_verbose(iterable_object, verbose, desc="Default", position=Non
     else:
         return iterable_object
 
-
+@torch.no_grad()
 def evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List],
                 info='Eval Starts', batch_size=128, chunk_size=1000):
     """
