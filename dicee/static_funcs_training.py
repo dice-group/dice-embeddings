@@ -9,11 +9,9 @@ def make_iterable_verbose(iterable_object, verbose, desc="Default", position=Non
     else:
         return iterable_object
 
-
-def evaluate_lp(model, triple_idx, num_entities:int,
-                er_vocab: Dict[Tuple, List],
-                re_vocab: Dict[Tuple, List],
-                info='Eval Starts', batch_size=1024, chunk_size=1024):
+@torch.no_grad()
+def evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List],
+                info='Eval Starts', batch_size=128, chunk_size=1000):
     """
     Evaluate model in a standard link prediction task
 
