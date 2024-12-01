@@ -20,6 +20,9 @@ def evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re
     the filtered missing tail entity rank
     :param model:
     :param triple_idx:
+    :param num_entities:
+    :param er_vocab:
+    :param re_vocab:
     :param info:
     :param batch_size:
     :param chunk_size:
@@ -127,7 +130,7 @@ def evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re
             ), dim=1)
 
             # Predict scores for missing tails
-            preds_tails = model.forward_triples(x_tails)
+            preds_tails = model(x_tails)
             preds_tails = preds_tails.view(batch_size_current, chunk_size_current)
             predictions_tails[:, chunk_start:chunk_end] = preds_tails
             del x_tails
@@ -140,7 +143,7 @@ def evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re
             ), dim=1)
 
             # Predict scores for missing heads
-            preds_heads = model.forward_triples(x_heads)
+            preds_heads = model(x_heads)
             preds_heads = preds_heads.view(batch_size_current, chunk_size_current)
             predictions_heads[:, chunk_start:chunk_end] = preds_heads
             del x_heads

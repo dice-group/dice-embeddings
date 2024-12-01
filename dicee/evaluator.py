@@ -57,16 +57,6 @@ class Evaluator:
         else:
             self.ee_vocab = dataset.ee_vocab.result()
 
-        """
-        if isinstance(dataset.constraints, tuple):
-            self.domain_constraints_per_rel, self.range_constraints_per_rel = dataset.constraints
-        else:
-            try:
-                self.domain_constraints_per_rel, self.range_constraints_per_rel = dataset.constraints.result()
-            except RuntimeError:
-                print('Domain constraint exception occurred')
-        """
-
         self.num_entities = dataset.num_entities
         self.num_relations = dataset.num_relations
         self.func_triple_to_bpe_representation = dataset.func_triple_to_bpe_representation
