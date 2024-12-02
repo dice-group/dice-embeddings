@@ -235,12 +235,6 @@
 <span class="k">class</span> <span class="nc">TensorParallel</span><span class="p">(</span><span class="n">AbstractTrainer</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">=</span><span class="p">[]</span>
-
-<div class="viewcode-block" id="TensorParallel.get_ensemble">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.TensorParallel.get_ensemble">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span></div>
 
 
 <div class="viewcode-block" id="TensorParallel.fit">
@@ -248,9 +242,9 @@
     <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Train model        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
-        <span class="n">seed_model</span><span class="p">,</span> <span class="o">=</span> <span class="n">args</span>
-        <span class="c1"># () Init. ensemble model.</span>
-        <span class="n">ensemble_model</span> <span class="o">=</span> <span class="n">EnsembleKGE</span><span class="p">(</span><span class="n">seed_model</span><span class="p">)</span>
+        <span class="n">ensemble_model</span><span class="p">,</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ensemble_model</span><span class="p">,</span><span class="n">EnsembleKGE</span><span class="p">),</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Selected model must &quot;</span>
+                                                        <span class="sa">f</span><span class="s2">&quot;be an instance of EnsembleKGE</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">ensemble_model</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="c1"># () Run on_fit_start callbacks.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
         <span class="c1"># () Sanity checking</span>

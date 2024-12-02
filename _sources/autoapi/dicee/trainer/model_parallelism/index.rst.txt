@@ -48,14 +48,6 @@ Module Contents
            ?
 
 
-   .. py:attribute:: models
-      :value: []
-
-
-
-   .. py:method:: get_ensemble()
-
-
    .. py:method:: fit(*args, **kwargs)
 
       Train model
