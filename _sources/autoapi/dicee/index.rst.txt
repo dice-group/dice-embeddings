@@ -1991,22 +1991,7 @@ Package Contents
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
 
 
-.. py:class:: EnsembleKGE(seed_model)
-
-   .. py:attribute:: models
-      :value: []
-
-
-
-   .. py:attribute:: optimizers
-      :value: []
-
-
-
-   .. py:attribute:: loss_history
-      :value: []
-
-
+.. py:class:: EnsembleKGE(seed_model=None, pretrained_models: List = None)
 
    .. py:attribute:: name
 
@@ -2108,16 +2093,7 @@ Package Contents
    Store Pytorch model into disk
 
 
-.. py:function:: store(trainer, trained_model, model_name: str = 'model', full_storage_path: str = None, save_embeddings_as_csv=False) -> None
-
-   Store trained_model model and save embeddings into csv file.
-   :param trainer: an instance of trainer class
-   :param full_storage_path: path to save parameters.
-   :param model_name: string representation of the name of the model.
-   :param trained_model: an instance of BaseKGE see core.models.base_model .
-   :param save_embeddings_as_csv: for easy access of embeddings.
-   :return:
-
+.. py:function:: store(trained_model, model_name: str = 'model', full_storage_path: str = None, save_embeddings_as_csv=False) -> None
 
 .. py:function:: add_noisy_triples(train_set: pandas.DataFrame, add_noise_rate: float) -> pandas.DataFrame
 
@@ -2187,7 +2163,7 @@ Package Contents
 
 .. py:function:: from_pretrained_model_write_embeddings_into_csv(path: str) -> None
 
-.. py:class:: DICE_Trainer(args, is_continual_training, storage_path, evaluator=None)
+.. py:class:: DICE_Trainer(args, is_continual_training: bool, storage_path, evaluator=None)
 
    DICE_Trainer implement
     1- Pytorch Lightning trainer (https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html)

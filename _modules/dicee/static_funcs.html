@@ -92,6 +92,9 @@
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">numpy.core.defchararray</span> <span class="kn">import</span> <span class="n">rfind</span>
+
 <span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Pyke</span><span class="p">,</span> <span class="n">DistMult</span><span class="p">,</span> <span class="n">KeciBase</span><span class="p">,</span> <span class="n">Keci</span><span class="p">,</span> <span class="n">TransE</span><span class="p">,</span> <span class="n">DeCaL</span><span class="p">,</span> <span class="n">DualE</span><span class="p">,</span>\
     <span class="n">ComplEx</span><span class="p">,</span> <span class="n">AConEx</span><span class="p">,</span> <span class="n">AConvO</span><span class="p">,</span> <span class="n">AConvQ</span><span class="p">,</span> <span class="n">ConvQ</span><span class="p">,</span> <span class="n">ConvO</span><span class="p">,</span> <span class="n">ConEx</span><span class="p">,</span> <span class="n">QMult</span><span class="p">,</span> <span class="n">OMult</span><span class="p">,</span> <span class="n">Shallom</span><span class="p">,</span> <span class="n">LFMult</span>
 <span class="kn">from</span> <span class="nn">.models.pykeen_models</span> <span class="kn">import</span> <span class="n">PykeenKGE</span>
@@ -218,20 +221,40 @@
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">is_continual_training</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">storage_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">is_continual_training</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loading pre-trained model...&#39;</span><span class="p">)</span>
-        <span class="n">model</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">intialize_model</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">storage_path</span> <span class="o">+</span> <span class="s1">&#39;/model.pt&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">))</span>
-            <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
-                <span class="n">parameter</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
-        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">storage_path</span><span class="si">}</span><span class="s2">/model.pt is not found. The model will be trained with random weights&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">_</span>
+        <span class="c1"># Check whether we have tensor parallelized KGE.</span>
+        <span class="n">files_under_storage_path</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">storage_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">storage_path</span><span class="p">,</span> <span class="n">f</span><span class="p">))]</span>
+        <span class="n">num_of_partial_models_for_tensor_parallel</span><span class="o">=</span> <span class="nb">len</span><span class="p">([</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">files_under_storage_path</span> <span class="k">if</span> <span class="s2">&quot;partial&quot;</span> <span class="ow">in</span> <span class="n">i</span> <span class="p">])</span>
+        <span class="k">if</span> <span class="n">num_of_partial_models_for_tensor_parallel</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">models</span><span class="o">=</span><span class="p">[]</span>
+            <span class="n">labelling_flag</span><span class="o">=</span><span class="kc">None</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_of_partial_models_for_tensor_parallel</span><span class="p">):</span>
+                <span class="n">model</span><span class="p">,</span> <span class="n">labelling_flag</span> <span class="o">=</span> <span class="n">intialize_model</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">storage_path</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;/model_partial_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.pt&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">),</span><span class="n">weights_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
+                    <span class="n">parameter</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+                <span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">EnsembleKGE</span><span class="p">(</span><span class="n">pretrained_models</span><span class="o">=</span><span class="n">models</span><span class="p">),</span> <span class="n">labelling_flag</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loading pre-trained model...&#39;</span><span class="p">)</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">labelling_flag</span> <span class="o">=</span> <span class="n">intialize_model</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">storage_path</span> <span class="o">+</span> <span class="s1">&#39;/model.pt&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">))</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
+                    <span class="n">parameter</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">FileNotFoundError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">storage_path</span><span class="si">}</span><span class="s2">/model.pt is not found. The model will be trained with random weights&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">e</span>
+            <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">labelling_flag</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">intialize_model</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
+        <span class="n">model</span><span class="p">,</span> <span class="n">labelling_flag</span><span class="o">=</span> <span class="n">intialize_model</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;trainer&quot;</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;TP&quot;</span><span class="p">:</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">EnsembleKGE</span><span class="p">(</span><span class="n">seed_model</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>
 
+    <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">labelling_flag</span></div>
 
 
 <div class="viewcode-block" id="load_model">
@@ -410,15 +433,12 @@
 <span class="k">def</span> <span class="nf">save_checkpoint_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Store Pytorch model into disk&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">BaseKGE</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">path</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">ReferenceError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Could not save the model correctly&#39;</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">path</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">EnsembleKGE</span><span class="p">):</span>
+        <span class="c1"># path comes with ../model_...</span>
+        <span class="n">root_path</span><span class="o">=</span><span class="n">path</span><span class="p">[:</span><span class="n">rfind</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="s2">&quot;_&quot;</span><span class="p">)]</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">partial_model</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
-            <span class="n">new_path</span><span class="o">=</span><span class="n">path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;model.pt&quot;</span><span class="p">,</span><span class="sa">f</span><span class="s2">&quot;model_partial_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">.pt&quot;</span><span class="p">)</span>
+            <span class="n">new_path</span><span class="o">=</span><span class="n">root_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">,</span><span class="sa">f</span><span class="s2">&quot;model_partial_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">.pt&quot;</span><span class="p">)</span>
             <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">partial_model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">new_path</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">path</span><span class="p">)</span></div>
@@ -427,18 +447,8 @@
 
 <div class="viewcode-block" id="store">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.store">[docs]</a>
-<span class="k">def</span> <span class="nf">store</span><span class="p">(</span><span class="n">trainer</span><span class="p">,</span>
-          <span class="n">trained_model</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="n">full_storage_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="k">def</span> <span class="nf">store</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="n">full_storage_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
           <span class="n">save_embeddings_as_csv</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Store trained_model model and save embeddings into csv file.</span>
-<span class="sd">    :param trainer: an instance of trainer class</span>
-<span class="sd">    :param full_storage_path: path to save parameters.</span>
-<span class="sd">    :param model_name: string representation of the name of the model.</span>
-<span class="sd">    :param trained_model: an instance of BaseKGE see core.models.base_model .</span>
-<span class="sd">    :param save_embeddings_as_csv: for easy access of embeddings.</span>
-<span class="sd">    :return:</span>
-<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">full_storage_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">model_name</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>

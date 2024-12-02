@@ -15,22 +15,7 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: EnsembleKGE(seed_model)
-
-   .. py:attribute:: models
-      :value: []
-
-
-
-   .. py:attribute:: optimizers
-      :value: []
-
-
-
-   .. py:attribute:: loss_history
-      :value: []
-
-
+.. py:class:: EnsembleKGE(seed_model=None, pretrained_models: List = None)
 
    .. py:attribute:: name
 

@@ -237,7 +237,7 @@
 <span class="sd">    report:dict</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">is_continual_training</span><span class="p">,</span> <span class="n">storage_path</span><span class="p">,</span> <span class="n">evaluator</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">is_continual_training</span><span class="p">:</span><span class="nb">bool</span><span class="p">,</span> <span class="n">storage_path</span><span class="p">,</span> <span class="n">evaluator</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">report</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="kc">None</span>
@@ -272,11 +272,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialize_trainer</span><span class="p">(</span><span class="n">callbacks</span><span class="o">=</span><span class="n">get_callbacks</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
         <span class="n">model</span><span class="p">,</span> <span class="n">form_of_labelling</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialize_or_load_model</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-
-        <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="c1"># TODO: Here we need to load memory pag</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluator</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">knowledge_graph</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">form_of_labelling</span> <span class="o">=</span> <span class="n">form_of_labelling</span>
@@ -300,8 +296,6 @@
         <span class="n">model</span><span class="p">,</span> <span class="n">form_of_labelling</span> <span class="o">=</span> <span class="n">select_model</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_continual_training</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage_path</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;form_of_labelling&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">form_of_labelling</span>
         <span class="k">assert</span> <span class="n">form_of_labelling</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;EntityPrediction&#39;</span><span class="p">,</span> <span class="s1">&#39;RelationPrediction&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">trainer</span><span class="o">==</span><span class="s2">&quot;TP&quot;</span><span class="p">:</span>
-            <span class="n">model</span> <span class="o">=</span> <span class="n">EnsembleKGE</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">form_of_labelling</span></div>
 
 
@@ -358,8 +352,8 @@
                 <span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span>
 
             <span class="n">train_dataset</span> <span class="o">=</span> <span class="n">construct_dataset</span><span class="p">(</span><span class="n">train_set</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
-                                              <span class="n">valid_set</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">valid_set</span><span class="p">,</span>
-                                              <span class="n">test_set</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">test_set</span><span class="p">,</span>
+                                              <span class="n">valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                              <span class="n">test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                               <span class="n">train_target_indices</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                               <span class="n">target_dim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                               <span class="n">ordered_bpe_entities</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -401,7 +395,7 @@
             <span class="c1"># TODO: Later, maybe we should write a callback to save the models in disk</span>
 
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="p">,</span> <span class="n">TensorParallel</span><span class="p">):</span>
-                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">EnsembleKGE</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">EnsembleKGE</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
                 <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">train_dataloaders</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">init_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">init_dataset</span><span class="p">()))</span>
                 <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span><span class="n">EnsembleKGE</span><span class="p">)</span>

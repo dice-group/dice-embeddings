@@ -92,6 +92,8 @@
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">load_json</span>
 <span class="kn">from</span> <span class="nn">.static_funcs</span> <span class="kn">import</span> <span class="n">pickle</span>
 <span class="kn">from</span> <span class="nn">.static_funcs_training</span> <span class="kn">import</span> <span class="n">evaluate_lp</span><span class="p">,</span> <span class="n">evaluate_bpe_lp</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span>
@@ -164,6 +166,7 @@
 <div class="viewcode-block" id="Evaluator.eval">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.eval">[docs]</a>
     <span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">KG</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">,</span> <span class="n">during_training</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">KG</span><span class="p">),</span> <span class="s2">&quot;dataset must be KG&quot;</span>
         <span class="c1"># @TODO: Why this reassigment ?</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span> <span class="o">=</span> <span class="n">during_training</span>
         <span class="c1"># (1) Exit, if the flag is not set</span>
@@ -238,6 +241,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/er_vocab.p&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/re_vocab.p&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/ee_vocab.p&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">))</span>
+        <span class="n">report</span> <span class="o">=</span> <span class="n">load_json</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/report.json&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">&quot;num_entities&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">&quot;num_relations&quot;</span><span class="p">]</span>
 
 <div class="viewcode-block" id="Evaluator.eval_rank_of_head_and_tail_entity">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.eval_rank_of_head_and_tail_entity">[docs]</a>
@@ -550,14 +556,20 @@
 <div class="viewcode-block" id="Evaluator.evaluate_lp">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.evaluate_lp">[docs]</a>
     <span class="k">def</span> <span class="nf">evaluate_lp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">evaluate_lp</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span> <span class="n">num_entities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">er_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;self.num_entities cannot be None&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;self.er_vocab cannot be None&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;self.re_vocab cannot be None&quot;</span>
+        <span class="k">return</span> <span class="n">evaluate_lp</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span>
+                           <span class="n">num_entities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span>
+                           <span class="n">er_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span>
                            <span class="n">re_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="n">info</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Evaluator.dummy_eval">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.dummy_eval">[docs]</a>
     <span class="k">def</span> <span class="nf">dummy_eval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-
+        <span class="k">assert</span> <span class="n">trained_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="c1"># @TODO:CD: Why such naming! We need to document it better.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_continual_training</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">__load_and_set_mappings</span><span class="p">()</span>
 
@@ -575,6 +587,7 @@
                                   <span class="n">trained_model</span><span class="o">=</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid argument: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/eval_report.json&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_descriptor</span><span class="p">:</span>
             <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">,</span> <span class="n">file_descriptor</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
 

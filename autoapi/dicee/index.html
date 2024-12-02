@@ -385,9 +385,6 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.EnsembleKGE"><code class="docutils literal notranslate"><span class="pre">EnsembleKGE</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#dicee.EnsembleKGE.models"><code class="docutils literal notranslate"><span class="pre">EnsembleKGE.models</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dicee.EnsembleKGE.optimizers"><code class="docutils literal notranslate"><span class="pre">EnsembleKGE.optimizers</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#dicee.EnsembleKGE.loss_history"><code class="docutils literal notranslate"><span class="pre">EnsembleKGE.loss_history</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.EnsembleKGE.name"><code class="docutils literal notranslate"><span class="pre">EnsembleKGE.name</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.EnsembleKGE.train_mode"><code class="docutils literal notranslate"><span class="pre">EnsembleKGE.train_mode</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.EnsembleKGE.named_children"><code class="docutils literal notranslate"><span class="pre">EnsembleKGE.named_children()</span></code></a></li>
@@ -896,7 +893,7 @@
 <td><p>Store Pytorch model into disk</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.store" title="dicee.store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store</span></code></a>(→ None)</p></td>
-<td><p>Store trained_model model and save embeddings into csv file.</p></td>
+<td><p></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.add_noisy_triples" title="dicee.add_noisy_triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_noisy_triples</span></code></a>(→ pandas.DataFrame)</p></td>
 <td><p>Add randomly constructed triples</p></td>
@@ -3179,23 +3176,8 @@ evaluation mode.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.EnsembleKGE">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">EnsembleKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/ensemble.html#EnsembleKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.EnsembleKGE" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">EnsembleKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed_model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained_models</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/ensemble.html#EnsembleKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.EnsembleKGE" title="Link to this definition"></a></dt>
 <dd><dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.EnsembleKGE.models">
-<span class="sig-name descname"><span class="pre">models</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.EnsembleKGE.models" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.EnsembleKGE.optimizers">
-<span class="sig-name descname"><span class="pre">optimizers</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.EnsembleKGE.optimizers" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.EnsembleKGE.loss_history">
-<span class="sig-name descname"><span class="pre">loss_history</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.EnsembleKGE.loss_history" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.EnsembleKGE.name">
 <span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#dicee.EnsembleKGE.name" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -3360,15 +3342,8 @@ evaluation mode.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.store">
-<span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">store</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'model'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_storage_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_embeddings_as_csv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../_modules/dicee/static_funcs.html#store"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.store" title="Link to this definition"></a></dt>
-<dd><p>Store trained_model model and save embeddings into csv file.
-:param trainer: an instance of trainer class
-:param full_storage_path: path to save parameters.
-:param model_name: string representation of the name of the model.
-:param trained_model: an instance of BaseKGE see core.models.base_model .
-:param save_embeddings_as_csv: for easy access of embeddings.
-:return:</p>
-</dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">store</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'model'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_storage_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_embeddings_as_csv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../_modules/dicee/static_funcs.html#store"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.store" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.add_noisy_triples">
@@ -3497,7 +3472,7 @@ Evaluate multi hop query answering on different query types</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.DICE_Trainer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">DICE_Trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_continual_training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evaluator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.DICE_Trainer" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">DICE_Trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_continual_training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evaluator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.DICE_Trainer" title="Link to this definition"></a></dt>
 <dd><dl>
 <dt>DICE_Trainer implement</dt><dd><p>1- Pytorch Lightning trainer (<a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html">https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html</a>)
 2- Multi-GPU Trainer(<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html">https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html</a>)

@@ -103,16 +103,7 @@ Module Contents
    Store Pytorch model into disk
 
 
-.. py:function:: store(trainer, trained_model, model_name: str = 'model', full_storage_path: str = None, save_embeddings_as_csv=False) -> None
-
-   Store trained_model model and save embeddings into csv file.
-   :param trainer: an instance of trainer class
-   :param full_storage_path: path to save parameters.
-   :param model_name: string representation of the name of the model.
-   :param trained_model: an instance of BaseKGE see core.models.base_model .
-   :param save_embeddings_as_csv: for easy access of embeddings.
-   :return:
-
+.. py:function:: store(trained_model, model_name: str = 'model', full_storage_path: str = None, save_embeddings_as_csv=False) -> None
 
 .. py:function:: add_noisy_triples(train_set: pandas.DataFrame, add_noise_rate: float) -> pandas.DataFrame
 
