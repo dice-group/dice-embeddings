@@ -10,28 +10,18 @@ def make_iterable_verbose(iterable_object, verbose, desc="Default", position=Non
         return iterable_object
 
 @torch.no_grad()
-def evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List],
+def evaluate_lp(model=None, triple_idx=None, num_entities=None, er_vocab: Dict[Tuple, List]=None,
+                re_vocab: Dict[Tuple, List]=None,
                 info='Eval Starts', batch_size=128, chunk_size=1000):
-    """
-    Evaluate model in a standard link prediction task
+    assert model is not None, "Model must be provided"
+    assert triple_idx is not None, "triple_idx must be provided"
+    assert num_entities is not None, "num_entities must be provided"
+    assert er_vocab is not None, "er_vocab must be provided"
+    assert re_vocab is not None, "re_vocab must be provided"
 
-    for each triple
-    the rank is computed by taking the mean of the filtered missing head entity rank and
-    the filtered missing tail entity rank
-    :param model:
-    :param triple_idx:
-    :param num_entities:
-    :param er_vocab:
-    :param re_vocab:
-    :param info:
-    :param batch_size:
-    :param chunk_size:
-    :return:
-    """
     model.eval()
     print(info)
     print(f'Num of triples {len(triple_idx)}')
-    print('** Evaluation with batching')
     hits = dict()
     reciprocal_ranks = []
     # Iterate over test triples

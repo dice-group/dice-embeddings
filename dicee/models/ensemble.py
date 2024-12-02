@@ -1,22 +1,32 @@
 import torch
 import copy
-
+from typing import List
 class EnsembleKGE:
-    def __init__(self, seed_model):
-        self.models = []
-        self.optimizers = []
-        self.loss_history = []
-        for i in range(torch.cuda.device_count()):
-            i_model=copy.deepcopy(seed_model)
-            # TODO: Why we cant send the compile model to cpu ?
-            #i_model = torch.compile(i_model)
-            i_model.to(torch.device(f"cuda:{i}"))
-            self.optimizers.append(i_model.configure_optimizers())
-            self.models.append(i_model)
-        # Maybe use the original model's name ?
+    def __init__(self, seed_model=None,pretrained_models:List=None):
+
+        if seed_model is not None:
+            self.models = []
+            self.optimizers = []
+            self.loss_history = []
+            for i in range(torch.cuda.device_count()):
+                i_model=copy.deepcopy(seed_model)
+                # TODO: Why we cant send the compile model to cpu ?
+                #i_model = torch.compile(i_model)
+                i_model.to(torch.device(f"cuda:{i}"))
+                self.optimizers.append(i_model.configure_optimizers())
+                self.models.append(i_model)
+        else:
+            assert pretrained_models is not None
+            self.models = pretrained_models
+            self.optimizers = []
+            self.loss_history = []
+
+            for i in range(torch.cuda.device_count()):
+                self.models[i].to(torch.device(f"cuda:{i}"))
+                self.optimizers.append(self.models[i].configure_optimizers())
+            # Maybe use the original model's name ?
         self.name=self.models[0].name
         self.train_mode=True
-
     def named_children(self):
         return self.models[0].named_children()
     @property

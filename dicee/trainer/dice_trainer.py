@@ -136,7 +136,7 @@ class DICE_Trainer:
     report:dict
     """
 
-    def __init__(self, args, is_continual_training, storage_path, evaluator=None):
+    def __init__(self, args, is_continual_training:bool, storage_path, evaluator=None):
         self.report = dict()
         self.args = args
         self.trainer = None
@@ -169,11 +169,7 @@ class DICE_Trainer:
 
         self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
         model, form_of_labelling = self.initialize_or_load_model()
-        print(model)
-
-        exit(1)
         # TODO: Here we need to load memory pag
-
         self.trainer.evaluator = self.evaluator
         self.trainer.dataset = knowledge_graph
         self.trainer.form_of_labelling = form_of_labelling
@@ -191,8 +187,6 @@ class DICE_Trainer:
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         self.report['form_of_labelling'] = form_of_labelling
         assert form_of_labelling in ['EntityPrediction', 'RelationPrediction']
-        if self.args.trainer=="TP":
-            model = EnsembleKGE(model)
         return model, form_of_labelling
 
     @timeit
@@ -243,8 +237,8 @@ class DICE_Trainer:
                 path = self.args.path_to_store_single_run
 
             train_dataset = construct_dataset(train_set=self.trainer.dataset,
-                                              valid_set=self.trainer.dataset.valid_set,
-                                              test_set=self.trainer.dataset.test_set,
+                                              valid_set=None,
+                                              test_set=None,
                                               train_target_indices=None,
                                               target_dim=None,
                                               ordered_bpe_entities=None,
@@ -283,7 +277,7 @@ class DICE_Trainer:
             # TODO: Later, maybe we should write a callback to save the models in disk
 
             if isinstance(self.trainer, TensorParallel):
-                assert isinstance(model, EnsembleKGE)
+                assert isinstance(model, EnsembleKGE), type(model)
 
                 model = self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
                 assert isinstance(model,EnsembleKGE)

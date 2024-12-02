@@ -2,6 +2,9 @@ import numpy as np
 import torch
 import datetime
 from typing import Tuple, List
+
+from numpy.core.defchararray import rfind
+
 from .models import Pyke, DistMult, KeciBase, Keci, TransE, DeCaL, DualE,\
     ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom, LFMult
 from .models.pykeen_models import PykeenKGE
@@ -102,20 +105,40 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
     assert isinstance(is_continual_training, bool)
     assert isinstance(storage_path, str)
     if is_continual_training:
-        print('Loading pre-trained model...')
-        model, _ = intialize_model(args)
-        try:
-            weights = torch.load(storage_path + '/model.pt', torch.device('cpu'))
-            model.load_state_dict(weights)
-            for parameter in model.parameters():
-                parameter.requires_grad = True
-            model.train()
-        except FileNotFoundError:
-            print(f"{storage_path}/model.pt is not found. The model will be trained with random weights")
-        return model, _
+        # Check whether we have tensor parallelized KGE.
+        files_under_storage_path = [f for f in os.listdir(storage_path) if os.path.isfile(os.path.join(storage_path, f))]
+        num_of_partial_models_for_tensor_parallel= len([ i for i in files_under_storage_path if "partial" in i ])
+        if num_of_partial_models_for_tensor_parallel >= 1:
+            models=[]
+            labelling_flag=None
+            for i in range(num_of_partial_models_for_tensor_parallel):
+                model, labelling_flag = intialize_model(args)
+                weights = torch.load(storage_path + f'/model_partial_{i}.pt', torch.device('cpu'),weights_only=False)
+                model.load_state_dict(weights)
+                for parameter in model.parameters():
+                    parameter.requires_grad = True
+                model.train()
+                models.append(model)
+            return EnsembleKGE(pretrained_models=models), labelling_flag
+        else:
+            print('Loading pre-trained model...')
+            model, labelling_flag = intialize_model(args)
+            try:
+                weights = torch.load(storage_path + '/model.pt', torch.device('cpu'))
+                model.load_state_dict(weights)
+                for parameter in model.parameters():
+                    parameter.requires_grad = True
+                model.train()
+            except FileNotFoundError as e:
+                print(f"{storage_path}/model.pt is not found. The model will be trained with random weights")
+                raise e
+            return model, labelling_flag
     else:
-        return intialize_model(args)
+        model, labelling_flag= intialize_model(args)
+        if args["trainer"]=="TP":
+            model=EnsembleKGE(seed_model=model)
 
+    return model, labelling_flag
 
 def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) -> Tuple[object, Tuple[dict, dict]]:
     """ Load weights and initialize pytorch module from namespace arguments"""
@@ -279,32 +302,19 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
 def save_checkpoint_model(model, path: str) -> None:
     """ Store Pytorch model into disk"""
     if isinstance(model, BaseKGE):
-        try:
-            torch.save(model.state_dict(), path)
-        except ReferenceError as e:
-            print(e)
-            print(model.name)
-            print('Could not save the model correctly')
+        torch.save(model.state_dict(), path)
     elif isinstance(model, EnsembleKGE):
+        # path comes with ../model_...
+        root_path=path[:rfind(path,"_")]
         for i, partial_model in enumerate(model):
-            new_path=path.replace("model.pt",f"model_partial_{i}.pt")
+            new_path=root_path.replace("model",f"model_partial_{i}.pt")
             torch.save(partial_model.state_dict(), new_path)
     else:
         torch.save(model.model.state_dict(), path)
 
 
-def store(trainer,
-          trained_model, model_name: str = 'model', full_storage_path: str = None,
+def store(trained_model, model_name: str = 'model', full_storage_path: str = None,
           save_embeddings_as_csv=False) -> None:
-    """
-    Store trained_model model and save embeddings into csv file.
-    :param trainer: an instance of trainer class
-    :param full_storage_path: path to save parameters.
-    :param model_name: string representation of the name of the model.
-    :param trained_model: an instance of BaseKGE see core.models.base_model .
-    :param save_embeddings_as_csv: for easy access of embeddings.
-    :return:
-    """
     assert full_storage_path is not None
     assert isinstance(model_name, str)
     assert len(model_name) > 1
