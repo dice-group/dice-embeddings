@@ -157,38 +157,6 @@
                 <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="n">file_descriptor</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="Execute.dept_read_preprocess_index_serialize_data">
-<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute.dept_read_preprocess_index_serialize_data">[docs]</a>
-    <span class="k">def</span> <span class="nf">dept_read_preprocess_index_serialize_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; Read &amp; Preprocess &amp; Index &amp; Serialize Input Data</span>
-
-<span class="sd">        (1) Read or load the data from disk into memory.</span>
-<span class="sd">        (2) Store the statistics of the data.</span>
-
-<span class="sd">        Parameter</span>
-<span class="sd">        ----------</span>
-
-<span class="sd">        Return</span>
-<span class="sd">        ----------</span>
-<span class="sd">        None</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># (2) Store the stats and share parameters</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_entities</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_relations</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_tokens</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">max_length_subword_tokens</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">ordered_bpe_entities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">ordered_bpe_entities</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;num_train_triples&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;num_entities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_entities</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;num_relations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_relations</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;num_relations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_relations</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span>
-            <span class="s1">&#39;max_length_subword_tokens&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="k">else</span> <span class="kc">None</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;runtime_kg_loading&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span></div>
-
-
 <div class="viewcode-block" id="Execute.save_trained_model">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute.save_trained_model">[docs]</a>
     <span class="nd">@timeit</span>
@@ -222,7 +190,7 @@
                   <span class="n">save_embeddings_as_csv</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">save_embeddings_as_csv</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">store</span><span class="p">(</span><span class="n">trained_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trained_model</span><span class="p">,</span>
-                  <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;model_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()),</span>
+                  <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="c1"># + str(datetime.datetime.now()),</span>
                   <span class="n">full_storage_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span>
                   <span class="n">save_embeddings_as_csv</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">save_embeddings_as_csv</span><span class="p">)</span>
 

@@ -2608,20 +2608,6 @@ Package Contents
    .. py:method:: setup_executor() -> None
 
 
-   .. py:method:: dept_read_preprocess_index_serialize_data() -> None
-
-      Read & Preprocess & Index & Serialize Input Data
-
-      (1) Read or load the data from disk into memory.
-      (2) Store the statistics of the data.
-
-      Parameter
-      ----------
-
-      :rtype: None
-
-
-
    .. py:method:: save_trained_model() -> None
 
       Save a knowledge graph embedding model
