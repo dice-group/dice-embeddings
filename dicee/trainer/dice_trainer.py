@@ -169,6 +169,9 @@ class DICE_Trainer:
 
         self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
         model, form_of_labelling = self.initialize_or_load_model()
+        print(model)
+
+        exit(1)
         # TODO: Here we need to load memory pag
 
         self.trainer.evaluator = self.evaluator
@@ -188,6 +191,8 @@ class DICE_Trainer:
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         self.report['form_of_labelling'] = form_of_labelling
         assert form_of_labelling in ['EntityPrediction', 'RelationPrediction']
+        if self.args.trainer=="TP":
+            model = EnsembleKGE(model)
         return model, form_of_labelling
 
     @timeit
@@ -230,14 +235,16 @@ class DICE_Trainer:
                                               byte_pair_encoding=self.args.byte_pair_encoding,
                                               block_size=self.args.block_size)
         else:
+            assert isinstance(self.trainer.dataset, np.memmap), ("Train dataset must be an instance of memmap. "
+                                                                 f"Currently, {type(np.memmap)}!")
             if self.args.continual_learning:
                 path = self.args.continual_learning
             else:
                 path = self.args.path_to_store_single_run
 
             train_dataset = construct_dataset(train_set=self.trainer.dataset,
-                                              valid_set=None,
-                                              test_set=None,
+                                              valid_set=self.trainer.dataset.valid_set,
+                                              test_set=self.trainer.dataset.test_set,
                                               train_target_indices=None,
                                               target_dim=None,
                                               ordered_bpe_entities=None,
@@ -276,6 +283,8 @@ class DICE_Trainer:
             # TODO: Later, maybe we should write a callback to save the models in disk
 
             if isinstance(self.trainer, TensorParallel):
+                assert isinstance(model, EnsembleKGE)
+
                 model = self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
                 assert isinstance(model,EnsembleKGE)
             else:
