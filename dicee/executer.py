@@ -62,35 +62,6 @@ class Execute:
                 temp = vars(self.args)
                 json.dump(temp, file_descriptor, indent=3)
 
-    def dept_read_preprocess_index_serialize_data(self) -> None:
-        """ Read & Preprocess & Index & Serialize Input Data
-
-        (1) Read or load the data from disk into memory.
-        (2) Store the statistics of the data.
-
-        Parameter
-        ----------
-
-        Return
-        ----------
-        None
-
-        """
-        # (2) Store the stats and share parameters
-        self.args.num_entities = self.knowledge_graph.num_entities
-        self.args.num_relations = self.knowledge_graph.num_relations
-        self.args.num_tokens = self.knowledge_graph.num_tokens
-        self.args.max_length_subword_tokens = self.knowledge_graph.max_length_subword_tokens
-        self.args.ordered_bpe_entities=self.knowledge_graph.ordered_bpe_entities
-        self.report['num_train_triples'] = len(self.knowledge_graph.train_set)
-        self.report['num_entities'] = self.knowledge_graph.num_entities
-        self.report['num_relations'] = self.knowledge_graph.num_relations
-        self.report['num_relations'] = self.knowledge_graph.num_relations
-        self.report[
-            'max_length_subword_tokens'] = self.knowledge_graph.max_length_subword_tokens if self.knowledge_graph.max_length_subword_tokens else None
-
-        self.report['runtime_kg_loading'] = time.time() - self.start_time
-
     @timeit
     def save_trained_model(self) -> None:
         """ Save a knowledge graph embedding model
@@ -122,7 +93,7 @@ class Execute:
                   save_embeddings_as_csv=self.args.save_embeddings_as_csv)
         else:
             store(trained_model=self.trained_model,
-                  model_name='model_' + str(datetime.datetime.now()),
+                  model_name='model', # + str(datetime.datetime.now()),
                   full_storage_path=self.args.full_storage_path,
                   save_embeddings_as_csv=self.args.save_embeddings_as_csv)
 

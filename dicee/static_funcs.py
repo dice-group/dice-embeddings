@@ -305,9 +305,8 @@ def save_checkpoint_model(model, path: str) -> None:
         torch.save(model.state_dict(), path)
     elif isinstance(model, EnsembleKGE):
         # path comes with ../model_...
-        root_path=path[:rfind(path,"_")]
         for i, partial_model in enumerate(model):
-            new_path=root_path.replace("model",f"model_partial_{i}.pt")
+            new_path=path.replace("model.pt",f"model_partial_{i}.pt")
             torch.save(partial_model.state_dict(), new_path)
     else:
         torch.save(model.model.state_dict(), path)
