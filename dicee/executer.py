@@ -49,8 +49,11 @@ class Execute:
     def setup_executor(self) -> None:
         if self.is_continual_training is False:
             # Create a single directory containing KGE and all related data
-            if self.args.path_to_store_single_run:
-                os.makedirs(self.args.path_to_store_single_run, exist_ok=True)
+            if self.args.path_to_store_single_run is not None:
+                if os.path.exists(self.args.path_to_store_single_run):
+                    print(f"Deleting the existing directory of {self.args.path_to_store_single_run}")
+                    os.system(f'rm -rf {self.args.path_to_store_single_run}')
+                os.makedirs(self.args.path_to_store_single_run, exist_ok=False)
                 self.args.full_storage_path = self.args.path_to_store_single_run
             else:
                 self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
@@ -58,35 +61,6 @@ class Execute:
             with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
                 temp = vars(self.args)
                 json.dump(temp, file_descriptor, indent=3)
-
-    def dept_read_preprocess_index_serialize_data(self) -> None:
-        """ Read & Preprocess & Index & Serialize Input Data
-
-        (1) Read or load the data from disk into memory.
-        (2) Store the statistics of the data.
-
-        Parameter
-        ----------
-
-        Return
-        ----------
-        None
-
-        """
-        # (2) Store the stats and share parameters
-        self.args.num_entities = self.knowledge_graph.num_entities
-        self.args.num_relations = self.knowledge_graph.num_relations
-        self.args.num_tokens = self.knowledge_graph.num_tokens
-        self.args.max_length_subword_tokens = self.knowledge_graph.max_length_subword_tokens
-        self.args.ordered_bpe_entities=self.knowledge_graph.ordered_bpe_entities
-        self.report['num_train_triples'] = len(self.knowledge_graph.train_set)
-        self.report['num_entities'] = self.knowledge_graph.num_entities
-        self.report['num_relations'] = self.knowledge_graph.num_relations
-        self.report['num_relations'] = self.knowledge_graph.num_relations
-        self.report[
-            'max_length_subword_tokens'] = self.knowledge_graph.max_length_subword_tokens if self.knowledge_graph.max_length_subword_tokens else None
-
-        self.report['runtime_kg_loading'] = time.time() - self.start_time
 
     @timeit
     def save_trained_model(self) -> None:
@@ -113,19 +87,17 @@ class Execute:
         self.report.update(self.trained_model.mem_of_model())
         # (3) Store/Serialize Model for further use.
         if self.is_continual_training is False:
-            store(trainer=self.trainer,
-                  trained_model=self.trained_model,
+            store(trained_model=self.trained_model,
                   model_name='model',
-                  full_storage_path=self.args.full_storage_path,#self.storage_path,
+                  full_storage_path=self.args.full_storage_path,
                   save_embeddings_as_csv=self.args.save_embeddings_as_csv)
         else:
-            store(trainer=self.trainer,
-                  trained_model=self.trained_model,
-                  model_name='model_' + str(datetime.datetime.now()),
-                  full_storage_path=self.args.full_storage_path,#self.storage_path,
+            store(trained_model=self.trained_model,
+                  model_name='model', # + str(datetime.datetime.now()),
+                  full_storage_path=self.args.full_storage_path,
                   save_embeddings_as_csv=self.args.save_embeddings_as_csv)
 
-        self.report['path_experiment_folder'] = self.args.full_storage_path#self.storage_path
+        self.report['path_experiment_folder'] = self.args.full_storage_path
         self.report['num_entities'] = self.args.num_entities
         self.report['num_relations'] = self.args.num_relations
 
@@ -154,7 +126,8 @@ class Execute:
             self.write_report()
             return {**self.report}
         else:
-            self.evaluator.eval(dataset=self.knowledge_graph, trained_model=self.trained_model,
+            self.evaluator.eval(dataset=self.knowledge_graph,
+                                trained_model=self.trained_model,
                                 form_of_labelling=form_of_labelling)
             self.write_report()
             return {**self.report, **self.evaluator.report}
@@ -246,7 +219,7 @@ class ContinuousExecute(Execute):
 
     def __init__(self, args):
         # (1) Current input configuration.
-        assert os.path.exists(args.continual_learning)
+        assert os.path.exists(args.continual_learning), f"Path doesn't exist {args.continual_learning}"
         assert os.path.isfile(args.continual_learning + '/configuration.json')
         # (2) Load previous input configuration.
         previous_args = load_json(args.continual_learning + '/configuration.json')
@@ -303,7 +276,6 @@ class ContinuousExecute(Execute):
         self.args.ordered_bpe_entities = None
 
         self.trained_model, form_of_labelling = self.trainer.continual_start(knowledge_graph)
-
         # (5) Store trained model.
         self.save_trained_model()
         # (6) Eval model.
