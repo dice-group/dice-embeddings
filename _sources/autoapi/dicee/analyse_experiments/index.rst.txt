@@ -6,6 +6,8 @@ dicee.analyse_experiments
 .. autoapi-nested-parse::
 
    This script should be moved to dicee/scripts
+   Example:
+   python dicee/analyse_experiments.py --dir Experiments --features "model" "trainMRR" "testMRR"
 
 
 
