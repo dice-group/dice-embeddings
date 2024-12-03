@@ -9,9 +9,6 @@ from .static_funcs import random_prediction, deploy_triple_prediction, deploy_ta
 from .static_funcs_training import evaluate_lp
 import numpy as np
 import sys
-
-# import gradio as gr
-
 import traceback
 
 
@@ -19,8 +16,7 @@ class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
     def __init__(self, path=None, url=None, construct_ensemble=False,
-                 model_name=None,
-                 apply_semantic_constraint=False):
+                 model_name=None):
         super().__init__(path=path, url=url, construct_ensemble=construct_ensemble, model_name=model_name)
 
     def __str__(self):
@@ -345,7 +341,9 @@ class KGE(BaseInteractiveKGE):
         else:
             return torch.sigmoid(scores)
 
-    def predict_topk(self, *, h: List[str] = None, r: List[str] = None, t: List[str] = None,
+    def predict_topk(self, *, h: Union[str, List[str]] = None,
+                     r: Union[str, List[str]] = None,
+                     t: Union[str, List[str]] = None,
                      topk: int = 10, within: List[str] = None):
         """
         Predict missing item in a given triple.
@@ -354,15 +352,15 @@ class KGE(BaseInteractiveKGE):
 
         Parameter
         ---------
-        head_entity: List[str]
+        head_entity: Union[str, List[str]]
 
         String representation of selected entities.
 
-        relation: List[str]
+        relation: Union[str, List[str]]
 
         String representation of selected relations.
 
-        tail_entity: List[str]
+        tail_entity: Union[str, List[str]]
 
         String representation of selected entities.
 
@@ -379,22 +377,17 @@ class KGE(BaseInteractiveKGE):
 
         # (1) Sanity checking.
         if h is not None:
-            assert isinstance(h, list)
+            assert isinstance(h, list) or isinstance(h,str)
         if r is not None:
-            assert isinstance(r, list)
+            assert isinstance(r, list) or isinstance(r,str)
         if t is not None:
-            assert isinstance(t, list)
+            assert isinstance(t, list) or isinstance(t,str)
         # (2) Predict missing head entity given a relation and a tail entity.
         if h is None:
             assert r is not None
             assert t is not None
             # ? r, t
             scores = self.predict_missing_head_entity(r, t, within=within).flatten()
-            if self.apply_semantic_constraint:
-                # filter the scores
-                for th, i in enumerate(r):
-                    scores[self.domain_constraints_per_rel[self.relation_to_idx[i]]] = -torch.inf
-
             sort_scores, sort_idxs = torch.topk(scores, topk)
             return [(self.idx_to_entity[idx_top_entity], scores.item()) for idx_top_entity, scores in
                     zip(sort_idxs.tolist(), torch.sigmoid(sort_scores))]
@@ -415,10 +408,6 @@ class KGE(BaseInteractiveKGE):
             assert r is not None
             # h r ?t
             scores = self.predict_missing_tail_entity(h, r, within=within).flatten()
-            if self.apply_semantic_constraint:
-                # filter the scores
-                for th, i in enumerate(r):
-                    scores[self.range_constraints_per_rel[self.relation_to_idx[i]]] = -torch.inf
             sort_scores, sort_idxs = torch.topk(scores, topk)
             return [(self.idx_to_entity[idx_top_entity], scores.item()) for idx_top_entity, scores in
                     zip(sort_idxs.tolist(), torch.sigmoid(sort_scores))]

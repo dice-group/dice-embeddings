@@ -1,6 +1,5 @@
 from collections import defaultdict
 from typing import Union, Dict, List, Tuple
-
 import numpy as np
 import random
 import os
@@ -491,6 +490,8 @@ class QueryGenerator:
         name_to_save = f'{self.mode}-{query_type}'
         if not os.path.isdir(save_path):
             os.makedirs(save_path)
+        # TODO: CD: Deprecate the pickle usage for data serialization.
+        # TODO: CD: yet since this files are small we can get away with them
         with open(f'{save_path}/{name_to_save}-queries.pkl', 'wb') as f:
             pickle.dump(unmapped_queries, f)
         with open(f'{save_path}/{name_to_save}-easy-answers.pkl', 'wb') as f:
