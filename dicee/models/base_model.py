@@ -297,7 +297,7 @@ class BaseKGE(BaseKGELightning):
         else:
             raise NotImplementedError()
 
-        self.optimizer_name = self.args['optim']
+        self.optimizer_name = self.args.get('optim',None)
 
         if self.args.get("init_param") is None:
             self.param_init = IdentityClass
