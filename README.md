@@ -178,42 +178,46 @@ _:1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07
 dicee --continual_learning "KeciFamilyRun" --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --backend rdflib --eval_model None
 ```
 
-
 </details>
 
-## Creating an Embedding Vector Database 
+## Search and Retrieval via Qdrant Vector Database
+
 <details> <summary> To see a code snippet </summary>
 
-##### Learning Embeddings
 ```bash
 # Train an embedding model
-dicee --dataset_dir KGs/Countries-S1 --path_to_store_single_run CountryEmbeddings --model Keci --p 0 --q 1 --embedding_dim 32 --adaptive_swa
+dicee --dataset_dir KGs/Countries-S1 --path_to_store_single_run CountryEmbeddings --model Keci --p 0 --q 1 --embedding_dim 256 --scoring_technique AllvsAll --num_epochs 300 --save_embeddings_as_csv
 ```
-#### Loading Embeddings into Qdrant Vector Database
-```bash
-# Ensure that Qdrant available
-# docker pull qdrant/qdrant && docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant
-diceeindex --path_model "CountryEmbeddings" --collection_name "dummy" --location "localhost"
-```
-#### Launching Webservice
-```bash
-diceeserve --path_model "CountryEmbeddings" --collection_name "dummy" --collection_location "localhost"
-```
-##### Retrieve and Search 
+Start qdrant instance.
 
-Get embedding of germany
+```bash
+pip3 install fastapi uvicorn qdrant-client
+docker pull qdrant/qdrant && docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant
+```
+Upload Embeddings into vector database and start a webservice
+```bash
+dicee_vector_db --index --serve --path CountryEmbeddings --collection "countries_vdb"
+Creating a collection countries_vdb with distance metric:Cosine
+Completed!
+INFO:     Started server process [28953]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+```
+Retrieve an embedding vector.
 ```bash
 curl -X 'GET' 'http://0.0.0.0:8000/api/get?q=germany' -H 'accept: application/json'
+# {"result": [{"name": "europe","vector": [...]}]}
 ```
-
-Get most similar things to europe
+Retrieve embedding vectors.
 ```bash
-curl -X 'GET' 'http://0.0.0.0:8000/api/search?q=europe' -H 'accept: application/json'
-{"result":[{"hit":"europe","score":1.0},
-{"hit":"northern_europe","score":0.67126536},
-{"hit":"western_europe","score":0.6010134},
-{"hit":"puerto_rico","score":0.5051694},
-{"hit":"southern_europe","score":0.4829831}]}
+curl -X 'POST' 'http://0.0.0.0:8000/api/search_batch' -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"queries": ["brunei","guam"]}'
+# {"results": [{ "name": "europe","vector": [...]},{ "name": "northern_europe","vector": [...]}]}    
+```
+Retrieve an average of embedding vectors.
+```bash
+curl -X 'POST' 'http://0.0.0.0:8000/api/search_batch' -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"queries": ["europe","northern_europe"],"reducer": "mean"}'
+# {"results":{"name": ["europe","northern_europe"],"vectors": [...]}}
 ```
 
 </details>
