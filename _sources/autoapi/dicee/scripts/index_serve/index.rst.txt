@@ -67,7 +67,12 @@ Module Contents
    .. py:attribute:: qdrant_client
 
 
-   .. py:method:: get(entity: str | List[str] = None)
+   .. py:attribute:: topk
+      :value: 5
+
+
+
+   .. py:method:: get(entity: str = None)
 
 
    .. py:method:: search(entity: str)
