@@ -1,0 +1,303 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.scripts.index_serve &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8775fe07" />
+
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="dicee.scripts.run" href="../run/index.html" />
+    <link rel="prev" title="dicee.scripts" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../../../../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">dicee</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../__main__/index.html">dicee.__main__</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstracts/index.html">dicee.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../analyse_experiments/index.html">dicee.analyse_experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../callbacks/index.html">dicee.callbacks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../config/index.html">dicee.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../dataset_classes/index.html">dicee.dataset_classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../eval_static_funcs/index.html">dicee.eval_static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../evaluator/index.html">dicee.evaluator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../executer/index.html">dicee.executer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../models/index.html">dicee.models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../query_generator/index.html">dicee.query_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sanity_checkers/index.html">dicee.sanity_checkers</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html">dicee.scripts</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l5 current"><a class="current reference internal" href="#">dicee.scripts.index_serve</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#attributes">Attributes</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="../run/index.html">dicee.scripts.run</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../static_funcs/index.html">dicee.static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../static_funcs_training/index.html">dicee.static_funcs_training</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../static_preprocess_funcs/index.html">dicee.static_preprocess_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../trainer/index.html">dicee.trainer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#classes">Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#functions">Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">dicee</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">dicee.scripts</a></li>
+      <li class="breadcrumb-item active">dicee.scripts.index_serve</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/autoapi/dicee/scripts/index_serve/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-dicee.scripts.index_serve">
+<span id="dicee-scripts-index-serve"></span><h1>dicee.scripts.index_serve<a class="headerlink" href="#module-dicee.scripts.index_serve" title="Link to this heading"></a></h1>
+<p>$ docker pull qdrant/qdrant &amp;&amp; docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant
+$ dicee_vector_db –index –serve –path CountryEmbeddings –collection “countries_vdb”</p>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.scripts.index_serve.app" title="dicee.scripts.index_serve.app"><code class="xref py py-obj docutils literal notranslate"><span class="pre">app</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.scripts.index_serve.neural_searcher" title="dicee.scripts.index_serve.neural_searcher"><code class="xref py py-obj docutils literal notranslate"><span class="pre">neural_searcher</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.scripts.index_serve.NeuralSearcher" title="dicee.scripts.index_serve.NeuralSearcher"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NeuralSearcher</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.scripts.index_serve.get_default_arguments" title="dicee.scripts.index_serve.get_default_arguments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_default_arguments</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.scripts.index_serve.index" title="dicee.scripts.index_serve.index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">index</span></code></a>(args)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.scripts.index_serve.root" title="dicee.scripts.index_serve.root"><code class="xref py py-obj docutils literal notranslate"><span class="pre">root</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.scripts.index_serve.search_embeddings" title="dicee.scripts.index_serve.search_embeddings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">search_embeddings</span></code></a>(q)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.scripts.index_serve.retrieve_embeddings" title="dicee.scripts.index_serve.retrieve_embeddings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">retrieve_embeddings</span></code></a>(q)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.scripts.index_serve.serve" title="dicee.scripts.index_serve.serve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">serve</span></code></a>(args)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.scripts.index_serve.main" title="dicee.scripts.index_serve.main"><code class="xref py py-obj docutils literal notranslate"><span class="pre">main</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.scripts.index_serve.get_default_arguments">
+<span class="sig-prename descclassname"><span class="pre">dicee.scripts.index_serve.</span></span><span class="sig-name descname"><span class="pre">get_default_arguments</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#dicee.scripts.index_serve.get_default_arguments" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.scripts.index_serve.index">
+<span class="sig-prename descclassname"><span class="pre">dicee.scripts.index_serve.</span></span><span class="sig-name descname"><span class="pre">index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.scripts.index_serve.index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="dicee.scripts.index_serve.app">
+<span class="sig-prename descclassname"><span class="pre">dicee.scripts.index_serve.</span></span><span class="sig-name descname"><span class="pre">app</span></span><a class="headerlink" href="#dicee.scripts.index_serve.app" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="dicee.scripts.index_serve.neural_searcher">
+<span class="sig-prename descclassname"><span class="pre">dicee.scripts.index_serve.</span></span><span class="sig-name descname"><span class="pre">neural_searcher</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.scripts.index_serve.neural_searcher" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.scripts.index_serve.NeuralSearcher">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.scripts.index_serve.</span></span><span class="sig-name descname"><span class="pre">NeuralSearcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.scripts.index_serve.NeuralSearcher" title="Link to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.scripts.index_serve.NeuralSearcher.collection_name">
+<span class="sig-name descname"><span class="pre">collection_name</span></span><a class="headerlink" href="#dicee.scripts.index_serve.NeuralSearcher.collection_name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.scripts.index_serve.NeuralSearcher.entity_to_idx">
+<span class="sig-name descname"><span class="pre">entity_to_idx</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.scripts.index_serve.NeuralSearcher.entity_to_idx" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.scripts.index_serve.NeuralSearcher.qdrant_client">
+<span class="sig-name descname"><span class="pre">qdrant_client</span></span><a class="headerlink" href="#dicee.scripts.index_serve.NeuralSearcher.qdrant_client" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.scripts.index_serve.NeuralSearcher.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.scripts.index_serve.NeuralSearcher.get" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.scripts.index_serve.NeuralSearcher.search">
+<span class="sig-name descname"><span class="pre">search</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.scripts.index_serve.NeuralSearcher.search" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.scripts.index_serve.root">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.scripts.index_serve.</span></span><span class="sig-name descname"><span class="pre">root</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#dicee.scripts.index_serve.root" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.scripts.index_serve.search_embeddings">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.scripts.index_serve.</span></span><span class="sig-name descname"><span class="pre">search_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.scripts.index_serve.search_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.scripts.index_serve.retrieve_embeddings">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.scripts.index_serve.</span></span><span class="sig-name descname"><span class="pre">retrieve_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.scripts.index_serve.retrieve_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.scripts.index_serve.serve">
+<span class="sig-prename descclassname"><span class="pre">dicee.scripts.index_serve.</span></span><span class="sig-name descname"><span class="pre">serve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.scripts.index_serve.serve" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.scripts.index_serve.main">
+<span class="sig-prename descclassname"><span class="pre">dicee.scripts.index_serve.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#dicee.scripts.index_serve.main" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="dicee.scripts" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../run/index.html" class="btn btn-neutral float-right" title="dicee.scripts.run" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,91 @@
+dicee.scripts.index_serve
+=========================
+
+.. py:module:: dicee.scripts.index_serve
+
+.. autoapi-nested-parse::
+
+   $ docker pull qdrant/qdrant && docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant
+   $ dicee_vector_db --index --serve --path CountryEmbeddings --collection "countries_vdb"
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.scripts.index_serve.app
+   dicee.scripts.index_serve.neural_searcher
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   dicee.scripts.index_serve.NeuralSearcher
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   dicee.scripts.index_serve.get_default_arguments
+   dicee.scripts.index_serve.index
+   dicee.scripts.index_serve.root
+   dicee.scripts.index_serve.search_embeddings
+   dicee.scripts.index_serve.retrieve_embeddings
+   dicee.scripts.index_serve.serve
+   dicee.scripts.index_serve.main
+
+
+Module Contents
+---------------
+
+.. py:function:: get_default_arguments()
+
+.. py:function:: index(args)
+
+.. py:data:: app
+
+.. py:data:: neural_searcher
+   :value: None
+
+
+.. py:class:: NeuralSearcher(args)
+
+   .. py:attribute:: collection_name
+
+
+   .. py:attribute:: entity_to_idx
+      :value: None
+
+
+
+   .. py:attribute:: qdrant_client
+
+
+   .. py:method:: get(entity: str | List[str] = None)
+
+
+   .. py:method:: search(entity: str)
+
+
+.. py:function:: root()
+   :async:
+
+
+.. py:function:: search_embeddings(q: str)
+   :async:
+
+
+.. py:function:: retrieve_embeddings(q: str)
+   :async:
+
+
+.. py:function:: serve(args)
+
+.. py:function:: main()
+
