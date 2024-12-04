@@ -204,12 +204,20 @@ INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 ```
-Retrieve embeddings of germany
+Retrieve an embedding vector.
 ```bash
 curl -X 'GET' 'http://0.0.0.0:8000/api/get?q=germany' -H 'accept: application/json'
+# {"result": [{"name": "europe","vector": [...]}]}
 ```
+Retrieve embedding vectors.
 ```bash
-curl -X 'GET' 'http://0.0.0.0:8000/api/search?q=europe' -H 'accept: application/json'
+curl -X 'POST' 'http://0.0.0.0:8000/api/search_batch' -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"queries": ["brunei","guam"]}'
+# {"results": [{ "name": "europe","vector": [...]},{ "name": "northern_europe","vector": [...]}]}    
+```
+Retrieve an average of embedding vectors.
+```bash
+curl -X 'POST' 'http://0.0.0.0:8000/api/search_batch' -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"queries": ["europe","northern_europe"],"reducer": "mean"}'
+# {"results":{"name": ["europe","northern_europe"],"vectors": [...]}}
 ```
 
 </details>

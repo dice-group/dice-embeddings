@@ -13,7 +13,8 @@ from qdrant_client.http.models import PointStruct
 
 from fastapi import FastAPI
 import uvicorn
-
+from pydantic import BaseModel
+from typing import List, Optional
 
 def get_default_arguments():
     parser = argparse.ArgumentParser(add_help=False)
@@ -86,14 +87,19 @@ class NeuralSearcher:
         # semantic search
         self.topk=5
 
-    def get(self,entity:str=None):
-        if entity is None:
-            return {"Input {entity} cannot be None"}
-        elif self.entity_to_idx.get(entity,None) is None:
-            return {f"Input {entity} not found"}
+    def retrieve_embedding(self,entity:str=None,entities:List[str]=None)->List:
+        ids=[]
+        inputs= [entity]
+        if entities is not None:
+            inputs.extend(entities)
+        for ent in inputs:
+            if idx := self.entity_to_idx.get(ent, None):
+                assert isinstance(idx, int)
+                ids.append(idx)
+        if len(ids)<1:
+            return {"error":f"IDs are not found for ({entity} or {entities})"}
         else:
-            ids=[self.entity_to_idx[entity]]
-            return self.qdrant_client.retrieve(collection_name=self.collection_name,ids=ids, with_vectors=True)
+            return [{"name": result.payload["name"], "vector": result.vector} for result in self.qdrant_client.retrieve(collection_name=self.collection_name,ids=ids, with_vectors=True)]
 
     def search(self, entity: str):
         return self.qdrant_client.query_points(collection_name=self.collection_name, query=self.entity_to_idx[entity],limit=self.topk)
@@ -108,8 +114,25 @@ async def search_embeddings(q: str):
 
 @app.get("/api/get")
 async def retrieve_embeddings(q: str):
-    return {"result": neural_searcher.get(entity=q)}
+    return {"result": neural_searcher.retrieve_embedding(entity=q)}
 
+class StringListRequest(BaseModel):
+    queries: List[str]
+    reducer: Optional[str] = None  # Add the reducer flag with default as None
+
+
+@app.post("/api/search_batch")
+async def search_embeddings_batch(request: StringListRequest):
+    if request.reducer == "mean":
+        names=[]
+        vectors=[]
+        for result in neural_searcher.retrieve_embedding(entities=request.queries):
+            names.append(result["name"])
+            vectors.append(result["vector"])
+        embeddings = np.mean(vectors, axis=0).tolist()  # Reduce to mean
+        return {"results":{"name":names,"vectors":embeddings}}
+    else:
+        return {"results": neural_searcher.retrieve_embedding(entities=request.queries)}
 
 def serve(args):
     global neural_searcher
