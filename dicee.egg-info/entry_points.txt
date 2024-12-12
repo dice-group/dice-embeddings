@@ -1,0 +1,3 @@
+[console_scripts]
+dicee = dicee.scripts.run:main
+dicee_vector_db = dicee.scripts.index_serve:main
