@@ -128,6 +128,8 @@ def get_default_arguments(description=None):
                         help="Find a batch size fitting in GPUs. Only available for TP trainer")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
+    parser.add_argument('--loss_fn', type=str, default="BCELoss",
+                        help='The loss function used in the model')
 
     if description is None:
         return parser.parse_args()
