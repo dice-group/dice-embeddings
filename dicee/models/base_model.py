@@ -136,14 +136,6 @@ class BaseKGE(BaseKGELightning):
         self.kernel_size = None
         self.num_of_output_channels = None
         self.weight_decay = None
-
-        if self.args["loss_fn"] == "BCELoss":
-            self.loss = torch.nn.BCEWithLogitsLoss()
-        if self.args["loss_fn"] == "LRLoss":
-            self.loss = LabelRelaxationLoss()
-        else:
-            self.loss = torch.nn.BCEWithLogitsLoss()
-
         self.selected_optimizer = None
         self.normalizer_class = None
         self.normalize_head_entity_embeddings = IdentityClass()
@@ -162,6 +154,14 @@ class BaseKGE(BaseKGELightning):
         self.byte_pair_encoding = self.args.get("byte_pair_encoding", False)
         self.max_length_subword_tokens = self.args.get("max_length_subword_tokens", None)
         self.block_size=self.args.get("block_size", None)
+
+        if self.args["loss_fn"] == "BCELoss":
+            self.loss = torch.nn.BCEWithLogitsLoss()
+        if self.args["loss_fn"] == "LRLoss":
+            self.loss = LabelRelaxationLoss()
+        else:
+            self.loss = torch.nn.BCEWithLogitsLoss()
+            
         if self.byte_pair_encoding and self.args['model'] != "BytE":
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
             self.param_init(self.token_embeddings.weight.data)
