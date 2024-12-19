@@ -158,10 +158,10 @@ class BaseKGE(BaseKGELightning):
         if self.args["loss_fn"] == "BCELoss":
             self.loss = torch.nn.BCEWithLogitsLoss()
         if self.args["loss_fn"] == "LRLoss":
-            self.loss = LabelRelaxationLoss()
+            self.loss = LabelRelaxationLoss(alpha=self.args["label_relaxation_alpha"])
         else:
             self.loss = torch.nn.BCEWithLogitsLoss()
-            
+
         if self.byte_pair_encoding and self.args['model'] != "BytE":
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
             self.param_init(self.token_embeddings.weight.data)

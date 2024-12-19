@@ -130,6 +130,8 @@ def get_default_arguments(description=None):
                         help='degree for polynomial embeddings')
     parser.add_argument('--loss_fn', type=str, default="BCELoss",
                         help='The loss function used in the model')
+    parser.add_argument('--label_relaxation_alpha', type=float, default=0.1,
+                        help='The alpha value for label relaxation')
 
     if description is None:
         return parser.parse_args()
