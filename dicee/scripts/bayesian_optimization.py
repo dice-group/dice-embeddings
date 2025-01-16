@@ -13,7 +13,7 @@ def objective(trial, model, dataset, loss):
     dataset = dataset
     model = model
 
-    num_epochs = 1
+    num_epochs = 50
 
     embedding_dim = 32 #trial.suggest_categorical("embedding_dim", [32, 64])
     optimizer = "Adam" #trial.suggest_categorical("optimizer", ["Adam", "Adopt"])
@@ -78,7 +78,7 @@ datasets = ["UMLS", "KINSHIP", "NELL-995-h100", "WN18RR", "FB15k-237"]
 models = ["Keci", "Pykeen_MuRE", "QMult", "Pykeen_DistMult", "Pykeen_ComplEx", "Pykeen_RotatE", "Pykeen_BoxE"]
 losses = ["LRLoss", "LS"]
 
-number_of_runs = 1
+number_of_runs = 30
 
 for dataset in datasets:
     for model in models:
