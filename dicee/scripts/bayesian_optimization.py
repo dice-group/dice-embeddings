@@ -2,30 +2,36 @@ import json
 from dicee.executer import Execute
 import argparse
 import optuna
+from functools import partial
+from optuna.visualization import plot_parallel_coordinate, plot_contour, plot_edf, plot_optimization_history
+import os
 
-def objective(trial):
+
+def objective(trial, model, dataset, loss):
     parser = argparse.ArgumentParser(add_help=False)
 
-    dataset = "/home/adel/Documents/dice-embeddings/KGs/Datasets_Perturbed/0_UMLS/0.0/"
-    model = "Keci"
-    embedding_dim = trial.suggest_categorical("embedding_dim", [32, 64])
-    num_epochs = 100
-    batch_size = trial.suggest_categorical("batch_size", [128, 256, 512, 1024])
-    learning_rate = trial.suggest_float("learning_rate", 0.01, 0.1)
-    label_smoothing_rate = 0.0
-    loss = "LRLoss"
-    label_relaxation_alpha = trial.suggest_float("label_relaxation_alpha", 0, 1)
-    optimizer = trial.suggest_categorical("optimizer", ['Adam', 'AdamW', 'SGD',"NAdam", "Adagrad", "ASGD", "Adopt"])
+    dataset = dataset
+    model = model
 
+    num_epochs = 1
+
+    embedding_dim = 32  # trial.suggest_categorical("embedding_dim", [32, 64])
+    optimizer = "Adam"  # trial.suggest_categorical("optimizer", ["Adam", "Adopt"])
+    batch_size = 1024  # trial.suggest_categorical("batch_size", [512, 1024])
+    learning_rate = trial.suggest_float("learning_rate", 0.01, 0.1)
+
+    label_relaxation_alpha = trial.suggest_float("label_relaxation_alpha", 0.01, 0.1, ) if loss == "LRLoss" else 0.0
+    label_smoothing_rate = trial.suggest_float("label_smoothing_rate", 0.01, 0.1) if loss == "LS" else 0.0
+
+    parser.add_argument('--loss_fn', type=str, default=loss)
+    parser.add_argument("--label_smoothing_rate", type=float, default=label_smoothing_rate)
+    parser.add_argument('--label_relaxation_alpha', type=float, default=label_relaxation_alpha)
+    parser.add_argument("--lr", type=float, default=learning_rate)
+    parser.add_argument('--batch_size', type=int, default=batch_size)
     parser.add_argument("--dataset_dir", type=str, default=dataset)
     parser.add_argument("--model", type=str, default=model)
     parser.add_argument('--embedding_dim', type=int, default=embedding_dim)
     parser.add_argument("--num_epochs", type=int, default=num_epochs)
-    parser.add_argument('--batch_size', type=int, default=batch_size)
-    parser.add_argument("--lr", type=float, default=learning_rate)
-    parser.add_argument("--label_smoothing_rate", type=float, default=label_smoothing_rate)
-    parser.add_argument('--loss_fn', type=str, default=loss)
-    parser.add_argument('--label_relaxation_alpha', type=float, default=label_relaxation_alpha)
     parser.add_argument('--optim', type=str, default=optimizer)
 
     parser.add_argument('--num_folds_for_cv', type=int, default=0)
@@ -56,17 +62,58 @@ def objective(trial):
     parser.add_argument("--auto_batch_finding", action="store_true")
     parser.add_argument('--degree', type=int, default=0)
     parser.add_argument("--save_embeddings_as_csv", action="store_true")
+    parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
 
     args = parser.parse_args()
     result = Execute(args=args).start()
 
     return result["Test"]["MRR"]
 
-study = optuna.create_study(direction="maximize")
-study.optimize(objective, n_trials=10)
 
-print("Best Trial:")
-best_trial = study.best_trial
+# set according to your environment TODO: make it as a parameter
+main_math = "../../../KGs/Datasets_Perturbed/"
+report_folder_name = "./bo_outputs/"
+report_file_name = "bayesian_optimization_report.txt"
 
-print(f"  Value: {best_trial.value}")
-print(f"  Params: {best_trial.params}")
+datasets = ["UMLS", "KINSHIP", "NELL-995-h100", "WN18RR", "FB15k-237"]
+models = ["Keci", "Pykeen_MuRE", "QMult", "Pykeen_DistMult", "Pykeen_ComplEx", "Pykeen_RotatE", "Pykeen_BoxE"]
+losses = ["LRLoss", "LS"]
+
+number_of_runs = 1
+
+for dataset in datasets:
+    for model in models:
+        for loss in losses:
+            dataset_path = main_math + dataset + "/0.0"
+
+            study = optuna.create_study(direction="maximize")
+
+            objective_with_params = partial(objective, dataset=dataset_path, model=model, loss=loss)
+            study.optimize(objective_with_params, n_trials=number_of_runs)
+
+            best_trial = study.best_trial
+
+            """
+            fig1 = plot_parallel_coordinate(study)
+            fig1.write_image(report_folder_name + f"parallel_coordinate-{dataset}-{model}-{loss}" + ".png")
+
+            fig3 = plot_edf(study)
+            fig3.write_image(report_folder_name + f"plot_edf-{dataset}-{model}-{loss}" + ".png")
+
+            fig4 = plot_optimization_history(study)
+            fig4.write_image(report_folder_name + f"plot_optimization_history-{dataset}-{model}-{loss}" + ".png")
+            """
+
+            if loss == "LRLoss":
+                fig2 = plot_contour(study, params=["label_relaxation_alpha", "learning_rate"])
+                fig2.write_image(report_folder_name + f"contour-{dataset}-{model}-{loss}" + ".png")
+
+            if loss == "LS":
+                fig2 = plot_contour(study, params=["label_smoothing_rate", "learning_rate"])
+                fig2.write_image(report_folder_name + f"contour-{dataset}-{model}-{loss}" + ".png")
+
+            os.makedirs(os.path.dirname(report_folder_name), exist_ok=True)
+            with open(report_folder_name + report_file_name, "a") as file:
+                file.write(
+                    f"Value: {best_trial.value}, Params: {best_trial.params}, Dataset: {dataset}, Model: {model}, Loss: {loss} \n")
+
