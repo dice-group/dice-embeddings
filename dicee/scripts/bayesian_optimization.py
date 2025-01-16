@@ -92,6 +92,8 @@ for dataset in datasets:
 
             best_trial = study.best_trial
 
+            os.makedirs(os.path.dirname(report_folder_name), exist_ok=True)
+
             fig1 = plot_parallel_coordinate(study)
             fig1.write_image(report_folder_name + f"parallel_coordinate-{dataset}-{model}-{loss}"+ ".png")
 
@@ -110,7 +112,6 @@ for dataset in datasets:
                 fig2.write_image(report_folder_name + f"contour-{dataset}-{model}-{loss}" + ".png")
 
 
-            os.makedirs(os.path.dirname(report_folder_name), exist_ok=True)
             with open(report_folder_name + report_file_name, "a") as file:
                 file.write(f"Value: {best_trial.value}, Params: {best_trial.params}, Dataset: {dataset}, Model: {model}, Loss: {loss} \n")
 
