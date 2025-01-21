@@ -1759,37 +1759,36 @@ class KGE(BaseInteractiveKGE):
         assert os.path.isfile(
             file_path
         ), f"Path does not lead to a file see {file_path}"
-        relation_groups = defaultdict(lambda: {"heads": [], "tails": []})
 
-        with open(file_path, "r") as file:
-            for line in file:
-                head, relation, tail = line.strip().split()
+        def denormalize(
+            row,
+            normalization_params,
+        ):
+            type_stats = normalization_params[row["relation"]]
+            return (row["preds"] * type_stats["std"]) + type_stats["mean"]
 
-                # Filter based on pre-trained entity index
-                if head in self.entity_to_idx and relation in train_rel:
-                    relation_groups[relation]["heads"].append(head)
-                    relation_groups[relation]["tails"].append(float(tail))
+        # Compute MAE and RMSE for each relation
+        def compute_errors(group):
+            actuals = group["tail"]
+            predictions = group["denormalized_preds"]
+            mae = mean_absolute_error(actuals, predictions)
+            rmse = root_mean_squared_error(actuals, predictions)
+            return pd.Series({"MAE": mae, "RMSE": rmse})
 
-        mea_results, rmse_results = {}, {}
-        # Iterate over each relation to calculate MEA
-        for rels, group in relation_groups.items():
+        test_df = pd.read_csv(
+            file_path, sep="\t", header=None, names=["head", "relation", "tail"]
+        )
+        test_df = test_df[test_df["head"].isin(self.entity_to_idx.keys())]
+        lit_entities_test = test_df["head"].values
+        lit_properties_test = test_df["relation"].values
 
-            h = group["heads"]
-            r = [rels] * len(h)
-            y_true = torch.FloatTensor(group["tails"])
-            y_pred = self.predict_literals(h=h, r=r)
-            mean, std = (
-                self.normalization_params[rels]["mean"],
-                self.normalization_params[rels]["std"],
-            )
-
-            y_pred_scaled = [data * std + mean for data in y_pred]
-            mea = mean_absolute_error(y_true, y_pred_scaled)
-            rmse = root_mean_squared_error(y_true, y_pred_scaled)
-            mea_results[rels] = mea
-            rmse_results[rels] = rmse
-
-        return mea_results, rmse_results
+        test_df["preds"] = self.predict_literals(lit_entities_test, lit_properties_test)
+        test_df["denormalized_preds"] = test_df.apply(
+            denormalize, axis=1, args=(self.normalization_params,)
+        )
+        error_metrics = test_df.groupby("relation").apply(compute_errors).reset_index()
+        pd.options.display.float_format = "{:.6f}".format  # 6 decimal places
+        print(error_metrics)
 
     """
     
