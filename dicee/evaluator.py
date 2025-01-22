@@ -312,6 +312,16 @@ class Evaluator:
                     predictions[j, id_e_target] = target_value
                 # (5) Sort predictions.
                 sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
+
+                #probabilities = torch.sigmoid(sort_values)
+                #non_zero_probs = probabilities[probabilities != 0.0]
+                #one_minus_non_zero_probs = 1 - non_zero_probs
+
+                non_zero_probs = sort_values[sort_values != 0.0]
+                probabilities = torch.sigmoid(non_zero_probs)
+                one_minus_non_zero_probs = 1 - probabilities
+
+                ECE = one_minus_non_zero_probs.sum().item()
                 # (6) Compute the filtered ranks.
                 for j in range(data_batch.shape[0]):
                     # index between 0 and \inf
@@ -327,7 +337,7 @@ class Evaluator:
         hit_10 = sum(hits[10]) / num_triples
         mean_reciprocal_rank = np.mean(1. / np.array(ranks))
 
-        results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}
+        results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank, 'ECE': ECE }
         if info and self.during_training is False:
             print(info)
             print(results)

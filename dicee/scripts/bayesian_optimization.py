@@ -18,10 +18,10 @@ def objective(trial, model, dataset, loss):
     embedding_dim = 32 #trial.suggest_categorical("embedding_dim", [32, 64])
     optimizer = "Adam" #trial.suggest_categorical("optimizer", ["Adam", "Adopt"])
     batch_size = 1024 #trial.suggest_categorical("batch_size", [512, 1024])
-    learning_rate = trial.suggest_float("learning_rate", 0.01, 0.1)
+    learning_rate = 0.1 #trial.suggest_float("learning_rate", 0.01, 0.1)
 
-    label_relaxation_alpha = trial.suggest_float("label_relaxation_alpha", 0.01, 0.1,) if loss == "LRLoss" else 0.0
-    label_smoothing_rate = trial.suggest_float("label_smoothing_rate", 0.01, 0.1)  if loss == "LS" else 0.0
+    label_relaxation_alpha = trial.suggest_float("label_relaxation_alpha", 0.01, 0.2,) if loss == "LRLoss" else 0.0
+    label_smoothing_rate = trial.suggest_float("label_smoothing_rate", 0.01, 0.2)  if loss == "LS" else 0.0
 
     parser.add_argument('--loss_fn', type=str, default=loss)
     parser.add_argument("--label_smoothing_rate", type=float, default=label_smoothing_rate)
@@ -71,14 +71,14 @@ def objective(trial, model, dataset, loss):
 
 # set according to your environment TODO: make it as a parameter
 main_math = "../../../KGs/Datasets_Perturbed/"
-report_folder_name = "./bo_outputs/"
+report_folder_name = "./bo_outputs/1024/"
 report_file_name = "bayesian_optimization_report.txt"
 
 datasets = ["UMLS", "KINSHIP", "NELL-995-h100", "WN18RR", "FB15k-237"]
-models = ["Keci", "Pykeen_MuRE", "QMult", "Pykeen_DistMult", "Pykeen_ComplEx", "Pykeen_RotatE", "Pykeen_BoxE"]
-losses = ["LRLoss", "LS"]
+models = ["Keci", "Pykeen_MuRE", "QMult", "Pykeen_DistMult", "Pykeen_ComplEx"] #, "Pykeen_RotatE", "Pykeen_BoxE"
+losses = ["LRLoss", "LS", "BCELoss"]
 
-number_of_runs = 30
+number_of_runs = 50
 
 for dataset in datasets:
     for model in models:
@@ -94,6 +94,7 @@ for dataset in datasets:
 
             os.makedirs(os.path.dirname(report_folder_name), exist_ok=True)
 
+
             fig1 = plot_parallel_coordinate(study)
             fig1.write_image(report_folder_name + f"parallel_coordinate-{dataset}-{model}-{loss}"+ ".png")
 
@@ -102,7 +103,8 @@ for dataset in datasets:
 
             fig4 = plot_optimization_history(study)
             fig4.write_image(report_folder_name + f"plot_optimization_history-{dataset}-{model}-{loss}" + ".png")
-            
+            """
+
             if loss == "LRLoss":
                 fig2 = plot_contour(study, params=["label_relaxation_alpha", "learning_rate"])
                 fig2.write_image(report_folder_name + f"contour-{dataset}-{model}-{loss}" + ".png")
@@ -110,10 +112,12 @@ for dataset in datasets:
             if loss == "LS":
                 fig2 = plot_contour(study, params=["label_smoothing_rate", "learning_rate"])
                 fig2.write_image(report_folder_name + f"contour-{dataset}-{model}-{loss}" + ".png")
-
+            """
 
             with open(report_folder_name + report_file_name, "a") as file:
-                file.write(f"Value: {best_trial.value}, Params: {best_trial.params}, Dataset: {dataset}, Model: {model}, Loss: {loss} \n")
-
-
-0
+                file.write(f"Value: {best_trial.value}, "
+                           f"Params: {best_trial.params}, "
+                           f"Dataset: {dataset}, "
+                           f"Model: {model}, "
+                           f"Loss: {loss} "
+                           f"\n")
