@@ -313,12 +313,8 @@ class Evaluator:
                 # (5) Sort predictions.
                 sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
 
-                #probabilities = torch.sigmoid(sort_values)
-                #non_zero_probs = probabilities[probabilities != 0.0]
-                #one_minus_non_zero_probs = 1 - non_zero_probs
-
-                non_zero_probs = sort_values[sort_values != 0.0]
-                probabilities = torch.sigmoid(non_zero_probs)
+                non_zero_values = sort_values[sort_values != 0.0]
+                probabilities = torch.sigmoid(non_zero_values)
                 one_minus_non_zero_probs = 1 - probabilities
 
                 ECE = one_minus_non_zero_probs.sum().item()
