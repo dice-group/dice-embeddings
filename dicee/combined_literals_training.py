@@ -250,7 +250,7 @@ model.to(device)
 
 # Testing loop (denormalizing results and calculating metrics)
 test_df = pd.read_csv(
-    lit_dataset_dir, sep="\t", header=None, names=["head", "relation", "tail"]
+    lit_test_dir, sep="\t", header=None, names=["head", "relation", "tail"]
 )
 test_df = test_df[test_df["relation"].isin(literal_dataset.train_rels)]
 test_df["head_idx"] = test_df["head"].map(literal_dataset.ent_idx)
