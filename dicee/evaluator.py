@@ -245,23 +245,6 @@ class Evaluator:
                                             form_of_labelling=form_of_labelling)
             self.report['Test'] = res
 
-    def compute_ece(self, probabilities, predictions, true_labels, M=10):
-
-        bin_boundaries = torch.linspace(0.0, 1.0, M + 1)
-        bin_lowers = bin_boundaries[:-1]
-        bin_uppers = bin_boundaries[1:]
-
-        ece = 0.0
-
-        for bin_lower, bin_upper in zip(bin_lowers, bin_uppers):
-            in_bin = (probabilities > bin_lower.item()) & (probabilities <= bin_upper.item())
-            if in_bin.sum() > 0:
-                accuracy_in_bin = (predictions[in_bin] == true_labels[in_bin]).float().mean()
-                avg_confidence_in_bin = probabilities[in_bin].mean()
-                ece += torch.abs(avg_confidence_in_bin - accuracy_in_bin).item() * in_bin.float().mean().item()
-
-        return ece
-
     def evaluate_lp_k_vs_all(self, model, triple_idx, info=None, form_of_labelling=None):
         """
         Filtered link prediction evaluation.
@@ -274,8 +257,6 @@ class Evaluator:
         # (1) set model to eval model
         model.eval()
         num_triples = len(triple_idx)
-        ece_values = []
-
         ranks = []
         # Hit range
         hits_range = [i for i in range(1, 11)]
@@ -331,22 +312,6 @@ class Evaluator:
                     predictions[j, id_e_target] = target_value
                 # (5) Sort predictions.
                 sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
-                """
-                non_zero_values = sort_values[sort_values != 0.0]
-                probabilities = torch.sigmoid(non_zero_values)
-                one_minus_non_zero_probs = 1 - probabilities
-
-                ECE = one_minus_non_zero_probs.mean().item()
-                """
-
-                probabilities = torch.sigmoid(sort_values)
-                predicted_labels = sort_idxs[:, 0]  # Take the top-1 predicted label
-                true_labels = e2_idx
-
-                # Compute ECE for this batch
-                ece = self.compute_ece(probabilities[:, 0], predicted_labels, true_labels, M=10)
-                ece_values.append(ece)
-
                 # (6) Compute the filtered ranks.
                 for j in range(data_batch.shape[0]):
                     # index between 0 and \inf
@@ -362,8 +327,7 @@ class Evaluator:
         hit_10 = sum(hits[10]) / num_triples
         mean_reciprocal_rank = np.mean(1. / np.array(ranks))
 
-        avg_ece = np.mean(ece_values)
-        results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank, 'ECE': avg_ece }
+        results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}
         if info and self.during_training is False:
             print(info)
             print(results)
