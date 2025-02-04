@@ -2,6 +2,8 @@ import pandas as pd
 import torch
 import numpy as np
 import json
+
+from . import load_json
 from .static_funcs import pickle
 from .static_funcs_training import evaluate_lp, evaluate_bpe_lp
 from typing import Tuple, List
@@ -57,16 +59,6 @@ class Evaluator:
         else:
             self.ee_vocab = dataset.ee_vocab.result()
 
-        """
-        if isinstance(dataset.constraints, tuple):
-            self.domain_constraints_per_rel, self.range_constraints_per_rel = dataset.constraints
-        else:
-            try:
-                self.domain_constraints_per_rel, self.range_constraints_per_rel = dataset.constraints.result()
-            except RuntimeError:
-                print('Domain constraint exception occurred')
-        """
-
         self.num_entities = dataset.num_entities
         self.num_relations = dataset.num_relations
         self.func_triple_to_bpe_representation = dataset.func_triple_to_bpe_representation
@@ -77,6 +69,7 @@ class Evaluator:
 
     # @timeit
     def eval(self, dataset: KG, trained_model, form_of_labelling, during_training=False) -> None:
+        assert isinstance(dataset, KG), "dataset must be KG"
         # @TODO: Why this reassigment ?
         self.during_training = during_training
         # (1) Exit, if the flag is not set
@@ -150,6 +143,9 @@ class Evaluator:
         self.er_vocab = pickle.load(open(self.args.full_storage_path + "/er_vocab.p", "rb"))
         self.re_vocab = pickle.load(open(self.args.full_storage_path + "/re_vocab.p", "rb"))
         self.ee_vocab = pickle.load(open(self.args.full_storage_path + "/ee_vocab.p", "rb"))
+        report = load_json(self.args.full_storage_path + "/report.json")
+        self.num_entities = report["num_entities"]
+        self.num_relations = report["num_relations"]
 
     def eval_rank_of_head_and_tail_entity(self, *, train_set, valid_set=None, test_set=None, trained_model):
         # 4. Test model on the training dataset if it is needed.
@@ -436,11 +432,17 @@ class Evaluator:
         return results
 
     def evaluate_lp(self, model, triple_idx, info: str):
-        return evaluate_lp(model, triple_idx, num_entities=self.num_entities, er_vocab=self.er_vocab,
+        assert self.num_entities is not None, "self.num_entities cannot be None"
+        assert self.er_vocab is not None, "self.er_vocab cannot be None"
+        assert self.re_vocab is not None, "self.re_vocab cannot be None"
+        return evaluate_lp(model, triple_idx,
+                           num_entities=self.num_entities,
+                           er_vocab=self.er_vocab,
                            re_vocab=self.re_vocab, info=info)
 
     def dummy_eval(self, trained_model, form_of_labelling: str):
-
+        assert trained_model is not None
+        # @TODO:CD: Why such naming! We need to document it better.
         if self.is_continual_training:
             self.__load_and_set_mappings()
 
@@ -458,6 +460,7 @@ class Evaluator:
                                   trained_model=trained_model, form_of_labelling=form_of_labelling)
         else:
             raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
+
         with open(self.args.full_storage_path + '/eval_report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor, indent=4)
 

@@ -138,7 +138,7 @@ class DICE_Trainer:
     report:dict
     """
 
-    def __init__(self, args, is_continual_training, storage_path, evaluator=None):
+    def __init__(self, args, is_continual_training:bool, storage_path, evaluator=None):
         self.report = dict()
         self.args = args
         self.trainer = None
@@ -172,7 +172,6 @@ class DICE_Trainer:
         self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
         model, form_of_labelling = self.initialize_or_load_model()
         # TODO: Here we need to load memory pag
-
         self.trainer.evaluator = self.evaluator
         self.trainer.dataset = knowledge_graph
         self.trainer.form_of_labelling = form_of_labelling
@@ -232,6 +231,8 @@ class DICE_Trainer:
                                               byte_pair_encoding=self.args.byte_pair_encoding,
                                               block_size=self.args.block_size)
         else:
+            assert isinstance(self.trainer.dataset, np.memmap), ("Train dataset must be an instance of memmap. "
+                                                                 f"Currently, {type(np.memmap)}!")
             if self.args.continual_learning:
                 path = self.args.continual_learning
             else:
@@ -278,6 +279,8 @@ class DICE_Trainer:
             # TODO: Later, maybe we should write a callback to save the models in disk
 
             if isinstance(self.trainer, TensorParallel):
+                assert isinstance(model, EnsembleKGE), type(model)
+
                 model = self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
                 assert isinstance(model,EnsembleKGE)
             else:
