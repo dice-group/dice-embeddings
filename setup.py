@@ -68,8 +68,7 @@ setup(
     python_requires='>=3.10',
     entry_points={"console_scripts":
                       ["dicee=dicee.scripts.run:main",
-                       "diceeindex=dicee.scripts.index:main",
-                       "diceeserve=dicee.scripts.serve:main"]},
+                       "dicee_vector_db=dicee.scripts.index_serve:main"]},
     long_description=long_description,
     long_description_content_type="text/markdown",
 )

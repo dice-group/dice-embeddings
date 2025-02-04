@@ -9,26 +9,19 @@ def make_iterable_verbose(iterable_object, verbose, desc="Default", position=Non
     else:
         return iterable_object
 
-
-def evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List],
+@torch.no_grad()
+def evaluate_lp(model=None, triple_idx=None, num_entities=None, er_vocab: Dict[Tuple, List]=None,
+                re_vocab: Dict[Tuple, List]=None,
                 info='Eval Starts', batch_size=128, chunk_size=1000):
-    """
-    Evaluate model in a standard link prediction task
+    assert model is not None, "Model must be provided"
+    assert triple_idx is not None, "triple_idx must be provided"
+    assert num_entities is not None, "num_entities must be provided"
+    assert er_vocab is not None, "er_vocab must be provided"
+    assert re_vocab is not None, "re_vocab must be provided"
 
-    for each triple
-    the rank is computed by taking the mean of the filtered missing head entity rank and
-    the filtered missing tail entity rank
-    :param model:
-    :param triple_idx:
-    :param info:
-    :param batch_size:
-    :param chunk_size:
-    :return:
-    """
     model.eval()
     print(info)
     print(f'Num of triples {len(triple_idx)}')
-    print('** Evaluation with batching')
     hits = dict()
     reciprocal_ranks = []
     # Iterate over test triples
@@ -127,7 +120,7 @@ def evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re
             ), dim=1)
 
             # Predict scores for missing tails
-            preds_tails = model.forward_triples(x_tails)
+            preds_tails = model(x_tails)
             preds_tails = preds_tails.view(batch_size_current, chunk_size_current)
             predictions_tails[:, chunk_start:chunk_end] = preds_tails
             del x_tails
@@ -140,7 +133,7 @@ def evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re
             ), dim=1)
 
             # Predict scores for missing heads
-            preds_heads = model.forward_triples(x_heads)
+            preds_heads = model(x_heads)
             preds_heads = preds_heads.view(batch_size_current, chunk_size_current)
             predictions_heads[:, chunk_start:chunk_end] = preds_heads
             del x_heads

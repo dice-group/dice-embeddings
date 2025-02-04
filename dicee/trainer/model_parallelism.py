@@ -134,17 +134,14 @@ def forward_backward_update_loss(z:Tuple, ensemble_model)->float:
 class TensorParallel(AbstractTrainer):
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
-        self.models=[]
 
-    def get_ensemble(self):
-        return self.models
 
     def fit(self, *args, **kwargs):
         """ Train model        """
         assert len(args) == 1
-        seed_model, = args
-        # () Init. ensemble model.
-        ensemble_model = EnsembleKGE(seed_model)
+        ensemble_model, = args
+        assert isinstance(ensemble_model,EnsembleKGE), (f"Selected model must "
+                                                        f"be an instance of EnsembleKGE{type(ensemble_model)}")
         # () Run on_fit_start callbacks.
         self.on_fit_start(self, ensemble_model)
         # () Sanity checking
@@ -167,9 +164,9 @@ class TensorParallel(AbstractTrainer):
                                                             timeout=0,
                                                             worker_init_fn=None,
                                                             persistent_workers=False)
-            if batch_rt is not None:
-                expected_training_time=batch_rt * len(train_dataloader) * self.attributes.num_epochs
-                print(f"Exp.Training Runtime: {expected_training_time/60 :.3f} in mins\t|\tBatch Size:{batch_size}\t|\tBatch RT:{batch_rt:.3f}\t|\t # of batches:{len(train_dataloader)}\t|\t# of epochs:{self.attributes.num_epochs}")
+            #if batch_rt is not None:
+            #    expected_training_time=batch_rt * len(train_dataloader) * self.attributes.num_epochs
+            # print(f"Exp.Training Runtime: {expected_training_time/60 :.3f} in mins\t|\tBatch Size:{batch_size}\t|\tBatch RT:{batch_rt:.3f}\t|\t # of batches:{len(train_dataloader)}\t|\t# of epochs:{self.attributes.num_epochs}")
 
         # () Number of batches to reach a single epoch.
         num_of_batches = len(train_dataloader)
