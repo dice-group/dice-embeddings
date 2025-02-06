@@ -257,6 +257,7 @@ class OnevsAllDataset(torch.utils.data.Dataset):
         triple= torch.from_numpy(self.train_data[idx].copy()).long()
         y_vec[triple[2]] = 1
         return triple[:2], y_vec
+
 class KvsAll(torch.utils.data.Dataset):
     """ Creates a dataset for KvsAll training by inheriting from torch.utils.data.Dataset.
     Let D denote a dataset for KvsAll training and be defined as D:= {(x,y)_i}_i ^N, where
@@ -348,7 +349,9 @@ class KvsAll(torch.utils.data.Dataset):
         y_vec[self.train_target[idx]] = 1.0
 
         if self.label_smoothing_rate:
-            y_vec = y_vec * (1 - self.label_smoothing_rate) + (1 / y_vec.size(0))
+            #y_vec = y_vec * (1 - self.label_smoothing_rate) + (1 / y_vec.size(0))
+            y_vec = y_vec * (1 - self.label_smoothing_rate) + (self.label_smoothing_rate / y_vec.size(0))
+            #y_vec = y_vec * (1 - self.label_smoothing_rate) + self.label_smoothing_rate * (1 - y_vec) / (y_vec.size(0) - 1)
         return self.train_data[idx], y_vec
 
 
@@ -630,6 +633,8 @@ class NegSampleDataset(torch.utils.data.Dataset):
         x = torch.cat((triple, negative_triple), dim=0)
         # (5) Concat labels of (4).
         y = torch.tensor([1.0, 0.0])
+
+
         return x, y
 
 
@@ -743,6 +748,7 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
         x = torch.stack((h, r, t), dim=1)
         label = torch.cat((label, label_head_corr, label_tail_corr, label_rel_corr), 0)
         """
+
         return x, label
 
 

@@ -5,7 +5,16 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from .adopt import ADOPT
-from dicee.losses.label_relaxation import LabelRelaxationLoss
+from dicee.losses.custom_losses import (
+                                        DefaultBCELoss,
+                                        LabelSmoothingLoss,
+                                        LabelRelaxationLoss,
+                                        AdaptiveLabelSmoothingLoss,
+                                        AdaptiveLabelRelaxationLoss,
+                                        CombinedLSandLR,
+                                        ConfidenceBasedAdaptiveLabelRelaxationLoss,
+                                        CombinedAdaptiveLSandAdaptiveLR
+                                        )
 
 class BaseKGELightning(pl.LightningModule):
     def __init__(self, *args, **kwargs):
@@ -24,6 +33,7 @@ class BaseKGELightning(pl.LightningModule):
         return {'EstimatedSizeMB': (num_params + buffer_size) / 1024 ** 2, 'NumParam': num_params}
 
     def training_step(self, batch, batch_idx=None):
+
         if len(batch)==2:
             # Default
             x_batch, y_batch = batch
@@ -35,7 +45,9 @@ class BaseKGELightning(pl.LightningModule):
         else:
             raise RuntimeError("Invalid batch received.")
 
-        loss_batch = self.loss_function(yhat_batch, y_batch)
+
+        loss_batch = self.loss(yhat_batch, y_batch, current_epoch=self.current_epoch)
+
         self.training_step_outputs.append(loss_batch.item())
         self.log("loss",
                  value=loss_batch,
@@ -155,12 +167,22 @@ class BaseKGE(BaseKGELightning):
         self.max_length_subword_tokens = self.args.get("max_length_subword_tokens", None)
         self.block_size=self.args.get("block_size", None)
 
-        if self.args["loss_fn"] == "BCELoss":
-            self.loss = torch.nn.BCEWithLogitsLoss()
+        if self.args["loss_fn"] == "LS":
+            self.loss = LabelSmoothingLoss(smoothness_ratio=self.args["label_smoothing_rate"])
         if self.args["loss_fn"] == "LRLoss":
             self.loss = LabelRelaxationLoss(alpha=self.args["label_relaxation_alpha"])
-        else:
-            self.loss = torch.nn.BCEWithLogitsLoss()
+        if self.args["loss_fn"] == "BCELoss":
+            self.loss = DefaultBCELoss()
+        if self.args["loss_fn"] == "CombinedLSandLR":
+            self.loss = CombinedLSandLR(smoothness_ratio=self.args["label_smoothing_rate"], alpha=self.args["label_relaxation_alpha"])
+        if self.args["loss_fn"] == "AdaptiveLabelSmoothingLoss":
+            self.loss = AdaptiveLabelSmoothingLoss()
+        if self.args["loss_fn"] == "AdaptiveLabelRelaxationLoss":
+            self.loss = AdaptiveLabelRelaxationLoss()
+        if self.args["loss_fn"] == "ConfidenceBasedAdaptiveLabelRelaxationLoss":
+            self.loss = ConfidenceBasedAdaptiveLabelRelaxationLoss()
+        if self.args["loss_fn"] == "CombinedAdaptiveLSandAdaptiveLR":
+            self.loss = CombinedAdaptiveLSandAdaptiveLR()
 
         if self.byte_pair_encoding and self.args['model'] != "BytE":
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)

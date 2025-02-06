@@ -3,8 +3,9 @@ from dicee.executer import Execute
 import argparse
 import optuna
 from functools import partial
-from optuna.visualization import plot_parallel_coordinate, plot_contour, plot_edf, plot_optimization_history
+from optuna.visualization import plot_parallel_coordinate
 import os
+import numpy as np
 
 def objective(trial, model, dataset, loss):
 
@@ -13,15 +14,15 @@ def objective(trial, model, dataset, loss):
     dataset = dataset
     model = model
 
-    num_epochs = 50
+    num_epochs = 70
 
     embedding_dim = 32 #trial.suggest_categorical("embedding_dim", [32, 64])
     optimizer = "Adam" #trial.suggest_categorical("optimizer", ["Adam", "Adopt"])
     batch_size = 1024 #trial.suggest_categorical("batch_size", [512, 1024])
     learning_rate = 0.1 #trial.suggest_float("learning_rate", 0.01, 0.1)
 
-    label_relaxation_alpha = trial.suggest_float("label_relaxation_alpha", 0.01, 0.2,) if loss == "LRLoss" else 0.0
-    label_smoothing_rate = trial.suggest_float("label_smoothing_rate", 0.01, 0.2)  if loss == "LS" else 0.0
+    label_relaxation_alpha = trial.suggest_float("LSR", 0.01, 0.1,) if loss == "LRLoss" else 0.0
+    label_smoothing_rate = trial.suggest_float("LSR", 0.01, 0.1)  if loss == "LS" else 0.0
 
     parser.add_argument('--loss_fn', type=str, default=loss)
     parser.add_argument("--label_smoothing_rate", type=float, default=label_smoothing_rate)
@@ -75,10 +76,12 @@ report_folder_name = "./bo_outputs/1024/"
 report_file_name = "bayesian_optimization_report.txt"
 
 datasets = ["UMLS", "KINSHIP", "NELL-995-h100", "WN18RR", "FB15k-237"]
-models = ["Keci", "Pykeen_MuRE", "QMult", "Pykeen_DistMult", "Pykeen_ComplEx"] #, "Pykeen_RotatE", "Pykeen_BoxE"
-losses = ["LRLoss", "LS", "BCELoss"]
+models = ["Keci", "Pykeen_MuRE", "QMult", "Pykeen_DistMult", "Pykeen_ComplEx", "Pykeen_RotatE", "Pykeen_BoxE", "Pykeen_TransE"] #
+losses = ["LRLoss", "LS"]
 
-number_of_runs = 50
+number_of_runs = 10
+
+os.makedirs(os.path.dirname(report_folder_name), exist_ok=True)
 
 for dataset in datasets:
     for model in models:
@@ -92,27 +95,28 @@ for dataset in datasets:
 
             best_trial = study.best_trial
 
-            os.makedirs(os.path.dirname(report_folder_name), exist_ok=True)
+            loss_type = "LR" if loss == "LRLoss" else "LS"
+            fig = plot_parallel_coordinate(study)
+            fig.update_layout(title={"text": f"Dataset: {dataset}, Model: {model}, Softening Method: {loss_type}",
+                                     "x": 0.5,
+                                     "xanchor": "center",
+                                     "y": 0.97,
+                                     "yanchor": "top"},
+                               title_font=dict(size=24),
+                               font=dict(size=22),
+                               legend=dict(font=dict(size=4)),
+                               )
 
+            for dim in fig.data[0].dimensions:
+                if dim['label'] == "Objective Value":
+                    dim['label'] = "MRR"
+                dim["label"] = f"<br>{dim['label']}"
 
-            fig1 = plot_parallel_coordinate(study)
-            fig1.write_image(report_folder_name + f"parallel_coordinate-{dataset}-{model}-{loss}"+ ".png")
+            fig.data[0]['labelangle'] = 0
+            fig.data[0]['labelside'] = 'bottom'
+            fig.data[0]['line']['colorbar']['title']['text'] = ''
 
-            fig3 = plot_edf(study)
-            fig3.write_image(report_folder_name + f"plot_edf-{dataset}-{model}-{loss}" + ".png")
-
-            fig4 = plot_optimization_history(study)
-            fig4.write_image(report_folder_name + f"plot_optimization_history-{dataset}-{model}-{loss}" + ".png")
-            """
-
-            if loss == "LRLoss":
-                fig2 = plot_contour(study, params=["label_relaxation_alpha", "learning_rate"])
-                fig2.write_image(report_folder_name + f"contour-{dataset}-{model}-{loss}" + ".png")
-
-            if loss == "LS":
-                fig2 = plot_contour(study, params=["label_smoothing_rate", "learning_rate"])
-                fig2.write_image(report_folder_name + f"contour-{dataset}-{model}-{loss}" + ".png")
-            """
+            fig.write_image(report_folder_name + f"parallel_coordinate-{dataset}-{model}-{loss}"+ ".png")
 
             with open(report_folder_name + report_file_name, "a") as file:
                 file.write(f"Value: {best_trial.value}, "
@@ -121,3 +125,5 @@ for dataset in datasets:
                            f"Model: {model}, "
                            f"Loss: {loss} "
                            f"\n")
+
+

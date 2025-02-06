@@ -264,7 +264,6 @@ class DICE_Trainer:
         in DDP setup, we need to load the memory map of already read/index KG.
         """
         """ Train selected model via the selected training strategy """
-        print('------------------- Train -------------------')
         assert isinstance(knowledge_graph, np.memmap) or isinstance(knowledge_graph, KG), \
             f"knowledge_graph must be an instance of KG or np.memmap. Currently {type(knowledge_graph)}"
         if self.args.num_folds_for_cv == 0:
@@ -274,6 +273,9 @@ class DICE_Trainer:
             self.trainer.evaluator = self.evaluator
             self.trainer.dataset = knowledge_graph
             self.trainer.form_of_labelling = form_of_labelling
+
+            print("######################", self.trainer.current_epoch)
+
             # TODO: Later, maybe we should write a callback to save the models in disk
 
             if isinstance(self.trainer, TensorParallel):
