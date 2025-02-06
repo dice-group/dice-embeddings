@@ -32,17 +32,15 @@ class AdaptiveLabelSmoothingLoss(nn.Module):
         super(AdaptiveLabelSmoothingLoss, self).__init__()
         self.min_smoothing_factor = min_smoothing_factor
         self.max_smoothing_factor = max_smoothing_factor
-        self.smoothing_factor_step = smoothing_factor_step  # Controls rate of alpha adjustment
-        self.smoothing_factor = initial_smoothing_factor  # Initial smoothing factor
-        self.prev_loss = None  # Store previous loss
-        self.eps = 1e-14  # Small value to prevent log(0)
+        self.smoothing_factor_step = smoothing_factor_step
+        self.smoothing_factor = initial_smoothing_factor
+        self.prev_loss = None
+        self.eps = 1e-14
 
     def forward(self, logits, target):
 
-        # log_softmax is more numerically stable
         pred = F.log_softmax(logits, dim=-1)
 
-        # Compute smoothed target distribution
         num_classes = logits.size(-1)
         #smoothed_target = (1 - self.smoothing_factor) * target + self.smoothing_factor / num_classes
         smoothed_target = (1 - self.smoothing_factor) * target + self.smoothing_factor * (1 - target) / (num_classes - 1)
@@ -95,9 +93,9 @@ class AdaptiveLabelRelaxationLoss(nn.Module):
         super(AdaptiveLabelRelaxationLoss, self).__init__()
         self.min_alpha = min_alpha
         self.max_alpha = max_alpha
-        self.alpha_step = alpha_step  # Controls how fast alpha adjusts
-        self.alpha = initial_alpha  # Initial alpha
-        self.prev_loss = None  # Store previous loss
+        self.alpha_step = alpha_step
+        self.alpha = initial_alpha
+        self.prev_loss = None
         self.eps = 1e-14
         self.gz_threshold = 0.1
 
@@ -105,7 +103,6 @@ class AdaptiveLabelRelaxationLoss(nn.Module):
         pred = pred.softmax(dim=-1)
         pred = torch.clamp(pred, min=self.eps, max=1.0)
 
-        # Compute mean loss
         with torch.no_grad():
             sum_y_hat_prime = torch.sum((torch.ones_like(target) - target) * pred, dim=-1)
             pred_hat = self.alpha * pred / torch.unsqueeze(sum_y_hat_prime, dim=-1)
@@ -117,24 +114,20 @@ class AdaptiveLabelRelaxationLoss(nn.Module):
                                         divergence)
             mean_final_loss = torch.mean(filtered_loss)
 
-        # Update alpha based on loss trend
         if self.prev_loss is not None:
-            loss_diff = mean_final_loss - self.prev_loss  # Check improvement
-            if loss_diff > 0:  # Loss is increasing (worse) → Increase relaxation
+            loss_diff = mean_final_loss - self.prev_loss
+            if loss_diff > 0:
                 self.alpha = min(self.alpha + self.alpha_step, self.max_alpha)
-            elif loss_diff < 0:  # Loss is decreasing (better) → Decrease relaxation
+            elif loss_diff < 0:
                 self.alpha = max(self.alpha - self.alpha_step, self.min_alpha)
 
-        # Store current loss for next iteration
         self.prev_loss = mean_final_loss
         print("Alpha: ", self.alpha, "Epoch: ")
 
-        # Recompute target credal set using updated alpha
         with torch.no_grad():
             pred_hat = self.alpha * pred / torch.unsqueeze(sum_y_hat_prime, dim=-1)
             target_credal = torch.where(target > self.gz_threshold, torch.ones_like(target) - self.alpha, pred_hat)
 
-        # Calculate divergence
         divergence = torch.sum(F.kl_div(pred.log(), target_credal, log_target=False, reduction="none"), dim=-1)
         predc = torch.sum(pred * target, dim=-1)
         result = torch.where(torch.gt(predc, 1. - self.alpha), torch.zeros_like(divergence), divergence)
@@ -195,7 +188,7 @@ class CombinedLSandLR(nn.Module):
 class CombinedAdaptiveLSandAdaptiveLR(nn.Module):
     def __init__(self):
         super(CombinedAdaptiveLSandAdaptiveLR, self).__init__()
-        self.adaptive_label_smoothing = AdaptiveLabelSmoothingLoss()  # Persist instance
+        self.adaptive_label_smoothing = AdaptiveLabelSmoothingLoss()
         self.adaptive_label_relaxation = AdaptiveLabelRelaxationLoss()
         self.criterion = ''
 
