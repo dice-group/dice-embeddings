@@ -6,12 +6,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dicee.models.complex &mdash; DICE Embeddings 0.1.3.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
 
   
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
@@ -88,17 +88,17 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.models.complex</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">.base_model</span> <span class="kn">import</span> <span class="n">BaseKGE</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseKGE</span>
 
 
 <div class="viewcode-block" id="ConEx">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.ConEx">[docs]</a>
-<span class="k">class</span> <span class="nc">ConEx</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConEx</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Convolutional ComplEx Knowledge Graph Embeddings&quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;ConEx&#39;</span>
         <span class="c1"># Convolution</span>
@@ -113,7 +113,7 @@
 
 <div class="viewcode-block" id="ConEx.residual_convolution">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.ConEx.residual_convolution">[docs]</a>
-    <span class="k">def</span> <span class="nf">residual_convolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">C_1</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">residual_convolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">C_1</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
                              <span class="n">C_2</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute residual score of two complex-valued embeddings.</span>
@@ -138,7 +138,7 @@
 
 <div class="viewcode-block" id="ConEx.forward_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.ConEx.forward_k_vs_all">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1"># (2) Split (1) into real and imaginary parts.</span>
@@ -161,7 +161,7 @@
 
 <div class="viewcode-block" id="ConEx.forward_triples">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.ConEx.forward_triples">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1"># (2) Split (1) into real and imaginary parts.</span>
@@ -183,7 +183,7 @@
 
 <div class="viewcode-block" id="ConEx.forward_k_vs_sample">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.ConEx.forward_k_vs_sample">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="c1"># @OTOD: Double check later.</span>
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -216,10 +216,10 @@
 
 <div class="viewcode-block" id="AConEx">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.AConEx">[docs]</a>
-<span class="k">class</span> <span class="nc">AConEx</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AConEx</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Additive Convolutional ComplEx Knowledge Graph Embeddings &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;AConEx&#39;</span>
         <span class="c1"># Convolution</span>
@@ -234,7 +234,7 @@
 
 <div class="viewcode-block" id="AConEx.residual_convolution">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.AConEx.residual_convolution">[docs]</a>
-    <span class="k">def</span> <span class="nf">residual_convolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">C_1</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">residual_convolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">C_1</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
                              <span class="n">C_2</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute residual score of two complex-valued embeddings.</span>
@@ -260,7 +260,7 @@
 
 <div class="viewcode-block" id="AConEx.forward_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.AConEx.forward_k_vs_all">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1"># (2) Split (1) into real and imaginary parts.</span>
@@ -284,7 +284,7 @@
 
 <div class="viewcode-block" id="AConEx.forward_triples">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.AConEx.forward_triples">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1"># (2) Split (1) into real and imaginary parts.</span>
@@ -305,7 +305,7 @@
 
 <div class="viewcode-block" id="AConEx.forward_k_vs_sample">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.AConEx.forward_k_vs_sample">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1"># (2) Split (1) into real and imaginary parts.</span>
@@ -342,15 +342,15 @@
 
 <div class="viewcode-block" id="ComplEx">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.ComplEx">[docs]</a>
-<span class="k">class</span> <span class="nc">ComplEx</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ComplEx</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;ComplEx&#39;</span>
 
 <div class="viewcode-block" id="ComplEx.score">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.ComplEx.score">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">tail_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">tail_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">):</span>
         <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_imag</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
         <span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_imag</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
         <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_imag</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">tail_ent_emb</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -365,7 +365,7 @@
 <div class="viewcode-block" id="ComplEx.k_vs_all_score">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.ComplEx.k_vs_all_score">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">k_vs_all_score</span><span class="p">(</span><span class="n">emb_h</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">emb_r</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">emb_E</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">k_vs_all_score</span><span class="p">(</span><span class="n">emb_h</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">emb_r</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">emb_E</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Parameters</span>
@@ -393,7 +393,7 @@
 
 <div class="viewcode-block" id="ComplEx.forward_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.ComplEx.forward_k_vs_all">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_vs_all_score</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span><span class="n">rel_ent_emb</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span></div>
@@ -401,7 +401,7 @@
 
 <div class="viewcode-block" id="ComplEx.forward_k_vs_sample">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.ComplEx.forward_k_vs_sample">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
         <span class="c1"># (b,2d), (b,2d)</span>
         <span class="n">emb_h</span><span class="p">,</span> <span class="n">emb_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1"># (b,k,2d)</span>

@@ -6,12 +6,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dicee.callbacks &mdash; DICE Embeddings 0.1.3.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
 
   
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
@@ -88,27 +88,27 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.callbacks</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">torch</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
-<span class="kn">import</span> <span class="nn">dicee.models.base_model</span>
-<span class="kn">from</span> <span class="nn">.static_funcs</span> <span class="kn">import</span> <span class="n">save_checkpoint_model</span><span class="p">,</span> <span class="n">save_pickle</span>
-<span class="kn">from</span> <span class="nn">.abstracts</span> <span class="kn">import</span> <span class="n">AbstractCallback</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">dicee.models.base_model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_checkpoint_model</span><span class="p">,</span> <span class="n">save_pickle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractCallback</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 
 
 <div class="viewcode-block" id="AccumulateEpochLossCallback">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.AccumulateEpochLossCallback">[docs]</a>
-<span class="k">class</span> <span class="nc">AccumulateEpochLossCallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AccumulateEpochLossCallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
 
 <div class="viewcode-block" id="AccumulateEpochLossCallback.on_fit_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.AccumulateEpochLossCallback.on_fit_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Store epoch loss</span>
 
@@ -130,14 +130,14 @@
 
 <div class="viewcode-block" id="PrintCallback">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback">[docs]</a>
-<span class="k">class</span> <span class="nc">PrintCallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PrintCallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
 <div class="viewcode-block" id="PrintCallback.on_fit_start">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback.on_fit_start">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">pl_module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">pl_module</span><span class="p">):</span>
         <span class="c1"># print(pl_module)</span>
         <span class="c1"># print(pl_module.summarize())</span>
         <span class="c1"># print(pl_module.selected_optimizer)</span>
@@ -146,7 +146,7 @@
 
 <div class="viewcode-block" id="PrintCallback.on_fit_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback.on_fit_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">pl_module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">pl_module</span><span class="p">):</span>
         <span class="n">training_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span>
         <span class="k">if</span> <span class="mi">60</span> <span class="o">&gt;</span> <span class="n">training_time</span><span class="p">:</span>
             <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">training_time</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> seconds.&#39;</span>
@@ -161,13 +161,13 @@
 
 <div class="viewcode-block" id="PrintCallback.on_train_batch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback.on_train_batch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_batch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_train_batch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">return</span></div>
 
 
 <div class="viewcode-block" id="PrintCallback.on_train_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback.on_train_epoch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">return</span></div>
 </div>
 
@@ -175,8 +175,8 @@
 
 <div class="viewcode-block" id="KGESaveCallback">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KGESaveCallback">[docs]</a>
-<span class="k">class</span> <span class="nc">KGESaveCallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">every_x_epoch</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_epochs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">KGESaveCallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">every_x_epoch</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_epochs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">every_x_epoch</span> <span class="o">=</span> <span class="n">every_x_epoch</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_epochs</span> <span class="o">=</span> <span class="n">max_epochs</span>
@@ -187,31 +187,31 @@
 
 <div class="viewcode-block" id="KGESaveCallback.on_train_batch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KGESaveCallback.on_train_batch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_batch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_train_batch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">return</span></div>
 
 
 <div class="viewcode-block" id="KGESaveCallback.on_fit_start">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KGESaveCallback.on_fit_start">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">pl_module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">pl_module</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="KGESaveCallback.on_train_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KGESaveCallback.on_train_epoch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="KGESaveCallback.on_fit_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KGESaveCallback.on_fit_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="KGESaveCallback.on_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KGESaveCallback.on_epoch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">every_x_epoch</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Storing model </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
             <span class="n">save_checkpoint_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
@@ -224,8 +224,8 @@
 
 <div class="viewcode-block" id="PseudoLabellingCallback">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PseudoLabellingCallback">[docs]</a>
-<span class="k">class</span> <span class="nc">PseudoLabellingCallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_module</span><span class="p">,</span> <span class="n">kg</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PseudoLabellingCallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_module</span><span class="p">,</span> <span class="n">kg</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_module</span> <span class="o">=</span> <span class="n">data_module</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kg</span> <span class="o">=</span> <span class="n">kg</span>
@@ -235,7 +235,7 @@
 
 <div class="viewcode-block" id="PseudoLabellingCallback.create_random_data">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PseudoLabellingCallback.create_random_data">[docs]</a>
-    <span class="k">def</span> <span class="nf">create_random_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_random_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">entities</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
         <span class="n">relations</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,))</span>
         <span class="c1"># unlabelled triples</span>
@@ -244,7 +244,7 @@
 
 <div class="viewcode-block" id="PseudoLabellingCallback.on_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PseudoLabellingCallback.on_epoch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
         <span class="c1"># Create random triples</span>
         <span class="c1"># if trainer.current_epoch &lt; 10:</span>
         <span class="c1">#    return None</span>
@@ -273,7 +273,7 @@
 
 <div class="viewcode-block" id="estimate_q">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.estimate_q">[docs]</a>
-<span class="k">def</span> <span class="nf">estimate_q</span><span class="p">(</span><span class="n">eps</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">estimate_q</span><span class="p">(</span><span class="n">eps</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; estimate rate of convergence q from sequence esp&quot;&quot;&quot;</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">eps</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
     <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">eps</span><span class="p">))))</span>
@@ -285,7 +285,7 @@
 
 <div class="viewcode-block" id="compute_convergence">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.compute_convergence">[docs]</a>
-<span class="k">def</span> <span class="nf">compute_convergence</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_convergence</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span>
     <span class="k">return</span> <span class="n">estimate_q</span><span class="p">(</span><span class="n">seq</span><span class="p">[</span><span class="o">-</span><span class="n">i</span><span class="p">:]</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span></div>
 
@@ -293,12 +293,12 @@
 
 <div class="viewcode-block" id="ASWA">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA">[docs]</a>
-<span class="k">class</span> <span class="nc">ASWA</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ASWA</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Adaptive stochastic weight averaging</span>
 <span class="sd">        ASWE keeps track of the validation performance and update s the ensemble model accordingly.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_epochs</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_epochs</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">=</span><span class="n">path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span><span class="o">=</span><span class="n">num_epochs</span>
@@ -309,7 +309,7 @@
 
 <div class="viewcode-block" id="ASWA.on_fit_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA.on_fit_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
         <span class="c1"># super().on_fit_end(trainer, model)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_eval_setting</span><span class="p">:</span>
             <span class="c1"># ADD this info back</span>
@@ -323,7 +323,7 @@
 <div class="viewcode-block" id="ASWA.compute_mrr">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA.compute_mrr">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">compute_mrr</span><span class="p">(</span><span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_mrr</span><span class="p">(</span><span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="c1"># (2) Enable eval mode.</span>
         <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
         <span class="c1"># (3) MRR performance on the validation data of running model.</span>
@@ -341,7 +341,7 @@
 
 <div class="viewcode-block" id="ASWA.get_aswa_state_dict">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA.get_aswa_state_dict">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_aswa_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_aswa_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
         <span class="c1"># (2) Question: Soft update or Rejection?!</span>
         <span class="n">ensemble_state_dict</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/aswa.pt&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">))</span>
         <span class="c1"># Perform provision parameter update.</span>
@@ -354,7 +354,7 @@
 
 <div class="viewcode-block" id="ASWA.decide">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA.decide">[docs]</a>
-    <span class="k">def</span> <span class="nf">decide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">running_model_state_dict</span><span class="p">,</span> <span class="n">ensemble_state_dict</span><span class="p">,</span> <span class="n">val_running_model</span><span class="p">,</span> <span class="n">mrr_updated_ensemble_model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">running_model_state_dict</span><span class="p">,</span> <span class="n">ensemble_state_dict</span><span class="p">,</span> <span class="n">val_running_model</span><span class="p">,</span> <span class="n">mrr_updated_ensemble_model</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Perform Hard Update, software or rejection</span>
 
@@ -401,7 +401,7 @@
 
 <div class="viewcode-block" id="ASWA.on_train_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA.on_train_epoch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
         
         <span class="k">if</span> <span class="p">(</span><span class="n">trainer</span><span class="o">.</span><span class="n">global_rank</span> <span class="o">==</span> <span class="n">trainer</span><span class="o">.</span><span class="n">local_rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
@@ -440,8 +440,8 @@
 
 <div class="viewcode-block" id="Eval">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.Eval">[docs]</a>
-<span class="k">class</span> <span class="nc">Eval</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">epoch_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Eval</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">epoch_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reports</span> <span class="o">=</span> <span class="p">[]</span>
@@ -450,13 +450,13 @@
 
 <div class="viewcode-block" id="Eval.on_fit_start">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.Eval.on_fit_start">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="Eval.on_fit_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.Eval.on_fit_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
         <span class="n">save_pickle</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reports</span><span class="p">,</span> <span class="n">file_path</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/evals_per_epoch&#39;</span><span class="p">)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -478,7 +478,7 @@
 
 <div class="viewcode-block" id="Eval.on_train_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.Eval.on_train_epoch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch_ratio</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
@@ -490,7 +490,7 @@
 
 <div class="viewcode-block" id="Eval.on_train_batch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.Eval.on_train_batch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_batch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_train_batch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">return</span></div>
 </div>
 
@@ -498,15 +498,15 @@
 
 <div class="viewcode-block" id="KronE">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KronE">[docs]</a>
-<span class="k">class</span> <span class="nc">KronE</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">KronE</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="KronE.batch_kronecker_product">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KronE.batch_kronecker_product">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">batch_kronecker_product</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">batch_kronecker_product</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Kronecker product of matrices a and b with leading batch dimensions.</span>
 <span class="sd">        Batch dimensions are broadcast. The number of them mush</span>
@@ -526,7 +526,7 @@
 
 <div class="viewcode-block" id="KronE.get_kronecker_triple_representation">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KronE.get_kronecker_triple_representation">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_kronecker_triple_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexed_triple</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_kronecker_triple_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexed_triple</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get kronecker embeddings</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -546,7 +546,7 @@
 
 <div class="viewcode-block" id="KronE.on_fit_start">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KronE.on_fit_start">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">normalize_head_entity_embeddings</span><span class="p">,</span> <span class="n">dicee</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">IdentityClass</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_triple_representation</span>
             <span class="n">model</span><span class="o">.</span><span class="n">get_triple_representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_kronecker_triple_representation</span>
@@ -559,7 +559,7 @@
 
 <div class="viewcode-block" id="Perturb">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.Perturb">[docs]</a>
-<span class="k">class</span> <span class="nc">Perturb</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Perturb</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; A callback for a three-Level Perturbation</span>
 
 <span class="sd">    Input Perturbation: During training an input x is perturbed by randomly replacing its element.</span>
@@ -572,7 +572,7 @@
 <span class="sd">    Output Perturbation:</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;input&quot;</span><span class="p">,</span> <span class="n">ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">scaler</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;input&quot;</span><span class="p">,</span> <span class="n">ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">scaler</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">frequency</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        level in {input, param, output}</span>
@@ -591,7 +591,7 @@
 
 <div class="viewcode-block" id="Perturb.on_train_batch_start">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.Perturb.on_train_batch_start">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_batch_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_train_batch_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">):</span>
         <span class="c1"># Modifications should be in-place</span>
         <span class="c1"># (1) Extract the input and output data points in a given batch.</span>
         <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">batch</span>

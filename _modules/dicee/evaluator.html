@@ -6,12 +6,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dicee.evaluator &mdash; DICE Embeddings 0.1.3.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
 
   
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
@@ -88,21 +88,21 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.evaluator</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">json</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 
-<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">load_json</span>
-<span class="kn">from</span> <span class="nn">.static_funcs</span> <span class="kn">import</span> <span class="n">pickle</span>
-<span class="kn">from</span> <span class="nn">.static_funcs_training</span> <span class="kn">import</span> <span class="n">evaluate_lp</span><span class="p">,</span> <span class="n">evaluate_bpe_lp</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span>
-<span class="kn">from</span> <span class="nn">.knowledge_graph</span> <span class="kn">import</span> <span class="n">KG</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">pickle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.static_funcs_training</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_lp</span><span class="p">,</span> <span class="n">evaluate_bpe_lp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.knowledge_graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">KG</span>
 
 
 <div class="viewcode-block" id="Evaluator">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator">[docs]</a>
-<span class="k">class</span> <span class="nc">Evaluator</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Evaluator</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Evaluator class to evaluate KGE models in various downstream tasks</span>
 
@@ -111,7 +111,7 @@
 <span class="sd">       executor: Executor class instance</span>
 <span class="sd">   &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">is_continual_training</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">is_continual_training</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span> <span class="o">=</span> <span class="kc">None</span>
@@ -126,7 +126,7 @@
 
 <div class="viewcode-block" id="Evaluator.vocab_preparation">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.vocab_preparation">[docs]</a>
-    <span class="k">def</span> <span class="nf">vocab_preparation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">vocab_preparation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        A function to wait future objects for the attributes of executor</span>
 
@@ -165,7 +165,7 @@
     <span class="c1"># @timeit</span>
 <div class="viewcode-block" id="Evaluator.eval">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.eval">[docs]</a>
-    <span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">KG</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">,</span> <span class="n">during_training</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">KG</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">,</span> <span class="n">during_training</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">KG</span><span class="p">),</span> <span class="s2">&quot;dataset must be KG&quot;</span>
         <span class="c1"># @TODO: Why this reassigment ?</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span> <span class="o">=</span> <span class="n">during_training</span>
@@ -221,7 +221,7 @@
         <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
 
 
-    <span class="k">def</span> <span class="nf">__load_indexed_datasets</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__load_indexed_datasets</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
         <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
             <span class="n">train_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/train_set.npy&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -237,7 +237,7 @@
             <span class="n">test_set</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">valid_set</span><span class="p">,</span> <span class="n">test_set</span>
 
-    <span class="k">def</span> <span class="nf">__load_and_set_mappings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__load_and_set_mappings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/er_vocab.p&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/re_vocab.p&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/ee_vocab.p&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">))</span>
@@ -247,7 +247,7 @@
 
 <div class="viewcode-block" id="Evaluator.eval_rank_of_head_and_tail_entity">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.eval_rank_of_head_and_tail_entity">[docs]</a>
-    <span class="k">def</span> <span class="nf">eval_rank_of_head_and_tail_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eval_rank_of_head_and_tail_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">):</span>
         <span class="c1"># 4. Test model on the training dataset if it is needed.</span>
         <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
             <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span>
@@ -266,7 +266,7 @@
 
 <div class="viewcode-block" id="Evaluator.eval_rank_of_head_and_tail_byte_pair_encoded_entity">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.eval_rank_of_head_and_tail_byte_pair_encoded_entity">[docs]</a>
-    <span class="k">def</span> <span class="nf">eval_rank_of_head_and_tail_byte_pair_encoded_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eval_rank_of_head_and_tail_byte_pair_encoded_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
                                                             <span class="n">train_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                                             <span class="n">valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                                             <span class="n">test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -291,7 +291,7 @@
 
 <div class="viewcode-block" id="Evaluator.eval_with_byte">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.eval_with_byte">[docs]</a>
-    <span class="k">def</span> <span class="nf">eval_with_byte</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">raw_train_set</span><span class="p">,</span> <span class="n">raw_valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">raw_test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eval_with_byte</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">raw_train_set</span><span class="p">,</span> <span class="n">raw_valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">raw_test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span>
                        <span class="n">form_of_labelling</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Evaluate model after reciprocal triples are added &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
@@ -312,7 +312,7 @@
 
 <div class="viewcode-block" id="Evaluator.eval_with_bpe_vs_all">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.eval_with_bpe_vs_all">[docs]</a>
-    <span class="k">def</span> <span class="nf">eval_with_bpe_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">raw_train_set</span><span class="p">,</span> <span class="n">raw_valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">raw_test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eval_with_bpe_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">raw_train_set</span><span class="p">,</span> <span class="n">raw_valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">raw_test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span>
                              <span class="n">form_of_labelling</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Evaluate model after reciprocal triples are added &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
@@ -336,7 +336,7 @@
 
 <div class="viewcode-block" id="Evaluator.eval_with_vs_all">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.eval_with_vs_all">[docs]</a>
-    <span class="k">def</span> <span class="nf">eval_with_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eval_with_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Evaluate model after reciprocal triples are added &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
             <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_k_vs_all</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span>
@@ -360,7 +360,7 @@
 
 <div class="viewcode-block" id="Evaluator.evaluate_lp_k_vs_all">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.evaluate_lp_k_vs_all">[docs]</a>
-    <span class="k">def</span> <span class="nf">evaluate_lp_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_lp_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Filtered link prediction evaluation.</span>
 <span class="sd">        :param model:</span>
@@ -452,12 +452,12 @@
 <div class="viewcode-block" id="Evaluator.evaluate_lp_with_byte">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.evaluate_lp_with_byte">[docs]</a>
     <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
-    <span class="k">def</span> <span class="nf">evaluate_lp_with_byte</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">info</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_lp_with_byte</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">info</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
         <span class="c1"># (1) set model to eval model</span>
         <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
         <span class="n">num_triples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span>
-        <span class="kn">import</span> <span class="nn">tiktoken</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">tiktoken</span>
 
         <span class="n">enc</span> <span class="o">=</span> <span class="n">tiktoken</span><span class="o">.</span><span class="n">get_encoding</span><span class="p">(</span><span class="s2">&quot;gpt2&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">info</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
@@ -479,7 +479,7 @@
 <div class="viewcode-block" id="Evaluator.evaluate_lp_bpe_k_vs_all">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.evaluate_lp_bpe_k_vs_all">[docs]</a>
     <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
-    <span class="k">def</span> <span class="nf">evaluate_lp_bpe_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_lp_bpe_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Parameters</span>
@@ -555,7 +555,7 @@
 
 <div class="viewcode-block" id="Evaluator.evaluate_lp">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.evaluate_lp">[docs]</a>
-    <span class="k">def</span> <span class="nf">evaluate_lp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_lp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;self.num_entities cannot be None&quot;</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;self.er_vocab cannot be None&quot;</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;self.re_vocab cannot be None&quot;</span>
@@ -567,7 +567,7 @@
 
 <div class="viewcode-block" id="Evaluator.dummy_eval">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.dummy_eval">[docs]</a>
-    <span class="k">def</span> <span class="nf">dummy_eval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dummy_eval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">trained_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="c1"># @TODO:CD: Why such naming! We need to document it better.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_continual_training</span><span class="p">:</span>
@@ -594,7 +594,7 @@
 
 <div class="viewcode-block" id="Evaluator.eval_with_data">
 <a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.eval_with_data">[docs]</a>
-    <span class="k">def</span> <span class="nf">eval_with_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">eval_with_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vocab_preparation</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
 
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Evaluate a trained model on a given a dataset&quot;&quot;&quot;</span>

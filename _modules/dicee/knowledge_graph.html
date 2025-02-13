@@ -6,12 +6,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dicee.knowledge_graph &mdash; DICE Embeddings 0.1.3.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
 
   
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
@@ -88,17 +88,17 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.knowledge_graph</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
-<span class="kn">from</span> <span class="nn">.read_preprocess_save_load_kg</span> <span class="kn">import</span> <span class="n">ReadFromDisk</span><span class="p">,</span> <span class="n">PreprocessKG</span><span class="p">,</span> <span class="n">LoadSaveToDisk</span>
-<span class="kn">import</span> <span class="nn">sys</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">polars</span> <span class="k">as</span> <span class="nn">pl</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.read_preprocess_save_load_kg</span><span class="w"> </span><span class="kn">import</span> <span class="n">ReadFromDisk</span><span class="p">,</span> <span class="n">PreprocessKG</span><span class="p">,</span> <span class="n">LoadSaveToDisk</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">polars</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pl</span>
 <div class="viewcode-block" id="KG">
 <a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph/index.html#dicee.knowledge_graph.KG">[docs]</a>
-<span class="k">class</span> <span class="nc">KG</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">KG</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Knowledge Graph &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">byte_pair_encoding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
                  <span class="n">add_noise_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -151,7 +151,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">idx_entity_to_bpe_shaped</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 
         <span class="c1"># WIP:</span>
-        <span class="kn">import</span> <span class="nn">tiktoken</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">tiktoken</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enc</span> <span class="o">=</span> <span class="n">tiktoken</span><span class="o">.</span><span class="n">get_encoding</span><span class="p">(</span><span class="s2">&quot;gpt2&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">n_vocab</span>  <span class="c1"># ~ 50</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_bpe_entities</span> <span class="o">=</span> <span class="kc">None</span>
@@ -190,7 +190,7 @@
 
 <div class="viewcode-block" id="KG.describe">
 <a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph/index.html#dicee.knowledge_graph.KG.describe">[docs]</a>
-    <span class="k">def</span> <span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">description_of_input</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">------------------- Description of Dataset </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_dir</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_dir</span><span class="p">,</span><span class="w"> </span><span class="nb">str</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="p">,</span><span class="w"> </span><span class="nb">str</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">path_single_kg</span><span class="si">}</span><span class="s1"> -------------------&#39;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">byte_pair_encoding</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">description_of_input</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Number of tokens:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_tokens</span><span class="si">}</span><span class="s1">&#39;</span> \
@@ -215,16 +215,16 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">entities_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">entities_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">relations_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">relations_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
 <div class="viewcode-block" id="KG.exists">
 <a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph/index.html#dicee.knowledge_graph.KG.exists">[docs]</a>
-    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">h</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span><span class="n">r</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span><span class="n">t</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">h</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span><span class="n">r</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span><span class="n">t</span><span class="p">:</span><span class="nb">str</span><span class="p">):</span>
         <span class="c1"># Row to check for existence</span>
         <span class="n">row_to_check</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;subject&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">h</span><span class="p">],</span> <span class="s1">&#39;relation&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">[</span><span class="n">r</span><span class="p">],</span> <span class="s1">&#39;object&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">t</span><span class="p">]}</span>
         <span class="c1"># Check if the row exists</span>
@@ -233,19 +233,19 @@
 
 <div class="viewcode-block" id="KG.__iter__">
 <a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph/index.html#dicee.knowledge_graph.KG.__iter__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_train_set</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
             <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">idx_to_entity</span><span class="p">[</span><span class="n">h</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">idx_to_relations</span><span class="p">[</span><span class="n">r</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">idx_to_entity</span><span class="p">[</span><span class="n">t</span><span class="p">]</span></div>
 
 <div class="viewcode-block" id="KG.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph/index.html#dicee.knowledge_graph.KG.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="KG.func_triple_to_bpe_representation">
 <a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph/index.html#dicee.knowledge_graph.KG.func_triple_to_bpe_representation">[docs]</a>
-    <span class="k">def</span> <span class="nf">func_triple_to_bpe_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">triple</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">func_triple_to_bpe_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">triple</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
         <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">triple</span><span class="p">:</span>

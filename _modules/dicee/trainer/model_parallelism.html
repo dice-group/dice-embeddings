@@ -6,12 +6,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dicee.trainer.model_parallelism &mdash; DICE Embeddings 0.1.3.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
 
   
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
@@ -88,16 +88,16 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.trainer.model_parallelism</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">..abstracts</span> <span class="kn">import</span> <span class="n">AbstractTrainer</span>
-<span class="kn">from</span> <span class="nn">..static_funcs_training</span> <span class="kn">import</span> <span class="n">make_iterable_verbose</span>
-<span class="kn">from</span> <span class="nn">..models.ensemble</span> <span class="kn">import</span> <span class="n">EnsembleKGE</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
-<span class="kn">import</span> <span class="nn">time</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractTrainer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..static_funcs_training</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_iterable_verbose</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..models.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">EnsembleKGE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
 <div class="viewcode-block" id="extract_input_outputs">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.extract_input_outputs">[docs]</a>
-<span class="k">def</span> <span class="nf">extract_input_outputs</span><span class="p">(</span><span class="n">z</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_input_outputs</span><span class="p">(</span><span class="n">z</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="c1"># pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
         <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">z</span>
@@ -120,7 +120,7 @@
 
 <div class="viewcode-block" id="find_good_batch_size">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.find_good_batch_size">[docs]</a>
-<span class="k">def</span> <span class="nf">find_good_batch_size</span><span class="p">(</span><span class="n">train_loader</span><span class="p">,</span><span class="n">tp_ensemble_model</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_good_batch_size</span><span class="p">(</span><span class="n">train_loader</span><span class="p">,</span><span class="n">tp_ensemble_model</span><span class="p">):</span>
     <span class="c1"># () Initial batch size.</span>
     <span class="n">initial_batch_size</span><span class="o">=</span><span class="n">train_loader</span><span class="o">.</span><span class="n">batch_size</span>
     <span class="c1"># () # of training data points.</span>
@@ -131,7 +131,7 @@
     <span class="c1"># () Log the number of training data points.</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of training data points:&quot;</span><span class="p">,</span><span class="n">training_dataset_size</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">increase_batch_size_until_cuda_out_of_memory</span><span class="p">(</span><span class="n">ensemble_model</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span><span class="n">delta</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">increase_batch_size_until_cuda_out_of_memory</span><span class="p">(</span><span class="n">ensemble_model</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span><span class="n">delta</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">delta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;delta cannot be None.&quot;</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="s2">&quot;delta must be a positive integer.&quot;</span>
         <span class="c1"># () Store the batch sizes and GPU memory usages in a tuple.</span>
@@ -214,7 +214,7 @@
 
 <div class="viewcode-block" id="forward_backward_update_loss">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.forward_backward_update_loss">[docs]</a>
-<span class="k">def</span> <span class="nf">forward_backward_update_loss</span><span class="p">(</span><span class="n">z</span><span class="p">:</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">float</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">forward_backward_update_loss</span><span class="p">(</span><span class="n">z</span><span class="p">:</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">float</span><span class="p">:</span>
     <span class="c1"># () Get a random batch of data points (z).</span>
     <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">extract_input_outputs</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
     <span class="c1"># () Move the batch of labels into the master GPU : GPU-0.</span>
@@ -232,14 +232,14 @@
 
 <div class="viewcode-block" id="TensorParallel">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.TensorParallel">[docs]</a>
-<span class="k">class</span> <span class="nc">TensorParallel</span><span class="p">(</span><span class="n">AbstractTrainer</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TensorParallel</span><span class="p">(</span><span class="n">AbstractTrainer</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="TensorParallel.fit">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.TensorParallel.fit">[docs]</a>
-    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Train model        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
         <span class="n">ensemble_model</span><span class="p">,</span> <span class="o">=</span> <span class="n">args</span>

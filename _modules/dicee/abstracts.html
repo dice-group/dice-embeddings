@@ -6,12 +6,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dicee.abstracts &mdash; DICE Embeddings 0.1.3.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
 
   
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
@@ -88,19 +88,19 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.abstracts</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">from</span> <span class="nn">.static_funcs</span> <span class="kn">import</span> <span class="n">load_model_ensemble</span><span class="p">,</span> <span class="n">load_model</span><span class="p">,</span> <span class="n">save_checkpoint_model</span><span class="p">,</span> <span class="n">load_json</span><span class="p">,</span> <span class="n">download_pretrained_model</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
-<span class="kn">import</span> <span class="nn">random</span>
-<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span>
-<span class="kn">import</span> <span class="nn">lightning</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_model_ensemble</span><span class="p">,</span> <span class="n">load_model</span><span class="p">,</span> <span class="n">save_checkpoint_model</span><span class="p">,</span> <span class="n">load_json</span><span class="p">,</span> <span class="n">download_pretrained_model</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">lightning</span>
 
 
 <div class="viewcode-block" id="AbstractTrainer">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractTrainer">[docs]</a>
-<span class="k">class</span> <span class="nc">AbstractTrainer</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AbstractTrainer</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Abstract class for Trainer class for knowledge graph embedding models</span>
 
@@ -114,7 +114,7 @@
 <span class="sd">            ?</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span> <span class="o">=</span> <span class="n">args</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span> <span class="o">=</span> <span class="n">callbacks</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_global_zero</span> <span class="o">=</span> <span class="kc">True</span>
@@ -128,7 +128,7 @@
 
 <div class="viewcode-block" id="AbstractTrainer.on_fit_start">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractTrainer.on_fit_start">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        A function to call callbacks before the training starts.</span>
 
@@ -149,7 +149,7 @@
 
 <div class="viewcode-block" id="AbstractTrainer.on_fit_end">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractTrainer.on_fit_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        A function to call callbacks at the ned of the training.</span>
 
@@ -170,7 +170,7 @@
 
 <div class="viewcode-block" id="AbstractTrainer.on_train_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractTrainer.on_train_epoch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        A function to call callbacks at the end of an epoch.</span>
 
@@ -191,7 +191,7 @@
 
 <div class="viewcode-block" id="AbstractTrainer.on_train_batch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractTrainer.on_train_batch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_batch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_train_batch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        A function to call callbacks at the end of each mini-batch during training.</span>
 
@@ -213,7 +213,7 @@
 <div class="viewcode-block" id="AbstractTrainer.save_checkpoint">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractTrainer.save_checkpoint">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">save_checkpoint</span><span class="p">(</span><span class="n">full_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_checkpoint</span><span class="p">(</span><span class="n">full_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        A static function to save a model into disk</span>
 
@@ -235,7 +235,7 @@
 
 <div class="viewcode-block" id="BaseInteractiveKGE">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE">[docs]</a>
-<span class="k">class</span> <span class="nc">BaseInteractiveKGE</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseInteractiveKGE</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Abstract/base class for using knowledge graph embedding models interactively.</span>
 
@@ -252,7 +252,7 @@
 <span class="sd">    apply_semantic_constraint : boolean</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">construct_ensemble</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">construct_ensemble</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">apply_semantic_constraint</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span>
@@ -278,7 +278,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">tuple_of_entity_relation_idx</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;byte_pair_encoding&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
-            <span class="kn">import</span> <span class="nn">tiktoken</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">tiktoken</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">enc</span> <span class="o">=</span> <span class="n">tiktoken</span><span class="o">.</span><span class="n">get_encoding</span><span class="p">(</span><span class="s2">&quot;gpt2&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">dummy_id</span> <span class="o">=</span> <span class="n">tiktoken</span><span class="o">.</span><span class="n">get_encoding</span><span class="p">(</span><span class="s2">&quot;gpt2&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="p">[</span><span class="s2">&quot;max_length_subword_tokens&quot;</span><span class="p">]</span>
@@ -299,13 +299,13 @@
 
 <div class="viewcode-block" id="BaseInteractiveKGE.get_eval_report">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_eval_report">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_eval_report</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_eval_report</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">load_json</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="s2">&quot;/eval_report.json&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseInteractiveKGE.get_bpe_token_representation">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_bpe_token_representation">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_bpe_token_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">str_entity_or_relation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_bpe_token_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">str_entity_or_relation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -338,7 +338,7 @@
 
 <div class="viewcode-block" id="BaseInteractiveKGE.get_padded_bpe_triple_representation">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_padded_bpe_triple_representation">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_padded_bpe_triple_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">List</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_padded_bpe_triple_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">List</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Parameters</span>
@@ -369,7 +369,7 @@
 
 <div class="viewcode-block" id="BaseInteractiveKGE.set_model_train_mode">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.set_model_train_mode">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_model_train_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_model_train_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Setting the model into training mode</span>
 
@@ -387,7 +387,7 @@
 
 <div class="viewcode-block" id="BaseInteractiveKGE.set_model_eval_mode">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.set_model_eval_mode">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_model_eval_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_model_eval_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Setting the model into eval mode</span>
 
@@ -405,12 +405,12 @@
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">name</span>
 
 <div class="viewcode-block" id="BaseInteractiveKGE.sample_entity">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.sample_entity">[docs]</a>
-    <span class="k">def</span> <span class="nf">sample_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">n</span> <span class="o">&gt;=</span> <span class="mi">0</span>
         <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">()],</span> <span class="n">n</span><span class="p">)</span></div>
@@ -418,7 +418,7 @@
 
 <div class="viewcode-block" id="BaseInteractiveKGE.sample_relation">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.sample_relation">[docs]</a>
-    <span class="k">def</span> <span class="nf">sample_relation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample_relation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">n</span> <span class="o">&gt;=</span> <span class="mi">0</span>
         <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">()],</span> <span class="n">n</span><span class="p">)</span></div>
@@ -426,7 +426,7 @@
 
 <div class="viewcode-block" id="BaseInteractiveKGE.is_seen">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.is_seen">[docs]</a>
-    <span class="k">def</span> <span class="nf">is_seen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">relation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_seen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">relation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">entity</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">entity</span><span class="p">)</span> <span class="k">else</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="n">relation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -435,7 +435,7 @@
 
 <div class="viewcode-block" id="BaseInteractiveKGE.save">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.save">[docs]</a>
-    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">t</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_ensemble</span><span class="p">:</span>
             <span class="n">save_checkpoint_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;/model_ensemble_interactive_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="si">}</span><span class="s1">.pt&#39;</span><span class="p">)</span>
@@ -445,19 +445,19 @@
 
 <div class="viewcode-block" id="BaseInteractiveKGE.get_entity_index">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_entity_index">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_entity_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_entity_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">x</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="BaseInteractiveKGE.get_relation_index">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_relation_index">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_relation_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_relation_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">[</span><span class="n">x</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="BaseInteractiveKGE.index_triple">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.index_triple">[docs]</a>
-    <span class="k">def</span> <span class="nf">index_triple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">relation</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">tail_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">index_triple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">relation</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">tail_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Index Triple</span>
@@ -491,7 +491,7 @@
 
 <div class="viewcode-block" id="BaseInteractiveKGE.add_new_entity_embeddings">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.add_new_entity_embeddings">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_new_entity_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_new_entity_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">embeddings</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">entity_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">:</span>
@@ -508,7 +508,7 @@
 
 <div class="viewcode-block" id="BaseInteractiveKGE.get_entity_embeddings">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_entity_embeddings">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_entity_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_entity_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return embedding of an entity given its string representation</span>
 
@@ -534,7 +534,7 @@
 
 <div class="viewcode-block" id="BaseInteractiveKGE.get_relation_embeddings">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_relation_embeddings">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_relation_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_relation_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return embedding of a relation given its string representation</span>
 
@@ -552,7 +552,7 @@
 
 <div class="viewcode-block" id="BaseInteractiveKGE.construct_input_and_output">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.construct_input_and_output">[docs]</a>
-    <span class="k">def</span> <span class="nf">construct_input_and_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">relation</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">tail_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">labels</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">construct_input_and_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">relation</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">tail_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">labels</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Construct a data point</span>
 <span class="sd">        :param head_entity:</span>
@@ -570,7 +570,7 @@
 
 <div class="viewcode-block" id="BaseInteractiveKGE.parameters">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.parameters">[docs]</a>
-    <span class="k">def</span> <span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span></div>
 </div>
 
@@ -578,7 +578,7 @@
 
 <div class="viewcode-block" id="AbstractCallback">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback">[docs]</a>
-<span class="k">class</span> <span class="nc">AbstractCallback</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">lightning</span><span class="o">.</span><span class="n">pytorch</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">Callback</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AbstractCallback</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">lightning</span><span class="o">.</span><span class="n">pytorch</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">Callback</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Abstract class for Callback class for knowledge graph embedding models</span>
 
@@ -588,12 +588,12 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span>
 
 <div class="viewcode-block" id="AbstractCallback.on_init_start">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback.on_init_start">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_init_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_init_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Parameter</span>
@@ -611,7 +611,7 @@
 
 <div class="viewcode-block" id="AbstractCallback.on_init_end">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback.on_init_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_init_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_init_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Call at the beginning of the training.</span>
 
@@ -630,7 +630,7 @@
 
 <div class="viewcode-block" id="AbstractCallback.on_fit_start">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback.on_fit_start">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Call at the beginning of the training.</span>
 
@@ -649,7 +649,7 @@
 
 <div class="viewcode-block" id="AbstractCallback.on_train_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback.on_train_epoch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Call at the end of each epoch during training.</span>
 
@@ -668,7 +668,7 @@
 
 <div class="viewcode-block" id="AbstractCallback.on_train_batch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback.on_train_batch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_batch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_train_batch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Call at the end of each mini-batch during the training.</span>
 
@@ -688,7 +688,7 @@
 
 <div class="viewcode-block" id="AbstractCallback.on_fit_end">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback.on_fit_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Call at the end of the training.</span>
 
@@ -709,7 +709,7 @@
 
 <div class="viewcode-block" id="AbstractPPECallback">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractPPECallback">[docs]</a>
-<span class="k">class</span> <span class="nc">AbstractPPECallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AbstractPPECallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Abstract class for Callback class for knowledge graph embedding models</span>
 
@@ -719,7 +719,7 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_epochs</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">epoch_to_start</span><span class="p">,</span> <span class="n">last_percent_to_consider</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_epochs</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">epoch_to_start</span><span class="p">,</span> <span class="n">last_percent_to_consider</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">AbstractPPECallback</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">=</span> <span class="n">num_epochs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
@@ -744,13 +744,13 @@
 
 <div class="viewcode-block" id="AbstractPPECallback.on_fit_start">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractPPECallback.on_fit_start">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="AbstractPPECallback.on_fit_end">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractPPECallback.on_fit_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/trainer_checkpoint_main.pt&quot;</span><span class="p">):</span>
             <span class="n">param_ensemble</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/trainer_checkpoint_main.pt&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">))</span>
             <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">param_ensemble</span><span class="p">)</span>
@@ -760,7 +760,7 @@
 
 <div class="viewcode-block" id="AbstractPPECallback.store_ensemble">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractPPECallback.store_ensemble">[docs]</a>
-    <span class="k">def</span> <span class="nf">store_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param_ensemble</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">store_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param_ensemble</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># (3) Save the updated parameter ensemble model.</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">param_ensemble</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/trainer_checkpoint_main.pt&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_counter</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>

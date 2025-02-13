@@ -6,12 +6,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dicee.dataset_classes &mdash; DICE Embeddings 0.1.3.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
 
   
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
@@ -88,19 +88,19 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.dataset_classes</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">pytorch_lightning</span> <span class="k">as</span> <span class="nn">pl</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
-<span class="kn">from</span> <span class="nn">.static_preprocess_funcs</span> <span class="kn">import</span> <span class="n">mapping_from_first_two_cols_to_third</span>
-<span class="kn">from</span> <span class="nn">.static_funcs</span> <span class="kn">import</span> <span class="n">timeit</span><span class="p">,</span> <span class="n">load_term_mapping</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytorch_lightning</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.static_preprocess_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">mapping_from_first_two_cols_to_third</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">timeit</span><span class="p">,</span> <span class="n">load_term_mapping</span>
 
 
 <div class="viewcode-block" id="reload_dataset">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.reload_dataset">[docs]</a>
 <span class="nd">@timeit</span>
-<span class="k">def</span> <span class="nf">reload_dataset</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">,</span> <span class="n">scoring_technique</span><span class="p">,</span> <span class="n">neg_ratio</span><span class="p">,</span> <span class="n">label_smoothing_rate</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">reload_dataset</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">,</span> <span class="n">scoring_technique</span><span class="p">,</span> <span class="n">neg_ratio</span><span class="p">,</span> <span class="n">label_smoothing_rate</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Reload the files from disk to construct the Pytorch dataset &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">construct_dataset</span><span class="p">(</span><span class="n">train_set</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span> <span class="o">+</span> <span class="s1">&#39;/train_set.npy&#39;</span><span class="p">),</span>
                              <span class="n">valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -116,7 +116,7 @@
 <div class="viewcode-block" id="construct_dataset">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.construct_dataset">[docs]</a>
 <span class="nd">@timeit</span>
-<span class="k">def</span> <span class="nf">construct_dataset</span><span class="p">(</span><span class="o">*</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">construct_dataset</span><span class="p">(</span><span class="o">*</span><span class="p">,</span>
                       <span class="n">train_set</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">],</span>
                       <span class="n">valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                       <span class="n">test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -201,8 +201,8 @@
 
 <div class="viewcode-block" id="BPE_NegativeSamplingDataset">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.BPE_NegativeSamplingDataset">[docs]</a>
-<span class="k">class</span> <span class="nc">BPE_NegativeSamplingDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">ordered_shaped_bpe_entities</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">neg_ratio</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BPE_NegativeSamplingDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">ordered_shaped_bpe_entities</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">neg_ratio</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">train_set</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
@@ -214,19 +214,19 @@
 
 <div class="viewcode-block" id="BPE_NegativeSamplingDataset.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.BPE_NegativeSamplingDataset.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_datapoints</span></div>
 
 
 <div class="viewcode-block" id="BPE_NegativeSamplingDataset.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.BPE_NegativeSamplingDataset.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="BPE_NegativeSamplingDataset.collate_fn">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.BPE_NegativeSamplingDataset.collate_fn">[docs]</a>
-    <span class="k">def</span> <span class="nf">collate_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_shaped_bpe_triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">collate_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_shaped_bpe_triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]):</span>
         <span class="n">batch_of_bpe_triples</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">batch_shaped_bpe_triples</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="n">size_of_batch</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">token_length</span> <span class="o">=</span> <span class="n">batch_of_bpe_triples</span><span class="o">.</span><span class="n">shape</span>
@@ -258,8 +258,8 @@
 
 <div class="viewcode-block" id="MultiLabelDataset">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.MultiLabelDataset">[docs]</a>
-<span class="k">class</span> <span class="nc">MultiLabelDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">train_indices_target</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">target_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiLabelDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">train_indices_target</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">target_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
                  <span class="n">torch_ordered_shaped_bpe_entities</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_set</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_indices_target</span><span class="p">)</span>
@@ -274,13 +274,13 @@
 
 <div class="viewcode-block" id="MultiLabelDataset.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.MultiLabelDataset.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_datapoints</span></div>
 
 
 <div class="viewcode-block" id="MultiLabelDataset.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.MultiLabelDataset.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="c1"># (1) Initialize as all zeros.</span>
         <span class="n">y_vec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_dim</span><span class="p">)</span>
         <span class="c1"># (2) Indices of labels.</span>
@@ -295,7 +295,7 @@
 
 <div class="viewcode-block" id="MultiClassClassificationDataset">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.MultiClassClassificationDataset">[docs]</a>
-<span class="k">class</span> <span class="nc">MultiClassClassificationDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MultiClassClassificationDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">       Dataset for the 1vsALL training strategy</span>
 
@@ -319,7 +319,7 @@
 <span class="sd">       torch.utils.data.Dataset</span>
 <span class="sd">       &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subword_units</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">block_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subword_units</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">block_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subword_units</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">subword_units</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
@@ -330,13 +330,13 @@
 
 <div class="viewcode-block" id="MultiClassClassificationDataset.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.MultiClassClassificationDataset.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_of_data_points</span></div>
 
 
 <div class="viewcode-block" id="MultiClassClassificationDataset.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.MultiClassClassificationDataset.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">[</span><span class="n">idx</span><span class="p">:</span><span class="n">idx</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="p">]</span>
         <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span></div>
@@ -346,7 +346,7 @@
 
 <div class="viewcode-block" id="OnevsAllDataset">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.OnevsAllDataset">[docs]</a>
-<span class="k">class</span> <span class="nc">OnevsAllDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OnevsAllDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">       Dataset for the 1vsALL training strategy</span>
 
@@ -370,7 +370,7 @@
 <span class="sd">       torch.utils.data.Dataset</span>
 <span class="sd">       &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">entity_idxs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">entity_idxs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_set_idx</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_set_idx</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_set_idx</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
@@ -379,13 +379,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">collate_fn</span> <span class="o">=</span> <span class="kc">None</span>
 <div class="viewcode-block" id="OnevsAllDataset.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.OnevsAllDataset.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="OnevsAllDataset.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.OnevsAllDataset.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="n">y_vec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_dim</span><span class="p">)</span>
         <span class="n">triple</span><span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
         <span class="n">y_vec</span><span class="p">[</span><span class="n">triple</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>
@@ -394,7 +394,7 @@
 
 <div class="viewcode-block" id="KvsAll">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.KvsAll">[docs]</a>
-<span class="k">class</span> <span class="nc">KvsAll</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">KvsAll</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Creates a dataset for KvsAll training by inheriting from torch.utils.data.Dataset.</span>
 <span class="sd">    Let D denote a dataset for KvsAll training and be defined as D:= {(x,y)_i}_i ^N, where</span>
 <span class="sd">    x: (h,r) is an unique tuple of an entity h \in E and a relation r \in R that has been seed in the input graph.</span>
@@ -431,7 +431,7 @@
 <span class="sd">    ? array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">entity_idxs</span><span class="p">,</span> <span class="n">relation_idxs</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">entity_idxs</span><span class="p">,</span> <span class="n">relation_idxs</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">label_smoothing_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_set_idx</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
@@ -477,14 +477,14 @@
 
 <div class="viewcode-block" id="KvsAll.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.KvsAll.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_target</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="KvsAll.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.KvsAll.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="c1"># 1. Initialize a vector of output.</span>
         <span class="n">y_vec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_dim</span><span class="p">)</span>
         <span class="n">y_vec</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">train_target</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span> <span class="o">=</span> <span class="mf">1.0</span>
@@ -498,7 +498,7 @@
 
 <div class="viewcode-block" id="AllvsAll">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.AllvsAll">[docs]</a>
-<span class="k">class</span> <span class="nc">AllvsAll</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AllvsAll</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Creates a dataset for AllvsAll training by inheriting from torch.utils.data.Dataset.</span>
 <span class="sd">    Let D denote a dataset for AllvsAll training and be defined as D:= {(x,y)_i}_i ^N, where</span>
 <span class="sd">    x: (h,r) is a possible unique tuple of an entity h \in E and a relation r \in R. Hence N = |E| x |R|</span>
@@ -536,7 +536,7 @@
 <span class="sd">    ? array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">entity_idxs</span><span class="p">,</span> <span class="n">relation_idxs</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">entity_idxs</span><span class="p">,</span> <span class="n">relation_idxs</span><span class="p">,</span>
                  <span class="n">label_smoothing_rate</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_set_idx</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
@@ -569,14 +569,14 @@
 
 <div class="viewcode-block" id="AllvsAll.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.AllvsAll.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_target</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AllvsAll.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.AllvsAll.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="c1"># 1. Initialize a vector of output.</span>
         <span class="n">y_vec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_dim</span><span class="p">)</span>
         <span class="n">existing_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_target</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
@@ -592,7 +592,7 @@
 
 <div class="viewcode-block" id="OnevsSample">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.OnevsSample">[docs]</a>
-<span class="k">class</span> <span class="nc">OnevsSample</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OnevsSample</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A custom PyTorch Dataset class for knowledge graph embeddings, which includes</span>
 <span class="sd">    both positive and negative sampling for a given dataset for multi-class classification problem..</span>
@@ -616,7 +616,7 @@
 <span class="sd">        collate_fn (function, optional): A function that can be used to collate data samples into</span>
 <span class="sd">            batches (set to None by default).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">,</span> <span class="n">num_relations</span><span class="p">,</span> <span class="n">neg_sample_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">,</span> <span class="n">num_relations</span><span class="p">,</span> <span class="n">neg_sample_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">label_smoothing_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="c1"># Input validation</span>
@@ -639,14 +639,14 @@
 
 <div class="viewcode-block" id="OnevsSample.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.OnevsSample.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the number of samples in the dataset.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="OnevsSample.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.OnevsSample.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">         Retrieves a single data sample from the dataset at the given index.</span>
 
@@ -689,7 +689,7 @@
 
 <div class="viewcode-block" id="KvsSampleDataset">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.KvsSampleDataset">[docs]</a>
-<span class="k">class</span> <span class="nc">KvsSampleDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">KvsSampleDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    KvsSample a Dataset:</span>
 <span class="sd">        D:= {(x,y)_i}_i ^N, where</span>
@@ -718,7 +718,7 @@
 <span class="sd">       torch.utils.data.Dataset</span>
 <span class="sd">       &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">entity_idxs</span><span class="p">,</span> <span class="n">relation_idxs</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">entity_idxs</span><span class="p">,</span> <span class="n">relation_idxs</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">neg_ratio</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">label_smoothing_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
@@ -742,13 +742,13 @@
         <span class="k">del</span> <span class="n">store</span>
 <div class="viewcode-block" id="KvsSampleDataset.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.KvsSampleDataset.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="KvsSampleDataset.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.KvsSampleDataset.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="c1"># (1) Get i.th unique (head,relation) pair.</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
         <span class="c1"># (2) Get tail entities given (1).</span>
@@ -771,8 +771,8 @@
 
 <div class="viewcode-block" id="NegSampleDataset">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.NegSampleDataset">[docs]</a>
-<span class="k">class</span> <span class="nc">NegSampleDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_relations</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">neg_sample_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NegSampleDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_relations</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">neg_sample_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
         <span class="c1"># https://pytorch.org/docs/stable/data.html#multi-process-data-loading</span>
         <span class="c1"># TLDL; replace Python objects with non-refcounted representations such as Pandas, Numpy or PyArrow objects</span>
@@ -786,13 +786,13 @@
 
 <div class="viewcode-block" id="NegSampleDataset.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.NegSampleDataset.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span></div>
 
 
 <div class="viewcode-block" id="NegSampleDataset.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.NegSampleDataset.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="c1"># (1) Get a triple.</span>
         <span class="n">triple</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
         <span class="c1"># (2) Sample an entity.</span>
@@ -815,7 +815,7 @@
 
 <div class="viewcode-block" id="TriplePredictionDataset">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.TriplePredictionDataset">[docs]</a>
-<span class="k">class</span> <span class="nc">TriplePredictionDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TriplePredictionDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Triple Dataset</span>
 
@@ -847,7 +847,7 @@
 <span class="sd">       torch.utils.data.Dataset</span>
 <span class="sd">       &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_relations</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">neg_sample_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_relations</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">neg_sample_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
                  <span class="n">label_smoothing_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
         <span class="c1"># https://pytorch.org/docs/stable/data.html#multi-process-data-loading</span>
@@ -865,19 +865,19 @@
 
 <div class="viewcode-block" id="TriplePredictionDataset.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.TriplePredictionDataset.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span></div>
 
 
 <div class="viewcode-block" id="TriplePredictionDataset.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.TriplePredictionDataset.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span><span class="o">.</span><span class="n">long</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="TriplePredictionDataset.collate_fn">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.TriplePredictionDataset.collate_fn">[docs]</a>
-    <span class="k">def</span> <span class="nf">collate_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">collate_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]):</span>
         <span class="n">batch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">batch</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">batch</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
         <span class="n">size_of_batch</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">shape</span>
@@ -940,7 +940,7 @@
 
 <div class="viewcode-block" id="CVDataModule">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.CVDataModule">[docs]</a>
-<span class="k">class</span> <span class="nc">CVDataModule</span><span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">LightningDataModule</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CVDataModule</span><span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">LightningDataModule</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">       Create a Dataset for cross validation</span>
 
@@ -966,7 +966,7 @@
 <span class="sd">       ?</span>
 <span class="sd">       &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">,</span> <span class="n">num_relations</span><span class="p">,</span> <span class="n">neg_sample_ratio</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">,</span> <span class="n">num_relations</span><span class="p">,</span> <span class="n">neg_sample_ratio</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span>
                  <span class="n">num_workers</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_set_idx</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
@@ -979,7 +979,7 @@
 
 <div class="viewcode-block" id="CVDataModule.train_dataloader">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.CVDataModule.train_dataloader">[docs]</a>
-    <span class="k">def</span> <span class="nf">train_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataLoader</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataLoader</span><span class="p">:</span>
         <span class="n">train_set</span> <span class="o">=</span> <span class="n">TriplePredictionDataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set_idx</span><span class="p">,</span>
                                             <span class="n">num_entities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span>
                                             <span class="n">num_relations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span>
@@ -992,19 +992,19 @@
 
 <div class="viewcode-block" id="CVDataModule.setup">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.CVDataModule.setup">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="CVDataModule.transfer_batch_to_device">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.CVDataModule.transfer_batch_to_device">[docs]</a>
-    <span class="k">def</span> <span class="nf">transfer_batch_to_device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transfer_batch_to_device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="CVDataModule.prepare_data">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.CVDataModule.prepare_data">[docs]</a>
-    <span class="k">def</span> <span class="nf">prepare_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">prepare_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="c1"># Nothing to be prepared for now.</span>
         <span class="k">pass</span></div>
 </div>

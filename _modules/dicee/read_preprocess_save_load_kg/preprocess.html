@@ -6,12 +6,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dicee.read_preprocess_save_load_kg.preprocess &mdash; DICE Embeddings 0.1.3.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
 
   
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
@@ -88,28 +88,28 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.read_preprocess_save_load_kg.preprocess</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">polars</span> <span class="k">as</span> <span class="nn">pl</span>
-<span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="n">timeit</span><span class="p">,</span> <span class="n">pandas_dataframe_indexer</span><span class="p">,</span> <span class="n">dataset_sanity_checking</span>
-<span class="kn">from</span> <span class="nn">dicee.static_funcs</span> <span class="kn">import</span> <span class="n">numpy_data_type_changer</span>
-<span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="n">get_er_vocab</span><span class="p">,</span> <span class="n">get_re_vocab</span><span class="p">,</span> <span class="n">get_ee_vocab</span><span class="p">,</span> <span class="n">apply_reciprical_or_noise</span><span class="p">,</span> <span class="n">polars_dataframe_indexer</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">concurrent</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">polars</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">timeit</span><span class="p">,</span> <span class="n">pandas_dataframe_indexer</span><span class="p">,</span> <span class="n">dataset_sanity_checking</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dicee.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">numpy_data_type_changer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_er_vocab</span><span class="p">,</span> <span class="n">get_re_vocab</span><span class="p">,</span> <span class="n">get_ee_vocab</span><span class="p">,</span> <span class="n">apply_reciprical_or_noise</span><span class="p">,</span> <span class="n">polars_dataframe_indexer</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">concurrent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
 
 
 <div class="viewcode-block" id="PreprocessKG">
 <a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG">[docs]</a>
-<span class="k">class</span> <span class="nc">PreprocessKG</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PreprocessKG</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Preprocess the data in memory &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kg</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kg</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kg</span> <span class="o">=</span> <span class="n">kg</span>
 
 <div class="viewcode-block" id="PreprocessKG.start">
 <a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.start">[docs]</a>
-    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Preprocess train, valid and test datasets stored in knowledge graph instance</span>
 
@@ -251,7 +251,7 @@
 
 
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">__replace_values_df</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__replace_values_df</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span>
         <span class="kc">None</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Map a n by 3 pandas dataframe containing n triples into a list of n tuples</span>
@@ -277,7 +277,7 @@
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bpe_triples</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">bpe_triples</span>
 
-    <span class="k">def</span> <span class="nf">__finding_max_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concat_of_train_val_test</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__finding_max_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concat_of_train_val_test</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="n">max_length_subword_tokens</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">concat_of_train_val_test</span><span class="p">:</span>
             <span class="n">max_token_length_per_triple</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
@@ -285,7 +285,7 @@
                 <span class="n">max_length_subword_tokens</span> <span class="o">=</span> <span class="n">max_token_length_per_triple</span>
         <span class="k">return</span> <span class="n">max_length_subword_tokens</span>
 
-    <span class="k">def</span> <span class="nf">__padding_in_place</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">max_length_subword_tokens</span><span class="p">,</span> <span class="n">bpe_subwords_to_shaped_bpe_entities</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__padding_in_place</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">max_length_subword_tokens</span><span class="p">,</span> <span class="n">bpe_subwords_to_shaped_bpe_entities</span><span class="p">,</span>
                            <span class="n">bpe_subwords_to_shaped_bpe_relations</span><span class="p">):</span>
 
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
@@ -313,7 +313,7 @@
 
 <div class="viewcode-block" id="PreprocessKG.preprocess_with_byte_pair_encoding">
 <a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_byte_pair_encoding">[docs]</a>
-    <span class="k">def</span> <span class="nf">preprocess_with_byte_pair_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">preprocess_with_byte_pair_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># n b</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">==</span> <span class="p">[</span><span class="s1">&#39;subject&#39;</span><span class="p">,</span> <span class="s1">&#39;relation&#39;</span><span class="p">,</span> <span class="s1">&#39;object&#39;</span><span class="p">]</span>
@@ -338,7 +338,7 @@
 <div class="viewcode-block" id="PreprocessKG.preprocess_with_byte_pair_encoding_with_padding">
 <a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_byte_pair_encoding_with_padding">[docs]</a>
     <span class="nd">@timeit</span>
-    <span class="k">def</span> <span class="nf">preprocess_with_byte_pair_encoding_with_padding</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">preprocess_with_byte_pair_encoding_with_padding</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
 
@@ -382,7 +382,7 @@
 <div class="viewcode-block" id="PreprocessKG.preprocess_with_pandas">
 <a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_pandas">[docs]</a>
     <span class="nd">@timeit</span>
-    <span class="k">def</span> <span class="nf">preprocess_with_pandas</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">preprocess_with_pandas</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Preprocess train, valid and test datasets stored in knowledge graph instance with pandas</span>
 
@@ -443,7 +443,7 @@
 <div class="viewcode-block" id="PreprocessKG.preprocess_with_polars">
 <a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_polars">[docs]</a>
     <span class="nd">@timeit</span>
-    <span class="k">def</span> <span class="nf">preprocess_with_polars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">preprocess_with_polars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        Returns</span>
@@ -454,7 +454,7 @@
 
         <span class="c1"># (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_reciprocal</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
-            <span class="k">def</span> <span class="nf">adding_reciprocal_triples</span><span class="p">():</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">adding_reciprocal_triples</span><span class="p">():</span>
 <span class="w">                </span><span class="sd">&quot;&quot;&quot; Add reciprocal triples &quot;&quot;&quot;</span>
                 <span class="c1"># (1.1) Add reciprocal triples into training set</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="o">.</span><span class="n">select</span><span class="p">([</span>
@@ -487,7 +487,7 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="ow">is</span> <span class="kc">None</span>
-        <span class="k">def</span> <span class="nf">concat_splits</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">concat_splits</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">test</span><span class="p">):</span>
             <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">train</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">x</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
@@ -532,7 +532,7 @@
 
 <div class="viewcode-block" id="PreprocessKG.sequential_vocabulary_construction">
 <a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.sequential_vocabulary_construction">[docs]</a>
-    <span class="k">def</span> <span class="nf">sequential_vocabulary_construction</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sequential_vocabulary_construction</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        (1) Read input data into memory</span>
 <span class="sd">        (2) Remove triples with a condition</span>

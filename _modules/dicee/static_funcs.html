@@ -6,12 +6,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dicee.static_funcs &mdash; DICE Embeddings 0.1.3.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
 
   
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
@@ -88,32 +88,32 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.static_funcs</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span>
-<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Pyke</span><span class="p">,</span> <span class="n">DistMult</span><span class="p">,</span> <span class="n">KeciBase</span><span class="p">,</span> <span class="n">Keci</span><span class="p">,</span> <span class="n">TransE</span><span class="p">,</span> <span class="n">DeCaL</span><span class="p">,</span> <span class="n">DualE</span><span class="p">,</span>\
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pyke</span><span class="p">,</span> <span class="n">DistMult</span><span class="p">,</span> <span class="n">CKeci</span><span class="p">,</span> <span class="n">Keci</span><span class="p">,</span> <span class="n">TransE</span><span class="p">,</span> <span class="n">DeCaL</span><span class="p">,</span> <span class="n">DualE</span><span class="p">,</span>\
     <span class="n">ComplEx</span><span class="p">,</span> <span class="n">AConEx</span><span class="p">,</span> <span class="n">AConvO</span><span class="p">,</span> <span class="n">AConvQ</span><span class="p">,</span> <span class="n">ConvQ</span><span class="p">,</span> <span class="n">ConvO</span><span class="p">,</span> <span class="n">ConEx</span><span class="p">,</span> <span class="n">QMult</span><span class="p">,</span> <span class="n">OMult</span><span class="p">,</span> <span class="n">Shallom</span><span class="p">,</span> <span class="n">LFMult</span>
-<span class="kn">from</span> <span class="nn">.models.pykeen_models</span> <span class="kn">import</span> <span class="n">PykeenKGE</span>
-<span class="kn">from</span> <span class="nn">.models.transformers</span> <span class="kn">import</span> <span class="n">BytE</span>
-<span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">import</span> <span class="nn">glob</span>
-<span class="kn">import</span> <span class="nn">functools</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">psutil</span>
-<span class="kn">from</span> <span class="nn">.models.base_model</span> <span class="kn">import</span> <span class="n">BaseKGE</span>
-<span class="kn">import</span> <span class="nn">pickle</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
-<span class="kn">import</span> <span class="nn">polars</span> <span class="k">as</span> <span class="nn">pl</span>
-<span class="kn">import</span> <span class="nn">requests</span>
-<span class="kn">import</span> <span class="nn">csv</span>
-<span class="kn">from</span> <span class="nn">.models.ensemble</span> <span class="kn">import</span> <span class="n">EnsembleKGE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models.pykeen_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">PykeenKGE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models.transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">BytE</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">psutil</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models.base_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseKGE</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">polars</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pl</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">EnsembleKGE</span>
 
 <div class="viewcode-block" id="create_recipriocal_triples">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.create_recipriocal_triples">[docs]</a>
-<span class="k">def</span> <span class="nf">create_recipriocal_triples</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_recipriocal_triples</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Add inverse triples into dask dataframe</span>
 <span class="sd">    :param x:</span>
@@ -127,7 +127,7 @@
 
 <div class="viewcode-block" id="get_er_vocab">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.get_er_vocab">[docs]</a>
-<span class="k">def</span> <span class="nf">get_er_vocab</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_er_vocab</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
     <span class="c1"># head entity and relation</span>
     <span class="n">er_vocab</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">triple</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
@@ -141,7 +141,7 @@
 
 <div class="viewcode-block" id="get_re_vocab">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.get_re_vocab">[docs]</a>
-<span class="k">def</span> <span class="nf">get_re_vocab</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_re_vocab</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
     <span class="c1"># head entity and relation</span>
     <span class="n">re_vocab</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">triple</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
@@ -154,7 +154,7 @@
 
 <div class="viewcode-block" id="get_ee_vocab">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.get_ee_vocab">[docs]</a>
-<span class="k">def</span> <span class="nf">get_ee_vocab</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_ee_vocab</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
     <span class="c1"># head entity and relation</span>
     <span class="n">ee_vocab</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">triple</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
@@ -167,9 +167,9 @@
 
 <div class="viewcode-block" id="timeit">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.timeit">[docs]</a>
-<span class="k">def</span> <span class="nf">timeit</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">timeit</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
     <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">timeit_wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">timeit_wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
@@ -185,7 +185,7 @@
 <span class="c1"># TODO:CD: Deprecate the pickle usage for data serialization.</span>
 <div class="viewcode-block" id="save_pickle">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.save_pickle">[docs]</a>
-<span class="k">def</span> <span class="nf">save_pickle</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">object</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_path</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_pickle</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">object</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">file_path</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">data</span><span class="p">:</span>
         <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
@@ -194,14 +194,14 @@
 <span class="c1"># TODO:CD: Deprecate the pickle usage for data serialization.</span>
 <div class="viewcode-block" id="load_pickle">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.load_pickle">[docs]</a>
-<span class="k">def</span> <span class="nf">load_pickle</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_pickle</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="load_term_mapping">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.load_term_mapping">[docs]</a>
-<span class="k">def</span> <span class="nf">load_term_mapping</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_term_mapping</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">load_pickle</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="n">file_path</span><span class="o">+</span><span class="s2">&quot;.p&quot;</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
@@ -212,7 +212,7 @@
 <span class="c1"># @TODO: Could these funcs can be merged?</span>
 <div class="viewcode-block" id="select_model">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.select_model">[docs]</a>
-<span class="k">def</span> <span class="nf">select_model</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">is_continual_training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">storage_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">select_model</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">is_continual_training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">storage_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
     <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">is_continual_training</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
@@ -256,7 +256,7 @@
 
 <div class="viewcode-block" id="load_model">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.load_model">[docs]</a>
-<span class="k">def</span> <span class="nf">load_model</span><span class="p">(</span><span class="n">path_of_experiment_folder</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;model.pt&#39;</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_model</span><span class="p">(</span><span class="n">path_of_experiment_folder</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;model.pt&#39;</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Load weights and initialize pytorch module from namespace arguments&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">verbose</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Loading model </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
@@ -325,7 +325,7 @@
 
 <div class="viewcode-block" id="load_model_ensemble">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.load_model_ensemble">[docs]</a>
-<span class="k">def</span> <span class="nf">load_model_ensemble</span><span class="p">(</span><span class="n">path_of_experiment_folder</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">BaseKGE</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_model_ensemble</span><span class="p">(</span><span class="n">path_of_experiment_folder</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">BaseKGE</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Construct Ensemble Of weights and initialize pytorch module from namespace arguments</span>
 
 <span class="sd">    (1) Detect models under given path</span>
@@ -394,7 +394,7 @@
 
 <div class="viewcode-block" id="save_numpy_ndarray">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.save_numpy_ndarray">[docs]</a>
-<span class="k">def</span> <span class="nf">save_numpy_ndarray</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_numpy_ndarray</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span></div>
 
@@ -402,7 +402,7 @@
 
 <div class="viewcode-block" id="numpy_data_type_changer">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.numpy_data_type_changer">[docs]</a>
-<span class="k">def</span> <span class="nf">numpy_data_type_changer</span><span class="p">(</span><span class="n">train_set</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">numpy_data_type_changer</span><span class="p">(</span><span class="n">train_set</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Detect most efficient data type for a given triples</span>
 <span class="sd">    :param train_set:</span>
@@ -427,7 +427,7 @@
 
 <div class="viewcode-block" id="save_checkpoint_model">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.save_checkpoint_model">[docs]</a>
-<span class="k">def</span> <span class="nf">save_checkpoint_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_checkpoint_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Store Pytorch model into disk&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">BaseKGE</span><span class="p">):</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">path</span><span class="p">)</span>
@@ -443,7 +443,7 @@
 
 <div class="viewcode-block" id="store">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.store">[docs]</a>
-<span class="k">def</span> <span class="nf">store</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="n">full_storage_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">store</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="n">full_storage_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
           <span class="n">save_embeddings_as_csv</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">full_storage_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
@@ -468,7 +468,7 @@
 
 <div class="viewcode-block" id="add_noisy_triples">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.add_noisy_triples">[docs]</a>
-<span class="k">def</span> <span class="nf">add_noisy_triples</span><span class="p">(</span><span class="n">train_set</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">add_noise_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_noisy_triples</span><span class="p">(</span><span class="n">train_set</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">add_noise_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Add randomly constructed triples</span>
 <span class="sd">    :param train_set:</span>
@@ -500,7 +500,7 @@
 
 <div class="viewcode-block" id="read_or_load_kg">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.read_or_load_kg">[docs]</a>
-<span class="k">def</span> <span class="nf">read_or_load_kg</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_or_load_kg</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;*** Read or Load Knowledge Graph  ***&#39;</span><span class="p">)</span>
     <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
     <span class="n">kg</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">dataset_dir</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="p">,</span>
@@ -527,7 +527,7 @@
 
 <div class="viewcode-block" id="intialize_model">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.intialize_model">[docs]</a>
-<span class="k">def</span> <span class="nf">intialize_model</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">intialize_model</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
     <span class="k">if</span> <span class="n">verbose</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initializing </span><span class="si">{</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
     <span class="n">model_name</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span>
@@ -576,8 +576,8 @@
     <span class="k">elif</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;Keci&#39;</span><span class="p">:</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">Keci</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
         <span class="n">form_of_labelling</span> <span class="o">=</span> <span class="s1">&#39;EntityPrediction&#39;</span>
-    <span class="k">elif</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;KeciBase&#39;</span><span class="p">:</span>
-        <span class="n">model</span> <span class="o">=</span> <span class="n">KeciBase</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;CKeci&#39;</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">CKeci</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
         <span class="n">form_of_labelling</span> <span class="o">=</span> <span class="s1">&#39;EntityPrediction&#39;</span>
     <span class="k">elif</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;BytE&#39;</span><span class="p">:</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">BytE</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
@@ -599,7 +599,7 @@
 
 <div class="viewcode-block" id="load_json">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.load_json">[docs]</a>
-<span class="k">def</span> <span class="nf">load_json</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_json</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">r</span><span class="p">:</span>
         <span class="n">args</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">args</span></div>
@@ -608,7 +608,7 @@
 
 <div class="viewcode-block" id="save_embeddings">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.save_embeddings">[docs]</a>
-<span class="k">def</span> <span class="nf">save_embeddings</span><span class="p">(</span><span class="n">embeddings</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">indexes</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_embeddings</span><span class="p">(</span><span class="n">embeddings</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">indexes</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Save it as CSV if memory allows.</span>
 <span class="sd">    :param embeddings:</span>
@@ -626,7 +626,7 @@
 
 <div class="viewcode-block" id="random_prediction">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.random_prediction">[docs]</a>
-<span class="k">def</span> <span class="nf">random_prediction</span><span class="p">(</span><span class="n">pre_trained_kge</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">random_prediction</span><span class="p">(</span><span class="n">pre_trained_kge</span><span class="p">):</span>
     <span class="n">head_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
     <span class="n">relation</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
     <span class="n">tail_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
@@ -642,7 +642,7 @@
 
 <div class="viewcode-block" id="deploy_triple_prediction">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.deploy_triple_prediction">[docs]</a>
-<span class="k">def</span> <span class="nf">deploy_triple_prediction</span><span class="p">(</span><span class="n">pre_trained_kge</span><span class="p">,</span> <span class="n">str_subject</span><span class="p">,</span> <span class="n">str_predicate</span><span class="p">,</span> <span class="n">str_object</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">deploy_triple_prediction</span><span class="p">(</span><span class="n">pre_trained_kge</span><span class="p">,</span> <span class="n">str_subject</span><span class="p">,</span> <span class="n">str_predicate</span><span class="p">,</span> <span class="n">str_object</span><span class="p">):</span>
     <span class="n">triple_score</span> <span class="o">=</span> <span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">triple_score</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="p">[</span><span class="n">str_subject</span><span class="p">],</span>
                                                 <span class="n">r</span><span class="o">=</span><span class="p">[</span><span class="n">str_predicate</span><span class="p">],</span>
                                                 <span class="n">t</span><span class="o">=</span><span class="p">[</span><span class="n">str_object</span><span class="p">])</span>
@@ -652,7 +652,7 @@
 
 <div class="viewcode-block" id="deploy_tail_entity_prediction">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.deploy_tail_entity_prediction">[docs]</a>
-<span class="k">def</span> <span class="nf">deploy_tail_entity_prediction</span><span class="p">(</span><span class="n">pre_trained_kge</span><span class="p">,</span> <span class="n">str_subject</span><span class="p">,</span> <span class="n">str_predicate</span><span class="p">,</span> <span class="n">top_k</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">deploy_tail_entity_prediction</span><span class="p">(</span><span class="n">pre_trained_kge</span><span class="p">,</span> <span class="n">str_subject</span><span class="p">,</span> <span class="n">str_predicate</span><span class="p">,</span> <span class="n">top_k</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;Shallom&#39;</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Tail entity prediction is not available for Shallom&#39;</span><span class="p">)</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
@@ -664,7 +664,7 @@
 
 <div class="viewcode-block" id="deploy_head_entity_prediction">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.deploy_head_entity_prediction">[docs]</a>
-<span class="k">def</span> <span class="nf">deploy_head_entity_prediction</span><span class="p">(</span><span class="n">pre_trained_kge</span><span class="p">,</span> <span class="n">str_object</span><span class="p">,</span> <span class="n">str_predicate</span><span class="p">,</span> <span class="n">top_k</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">deploy_head_entity_prediction</span><span class="p">(</span><span class="n">pre_trained_kge</span><span class="p">,</span> <span class="n">str_object</span><span class="p">,</span> <span class="n">str_predicate</span><span class="p">,</span> <span class="n">top_k</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;Shallom&#39;</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Head entity prediction is not available for Shallom&#39;</span><span class="p">)</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
@@ -675,7 +675,7 @@
 
 <div class="viewcode-block" id="deploy_relation_prediction">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.deploy_relation_prediction">[docs]</a>
-<span class="k">def</span> <span class="nf">deploy_relation_prediction</span><span class="p">(</span><span class="n">pre_trained_kge</span><span class="p">,</span> <span class="n">str_subject</span><span class="p">,</span> <span class="n">str_object</span><span class="p">,</span> <span class="n">top_k</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">deploy_relation_prediction</span><span class="p">(</span><span class="n">pre_trained_kge</span><span class="p">,</span> <span class="n">str_subject</span><span class="p">,</span> <span class="n">str_object</span><span class="p">,</span> <span class="n">top_k</span><span class="p">):</span>
     <span class="n">str_relation_scores</span> <span class="o">=</span> <span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">predict_topk</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="p">[</span><span class="n">str_subject</span><span class="p">],</span> <span class="n">t</span><span class="o">=</span><span class="p">[</span><span class="n">str_object</span><span class="p">],</span> <span class="n">topk</span><span class="o">=</span><span class="n">top_k</span><span class="p">)</span>
     <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;(  </span><span class="si">{</span><span class="n">str_subject</span><span class="si">}</span><span class="s1">, ?, </span><span class="si">{</span><span class="n">str_object</span><span class="si">}</span><span class="s1"> )&#39;</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">str_relation_scores</span><span class="p">,</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;relation&quot;</span><span class="p">,</span><span class="s2">&quot;score&quot;</span><span class="p">])</span></div>
 
@@ -684,7 +684,7 @@
 <div class="viewcode-block" id="vocab_to_parquet">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.vocab_to_parquet">[docs]</a>
 <span class="nd">@timeit</span>
-<span class="k">def</span> <span class="nf">vocab_to_parquet</span><span class="p">(</span><span class="n">vocab_to_idx</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">path_for_serialization</span><span class="p">,</span> <span class="n">print_into</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">vocab_to_parquet</span><span class="p">(</span><span class="n">vocab_to_idx</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">path_for_serialization</span><span class="p">,</span> <span class="n">print_into</span><span class="p">):</span>
     <span class="c1"># @TODO: This function should take any DASK/Pandas DataFrame or Series.</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">print_into</span><span class="p">)</span>
     <span class="n">vocab_to_idx</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">path_for_serialization</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;/</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;pyarrow&#39;</span><span class="p">)</span>
@@ -694,7 +694,7 @@
 
 <div class="viewcode-block" id="create_experiment_folder">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.create_experiment_folder">[docs]</a>
-<span class="k">def</span> <span class="nf">create_experiment_folder</span><span class="p">(</span><span class="n">folder_name</span><span class="o">=</span><span class="s1">&#39;Experiments&#39;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_experiment_folder</span><span class="p">(</span><span class="n">folder_name</span><span class="o">=</span><span class="s1">&#39;Experiments&#39;</span><span class="p">):</span>
     <span class="n">directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">folder_name</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span>
     <span class="c1"># folder_name = str(datetime.datetime.now())</span>
     <span class="n">folder_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">)</span>
@@ -707,7 +707,7 @@
 
 <div class="viewcode-block" id="continual_training_setup_executor">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.continual_training_setup_executor">[docs]</a>
-<span class="k">def</span> <span class="nf">continual_training_setup_executor</span><span class="p">(</span><span class="n">executor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">continual_training_setup_executor</span><span class="p">(</span><span class="n">executor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="c1"># TODO:CD:Deprecate it</span>
     <span class="k">if</span> <span class="n">executor</span><span class="o">.</span><span class="n">is_continual_training</span><span class="p">:</span>
         <span class="c1"># (4.1) If it is continual, then store new models on previous path.</span>
@@ -729,7 +729,7 @@
 
 <div class="viewcode-block" id="exponential_function">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.exponential_function">[docs]</a>
-<span class="k">def</span> <span class="nf">exponential_function</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">lam</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">ascending_order</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">exponential_function</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">lam</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">ascending_order</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
     <span class="c1"># A sequence in exponentially decreasing order</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">lam</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">lam</span> <span class="o">*</span> <span class="n">x</span><span class="p">))</span>
     <span class="k">assert</span> <span class="mf">0.999</span> <span class="o">&lt;</span> <span class="nb">sum</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1.0001</span>
@@ -741,7 +741,7 @@
 <div class="viewcode-block" id="load_numpy">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.load_numpy">[docs]</a>
 <span class="nd">@timeit</span>
-<span class="k">def</span> <span class="nf">load_numpy</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_numpy</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loading indexed training data...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
@@ -751,7 +751,7 @@
 
 <div class="viewcode-block" id="evaluate">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.evaluate">[docs]</a>
-<span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="n">entity_to_idx</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">easy_answers</span><span class="p">,</span> <span class="n">hard_answers</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="n">entity_to_idx</span><span class="p">,</span> <span class="n">scores</span><span class="p">,</span> <span class="n">easy_answers</span><span class="p">,</span> <span class="n">hard_answers</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    # @TODO: CD: Renamed this function</span>
 <span class="sd">    Evaluate multi hop query answering on different query types</span>
@@ -815,10 +815,10 @@
 
 <div class="viewcode-block" id="download_file">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.download_file">[docs]</a>
-<span class="k">def</span> <span class="nf">download_file</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">destination_folder</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">download_file</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">destination_folder</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">):</span>
     <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="c1"># lazy import</span>
-    <span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">urlparse</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlparse</span>
 
     <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
         <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">destination_folder</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">urlparse</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
@@ -834,7 +834,7 @@
 
 <div class="viewcode-block" id="download_files_from_url">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.download_files_from_url">[docs]</a>
-<span class="k">def</span> <span class="nf">download_files_from_url</span><span class="p">(</span><span class="n">base_url</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">destination_folder</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">)</span><span class="o">-&gt;</span><span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">download_files_from_url</span><span class="p">(</span><span class="n">base_url</span><span class="p">:</span><span class="nb">str</span><span class="p">,</span> <span class="n">destination_folder</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">)</span><span class="o">-&gt;</span><span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">    Parameters</span>
@@ -849,7 +849,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># lazy import</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">bs4</span><span class="w"> </span><span class="kn">import</span> <span class="n">BeautifulSoup</span>
     <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Please install the &#39;beautifulsoup4&#39; package by running: pip install beautifulsoup4&quot;</span><span class="p">)</span>
         <span class="k">raise</span>
@@ -870,7 +870,7 @@
 
 <div class="viewcode-block" id="download_pretrained_model">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.download_pretrained_model">[docs]</a>
-<span class="k">def</span> <span class="nf">download_pretrained_model</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">download_pretrained_model</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">url</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;/&quot;</span>
     <span class="n">dir_name</span> <span class="o">=</span> <span class="n">url</span><span class="p">[</span><span class="n">url</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]</span>
     <span class="n">url_to_download_from</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://files.dice-research.org/projects/DiceEmbeddings/</span><span class="si">{</span><span class="n">dir_name</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -884,7 +884,7 @@
 
 <div class="viewcode-block" id="write_csv_from_model_parallel">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.write_csv_from_model_parallel">[docs]</a>
-<span class="k">def</span> <span class="nf">write_csv_from_model_parallel</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">write_csv_from_model_parallel</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create&quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="s2">&quot;Path does not exist&quot;</span>
     <span class="c1"># Detect files that start with model_ and end with .pt</span>
@@ -910,7 +910,7 @@
 
 <div class="viewcode-block" id="from_pretrained_model_write_embeddings_into_csv">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.from_pretrained_model_write_embeddings_into_csv">[docs]</a>
-<span class="k">def</span> <span class="nf">from_pretrained_model_write_embeddings_into_csv</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_pretrained_model_write_embeddings_into_csv</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="s2">&quot;Path does not exist&quot;</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">load_json</span><span class="p">(</span><span class="n">path</span> <span class="o">+</span> <span class="s1">&#39;/configuration.json&#39;</span><span class="p">)</span>

@@ -6,12 +6,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dicee.executer &mdash; DICE Embeddings 0.1.3.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
-      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=677a9ea0" />
 
   
     <link rel="shortcut icon" href="../../_static/favicon.ico"/>
@@ -88,20 +88,20 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.executer</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">SimpleNamespace</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">from</span> <span class="nn">pytorch_lightning</span> <span class="kn">import</span> <span class="n">seed_everything</span>
-<span class="kn">from</span> <span class="nn">.knowledge_graph</span> <span class="kn">import</span> <span class="n">KG</span>
-<span class="kn">from</span> <span class="nn">.evaluator</span> <span class="kn">import</span> <span class="n">Evaluator</span>
-<span class="kn">from</span> <span class="nn">.static_preprocess_funcs</span> <span class="kn">import</span> <span class="n">preprocesses_input_args</span>
-<span class="kn">from</span> <span class="nn">.trainer</span> <span class="kn">import</span> <span class="n">DICE_Trainer</span>
-<span class="kn">from</span> <span class="nn">.static_funcs</span> <span class="kn">import</span> <span class="n">timeit</span><span class="p">,</span> <span class="n">read_or_load_kg</span><span class="p">,</span> <span class="n">load_json</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">create_experiment_folder</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleNamespace</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pytorch_lightning</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_everything</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.knowledge_graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">KG</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.evaluator</span><span class="w"> </span><span class="kn">import</span> <span class="n">Evaluator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.static_preprocess_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">preprocesses_input_args</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.trainer</span><span class="w"> </span><span class="kn">import</span> <span class="n">DICE_Trainer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">timeit</span><span class="p">,</span> <span class="n">read_or_load_kg</span><span class="p">,</span> <span class="n">load_json</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">create_experiment_folder</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pytorch_lightning&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">DeprecationWarning</span><span class="p">)</span>
@@ -109,7 +109,7 @@
 
 <div class="viewcode-block" id="Execute">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute">[docs]</a>
-<span class="k">class</span> <span class="nc">Execute</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Execute</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; A class for Training, Retraining and Evaluation a model.</span>
 
 <span class="sd">    (1) Loading &amp; Preprocessing &amp; Serializing input data.</span>
@@ -117,7 +117,7 @@
 <span class="sd">    (3) Storing all necessary info</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">continuous_training</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">continuous_training</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="c1"># (1) Process arguments and sanity checking.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">preprocesses_input_args</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="c1"># (2) Ensure reproducibility.</span>
@@ -140,7 +140,7 @@
 
 <div class="viewcode-block" id="Execute.setup_executor">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute.setup_executor">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_executor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_executor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_continual_training</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
             <span class="c1"># Create a single directory containing KGE and all related data</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -160,7 +160,7 @@
 <div class="viewcode-block" id="Execute.save_trained_model">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute.save_trained_model">[docs]</a>
     <span class="nd">@timeit</span>
-    <span class="k">def</span> <span class="nf">save_trained_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_trained_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Save a knowledge graph embedding model</span>
 
 <span class="sd">        (1) Send model to eval mode and cpu.</span>
@@ -201,7 +201,7 @@
 
 <div class="viewcode-block" id="Execute.end">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute.end">[docs]</a>
-    <span class="k">def</span> <span class="nf">end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        End training</span>
 
@@ -235,7 +235,7 @@
 
 <div class="viewcode-block" id="Execute.write_report">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute.write_report">[docs]</a>
-    <span class="k">def</span> <span class="nf">write_report</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">write_report</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Report training related information in a report.json file &quot;&quot;&quot;</span>
         <span class="c1"># @TODO: Move to static funcs</span>
         <span class="c1"># Report total runtime.</span>
@@ -247,7 +247,7 @@
 
 <div class="viewcode-block" id="Execute.start">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute.start">[docs]</a>
-    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Start training</span>
 
@@ -315,7 +315,7 @@
 
 <div class="viewcode-block" id="ContinuousExecute">
 <a class="viewcode-back" href="../../autoapi/dicee/executer/index.html#dicee.executer.ContinuousExecute">[docs]</a>
-<span class="k">class</span> <span class="nc">ContinuousExecute</span><span class="p">(</span><span class="n">Execute</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ContinuousExecute</span><span class="p">(</span><span class="n">Execute</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; A subclass of Execute Class for retraining</span>
 
 <span class="sd">    (1) Loading &amp; Preprocessing &amp; Serializing input data.</span>
@@ -327,7 +327,7 @@
 <span class="sd">    Trained model is noted with the current time.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="c1"># (1) Current input configuration.</span>
         <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">continual_learning</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Path doesn&#39;t exist </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">continual_learning</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">continual_learning</span> <span class="o">+</span> <span class="s1">&#39;/configuration.json&#39;</span><span class="p">)</span>
@@ -351,7 +351,7 @@
 
 <div class="viewcode-block" id="ContinuousExecute.continual_start">
 <a class="viewcode-back" href="../../autoapi/dicee/executer/index.html#dicee.executer.ContinuousExecute.continual_start">[docs]</a>
-    <span class="k">def</span> <span class="nf">continual_start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">continual_start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Start Continual Training</span>
 
