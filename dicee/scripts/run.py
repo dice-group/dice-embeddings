@@ -32,7 +32,7 @@ def get_default_arguments(description=None):
     # Model related arguments
     parser.add_argument("--model", type=str,
                         default="Keci",
-                        choices=["ComplEx", "Keci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
+                        choices=["ComplEx", "Keci", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "DualE",
                                  "BytE",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
