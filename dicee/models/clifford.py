@@ -560,19 +560,19 @@ class Keci(BaseKGE):
         return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
 
 
-class KeciBase(Keci):
+class CKeci(Keci):
     " Without learning dimension scaling"
 
     def __init__(self, args):
         super().__init__(args)
-        self.name = 'KeciBase'
+        self.name = 'CKeci'
         self.requires_grad_for_interactions = False
         print(f'r:{self.r}\t p:{self.p}\t q:{self.q}')
         if self.p > 0:
-            self.p_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.p)
+            self.p_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.p,_freeze=self.requires_grad_for_interactions)
             torch.nn.init.ones_(self.p_coefficients.weight)
         if self.q > 0:
-            self.q_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.q)
+            self.q_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.q,_freeze=self.requires_grad_for_interactions)
             torch.nn.init.ones_(self.q_coefficients.weight)
 
 
