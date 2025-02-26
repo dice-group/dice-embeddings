@@ -132,6 +132,8 @@ def get_default_arguments(description=None):
                         help='The loss function used in the model')
     parser.add_argument('--label_relaxation_alpha', type=float, default=0.1,
                         help='The alpha value for label relaxation')
+    parser.add_argument('--Paramlogger', type=str, default="CSVLogger",
+                        help='logger')
 
     if description is None:
         return parser.parse_args()

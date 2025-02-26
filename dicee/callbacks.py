@@ -489,3 +489,13 @@ class Perturb(AbstractCallback):
                 raise NotImplementedError(f"{self.level}")
         else:
             raise RuntimeError(f"--level is given as {self.level}!")
+
+
+class GradientNormLogger(AbstractCallback):
+    def on_after_backward(self, trainer, model):
+        total_norm = 0
+        for param in model.parameters():
+            if param.grad is not None:
+                total_norm += param.grad.norm(2).item()
+
+        #trainer.logger.experiment.add_scalar("gradient_norm", total_norm, trainer.global_step)

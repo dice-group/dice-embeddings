@@ -13,7 +13,10 @@ from dicee.losses.custom_losses import (
                                         AdaptiveLabelRelaxationLoss,
                                         CombinedLSandLR,
                                         ConfidenceBasedAdaptiveLabelRelaxationLoss,
-                                        CombinedAdaptiveLSandAdaptiveLR
+                                        CombinedAdaptiveLSandAdaptiveLR,
+                                        AggregatedLSandLR,
+                                        GradientBasedLSLR,
+                                        GradientBasedAdaptiveLSLR
                                         )
 
 class BaseKGELightning(pl.LightningModule):
@@ -46,7 +49,16 @@ class BaseKGELightning(pl.LightningModule):
             raise RuntimeError("Invalid batch received.")
 
 
-        loss_batch = self.loss(yhat_batch, y_batch, current_epoch=self.current_epoch)
+
+
+        total_norm = 0
+        for param in self.parameters():
+            if param.grad is not None:
+                total_norm += param.grad.norm(2).item()
+
+        loss_batch = self.loss(yhat_batch, y_batch, current_epoch=self.current_epoch, gradient_norm=total_norm)
+
+        self.log("gradient_norm", total_norm, prog_bar=True, on_step=True, on_epoch=True)
 
         self.training_step_outputs.append(loss_batch.item())
         self.log("loss",
@@ -183,6 +195,12 @@ class BaseKGE(BaseKGELightning):
             self.loss = ConfidenceBasedAdaptiveLabelRelaxationLoss()
         if self.args["loss_fn"] == "CombinedAdaptiveLSandAdaptiveLR":
             self.loss = CombinedAdaptiveLSandAdaptiveLR()
+        if self.args["loss_fn"] == "AggregatedLSandLR":
+            self.loss = AggregatedLSandLR()
+        if self.args["loss_fn"] == "GradientBasedLSLR":
+            self.loss = GradientBasedLSLR()
+        if self.args["loss_fn"] == "GradientBasedAdaptiveLSLR":
+            self.loss = GradientBasedAdaptiveLSLR()
 
         if self.byte_pair_encoding and self.args['model'] != "BytE":
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)

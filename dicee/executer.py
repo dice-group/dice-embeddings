@@ -46,6 +46,7 @@ class Execute:
         # (9) Execution start time
         self.start_time = None
 
+
     def setup_executor(self) -> None:
         if self.is_continual_training is False:
             # Create a single directory containing KGE and all related data
@@ -158,6 +159,7 @@ class Execute:
         A dict containing information about the training and/or evaluation
 
         """
+
         self.start_time = time.time()
         print(f"Start time:{datetime.datetime.now()}")
         # (1) Reload the memory-map of index knowledge graph stored as a numpy ndarray.
@@ -199,7 +201,8 @@ class Execute:
         self.trainer = DICE_Trainer(args=self.args,
                                     is_continual_training=self.is_continual_training,
                                     storage_path=self.args.full_storage_path,
-                                    evaluator=self.evaluator)
+                                    evaluator=self.evaluator,
+                                    )
         # (4) Start the training
         self.trained_model, form_of_labelling = self.trainer.start(knowledge_graph=self.knowledge_graph)
         return self.end(form_of_labelling)

@@ -14,15 +14,15 @@ def objective(trial, model, dataset, loss):
     dataset = dataset
     model = model
 
-    num_epochs = 70
+    num_epochs = 100
 
     embedding_dim = 32 #trial.suggest_categorical("embedding_dim", [32, 64])
     optimizer = "Adam" #trial.suggest_categorical("optimizer", ["Adam", "Adopt"])
     batch_size = 1024 #trial.suggest_categorical("batch_size", [512, 1024])
     learning_rate = 0.1 #trial.suggest_float("learning_rate", 0.01, 0.1)
 
-    label_relaxation_alpha = trial.suggest_float("LSR", 0.01, 0.1,) if loss == "LRLoss" else 0.0
-    label_smoothing_rate = trial.suggest_float("LSR", 0.01, 0.1)  if loss == "LS" else 0.0
+    label_relaxation_alpha = trial.suggest_float("LR", 0.01, 0.1,) if loss == "LRLoss" else 0.0
+    label_smoothing_rate = trial.suggest_float("LS", 0.01, 0.1)  if loss == "LS" else 0.0
 
     parser.add_argument('--loss_fn', type=str, default=loss)
     parser.add_argument("--label_smoothing_rate", type=float, default=label_smoothing_rate)
@@ -72,14 +72,14 @@ def objective(trial, model, dataset, loss):
 
 # set according to your environment TODO: make it as a parameter
 main_math = "../../../KGs/Datasets_Perturbed/"
-report_folder_name = "./bo_outputs/1024/"
+report_folder_name = "./bo_outputs/512_05_100Epochs/"
 report_file_name = "bayesian_optimization_report.txt"
 
-datasets = ["UMLS", "KINSHIP", "NELL-995-h100", "WN18RR", "FB15k-237"]
-models = ["Keci", "Pykeen_MuRE", "QMult", "Pykeen_DistMult", "Pykeen_ComplEx", "Pykeen_RotatE", "Pykeen_BoxE", "Pykeen_TransE"] #
+datasets = ["UMLS", "KINSHIP"]
+models = ["Keci", "Pykeen_MuRE", "QMult", "Pykeen_DistMult", "Pykeen_ComplEx", "Pykeen_BoxE", "Pykeen_RotatE"] #
 losses = ["LRLoss", "LS"]
 
-number_of_runs = 10
+number_of_runs = 50
 
 os.makedirs(os.path.dirname(report_folder_name), exist_ok=True)
 

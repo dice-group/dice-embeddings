@@ -3,7 +3,7 @@ import polars
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb
+from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb, GradientNormLogger
 from dicee.dataset_classes import construct_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
@@ -17,6 +17,8 @@ import copy
 from typing import List, Tuple
 from ..knowledge_graph import KG
 import numpy as np
+from pytorch_lightning.loggers import CSVLogger
+
 
 def load_term_mapping(file_path=str):
     return polars.read_csv(file_path + ".csv")
@@ -66,11 +68,18 @@ def initialize_trainer(args, callbacks)->TorchTrainer | TensorParallel | TorchDD
         default_root_dir: Optional[_PATH] = None,)
         """
         # @TODO: callbacks need to be ad
+
+        os.makedirs("param_logs/", exist_ok=True)
+
+        Paramlogger = args.Paramlogger
+        if Paramlogger is "CSVLogger":
+            Paramlogger = CSVLogger("param_logs/", name=f"gradient_logging-{args.loss_fn}-{args.model}-{args.add_noise_rate}")
+
         trainer= pl.Trainer(accelerator=kwargs.get("accelerator", "auto"),
                           strategy=kwargs.get("strategy", "auto"),
                           num_nodes=kwargs.get("num_nodes", 1),
                           precision=kwargs.get("precision", None),
-                          logger=kwargs.get("logger", None),
+                          logger=Paramlogger,
                           callbacks=callbacks,
                           fast_dev_run=kwargs.get("fast_dev_run", False),
                           max_epochs=kwargs["num_epochs"],
@@ -79,6 +88,7 @@ def initialize_trainer(args, callbacks)->TorchTrainer | TensorParallel | TorchDD
                           min_steps=kwargs.get("min_steps", None),
                           detect_anomaly=False,
                           barebones=False)
+
     else:
         print('Initializing TorchTrainer CPU Trainer...', end='\t')
         trainer = TorchTrainer(args, callbacks=callbacks)
@@ -110,6 +120,8 @@ def get_callbacks(args):
             callbacks.append(KronE())
         elif k == 'Eval':
             callbacks.append(Eval(path=args.full_storage_path, epoch_ratio=v.get('epoch_ratio')))
+        elif k == 'GradientNormLogger':
+            callbacks.append(GradientNormLogger())
         else:
             raise RuntimeError(f'Incorrect callback:{k}')
     return callbacks
@@ -263,6 +275,8 @@ class DICE_Trainer:
 
         in DDP setup, we need to load the memory map of already read/index KG.
         """
+
+
         """ Train selected model via the selected training strategy """
         assert isinstance(knowledge_graph, np.memmap) or isinstance(knowledge_graph, KG), \
             f"knowledge_graph must be an instance of KG or np.memmap. Currently {type(knowledge_graph)}"
@@ -274,7 +288,10 @@ class DICE_Trainer:
             self.trainer.dataset = knowledge_graph
             self.trainer.form_of_labelling = form_of_labelling
 
-            print("######################", self.trainer.current_epoch)
+            if self.trainer.logger:
+                print(f"Log files: {self.trainer.logger.save_dir}")
+            else:
+                print("Logging is disabled.")
 
             # TODO: Later, maybe we should write a callback to save the models in disk
 
