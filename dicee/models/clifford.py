@@ -837,10 +837,6 @@ class DeCaL(BaseKGE):
         # (4) Compute a triple score based on interactions described by the basis 1.
         h0r0t0 = torch.einsum('br,er->be', h0 * r0, t0)
 
-        print(h0r0t0.shape)
-        print("yes")
-        exit(0)
-
         # (5) Compute a triple score based on interactions described by the bases of p {e_1, ..., e_p}.
         if self.p > 0:
             tp = E[:, self.re: self.re + (self.re * self.p)].view(self.num_entities, self.re, self.p)
@@ -877,9 +873,6 @@ class DeCaL(BaseKGE):
         else:
             sigma_pp = 0
 
-        print(sigma_pp.shape)
-        exit(0)
-
         if self.q >= 2:
             sigma_qq = torch.sum(self.compute_sigma_qq(hq, rq), dim=[1, 2]).unsqueeze(-1)
         else:
@@ -902,13 +895,8 @@ class DeCaL(BaseKGE):
             sigma_qr = torch.sum(self.compute_sigma_qr(hq=hq, hk=hk, rq=rq, rk=rk), dim=[1, 2, 3]).unsqueeze(-1)
         else:
             sigma_qr = 0
-        
-        score =  h0r0t0 + score_p + score_q + score_r + sigma_pp + sigma_qq + sigma_rr + sigma_pq + sigma_pr + sigma_qr
-
-        print(score.shape)
-        exit(0)
-
-        return score
+    
+        return h0r0t0 + score_p + score_q + score_r + sigma_pp + sigma_qq + sigma_rr + sigma_pq + sigma_pr + sigma_qr
 
     def apply_coefficients(self, h0, hp, hq, hk, r0, rp, rq, rk):
         """ Multiplying a base vector with its scalar coefficient """
