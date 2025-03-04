@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 import math
+import numpy as np
 
 class DefaultBCELoss(nn.Module):
     def __init__(self):
@@ -44,18 +45,15 @@ class AdaptiveLabelSmoothingLoss(nn.Module):
         #smoothed_target = (1 - self.smoothing_factor) * target + self.smoothing_factor / num_classes
         smoothed_target = (1 - self.smoothing_factor) * target + self.smoothing_factor * (1 - target) / (num_classes - 1)
 
-        # Compute KL divergence loss
         loss = F.kl_div(pred, smoothed_target, reduction="batchmean")
 
-        # Dynamically adjust alpha based on loss trend
         if self.prev_loss is not None:
-            loss_diff = loss.item() - self.prev_loss  # Check improvement
-            if loss_diff > 0:  # Loss is increasing (bad) → Increase smoothing
+            loss_diff = loss.item() - self.prev_loss
+            if loss_diff > 0:
                 self.smoothing_factor = min(self.smoothing_factor + self.smoothing_factor_step, self.max_smoothing_factor)
-            elif loss_diff < 0:  # Loss is decreasing (good) → Reduce smoothing
+            elif loss_diff < 0:
                 self.smoothing_factor = max(self.smoothing_factor - self.smoothing_factor_step, self.min_smoothing_factor)
 
-        # Store current loss for the next iteration
         self.prev_loss = loss.item()
 
         return loss
@@ -216,7 +214,6 @@ class AggregatedLSandLR(nn.Module):
 
         return final_loss
 
-"""
 class GradientBasedLSLR(nn.Module):
     def __init__(self, smoothness_ratio=0.0, alpha=0.0, check_interval=10, dynamic_threshold_ratio=0.015):
         super(GradientBasedLSLR, self).__init__()
@@ -236,18 +233,11 @@ class GradientBasedLSLR(nn.Module):
             self.grad_norm_history.pop(0)
         self.grad_norm_history.append(gradient_norm)
 
-        max_norm = max(self.grad_norm_history)
-        min_norm = min(self.grad_norm_history)
         avg_norm = sum(self.grad_norm_history) / len(self.grad_norm_history) + 1e-14 # avoid division by zero
-        relative_change = (max_norm - min_norm) / avg_norm
-        print(avg_norm)
-        print(f"Relative change: {relative_change:.6f}")
 
         if current_epoch != 0:
             if avg_norm < self.dynamic_threshold_ratio and self.mode == 'smooth':
                 self.mode = 'relax'
-                print("------------------ switched to relax")
-
 
         #final_loss = 0
         if self.mode == 'smooth':
@@ -256,45 +246,6 @@ class GradientBasedLSLR(nn.Module):
             final_loss = self.LabelRelaxationLoss(pred, target, current_epoch, gradient_norm)
 
         return final_loss
-"""
-import numpy as np
-
-class GradientBasedLSLR(nn.Module):
-    def __init__(self, smoothness_ratio=0.0, alpha=0.0, check_interval=10,
-                 variability_threshold=0.009):
-        super(GradientBasedLSLR, self).__init__()
-        self.smoothness_ratio = smoothness_ratio
-        self.alpha = alpha
-        self.check_interval = check_interval
-        self.variability_threshold = variability_threshold
-        self.mode = 'smooth'
-        self.grad_norm_history = []
-        self.LabelSmoothingLoss = LabelSmoothingLoss()
-        self.LabelRelaxationLoss = LabelRelaxationLoss()
-
-    def update_dynamic_threshold(self, current_epoch):
-        if len(self.grad_norm_history) < self.check_interval:
-            return
-
-        std_dev = np.std(self.grad_norm_history)
-
-        if std_dev < self.variability_threshold and self.mode == 'smooth':
-            print("################## Switched To Relaxation ######################")
-            self.mode = 'relax'
-
-    def forward(self, pred, target, current_epoch, gradient_norm):
-        if len(self.grad_norm_history) == self.check_interval:
-            self.grad_norm_history.pop(0)
-        self.grad_norm_history.append(gradient_norm)
-
-        if current_epoch % self.check_interval == 0:
-            self.update_dynamic_threshold(current_epoch)
-
-        # Compute loss based on current mode
-        if self.mode == 'smooth':
-            return self.LabelSmoothingLoss(pred, target, current_epoch, gradient_norm)
-        else:
-            return self.LabelRelaxationLoss(pred, target, current_epoch, gradient_norm)
 
 
 class GradientBasedAdaptiveLSLR(nn.Module):
@@ -317,7 +268,6 @@ class GradientBasedAdaptiveLSLR(nn.Module):
         std_dev = np.std(self.grad_norm_history)
         print(std_dev, self.variability_threshold)
         if std_dev < self.variability_threshold and self.mode == 'smooth':
-            print("################## Switched To Relaxation ######################")
             self.mode = 'relax'
 
     def forward(self, pred, target, current_epoch, gradient_norm):
@@ -328,7 +278,6 @@ class GradientBasedAdaptiveLSLR(nn.Module):
         if current_epoch % self.check_interval == 0:
             self.update_dynamic_threshold(current_epoch)
 
-        # Compute loss based on current mode
         if self.mode == 'smooth':
             return self.adaptive_label_smoothing(pred, target, current_epoch, gradient_norm)
         else:
