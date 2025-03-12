@@ -544,17 +544,17 @@ class Keci(BaseKGE):
             score_q = 0
 
         if self.p >= 2:
-            sigma_pp = torch.sum(self.compute_sigma_pp(hp, rp), dim=[1, 2]).unsqueeze(-1)
+            sigma_pp = torch.sum(self.compute_sigma_pp(hp, rp), dim=[1, 2]).squeeze(-1)
         else:
             sigma_pp = 0
 
         if self.q >= 2:
-            sigma_qq = torch.sum(self.compute_sigma_qq(hq, rq), dim=[1, 2]).unsqueeze(-1)
+            sigma_qq = torch.sum(self.compute_sigma_qq(hq, rq), dim=[1, 2]).squeeze(-1)
         else:
             sigma_qq = 0
 
         if self.p >= 2 and self.q >= 2:
-            sigma_pq = torch.sum(self.compute_sigma_pq(hp=hp, hq=hq, rp=rp, rq=rq), dim=[1, 2, 3]).unsqueeze(-1)
+            sigma_pq = torch.sum(self.compute_sigma_pq(hp=hp, hq=hq, rp=rp, rq=rq), dim=[1, 2, 3]).squeeze(-1)
         else:
             sigma_pq = 0
         return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
@@ -654,35 +654,36 @@ class DeCaL(BaseKGE):
             score_r = 0
 
         if self.p >= 2:
-            sigma_pp = torch.sum(self.compute_sigma_pp(hp, rp), dim=[1, 2]).unsqueeze(-1)
+            sigma_pp = torch.sum(self.compute_sigma_pp(hp, rp), dim=[1, 2]).squeeze(-1)
         else:
             sigma_pp = 0
 
         if self.q >= 2:
-            sigma_qq = torch.sum(self.compute_sigma_qq(hq, rq), dim=[1, 2]).unsqueeze(-1)
+            sigma_qq = torch.sum(self.compute_sigma_qq(hq, rq), dim=[1, 2]).squeeze(-1)
         else:
             sigma_qq = 0
 
         if self.r >= 2:
-            sigma_rr = torch.sum(self.compute_sigma_qq(hk, rk), dim=[1, 2]).unsqueeze(-1)
+            sigma_rr = torch.sum(self.compute_sigma_qq(hk, rk), dim=[1, 2]).squeeze(-1)
         else:
             sigma_rr = 0
 
         if self.p >= 2 and self.q >= 2:
-            sigma_pq = torch.sum(self.compute_sigma_pq(hp=hp, hq=hq, rp=rp, rq=rq), dim=[1, 2, 3]).unsqueeze(-1)
+            sigma_pq = torch.sum(self.compute_sigma_pq(hp=hp, hq=hq, rp=rp, rq=rq), dim=[1, 2, 3]).squeeze(-1)
         else:
             sigma_pq = 0
 
         if self.p >= 2 and self.r >= 2:
-            sigma_pr = torch.sum(self.compute_sigma_pq(hp=hp, hk=hk, rp=rp, rk=rk), dim=[1, 2, 3]).unsqueeze(-1)
+            sigma_pr = torch.sum(self.compute_sigma_pq(hp=hp, hk=hk, rp=rp, rk=rk), dim=[1, 2, 3]).squeeze(-1)
         else:
             sigma_pr = 0
         if self.q >= 2 and self.r >= 2:
-            sigma_qr = torch.sum(self.compute_sigma_pq(hq=hq, hk=hk, rq=rq, rk=rk), dim=[1, 2, 3]).unsqueeze(-1)
+            sigma_qr = torch.sum(self.compute_sigma_pq(hq=hq, hk=hk, rq=rq, rk=rk), dim=[1, 2, 3]).squeeze(-1)
         else:
             sigma_qr = 0
-        return h0r0t0 + score_p + score_q + score_r + sigma_pp + sigma_qq + sigma_rr + sigma_pq + sigma_qr + sigma_pr
 
+        return h0r0t0 + score_p + score_q + score_r + sigma_pp + sigma_qq + sigma_rr + sigma_pq + sigma_qr + sigma_pr
+    
     def cl_pqr(self, a:torch.tensor)->torch.tensor:
 
         ''' Input: tensor(batch_size, emb_dim) ---> output: tensor with 1+p+q+r components with size (batch_size, emb_dim/(1+p+q+r)) each.
@@ -894,7 +895,7 @@ class DeCaL(BaseKGE):
             sigma_qr = torch.sum(self.compute_sigma_qr(hq=hq, hk=hk, rq=rq, rk=rk), dim=[1, 2, 3]).unsqueeze(-1)
         else:
             sigma_qr = 0
-
+    
         return h0r0t0 + score_p + score_q + score_r + sigma_pp + sigma_qq + sigma_rr + sigma_pq + sigma_pr + sigma_qr
 
     def apply_coefficients(self, h0, hp, hq, hk, r0, rp, rq, rk):
