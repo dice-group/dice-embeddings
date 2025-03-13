@@ -1,5 +1,5 @@
 """
-# pip install openai
+# pip install openai==1.66.3
 # Data Preparation
 # Read a knowledge graph (Countries)
 
