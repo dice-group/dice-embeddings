@@ -33,6 +33,7 @@ class KG:
         sample_triples_ratio
         :param training_technique
         """
+        assert dataset_dir is not None, f"dataset_dir cannot be None"
         self.dataset_dir = dataset_dir
         self.sparql_endpoint = sparql_endpoint
         self.path_single_kg = path_single_kg
@@ -56,6 +57,8 @@ class KG:
         self.training_technique = training_technique
         self.raw_train_set, self.raw_valid_set, self.raw_test_set = None, None, None
         self.train_set, self.valid_set, self.test_set = None, None, None
+        self.re_vocab=None,
+        self.er_vocab,self.re_vocab, self.ee_vocab =None, None, None
         self.idx_entity_to_bpe_shaped = dict()
 
         # WIP:

@@ -54,13 +54,20 @@ class PreprocessKG:
                     data = np.concatenate([self.kg.train_set, self.kg.valid_set, self.kg.test_set])
                 else:
                     data = self.kg.train_set
-            print('Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...')
-            # We need to benchmark the benefits of using futures  ?
-            executor = concurrent.futures.ProcessPoolExecutor()
-            self.kg.er_vocab = executor.submit(get_er_vocab, data, self.kg.path_for_serialization + '/er_vocab.p')
-            self.kg.re_vocab = executor.submit(get_re_vocab, data, self.kg.path_for_serialization + '/re_vocab.p')
-            self.kg.ee_vocab = executor.submit(get_ee_vocab, data, self.kg.path_for_serialization + '/ee_vocab.p')
-
+            if self.kg.path_for_serialization is not None:
+                print('Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...')
+                # We need to benchmark the benefits of using futures  ?
+                executor = concurrent.futures.ProcessPoolExecutor()
+                self.kg.er_vocab = executor.submit(get_er_vocab, data, self.kg.path_for_serialization + '/er_vocab.p')
+                self.kg.re_vocab = executor.submit(get_re_vocab, data, self.kg.path_for_serialization + '/re_vocab.p')
+                self.kg.ee_vocab = executor.submit(get_ee_vocab, data, self.kg.path_for_serialization + '/ee_vocab.p')
+            else:
+                print("Creating mapping from pairs of unique head and relations to tails")
+                self.kg.er_vocab = get_er_vocab(data)
+                print("Creating mapping from unique pairs of relations and tail entities tails")
+                self.kg.re_vocab = get_re_vocab(data)
+                print("Creating mapping from unique pairs head entities and tail entities")
+                self.kg.ee_vocab = get_ee_vocab(data)
         # string containing
         assert isinstance(self.kg.raw_train_set, pd.DataFrame) or isinstance(self.kg.raw_train_set, pl.DataFrame)
 

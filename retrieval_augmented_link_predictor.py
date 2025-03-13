@@ -59,6 +59,10 @@ from openai import OpenAI
 import os
 from typing import List, Dict, Tuple
 import json
+from dicee.knowledge_graph import KG
+from dicee.evaluator import evaluate_lp
+from abc import ABC, abstractmethod
+import torch
 
 class KnowledgeGraphPredictor:
     """
@@ -355,7 +359,64 @@ Important: Ensure your response is valid JSON without any markdown formatting or
         return ranked_candidates
 
 
+
+class AbstractBaseLinkPredictorClass(ABC):
+    def __init__(self, knowledge_graph:KG=None,name="dummy"):
+        assert knowledge_graph is not None
+        assert name is not None
+        self.kg = knowledge_graph
+        self.name = name
+
+        # Mappings from str to idx
+        # kg.entity_to_idx:pd.DataFrame
+        # kg.relation_to_idx:pd.DataFrame
+        # indexed KGs
+        # kg.train_set : numpy.ndarray
+        # kg.valid_set : numpy.ndarray
+        # kg.test_set  :  numpy.ndarray
+
+        # Create dictionaries
+        #
+        self.idx_to_entity = self.kg.entity_to_idx.set_index(self.kg.entity_to_idx.index)['entity'].to_dict()
+        self.entity_to_idx = {idx: entity for entity, idx in self.idx_to_entity.items()}
+        #
+        self.idx_to_relation = self.kg.relation_to_idx.set_index(self.kg.relation_to_idx.index)['relation'].to_dict()
+        self.relation_idx = {idx: rel for rel, idx in self.idx_to_relation.items()}
+
+    def eval(self):
+        pass
+
+    @abstractmethod
+    def __call__(self,*args,**kwargs):
+        """Predicting missing triples"""
+
+class Dummy(AbstractBaseLinkPredictorClass):
+    def __init__(self, knowledge_graph:KG=None, name="dummy") -> None:
+        super().__init__(knowledge_graph,name)
+
+    def __call__(self,indexed_triples:torch.LongTensor):
+        n,d=indexed_triples.shape
+        # For the time being
+        assert d==3
+        assert n==1
+        scores=[]
+        for triple in indexed_triples.tolist():
+            idx_h, idx_r, idx_t = triple
+            h,r,t=self.idx_to_entity[idx_h], self.idx_to_relation[idx_r], self.idx_to_entity[idx_t]
+            # Given this triple, we need to assign a score
+            scores.append([0.0])
+        return torch.FloatTensor(scores)
+
 if __name__ == "__main__":
+    # () Read / Preprocess KG
+    kg = KG(dataset_dir="KGs/Countries-S1",separator="\s+",eval_model="train_val_test")
+
+    evaluate_lp(model=Dummy(knowledge_graph=kg), triple_idx=kg.train_set, num_entities=len(kg.entity_to_idx), er_vocab=kg.er_vocab,
+                re_vocab=kg.re_vocab,  info='Eval LP Starts', batch_size=1, chunk_size=1)
+
+    # @TODO: Create classes inherits from AbstractBaseLinkPredictorClass and improve the link prediction results
+    exit(1)
+    # @TODO:CD -> Luke: Please refactor the below code to work with the above code.
     # Create predictor (uses Tentris model by default)
     predictor = KnowledgeGraphPredictor()
 
