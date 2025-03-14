@@ -33,7 +33,7 @@ class KG:
         sample_triples_ratio
         :param training_technique
         """
-        assert dataset_dir is not None, f"dataset_dir cannot be None"
+        assert dataset_dir is not None, "dataset_dir cannot be None"
         self.dataset_dir = dataset_dir
         self.sparql_endpoint = sparql_endpoint
         self.path_single_kg = path_single_kg
