@@ -5,7 +5,7 @@ import json
 
 from . import load_json
 from .static_funcs import pickle
-from .static_funcs_training import evaluate_lp, evaluate_bpe_lp
+from .static_funcs_training import evaluate_lp, evaluate_bpe_lp, evaluate_lp_k_vs_all
 from typing import Tuple, List
 from .knowledge_graph import KG
 

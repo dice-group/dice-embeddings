@@ -213,6 +213,71 @@ def evaluate_lp(model=None, triple_idx=None, num_entities=None, er_vocab: Dict[T
     print(results)
     return results
 
+@torch.no_grad()
+def evaluate_lp_k_vs_all(model, triple_idx, er_vocab=None,info=None, batch_size:int =1):
+    """
+    Filtered link prediction evaluation.
+    :param model:
+    :param er_vocab:
+    :param triple_idx: test triples
+    :param info:
+    :param form_of_labelling:
+    :return:
+    """
+    assert er_vocab is not None
+    # (1) set model to eval model
+    model.eval()
+    num_triples = len(triple_idx)
+    ranks = []
+    # Hit range
+    hits_range = [i for i in range(1, 11)]
+    hits = {i: [] for i in hits_range}
+    if info :
+        print(info + ':', end=' ')
+    # Iterate over integer indexed triples in mini batch fashion
+    for i in tqdm(range(0, num_triples, batch_size)):
+            # (1) Get a batch of data.
+            data_batch = triple_idx[i:i + batch_size]
+            # (2) Extract entities and relations.
+            e1_idx_r_idx, e2_idx = torch.LongTensor(data_batch[:, [0, 1]]), torch.tensor(data_batch[:, 2])
+            # (3) Predict missing entities, i.e., assign probs to all entities.
+            with torch.no_grad():
+                predictions = model(e1_idx_r_idx)
+            # (4) Filter entities except the target entity
+            for j in range(data_batch.shape[0]):
+                # (4.1) Get the ids of the head entity, the relation and the target tail entity in the j.th triple.
+                id_e, id_r, id_e_target = data_batch[j]
+                # (4.2) Get all ids of all entities occurring with the head entity and relation extracted in 4.1.
+                filt = er_vocab[(id_e, id_r)]
+                # (4.3) Store the assigned score of the target tail entity extracted in 4.1.
+                target_value = predictions[j, id_e_target].item()
+                # (4.4.1) Filter all assigned scores for entities.
+                predictions[j, filt] = -np.Inf
+                # (4.5) Insert 4.3. after filtering.
+                predictions[j, id_e_target] = target_value
+            # (5) Sort predictions.
+            sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
+            # (6) Compute the filtered ranks.
+            for j in range(data_batch.shape[0]):
+                # index between 0 and \inf
+                rank = torch.where(sort_idxs[j] == e2_idx[j])[0].item() + 1
+                ranks.append(rank)
+                for hits_level in hits_range:
+                    if rank <= hits_level:
+                        hits[hits_level].append(1.0)
+    # (7) Sanity checking: a rank for a triple
+    assert len(triple_idx) == len(ranks) == num_triples
+    hit_1 = sum(hits[1]) / num_triples
+    hit_3 = sum(hits[3]) / num_triples
+    hit_10 = sum(hits[10]) / num_triples
+    mean_reciprocal_rank = np.mean(1. / np.array(ranks))
+
+    results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}
+    if info:
+        print(info)
+        print(results)
+    return results
+
 
 @torch.no_grad()
 def evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities,
