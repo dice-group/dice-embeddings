@@ -65,12 +65,16 @@ from dicee.evaluator import evaluate_lp
 from abc import ABC, abstractmethod
 import torch
 import re
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 class KnowledgeGraphPredictor:
     """
     A class for predicting missing relations in knowledge graphs using LLMs.
     """
-    
+
     def __init__(self, api_key="super-secure-key", base_url="http://tentris-ml.cs.upb.de:8501/v1", model="tentris"):
         """
         Initialize the KnowledgeGraphPredictor.
@@ -85,16 +89,16 @@ class KnowledgeGraphPredictor:
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError("OpenAI API key not found. Please provide an API key or set the OPENAI_API_KEY environment variable.")
-        
+
         self.base_url = base_url
         self.model = model
-        
+
         # Initialize OpenAI client
         if self.base_url:
             self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
         else:
             self.client = OpenAI(api_key=self.api_key)
-    
+
     def build_knowledge_graph(self, rdf_file_path: str, format: str = "ttl") -> nx.DiGraph:
         """
         Build a directed NetworkX graph from an RDF file.
@@ -115,10 +119,10 @@ class KnowledgeGraphPredictor:
         g = rdflib.Graph()
         # NOTE: Currently uses RDF/TTL format! 
         g.parse(rdf_file_path, format=format)
-        
+
         # Create a NetworkX directed graph
         G = nx.DiGraph()
-        
+
         # Process the graph data
         for s, p, o in g:
             # NOTE: For now the borders relation is hardcoded! 
@@ -126,12 +130,12 @@ class KnowledgeGraphPredictor:
                 # Get readable labels
                 s_label = str(s).split('/')[-1].replace('>', '').replace('_', ' ')
                 o_label = str(o).split('/')[-1].replace('>', '').replace('_', ' ')
-                
+
                 # Add edge to graph with relation as attribute
                 G.add_edge(s_label, o_label, relation="borders")
-        
+
         return G
-    
+
     def extract_entity_neighborhood(self, G: nx.DiGraph, entity: str, k: int = 2) -> nx.DiGraph:
         """
         Extract the k-order neighborhood of an entity in the graph.
@@ -152,32 +156,32 @@ class KnowledgeGraphPredictor:
         """
         # Initialize with the entity itself
         nodes = {entity}
-        
+
         # Current frontier is the entity
         frontier = {entity}
-        
+
         # Expand neighborhood k times
         for _ in range(k):
             new_frontier = set()
-            
+
             for node in frontier:
                 # Add outgoing neighbors
                 out_neighbors = set(G.successors(node))
                 new_frontier.update(out_neighbors)
-                
+
                 # Add incoming neighbors
                 in_neighbors = set(G.predecessors(node))
                 new_frontier.update(in_neighbors)
-            
+
             # Update nodes and frontier
             nodes.update(new_frontier)
             frontier = new_frontier
-        
+
         # Create subgraph with the collected nodes
         G_hr = G.subgraph(nodes).copy()
-        
+
         return G_hr
-    
+
     def extract_relation_neighborhood(self, G: nx.DiGraph, relation: str) -> nx.DiGraph:
         """
         Extract all triples with a specific relation.
@@ -196,13 +200,13 @@ class KnowledgeGraphPredictor:
         """
         # Get all edges with the specified relation
         edges = [(u, v) for u, v, d in G.edges(data=True) if d.get('relation') == relation]
-        
+
         # Create a new graph with these edges
         G_hr = nx.DiGraph()
         G_hr.add_edges_from(edges, relation=relation)
-        
+
         return G_hr
-    
+
     def generate_prompt(self, G_hr: nx.DiGraph, head: str, relation: str, candidates: List[str]) -> str:
         """
         Generate a prompt for the LLM to score candidates.
@@ -227,9 +231,9 @@ class KnowledgeGraphPredictor:
         triples = []
         for u, v, d in G_hr.edges(data=True):
             triples.append(f"- {u} {d.get('relation', 'relates to')} {v}.")
-        
+
         context = "\n".join(triples)
-        
+
         # Create the prompt with emphasis on clean JSON response
         prompt = f"""Context:
 {context}
@@ -255,7 +259,7 @@ Respond with a clean, properly formatted JSON object using this exact format:
 
 Important: Ensure your response is valid JSON without any markdown formatting or code blocks."""
         return prompt
-    
+
     def query_openai(self, prompt: str) -> Dict:
         """
         Query the OpenAI API with a prompt.
@@ -279,10 +283,10 @@ Important: Ensure your response is valid JSON without any markdown formatting or
                     {"role": "user", "content": prompt}
                 ],
             )
-            
+
             # Extract the response content
             content = response.choices[0].message.content.strip()
-            
+
             # Try to extract JSON from the response
             try:
                 # First try direct JSON parsing
@@ -295,22 +299,22 @@ Important: Ensure your response is valid JSON without any markdown formatting or
                     json_str = content.split("```")[1].strip()
                 else:
                     json_str = content
-                
+
                 # Clean up the string
                 json_str = json_str.replace('\n', ' ').replace('\r', '')
                 json_str = ' '.join(json_str.split())  # Normalize whitespace
-                
+
                 try:
                     return json.loads(json_str)
                 except json.JSONDecodeError as e:
                     print(f"Error parsing JSON: {e}")
                     print(f"Cleaned JSON string: {json_str}")
                     return {"reasoning": "Error parsing response", "scores": {}}
-                
+
         except Exception as e:
             print(f"Error querying LLM: {e}")
             return {"reasoning": "Error querying model", "scores": {}}
-    
+
     def predict_missing_tails(self, head: str, relation: str, candidates: List[str], rdf_file_path: str) -> List[Tuple[str, float]]:
         """
         Predict missing tail entities for a given head and relation.
@@ -333,31 +337,31 @@ Important: Ensure your response is valid JSON without any markdown formatting or
         """
         # Build the knowledge graph
         G = self.build_knowledge_graph(rdf_file_path)
-        
+
         # Extract k-order neighborhood of the head entity
         G_entity = self.extract_entity_neighborhood(G, head, k=2)
-        
+
         # Extract neighborhood of the relation
         G_relation = self.extract_relation_neighborhood(G, relation)
-        
+
         # Combine the two subgraphs
         G_hr = nx.DiGraph()
         G_hr.add_edges_from(G_entity.edges(data=True))
         G_hr.add_edges_from(G_relation.edges(data=True))
-        
+
         # Generate prompt for the LLM
         prompt = self.generate_prompt(G_hr, head, relation, candidates)
-        
+
         # Query the LLM
         response = self.query_openai(prompt)
         print(response)
         # Extract scores
         scores = response.get("scores", {})
-        
+
         # Rank candidates by scores
         ranked_candidates = [(candidate, scores.get(candidate, 0)) for candidate in candidates]
         ranked_candidates.sort(key=lambda x: x[1], reverse=True)
-        
+
         return ranked_candidates
 
 
@@ -509,6 +513,9 @@ def run(args):
         args.eval_size = len(kg.test_set)
     model = None
 
+    if args.api_key is None:
+        args.api_key = os.environ.get("TENTRIS_TOKEN")
+
     # () Initialize the link prediction model
     if args.model == "RALP":
         model = RALP(knowledge_graph=kg,
@@ -529,11 +536,14 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_dir", type=str, default="KGs/Countries-S1", help="Path to dataset.")
-    parser.add_argument("--model", type=str, default="RALP", help="Model name to use for link prediction.", choices=["RALP"]) # add new models in 'choices'
+    parser.add_argument("--model", type=str, default="RALP", help="Model name to use for link prediction.",
+                        choices=["RALP"])  # add new models in 'choices'
     parser.add_argument("--base_url", type=str, default="http://tentris-ml.cs.upb.de:8501/v1",
                         help="Base URL for the OpenAI client.")
     parser.add_argument("--llm_model_name", type=str, default="tentris", help="Model name of the LLM to use.")
-    parser.add_argument("--api_key", type=str, default="INSERT_API_KEY", help="API key for the OpenAI client.")
+    parser.add_argument("--api_key", type=str, default=None, help="API key for the OpenAI client. If left to None, "
+                                                                  "it will look at the environment variable named "
+                                                                  "TENTRIS_TOKEN from a local .env file.")
     parser.add_argument("--temperature", type=float, default=1, help="Temperature hyperparameter for LLM calls.")
     parser.add_argument("--eval_size", type=int, default=None,
                         help="Amount of triples from the test set to evaluate. "
