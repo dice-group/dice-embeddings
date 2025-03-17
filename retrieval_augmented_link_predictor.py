@@ -65,6 +65,8 @@ from dicee.evaluator import evaluate_lp, evaluate_lp_k_vs_all
 from abc import ABC, abstractmethod
 import torch
 import re
+from dotenv import load_dotenv
+load_dotenv()
 
 
 class KnowledgeGraphPredictor:
@@ -85,8 +87,7 @@ class KnowledgeGraphPredictor:
         # Set OpenAI API key
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
         if not self.api_key:
-            raise ValueError(
-                "OpenAI API key not found. Please provide an API key or set the OPENAI_API_KEY environment variable.")
+            raise ValueError("OpenAI API key not found. Please provide an API key or set the OPENAI_API_KEY environment variable.")
 
         self.base_url = base_url
         self.model = model
@@ -313,9 +314,8 @@ Important: Ensure your response is valid JSON without any markdown formatting or
         except Exception as e:
             print(f"Error querying LLM: {e}")
             return {"reasoning": "Error querying model", "scores": {}}
-
-    def predict_missing_tails(self, head: str, relation: str, candidates: List[str], rdf_file_path: str) -> List[
-        Tuple[str, float]]:
+        
+    def predict_missing_tails(self, head: str, relation: str, candidates: List[str], rdf_file_path: str) -> List[Tuple[str, float]]:
         """
         Predict missing tail entities for a given head and relation.
         
@@ -642,6 +642,8 @@ def run(args):
                                                     f"total amount of triples in the test set: {len(kg.test_set)}")
     else:
         args.eval_size = len(kg.test_set)
+    if args.api_key is None:
+        args.api_key = os.environ.get("TENTRIS_TOKEN")
     # () Initialize the link prediction model
     if args.model == "RALP":
         model = RALP(knowledge_graph=kg,
@@ -679,6 +681,12 @@ if __name__ == "__main__":
     parser.add_argument("--llm_model_name", type=str, default="tentris", help="Model name of the LLM to use.")
     parser.add_argument("--api_key", type=str, default="token-tentris-upb", help="API key for the OpenAI client. token-tentris-upb")
     parser.add_argument("--temperature", type=float, default=0.0, help="Temperature hyperparameter for LLM calls.")
+
+    parser.add_argument("--llm_model_name", type=str, default="tentris", help="Model name of the LLM to use.")
+    parser.add_argument("--api_key", type=str, default=None, help="API key for the OpenAI client. If left to None, "
+                                                                  "it will look at the environment variable named "
+                                                                  "TENTRIS_TOKEN from a local .env file.")
+    parser.add_argument("--temperature", type=float, default=1, help="Temperature hyperparameter for LLM calls.")
     parser.add_argument("--eval_size", type=int, default=None,
                         help="Amount of triples from the test set to evaluate. "
                              "Leave it None to include all triples on the test set.")
