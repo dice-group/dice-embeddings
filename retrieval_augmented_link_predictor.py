@@ -510,7 +510,7 @@ class GraphContextLearner(AbstractBaseLinkPredictorClass):
             # Initialize scores for all entities
             scores_for_all_entities=[ -10.0 for _ in range(len(self.idx_to_entity))]
             # LLM call.
-            # @TODO: Later we will find a subgraph given h,r
+            # @TODO: Later we will find a subgraph given (h,r) to reduce the noise (unrelated info) about the input pair.
             content_=lp_prompt.format(input_text=f"{h} {r}", graph=self.str_train_set, candidates=self.str_ordered_entities)
             llm_response = self.client.chat.completions.create(
                 model=self.llm_model,
@@ -636,6 +636,8 @@ class RALP(AbstractBaseLinkPredictorClass):
 def run(args):
     # () Read KG
     # add_reciprocal is False leads to compute only tail entity rankings with KvsAll is being used
+    # @TODO:CD: We need to introduce a flag to use negative sampling eval or kvsall evall. If kvsall selected
+    # @TODO: add_reciprocal must be True.
     kg = KG(dataset_dir=args.dataset_dir, separator="\s+", eval_model=args.eval_model, add_reciprocal=False)
     if args.eval_size is not None:
         assert len(kg.test_set) >= args.eval_size, (f"Evaluation size cant be greater than the "
@@ -664,7 +666,7 @@ def run(args):
     evaluate_lp_k_vs_all(model=model, triple_idx=kg.test_set[:args.eval_size], er_vocab=kg.er_vocab,
                          info='Eval KvsAll Starts', batch_size=args.batch_size)
 
-    # () Start evaluation
+    # @TODO:CD: We need to introduce a flag to use negative sampling eval or kvsall eval
     #evaluate_lp(model=model, triple_idx=kg.test_set[:args.eval_size], num_entities=len(kg.entity_to_idx),
     #            er_vocab=kg.er_vocab, re_vocab=kg.re_vocab, info='Eval LP Starts', batch_size=args.batch_size,
     #            chunk_size=args.chunk_size)
@@ -679,14 +681,11 @@ if __name__ == "__main__":
                         choices=["http://harebell.cs.upb.de:8501/v1", "http://tentris-ml.cs.upb.de:8502/v1"],
                         help="Base URL for the OpenAI client.")
     parser.add_argument("--llm_model_name", type=str, default="tentris", help="Model name of the LLM to use.")
-    parser.add_argument("--api_key", type=str, default="token-tentris-upb", help="API key for the OpenAI client. token-tentris-upb")
     parser.add_argument("--temperature", type=float, default=0.0, help="Temperature hyperparameter for LLM calls.")
 
-    parser.add_argument("--llm_model_name", type=str, default="tentris", help="Model name of the LLM to use.")
     parser.add_argument("--api_key", type=str, default=None, help="API key for the OpenAI client. If left to None, "
                                                                   "it will look at the environment variable named "
                                                                   "TENTRIS_TOKEN from a local .env file.")
-    parser.add_argument("--temperature", type=float, default=1, help="Temperature hyperparameter for LLM calls.")
     parser.add_argument("--eval_size", type=int, default=None,
                         help="Amount of triples from the test set to evaluate. "
                              "Leave it None to include all triples on the test set.")
