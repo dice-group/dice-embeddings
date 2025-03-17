@@ -1,58 +1,11 @@
 """
-# pip install openai==1.66.3
-# Data Preparation
-# Read a knowledge graph (Countries)
-
-Let g:(train,val,test) be a tuple of three knowledge graphs
-For g[i] \in E x R x E, where
-E denotes a set of entities
-R denotes a set of relations
-
-# Get the test dataset
-train : List[Tuple[str,str,str]] = g[0]
-test  : List[Tuple[str,str,str]] = g[2]
-
-1. Move to train into directed graph of networkx (https://networkx.org/documentation/stable/index.html) or igraph (https://python.igraph.org/en/stable/)
-Although this is not necessary, they implement few functions that we would like to use in the next steps.
-
-
-# Link Prediction
-
-Let (h,r,t) be a test triple
-
-## Predicting missing tail
-Given (h,r) rank elements of E in te descending order of their relevance.
-
-#### Getting information about an entity (h)
-
-1. Getting k order neighbors of an entity
-Let n_h := {(s,p,o)} denote a set of triples from the train set, where h==s or h==o.
-n_h denotes the first order neighborhood (see https://python.igraph.org/en/stable/analysis.html#neighborhood)
-we can extend this into k>1 to get a subgraph that is "about h".
-
-
-2. Getting k order neighbors of a relation
-Let m_r := {(s,p,o)} denote a set of triples from the train set, where p==r.
-Similarly,
-- m_h denotes the first order neighborhood of r
-- we can extend this into k>1 to get a subgraph that is "about r".
-
-For the time being, assume that k=3.
-
-3. Assigning scores to entities based on information derived from (1) and (2)
-Let G_hr denote a set of triples derived from (1) and (2)
-Let E_hr denote a set of filtered entities (a concept from the link prediction evaluation)
-
-3.1.Write a prompt based on G_hr, and E_hr so that LLM generates scores for each item of E_hr
-
-3.2. We are done :)
+Additional dependencies
+pip install openai==1.66.3
+pip install igraph==0.11.8
 
 
 """
 import argparse
-
-#### NOTE: LF: First implementation approach
-
 import networkx as nx
 import rdflib
 from rdflib import URIRef
@@ -65,7 +18,15 @@ from dicee.evaluator import evaluate_lp, evaluate_lp_k_vs_all
 from abc import ABC, abstractmethod
 import torch
 import re
+import igraph
+import os
+import json
+from typing import List, Tuple, Dict
+import numpy as np
+from pydantic import BaseModel, Field
+from typing import List, Optional
 from dotenv import load_dotenv
+
 load_dotenv()
 
 
@@ -364,7 +325,6 @@ Important: Ensure your response is valid JSON without any markdown formatting or
 
         return ranked_candidates
 
-
 class AbstractBaseLinkPredictorClass(ABC):
     def __init__(self, knowledge_graph: KG = None, name="dummy"):
         assert knowledge_graph is not None
@@ -413,17 +373,29 @@ class AbstractBaseLinkPredictorClass(ABC):
                 raise RuntimeError("Unsupported shape: {}".format(shape_info))
 
 
-class GraphContextLearner(AbstractBaseLinkPredictorClass):
+class PredictionItem(BaseModel):
+    """Individual prediction item with entity name and confidence score."""
+    entity: str = Field(..., description="Name of the predicted entity")
+    score: float = Field(..., description="Confidence score between 0 and 1", ge=0, le=1)
+class PredictionResponse(BaseModel):
+    """Response model containing a list of entity predictions."""
+    predictions: List[PredictionItem] = Field(..., description="List of predicted entities with scores")
+
+class GCL(AbstractBaseLinkPredictorClass):
+    """ In context Learning on neighbouring triples to predict missing entities.
+
+    (h, r, t) \in G_test
+
+    1. Get all nodes that are n=3 hop around h.
+    2. Get all triples from G_train involving (1).
+    3. Generate a prompt based on (2) and (h,r) to assign scores for all e \in E.
+
+    @TODO:CD: We should write a regression test on the Countries S1 dataset.
+    @TODO:CD: We should ensure that the input tokens do not exceed the allowed limit.
+
     """
-    Link Prediction via Subgraph Context Learning
-
-    Given (h,r,t) \in Test
-
-
-    """
-    def __init__(self, knowledge_graph: KG = None,base_url:str=None,
-                 api_key:str=None,
-                 llm_model:str=None,temperature:float=0.0,seed:int=42) -> None:
+    def __init__(self, knowledge_graph: KG = None,base_url:str=None, api_key:str=None, llm_model:str=None,
+                 temperature:float=0.0, seed:int=42, num_of_hops:int=3, use_val:bool=True) -> None:
         super().__init__(knowledge_graph, name="GCL")
         # @TODO: CD: input arguments should be passed onto the abstract class
         assert base_url is not None and isinstance(base_url, str)
@@ -432,7 +404,7 @@ class GraphContextLearner(AbstractBaseLinkPredictorClass):
         self.llm_model = llm_model
         self.temperature = temperature
         self.seed = seed
-        self.client=OpenAI(base_url=self.base_url, api_key=self.api_key)
+        self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
         # Training dataset
         self.train_set:List[Tuple[str]] = [(self.idx_to_entity[idx_h],self.idx_to_relation[idx_r],self.idx_to_entity[idx_t]) for idx_h,idx_r,idx_t in self.kg.train_set.tolist()]
         # Validation dataset
@@ -440,66 +412,125 @@ class GraphContextLearner(AbstractBaseLinkPredictorClass):
                                           self.idx_to_relation[idx_r],
                                           self.idx_to_entity[idx_t]) for idx_h,idx_r,idx_t in self.kg.valid_set.tolist()]
 
-        self.str_ordered_entities = " \n ".join(list(sorted(self.entity_to_idx.keys())))
+        self.igraph = self.build_igraph(self.train_set + self.val_set if use_val else self.train_set)
+        self.str_entity_to_igraph_vertice={i["name"]:i for i in self.igraph.vs}
+        self.str_rel_to_igraph_edges={i["label"]:i for i in self.igraph.es}
 
-        self.str_train_set = "\n".join([ f"{s}, {p}, {o}" for s,p,o in list(sorted(self.train_set+self.val_set))])
+        self.node_to_relevant_triples=dict()
+        for entity, entity_node_object in self.str_entity_to_igraph_vertice.items():
+            neighboring_nodes = self.igraph.neighborhood(entity_node_object, order=num_of_hops)
+            subgraph = self.igraph.subgraph(neighboring_nodes)
+            triples = {(subgraph.vs[edge.source]["name"], edge["label"], subgraph.vs[edge.target]["name"]) for edge in subgraph.es}
+            self.node_to_relevant_triples[entity] = triples
+
+        self.target_entities = list(sorted(self.entity_to_idx.keys()))
+
+
+    def _create_prompt(self, source: str, relation: str) -> str:
+        # neighbouring nodes of source
+        base_prompt = f"""
+        I'm trying to predict the most likely target entities for the following query:
+        Source entity: {source}
+        Relation: {relation}
+        Query: ({source}, {relation}, ?)
+        
+        Please provide a ranked list of the 10 most likely target entities from the following list, along with likelihoods for each: {self.target_entities}
+        
+        Provide your answer in the following JSON format: {{"predictions": [{{"entity": "entity_name", "score": "float number"}}]}}
+
+        Notes:
+        1. Only include entities that are plausible targets for this relation.
+        2. For geographic entities, consider geographic location, regional classifications, and political associations.
+        3. Rank the entities by likelihood of being the correct target.
+        4. Only include entities from the provided list in your predictions.
+        5. If certain entities are not suitable for this relation, don't include them.
+        6. Return a valid JSON output.
+        """
+        return base_prompt
+
+    def _create_prompt_based_on_neighbours(self, source: str, relation: str) -> str:
+        # Get relevant triples for the source entity
+        relevant_triples = []
+        if source in self.node_to_relevant_triples:
+            relevant_triples = list(self.node_to_relevant_triples[source])
+            # Limit to top 20 triples to avoid overwhelming the prompt
+            relevant_triples = relevant_triples
+
+        # Format the relevant triples for display
+        triples_context = ""
+        if relevant_triples:
+            triples_context = "Here are some known facts about the source entity that might be relevant:\n"
+            for s, p, o in relevant_triples:
+                triples_context += f"- {s} {p} {o}\n"
+            triples_context += "\n"
+
+        # Important: Grouping relations is important to reach MRR 1.0
+        similar_relations = []
+        for s, p, o in relevant_triples:
+            if p == relation and s != source:
+                similar_relations.append((s, p, o))
+        similar_relations_context = ""
+        if similar_relations:
+            similar_relations_context = "Here are examples of similar relations in the knowledge base:\n"
+            for s, p, o in similar_relations:
+                similar_relations_context += f"- {s} {p} {o}\n"
+            similar_relations_context += "\n"
+
+        base_prompt = f"""
+        I'm trying to predict the most likely target entities for the following query:
+        Source entity: {source}
+        Relation: {relation}
+        Query: ({source}, {relation}, ?)
+
+        {triples_context}
+        {similar_relations_context}
+        
+        Please provide a ranked list of the 10 most likely target entities from the following list, along with likelihoods for each: {self.target_entities}
+    
+        Provide your answer in the following JSON format: {{"predictions": [{{"entity": "entity_name", "score": float_number}}]}}
+
+        Notes:
+        1. Only include entities that are plausible targets for this relation.
+        2. For geographic entities, consider geographic location, regional classifications, and political associations.
+        3. Rank the entities by likelihood of being the correct target.
+        4. Only include entities from the provided list in your predictions.
+        5. If certain entities are not suitable for this relation, don't include them.
+        6. Return a valid JSON output.
+        7. Make sure scores are floating point numbers between 0 and 1, not strings.
+        8. Use the provided knowledge about the source entity and similar relations to inform your predictions.
+        """
+        return base_prompt
+
+    @staticmethod
+    def build_igraph(graph:List[Tuple[str,str,str]]):
+        ig_graph = igraph.Graph(directed=True)
+        # Extract unique vertices from all quadruples
+        vertices = set()
+        edges = []
+        labels = []
+        for s,p,o in graph:
+            vertices.add(s)
+            vertices.add(o)
+            # ORDER MATTERS!
+            edges.append((s, o))
+            labels.append(p)
+
+        # Add all unique vertices at once
+        ig_graph.add_vertices(list(vertices))
+        # Add edges with labels
+        ig_graph.add_edges(edges)
+        ig_graph.es["label"] = labels
+        # Validate edge count
+        assert len(edges) == len(ig_graph.es), "Edge mismatch after graph construction!"
+        extracted_triples = [(ig_graph.vs[edge.source]["name"], edge["label"], ig_graph.vs[edge.target]["name"]) for edge in ig_graph.es]
+        # Not only the number but even the order must match
+        assert extracted_triples == [triple for triple in graph]
+        return ig_graph
 
     def forward_triples(self, x: torch.LongTensor):
         raise NotImplementedError("GraphContextLearner needs to implement it")
 
-        n, d = indexed_triples.shape
-        # For the time being
-        assert d == 3
-        assert n == 1
-        scores = []
-        for triple in indexed_triples.tolist():
-            idx_h, idx_r, idx_t = triple
-            h, r, t = self.idx_to_entity[idx_h], self.idx_to_relation[idx_r], self.idx_to_entity[idx_t]
-            # Given this triple, we need to assign a score
-            scores.append([0.0])
-        return torch.FloatTensor(scores)
-
     def forward_k_vs_all(self,x: torch.LongTensor) -> torch.FloatTensor:
-        # @TODO: We need to ensure that the prompt is not longer than 32K token size
-        # @TODO: We can also introduce another model that only returns top K candidates rather than assigning scores
-
-        # Prompt for using contextual learning in link prediction.
-        lp_prompt = """You are an AI assistant tasked with link prediction on knowledge graphs.
-
-        Your goal is to detect relevant entities from a given knowledge graph and a subject and relation pair.
-        For each candidate, provide a relevancy score between 0 and 100 indicating how likely it is to complete the triple (subject, relation, candidate).
-
-        Scoring guidelines:
-        - 80-100 : Directly and accurately completes the triple (highly relevant)
-        - 50-79  : Moderately relevant to the subject-relation pair
-        - 1-49   : Marginally relevant to the subject-relation pair
-        - 0: Completely irrelevant
-
-        For each candidate, carefully consider:
-        1. The semantic meaning of the subject and relation
-        2. The factual accuracy of the potential triple
-        3. The specificity of the connection
-    
-
-        Input:
-        Given a subject and a relation: {input_text}
-        \n\n
-        Graph:
-        Knowledge Graph: {graph}
-        \n\n
-        Candidate Entities: {candidates}
-
-        Output format:
-        Provide your response as a valid JSON array of objects, where each object contains a candidate and its score. 
-        Return only candidates with score greater than 0.
-        Do not make up any candidates. 
-        Example:
-        [
-          {{"candidate": "candidate_name1", "score": relevancy_score1}},
-          {{"candidate": "candidate_name2", "score": relevancy_score2}}
-        ]
-        """
-
         batch_output = []
         # Iterate over batch of subject and relation pairs
         for i in x.tolist():
@@ -507,35 +538,23 @@ class GraphContextLearner(AbstractBaseLinkPredictorClass):
             idx_h, idx_r =i
             # String representations of an entity and a relation, respectively.
             h, r = self.idx_to_entity[idx_h], self.idx_to_relation[idx_r]
-            # Initialize scores for all entities
-            scores_for_all_entities=[ -10.0 for _ in range(len(self.idx_to_entity))]
-            # LLM call.
-            # @TODO: Later we will find a subgraph given (h,r) to reduce the noise (unrelated info) about the input pair.
-            content_=lp_prompt.format(input_text=f"{h} {r}", graph=self.str_train_set, candidates=self.str_ordered_entities)
             llm_response = self.client.chat.completions.create(
-                model=self.llm_model,
-                temperature = self.temperature,
-                seed = self.seed,
-                messages=[{"role": "user", "content": content_}],
-                extra_body={"truncate_prompt_tokens": 30_000},
-                response_format ={"type": "json_object"}).choices[0].message.content
-            # Extract json output
-            scores = json.loads(llm_response)
-            # Iterate over json output
-            for report in scores:
+                model=self.llm_model, temperature=self.temperature, seed=self.seed,
+                messages=[{"role": "user",
+                           "content": "You are a knowledgeable assistant that helps with link prediction tasks.\n" +
+                                      self._create_prompt_based_on_neighbours(source=h, relation=r)}],
+                extra_body={"guided_json": PredictionResponse.model_json_schema()}).choices[0].message.content
+
+            prediction_response = PredictionResponse(**json.loads(llm_response))
+            # Initialize scores for all entities
+            scores_for_all_entities = [ 0.0 for _ in range(len(self.idx_to_entity))]
+            for pred in prediction_response.predictions:
                 try:
-                    # Get the index of an entity.
-                    idx_entity = self.entity_to_idx[report["candidate"]]
-                    # Get the score
-                    score = report["score"]
-                    # Insert the score
-                    scores_for_all_entities[idx_entity] = score
-                except Exception as e :
-                    print(f"Exception at predicting ({h}, {r}) \t {report} \t {e}")
+                    scores_for_all_entities[self.entity_to_idx[pred.entity]]=pred.score
+                except KeyError:
+                    print(f"For {h},{r}, {pred} not found")
                     continue
-                batch_output.append(scores_for_all_entities)
-
-
+            batch_output.append(scores_for_all_entities)
         return torch.FloatTensor(batch_output)
 
 
@@ -633,12 +652,7 @@ class RALP(AbstractBaseLinkPredictorClass):
         return torch.FloatTensor(scores)
 
 
-def run(args):
-    # () Read KG
-    # add_reciprocal is False leads to compute only tail entity rankings with KvsAll is being used
-    # @TODO:CD: We need to introduce a flag to use negative sampling eval or kvsall evall. If kvsall selected
-    # @TODO: add_reciprocal must be True.
-    kg = KG(dataset_dir=args.dataset_dir, separator="\s+", eval_model=args.eval_model, add_reciprocal=False)
+def sanity_checking(args,kg):
     if args.eval_size is not None:
         assert len(kg.test_set) >= args.eval_size, (f"Evaluation size cant be greater than the "
                                                     f"total amount of triples in the test set: {len(kg.test_set)}")
@@ -646,25 +660,30 @@ def run(args):
         args.eval_size = len(kg.test_set)
     if args.api_key is None:
         args.api_key = os.environ.get("TENTRIS_TOKEN")
+
+def get_model(args,kg)->AbstractBaseLinkPredictorClass:
     # () Initialize the link prediction model
     if args.model == "RALP":
-        model = RALP(knowledge_graph=kg,
-                     base_url=args.base_url,
-                     api_key=args.api_key,
-                     llm_model=args.llm_model_name,
-                     temperature=args.temperature,seed=args.seed)
-    elif args.model == "GraphContextLearner":
-        model = GraphContextLearner(knowledge_graph=kg,
-                     base_url=args.base_url,
-                     api_key=args.api_key,
-                     llm_model=args.llm_model_name,
-                     temperature=args.temperature,seed=args.seed)
+        model = RALP(knowledge_graph=kg, base_url=args.base_url, api_key=args.api_key,
+                     llm_model=args.llm_model_name, temperature=args.temperature, seed=args.seed)
+    elif args.model == "GCL":
+        model = GCL(knowledge_graph=kg, base_url=args.base_url, api_key=args.api_key,
+                    llm_model=args.llm_model_name, temperature=args.temperature, seed=args.seed)
     else:
         raise KeyError(f"{args.model} is not a valid model")
     assert model is not None, f"Couldn't assign a model named: {args.model}"
+    return model
+def run(args):
+    # Important: add_reciprocal=False in KvsAll implies that inverse relation has been introduced.
+    # Therefore, The link prediction results are based on the missing tail rankings only!
+    kg = KG(dataset_dir=args.dataset_dir, separator="\s+", eval_model=args.eval_model, add_reciprocal=False)
 
-    evaluate_lp_k_vs_all(model=model, triple_idx=kg.test_set[:args.eval_size], er_vocab=kg.er_vocab,
-                         info='Eval KvsAll Starts', batch_size=args.batch_size)
+    sanity_checking(args,kg)
+
+    model = get_model(args,kg)
+
+    evaluate_lp_k_vs_all(model=model, triple_idx=kg.test_set[:args.eval_size],
+                         er_vocab=kg.er_vocab, info='Eval KvsAll Starts', batch_size=args.batch_size)
 
     # @TODO:CD: We need to introduce a flag to use negative sampling eval or kvsall eval
     #evaluate_lp(model=model, triple_idx=kg.test_set[:args.eval_size], num_entities=len(kg.entity_to_idx),
@@ -675,21 +694,21 @@ def run(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_dir", type=str, default="KGs/Countries-S1", help="Path to dataset.")
-    parser.add_argument("--model", type=str, default="GraphContextLearner", help="Model name to use for link prediction.",
-                        choices=["RALP","GraphContextLearner"])
+    parser.add_argument("--model", type=str, default="GCL", help="Model name to use for link prediction.",
+                        choices=["RALP","GCL"])
     parser.add_argument("--base_url", type=str, default="http://harebell.cs.upb.de:8501/v1",
                         choices=["http://harebell.cs.upb.de:8501/v1", "http://tentris-ml.cs.upb.de:8502/v1"],
                         help="Base URL for the OpenAI client.")
     parser.add_argument("--llm_model_name", type=str, default="tentris", help="Model name of the LLM to use.")
     parser.add_argument("--temperature", type=float, default=0.0, help="Temperature hyperparameter for LLM calls.")
-
     parser.add_argument("--api_key", type=str, default=None, help="API key for the OpenAI client. If left to None, "
                                                                   "it will look at the environment variable named "
                                                                   "TENTRIS_TOKEN from a local .env file.")
     parser.add_argument("--eval_size", type=int, default=None,
                         help="Amount of triples from the test set to evaluate. "
                              "Leave it None to include all triples on the test set.")
-    parser.add_argument("--eval_model", type=str, default="train_value_test", help="Type of evaluation model.")
+    parser.add_argument("--eval_model", type=str, default="train_value_test",
+                        help="Type of evaluation model.")
     parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--chunk_size", type=int, default=1)
     parser.add_argument("--seed", type=int, default=42)
