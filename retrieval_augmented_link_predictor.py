@@ -49,6 +49,7 @@ Let E_hr denote a set of filtered entities (a concept from the link prediction e
 
 
 """
+import argparse
 
 #### NOTE: LF: First implementation approach
 
@@ -391,19 +392,20 @@ class AbstractBaseLinkPredictorClass(ABC):
     def __call__(self,*args,**kwargs):
         """Predicting missing triples"""
 
+
 class Dummy(AbstractBaseLinkPredictorClass):
-    def __init__(self, knowledge_graph:KG=None, name="dummy") -> None:
-        super().__init__(knowledge_graph,name)
+    def __init__(self, knowledge_graph: KG = None, name="dummy") -> None:
+        super().__init__(knowledge_graph, name)
 
     def __call__(self,indexed_triples:torch.LongTensor):
         n,d=indexed_triples.shape
         # For the time being
-        assert d==3
-        assert n==1
-        scores=[]
+        assert d == 3
+        assert n == 1
+        scores = []
         for triple in indexed_triples.tolist():
             idx_h, idx_r, idx_t = triple
-            h,r,t=self.idx_to_entity[idx_h], self.idx_to_relation[idx_r], self.idx_to_entity[idx_t]
+            h, r, t = self.idx_to_entity[idx_h], self.idx_to_relation[idx_r], self.idx_to_entity[idx_t]
             # Given this triple, we need to assign a score
             scores.append([0.0])
         return torch.FloatTensor(scores)
@@ -414,10 +416,12 @@ class RALP(AbstractBaseLinkPredictorClass):
                  name="ralp-1.0",
                  base_url="http://tentris-ml.cs.upb.de:8501/v1",
                  api_key=None,
-                 model="tentris")-> None:
+                 llm_model="tentris",
+                 temperature=1) -> None:
         super().__init__(knowledge_graph, name)
         self.client = OpenAI(base_url=base_url, api_key=api_key)
-        self.model = model
+        self.llm_model = llm_model
+        self.temperature = temperature
 
     def extract_float(self, text):
         """Extract the float number from a string. Used mainly to filter the LLM-output for the scoring task."""
@@ -457,11 +461,13 @@ class RALP(AbstractBaseLinkPredictorClass):
         Assign a score to the given triple based on the provided training triples.
         """
         response = self.client.chat.completions.create(
-            model=self.model,
+            model=self.llm_model,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
+            seed=42,
+            temperature=self.temperature
         )
 
         # Extract the response content
@@ -487,126 +493,53 @@ class RALP(AbstractBaseLinkPredictorClass):
                 triples_h_str += f'- ("{self.ru(self.idx_to_entity[trp[0]])}", "{self.ru(self.idx_to_relation[trp[1]])}", "{self.ru(self.idx_to_entity[trp[2]])}") \n'
 
             # Get the score from the LLM
-            score = self.get_score((h, r, t), triples_h)
+            score = self.get_score((h, r, t), triples_h_str)
             scores.append([score])
         return torch.FloatTensor(scores)
 
 
+def run(args):
+
+    # () Read KG
+    kg = KG(dataset_dir=args.dataset_dir, separator="\s+", eval_model=args.eval_model)
+    if args.eval_size is not None:
+        assert len(kg.test_set) >= args.eval_size, (f"Evaluation size cant be greater than the "
+                                                    f"total amount of triples in the test set: {len(kg.test_set)}")
+    else:
+        args.eval_size = len(kg.test_set)
+    model = None
+
+    # () Initialize the link prediction model
+    if args.model == "RALP":
+        model = RALP(knowledge_graph=kg,
+                     base_url=args.base_url,
+                     api_key=args.api_key,
+                     llm_model=args.llm_model_name,
+                     temperature=args.temperature)
+
+    assert model is not None, f"Couldn't assign a model named: {args.model}"
+
+    # () Start evaluation
+    evaluate_lp(model=model, triple_idx=kg.test_set[:args.eval_size], num_entities=len(kg.entity_to_idx),
+                er_vocab=kg.er_vocab, re_vocab=kg.re_vocab, info='Eval LP Starts', batch_size=args.batch_size,
+                chunk_size=args.chunk_size)
+
+
 if __name__ == "__main__":
-    # () Read / Preprocess KG
-    kg = KG(dataset_dir="KGs/Countries-S1",separator="\s+",eval_model="train_val_test")
 
-    # It takes ~14 h to evaluate this model :/
-    evaluate_lp(model=RALP(knowledge_graph=kg, api_key="API_KEY"), triple_idx=kg.train_set, num_entities=len(kg.entity_to_idx), er_vocab=kg.er_vocab,
-                re_vocab=kg.re_vocab,  info='Eval LP Starts', batch_size=1, chunk_size=1)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dataset_dir", type=str, default="KGs/Countries-S1", help="Path to dataset.")
+    parser.add_argument("--model", type=str, default="RALP", help="Model name to use for link prediction.", choices=["RALP"]) # add new models in 'choices'
+    parser.add_argument("--base_url", type=str, default="http://tentris-ml.cs.upb.de:8501/v1",
+                        help="Base URL for the OpenAI client.")
+    parser.add_argument("--llm_model_name", type=str, default="tentris", help="Model name of the LLM to use.")
+    parser.add_argument("--api_key", type=str, default="INSERT_API_KEY", help="API key for the OpenAI client.")
+    parser.add_argument("--temperature", type=float, default=1, help="Temperature hyperparameter for LLM calls.")
+    parser.add_argument("--eval_size", type=int, default=None,
+                        help="Amount of triples from the test set to evaluate. "
+                             "Leave it None to include all triples on the test set.")
+    parser.add_argument("--eval_model", type=str, default="train_value_test", help="Type of evaluation model.")
+    parser.add_argument("--batch_size", type=int, default=1)
+    parser.add_argument("--chunk_size", type=int, default=1)
 
-    # @TODO: Create classes inherits from AbstractBaseLinkPredictorClass and improve the link prediction results
-    exit(1)
-    # @TODO:CD -> Luke: Please refactor the below code to work with the above code.
-    # Create predictor (uses Tentris model by default)
-    predictor = KnowledgeGraphPredictor()
-
-    print("\nExample: Countries that border Italy")
-    head = "Italy"
-    relation = "borders"
-    candidates = ["France", "Austria", "Switzerland", "Slovenia", "Vatican", "San Marino"]
-    
-    # Predict missing tails
-    ranked_candidates = predictor.predict_missing_tails(head, relation, candidates, "data/countries.ttl")
-    
-    # Print results
-    print(f"\nPredicting missing tails for ({head}, {relation}, ?)")
-    print("\nRanked candidates with scores:")
-    for candidate, score in ranked_candidates:
-        print(f"{candidate}: {score:.2f}")
-
-    print("\ndone!")
-
-
-'''
-Data used:
-
-@prefix ex: <http://example.org/> .
-@prefix dbo: <http://dbpedia.org/ontology/> .
-@prefix dbr: <http://dbpedia.org/resource/> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-
-# Germany and its borders
-ex:Germany a dbo:Country ;
-    rdfs:label "Germany" ;
-    dbo:capital dbr:Berlin ;
-    dbo:continent dbr:Europe ;
-    dbo:borders ex:France, ex:Poland, ex:Netherlands, ex:Austria, ex:Czech_Republic, ex:Denmark . 
-
-# France with partial missing borders
-ex:France a dbo:Country ;
-    rdfs:label "France" ;
-    dbo:capital dbr:Paris ;
-    dbo:continent dbr:Europe ;
-    dbo:borders ex:Germany, ex:Belgium, ex:Spain, ex:Italy .  
-    # Missing Luxembourg, Switzerland, Monaco
-
-# Poland with missing some eastern borders
-ex:Poland a dbo:Country ;
-    rdfs:label "Poland" ;
-    dbo:capital dbr:Warsaw ;
-    dbo:continent dbr:Europe ;
-    dbo:borders ex:Germany, ex:Czech_Republic, ex:Slovakia, ex:Lithuania .  
-    # Missing Ukraine, Belarus
-
-# Netherlands with incomplete neighbors
-ex:Netherlands a dbo:Country ;
-    rdfs:label "Netherlands" ;
-    dbo:capital dbr:Amsterdam ;
-    dbo:continent dbr:Europe ;
-    dbo:borders ex:Germany, ex:Belgium .  
-    # Missing North Sea relation
-
-# Belgium with missing some minor relations
-ex:Belgium a dbo:Country ;
-    rdfs:label "Belgium" ;
-    dbo:capital dbr:Brussels ;
-    dbo:borders ex:France, ex:Netherlands, ex:Germany .  
-    # Missing Luxembourg
-
-# Austria with some missing borders
-ex:Austria a dbo:Country ;
-    rdfs:label "Austria" ;
-    dbo:capital dbr:Vienna ;
-    dbo:continent dbr:Europe ;
-    dbo:borders ex:Germany, ex:Czech_Republic, ex:Slovakia, ex:Italy .  
-    # Missing Switzerland, Slovenia, Hungary
-
-# Czech Republic with missing some eastern borders
-ex:Czech_Republic a dbo:Country ;
-    rdfs:label "Czech Republic" ;
-    dbo:capital dbr:Prague ;
-    dbo:continent dbr:Europe ;
-    dbo:borders ex:Germany, ex:Poland, ex:Austria .  
-    # Missing Slovakia
-
-# Denmark with only one neighbor
-ex:Denmark a dbo:Country ;
-    rdfs:label "Denmark" ;
-    dbo:capital dbr:Copenhagen ;
-    dbo:continent dbr:Europe ;
-    dbo:borders ex:Germany .  
-    # Missing maritime neighbors (Sweden, Norway via sea)
-
-# Italy with missing eastern borders
-ex:Italy a dbo:Country ;
-    rdfs:label "Italy" ;
-    dbo:capital dbr:Rome ;
-    dbo:continent dbr:Europe ;
-    dbo:borders ex:France, ex:Austria .  
-    # Missing Slovenia, Switzerland, Vatican, San Marino
-
-# Slovakia with partial information
-ex:Slovakia a dbo:Country ;
-    rdfs:label "Slovakia" ;
-    dbo:capital dbr:Bratislava ;
-    dbo:continent dbr:Europe ;
-    dbo:borders ex:Poland, ex:Czech_Republic, ex:Austria .  
-    # Missing Hungary, Ukraine
-'''
+    run(parser.parse_args())
