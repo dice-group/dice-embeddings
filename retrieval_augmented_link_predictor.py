@@ -490,6 +490,7 @@ class GCL(AbstractBaseLinkPredictorClass):
         5. If certain entities are not suitable for this relation, don't include them.
         6. Return a valid JSON output.
         7. Make sure scores are floating point numbers between 0 and 1, not strings.
+        8. A score can only be between 0 and 1, i.e. score ∈ [0, 1]. They can never be negative or greater than 1!
         """
         return base_prompt
 
