@@ -2,7 +2,20 @@
 Additional dependencies
 pip install openai==1.66.3
 pip install igraph==0.11.8
+pip install jellyfish==1.1.3
 
+# @TODO:CD:@Luke I guess writing few regression tests would help us to ensure that our modifications would not break the model
+python retrieval_augmented_link_predictor.py --dataset_dir "KGs/Countries-S1" --model "GCL" --base_url "http://harebell.cs.upb.de:8501/v1" --num_of_hops 1
+@TODO: CD: There is some randomness on this setup. I dunno whay
+{'H@1': 0.7916666666666666, 'H@3': 0.875, 'H@10': 0.9583333333333334, 'MRR': 0.8472644080996884}
+
+python retrieval_augmented_link_predictor.py --dataset_dir "KGs/Countries-S1" --model "GCL" --base_url "http://harebell.cs.upb.de:8501/v1" --num_of_hops 2
+{'H@1': 1.0, 'H@3': 1.0, 'H@10': 1.0, 'MRR': 1.0}
+
+python retrieval_augmented_link_predictor.py --dataset_dir "KGs/Countries-S2" --model "GCL" --base_url "http://harebell.cs.upb.de:8501/v1" --num_of_hops 2
+@TODO: CD: There is some randomness on this setup. I dunno whay
+{'H@1': 0.875, 'H@3': 1.0, 'H@10': 1.0, 'MRR': 0.9305555555555555}
+{'H@1': 0.9166666666666666, 'H@3': 1.0, 'H@10': 1.0, 'MRR': 0.9583333333333334}
 
 """
 import argparse
@@ -28,7 +41,6 @@ from typing import List, Optional
 from dotenv import load_dotenv
 
 load_dotenv()
-
 
 class KnowledgeGraphPredictor:
     """
@@ -324,7 +336,6 @@ Important: Ensure your response is valid JSON without any markdown formatting or
         ranked_candidates.sort(key=lambda x: x[1], reverse=True)
 
         return ranked_candidates
-
 class AbstractBaseLinkPredictorClass(ABC):
     def __init__(self, knowledge_graph: KG = None, name="dummy"):
         assert knowledge_graph is not None
@@ -372,7 +383,6 @@ class AbstractBaseLinkPredictorClass(ABC):
             else:
                 raise RuntimeError("Unsupported shape: {}".format(shape_info))
 
-
 class PredictionItem(BaseModel):
     """Individual prediction item with entity name and confidence score."""
     entity: str = Field(..., description="Name of the predicted entity")
@@ -382,7 +392,7 @@ class PredictionResponse(BaseModel):
     predictions: List[PredictionItem] = Field(..., description="List of predicted entities with scores")
 
 class GCL(AbstractBaseLinkPredictorClass):
-    """ In context Learning on neighbouring triples to predict missing entities.
+    """ in-context Learning on neighbouring triples to predict missing entities.
 
     (h, r, t) \in G_test
 
@@ -406,75 +416,56 @@ class GCL(AbstractBaseLinkPredictorClass):
         self.seed = seed
         self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
         # Training dataset
-        self.train_set:List[Tuple[str]] = [(self.idx_to_entity[idx_h],self.idx_to_relation[idx_r],self.idx_to_entity[idx_t]) for idx_h,idx_r,idx_t in self.kg.train_set.tolist()]
+        self.train_set:List[Tuple[str]] = [(self.idx_to_entity[idx_h],
+                                            self.idx_to_relation[idx_r],
+                                            self.idx_to_entity[idx_t]) for idx_h,idx_r,idx_t in self.kg.train_set.tolist()]
         # Validation dataset
         self.val_set:List[Tuple[str]] = [(self.idx_to_entity[idx_h],
                                           self.idx_to_relation[idx_r],
                                           self.idx_to_entity[idx_t]) for idx_h,idx_r,idx_t in self.kg.valid_set.tolist()]
 
-        self.igraph = self.build_igraph(self.train_set + self.val_set if use_val else self.train_set)
+        triples = self.train_set + self.val_set if use_val else self.train_set
+        self.igraph = self.build_igraph(triples)
         self.str_entity_to_igraph_vertice={i["name"]:i for i in self.igraph.vs}
         self.str_rel_to_igraph_edges={i["label"]:i for i in self.igraph.es}
 
+        # Mapping from an entity to relevant triples.
+        # A relevant triple contains a entity that is num_of_hops around of a given entity
         self.node_to_relevant_triples=dict()
         for entity, entity_node_object in self.str_entity_to_igraph_vertice.items():
             neighboring_nodes = self.igraph.neighborhood(entity_node_object, order=num_of_hops)
             subgraph = self.igraph.subgraph(neighboring_nodes)
-            triples = {(subgraph.vs[edge.source]["name"], edge["label"], subgraph.vs[edge.target]["name"]) for edge in subgraph.es}
-            self.node_to_relevant_triples[entity] = triples
+            self.node_to_relevant_triples[entity] = {(subgraph.vs[edge.source]["name"], edge["label"], subgraph.vs[edge.target]["name"]) for edge in subgraph.es}
 
         self.target_entities = list(sorted(self.entity_to_idx.keys()))
-
-
-    def _create_prompt(self, source: str, relation: str) -> str:
-        # neighbouring nodes of source
-        base_prompt = f"""
-        I'm trying to predict the most likely target entities for the following query:
-        Source entity: {source}
-        Relation: {relation}
-        Query: ({source}, {relation}, ?)
-        
-        Please provide a ranked list of the 10 most likely target entities from the following list, along with likelihoods for each: {self.target_entities}
-        
-        Provide your answer in the following JSON format: {{"predictions": [{{"entity": "entity_name", "score": "float number"}}]}}
-
-        Notes:
-        1. Only include entities that are plausible targets for this relation.
-        2. For geographic entities, consider geographic location, regional classifications, and political associations.
-        3. Rank the entities by likelihood of being the correct target.
-        4. Only include entities from the provided list in your predictions.
-        5. If certain entities are not suitable for this relation, don't include them.
-        6. Return a valid JSON output.
-        """
-        return base_prompt
 
     def _create_prompt_based_on_neighbours(self, source: str, relation: str) -> str:
         # Get relevant triples for the source entity
         relevant_triples = []
         if source in self.node_to_relevant_triples:
             relevant_triples = list(self.node_to_relevant_triples[source])
-            # Limit to top 20 triples to avoid overwhelming the prompt
-            relevant_triples = relevant_triples
 
-        # Format the relevant triples for display
-        triples_context = ""
-        if relevant_triples:
-            triples_context = "Here are some known facts about the source entity that might be relevant:\n"
-            for s, p, o in relevant_triples:
-                triples_context += f"- {s} {p} {o}\n"
-            triples_context += "\n"
+        assert len(relevant_triples) > 0
+        # @TODO:CD:Potential improvement by trade offing the test runtime:
+        #  @TODO: Finding an some triples from relevant_triples while the prediction is being invariant to it
+        # @TODO: Prediction does not change but the input size decreases
+        # @TODO: The removed triples can be seen as noise
+        triples_context = "Here are some known facts about the source entity that might be relevant:\n"
+        for s, p, o in sorted(relevant_triples):
+            triples_context += f"- {s} {p} {o}\n"
+        triples_context += "\n"
 
         # Important: Grouping relations is important to reach MRR 1.0
         similar_relations = []
         for s, p, o in relevant_triples:
             if p == relation and s != source:
                 similar_relations.append((s, p, o))
-        similar_relations_context = ""
-        if similar_relations:
-            similar_relations_context = "Here are examples of similar relations in the knowledge base:\n"
-            for s, p, o in similar_relations:
-                similar_relations_context += f"- {s} {p} {o}\n"
-            similar_relations_context += "\n"
+
+        similar_relations_context = "Here are examples of similar relations in the knowledge base:\n"
+        for s, p, o in similar_relations:
+            similar_relations_context += f"- {s} {p} {o}\n"
+        similar_relations_context += "\n"
+
 
         base_prompt = f"""
         I'm trying to predict the most likely target entities for the following query:
@@ -482,22 +473,23 @@ class GCL(AbstractBaseLinkPredictorClass):
         Relation: {relation}
         Query: ({source}, {relation}, ?)
 
+        Subgraph Graph:
         {triples_context}
         {similar_relations_context}
         
-        Please provide a ranked list of the 10 most likely target entities from the following list, along with likelihoods for each: {self.target_entities}
+        Please provide a ranked list of at most {min(len(self.target_entities),15)} likely target entities from the following list, along with likelihoods for each: {self.target_entities}
     
         Provide your answer in the following JSON format: {{"predictions": [{{"entity": "entity_name", "score": float_number}}]}}
 
         Notes:
+        1. Use the provided knowledge about the source entity and similar relations to inform your predictions.       
         1. Only include entities that are plausible targets for this relation.
         2. For geographic entities, consider geographic location, regional classifications, and political associations.
         3. Rank the entities by likelihood of being the correct target.
-        4. Only include entities from the provided list in your predictions.
+        4. ONLY INCLUDE entities from the provided list in your predictions.
         5. If certain entities are not suitable for this relation, don't include them.
         6. Return a valid JSON output.
         7. Make sure scores are floating point numbers between 0 and 1, not strings.
-        8. Use the provided knowledge about the source entity and similar relations to inform your predictions.
         """
         return base_prompt
 
@@ -543,16 +535,18 @@ class GCL(AbstractBaseLinkPredictorClass):
                 messages=[{"role": "user",
                            "content": "You are a knowledgeable assistant that helps with link prediction tasks.\n" +
                                       self._create_prompt_based_on_neighbours(source=h, relation=r)}],
-                extra_body={"guided_json": PredictionResponse.model_json_schema()}).choices[0].message.content
+                extra_body={"guided_json": PredictionResponse.model_json_schema(),
+                            "truncate_prompt_tokens": 30_000,
+                            }).choices[0].message.content
 
             prediction_response = PredictionResponse(**json.loads(llm_response))
             # Initialize scores for all entities
-            scores_for_all_entities = [ 0.0 for _ in range(len(self.idx_to_entity))]
+            scores_for_all_entities = [ -1.0 for _ in range(len(self.idx_to_entity))]
             for pred in prediction_response.predictions:
                 try:
                     scores_for_all_entities[self.entity_to_idx[pred.entity]]=pred.score
                 except KeyError:
-                    print(f"For {h},{r}, {pred} not found")
+                    print(f"For {h},{r}, {pred} not found\tPrediction Size: {len(prediction_response.predictions)}")
                     continue
             batch_output.append(scores_for_all_entities)
         return torch.FloatTensor(batch_output)
@@ -668,11 +662,12 @@ def get_model(args,kg)->AbstractBaseLinkPredictorClass:
                      llm_model=args.llm_model_name, temperature=args.temperature, seed=args.seed)
     elif args.model == "GCL":
         model = GCL(knowledge_graph=kg, base_url=args.base_url, api_key=args.api_key,
-                    llm_model=args.llm_model_name, temperature=args.temperature, seed=args.seed)
+                    llm_model=args.llm_model_name, temperature=args.temperature, seed=args.seed,num_of_hops=args.num_of_hops)
     else:
         raise KeyError(f"{args.model} is not a valid model")
     assert model is not None, f"Couldn't assign a model named: {args.model}"
     return model
+
 def run(args):
     # Important: add_reciprocal=False in KvsAll implies that inverse relation has been introduced.
     # Therefore, The link prediction results are based on the missing tail rankings only!
@@ -682,10 +677,9 @@ def run(args):
 
     model = get_model(args,kg)
 
-    evaluate_lp_k_vs_all(model=model, triple_idx=kg.test_set[:args.eval_size],
+    results:dict = evaluate_lp_k_vs_all(model=model, triple_idx=kg.test_set[:args.eval_size],
                          er_vocab=kg.er_vocab, info='Eval KvsAll Starts', batch_size=args.batch_size)
-
-    # @TODO:CD: We need to introduce a flag to use negative sampling eval or kvsall eval
+    print(results)
     #evaluate_lp(model=model, triple_idx=kg.test_set[:args.eval_size], num_entities=len(kg.entity_to_idx),
     #            er_vocab=kg.er_vocab, re_vocab=kg.re_vocab, info='Eval LP Starts', batch_size=args.batch_size,
     #            chunk_size=args.chunk_size)
@@ -694,8 +688,7 @@ def run(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_dir", type=str, default="KGs/Countries-S1", help="Path to dataset.")
-    parser.add_argument("--model", type=str, default="GCL", help="Model name to use for link prediction.",
-                        choices=["RALP","GCL"])
+    parser.add_argument("--model", type=str, default="GCL", help="Model name to use for link prediction.", choices=["RALP",'GCL'])
     parser.add_argument("--base_url", type=str, default="http://harebell.cs.upb.de:8501/v1",
                         choices=["http://harebell.cs.upb.de:8501/v1", "http://tentris-ml.cs.upb.de:8502/v1"],
                         help="Base URL for the OpenAI client.")
@@ -712,4 +705,5 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--chunk_size", type=int, default=1)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--num_of_hops", type=int, default=1, help="Number of hops to use to extract a subgraph around an entity-")
     run(parser.parse_args())
