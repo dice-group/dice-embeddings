@@ -42,300 +42,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-class KnowledgeGraphPredictor:
-    """
-    A class for predicting missing relations in knowledge graphs using LLMs.
-    """
-
-    def __init__(self, api_key="super-secure-key", base_url="http://tentris-ml.cs.upb.de:8501/v1", model="tentris"):
-        """
-        Initialize the KnowledgeGraphPredictor.
-        
-        Parameters:
-        -----------
-        api_key : str, optional
-        base_url : str, optional
-        model : str, optional
-        """
-        # Set OpenAI API key
-        self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
-        if not self.api_key:
-            raise ValueError("OpenAI API key not found. Please provide an API key or set the OPENAI_API_KEY environment variable.")
-
-        self.base_url = base_url
-        self.model = model
-
-        # Initialize OpenAI client
-        if self.base_url:
-            self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
-        else:
-            self.client = OpenAI(api_key=self.api_key)
-
-    def build_knowledge_graph(self, rdf_file_path: str, format: str = "ttl") -> nx.DiGraph:
-        """
-        Build a directed NetworkX graph from an RDF file.
-        
-        Parameters:
-        -----------
-        rdf_file_path : str
-            Path to the RDF file
-        format : str, optional
-            Format of the RDF file (default: "ttl")
-            
-        Returns:
-        --------
-        G : networkx.DiGraph
-            The directed NetworkX graph built from the RDF data
-        """
-        # Load RDF graph
-        g = rdflib.Graph()
-        # NOTE: Currently uses RDF/TTL format! 
-        g.parse(rdf_file_path, format=format)
-
-        # Create a NetworkX directed graph
-        G = nx.DiGraph()
-
-        # Process the graph data
-        for s, p, o in g:
-            # NOTE: For now the borders relation is hardcoded! 
-            if p == URIRef('http://dbpedia.org/ontology/borders'):
-                # Get readable labels
-                s_label = str(s).split('/')[-1].replace('>', '').replace('_', ' ')
-                o_label = str(o).split('/')[-1].replace('>', '').replace('_', ' ')
-
-                # Add edge to graph with relation as attribute
-                G.add_edge(s_label, o_label, relation="borders")
-
-        return G
-
-    def extract_entity_neighborhood(self, G: nx.DiGraph, entity: str, k: int = 2) -> nx.DiGraph:
-        """
-        Extract the k-order neighborhood of an entity in the graph.
-        
-        Parameters:
-        -----------
-        G : networkx.DiGraph
-            The knowledge graph
-        entity : str
-            The entity to extract neighborhood for
-        k : int, optional
-            The order of the neighborhood (default: 2)
-            
-        Returns:
-        --------
-        G_hr : networkx.DiGraph
-            Subgraph containing the k-order neighborhood
-        """
-        # Initialize with the entity itself
-        nodes = {entity}
-
-        # Current frontier is the entity
-        frontier = {entity}
-
-        # Expand neighborhood k times
-        for _ in range(k):
-            new_frontier = set()
-
-            for node in frontier:
-                # Add outgoing neighbors
-                out_neighbors = set(G.successors(node))
-                new_frontier.update(out_neighbors)
-
-                # Add incoming neighbors
-                in_neighbors = set(G.predecessors(node))
-                new_frontier.update(in_neighbors)
-
-            # Update nodes and frontier
-            nodes.update(new_frontier)
-            frontier = new_frontier
-
-        # Create subgraph with the collected nodes
-        G_hr = G.subgraph(nodes).copy()
-
-        return G_hr
-
-    def extract_relation_neighborhood(self, G: nx.DiGraph, relation: str) -> nx.DiGraph:
-        """
-        Extract all triples with a specific relation.
-        
-        Parameters:
-        -----------
-        G : networkx.DiGraph
-            The knowledge graph
-        relation : str
-            The relation to extract
-            
-        Returns:
-        --------
-        G_hr : networkx.DiGraph
-            Subgraph containing all triples with the relation
-        """
-        # Get all edges with the specified relation
-        edges = [(u, v) for u, v, d in G.edges(data=True) if d.get('relation') == relation]
-
-        # Create a new graph with these edges
-        G_hr = nx.DiGraph()
-        G_hr.add_edges_from(edges, relation=relation)
-
-        return G_hr
-
-    def generate_prompt(self, G_hr: nx.DiGraph, head: str, relation: str, candidates: List[str]) -> str:
-        """
-        Generate a prompt for the LLM to score candidates.
-        
-        Parameters:
-        -----------
-        G_hr : networkx.DiGraph
-            The subgraph containing relevant context
-        head : str
-            The head entity
-        relation : str
-            The relation
-        candidates : List[str]
-            List of candidate tail entities
-            
-        Returns:
-        --------
-        prompt : str
-            The prompt for the LLM
-        """
-        # Extract triples from the subgraph
-        triples = []
-        for u, v, d in G_hr.edges(data=True):
-            triples.append(f"- {u} {d.get('relation', 'relates to')} {v}.")
-
-        context = "\n".join(triples)
-
-        # Create the prompt with emphasis on clean JSON response
-        prompt = f"""Context:
-{context}
-
-Question: Which entities are most likely to have the relation '{relation}' with '{head}'? 
-Assign scores between 0 and 1 to each candidate, where 1 means definitely related and 0 means definitely not related.
-
-The context given might be incomplete - thus information not in the context can still result in a score of 1.0.
-Use reasoning based on the context and your knowledge of the domain to justify your scores.
-
-Candidates:
-{', '.join(candidates)}
-
-Respond with a clean, properly formatted JSON object using this exact format:
-{{
-    "reasoning": "Brief step-by-step reasoning for the scores",
-    "scores": {{
-        "{candidates[0]}": score1,
-        "{candidates[1]}": score2,
-        ...
-    }}
-}}
-
-Important: Ensure your response is valid JSON without any markdown formatting or code blocks."""
-        return prompt
-
-    def query_openai(self, prompt: str) -> Dict:
-        """
-        Query the OpenAI API with a prompt.
-        
-        Parameters:
-        -----------
-        prompt : str
-            The prompt for the LLM
-            
-        Returns:
-        --------
-        response : Dict
-            The parsed response from the LLM
-        """
-        # Call the OpenAI API using the client
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system",
-                     "content": "You are a helpful assistant that analyzes knowledge graphs and predicts missing relations. Always return valid JSON."},
-                    {"role": "user", "content": prompt}
-                ],
-            )
-
-            # Extract the response content
-            content = response.choices[0].message.content.strip()
-
-            # Try to extract JSON from the response
-            try:
-                # First try direct JSON parsing
-                return json.loads(content)
-            except json.JSONDecodeError:
-                # If that fails, try to extract JSON from markdown code blocks
-                if "```json" in content:
-                    json_str = content.split("```json")[1].split("```")[0].strip()
-                elif "```" in content:
-                    json_str = content.split("```")[1].strip()
-                else:
-                    json_str = content
-
-                # Clean up the string
-                json_str = json_str.replace('\n', ' ').replace('\r', '')
-                json_str = ' '.join(json_str.split())  # Normalize whitespace
-
-                try:
-                    return json.loads(json_str)
-                except json.JSONDecodeError as e:
-                    print(f"Error parsing JSON: {e}")
-                    print(f"Cleaned JSON string: {json_str}")
-                    return {"reasoning": "Error parsing response", "scores": {}}
-
-        except Exception as e:
-            print(f"Error querying LLM: {e}")
-            return {"reasoning": "Error querying model", "scores": {}}
-        
-    def predict_missing_tails(self, head: str, relation: str, candidates: List[str], rdf_file_path: str) -> List[Tuple[str, float]]:
-        """
-        Predict missing tail entities for a given head and relation.
-        
-        Parameters:
-        -----------
-        head : str
-            The head entity
-        relation : str
-            The relation
-        candidates : List[str]
-            List of candidate tail entities
-        rdf_file_path : str
-            Path to the RDF file
-            
-        Returns:
-        --------
-        ranked_candidates : List[Tuple[str, float]]
-            List of candidates ranked by their scores
-        """
-        # Build the knowledge graph
-        G = self.build_knowledge_graph(rdf_file_path)
-
-        # Extract k-order neighborhood of the head entity
-        G_entity = self.extract_entity_neighborhood(G, head, k=2)
-
-        # Extract neighborhood of the relation
-        G_relation = self.extract_relation_neighborhood(G, relation)
-
-        # Combine the two subgraphs
-        G_hr = nx.DiGraph()
-        G_hr.add_edges_from(G_entity.edges(data=True))
-        G_hr.add_edges_from(G_relation.edges(data=True))
-
-        # Generate prompt for the LLM
-        prompt = self.generate_prompt(G_hr, head, relation, candidates)
-
-        # Query the LLM
-        response = self.query_openai(prompt)
-        print(response)
-        # Extract scores
-        scores = response.get("scores", {})
-
-        # Rank candidates by scores
-        ranked_candidates = [(candidate, scores.get(candidate, 0)) for candidate in candidates]
-        ranked_candidates.sort(key=lambda x: x[1], reverse=True)
-
-        return ranked_candidates
 class AbstractBaseLinkPredictorClass(ABC):
     def __init__(self, knowledge_graph: KG = None, name="dummy"):
         assert knowledge_graph is not None
@@ -552,7 +258,6 @@ class GCL(AbstractBaseLinkPredictorClass):
             batch_output.append(scores_for_all_entities)
         return torch.FloatTensor(batch_output)
 
-
 class RALP(AbstractBaseLinkPredictorClass):
     def __init__(self, knowledge_graph: KG = None,
                  name="ralp-1.0",
@@ -646,7 +351,6 @@ class RALP(AbstractBaseLinkPredictorClass):
             scores.append([score])
         return torch.FloatTensor(scores)
 
-
 class RCL(AbstractBaseLinkPredictorClass):
     """ Relation-based Context Learning to predict missing entities.
 
@@ -656,8 +360,8 @@ class RCL(AbstractBaseLinkPredictorClass):
     2. Generate a prompt based on these triples and (h,r) to assign scores for all e ∈ E.
     """
     def __init__(self, knowledge_graph: KG = None, base_url:str=None, api_key:str=None, llm_model:str=None,
-                 temperature:float=0.0, seed:int=42, max_relation_examples:int=50, use_val:bool=True, 
-                 exclude_source:bool=True) -> None:
+                 temperature:float=0.0, seed:int=42, max_relation_examples:int=2000, use_val:bool=True, 
+                 exclude_source:bool=False) -> None:
         super().__init__(knowledge_graph, name="RCL")
         assert base_url is not None and isinstance(base_url, str)
         self.base_url = base_url
@@ -703,35 +407,42 @@ class RCL(AbstractBaseLinkPredictorClass):
             if len(relation_triples) > self.max_relation_examples:
                 relation_triples = relation_triples[:self.max_relation_examples]
                 
-        relation_context = "Here are examples of how the relation is used in the knowledge base:\n"
+        relation_context = "Examples of how the relation is used in the knowledge base:\n"
         for s, p, o in sorted(relation_triples):
             relation_context += f"- {s} {p} {o}\n"
         relation_context += "\n"
-
-        base_prompt = f"""
-        I'm trying to predict the most likely target entities for the following query:
-        Source entity: {source}
-        Relation: {relation}
-        Query: ({source}, {relation}, ?)
-
-        {relation_context}
         
-        Please provide a ranked list of at most {min(len(self.target_entities),15)} likely target entities from the following list, along with likelihoods for each: {self.target_entities}
-    
-        Provide your answer in the following JSON format: {{"predictions": [{{"entity": "entity_name", "score": float_number}}]}}
+        prompt = f"""
+    Task:
+    Predict the most likely target entities for the query using the provided knowledge base examples.
 
-        Notes:
-        1. Use the provided knowledge about how the relation is used to inform your predictions.
-        2. Only include entities that are plausible targets for this relation.
-        3. For geographic entities, consider geographic location, regional classifications, and political associations.
-        4. Rank the entities by likelihood of being the correct target.
-        5. ONLY INCLUDE entities from the provided list in your predictions.
-        6. If certain entities are not suitable for this relation, don't include them.
-        7. Return a valid JSON output.
-        8. Make sure scores are floating point numbers between 0 and 1, not strings.
-        9. A score can only be between 0 and 1, i.e. score ∈ [0, 1]. They can never be negative or greater than 1!
-        """
-        return base_prompt
+    Input:
+    - Source Entity: {source}
+    - Relation: {relation}
+    - Query: ({source}, {relation}, ?)
+
+    Knowledge Base Examples:
+    {relation_context}
+
+    Instructions:
+    1. From the provided list of target entities: {self.target_entities}, select up to {min(len(self.target_entities), 15)} plausible targets.
+    2. Rank these entities in order of likelihood for being the correct target.
+    3. Assign each entity a likelihood score as a floating point number between 0 and 1.
+    4. Consider geographic factors (e.g., location, regional classifications, political associations) when applicable.
+    5. Only include entities from the provided list that are plausible for the given relation.
+    6. If no entity seems plausible, return an empty list.
+
+    Output:
+    Return a valid JSON object **only** in the following format (without any additional text) and float_number ∈ [0,1]:
+
+    {{
+    "predictions": [
+        {{"entity": "entity_name", "score": float_number}},
+        ...
+    ]
+    }}
+    """
+        return prompt
 
     def forward_triples(self, x: torch.LongTensor):
         raise NotImplementedError("RCL needs to implement it")
@@ -807,7 +518,6 @@ def run(args):
     #            er_vocab=kg.er_vocab, re_vocab=kg.re_vocab, info='Eval LP Starts', batch_size=args.batch_size,
     #            chunk_size=args.chunk_size)
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_dir", type=str, default="KGs/Countries-S1", help="Path to dataset.")
@@ -829,6 +539,6 @@ if __name__ == "__main__":
     parser.add_argument("--chunk_size", type=int, default=1)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--num_of_hops", type=int, default=1, help="Number of hops to use to extract a subgraph around an entity.")
-    parser.add_argument("--max_relation_examples", type=int, default=50, help="Maximum number of relation examples to include in RCL context.")
-    parser.add_argument("--exclude_source", default=True, help="Exclude triples with the same source entity in RCL context.")
+    parser.add_argument("--max_relation_examples", type=int, default=2000, help="Maximum number of relation examples to include in RCL context.")
+    parser.add_argument("--exclude_source", action="store_true", help="Exclude triples with the same source entity in RCL context.")
     run(parser.parse_args())
