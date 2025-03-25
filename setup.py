@@ -20,7 +20,10 @@ _deps = [
     "gradio>=3.23.0",
     "rdflib>=7.0.0",
     "tiktoken>=0.5.1",
-    "matplotlib>=3.8.2"
+    "matplotlib>=3.8.2",
+    "openai>=1.66.3",
+    "igraph>=0.11.8",
+    "python-dotenv>=1.1.0"
 ]
 
 # some of the values are versioned whereas others aren't.
@@ -47,6 +50,7 @@ extras["min"] = deps_list(
 
 extras["dev"] = (extras["min"] + deps_list("ruff", "pytest",
                                            "polars", "pyarrow",
+                                           "openai","igraph","python-dotenv",
                                            "scikit-learn"))
 install_requires = [extras["min"]]
 
