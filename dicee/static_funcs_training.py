@@ -214,11 +214,12 @@ def evaluate_lp(model=None, triple_idx=None, num_entities=None, er_vocab: Dict[T
     return results
 
 @torch.no_grad()
-def evaluate_lp_k_vs_all(model, triple_idx, er_vocab=None,info=None, batch_size:int =1):
+def evaluate_lp_k_vs_all(model, triple_idx, er_vocab=None,info=None, batch_size:int =1) -> Dict:
     """
     Filtered link prediction evaluation.
     :param model:
     :param er_vocab:
+    :param batch_size:
     :param triple_idx: test triples
     :param info:
     :param form_of_labelling:
@@ -271,11 +272,7 @@ def evaluate_lp_k_vs_all(model, triple_idx, er_vocab=None,info=None, batch_size:
     hit_3 = sum(hits[3]) / num_triples
     hit_10 = sum(hits[10]) / num_triples
     mean_reciprocal_rank = np.mean(1. / np.array(ranks))
-
     results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}
-    if info:
-        print(info)
-        print(results)
     return results
 
 
