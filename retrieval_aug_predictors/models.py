@@ -499,3 +499,85 @@ class Demir(AbstractBaseLinkPredictorClass):
         # 4. Instantiate your predictor
         self.scoring_func = MultiLabelLinkPredictor()
         self.entities:List[str]=list(sorted(self.entity_to_idx.keys()))
+
+class LM_Call_Signature(dspy.Signature):
+    source: str = dspy.InputField(description="The source entity")
+    relation: str = dspy.InputField(description="The relation")
+    target_entities: List[str] = dspy.InputField(description="The list of target entities")
+    predictions: List[PredictionItem] = dspy.OutputField(description="The list of predicted entities with scores")
+
+class DSPy_RCL(AbstractBaseLinkPredictorClass):
+
+    def __init__(self, knowledge_graph: KG = None, base_url: str = None, api_key: str = None, llm_model: str = None,
+                 temperature: float = 0.0, seed: int = 42, max_relation_examples: int = 2000, use_val: bool = True,
+                 exclude_source: bool = False) -> None:
+        super().__init__(knowledge_graph, name="DSPy_RCL")
+        assert base_url is not None and isinstance(base_url, str)
+        self.base_url = base_url
+        self.api_key = api_key
+        self.llm_model = llm_model
+        self.temperature = temperature
+        self.seed = seed
+        self.max_relation_examples = max_relation_examples
+        self.exclude_source = exclude_source
+        # hardcoded for now
+        self.lm = dspy.LM(model="openai/tentris", api_key=self.api_key, base_url=self.base_url)
+        dspy.configure(lm=self.lm)
+        self.model = dspy.ChainOfThought(LM_Call_Signature)
+
+        # Training dataset
+        self.train_set: List[Tuple[str]] = [(self.idx_to_entity[idx_h],
+                                             self.idx_to_relation[idx_r],
+                                             self.idx_to_entity[idx_t]) for idx_h, idx_r, idx_t in
+                                            self.kg.train_set.tolist()]
+        # Validation dataset
+        self.val_set: List[Tuple[str]] = [(self.idx_to_entity[idx_h],
+                                           self.idx_to_relation[idx_r],
+                                           self.idx_to_entity[idx_t]) for idx_h, idx_r, idx_t in
+                                          self.kg.valid_set.tolist()]
+
+        triples = self.train_set + self.val_set if use_val else self.train_set
+
+        # Create a mapping from relation to all triples using that relation
+        self.relation_to_triples = {}
+        for s, p, o in triples:
+            if p not in self.relation_to_triples:
+                self.relation_to_triples[p] = []
+            self.relation_to_triples[p].append((s, p, o))
+
+        self.target_entities = list(sorted(self.entity_to_idx.keys()))
+
+    def metric(self, example, pred, trace=None):
+        # Calculate MRR
+        mrr = 0
+        for i, (h, r, t) in enumerate(example):
+            if t in pred:
+                mrr += 1 / (i + 1)
+        mrr /= len(example)
+        return mrr
+    
+    def forward(self, x: torch.LongTensor) -> torch.FloatTensor:
+        idx_h, idx_r = x.tolist()[0]
+        h, r = self.idx_to_entity[idx_h], self.idx_to_relation[idx_r]
+        pred = self.model(source=h, relation=r, target_entities=self.target_entities)
+        print(self.lm.inspect_history())
+        return pred.predictions
+    
+    def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
+        batch_output = []
+        for i in x.tolist():
+            idx_h, idx_r = i
+            h, r = self.idx_to_entity[idx_h], self.idx_to_relation[idx_r]
+            pred = self.model(source=h, relation=r, target_entities=self.target_entities)
+            print(self.lm.inspect_history())
+            batch_output.append(pred.predictions)
+        return torch.FloatTensor(batch_output)
+    
+    def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
+        raise NotImplementedError("DSPy_RCL needs to implement it")
+
+# test the dspy model -> remove later 
+if __name__ == "__main__":
+    kg = KG(dataset_dir="KGs/Countries-S1", separator="\s+", eval_model="train_value_test", add_reciprocal=False)
+    model = DSPy_RCL(knowledge_graph=kg, base_url="http://harebell.cs.upb.de:8501/v1", api_key="secure-key-123")
+    print(model.forward(torch.tensor([(1, 1)])))
