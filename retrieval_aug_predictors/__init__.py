@@ -1,2 +1,2 @@
 from .abstract import AbstractBaseLinkPredictorClass
-from .models import RCL,RALP, GCL
+from .models import RCL,RALP, GCL, Demir

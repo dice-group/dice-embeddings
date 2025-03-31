@@ -37,7 +37,7 @@ from typing import List, Tuple, Dict
 import numpy as np
 from typing import List, Optional
 from dotenv import load_dotenv
-from retrieval_aug_predictors import AbstractBaseLinkPredictorClass, RALP, GCL, RCL
+from retrieval_aug_predictors import AbstractBaseLinkPredictorClass, RALP, GCL, RCL, Demir
 
 load_dotenv()
 
@@ -63,6 +63,10 @@ def get_model(args,kg)->AbstractBaseLinkPredictorClass:
         model = RCL(knowledge_graph=kg, base_url=args.base_url, api_key=args.api_key,
                     llm_model=args.llm_model_name, temperature=args.temperature, seed=args.seed, 
                     max_relation_examples=args.max_relation_examples, exclude_source=args.exclude_source)
+    elif args.model == "Demir":
+        model = Demir(knowledge_graph=kg, base_url=args.base_url, api_key=args.api_key,
+                     llm_model=args.llm_model_name, temperature=args.temperature, seed=args.seed)
+
     else:
         raise KeyError(f"{args.model} is not a valid model")
     assert model is not None, f"Couldn't assign a model named: {args.model}"
@@ -85,7 +89,7 @@ def run(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset_dir", type=str, default="KGs/Countries-S1", help="Path to dataset.")
-    parser.add_argument("--model", type=str, default="GCL", help="Model name to use for link prediction.", choices=["RALP", "GCL", "RCL"])
+    parser.add_argument("--model", type=str, default="Demir", help="Model name to use for link prediction.", choices=["Demir", "GCL", "RCL","RALP"])
     parser.add_argument("--base_url", type=str, default="http://harebell.cs.upb.de:8501/v1",
                         choices=["http://harebell.cs.upb.de:8501/v1", "http://tentris-ml.cs.upb.de:8502/v1"],
                         help="Base URL for the OpenAI client.")
