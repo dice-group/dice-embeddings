@@ -3,6 +3,8 @@ from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveTo
 import sys
 import pandas as pd
 import polars as pl
+import numpy as np
+
 class KG:
     """ Knowledge Graph """
 
@@ -137,8 +139,22 @@ class KG:
         return ((self.raw_train_set == pd.Series(row_to_check)).all(axis=1)).any()
 
     def __iter__(self):
-        for h, r, t in self.raw_train_set.to_numpy().tolist():
+        if self.raw_train_set is not None:
+            graph=self.raw_train_set.to_numpy()
+        elif self.train_set is not None:
+            assert isinstance(self.train_set,np.ndarray)
+            graph=self.train_set
+        else:
+            raise RuntimeError(f"Dataset {self.dataset_dir} and {self.raw_train_set} & {self.train_set} are None")
+        assert graph.shape[0]>=0 and graph.shape[1]==3, "Invalid graph shape!"
+
+        if hasattr(self,"idx_to_entity") is False:
+            self.idx_to_entity = self.entity_to_idx.set_index(self.entity_to_idx.index)['entity'].to_dict()
+            self.idx_to_relations = self.relation_to_idx.set_index(self.relation_to_idx.index)['relation'].to_dict()
+
+        for h, r, t in graph.tolist():
             yield self.idx_to_entity[h], self.idx_to_relations[r], self.idx_to_entity[t]
+
     def __len__(self):
         return len(self.raw_train_set)
 

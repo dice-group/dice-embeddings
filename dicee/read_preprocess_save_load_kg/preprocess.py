@@ -311,7 +311,6 @@ class PreprocessKG:
         self.kg.raw_test_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
                                                          eval_model=self.kg.eval_model,
                                                          df=self.kg.raw_test_set, info="Test")
-
         # (2) Construct integer indexing for entities and relations.
         self.sequential_vocabulary_construction()
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)

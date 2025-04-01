@@ -6,21 +6,20 @@ python -m retrieval_aug_predictors.models.demir_ensemble --dataset_dir KGs/Count
     "H@10": 1.0,
     "MRR": 1.0
 }
-
 python -m retrieval_aug_predictors.models.demir_ensemble --dataset_dir KGs/Countries-S2 --out "countries_s2_results.json" && cat countries_s2_results.json
 {
-    "H@1": 0.9583333333333334,
-    "H@3": 0.9583333333333334,
+    "H@1": 1.0,
+    "H@3": 1.0,
     "H@10": 1.0,
-    "MRR": 0.9666666666666667
+    "MRR": 1.0
 }
 python -m retrieval_aug_predictors.models.demir_ensemble --dataset_dir KGs/Countries-S3 --out "countries_s3_results.json" && cat countries_s3_results.json
 {
-    "H@1": 0.875,
-    "H@3": 0.9583333333333334,
+    "H@1": 0.9166666666666666,
+    "H@3": 1.0,
     "H@10": 1.0,
-    "MRR": 0.9249999999999999
-}
+    "MRR": 0.951388888888889
+}(
 """
 
 import dspy
@@ -49,7 +48,7 @@ class MultiLabelLinkPredictionWithScores(dspy.Signature):
 class MultiLabelLinkPredictor(dspy.Module):
     def __init__(self):
         super().__init__()
-        self.predictor = dspy.Predict(MultiLabelLinkPredictionWithScores)
+        self.predictor = dspy.ChainOfThought(MultiLabelLinkPredictionWithScores)
 
     def forward(self, subject, predicate, few_shot_examples) -> List[Tuple[str, float]]:
         # Format examples more structured with clearer JSON expectations
@@ -96,16 +95,13 @@ class DemirEnsemble(AbstractBaseLinkPredictorClass):
         super().__init__(knowledge_graph, name="DemirEnsemble")
         self.temperature = temperature
         self.seed = seed
-
-        # Create multiple LLM models with different parameters
-        self.lm_high_temp = dspy.LM(model=f"openai/{llm_model}", api_key=api_key,
-                                    api_base=base_url, seed=seed, temperature=0.7,
-                                    cache=True, cache_in_memory=True)
-
-        self.lm_low_temp = dspy.LM(model=f"openai/{llm_model}", api_key=api_key,
-                                   api_base=base_url, seed=seed, temperature=0.1,
-                                   cache=True, cache_in_memory=True)
-
+        # () Initialize ensemble.
+        self.ensemble=[]
+        for i in range(0, 9):
+            temperature_coefficient=i*0.1
+            self.ensemble.append(dspy.LM(model=f"openai/{llm_model}", api_key=api_key,
+                    api_base=base_url, seed=seed, temperature=temperature_coefficient,
+                    cache=True, cache_in_memory=True))
         # Initialize data same as original
         self.train_set = [(self.idx_to_entity[idx_h],
                            self.idx_to_relation[idx_r],
@@ -136,14 +132,14 @@ class DemirEnsemble(AbstractBaseLinkPredictorClass):
     def _create_ensemble_predictors(self):
         """Create multiple predictors with different configurations"""
         predictors = []
-
-        # Standard predictor
-        dspy.configure(lm=self.lm_low_temp)
-        predictors.append(MultiLabelLinkPredictor())
+        for i in self.ensemble:
+            # Standard predictor
+            dspy.configure(lm=i)
+            predictors.append(MultiLabelLinkPredictor())
 
         # Diverse predictor (high temp)
-        dspy.configure(lm=self.lm_high_temp)
-        predictors.append(MultiLabelLinkPredictor())
+        #dspy.configure(lm=self.lm_high_temp)
+        #predictors.append(MultiLabelLinkPredictor())
 
         return predictors
 

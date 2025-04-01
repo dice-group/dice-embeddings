@@ -14,7 +14,7 @@ python -m retrieval_aug_predictors.models.Demir --dataset_dir KGs/Countries-S2 -
     "H@10": 0.9583333333333334,
     "MRR": 0.7921296296296297
 }
-python -m retrieval_aug_predictors.models.Demir --dataset_dir KGs/Countries-S3 --out "countries_s3_results.json" && cat countries_s3_results.json
+python -m retrieval_aug_predictors.models.demir_ensemble --dataset_dir KGs/Countries-S3 --out "countries_s3_results.json" && cat countries_s3_results.json
 {
     "H@1": 0.7083333333333334,
     "H@3": 0.9583333333333334,
