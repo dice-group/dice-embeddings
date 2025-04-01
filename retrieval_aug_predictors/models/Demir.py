@@ -29,11 +29,9 @@ import torch
 import json
 from typing import List, Tuple
 from retrieval_aug_predictors.models import KG, AbstractBaseLinkPredictorClass
-from openai import OpenAI
-from collections import OrderedDict
 from retrieval_aug_predictors.arguments import parser
 from retrieval_aug_predictors.utils import sanity_checking
-from dicee.evaluator import evaluate_lp, evaluate_lp_k_vs_all
+from dicee.evaluator import evaluate_lp_k_vs_all
 from dotenv import load_dotenv
 load_dotenv()
 
