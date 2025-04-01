@@ -1,5 +1,5 @@
 """
-python -m retrieval_aug_predictors.models.Demir --dataset_dir KGs/Countries-S1 --out "countries_s1_results.json" && cat countries_s1_results.json
+python -m retrieval_aug_predictors.models.demir_ensemble --dataset_dir KGs/Countries-S1 --out "countries_s1_results.json" && cat countries_s1_results.json
 {
     "H@1": 1.0,
     "H@3": 1.0,
@@ -7,14 +7,14 @@ python -m retrieval_aug_predictors.models.Demir --dataset_dir KGs/Countries-S1 -
     "MRR": 1.0
 }
 
-python -m retrieval_aug_predictors.models.Demir --dataset_dir KGs/Countries-S2 --out "countries_s2_results.json" && cat countries_s2_results.json
+python -m retrieval_aug_predictors.models.demir_ensemble --dataset_dir KGs/Countries-S2 --out "countries_s2_results.json" && cat countries_s2_results.json
 {
     "H@1": 0.9583333333333334,
     "H@3": 0.9583333333333334,
     "H@10": 1.0,
     "MRR": 0.9666666666666667
 }
-python -m retrieval_aug_predictors.models.Demir --dataset_dir KGs/Countries-S3 --out "countries_s3_results.json" && cat countries_s3_results.json
+python -m retrieval_aug_predictors.models.demir_ensemble --dataset_dir KGs/Countries-S3 --out "countries_s3_results.json" && cat countries_s3_results.json
 {
     "H@1": 0.875,
     "H@3": 0.9583333333333334,
@@ -231,6 +231,8 @@ class DemirEnsemble(AbstractBaseLinkPredictorClass):
         return torch.FloatTensor(batch_predictions)
     def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
         raise NotImplementedError("RCL needs to implement it")
+
+
 # test the dspy model -> remove later
 if __name__ == "__main__":
     args=parser.parse_args()
@@ -238,7 +240,8 @@ if __name__ == "__main__":
     # Therefore, The link prediction results are based on the missing tail rankings only!
     kg = KG(dataset_dir=args.dataset_dir, separator="\s+", eval_model=args.eval_model, add_reciprocal=False)
     sanity_checking(args,kg)
-    model = DemirEnsemble(knowledge_graph=kg, base_url=args.base_url, api_key=args.api_key, llm_model=args.llm_model_name, temperature=args.temperature, seed=args.seed)
+    model = DemirEnsemble(knowledge_graph=kg, base_url=args.base_url, api_key=args.api_key,
+                              llm_model=args.llm_model_name, temperature=args.temperature, seed=args.seed)
     results:dict = evaluate_lp_k_vs_all(model=model, triple_idx=kg.test_set[:args.eval_size],
                          er_vocab=kg.er_vocab, info='Eval KvsAll Starts', batch_size=args.batch_size)
     if args.out and results:
