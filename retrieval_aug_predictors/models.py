@@ -9,6 +9,8 @@ import re
 import igraph
 from typing import Tuple, Dict
 import dspy
+from tqdm import tqdm
+from dspy.teleprompt import LabeledFewShot
 class PredictionItem(BaseModel):
     """Individual prediction item with entity name and confidence score."""
     entity: str = Field(..., description="Name of the predicted entity")
@@ -439,9 +441,8 @@ class MultiLabelLinkPredictor(dspy.Module):
     def forward(self, subject, predicate, few_shot_examples)->List[Tuple[str, float]]:
         example_str = ""
         for (s, p), o_list in few_shot_examples.items():
-            for o in o_list:
-                example_str += f"({s}, {p}, {o})\n"
-            example_str+"\n\n"
+            example_str += f"({s}, {p})\n{', '.join(o_list)}\n---\n"
+        # @TODO: CD: Also keep track of LLM cost
         dspy_pred:dspy.primitives.prediction.Prediction=self.predictor(examples=example_str, subject=subject, predicate=predicate)
         return [ (i["entity"],i["score"])for i in json.loads(dspy_pred.objects_with_scores)]
 
@@ -499,3 +500,189 @@ class Demir(AbstractBaseLinkPredictorClass):
 
         # 4. Instantiate your predictor
         self.scoring_func = MultiLabelLinkPredictor()
+        self.entities:List[str]=list(sorted(self.entity_to_idx.keys()))
+
+class LM_Call_Signature(dspy.Signature):
+    source: str = dspy.InputField(description="The source entity")
+    relation: str = dspy.InputField(description="The relation")
+    target_entities: List[str] = dspy.InputField(description="The list of target entities")
+    predictions: List[PredictionItem] = dspy.OutputField(description="The list of predicted entities with scores")
+
+class DSPy_RCL(AbstractBaseLinkPredictorClass):
+
+    def __init__(self, knowledge_graph: KG = None, base_url: str = None, api_key: str = None, llm_model: str = None,
+                 temperature: float = 0.0, seed: int = 42, max_relation_examples: int = 2000, use_val: bool = True,
+                 exclude_source: bool = False) -> None:
+        super().__init__(knowledge_graph, name="DSPy_RCL")
+        assert base_url is not None and isinstance(base_url, str)
+        self.base_url = base_url
+        self.api_key = api_key
+        self.llm_model = llm_model
+        self.temperature = temperature
+        self.seed = seed
+        self.max_relation_examples = max_relation_examples
+        self.exclude_source = exclude_source
+        # hardcoded for now
+        self.lm = dspy.LM(model="openai/tentris", api_key=self.api_key, base_url=self.base_url)
+        dspy.configure(lm=self.lm)
+        self.model = dspy.ChainOfThought(LM_Call_Signature)
+
+        # Training dataset
+        self.train_set: List[Tuple[str]] = [(self.idx_to_entity[idx_h],
+                                             self.idx_to_relation[idx_r],
+                                             self.idx_to_entity[idx_t]) for idx_h, idx_r, idx_t in
+                                            self.kg.train_set.tolist()]
+        # Validation dataset
+        self.val_set: List[Tuple[str]] = [(self.idx_to_entity[idx_h],
+                                           self.idx_to_relation[idx_r],
+                                           self.idx_to_entity[idx_t]) for idx_h, idx_r, idx_t in
+                                          self.kg.valid_set.tolist()]
+
+        triples = self.train_set + self.val_set if use_val else self.train_set
+        self.triples = triples
+
+        # Create a mapping from relation to all triples using that relation
+        self.relation_to_triples = {}
+        for s, p, o in triples:
+            if p not in self.relation_to_triples:
+                self.relation_to_triples[p] = []
+            self.relation_to_triples[p].append((s, p, o))
+
+        self.target_entities = list(sorted(self.entity_to_idx.keys()))
+
+    def metric(self, example, pred, trace=None):
+        # Calculate MRR
+        mrr = 0
+        for i, (h, r, t) in enumerate(example):
+            # Check if the target entity is in the list of predicted entities
+            if t in [p.entity for p in pred]:
+                mrr += 1 / (i + 1)
+        mrr /= len(example)
+        return mrr
+
+    def generate_examples(self):
+        """
+        Generate DSPy examples for training the model.
+
+        Returns:
+            List[dspy.Example]: A list of DSPy examples for training.
+        """
+        examples = []
+
+        # Iterate through each relation
+        for relation, triples in self.relation_to_triples.items():
+            # Group triples by head entity
+            head_to_tails = {}
+            for s, p, o in triples:
+                if s not in head_to_tails:
+                    head_to_tails[s] = []
+                head_to_tails[s].append(o)
+
+            # Create examples for each head entity
+            for source, targets in head_to_tails.items():
+                # Convert target entities to PredictionItem objects with score 1.0
+                prediction_items = [PredictionItem(entity=target, score=1.0) for target in targets]
+
+                # Create a DSPy example with the input being the head entity and relation
+                # and the output being all correct tail entities as PredictionItem objects
+                example = dspy.Example(
+                    source=source,
+                    relation=relation,
+                    target_entities=self.target_entities,
+                    predictions=prediction_items
+                ).with_inputs("source", "relation", "target_entities")
+                examples.append(example)
+
+        return examples
+
+    def generate_train_test_split(self, examples, test_size=0.2):
+        """
+        Split the examples into training and testing sets.
+
+        Args:
+            examples (List[dspy.Example]): A list of DSPy examples to split.
+            test_size (float): The proportion of examples to include in the test set.
+
+        Returns:
+            Tuple[List[dspy.Example], List[dspy.Example]]: A tuple containing the training and testing examples.
+        """
+        import random
+        random.seed(self.seed)
+
+        # Shuffle the examples
+        shuffled_examples = examples.copy()
+        random.shuffle(shuffled_examples)
+
+        # Calculate the split point
+        split_idx = int(len(shuffled_examples) * (1 - test_size))
+
+        # Split the examples
+        train_examples = shuffled_examples[:split_idx]
+        test_examples = shuffled_examples[split_idx:]
+
+        return train_examples, test_examples
+
+    def manual_evaluation(self, examples):
+        """
+        Manually evaluate the model on a list of examples using the metric method.
+
+        Args:
+            examples (List[dspy.Example]): A list of DSPy examples to evaluate.
+
+        Returns:
+            float: The average metric score across all examples.
+        """
+        total_score = 0.0
+        for example in tqdm(examples, desc="Evaluating examples", unit="ex", ncols=100, leave=True):
+            # Extract the input values from the example
+            source = example.source
+            relation = example.relation
+            target_entities = example.target_entities
+            # Get model predictions
+            pred = self.model(source=source, relation=relation, target_entities=target_entities)
+            formatted_example = [(source, relation, item.entity) for item in example.predictions]
+            score = self.metric(formatted_example, pred.predictions)
+            total_score += score
+        # Return the average score
+        return total_score / len(examples) if examples else 0.0
+
+    def train_labeledFewShot(self, train_set, few_shot_k):
+        lfs_optimizer = LabeledFewShot(k=few_shot_k)
+        lfs_model = lfs_optimizer.compile(self.model, trainset=train_set)
+        self.model = lfs_model
+        lfs_model.save("./lfs_model.json")
+        return lfs_model
+
+    def forward(self, x: torch.LongTensor) -> torch.FloatTensor:
+        idx_h, idx_r = x.tolist()[0]
+        h, r = self.idx_to_entity[idx_h], self.idx_to_relation[idx_r]
+        pred = self.model(source=h, relation=r, target_entities=self.target_entities)
+        return pred.predictions
+
+    def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
+        batch_output = []
+        for i in x.tolist():
+            idx_h, idx_r = i
+            h, r = self.idx_to_entity[idx_h], self.idx_to_relation[idx_r]
+            pred = self.model(source=h, relation=r, target_entities=self.target_entities)
+            batch_output.append(pred.predictions)
+        return torch.FloatTensor(batch_output)
+
+    def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
+        raise NotImplementedError("DSPy_RCL needs to implement it")
+
+# test the dspy model -> remove later
+if __name__ == "__main__":
+    kg = KG(dataset_dir="KGs/Countries-S1", separator="\s+", eval_model="train_value_test", add_reciprocal=False)
+    model = DSPy_RCL(knowledge_graph=kg, base_url="http://harebell.cs.upb.de:8501/v1", api_key=":)")
+
+    examples = model.generate_examples()
+    train_examples, test_examples = model.generate_train_test_split(examples, test_size=0.2)
+
+    # Train the model
+    model.train_labeledFewShot(train_examples, few_shot_k=3)
+
+    # eval model
+    print(model.manual_evaluation(test_examples))
+
+
