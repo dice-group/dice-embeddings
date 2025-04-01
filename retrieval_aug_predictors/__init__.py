@@ -1,2 +1,7 @@
 from .abstract import AbstractBaseLinkPredictorClass
-from .models import RCL,RALP, GCL, Demir
+from .models.luke_dspy import DSPy_RCL
+from .models.GCL import GCL
+from .models.RALP import RALP
+from .models.RCL import RCL
+from .models.Demir import Demir
+
