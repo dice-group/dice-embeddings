@@ -439,8 +439,9 @@ class MultiLabelLinkPredictor(dspy.Module):
     def forward(self, subject, predicate, few_shot_examples)->List[Tuple[str, float]]:
         example_str = ""
         for (s, p), o_list in few_shot_examples.items():
-            example_str += f"({s}, {p})\n{', '.join(o_list)}\n---\n"
-        # @TODO: CD: Also keep track of LLM cost
+            for o in o_list:
+                example_str += f"({s}, {p}, {o})\n"
+            example_str+"\n\n"
         dspy_pred:dspy.primitives.prediction.Prediction=self.predictor(examples=example_str, subject=subject, predicate=predicate)
         return [ (i["entity"],i["score"])for i in json.loads(dspy_pred.objects_with_scores)]
 
@@ -498,4 +499,3 @@ class Demir(AbstractBaseLinkPredictorClass):
 
         # 4. Instantiate your predictor
         self.scoring_func = MultiLabelLinkPredictor()
-        self.entities:List[str]=list(sorted(self.entity_to_idx.keys()))
