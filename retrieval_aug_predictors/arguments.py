@@ -25,3 +25,5 @@ parser.add_argument("--max_relation_examples", type=int, default=2000,
                     help="Maximum number of relation examples to include in RCL context.")
 parser.add_argument("--exclude_source", action="store_true",
                     help="Exclude triples with the same source entity in RCL context.")
+parser.add_argument("--out", type=str, default=None,
+                    help="A path of a json file reporting the link prediction results.")

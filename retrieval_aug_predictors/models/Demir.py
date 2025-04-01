@@ -1,3 +1,29 @@
+"""
+python -m retrieval_aug_predictors.models.Demir --dataset_dir KGs/Countries-S1 --out "countries_s1_results.json" && cat countries_s1_results.json
+{
+    "H@1": 1.0,
+    "H@3": 1.0,
+    "H@10": 1.0,
+    "MRR": 1.0
+}
+
+python -m retrieval_aug_predictors.models.Demir --dataset_dir KGs/Countries-S2 --out "countries_s2_results.json" && cat countries_s2_results.json
+{
+    "H@1": 0.7083333333333334,
+    "H@3": 1.0,
+    "H@10": 1.0,
+    "MRR": 0.8541666666666666
+}
+
+python -m retrieval_aug_predictors.models.Demir --dataset_dir KGs/Countries-S3 --out "countries_s3_results.json" && cat countries_s3_results.json
+{
+    "H@1": 0.3333333333333333,
+    "H@3": 1.0,
+    "H@10": 1.0,
+    "MRR": 0.6666666666666666
+}
+"""
+
 import dspy
 import torch
 import json
@@ -10,6 +36,7 @@ from retrieval_aug_predictors.utils import sanity_checking
 from dicee.evaluator import evaluate_lp, evaluate_lp_k_vs_all
 from dotenv import load_dotenv
 load_dotenv()
+
 
 class MultiLabelLinkPredictionWithScores(dspy.Signature):
     examples = dspy.InputField(
@@ -89,13 +116,14 @@ if __name__ == "__main__":
     args=parser.parse_args()
     # Important: add_reciprocal=False in KvsAll implies that inverse relation has been introduced.
     # Therefore, The link prediction results are based on the missing tail rankings only!
-    print(args)
     kg = KG(dataset_dir=args.dataset_dir, separator="\s+", eval_model=args.eval_model, add_reciprocal=False)
-
     sanity_checking(args,kg)
-
     model = Demir(knowledge_graph=kg, base_url=args.base_url, api_key=args.api_key, llm_model=args.llm_model_name, temperature=args.temperature, seed=args.seed)
-
     results:dict = evaluate_lp_k_vs_all(model=model, triple_idx=kg.test_set[:args.eval_size],
                          er_vocab=kg.er_vocab, info='Eval KvsAll Starts', batch_size=args.batch_size)
-    print(results)
+    if args.out and results:
+        # Writing the dictionary to a JSON file
+        print(results)
+        with open(args.out, 'w') as json_file:
+            json.dump(results, json_file, indent=4)
+        print(f"Results has been saved to {args.out}")
