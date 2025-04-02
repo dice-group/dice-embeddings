@@ -108,6 +108,12 @@
 <span class="sd">    Pykeen_CP:</span>
 <span class="sd">    Pykeen_HolE:</span>
 <span class="sd">    Pykeen_HolE:</span>
+<span class="sd">    Pykeen_HolE:</span>
+<span class="sd">    Pykeen_TransD:</span>
+<span class="sd">    Pykeen_TransE:</span>
+<span class="sd">    Pykeen_TransF:</span>
+<span class="sd">    Pykeen_TransH:</span>
+<span class="sd">    Pykeen_TransR:</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
@@ -141,8 +147,19 @@
             <span class="k">pass</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;RotatE&quot;</span><span class="p">:</span>
             <span class="k">pass</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;TransD&quot;</span><span class="p">:</span>
+            <span class="c1">#TransD does not support a &#39;regularizer&#39; </span>
+            <span class="k">pass</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;TransE&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">[</span><span class="s2">&quot;regularizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;TransF&quot;</span><span class="p">:</span>
+            <span class="c1">#TransF does not support a &#39;regularizer&#39; </span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;TransH&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">[</span><span class="s2">&quot;regularizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;TransR&quot;</span><span class="p">:</span>
+            <span class="c1">#TransR does not support a &#39;regularizer&#39;</span>
+            <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Pykeen model have a memory leak caused by their implementation of regularizers&quot;</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> does not seem to have any regularizer&quot;</span><span class="p">)</span>

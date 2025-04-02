@@ -30,6 +30,12 @@ Module Contents
    Pykeen_CP:
    Pykeen_HolE:
    Pykeen_HolE:
+   Pykeen_HolE:
+   Pykeen_TransD:
+   Pykeen_TransE:
+   Pykeen_TransF:
+   Pykeen_TransH:
+   Pykeen_TransR:
 
 
    .. py:attribute:: model_kwargs
