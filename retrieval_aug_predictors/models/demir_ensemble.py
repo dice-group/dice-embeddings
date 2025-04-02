@@ -19,7 +19,7 @@ python -m retrieval_aug_predictors.models.demir_ensemble --dataset_dir KGs/Count
     "H@3": 1.0,
     "H@10": 1.0,
     "MRR": 0.951388888888889
-}(
+}
 """
 
 import dspy
@@ -136,11 +136,6 @@ class DemirEnsemble(AbstractBaseLinkPredictorClass):
             # Standard predictor
             dspy.configure(lm=i)
             predictors.append(MultiLabelLinkPredictor())
-
-        # Diverse predictor (high temp)
-        #dspy.configure(lm=self.lm_high_temp)
-        #predictors.append(MultiLabelLinkPredictor())
-
         return predictors
 
     def _create_pattern_predictor(self):
