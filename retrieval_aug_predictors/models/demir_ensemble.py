@@ -186,8 +186,7 @@ class DemirEnsemble(AbstractBaseLinkPredictorClass):
                 dspy_pred = predictor.forward(
                     subject=h,
                     predicate=r,
-                    few_shot_examples=self.entity_relation_to_entities
-                )
+                    few_shot_examples=self.entity_relation_to_entities)
                 ensemble_predictions.append(dspy_pred)
 
             # Initialize scores vector
@@ -235,6 +234,7 @@ if __name__ == "__main__":
                               llm_model=args.llm_model_name, temperature=args.temperature, seed=args.seed)
     results:dict = evaluate_lp_k_vs_all(model=model, triple_idx=kg.test_set[:args.eval_size],
                          er_vocab=kg.er_vocab, info='Eval KvsAll Starts', batch_size=args.batch_size)
+    print(results)
     if args.out and results:
         # Writing the dictionary to a JSON file
         print(results)
