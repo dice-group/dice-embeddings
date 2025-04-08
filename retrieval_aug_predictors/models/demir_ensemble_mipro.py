@@ -1,32 +1,32 @@
 """
-
 python -m retrieval_aug_predictors.models.demir_ensemble_mipro --dataset_dir KGs/Countries-S1 --out "countries_s1_results.json" && cat countries_s1_results.json
 {
-    "H@1": 0.9583333333333334,
-    "H@3": 1.0,
+    "H@1": 0.75,
+    "H@3": 0.875,
     "H@10": 1.0,
-    "MRR": 0.9791666666666666
+    "MRR": 0.8416666666666667
 }
-
 python -m retrieval_aug_predictors.models.demir_ensemble_mipro --dataset_dir KGs/Countries-S2 --out "countries_s2_results.json" && cat countries_s2_results.json
 {
-    "H@1": 0.6666666666666666,
+    "H@1": 0.75,
     "H@3": 1.0,
     "H@10": 1.0,
-    "MRR": 0.8333333333333334
-}
+    "MRR": 0.8680555555555555
+}(
+
+
 python -m retrieval_aug_predictors.models.demir_ensemble_mipro --dataset_dir KGs/Countries-S3 --out "countries_s3_results.json" && cat countries_s3_results.json
 {
-    "H@1": 0.6666666666666666,
-    "H@3": 1.0,
-    "H@10": 1.0,
-    "MRR": 0.8333333333333334
+    "H@1": 0.041666666666666664,
+    "H@3": 0.4583333333333333,
+    "H@10": 0.625,
+    "MRR": 0.2626660300405415
 }
+
 """
 import dspy
 import torch
 import json
-import random
 from tqdm import tqdm
 from typing import List, Tuple, Dict, Set
 from dspy.teleprompt import MIPROv2
@@ -42,52 +42,23 @@ import pandas as pd
 from typing import List,Iterable
 import dspy
 import pydantic
-
-pd.set_option('display.max_columns', None)
-
+import random
+from typing import Dict, Set, Tuple, Any, TypeAlias, List, Optional, Union
 # --- Constants ---
 load_dotenv()
 pd.set_option('display.max_columns', None)
 
 SAVE_DIR_BASE = "DemirEnsembleMIPRO_Optimized"
 TEST_SIZE = 0.2
+# --- Type Definitions ---
+# Represents the graph: {(subject, predicate): {object1, object2}}
+# Using str for entities/predicates as in the input code
+GraphType: TypeAlias = Dict[Tuple[str, str], Set[str]]
+# Represents a single triple
+TripleType: TypeAlias = Tuple[str, str, str]
+# Define type for the new return structure
+ResultsByHopType: TypeAlias = Dict[int, Union[Set[TripleType], Set[str]]]
 
-# --- Pydantic Model for Structured Output ---
-class PredictionScore(pydantic.BaseModel):
-    entity: str = pydantic.Field(..., description="The predicted entity.")
-    score: pydantic.confloat(ge=0.0, le=1.0) = pydantic.Field(...,
-                                                              description="Confidence score between 0.0 and 1.0.")
-class MultiLabelLinkPrediction(dspy.Signature):
-    """Predicts multiple tail entities for a given subject and predicate, along with confidence scores."""
-    subject: str = dspy.InputField(desc="The subject entity.")
-    predicate: str = dspy.InputField(desc="The relationship type.")
-    entities: List[str] = dspy.InputField(desc="List of all possible entities in the knowledge graph.")
-    target: List[str] = dspy.OutputField(desc="List of suitable entities (str)")
-
-class Scorer(dspy.Signature):
-    """Predicts multiple tail entities for a given subject and predicate, along with confidence scores."""
-    #reasoning: str = dspy.InputField(desc="Explanation behind prediction.")
-    predicted_entities: List[str] = dspy.InputField(desc="A list of predicted entities")
-    target: List[float] = dspy.OutputField(desc="List of scores for each entity")
-
-
-class MultiLabelLinkPredictor(dspy.Module):
-    """DSPy Module wrapping a ChainOfThought program for link prediction."""
-    def __init__(self, entities: List[str]):
-        super().__init__()
-        self.entities = sorted(list(set(entities)))
-        self.finder = dspy.Predict(MultiLabelLinkPrediction)
-        self.scorer = dspy.Predict(Scorer)
-
-    def forward(self, subject: str, predicate: str) -> dspy.Prediction:
-        retrieved_entities = self.finder(subject=subject, predicate=predicate, entities=self.entities)
-        scores=self.scorer(#reasoning=retrieved_entities.reasoning,
-                           predicted_entities=retrieved_entities.target)
-
-        final=dspy.Prediction(#reasoning_entity=retrieved_entities.reasoning,
-                              #reasoning_scores=scores.reasoning,
-                        target=[ (retrieved_entities.target[idx],score) for idx,score in enumerate(scores.target)])
-        return final
 # --- Data Preparation ---
 def generate_train_test_split(examples: List[dspy.Example], test_size: float, seed: int) -> Tuple[List[dspy.Example], List[dspy.Example]]:
     """Splits dspy.Examples into training and testing sets."""
@@ -104,10 +75,10 @@ def generate_examples_for_mipro(data: Dict[Tuple[str, str], List[str]], all_enti
     Includes true entities (score 1.0) and subsampled false entities (score 0.0).
     """
     examples = []
-    for (h, r), true_entity_list in tqdm(data.items(), desc="Generating Examples for MIPRO"):
+    for (h, r), true_entity_list in data.items():
         true_entities_set = set(true_entity_list)
         y_true = list(sorted([(entity, 1.0) for entity in true_entities_set]))
-        examples.append(dspy.Example(subject=h, predicate=r, target=y_true).with_inputs("subject", "predicate"))
+        examples.append(dspy.Example(subject=h, predicate=r,target=y_true).with_inputs("subject", "predicate"))
 
         continue
 
@@ -175,16 +146,170 @@ def quality_score_closeness(y: List[Tuple[str, float]],
 
 def dspy_quality_score_closeness(y: dspy.Example, yhat: dspy.Prediction,trace=None)-> float:
     return quality_score_closeness(y.target, yhat.target)
+def traverse_beam_by_hop(
+    graph: GraphType,
+    start_entities: Union[Set[str], List[str], str],
+    hops: int,
+    beam_width: int,
+    return_triples_only: bool = True
+) -> ResultsByHopType:
+    """
+    Performs multi-hop graph traversal using beam search, returning results by hop.
+
+    Explores the graph outwards for a specified number of hops. At each hop,
+    it finds triples originating from the subjects currently in the beam.
+    The objects of these triples become candidates for the next hop's beam,
+    limited by 'beam_width'. Results are stored per hop.
+
+    Args:
+        graph: The graph data structure.
+        start_entities: A set, list, or single string entity (node) to start the
+                        traversal from.
+        hops: The number of hops (steps) to explore outwards. A hop finds
+              triples (S, P, O) where S is in the current beam.
+        beam_width: The maximum number of entities (objects found) to
+                    consider as subjects for the *next* hop.
+        return_triples_only: If True (default), the dictionary values will be
+                             sets of triples found *during* each hop. If False,
+                             the values will be the set of entities constituting
+                             the beam selected *after* each hop (i.e., the beam
+                             for the *next* hop).
+
+    Returns:
+        A dictionary where keys are hop numbers (int, starting from 1) and
+        values are the results for that hop.
+        - If return_triples_only is True: Dict[int, Set[TripleType]]
+        - If return_triples_only is False: Dict[int, Set[str]] (entities in beam for next hop)
+        The dictionary will contain entries only for hops that were actually executed.
+    """
+    # Ensure start_entities is a set for efficient handling
+    if isinstance(start_entities, str):
+        current_beam: Set[str] = {start_entities}
+    elif isinstance(start_entities, list):
+        current_beam: Set[str] = set(start_entities)
+    elif isinstance(start_entities, set):
+         current_beam: Set[str] = start_entities
+    else:
+         # Raise an error for unsupported type
+         raise TypeError("start_entities must be a string, list of strings, or set of strings")
+
+
+    # Dictionary to store results per hop
+    results_by_hop: ResultsByHopType = {}
+    # Keep track of all triples found across hops to avoid adding duplicates
+    # to the results sets if return_triples_only=True, although the beam
+    # logic itself doesn't strictly need this separation anymore. Let's keep
+    # it simple and store only the unique triples *found in this specific hop*.
+    all_found_triples_ever: Set[TripleType] = set()
+
+
+    for i in range(hops):
+        hop_number = i + 1
+        # If the beam is empty, we can't explore further
+        if not current_beam:
+            break
+
+        # Store candidate objects for the next beam and triples found in this hop
+        next_beam_candidates: Set[str] = set()
+        triples_this_hop: Set[TripleType] = set()
+
+        # Explore from all entities currently in the beam
+        for subject in current_beam:
+            # Find triples in the graph where 'subject' is the subject
+            for (s, p), objects in graph.items():
+                if s == subject:
+                    for o in objects:
+                        triple = (s, p, o)
+                        # Add triple if it's genuinely new in this traversal
+                        # This ensures triples_this_hop only contains triples first discovered in this hop.
+                        if triple not in all_found_triples_ever:
+                             triples_this_hop.add(triple)
+                             all_found_triples_ever.add(triple) # Mark as seen globally
+
+                        # Always consider the object as a candidate for the next beam,
+                        # even if the triple itself was seen before via another path.
+                        next_beam_candidates.add(o)
+
+        # --- Beam Selection ---
+        # Select entities for the *next* hop's beam
+        if len(next_beam_candidates) > beam_width:
+            sorted_candidates = sorted(list(next_beam_candidates), key=str)
+            next_beam = set(sorted_candidates[:beam_width])
+        else:
+            next_beam = next_beam_candidates
+
+        # --- Store Results for Current Hop ---
+        if return_triples_only:
+            # Store the unique triples discovered *during* this hop
+             results_by_hop[hop_number] = triples_this_hop
+        else:
+            # Store the beam selected to proceed *from* this hop
+            results_by_hop[hop_number] = next_beam
+
+        # Update the beam for the next iteration
+        current_beam = next_beam
+
+    return results_by_hop
+
+class EntityFinder(dspy.Signature):
+    """Predicts multiple tail entities for a given subject and predicate"""
+    subject: str = dspy.InputField(desc="An entity as a subject in a triple.")
+    predicate: str = dspy.InputField(desc="A predicate in a triple.")
+    context: str = dspy.InputField(desc="Background knowledge.")
+    entities: List[str] = dspy.InputField(desc="A list of all possible entities in the knowledge graph.")
+    target: List[str] = dspy.OutputField(desc="A list of suitable entities")
+
+class Scorer(dspy.Signature):
+    """Predicts likelihoods of multiple tail entities for a given subject and predicate."""
+    predicted_entities: List[str] = dspy.InputField(desc="A list of predicted entities")
+    target: List[float] = dspy.OutputField(desc="A list of scores for each entity")
+
+class MultiLabelLinkPredictor(dspy.Module):
+    def __init__(self, entities: List[str],g:GraphType):
+        super().__init__()
+        self.entities = sorted(list(set(entities)))
+        self.g = g
+        self.finder = dspy.Predict(EntityFinder)
+        self.scorer = dspy.Predict(Scorer)
+
+    def _graph_based_content_builder(self,subject:str):
+        hop_to_triples = dict()
+        graph_report = traverse_beam_by_hop(graph=self.g, start_entities=subject, hops=5,
+                                          beam_width=len(self.entities), return_triples_only=True)
+        # Accumulate triples over hops: assert hop_to_triples[i].issubset(hop_to_triples[i+1])
+        for k,v in graph_report.items():
+            hop_to_triples[k] = v | set().union(*hop_to_triples.values())
+        return hop_to_triples
+
+    def forward(self, subject: str, predicate: str) -> dspy.Prediction:
+        intermediate_predictions=dict()
+        graph_report = self._graph_based_content_builder(subject=subject)
+        for idx_hop, triples in graph_report.items():
+
+            context="\n".join([f"{s} {p} {o}"for s,p,o in sorted(triples)])
+            retrieved_entities = self.finder(subject=subject,
+                                             predicate=predicate,
+                                             context=context,
+                                             entities=self.entities)
+            scores = self.scorer(predicted_entities=retrieved_entities.target)
+            for idx, score in enumerate(scores.target):
+                entity = retrieved_entities.target[idx]
+                intermediate_predictions.setdefault(entity, []).append(score)
+        # Avg scores of intermediate predictions. @TODO: CD: Sum of average ?!
+        predictions=dict()
+        for k,v in intermediate_predictions.items():
+            predictions[k]=sum(v)/len(v)
+        return dspy.Prediction(target=[(k,v) for k,v in predictions.items()])
+
+
 
 class DemirEnsembleMPRO(AbstractBaseLinkPredictorClass):
     """
     Ensemble predictor using MIPROv2 optimized base prompts.
     Combines predictions from models trained/optimized with different settings (e.g., temperature).
     """
-
     def __init__(self, knowledge_graph: KG, base_url: str, api_key: str, llm_model: str,
-                 temperature: float, seed: int, use_val: bool = True,
-                 ensemble_temperatures=None,
+                 temperature: float, seed: int, use_val: bool = True, ensemble_temperatures=None,
                  save_dir: str = SAVE_DIR_BASE):
         super().__init__(knowledge_graph, name="DemirEnsembleMIPRO")
 
@@ -195,40 +320,18 @@ class DemirEnsembleMPRO(AbstractBaseLinkPredictorClass):
         self.seed = seed
         self.use_val = use_val
         self.save_dir = save_dir
-        if ensemble_temperatures is None:
-            self.ensemble_temperatures = [i * 0.1 for i in range(1)]
-        else:
-            self.ensemble_temperatures = ensemble_temperatures
-
+        self.ensemble_temperatures = [i * 0.1 for i in range(1)] if (ensemble_temperatures
+                                                                     is None) else ensemble_temperatures
         self.mipro_optimizer_temperature = temperature
-        # Seed random for reproducibility
+        # Seed random for reproducibility.
         random.seed(self.seed)
-        # Data Preparation
+        # Data Preparation.
         self._prepare_data()
-        # Create and Optimize/Load Predictors
+        # Create and Optimize/Load Predictors.
         os.makedirs(self.save_dir, exist_ok=True)
+        # Train predictors.
         self.predictors: List[MultiLabelLinkPredictor] = self._create_and_optimize_predictors()
-
         print(f"\n--- {self.__class__.__name__} initialized with {len(self.predictors)} predictors ---")
-    def _prepare_data(self):
-        """Loads, processes, and prepares training/validation data."""
-        print("Preparing data...")
-        train_set = [(self.idx_to_entity[h], self.idx_to_relation[r], self.idx_to_entity[t])
-                     for h, r, t in self.kg.train_set.tolist()]
-        val_set = [(self.idx_to_entity[h], self.idx_to_relation[r], self.idx_to_entity[t])
-                   for h, r, t in self.kg.valid_set.tolist()]
-
-        self.triples = train_set + (val_set if self.use_val else [])
-
-        # Group triples by (subject, predicate)
-        self.entity_relation_to_entities: Dict[Tuple[str, str], List[str]] = {}
-        self.all_entities: Set[str] = set()
-        for s, p, o in self.triples:
-            self.all_entities.add(s)
-            self.all_entities.add(o)
-            self.entity_relation_to_entities.setdefault((s, p), []).append(o)
-
-        print(f"Prepared data: {len(self.triples)} triples, {len(self.all_entities)} unique entities.")
 
     def _create_and_optimize_predictors(self) -> List[MultiLabelLinkPredictor]:
         """
@@ -238,11 +341,12 @@ class DemirEnsembleMPRO(AbstractBaseLinkPredictorClass):
         predictors = []
         for idx, temp in enumerate(self.ensemble_temperatures):
             print(f"\n--- Optimizing/Loading Predictor for Temperature: {temp:.1f} ---")
-            save_filename = os.path.join(self.save_dir, f"predictor_temp_{temp:.1f}.json")
+            dataset_name=self.kg.dataset_dir.split("/")[-1]
+            save_filename = os.path.join(self.save_dir, f"{dataset_name}_predictor_temp_{temp:.1f}.json")
+            # @TODO: CD: Later, save the details eval results as csv controlled by a flag attribute.
             results_filename = os.path.join(self.save_dir, f"eval_results_temp_{temp:.1f}.csv")
             # Initialize the base predictor for this temperature
-            base_predictor = MultiLabelLinkPredictor(entities=list(self.all_entities))
-
+            base_predictor = MultiLabelLinkPredictor(entities=list(self.all_entities),g=self.entity_relation_to_entities)
             if os.path.exists(save_filename):
                 print(f"Loading optimized predictor from {save_filename}...")
                 # Need to configure LM *before* loading if LM state isn't saved
@@ -250,9 +354,6 @@ class DemirEnsembleMPRO(AbstractBaseLinkPredictorClass):
                              api_base=self.base_url, temperature=temp, # Use the specific temp
                              cache=True, cache_in_memory=True) # Seed might not be needed for loading
                 dspy.configure(lm=lm)
-                # Load requires the class, not an instance
-                # optimized_predictor = MultiLabelLinkPredictor.load(save_filename)
-                # Load modifies the instance in place
                 base_predictor.load(save_filename)
                 optimized_predictor = base_predictor
                 print("Loaded successfully.")
@@ -298,7 +399,6 @@ class DemirEnsembleMPRO(AbstractBaseLinkPredictorClass):
                 # --- End Optional Evaluation ---
             predictors.append(optimized_predictor)
             dspy.configure(lm=None) # Reset global LM config after use
-
         return predictors
     def _compile_predictor_for_temperature(self, predictor_to_optimize: MultiLabelLinkPredictor,
                                            train_examples:List[dspy.Example],test_examples,temperature: float,save_filename:str) -> MultiLabelLinkPredictor:
@@ -307,45 +407,30 @@ class DemirEnsembleMPRO(AbstractBaseLinkPredictorClass):
         assert isinstance(train_examples, list) and isinstance(train_examples[0],dspy.Example)
         assert isinstance(test_examples, list) and isinstance(test_examples[0],dspy.Example)
         # Configure DSPy LM specifically for this optimization run
-        lm = dspy.LM(model=f"openai/{self.llm_model}", api_key=self.api_key,
-                     api_base=self.base_url, seed=self.seed, temperature=temperature,
+        lm = dspy.LM(model=f"openai/{self.llm_model}", api_key=self.api_key,api_base=self.base_url,
+                     seed=self.seed, temperature=temperature,
                      cache=True, cache_in_memory=True)
         dspy.configure(lm=lm)
-        #print(x)
-        #tp = dspy.MIPROv2(metric=dspy.SemanticF1(), auto="medium", num_threads=24)
-        #optimized_rag = tp.compile(RAG(), trainset=trainset, max_bootstrapped_demos=2, max_labeled_demos=2)
-
-        #evaluate = Evaluate(devset=self.test_examples,metric=dspy_quality_score_closeness,
-        #                    num_threads=6, display_table=False, display_progress=True, provide_traceback=True)
-        #print(evaluate(predictor_to_optimize))
-
-        #for data_example in self.train_examples:
-        #    yhat = predictor_to_optimize(**data_example.inputs())
-        #    print(dspy_quality_score_closeness(y=data_example.labels(),yhat=yhat))
-        #    break
+        # Test Run
+        for s,p,o in self.triples:
+            print(s,p,o)
+            yhat = predictor_to_optimize.forward(subject=s,predicate=p)
+            print(yhat)
+            break
+        # Test Run
+        Evaluate(devset=test_examples[:6],metric=dspy_quality_score_closeness,
+                 num_threads=6, display_table=False,
+                 display_progress=True, provide_traceback=True)(predictor_to_optimize)
         # Generate examples needed for optimization outside the loop
-        tp = dspy.MIPROv2(metric=dspy_quality_score_closeness, auto="light")
-        optimized_predictor = tp.compile(predictor_to_optimize.deepcopy(), trainset=train_examples[:],
+        optim = dspy.MIPROv2(metric=dspy_quality_score_closeness, auto="light")
+        optimized_predictor = optim.compile(predictor_to_optimize.deepcopy(), trainset=train_examples[:],
                                          valset=test_examples[:],
                                          requires_permission_to_run=False)
         optimized_predictor.finder.lm=lm
         optimized_predictor.scorer.lm=lm
         optimized_predictor.save(save_filename)
-        """
-        print(f"Starting MIPROv2 compilation for temperature {temperature:.1f}...")
-        optimized_predictor = mipro_optimizer.compile(
-            student=predictor_to_optimize.deepcopy(), # Optimize a copy
-            trainset=self.train_examples,
-            valset=self.test_examples, # Use test set as validation for MIPRO
-            num_trials=MIPRO_NUM_TRIALS,
-            max_bootstrapped_demos=2, # Limit number of demos MIPRO adds
-            max_labeled_demos=2, # Limit number of demos MIPRO adds
-            seed=self.seed,
-            requires_permission_to_run=False # Auto-run if needed
-        )
-        print("MIPROv2 compilation finished.")
-        """
         return optimized_predictor
+
     def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
         """
         Generate predictions for (head, relation) pairs against all entities.
@@ -370,24 +455,12 @@ class DemirEnsembleMPRO(AbstractBaseLinkPredictorClass):
 
             # Get predictions from each predictor in the ensemble
             for i, predictor in enumerate(self.predictors):
-                try:
-                    # Ensure correct LM is configured if predictor doesn't hold it internally
-                    # This might be needed if .save()/.load() doesn't handle LM state well.
-                    # Re-configure based on predictor's intended temperature (if stored) or loop temp?
-                    # Assuming predictor holds its state or configuration is handled globally/contextually.
-                    # lm = dspy.LM(...) # Potentially reconfigure LM here if needed per predictor
-                    # dspy.configure(lm=lm)
+                prediction = predictor.forward(subject=h, predicate=r)
+                num_predictors_used += 1
 
-                    prediction = predictor.forward(subject=h, predicate=r)
-                    num_predictors_used += 1
-
-                    # prediction.target should be List[Tuple[str, float]] thanks to predictor.forward()
-                    for entity, score in prediction.target:
-                        accumulated_scores[entity] = accumulated_scores.get(entity, 0.0) + score
-
-                except Exception as e:
-                    print(f"Error during prediction with predictor {i} for ({h}, {r}): {e}")
-                    # Optionally skip this predictor's contribution or handle error
+                # prediction.target should be List[Tuple[str, float]] thanks to predictor.forward()
+                for entity, score in prediction.target:
+                    accumulated_scores[entity] = accumulated_scores.get(entity, 0.0) + score
 
             # --- Convert accumulated scores to the final output format ---
             final_scores = [0.0] * num_entities
@@ -406,14 +479,30 @@ class DemirEnsembleMPRO(AbstractBaseLinkPredictorClass):
         # This method is required by the abstract class but not the focus here.
         # If needed, adapt it similar to forward_k_vs_all but for specific triples.
         raise NotImplementedError("forward_triples needs implementation if used.")
+    def _prepare_data(self):
+        """Loads, processes, and prepares training/validation data."""
+        print("Preparing data...")
+        train_set = [(self.idx_to_entity[h], self.idx_to_relation[r], self.idx_to_entity[t])
+                     for h, r, t in self.kg.train_set.tolist()]
+        val_set = [(self.idx_to_entity[h], self.idx_to_relation[r], self.idx_to_entity[t])
+                   for h, r, t in self.kg.valid_set.tolist()]
+
+        self.triples = train_set + (val_set if self.use_val else [])
+
+        # Group triples by (subject, predicate)
+        self.entity_relation_to_entities: Dict[Tuple[str, str], List[str]] = {}
+        self.all_entities: Set[str] = set()
+        for s, p, o in self.triples:
+            self.all_entities.add(s)
+            self.all_entities.add(o)
+            self.entity_relation_to_entities.setdefault((s, p), []).append(o)
+
+        print(f"Prepared data: {len(self.triples)} triples, {len(self.all_entities)} unique entities.")
 
 
 # --- Main Execution Block ---
 if __name__ == "__main__":
     args = parser.parse_args()
-
-    # Important: add_reciprocal=False in KvsAll implies that inverse relation has been introduced.
-    # Therefore, The link prediction results are based on the missing tail rankings only!
     print(f"Loading KG from: {args.dataset_dir}")
     kg = KG(dataset_dir=args.dataset_dir, separator="\s+", eval_model=args.eval_model, add_reciprocal=False)
     sanity_checking(args, kg) # Assuming this function exists and checks args
