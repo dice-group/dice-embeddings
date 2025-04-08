@@ -234,6 +234,10 @@ if __name__ == "__main__":
                               llm_model=args.llm_model_name, temperature=args.temperature, seed=args.seed)
     results:dict = evaluate_lp_k_vs_all(model=model, triple_idx=kg.test_set[:args.eval_size],
                          er_vocab=kg.er_vocab, info='Eval KvsAll Starts', batch_size=args.batch_size)
+    # @TODO: CD -> AB:
+    # @TODO: (1) Append new triples found by DemirEnsemble into train split of KG .
+    # @TODO: (2) Train KGE models on extended KGs.
+    # @TODO: (3) Train KGE models on benchmark KGs CountriesS1-S3) and report the results here (https://github.com/dice-group/dice-embeddings?tab=readme-ov-file#umls)
     print(results)
     if args.out and results:
         # Writing the dictionary to a JSON file
