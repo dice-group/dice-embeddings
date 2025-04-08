@@ -29,7 +29,6 @@ import torch
 import json
 from tqdm import tqdm
 from typing import List, Tuple, Dict, Set
-from dspy.teleprompt import MIPROv2
 from retrieval_aug_predictors.models import KG, AbstractBaseLinkPredictorClass
 from retrieval_aug_predictors.arguments import parser
 from retrieval_aug_predictors.utils import sanity_checking
@@ -39,11 +38,8 @@ import os
 from dspy.evaluate import Evaluate
 import math
 import pandas as pd
-from typing import List,Iterable
-import dspy
-import pydantic
 import random
-from typing import Dict, Set, Tuple, Any, TypeAlias, List, Optional, Union
+from typing import TypeAlias, Union
 # --- Constants ---
 load_dotenv()
 pd.set_option('display.max_columns', None)
