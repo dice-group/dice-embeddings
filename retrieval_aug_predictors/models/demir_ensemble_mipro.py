@@ -265,8 +265,8 @@ class MultiLabelLinkPredictor(dspy.Module):
         super().__init__()
         self.entities = sorted(list(set(entities)))
         self.g = g
-        self.finder = dspy.Predict(EntityFinder)
-        self.scorer = dspy.Predict(Scorer)
+        self.finder = dspy.ChainOfThought(EntityFinder)
+        self.scorer = dspy.ChainOfThought(Scorer)
 
     def _graph_based_content_builder(self,subject:str):
         hop_to_triples = dict()
@@ -434,6 +434,12 @@ class DemirEnsembleMPRO(AbstractBaseLinkPredictorClass):
         """
         batch_predictions = []
         num_entities = len(self.idx_to_entity)
+
+        # Configure LM for prediction
+        lm = dspy.LM(model=f"openai/{self.llm_model}", api_key=self.api_key, api_base=self.base_url,
+                     seed=self.seed, temperature=self.mipro_optimizer_temperature,
+                     cache=True, cache_in_memory=True)
+        dspy.configure(lm=lm)
 
         # Use tqdm for progress visualization
         for hr in tqdm(x.tolist(), desc="Predicting Batches (K vs All)"):
