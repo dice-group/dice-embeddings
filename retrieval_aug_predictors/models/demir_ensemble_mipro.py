@@ -1,29 +1,3 @@
-"""
-python -m retrieval_aug_predictors.models.demir_ensemble_mipro --dataset_dir KGs/Countries-S1 --out "countries_s1_results.json" && cat countries_s1_results.json
-{
-    "H@1": 0.75,
-    "H@3": 0.875,
-    "H@10": 1.0,
-    "MRR": 0.8416666666666667
-}
-python -m retrieval_aug_predictors.models.demir_ensemble_mipro --dataset_dir KGs/Countries-S2 --out "countries_s2_results.json" && cat countries_s2_results.json
-{
-    "H@1": 0.75,
-    "H@3": 1.0,
-    "H@10": 1.0,
-    "MRR": 0.8680555555555555
-}(
-
-
-python -m retrieval_aug_predictors.models.demir_ensemble_mipro --dataset_dir KGs/Countries-S3 --out "countries_s3_results.json" && cat countries_s3_results.json
-{
-    "H@1": 0.041666666666666664,
-    "H@3": 0.4583333333333333,
-    "H@10": 0.625,
-    "MRR": 0.2626660300405415
-}
-
-"""
 import dspy
 import torch
 import json
@@ -39,7 +13,7 @@ from dspy.evaluate import Evaluate
 import math
 import pandas as pd
 import random
-from typing import TypeAlias, Union
+from typing import TypeAlias, Union, Literal, Optional
 # --- Constants ---
 load_dotenv()
 pd.set_option('display.max_columns', None)
@@ -267,10 +241,10 @@ class MultiLabelLinkPredictor(dspy.Module):
         self.g = g
         self.finder = dspy.ChainOfThought(EntityFinder)
         self.scorer = dspy.ChainOfThought(Scorer)
-
-    def _graph_based_content_builder(self,subject:str):
+    def _graph_based_content_builder(self,subject:str,hops:int=5):
+        assert hops>=0
         hop_to_triples = dict()
-        graph_report = traverse_beam_by_hop(graph=self.g, start_entities=subject, hops=5,
+        graph_report = traverse_beam_by_hop(graph=self.g, start_entities=subject, hops=hops,
                                           beam_width=len(self.entities), return_triples_only=True)
         # Accumulate triples over hops: assert hop_to_triples[i].issubset(hop_to_triples[i+1])
         for k,v in graph_report.items():
@@ -291,7 +265,7 @@ class MultiLabelLinkPredictor(dspy.Module):
             for idx, score in enumerate(scores.target):
                 entity = retrieved_entities.target[idx]
                 intermediate_predictions.setdefault(entity, []).append(score)
-        # Avg scores of intermediate predictions. @TODO: CD: Sum of average ?!
+        # Avg scores of intermediate predictions. @TODO: CD: Is there any better way ?!
         predictions=dict()
         for k,v in intermediate_predictions.items():
             predictions[k]=sum(v)/len(v)
@@ -306,18 +280,20 @@ class DemirEnsembleMPRO(AbstractBaseLinkPredictorClass):
     """
     def __init__(self, knowledge_graph: KG, base_url: str, api_key: str, llm_model: str,
                  temperature: float, seed: int, use_val: bool = True, ensemble_temperatures=None,
-                 save_dir: str = SAVE_DIR_BASE):
+                 save_dir: str = SAVE_DIR_BASE,auto: Optional[Literal["light", "medium", "heavy"]] = "light"):
         super().__init__(knowledge_graph, name="DemirEnsembleMIPRO")
 
         # Configuration
         self.base_url = base_url
         self.api_key = api_key
         self.llm_model = llm_model
+        self.auto=auto
         self.seed = seed
         self.use_val = use_val
         self.save_dir = save_dir
         self.ensemble_temperatures = [i * 0.1 for i in range(1)] if (ensemble_temperatures
                                                                      is None) else ensemble_temperatures
+        assert isinstance(self.ensemble_temperatures, list) and isinstance(self.ensemble_temperatures[0], float) and 1.0 > self.ensemble_temperatures[0] >= 0.0
         self.mipro_optimizer_temperature = temperature
         # Seed random for reproducibility.
         random.seed(self.seed)
@@ -366,7 +342,7 @@ class DemirEnsembleMPRO(AbstractBaseLinkPredictorClass):
                     predictor_to_optimize=base_predictor,
                     train_examples=train_examples,
                     test_examples=test_examples,
-                    temperature=temp, save_filename=save_filename)
+                    temperature=temp, save_filename=save_filename,auto=self.auto)
                 # --- Optional: Evaluate after optimization ---
                 # print(f"Evaluating optimized predictor for temp {temp:.1f}...")
                 # evaluator = Evaluate(devset=self.test_examples[:50], # Limit evaluation size
@@ -397,11 +373,15 @@ class DemirEnsembleMPRO(AbstractBaseLinkPredictorClass):
             dspy.configure(lm=None) # Reset global LM config after use
         return predictors
     def _compile_predictor_for_temperature(self, predictor_to_optimize: MultiLabelLinkPredictor,
-                                           train_examples:List[dspy.Example],test_examples,temperature: float,save_filename:str) -> MultiLabelLinkPredictor:
+                                           train_examples:List[dspy.Example],test_examples,temperature: float,
+                                           save_filename:str,
+                                           auto: Optional[Literal["light", "medium", "heavy"]] = "light") -> MultiLabelLinkPredictor:
         """Configures LM and runs MIPROv2 compilation."""
+
         assert isinstance(predictor_to_optimize, MultiLabelLinkPredictor)
         assert isinstance(train_examples, list) and isinstance(train_examples[0],dspy.Example)
         assert isinstance(test_examples, list) and isinstance(test_examples[0],dspy.Example)
+        assert auto in ("light", "medium", "heavy")
         # Configure DSPy LM specifically for this optimization run
         lm = dspy.LM(model=f"openai/{self.llm_model}", api_key=self.api_key,api_base=self.base_url,
                      seed=self.seed, temperature=temperature,
@@ -418,7 +398,7 @@ class DemirEnsembleMPRO(AbstractBaseLinkPredictorClass):
                  num_threads=6, display_table=False,
                  display_progress=True, provide_traceback=True)(predictor_to_optimize)
         # Generate examples needed for optimization outside the loop
-        optim = dspy.MIPROv2(metric=dspy_quality_score_closeness, auto="light")
+        optim = dspy.MIPROv2(metric=dspy_quality_score_closeness, auto=auto)
         optimized_predictor = optim.compile(predictor_to_optimize.deepcopy(), trainset=train_examples[:],
                                          valset=test_examples[:],
                                          requires_permission_to_run=False)
