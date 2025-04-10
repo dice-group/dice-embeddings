@@ -701,6 +701,7 @@ CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --model "Keci" --p 0 --q 1
 | DeCaL-AllvsAll-ASWA    | val   | 0.320 |  0.229 |  0.333 |   0.562 |
 | DeCaL-AllvsAll-ASWA    | test  | 0.286 |  0.208 |  0.292 |   0.458 |
 
+`--embedding_dim 256 --num_epochs 100 --batch_size 32`
 
 </details>
 
@@ -837,6 +838,8 @@ CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --model "Keci" --p 0 --q 1
 | DeCaL-AllvsAll-ASWA    | val   | 0.246 |  0.167 |  0.271 |   0.417 |
 | DeCaL-AllvsAll-ASWA    | test  | 0.215 |  0.125 |  0.229 |   0.396 |
 
+`--embedding_dim 256 --num_epochs 100 --batch_size 32`
+
 </details> 
 
 #### Countries-S3 ####
@@ -971,6 +974,8 @@ CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --model "Keci" --p 0 --q 1
 | DeCaL-AllvsAll-ASWA    | train | 0.998 |  0.997 |  0.999 |   0.999 |
 | DeCaL-AllvsAll-ASWA    | val   | 0.136 |  0.083 |  0.125 |   0.229 |
 | DeCaL-AllvsAll-ASWA    | test  | 0.090 |  0.021 |  0.083 |   0.208 |
+
+`--embedding_dim 256 --num_epochs 100 --batch_size 32`
 
 </details>
 
