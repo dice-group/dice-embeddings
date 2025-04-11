@@ -289,7 +289,7 @@ if __name__ == "__main__":
                              er_vocab=kg.er_vocab, info='Eval KvsAll Starts', batch_size=args.batch_size)
     else:
         x = kg.test_set[:, [0, 1]]
-        results = model.get_predicted_triples(x)
+        results = model.get_predicted_triples(x, args.k)
 
     print("Results: {}".format(results))
 
