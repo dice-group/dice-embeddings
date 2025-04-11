@@ -25,7 +25,7 @@ python -m retrieval_aug_predictors.models.demir_ensemble --dataset_dir KGs/Count
 import dspy
 import torch
 import json
-from typing import List, Tuple
+from typing import List, Tuple, Callable, Protocol, Any
 from retrieval_aug_predictors.models import KG, AbstractBaseLinkPredictorClass
 from retrieval_aug_predictors.arguments import parser
 from retrieval_aug_predictors.utils import sanity_checking
@@ -173,9 +173,25 @@ class DemirEnsemble(AbstractBaseLinkPredictorClass):
 
         return stats
 
-    def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
-        batch_predictions = []
+    class ProcessingType(Protocol):
+        """Specifies the type of the callable argument for `process_scores` method"""
+        def __call__(self, x: List[float], y: List, **kwargs: Any) -> None: ...
 
+    def process_scores(self, x: torch.LongTensor, process: ProcessingType,
+                       storage: List = None) -> List:
+        """Run the predictors to predict tail entities, score the prediction and
+        further process the scores depending on the `process` argument.
+
+        Args:
+            x (torch.LongTensor): Batch of (h, r) indices to predict triples for.
+            process (ProcessingType): Callable function to further process the scores.
+            storage (List): List to store the processed scores.
+
+        Returns:
+            List: a list of processed scores.
+        """
+        if storage is None:
+            storage = []
         for hr in x.tolist():
             idx_h, idx_r = hr
             h, r = self.idx_to_entity[idx_h], self.idx_to_relation[idx_r]
@@ -216,11 +232,46 @@ class DemirEnsemble(AbstractBaseLinkPredictorClass):
             if max_score > 0:
                 scores = [s / max_score for s in scores]
 
-            batch_predictions.append(scores)
+            process(scores, storage, h=h, r=r)
+
+        return storage
+
+    def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
+
+        def process(scores, storage, **kwargs):
+            storage.append(scores)
+
+        batch_predictions = self.process_scores(x, process)
 
         return torch.FloatTensor(batch_predictions)
+
     def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
         raise NotImplementedError("RCL needs to implement it")
+
+    def get_predicted_triples(self, x: torch.LongTensor, top_k: int = 1):
+        """
+        Retrieve the top predicted triples for the given batch of (h, r) indices.
+        Args:
+            x (torch.LongTensor): Batch of (h, r) indices to predict triples for.
+            top_k (int): Number of top entities to return per (h, r).
+        Returns:
+            List[Tuple[str, str, List[Tuple[str, float]]]]:
+                A list of (subject, relation, [(entity, score)]), where the scores are
+                sorted to get the top_k predicted triples.
+        """
+
+        def process(scores, storage, **kwargs):
+            # Extract top-k entities (along with scores)
+                rng = range(len(scores))
+                top_entity_indices = sorted(rng, key=lambda i: scores[i], reverse=True)[:top_k]
+                top_entities = [(self.idx_to_entity[idx], scores[idx]) for idx in top_entity_indices]
+
+                # Append formatted triple: (subject, predicate, [(entity, score)])
+                storage.append((kwargs.get('h'), kwargs.get('r'), top_entities))
+
+        predicted_triples = self.process_scores(x, process)
+
+        return predicted_triples
 
 
 # test the dspy model -> remove later
@@ -232,12 +283,18 @@ if __name__ == "__main__":
     sanity_checking(args,kg)
     model = DemirEnsemble(knowledge_graph=kg, base_url=args.base_url, api_key=args.api_key,
                               llm_model=args.llm_model_name, temperature=args.temperature, seed=args.seed)
-    results:dict = evaluate_lp_k_vs_all(model=model, triple_idx=kg.test_set[:args.eval_size],
-                         er_vocab=kg.er_vocab, info='Eval KvsAll Starts', batch_size=args.batch_size)
-    print(results)
+
+    if not args.print_top_predictions:
+        results:dict = evaluate_lp_k_vs_all(model=model, triple_idx=kg.test_set[:args.eval_size],
+                             er_vocab=kg.er_vocab, info='Eval KvsAll Starts', batch_size=args.batch_size)
+    else:
+        x = kg.test_set[:, [0, 1]]
+        results = model.get_predicted_triples(x)
+
+    print("Results: {}".format(results))
+
     if args.out and results:
         # Writing the dictionary to a JSON file
-        print(results)
         with open(args.out, 'w') as json_file:
             json.dump(results, json_file, indent=4)
         print(f"Results has been saved to {args.out}")

@@ -1,6 +1,6 @@
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("--dataset_dir", type=str, default="/home/cdemir/Desktop/Softwares/dice-embeddings/KGs/Countries-S1", help="Path to dataset.")
+parser.add_argument("--dataset_dir", type=str, default="/home/alkid/PycharmProjects/dice-embeddings/KGs/Countries-S1", help="Path to dataset.")
 parser.add_argument("--model", type=str, default="Demir", help="Model name to use for link prediction.",
                     choices=["Demir", "GCL", "RCL", "RALP"])
 parser.add_argument("--base_url", type=str, default="http://harebell.cs.upb.de:8501/v1",
@@ -27,3 +27,7 @@ parser.add_argument("--exclude_source", action="store_true",
                     help="Exclude triples with the same source entity in RCL context.")
 parser.add_argument("--out", type=str, default=None,
                     help="A path of a json file reporting the link prediction results.")
+parser.add_argument("--print_top_predictions", action="store_true",
+                    help="Whether you want to print top-k predictions. Set k by using --k flag.")
+parser.add_argument("--k", type=int, default=1,
+                    help="Number of top predictions to print for each (h, r) ")
