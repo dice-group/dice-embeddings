@@ -25,8 +25,9 @@ def run(args):
         triples = f.readlines()
 
     for prd in predictions:
-        triple = prd[0] + "\t" + prd[1] + " \t" + prd[2][0][0]
-        triples.append(triple + "\n")
+        triple = prd[0] + "\t" + prd[1] + " \t" + prd[2][0][0]+ "\n"
+        if triple not in triples:
+            triples.append(triple)
 
     with open(args.dataset_dir + "/" + args.kg_out, "w") as out:
         out.writelines(triples)
@@ -40,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument("--pred_out", type=str, default=None,
                         help="Name of the output file where the predictions will be saved.")
 
-    parser.add_argument("--kg_out", type=str, default="extended_train.txt",
+    parser.add_argument("--kg_out", type=str, default="enriched_train.txt",
                         help="Name of the output file where the extended train set will be saved.")
 
     run(parser.parse_args())

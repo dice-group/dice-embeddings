@@ -88,8 +88,9 @@ class MultiLabelLinkPredictor(dspy.Module):
             return []
 
 
-class DemirEnsemble(AbstractBaseLinkPredictorClass):
-    """Ensemble approach combining multiple prediction strategies"""
+class RALP(AbstractBaseLinkPredictorClass):
+    """Retrieval-Augmented Link Prediction (ex DemirEnsemble).
+    Ensemble approach combining multiple prediction strategies"""
 
     def __init__(self, knowledge_graph, base_url, api_key, temperature, seed, llm_model, use_val: bool = False):
         super().__init__(knowledge_graph, name="DemirEnsemble")
@@ -288,7 +289,7 @@ if __name__ == "__main__":
         results:dict = evaluate_lp_k_vs_all(model=model, triple_idx=kg.test_set[:args.eval_size],
                              er_vocab=kg.er_vocab, info='Eval KvsAll Starts', batch_size=args.batch_size)
     else:
-        x = kg.test_set[:, [0, 1]]
+        x = kg.train_set[:, [0, 1]]
         results = model.get_predicted_triples(x, args.k)
 
     print("Results: {}".format(results))

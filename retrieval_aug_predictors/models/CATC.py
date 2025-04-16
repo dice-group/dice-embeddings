@@ -4,7 +4,8 @@ from openai import OpenAI
 from retrieval_aug_predictors.models import KG, AbstractBaseLinkPredictorClass
 
 
-class RALP(AbstractBaseLinkPredictorClass):
+class CATC(AbstractBaseLinkPredictorClass):
+    """Context-Aware Triple Completion"""
     def __init__(self, knowledge_graph: KG = None,
                  name="ralp-1.0",
                  base_url="http://tentris-ml.cs.upb.de:8501/v1",
