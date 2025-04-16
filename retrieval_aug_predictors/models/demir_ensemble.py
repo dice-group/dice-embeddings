@@ -93,7 +93,7 @@ class RALP(AbstractBaseLinkPredictorClass):
     Ensemble approach combining multiple prediction strategies"""
 
     def __init__(self, knowledge_graph, base_url, api_key, temperature, seed, llm_model, use_val: bool = False):
-        super().__init__(knowledge_graph, name="DemirEnsemble")
+        super().__init__(knowledge_graph, name="RALP")
         self.temperature = temperature
         self.seed = seed
         # () Initialize ensemble.
@@ -282,7 +282,7 @@ if __name__ == "__main__":
     # Therefore, The link prediction results are based on the missing tail rankings only!
     kg = KG(dataset_dir=args.dataset_dir, separator="\s+", eval_model=args.eval_model, add_reciprocal=False)
     sanity_checking(args,kg)
-    model = DemirEnsemble(knowledge_graph=kg, base_url=args.base_url, api_key=args.api_key,
+    model = RALP(knowledge_graph=kg, base_url=args.base_url, api_key=args.api_key,
                               llm_model=args.llm_model_name, temperature=args.temperature, seed=args.seed)
 
     if not args.print_top_predictions:

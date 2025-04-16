@@ -5,10 +5,10 @@ import torch
 import tempfile
 import shutil
 from retrieval_aug_predictors.models import KG
-from retrieval_aug_predictors.models.demir_ensemble_mipro import DemirEnsembleMPRO
+from retrieval_aug_predictors.models.demir_ensemble_mipro import RALP_MPRO
 from dicee.evaluator import evaluate_lp_k_vs_all
 
-class TestDemirEnsembleMPRORegression:
+class TestRALP_MPRORegression:
     @classmethod
     def setup_class(cls):
         # Create a temporary directory for model outputs
@@ -67,7 +67,7 @@ class TestDemirEnsembleMPRORegression:
         
         kg = KG(dataset_dir=dataset_dir, separator="\s+", eval_model="KvsAll", add_reciprocal=False)
         
-        model = DemirEnsembleMPRO(
+        model = RALP_MPRO(
             knowledge_graph=kg,
             base_url=self.base_url,
             api_key=self.api_key,
@@ -87,7 +87,7 @@ class TestDemirEnsembleMPRORegression:
             model=model,
             triple_idx=test_triples,
             er_vocab=kg.er_vocab,
-            info=f'Regression Test (DemirEnsembleMIPRO) - {dataset_name}'
+            info=f'Regression Test (RALP_MPRO) - {dataset_name}'
         )
         
         # Save test results for inspection

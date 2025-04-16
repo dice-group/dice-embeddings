@@ -18,7 +18,7 @@ from typing import TypeAlias, Union, Literal, Optional
 load_dotenv()
 pd.set_option('display.max_columns', None)
 
-SAVE_DIR_BASE = "DemirEnsembleMIPRO_Optimized"
+SAVE_DIR_BASE = "RALP_MPRO_Optimized"
 TEST_SIZE = 0.2
 # --- Type Definitions ---
 # Represents the graph: {(subject, predicate): {object1, object2}}
@@ -273,15 +273,16 @@ class MultiLabelLinkPredictor(dspy.Module):
 
 
 
-class DemirEnsembleMPRO(AbstractBaseLinkPredictorClass):
+class RALP_MPRO(AbstractBaseLinkPredictorClass):
     """
+    (ex DemirEnsembleMPRO)
     Ensemble predictor using MIPROv2 optimized base prompts.
     Combines predictions from models trained/optimized with different settings (e.g., temperature).
     """
     def __init__(self, knowledge_graph: KG, base_url: str, api_key: str, llm_model: str,
                  temperature: float, seed: int, use_val: bool = True, ensemble_temperatures=None,
                  save_dir: str = SAVE_DIR_BASE,auto: Optional[Literal["light", "medium", "heavy"]] = "light"):
-        super().__init__(knowledge_graph, name="DemirEnsembleMIPRO")
+        super().__init__(knowledge_graph, name="RALP_MPRO")
 
         # Configuration
         self.base_url = base_url
@@ -488,8 +489,8 @@ if __name__ == "__main__":
     print(f"Loading KG from: {args.dataset_dir}")
     kg = KG(dataset_dir=args.dataset_dir, separator="\s+", eval_model=args.eval_model, add_reciprocal=False)
     sanity_checking(args, kg) # Assuming this function exists and checks args
-    print("Initializing DemirEnsemble with MIPROv2...")
-    model = DemirEnsembleMPRO(knowledge_graph=kg, base_url=args.base_url, api_key=args.api_key,
+    print("Initializing RALP with MIPROv2...")
+    model = RALP_MPRO(knowledge_graph=kg, base_url=args.base_url, api_key=args.api_key,
                               llm_model=args.llm_model_name, temperature=args.temperature,
                               seed=args.seed, use_val=True)
     print("Starting evaluation...")
@@ -498,7 +499,7 @@ if __name__ == "__main__":
     print(f"Evaluating on {len(eval_triples)} test triples...")
     results: dict = evaluate_lp_k_vs_all(model=model, triple_idx=eval_triples,
                                          er_vocab=kg.er_vocab,
-                                         info='Eval KvsAll (DemirEnsembleMIPRO) Starts')
+                                         info='Eval KvsAll (RALP_MPRO) Starts')
     print(results)
     if args.out and results:
         print(f"\nEvaluation Results:\n{json.dumps(results, indent=4)}")
