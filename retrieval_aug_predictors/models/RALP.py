@@ -1,19 +1,19 @@
 """
-python -m retrieval_aug_predictors.models.demir_ensemble --dataset_dir KGs/Countries-S1 --out "countries_s1_results.json" && cat countries_s1_results.json
+python -m retrieval_aug_predictors.models.RALP --dataset_dir KGs/Countries-S1 --out "countries_s1_results.json" && cat countries_s1_results.json
 {
     "H@1": 1.0,
     "H@3": 1.0,
     "H@10": 1.0,
     "MRR": 1.0
 }
-python -m retrieval_aug_predictors.models.demir_ensemble --dataset_dir KGs/Countries-S2 --out "countries_s2_results.json" && cat countries_s2_results.json
+python -m retrieval_aug_predictors.models.RALP --dataset_dir KGs/Countries-S2 --out "countries_s2_results.json" && cat countries_s2_results.json
 {
     "H@1": 1.0,
     "H@3": 1.0,
     "H@10": 1.0,
     "MRR": 1.0
 }
-python -m retrieval_aug_predictors.models.demir_ensemble --dataset_dir KGs/Countries-S3 --out "countries_s3_results.json" && cat countries_s3_results.json
+python -m retrieval_aug_predictors.models.RALP --dataset_dir KGs/Countries-S3 --out "countries_s3_results.json" && cat countries_s3_results.json
 {
     "H@1": 0.9166666666666666,
     "H@3": 1.0,

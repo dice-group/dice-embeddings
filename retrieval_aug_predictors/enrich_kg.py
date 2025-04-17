@@ -15,7 +15,7 @@ def run(args):
 
 
     if not os.path.exists(args.pred_out):
-        subprocess.run(["python", "models/demir_ensemble.py",
+        subprocess.run(["python", "models/RALP.py",
                         "--dataset_dir", args.dataset_dir,
                         "--print_top_predictions",
                         "--out", args.pred_out])

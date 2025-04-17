@@ -1,11 +1,10 @@
 import os
 import json
 import pytest
-import torch
 import tempfile
 import shutil
 from retrieval_aug_predictors.models import KG
-from retrieval_aug_predictors.models.demir_ensemble_mipro import RALP_MPRO
+from retrieval_aug_predictors.models.RALP_mipro import RALP_MPRO
 from dicee.evaluator import evaluate_lp_k_vs_all
 
 class TestRALP_MPRORegression:
