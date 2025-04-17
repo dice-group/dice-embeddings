@@ -44,9 +44,9 @@ def run(args):
 
 
 if __name__ == "__main__":
-    """If run on default arguments (dataset_dir has to be set), it will create prediction using RALP,
-    enrich the train set of the KG with these predictions and save it to a directory named "Enriched_<dataset_dir>".
-    Test and validation splits are copied as they are.
+    """If run on default arguments (with exception of `dataset_dir` which has to be set), it will create prediction 
+    using RALP, enrich the train set of the KG with these predictions and save it to a directory named 
+    "Enriched_<dataset_name>". Test and validation splits are copied as they are from the original dataset.
     """
     parser = argparse.ArgumentParser()
 
