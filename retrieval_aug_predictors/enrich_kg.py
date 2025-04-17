@@ -2,6 +2,8 @@ import os
 import subprocess
 import json
 import argparse
+import shutil
+
 
 def run(args):
 
@@ -29,10 +31,23 @@ def run(args):
         if triple not in triples:
             triples.append(triple)
 
-    with open(args.dataset_dir + "/" + args.kg_out, "w") as out:
+    if args.kg_out is None:
+        args.kg_out = os.path.dirname(args.dataset_dir) + "/Enriched_" + args.dataset_dir.split("/")[-1]
+
+    os.makedirs(args.kg_out, exist_ok=True)
+
+    with open(args.kg_out + "/train.txt", "w") as out:
         out.writelines(triples)
 
+    shutil.copy(args.dataset_dir + "/valid.txt", args.kg_out + "/valid.txt")
+    shutil.copy(args.dataset_dir + "/test.txt", args.kg_out + "/test.txt")
+
+
 if __name__ == "__main__":
+    """If run on default arguments (dataset_dir has to be set), it will create prediction using RALP,
+    enrich the train set of the KG with these predictions and save it to a directory named "Enriched_<dataset_dir>".
+    Test and validation splits are copied as they are.
+    """
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--dataset_dir", type=str,
@@ -41,7 +56,7 @@ if __name__ == "__main__":
     parser.add_argument("--pred_out", type=str, default=None,
                         help="Name of the output file where the predictions will be saved.")
 
-    parser.add_argument("--kg_out", type=str, default="enriched_train.txt",
+    parser.add_argument("--kg_out", type=str, default=None,
                         help="Name of the output file where the extended train set will be saved.")
 
     run(parser.parse_args())
