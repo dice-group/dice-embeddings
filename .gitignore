@@ -156,6 +156,6 @@ KGs*/
 pre_trained_agents.zip
 embeddings.zip
 KGs.zip
-/Experiments/
+Experiments/
 /KGs/
-/checkpoints/
+checkpoints/
