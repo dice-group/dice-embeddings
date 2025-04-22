@@ -199,7 +199,8 @@ def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio:
                          nrows=None if read_only_few is None else read_only_few,
                          usecols=[0, 1, 2],
                          names=['subject', 'relation', 'object'],
-                         dtype=str)
+                         dtype=str,
+                         engine='python')
     else:
         df = pd.read_parquet(data_path, engine="pyarrow")
         # (2)a Read only few if it is asked.
