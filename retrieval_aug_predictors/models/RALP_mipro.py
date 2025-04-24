@@ -39,7 +39,7 @@ def generate_train_test_split(examples: List[dspy.Example], test_size: float, se
     test_examples = shuffled_examples[split_idx:]
     return train_examples, test_examples
 
-def generate_examples_for_mipro(data: Dict[Tuple[str, str], List[str]], all_entities: Set[str], seed: int) -> List[dspy.Example]:
+def generate_examples_for_mipro(data: Dict[Tuple[str, str], Set[str]], all_entities: Set[str], seed: int) -> List[dspy.Example]:
     """
     Generates dspy.Example objects for MIPRO optimization.
     Includes true entities (score 1.0) and subsampled false entities (score 0.0).
@@ -319,7 +319,8 @@ class RALP_MPRO(AbstractBaseLinkPredictorClass):
             # @TODO: CD: Later, save the details eval results as csv controlled by a flag attribute.
             results_filename = os.path.join(self.save_dir, f"eval_results_temp_{temp:.1f}.csv")
             # Initialize the base predictor for this temperature
-            base_predictor = MultiLabelLinkPredictor(entities=list(self.all_entities),g=self.entity_relation_to_entities)
+            base_predictor = MultiLabelLinkPredictor(entities=list(self.all_entities),
+                                                     g=self.entity_relation_to_entities)
             if os.path.exists(save_filename):
                 print(f"Loading optimized predictor from {save_filename}...")
                 # Need to configure LM *before* loading if LM state isn't saved
@@ -417,6 +418,7 @@ class RALP_MPRO(AbstractBaseLinkPredictorClass):
         num_entities = len(self.idx_to_entity)
 
         # Configure LM for prediction
+        # TODO: AB: Why do we config this LM if we already have configured LM for each predictor in self.predictors?
         lm = dspy.LM(model=f"openai/{self.llm_model}", api_key=self.api_key, api_base=self.base_url,
                      seed=self.seed, temperature=self.mipro_optimizer_temperature,
                      cache=True, cache_in_memory=True)
@@ -473,12 +475,12 @@ class RALP_MPRO(AbstractBaseLinkPredictorClass):
         self.triples = train_set + (val_set if self.use_val else [])
 
         # Group triples by (subject, predicate)
-        self.entity_relation_to_entities: Dict[Tuple[str, str], List[str]] = {}
+        self.entity_relation_to_entities: Dict[Tuple[str, str], Set[str]] = {}
         self.all_entities: Set[str] = set()
         for s, p, o in self.triples:
             self.all_entities.add(s)
             self.all_entities.add(o)
-            self.entity_relation_to_entities.setdefault((s, p), []).append(o)
+            self.entity_relation_to_entities.setdefault((s, p), set()).add(o)
 
         print(f"Prepared data: {len(self.triples)} triples, {len(self.all_entities)} unique entities.")
 
