@@ -2,7 +2,7 @@ import dspy
 import torch
 import json
 from tqdm import tqdm
-from typing import List, Tuple, Dict, Set
+from typing import List, Tuple, Dict, Set, Any, Protocol
 from retrieval_aug_predictors.models import KG, AbstractBaseLinkPredictorClass
 from retrieval_aug_predictors.arguments import parser
 from retrieval_aug_predictors.utils import sanity_checking
@@ -409,15 +409,25 @@ class RALP_MPRO(AbstractBaseLinkPredictorClass):
         optimized_predictor.save(save_filename)
         return optimized_predictor
 
-    def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
+    class ProcessingType(Protocol):
+        """Specifies the type of the callable argument for `_process_scores` method"""
+        def __call__(self, x: List[float], y: List, **kwargs: Any) -> None: ...
+
+    def _process_scores(self, x: torch.LongTensor, process: ProcessingType,
+                       storage: List = None) -> List:
+        """Run the predictors to predict tail entities, score the prediction and
+        further process the scores depending on the `process` argument.
+
+        Args:
+            x (torch.LongTensor): Batch of (h, r) indices to predict triples for.
+            process (ProcessingType): Callable function to further process the scores.
+            storage (List): List to store the processed scores.
+
+        Returns:
+            List: a list of processed scores.
         """
-        Generate predictions for (head, relation) pairs against all entities.
-        Averages scores from all predictors in the ensemble.
-        """
-        batch_predictions = []
         num_entities = len(self.idx_to_entity)
 
-        # Configure LM for prediction
         # TODO: AB: Why do we config this LM if we already have configured LM for each predictor in self.predictors?
         lm = dspy.LM(model=f"openai/{self.llm_model}", api_key=self.api_key, api_base=self.base_url,
                      seed=self.seed, temperature=self.mipro_optimizer_temperature,
@@ -430,9 +440,9 @@ class RALP_MPRO(AbstractBaseLinkPredictorClass):
             h = self.idx_to_entity.get(idx_h, None)
             r = self.idx_to_relation.get(idx_r, None)
             if h is None or r is None:
-                 print(f"Warning: Unknown index in query: h={idx_h}, r={idx_r}. Skipping.")
-                 batch_predictions.append([0.0] * num_entities) # Predict all zeros
-                 continue
+                print(f"Warning: Unknown index in query: h={idx_h}, r={idx_r}. Skipping.")
+                storage.append([0.0] * num_entities)  # Predict all zeros
+                continue
 
             # Use a dictionary to accumulate scores by entity name for easier handling
             accumulated_scores: Dict[str, float] = {}
@@ -453,17 +463,56 @@ class RALP_MPRO(AbstractBaseLinkPredictorClass):
                 for entity_name, total_score in accumulated_scores.items():
                     if entity_name in self.entity_to_idx:
                         idx_entity = self.entity_to_idx[entity_name]
-                        final_scores[idx_entity] = total_score / num_predictors_used # Average score
+                        final_scores[idx_entity] = total_score / num_predictors_used  # Average score
                     # else:
                     #    print(f"Warning: Predicted entity '{entity_name}' not in entity index map.")
 
-            batch_predictions.append(final_scores)
+            process(final_scores, storage, h=h, r=r)
+
+        return storage
+
+    def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
+        """
+        Generate predictions for (head, relation) pairs against all entities.
+        Averages scores from all predictors in the ensemble.
+        """
+
+        def process(scores, storage, **kwargs):
+            storage.append(scores)
+
+        batch_predictions = self._process_scores(x, process)
 
         return torch.FloatTensor(batch_predictions)
     def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
         # This method is required by the abstract class but not the focus here.
         # If needed, adapt it similar to forward_k_vs_all but for specific triples.
         raise NotImplementedError("forward_triples needs implementation if used.")
+
+    def get_predicted_triples(self, x: torch.LongTensor, top_k: int = 1):
+        """
+        Retrieve the top predicted triples for the given batch of (h, r) indices.
+        Args:
+            x (torch.LongTensor): Batch of (h, r) indices to predict triples for.
+            top_k (int): Number of top entities to return per (h, r).
+        Returns:
+            List[Tuple[str, str, List[Tuple[str, float]]]]:
+                A list of (subject, relation, [(entity, score)]), where the scores are
+                sorted to get the top_k predicted triples.
+        """
+
+        def process(scores, storage, **kwargs):
+            # Extract top-k entities (along with scores)
+                rng = range(len(scores))
+                top_entity_indices = sorted(rng, key=lambda i: scores[i], reverse=True)[:top_k]
+                top_entities = [(self.idx_to_entity[idx], scores[idx]) for idx in top_entity_indices]
+
+                # Append formatted triple: (subject, predicate, [(entity, score)])
+                storage.append((kwargs.get('h'), kwargs.get('r'), top_entities))
+
+        predicted_triples = self._process_scores(x, process)
+
+        return predicted_triples
+
     def _prepare_data(self):
         """Loads, processes, and prepares training/validation data."""
         print("Preparing data...")
@@ -495,13 +544,18 @@ if __name__ == "__main__":
     model = RALP_MPRO(knowledge_graph=kg, base_url=args.base_url, api_key=args.api_key,
                               llm_model=args.llm_model_name, temperature=args.temperature,
                               seed=args.seed, use_val=True)
-    print("Starting evaluation...")
-    # Limit evaluation size if needed (e.g., during testing)
-    eval_triples = kg.test_set[:args.eval_size] if args.eval_size > 0 else kg.test_set
-    print(f"Evaluating on {len(eval_triples)} test triples...")
-    results: dict = evaluate_lp_k_vs_all(model=model, triple_idx=eval_triples,
-                                         er_vocab=kg.er_vocab,
-                                         info='Eval KvsAll (RALP_MPRO) Starts')
+
+    if not args.print_top_predictions: # Evaluate
+        print("Starting evaluation...")
+        # Limit evaluation size if needed (e.g., during testing)
+        eval_triples = kg.test_set[:args.eval_size] if args.eval_size > 0 else kg.test_set
+        print(f"Evaluating on {len(eval_triples)} test triples...")
+        results: dict = evaluate_lp_k_vs_all(model=model, triple_idx=eval_triples,
+                                             er_vocab=kg.er_vocab,
+                                             info='Eval KvsAll (RALP_MPRO) Starts')
+    else: # Print prediction generated from the train set
+        x = kg.train_set[:, [0, 1]]
+        results = model.get_predicted_triples(x, args.k)
     print(results)
     if args.out and results:
         print(f"\nEvaluation Results:\n{json.dumps(results, indent=4)}")
