@@ -433,7 +433,8 @@ class RALP_MPRO(AbstractBaseLinkPredictorClass):
                      seed=self.seed, temperature=self.mipro_optimizer_temperature,
                      cache=True, cache_in_memory=True)
         dspy.configure(lm=lm)
-
+        if storage is None:
+            storage = []
         # Use tqdm for progress visualization
         for hr in tqdm(x.tolist(), desc="Predicting Batches (K vs All)"):
             idx_h, idx_r = hr
