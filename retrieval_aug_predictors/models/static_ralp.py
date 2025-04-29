@@ -1,5 +1,5 @@
 """
-python -m retrieval_aug_predictors.models.static_ralp --dataset_dir KGs/Countries-S1 --out "countries_s1_results.json" && cat countries_s1_results.json
+python -m retrieval_aug_predictors.models.static_ralp --enrich_training --dataset_dir KGs/Countries-S1 --out "countries_s1_results.json" && cat countries_s1_results.json
 {
     "H@1": 1.0,
     "H@3": 1.0,
@@ -24,9 +24,11 @@ python -m retrieval_aug_predictors.models.static_ralp --dataset_dir KGs/Countrie
 """
 
 import dspy
+import numpy as np
 import torch
 import json
-from typing import List, Tuple
+from typing import List, Tuple, Set
+from tqdm import tqdm
 from retrieval_aug_predictors.models import KG, AbstractBaseLinkPredictorClass
 from retrieval_aug_predictors.arguments import parser
 from retrieval_aug_predictors.utils import sanity_checking, MultiLabelLinkPredictionWithScores, BasicMultiLabelLinkPredictor
@@ -86,6 +88,30 @@ class StaticRALP(AbstractBaseLinkPredictorClass):
         return torch.FloatTensor(batch_predictions)
 
 
+def find_missing_triples(model:AbstractBaseLinkPredictorClass,train_set:np.ndarray,threshold:float=0.5)->List[Tuple[str,str,str]]:
+    triples={tuple(triple) for triple in train_set.tolist()}
+    founded_triples=set()
+    t:Tuple[int,int,int]
+    for t in tqdm(triples):
+        idx_s,idx_p,idx_o=t
+        #
+        s,p,o=model.idx_to_entity[idx_s],model.idx_to_relation[idx_p],model.idx_to_entity[idx_o]
+        # print(s,p,o)
+        # Likelihood for each entities.
+        predictions=model.forward_k_vs_all(x=torch.LongTensor([[idx_s,idx_p]]))
+        # Work with the 1D row only
+        scores = predictions[0]
+        mask = scores > threshold
+        matching_indices = torch.nonzero(mask, as_tuple=True)[0]  # Get just the indices, shape: [num_matches]
+        # print("Scores > 0.5:")
+        # print(scores[matching_indices])
+        # print("Indices with score > 0.5:")
+        entities=[ model.idx_to_entity[i]for i in matching_indices.tolist()]
+        for new_o in entities:
+            founded_triples.add((s,p,new_o))
+    # Only return missing triples
+    return founded_triples - triples
+
 # test the dspy model -> remove later
 if __name__ == "__main__":
     args=parser.parse_args()
@@ -94,6 +120,16 @@ if __name__ == "__main__":
     kg = KG(dataset_dir=args.dataset_dir, separator="\s+", eval_model=args.eval_model, add_reciprocal=False)
     sanity_checking(args,kg)
     model = StaticRALP(knowledge_graph=kg, base_url=args.base_url, api_key=args.api_key, llm_model=args.llm_model_name, temperature=args.temperature, seed=args.seed)
+
+    if args.enrich_train:
+        missing_triples:Set[Tuple[str,str,str]] = find_missing_triples(model=model,train_set=kg.train_set)
+        # Write the triples to a file
+        paths = args.dataset_dir+"/missing_triples.txt"
+        with open(paths, "w", encoding="utf-8") as f:
+            for s, p, o in missing_triples:
+                f.write(f"{s}\t{p}\t{o}\n")
+        print(f"Missing triples written to {paths}")
+
     results:dict = evaluate_lp_k_vs_all(model=model, triple_idx=kg.test_set[:args.eval_size],
                          er_vocab=kg.er_vocab, info='Eval KvsAll Starts', batch_size=args.batch_size)
     if args.out and results:
