@@ -169,16 +169,54 @@ class RALP(AbstractBaseLinkPredictorClass):
         for s, p, o in self.triples:
             self.relation_to_triples.setdefault(p, []).append((s, p, o))
 
-
+        # Replace hardcoded datatype_properties with detected ones
+        self.datatype_properties = self.detect_data_properties()
+        print(f"Datatype properties: {self.datatype_properties}")
         # Create models for ensemble
         self.predictors = self._create_ensemble_predictors()
-
         self.literal_predictors = self._create_literal_predictor()
-        # Add pattern-based predictor for common relationship types
         self.pattern_predictor = self._create_pattern_predictor()
-
-        # Add statistical predictor
         self.statistical_predictor = self._create_statistical_predictor()
+
+    def detect_data_properties(self):
+        """
+        Simple format-based detection of data properties by checking value patterns.
+        Returns a set of predicates that are likely data properties.
+        """
+        data_properties = set()
+        property_values = {}
+
+        # First pass: collect sample values for each predicate
+        for (s, p, o) in self.triples:
+            if p not in property_values:
+                property_values[p] = []
+            # Only collect up to 100 samples per predicate to keep it efficient
+            if len(property_values[p]) < 100:
+                property_values[p].append(str(o))
+
+        # Second pass: check formats
+        for p, values in property_values.items():
+            # Skip if we don't have enough samples
+            if not values:
+                continue
+
+            # Check if values match common data patterns
+            numeric_values = 0
+            for value in values:
+                # Try to convert to float (handles integers and decimals)
+                try:
+                    float(value.replace(',', ''))
+                    numeric_values += 1
+                except ValueError:
+                    # Check for boolean values
+                    if value.lower() in ['true', 'false', 'yes', 'no']:
+                        numeric_values += 1
+
+            # If more than 80% of values are numeric or boolean, consider it a data property
+            if numeric_values / len(values) > 0.8:
+                data_properties.add(p)
+
+        return data_properties
 
     def _create_ensemble_predictors(self):
         """Create multiple predictors with different configurations"""
@@ -253,10 +291,6 @@ class RALP(AbstractBaseLinkPredictorClass):
         if storage is None:
             storage = []
 
-        # TODO: obv. not a good way to hardcode the dataproperties
-        # we need some way to detect which properties are dataproperties 
-        datatype_properties = {"age", "height"}
-
         for hr in x.tolist():
             idx_h, idx_r = hr
             if (idx_h, idx_r) in seen_set:
@@ -266,7 +300,7 @@ class RALP(AbstractBaseLinkPredictorClass):
 
             h, r = self.idx_to_entity[idx_h], self.idx_to_relation[idx_r]
 
-            if r in datatype_properties:
+            if r in self.datatype_properties:
                 literal_predictions = []
                 for predictor in self.literal_predictors:
                     dspy_pred = predictor.forward(
