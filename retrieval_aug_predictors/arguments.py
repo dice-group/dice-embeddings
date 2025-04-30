@@ -31,3 +31,6 @@ parser.add_argument("--print_top_predictions", action="store_true",
                     help="Whether you want to print top-k predictions. Set k by using --k flag.")
 parser.add_argument("--k", type=int, default=1,
                     help="Number of top predictions to print for each (h, r) ")
+
+parser.add_argument("--enrich_train", action="store_true",
+                    help="Create an enriched_train.txt.")
