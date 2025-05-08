@@ -7,11 +7,16 @@ from owlapy.class_expression import OWLClass
 from owlapy.owl_ontology import Ontology
 from owlapy.owl_reasoner import StructuralReasoner
 from rdflib import Graph
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Classifier(dspy.Signature):
     graph = dspy.InputField(desc="All triples in the knowledge graph.")
     concept: str = dspy.InputField(desc="The named concept that is used to classify entities of a knowledge graph")
     classified_entities: List[str] = dspy.OutputField(desc="All the entities from the knowledge graph that can be classified by the given concept. Result must be a list of unique entities.")
+
+
 
 
 class IRLLM:
@@ -30,6 +35,7 @@ class IRLLM:
         self.triples = [f"{str(s)} {str(p)} {str(o)}" for s, p, o in g]
 
     def evaluate(self):
+
         onto = Ontology(self.kg_path)
         reasoner = StructuralReasoner(onto)
 
@@ -43,10 +49,8 @@ class IRLLM:
         concept_in_owl = OWLClass("http://example.com/father#female")
 
         true_instances = {i.str for i in reasoner.instances(concept_in_owl)}
-        # true_instances = set(sorted(set([i.str for i in reasoner.instances(concept_in_owl)])))
         print(true_instances)
-        # predicted_instances = set(cot_model(graph=self.triples, concept=concept).classified_entities)
-        predicted_instances = {'http://example.com/father#michelle', 'http://example.com/father#anna'}
+        predicted_instances = set(cot_model(graph=self.triples, concept=concept).classified_entities)
         print(predicted_instances)
 
         intersection = true_instances.intersection(predicted_instances)
@@ -60,7 +64,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--kg_path", type=str, default="/home/alkid/PycharmProjects/dice-embeddings/KGs/Family/father.owl")
     parser.add_argument("--base_url", type=str, default="http://harebell.cs.upb.de:8501/v1")
-    parser.add_argument("--api_key", type=str, default="token-tentris-upb")
+    parser.add_argument("--api_key", type=str, default=None)
     parser.add_argument("--temperature", type=float, default=0.1)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--llm_model", type=str, default="tentris")
