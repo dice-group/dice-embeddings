@@ -1,9 +1,13 @@
 import argparse
+import ast
 import os
 from typing import List, Set
 
 import dspy
+import pandas as pd
+from owlapy import OntologyManager
 from owlapy.class_expression import OWLClass
+from owlapy.iri import IRI
 from owlapy.owl_ontology import Ontology
 from owlapy.owl_reasoner import StructuralReasoner
 from rdflib import Graph
@@ -12,12 +16,26 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Classifier(dspy.Signature):
-    graph = dspy.InputField(desc="All triples in the knowledge graph.")
-    concept: str = dspy.InputField(desc="The named concept that is used to classify entities of a knowledge graph")
-    classified_entities: List[str] = dspy.OutputField(desc="All the entities from the knowledge graph that can be classified by the given concept. Result must be a list of unique entities.")
+    graph: str = dspy.InputField(desc="All triples in the knowledge graph. Entities and relations include their namespace.")
+    # concept: str = dspy.InputField(desc="The description logics concept that is used to classify entities of a knowledge graph")
+    concept: str = dspy.InputField(desc="A concept or class in natural language.")
+    classified_entities: list[str] = dspy.OutputField(desc="All the entities from the knowledge graph that can be classified by the given concept or class. Result must be a list of unique entities.")
 
+class Verbaliser(dspy.Signature):
+    expression = dspy.InputField(desc="An expression in description logics. Example: ∃ hasChild.{markus} --> There exist a named individual who has child and this child is Markus")
+    verbalisation = dspy.OutputField(desc="A concise verbalisation of the expression in natural language.")
 
+class PredictionModule(dspy.Module):
+    def __init__(self):
+        self.verbaliser = dspy.Predict(Verbaliser)
+        self.classifier = dspy.ChainOfThought(Classifier)
 
+    def forward(self, graph: str, dl_expression: str) -> list[str]:
+
+        verbalized_concept = self.verbaliser(expression=dl_expression).verbalisation
+        predicted_instances = self.classifier(graph=graph, concept=verbalized_concept).classified_entities
+
+        return predicted_instances
 
 class IRLLM:
     """Instance Retrieval via LLM"""
@@ -35,29 +53,43 @@ class IRLLM:
         self.triples = [f"{str(s)} {str(p)} {str(o)}" for s, p, o in g]
 
     def evaluate(self):
-
-        onto = Ontology(self.kg_path)
-        reasoner = StructuralReasoner(onto)
+        # mg = OntologyManager()
+        # onto = Ontology(manager=mg, ontology_iri=IRI.create("file://" + self.kg_path), load=True)
+        # reasoner = StructuralReasoner(onto)
 
         lm = dspy.LM(model=f"openai/{self.llm_model}", api_key=self.api_key, api_base=self.base_url,
                      temperature=self.temperature, seed=self.seed, cache=True, cache_in_memory=True)
         dspy.configure(lm=lm)
 
-        cot_model = dspy.ChainOfThought(Classifier)
+        program = PredictionModule()
 
-        concept = "Female"
-        concept_in_owl = OWLClass("http://example.com/father#female")
 
-        true_instances = {i.str for i in reasoner.instances(concept_in_owl)}
-        print(true_instances)
-        predicted_instances = set(cot_model(graph=self.triples, concept=concept).classified_entities)
-        print(predicted_instances)
+        df = pd.read_csv("ALCQHI_Retrieval_Results.csv")
+        file_exists = False
+        for index, row in df.iterrows():
+            concept = row[0]
 
-        intersection = true_instances.intersection(predicted_instances)
-        union = true_instances.union(predicted_instances)
-        jaccard_similarity = len(intersection) / len(union)
+            # true_instances = {i.str for i in reasoner.instances(concept_in_owl)}
+            true_instances = ast.literal_eval(row[2])
+            predicted_instances = set(program(graph=self.triples, dl_expression=concept))
 
-        print("Jaccard similarity:", jaccard_similarity)
+            intersection = true_instances.intersection(predicted_instances)
+            union = true_instances.union(predicted_instances)
+            if len(union) == 0:
+                jaccard_similarity = 1.0
+            else:
+                jaccard_similarity = len(intersection) / len(union)
+
+            df_row = pd.DataFrame(
+                [{
+                    "Expression": concept,
+                    "True_set": true_instances,
+                    "Pred_set": predicted_instances,
+                    "Jaccard_similarity": jaccard_similarity,
+                }])
+            # Append the row to the CSV file
+            df_row.to_csv("Results.csv", mode='a', header=not file_exists, index=False)
+            file_exists = True
 
 
 if __name__ == "__main__":
