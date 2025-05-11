@@ -75,7 +75,7 @@ main_math = "../../../KGs/Datasets_Perturbed/"
 report_folder_name = "./bo_outputs/512_05_100Epochs/"
 report_file_name = "bayesian_optimization_report.txt"
 
-datasets = ["UMLS", "KINSHIP"]
+datasets = ["UMLS", "KINSHIP", "NELL-995-h100", "WN18RR", "FB15k-237"]
 models = ["Keci", "Pykeen_MuRE", "QMult", "Pykeen_DistMult", "Pykeen_ComplEx", "Pykeen_BoxE", "Pykeen_RotatE"] #
 losses = ["LRLoss", "LS"]
 

@@ -71,15 +71,15 @@ def initialize_trainer(args, callbacks)->TorchTrainer | TensorParallel | TorchDD
 
         os.makedirs("param_logs/", exist_ok=True)
 
-        Paramlogger = args.Paramlogger
-        if Paramlogger is "CSVLogger":
-            Paramlogger = CSVLogger("param_logs/", name=f"gradient_logging-{args.loss_fn}-{args.model}-{args.add_noise_rate}")
+        #Paramlogger = args.Paramlogger
+        #if Paramlogger is "CSVLogger":
+        #    Paramlogger = CSVLogger("param_logs/", name=f"gradient_logging-{args.loss_fn}-{args.model}-{args.add_noise_rate}")
 
         trainer= pl.Trainer(accelerator=kwargs.get("accelerator", "auto"),
                           strategy=kwargs.get("strategy", "auto"),
                           num_nodes=kwargs.get("num_nodes", 1),
                           precision=kwargs.get("precision", None),
-                          logger=Paramlogger,
+                          #logger=Paramlogger,
                           callbacks=callbacks,
                           fast_dev_run=kwargs.get("fast_dev_run", False),
                           max_epochs=kwargs["num_epochs"],

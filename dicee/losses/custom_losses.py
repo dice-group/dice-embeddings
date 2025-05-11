@@ -3,23 +3,46 @@ from torch import nn
 from torch.nn import functional as F
 import math
 import numpy as np
+import os
+import numpy as np
+from torch import tensor
 
 class DefaultBCELoss(nn.Module):
     def __init__(self):
         super(DefaultBCELoss, self).__init__()
 
-    def forward(self, pred, target, current_epoch, gradient_norm):
+    def forward(self, pred, target, current_epoch):
+
         criterion = torch.nn.BCEWithLogitsLoss()
         final_loss = criterion(pred, target)
+
         return final_loss
 
+class WeightedBCELoss(nn.Module):
+    def __init__(self):
+        super(WeightedBCELoss, self).__init__()
+
+    def forward(self, pred, target, current_epoch):
+
+        gamma = 10
+        confidence = torch.abs(2 * torch.sigmoid(pred) - 1)
+        weights = torch.exp(-gamma * (1 - confidence))
+        weights = torch.clamp(weights, min=0.5, max=1.0)
+
+        weights = weights.detach()
+
+        criterion = torch.nn.BCEWithLogitsLoss(weight=weights)
+        final_loss = criterion(pred, target)
+
+        return final_loss
 
 class LabelSmoothingLoss(nn.Module):
     def __init__(self, smoothness_ratio=0.0):
         super(LabelSmoothingLoss, self).__init__()
         self.smoothness_ratio = smoothness_ratio
+        self.log_dir = "./smoothing_rates"
 
-    def forward(self, pred, target, current_epoch, gradient_norm):
+    def forward(self, pred, target, current_epoch):
 
         criterion = torch.nn.BCEWithLogitsLoss()
         final_loss = criterion(pred, target)
@@ -27,7 +50,11 @@ class LabelSmoothingLoss(nn.Module):
         return final_loss
 
 class AdaptiveLabelSmoothingLoss(nn.Module):
-    def __init__(self, min_smoothing_factor=0.01, max_smoothing_factor=0.2, smoothing_factor_step=0.01, initial_smoothing_factor=0.1):
+    def __init__(self, min_smoothing_factor=0.01,
+                 max_smoothing_factor=0.2,
+                 smoothing_factor_step=0.01,
+                 initial_smoothing_factor=0.1,
+                 ):
 
         super(AdaptiveLabelSmoothingLoss, self).__init__()
         self.min_smoothing_factor = min_smoothing_factor
@@ -36,22 +63,25 @@ class AdaptiveLabelSmoothingLoss(nn.Module):
         self.smoothing_factor = initial_smoothing_factor
         self.prev_loss = None
         self.eps = 1e-14
+        self.log_dir ="./smoothing_rates"
 
-    def forward(self, logits, target, current_epoch, gradient_norm):
+    def forward(self, logits, target, current_epoch):
 
-        pred = F.log_softmax(logits, dim=-1)
+        pred = F.log_softmax(logits, dim=-1) # scores converted to be used in KL
 
         num_classes = logits.size(-1)
         #smoothed_target = (1 - self.smoothing_factor) * target + self.smoothing_factor / num_classes
         smoothed_target = (1 - self.smoothing_factor) * target + self.smoothing_factor * (1 - target) / (num_classes - 1)
 
-        loss = F.kl_div(pred, smoothed_target, reduction="batchmean")
+        kl_loss = F.kl_div(pred, smoothed_target, reduction="batchmean")
+        loss = kl_loss
 
         if self.prev_loss is not None:
             loss_diff = loss.item() - self.prev_loss
-            if loss_diff > 0:
+            if loss_diff >= 0.0:
                 self.smoothing_factor = min(self.smoothing_factor + self.smoothing_factor_step, self.max_smoothing_factor)
-            elif loss_diff < 0:
+                #self.gamma = min(self.gamma + self.gamma_step, self.max_gamma)
+            elif loss_diff <= 0.0:
                 self.smoothing_factor = max(self.smoothing_factor - self.smoothing_factor_step, self.min_smoothing_factor)
 
         self.prev_loss = loss.item()
@@ -66,7 +96,9 @@ class LabelRelaxationLoss(nn.Module):
         self.gz_threshold = 0.1
         self.eps = 1e-14
 
-    def forward(self, pred, target, current_epoch, gradient_norm):
+    def forward(self, pred, target, current_epoch):
+        probs = torch.softmax(pred, dim=-1)
+
         pred = pred.softmax(dim=-1)
         pred = torch.clamp(pred, min=self.eps, max=1.0)
         # Construct credal set
@@ -94,7 +126,9 @@ class AdaptiveLabelRelaxationLoss(nn.Module):
         self.eps = 1e-14
         self.gz_threshold = 0.1
 
-    def forward(self, pred, target, current_epoch, gradient_norm):
+    def forward(self, pred, target, current_epoch):
+        probs = torch.softmax(pred, dim=-1)
+
         pred = pred.softmax(dim=-1)
         pred = torch.clamp(pred, min=self.eps, max=1.0)
 
@@ -138,7 +172,7 @@ class ConfidenceBasedAdaptiveLabelRelaxationLoss(nn.Module):
         self.gz_threshold = 0.1
         self.eps = 1e-14
 
-    def forward(self, pred, target, current_epoch, gradient_norm):
+    def forward(self, pred, target, current_epoch):
         pred = pred.softmax(dim=-1)
         pred = torch.clamp(pred, min=self.eps, max=1.0)
 
@@ -167,7 +201,7 @@ class CombinedLSandLR(nn.Module):
         self.smoothness_ratio = smoothness_ratio
         self.alpha = alpha
 
-    def forward(self, pred, target, current_epoch, gradient_norm):
+    def forward(self, pred, target, current_epoch):
         final_loss = 0
         if current_epoch < 20:
             criterion = LabelSmoothingLoss(smoothness_ratio=self.smoothness_ratio)
@@ -185,7 +219,7 @@ class CombinedAdaptiveLSandAdaptiveLR(nn.Module):
         self.adaptive_label_relaxation = AdaptiveLabelRelaxationLoss()
         self.criterion = ''
 
-    def forward(self, pred, target, current_epoch, gradient_norm):
+    def forward(self, pred, target, current_epoch):
         final_loss = 0
         if current_epoch < 100:
             final_loss = self.adaptive_label_smoothing(pred, target, current_epoch)
@@ -200,7 +234,7 @@ class AggregatedLSandLR(nn.Module):
         self.smoothness_ratio = smoothness_ratio
         self.alpha = alpha
 
-    def forward(self, pred, target, current_epoch, gradient_norm):
+    def forward(self, pred, target, current_epoch):
         final_loss = 0
 
         Smoothing_criterion = LabelSmoothingLoss(smoothness_ratio=self.smoothness_ratio)
@@ -214,6 +248,7 @@ class AggregatedLSandLR(nn.Module):
 
         return final_loss
 
+"""
 class GradientBasedLSLR(nn.Module):
     def __init__(self, smoothness_ratio=0.0, alpha=0.0, check_interval=10, dynamic_threshold_ratio=0.015):
         super(GradientBasedLSLR, self).__init__()
@@ -282,3 +317,61 @@ class GradientBasedAdaptiveLSLR(nn.Module):
             return self.adaptive_label_smoothing(pred, target, current_epoch, gradient_norm)
         else:
             return self.adaptive_label_relaxation(pred, target, current_epoch, gradient_norm)
+
+"""
+
+class ACLS(nn.Module):
+
+    def __init__(self,
+                 pos_lambda: float = 1.0,
+                 neg_lambda: float = 0.1,
+                 alpha: float = 0.1,
+                 margin: float = 10.0,
+                 num_classes: int = 200,
+                 ignore_index: int = -100):
+        super().__init__()
+        self.pos_lambda = pos_lambda
+        self.neg_lambda = neg_lambda
+        self.alpha = alpha
+        self.margin = margin
+        self.num_classes = num_classes
+        self.ignore_index = ignore_index
+        self.cross_entropy = nn.CrossEntropyLoss()
+
+    @property
+    def names(self):
+        return "loss", "loss_ce", "reg"
+
+    def get_reg(self, inputs, targets):
+        max_values, indices = inputs.max(dim=1)
+        max_values = max_values.unsqueeze(dim=1).repeat(1, inputs.shape[1])
+        indicator = (max_values.clone().detach() == inputs.clone().detach()).float()
+
+        batch_size, num_classes = inputs.size()
+        num_pos = batch_size * 1.0
+        num_neg = batch_size * (num_classes - 1.0)
+
+        neg_dist = max_values.clone().detach() - inputs
+
+        pos_dist_margin = F.relu(max_values - self.margin)
+        neg_dist_margin = F.relu(neg_dist - self.margin)
+
+        pos = indicator * pos_dist_margin ** 2
+        neg = (1.0 - indicator) * (neg_dist_margin ** 2)
+
+        reg = self.pos_lambda * (pos.sum() / num_pos) + self.neg_lambda * (neg.sum() / num_neg)
+        return reg
+
+    def forward(self, inputs, targets, current_epoch):
+        if inputs.dim() > 2:
+            inputs = inputs.view(inputs.size(0), inputs.size(1), -1)  # N,C,H,W => N,C,H*W
+            inputs = inputs.transpose(1, 2)  # N,C,H*W => N,H*W,C
+            inputs = inputs.contiguous().view(-1, inputs.size(2))  # N,H*W,C => N*H*W,C
+            targets = targets.view(-1)
+
+        loss_ce = self.cross_entropy(inputs, targets)
+
+        loss_reg = self.get_reg(inputs, targets)
+        loss = loss_ce + self.alpha * loss_reg
+
+        return loss
