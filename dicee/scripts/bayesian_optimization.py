@@ -68,7 +68,7 @@ def objective(trial, model, dataset, loss):
     args = parser.parse_args()
     result = Execute(args=args).start()
 
-    return result["Test"]["MRR"]
+    return result["Val"]["MRR"]
 
 # set according to your environment TODO: make it as a parameter
 main_math = "../../../KGs/Datasets_Perturbed/"
