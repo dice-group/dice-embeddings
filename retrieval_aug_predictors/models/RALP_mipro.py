@@ -1,3 +1,7 @@
+"""
+python -m retrieval_aug_predictors.models.RALP_mipro --dataset_dir KGs/Countries-S1 --out "countries_s1_results.json" && cat countries_s1_results.json
+
+"""
 import dspy
 import torch
 import json
@@ -19,7 +23,7 @@ load_dotenv()
 pd.set_option('display.max_columns', None)
 
 SAVE_DIR_BASE = "RALP_MPRO_Optimized"
-TEST_SIZE = 0.2
+TEST_SIZE = 0.1
 # --- Type Definitions ---
 # Represents the graph: {(subject, predicate): {object1, object2}}
 # Using str for entities/predicates as in the input code
@@ -114,8 +118,58 @@ def quality_score_closeness(y: List[Tuple[str, float]],
     average_closeness = total_closeness / len(y)
     return average_closeness
 
+
+def cross_entropy_loss(y: List[Tuple[str, float]],
+                       prediction: List[Tuple[str, float]],
+                       epsilon: float = 1e-15) -> float:
+    """
+    Calculates the cross-entropy loss between ground truth probabilities and predicted
+    probabilities for entities specified in 'y'.
+
+    Cross-entropy loss measures how different two probability distributions are.
+    Lower values indicate better alignment between the distributions.
+
+    Args:
+        y: Ground truth list of tuples (entity_name, ground_truth_probability).
+           These should be probabilities in the range [0, 1] and can represent
+           either binary labels (0 or 1) or probability distributions.
+        prediction: Predicted list of tuples (entity_name, predicted_probability).
+           These should be probabilities in the range [0, 1].
+        epsilon: Small constant to avoid numerical instability with log(0).
+                 Defaults to 1e-15.
+
+    Returns:
+        The cross-entropy loss value. Lower values indicate better predictions.
+        - Returns 0.0 if 'y' is empty, as no evaluation is possible.
+        - For missing predictions, assumes a default probability of 0.5.
+    """
+    if not y:
+        # Cannot evaluate loss if there are no ground truth items
+        return 0.0
+
+    # Create a dictionary for efficient lookup of prediction scores
+    prediction_map = {entity: score for entity, score in prediction}
+
+    total_loss = 0.0
+    for entity, y_prob in y:
+        # Get prediction probability, default to 0.5 if not found
+        pred_prob = prediction_map.get(entity, 0.5)
+
+        # Clip probabilities to avoid log(0) or log(1)
+        y_prob = max(min(y_prob, 1.0 - epsilon), epsilon)
+        pred_prob = max(min(pred_prob, 1.0 - epsilon), epsilon)
+
+        # Calculate cross-entropy for this entity
+        # CE = -y * log(p) - (1-y) * log(1-p)
+        entity_loss = -1 * (y_prob * math.log(pred_prob) + (1 - y_prob) * math.log(1 - pred_prob))
+        total_loss += entity_loss
+
+    # Calculate average loss across all entities
+    average_loss = total_loss / len(y)
+    return average_loss
 def dspy_quality_score_closeness(y: dspy.Example, yhat: dspy.Prediction,trace=None)-> float:
-    return quality_score_closeness(y.target, yhat.target)
+    return cross_entropy_loss(y.target, yhat.target)
+
 def traverse_beam_by_hop(
     graph: GraphType,
     start_entities: Union[Set[str], List[str], str],
@@ -221,31 +275,35 @@ def traverse_beam_by_hop(
 
     return results_by_hop
 
-class EntityFinder(dspy.Signature):
-    """Predicts multiple tail entities for a given subject and predicate"""
+class Composer(dspy.Signature):
+    """Finds multiple tail entities for a given subject and predicate"""
     subject: str = dspy.InputField(desc="An entity as a subject in a triple.")
     predicate: str = dspy.InputField(desc="A predicate in a triple.")
     context: str = dspy.InputField(desc="Background knowledge.")
     entities: List[str] = dspy.InputField(desc="A list of all possible entities in the knowledge graph.")
-    target: List[str] = dspy.OutputField(desc="A list of suitable entities")
+    target: List[str] = dspy.OutputField(desc="Candidates found in entities.")
 
 class Scorer(dspy.Signature):
-    """Predicts likelihoods of multiple tail entities for a given subject and predicate."""
+    """Predict likelihoods of multiple tail entities for a given subject and predicate."""
     predicted_entities: List[str] = dspy.InputField(desc="A list of predicted entities")
     target: List[float] = dspy.OutputField(desc="A list of scores for each entity")
 
 class MultiLabelLinkPredictor(dspy.Module):
-    def __init__(self, entities: List[str],g:GraphType):
+    def __init__(self, entities: List[str],knowledge_graph:GraphType):
         super().__init__()
         self.entities = sorted(list(set(entities)))
-        self.g = g
-        self.finder = dspy.ChainOfThought(EntityFinder)
+        self.knowledge_graph = knowledge_graph
+        # Using dspy.ChainOfThought increases the context length drastically.
+        self.finder = dspy.ChainOfThought(Composer)
         self.scorer = dspy.ChainOfThought(Scorer)
+
     def _graph_based_content_builder(self,subject:str,hops:int=5):
         assert hops>=0
         hop_to_triples = dict()
-        graph_report = traverse_beam_by_hop(graph=self.g, start_entities=subject, hops=hops,
-                                          beam_width=len(self.entities), return_triples_only=True)
+        graph_report = traverse_beam_by_hop(graph=self.knowledge_graph,
+                                            start_entities=subject,
+                                            hops=hops,
+                                            beam_width=len(self.entities), return_triples_only=True)
         # Accumulate triples over hops: assert hop_to_triples[i].issubset(hop_to_triples[i+1])
         for k,v in graph_report.items():
             hop_to_triples[k] = v | set().union(*hop_to_triples.values())
@@ -253,19 +311,18 @@ class MultiLabelLinkPredictor(dspy.Module):
 
     def forward(self, subject: str, predicate: str) -> dspy.Prediction:
         intermediate_predictions=dict()
-        graph_report = self._graph_based_content_builder(subject=subject)
-        for idx_hop, triples in graph_report.items():
-
-            context="\n".join([f"{s} {p} {o}"for s,p,o in sorted(triples)])
-            retrieved_entities = self.finder(subject=subject,
-                                             predicate=predicate,
-                                             context=context,
-                                             entities=self.entities)
-            scores = self.scorer(predicted_entities=retrieved_entities.target)
-            for idx, score in enumerate(scores.target):
-                entity = retrieved_entities.target[idx]
-                intermediate_predictions.setdefault(entity, []).append(score)
-        # Avg scores of intermediate predictions. @TODO: CD: Is there any better way ?!
+        # graph_report = self._graph_based_content_builder(subject=subject)
+        contextual_triples={ (s,p,o) for (s,p), os in self.knowledge_graph.items() for o in os}
+        contextual_triples = [f"{s} {p} {o}" for s, p, o in sorted(contextual_triples)][:100]
+        context = "\n".join(contextual_triples)
+        retrieved_entities = self.finder(subject=subject,
+                                         predicate=predicate,
+                                         context=context,
+                                         entities=self.entities)
+        scores = self.scorer(predicted_entities=retrieved_entities.target)
+        for idx, score in enumerate(scores.target):
+            entity = retrieved_entities.target[idx]
+            intermediate_predictions.setdefault(entity, []).append(score)
         predictions=dict()
         for k,v in intermediate_predictions.items():
             predictions[k]=sum(v)/len(v)
@@ -281,7 +338,7 @@ class RALP_MPRO(AbstractBaseLinkPredictorClass):
     """
     def __init__(self, knowledge_graph: KG, base_url: str, api_key: str, llm_model: str,
                  temperature: float, seed: int, use_val: bool = True, ensemble_temperatures=None,
-                 save_dir: str = SAVE_DIR_BASE,auto: Optional[Literal["light", "medium", "heavy"]] = "light"):
+                 save_dir: str = SAVE_DIR_BASE,auto: Optional[Literal["light", "medium", "heavy"]] = "light",num_ensemble:int=10):
         super().__init__(knowledge_graph, name="RALP_MPRO")
 
         # Configuration
@@ -292,7 +349,8 @@ class RALP_MPRO(AbstractBaseLinkPredictorClass):
         self.seed = seed
         self.use_val = use_val
         self.save_dir = save_dir
-        self.ensemble_temperatures = [i * 0.1 for i in range(1)] if (ensemble_temperatures
+        self.num_ensemble = num_ensemble
+        self.ensemble_temperatures = [i * 0.1 for i in range(self.num_ensemble)] if (ensemble_temperatures
                                                                      is None) else ensemble_temperatures
         assert isinstance(self.ensemble_temperatures, list) and isinstance(self.ensemble_temperatures[0], float) and 1.0 > self.ensemble_temperatures[0] >= 0.0
         self.mipro_optimizer_temperature = temperature
@@ -320,7 +378,7 @@ class RALP_MPRO(AbstractBaseLinkPredictorClass):
             results_filename = os.path.join(self.save_dir, f"eval_results_temp_{temp:.1f}.csv")
             # Initialize the base predictor for this temperature
             base_predictor = MultiLabelLinkPredictor(entities=list(self.all_entities),
-                                                     g=self.entity_relation_to_entities)
+                                                     knowledge_graph=self.entity_relation_to_entities)
             if os.path.exists(save_filename):
                 print(f"Loading optimized predictor from {save_filename}...")
                 # Need to configure LM *before* loading if LM state isn't saved
@@ -377,7 +435,7 @@ class RALP_MPRO(AbstractBaseLinkPredictorClass):
     def _compile_predictor_for_temperature(self, predictor_to_optimize: MultiLabelLinkPredictor,
                                            train_examples:List[dspy.Example],test_examples,temperature: float,
                                            save_filename:str,
-                                           auto: Optional[Literal["light", "medium", "heavy"]] = "light") -> MultiLabelLinkPredictor:
+                                           auto: Optional[Literal["light", "medium", "heavy"]] = "heavy") -> MultiLabelLinkPredictor:
         """Configures LM and runs MIPROv2 compilation."""
 
         assert isinstance(predictor_to_optimize, MultiLabelLinkPredictor)
@@ -397,10 +455,11 @@ class RALP_MPRO(AbstractBaseLinkPredictorClass):
             break
         # Test Run
         Evaluate(devset=test_examples[:6],metric=dspy_quality_score_closeness,
-                 num_threads=6, display_table=False,
+                 num_threads=1, display_table=False,
                  display_progress=True, provide_traceback=True)(predictor_to_optimize)
         # Generate examples needed for optimization outside the loop
-        optim = dspy.MIPROv2(metric=dspy_quality_score_closeness, auto=auto)
+        optim = dspy.MIPROv2(metric=dspy_quality_score_closeness,
+                             auto=auto)
         optimized_predictor = optim.compile(predictor_to_optimize.deepcopy(), trainset=train_examples[:],
                                          valset=test_examples[:],
                                          requires_permission_to_run=False)
