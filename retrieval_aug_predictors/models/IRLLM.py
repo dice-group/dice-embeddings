@@ -1,109 +1,267 @@
 import argparse
 import ast
 import os
-from typing import List, Set
+import sys
+from typing import List, Set, Dict, Any
 
 import dspy
 import pandas as pd
-from owlapy import OntologyManager
+from owlapy import OntologyManager # Although commented out, keeping imports for potential future use
 from owlapy.class_expression import OWLClass
 from owlapy.iri import IRI
 from owlapy.owl_ontology import Ontology
 from owlapy.owl_reasoner import StructuralReasoner
-from rdflib import Graph
+from rdflib import Graph, exceptions as rdf_exceptions
 from dotenv import load_dotenv
 
+# Load environment variables from a .env file
 load_dotenv()
 
+# Define DSPy Signatures for the LLM tasks
+
 class Classifier(dspy.Signature):
+    """Classifies entities in a knowledge graph based on a natural language concept."""
     graph: str = dspy.InputField(desc="All triples in the knowledge graph. Entities and relations include their namespace.")
-    # concept: str = dspy.InputField(desc="The description logics concept that is used to classify entities of a knowledge graph")
     concept: str = dspy.InputField(desc="A concept or class in natural language.")
-    classified_entities: list[str] = dspy.OutputField(desc="All the entities from the knowledge graph that can be classified by the given concept or class. Result must be a list of unique entities.")
+    classified_entities: List[str] = dspy.OutputField(desc="All the entities from the knowledge graph that can be classified by the given concept or class. Result must be a list of unique entities.")
 
 class Verbaliser(dspy.Signature):
-    expression = dspy.InputField(desc="An expression in description logics. Example: ∃ hasChild.{markus} --> There exist a named individual who has child and this child is Markus")
-    verbalisation = dspy.OutputField(desc="A concise verbalisation of the expression in natural language.")
+    """Verbalises a description logic expression into natural language."""
+    expression: str = dspy.InputField(desc="An expression in description logics. Example: ∃ hasChild.{markus} --> There exist a named individual who has child and this child is Markus")
+    verbalisation: str = dspy.OutputField(desc="A concise verbalisation of the expression in natural language.")
+
+# Define a DSPy Module combining the Verbaliser and Classifier
 
 class PredictionModule(dspy.Module):
+    """A module that verbalises a DL expression and then classifies entities using the verbalisation."""
     def __init__(self):
+        super().__init__()
+        # Use dspy.Predict for simple signature execution
         self.verbaliser = dspy.Predict(Verbaliser)
+        # Use dspy.ChainOfThought for multi-step reasoning in classification
         self.classifier = dspy.ChainOfThought(Classifier)
 
-    def forward(self, graph: str, dl_expression: str) -> list[str]:
+    def forward(self, graph: str, dl_expression: str) -> List[str]:
+        """
+        Verbalises a DL expression and uses the verbalisation to classify entities in a graph.
 
+        Args:
+            graph: The knowledge graph as a string of triples.
+            dl_expression: The description logic expression.
+
+        Returns:
+            A list of entities classified by the verbalised concept.
+        """
+        # Verbalise the description logic expression
         verbalized_concept = self.verbaliser(expression=dl_expression).verbalisation
+        # Classify entities in the graph based on the verbalised concept
         predicted_instances = self.classifier(graph=graph, concept=verbalized_concept).classified_entities
 
         return predicted_instances
 
+# Main class for Instance Retrieval via LLM
+
 class IRLLM:
-    """Instance Retrieval via LLM"""
-    def __init__(self, path, base_url, api_key, temperature, seed, llm_model):
-        self.kg_path = path
+    """
+    Instance Retrieval via LLM.
+
+    Handles loading the knowledge graph, configuring the LLM, and evaluating
+    the LLM's ability to retrieve instances for given concepts.
+    """
+    def __init__(self, kg_path: str, base_url: str, api_key: str, temperature: float, seed: int, llm_model: str):
+        """
+        Initializes the IRLLM with KG path and LLM configuration.
+
+        Args:
+            kg_path: Path to the knowledge graph file.
+            base_url: Base URL for the LLM API.
+            api_key: API key for the LLM.
+            temperature: Temperature setting for the LLM.
+            seed: Seed for the LLM (if applicable).
+            llm_model: The name or identifier of the LLM model to use.
+        """
+        self.kg_path = kg_path
         self.base_url = base_url
         self.api_key = api_key
         self.temperature = temperature
         self.seed = seed
         self.llm_model = llm_model
-        self.triples = []
+        self.triples: List[str] = [] # Using type hint for clarity
+
+        self._load_knowledge_graph()
+
+    def _load_knowledge_graph(self):
+        """Loads the knowledge graph from the specified path."""
+        if not os.path.exists(self.kg_path):
+            print(f"Error: Knowledge graph file not found at {self.kg_path}", file=sys.stderr)
+            sys.exit(1)
 
         g = Graph()
-        g.parse(path, format="xml")
+        try:
+            # Attempt to parse the graph, try different formats if necessary
+            # You might want to add more robust format detection if needed
+            g.parse(self.kg_path, format="xml") # Starting with xml as in original code
+        except rdf_exceptions.ParserError as e:
+             print(f"Error parsing knowledge graph file {self.kg_path}: {e}", file=sys.stderr)
+             # Attempt other formats if parsing fails
+             try:
+                 g.parse(self.kg_path, format="ttl") # Try Turtle format
+             except rdf_exceptions.ParserError as e:
+                 print(f"Error parsing knowledge graph file {self.kg_path} in Turtle format: {e}", file=sys.stderr)
+                 sys.exit(1)
+             except Exception as e:
+                 print(f"An unexpected error occurred while parsing {self.kg_path} in Turtle format: {e}", file=sys.stderr)
+                 sys.exit(1)
+        except Exception as e:
+            print(f"An unexpected error occurred while parsing {self.kg_path}: {e}", file=sys.stderr)
+            sys.exit(1)
+
+
         self.triples = [f"{str(s)} {str(p)} {str(o)}" for s, p, o in g]
+        print(f"Successfully loaded {len(self.triples)} triples from {self.kg_path}")
 
-    def evaluate(self):
-        # mg = OntologyManager()
-        # onto = Ontology(manager=mg, ontology_iri=IRI.create("file://" + self.kg_path), load=True)
-        # reasoner = StructuralReasoner(onto)
 
-        lm = dspy.LM(model=f"openai/{self.llm_model}", api_key=self.api_key, api_base=self.base_url,
-                     temperature=self.temperature, seed=self.seed, cache=True, cache_in_memory=True)
-        dspy.configure(lm=lm)
+    def evaluate(self, results_csv_path: str = "ALCQHI_Retrieval_Results.csv", output_csv_path: str = "Results.csv"):
+        """
+        Evaluates the LLM's instance retrieval performance against a ground truth CSV.
+
+        Args:
+            results_csv_path: Path to the CSV file containing DL expressions and true instances.
+            output_csv_path: Path to save the evaluation results.
+        """
+        # Configure the DSPy language model
+        if not self.api_key:
+            print("Error: LLM API key is not provided.", file=sys.stderr)
+            sys.exit(1)
+
+        try:
+            lm = dspy.LM(model=f"openai/{self.llm_model}", api_key=self.api_key, api_base=self.base_url,
+                         temperature=self.temperature, seed=self.seed, cache=True, cache_in_memory=True)
+            dspy.configure(lm=lm)
+            print(f"DSPy configured with model: {self.llm_model}, base_url: {self.base_url}")
+        except Exception as e:
+            print(f"Error configuring DSPy or connecting to LLM: {e}", file=sys.stderr)
+            sys.exit(1)
+
 
         program = PredictionModule()
 
+        # Load the ground truth results CSV once
+        if not os.path.exists(results_csv_path):
+            print(f"Error: Ground truth results file not found at {results_csv_path}", file=sys.stderr)
+            sys.exit(1)
 
-        df = pd.read_csv("ALCQHI_Retrieval_Results.csv")
-        file_exists = False
-        for index, row in df.iterrows():
-            concept = row[0]
+        try:
+            df_ground_truth = pd.read_csv(results_csv_path)
+            if df_ground_truth.empty:
+                 print(f"Warning: Ground truth results file {results_csv_path} is empty.", file=sys.stderr)
+                 return # Exit if there's no data to process
+        except FileNotFoundError:
+             # Already checked for existence, but good practice to handle
+             print(f"Error reading ground truth results file {results_csv_path}.", file=sys.stderr)
+             sys.exit(1)
+        except pd.errors.EmptyDataError:
+            print(f"Warning: Ground truth results file {results_csv_path} is empty.", file=sys.stderr)
+            return
+        except Exception as e:
+            print(f"An unexpected error occurred while reading {results_csv_path}: {e}", file=sys.stderr)
+            sys.exit(1)
 
-            # true_instances = {i.str for i in reasoner.instances(concept_in_owl)}
-            true_instances = ast.literal_eval(row[2])
-            predicted_instances = set(program(graph=self.triples, dl_expression=concept))
+        # @TODO: CD: Use tqdm and report the current avg. jaccard simmilarity
+        evaluation_results: List[Dict[str, Any]] = []
 
-            intersection = true_instances.intersection(predicted_instances)
-            union = true_instances.union(predicted_instances)
-            if len(union) == 0:
-                jaccard_similarity = 1.0
-            else:
-                jaccard_similarity = len(intersection) / len(union)
+        # Iterate through each row in the ground truth data
+        # Using iterrows is acceptable for smaller DataFrames, but for very large ones,
+        # converting to a list of dictionaries might be more performant.
+        for index, row in df_ground_truth.iterrows():
+            try:
+                concept = row.iloc[0] # Use iloc for potentially better performance and clarity
+                # Assuming the true instances are in the third column (index 2)
+                # and are stored as a string representation of a Python list/set
+                true_instances_str = row.iloc[2]
+                true_instances: Set[str] = set(ast.literal_eval(true_instances_str))
 
-            df_row = pd.DataFrame(
-                [{
+                print(f"\nProcessing concept: {concept}")
+                print(f"True instances: {true_instances}")
+
+                # Get predictions from the LLM
+                predicted_instances_list = program(graph="\n".join(self.triples), dl_expression=concept)
+                # Ensure predicted instances are unique and in a set for easy comparison
+                predicted_instances: Set[str] = set(predicted_instances_list)
+
+                print(f"Predicted instances: {predicted_instances}")
+
+                # Calculate Jaccard Similarity
+                intersection = true_instances.intersection(predicted_instances)
+                union = true_instances.union(predicted_instances)
+
+                jaccard_similarity = 1.0 if len(union) == 0 else len(intersection) / len(union)
+
+                print(f"Jaccard Similarity: {jaccard_similarity}")
+
+                # Store results
+                evaluation_results.append({
                     "Expression": concept,
-                    "True_set": true_instances,
-                    "Pred_set": predicted_instances,
+                    "True_set": list(true_instances), # Convert set back to list for CSV writing
+                    "Pred_set": list(predicted_instances), # Convert set back to list for CSV writing
                     "Jaccard_similarity": jaccard_similarity,
-                }])
-            # Append the row to the CSV file
-            df_row.to_csv("Results.csv", mode='a', header=not file_exists, index=False)
-            file_exists = True
+                })
+            except KeyError as e:
+                print(f"Error processing row {index}: Missing expected column. Details: {e}", file=sys.stderr)
+                # Decide whether to continue or break
+                continue # Continue processing the next row
+            except ValueError as e:
+                 print(f"Error processing row {index} due to invalid value (e.g., in ast.literal_eval): {e}", file=sys.stderr)
+                 continue # Continue processing the next row
+            except Exception as e:
+                print(f"An unexpected error occurred while processing row {index} for concept '{concept}': {e}", file=sys.stderr)
+                # Depending on severity, you might want to sys.exit(1) here
+                continue # Continue processing the next row
+
+        # @TODO:  CD: USe https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.describe.html on jaccard similarities
+        # Write all results to the output CSV outside the loop
+        if evaluation_results:
+            df_results = pd.DataFrame(evaluation_results)
+            try:
+                df_results.to_csv(output_csv_path, index=False)
+                print(f"\nEvaluation results saved to {output_csv_path}")
+            except Exception as e:
+                print(f"Error writing evaluation results to {output_csv_path}: {e}", file=sys.stderr)
+        else:
+            print("\nNo evaluation results to save.")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--kg_path", type=str, default="/home/alkid/PycharmProjects/dice-embeddings/KGs/Family/father.owl")
-    parser.add_argument("--base_url", type=str, default="http://harebell.cs.upb.de:8501/v1")
-    parser.add_argument("--api_key", type=str, default=None)
-    parser.add_argument("--temperature", type=float, default=0.1)
-    parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--llm_model", type=str, default="tentris")
+    parser = argparse.ArgumentParser(description="Instance Retrieval via LLM")
+    parser.add_argument("--kg_path", type=str, default="/home/cdemir/Desktop/Softwares/Ontolearn/KGs/Family/father.owl",
+                        help="Path to the knowledge graph file (e.g., in OWL/XML format).")
+    parser.add_argument("--base_url", type=str, default="http://harebell.cs.upb.de:8501/v1",
+                        help="Base URL for the LLM API (e.g., OpenAI compatible endpoint).")
+    parser.add_argument("--api_key", type=str, default=None,
+                        help="API key for the LLM. Can also be provided via TENTRIS_TOKEN environment variable.")
+    parser.add_argument("--temperature", type=float, default=0.1,
+                        help="Temperature setting for the LLM (controls randomness).")
+    parser.add_argument("--seed", type=int, default=42,
+                        help="Seed for the LLM (for reproducibility if the LLM supports it).")
+    parser.add_argument("--llm_model", type=str, default="tentris",
+                        help="The name or identifier of the LLM model to use.")
+    parser.add_argument("--results_csv_path", type=str, default="ALCQHI_Retrieval_Results.csv",
+                        help="Path to the CSV file containing ground truth DL expressions and instances.")
+    parser.add_argument("--output_csv_path", type=str, default="Results.csv",
+                        help="Path to save the evaluation results CSV.")
+
     args = parser.parse_args()
+
+    # Load API key from environment variable if not provided as argument
     if args.api_key is None:
         args.api_key = os.environ.get("TENTRIS_TOKEN")
+        if args.api_key:
+            print("Using API key from TENTRIS_TOKEN environment variable.")
+        else:
+            print("Warning: No API key provided via argument or TENTRIS_TOKEN environment variable.", file=sys.stderr)
 
+
+    # Instantiate and run the evaluation
     model = IRLLM(args.kg_path, args.base_url, args.api_key, args.temperature, args.seed, args.llm_model)
 
-    model.evaluate()
+    model.evaluate(results_csv_path=args.results_csv_path, output_csv_path=args.output_csv_path)

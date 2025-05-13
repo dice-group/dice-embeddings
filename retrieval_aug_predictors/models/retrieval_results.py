@@ -1,3 +1,7 @@
+"""
+incomplete
+/home/cdemir/anaconda3/envs/dice/bin/python /home/cdemir/Desktop/Softwares/dice-embeddings/retrieval_aug_predictors/models/retrieval_results.py
+"""
 from ontolearn.knowledge_base import KnowledgeBase
 from ontolearn.utils import jaccard_similarity, f1_set_similarity, concept_reducer, concept_reducer_properties
 from owlapy.class_expression import (
@@ -41,7 +45,7 @@ def execute(args):
     object_properties = set(object_properties)
 
     # (4) R⁻: Inverse of object properties.
-    object_properties_inverse = {i.get_inverse_property() for i in object_properties}
+    object_properties_inverse = object_properties # {i.get_inverse_property() for i in object_properties}
 
     # (5) R*: R UNION R⁻.
     object_properties_and_inverse = object_properties.union(object_properties_inverse)
@@ -59,7 +63,7 @@ def execute(args):
     # (8) NC*: NC UNION NC⁻.
     nc_star = nc.union(nnc)
     # (9) Retrieve 10 random Nominals.
-    if len(set(symbolic_kb.individuals())) > args.num_nominals:
+    if args.num_nominals is not None and len(set(symbolic_kb.individuals())) > args.num_nominals:
         nominals = set(random.sample(set(symbolic_kb.individuals()), args.num_nominals))
     else:
         nominals = symbolic_kb.individuals()
@@ -128,11 +132,12 @@ def execute(args):
             nnc,  # negated named concepts  (\neg C)
             unions_nc_star,  # A set of Union of named concepts and negat
             intersections_nc_star,  #
-            exist_nc_star,
-            for_all_nc_star,
-            min_cardinality_nc_star_1, min_cardinality_nc_star_1, min_cardinality_nc_star_3,
-            max_cardinality_nc_star_1, max_cardinality_nc_star_2, max_cardinality_nc_star_3,
-            exist_nominals))
+            #exist_nc_star,
+            #for_all_nc_star,
+            #min_cardinality_nc_star_1, min_cardinality_nc_star_1, min_cardinality_nc_star_3,
+            #max_cardinality_nc_star_1, max_cardinality_nc_star_2, max_cardinality_nc_star_3,
+            #exist_nominals
+            ))
     print("\n")
     print("#" * 50)
     print("Description of generated Concepts")
@@ -174,12 +179,15 @@ def execute(args):
         # () Compute the F1-score.
         # f1_sim = f1_set_similarity(retrieval_y, retrieval_neural_y)
         # () Store the data.
-        df_row = pd.DataFrame(
-            [{
-                "Expression": owl_expression_to_dl(expression),
-                "Type": type(expression).__name__,
-                "Symbolic_Retrieval": retrieval_y
-            }])
+        if len(retrieval_y)>0:
+            df_row = pd.DataFrame(
+                [{
+                    "Expression": owl_expression_to_dl(expression),
+                    "Type": type(expression).__name__,
+                    "Symbolic_Retrieval": retrieval_y
+                }])
+        else:
+            continue
         # Append the row to the CSV file
         df_row.to_csv(args.path_report, mode='a', header=not file_exists, index=False)
         file_exists = True
@@ -196,15 +204,15 @@ def execute(args):
 
 def get_default_arguments():
     parser = ArgumentParser()
-    parser.add_argument("--path_kg", type=str, default="/home/alkid/PycharmProjects/dice-embeddings/KGs/Family/father.owl")
+    parser.add_argument("--path_kg", type=str, default="/home/cdemir/Desktop/Softwares/Ontolearn/KGs/Family/father.owl")
     parser.add_argument("--path_kge_model", type=str, default=None)
     parser.add_argument("--endpoint_triple_store", type=str, default=None)
     parser.add_argument("--gamma", type=float, default=0.9)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--ratio_sample_nc", type=float, default=0.2, help="To sample OWL Classes.")
-    parser.add_argument("--ratio_sample_object_prop", type=float, default=0.1, help="To sample OWL Object Properties.")
+    parser.add_argument("--ratio_sample_nc", type=float, default=None, help="To sample OWL Classes.")
+    parser.add_argument("--ratio_sample_object_prop", type=float, default=None, help="To sample OWL Object Properties.")
     parser.add_argument("--min_jaccard_similarity", type=float, default=0.0, help="Minimum Jaccard similarity to be achieve by the reasoner")
-    parser.add_argument("--num_nominals", type=int, default=10, help="Number of OWL named individuals to be sampled.")
+    parser.add_argument("--num_nominals", type=int, default=None, help="Number of OWL named individuals to be sampled.")
 
     # H is obtained if the forward chain is applied on KG.
     parser.add_argument("--path_report", type=str, default="ALCQHI_Retrieval_Results.csv")
