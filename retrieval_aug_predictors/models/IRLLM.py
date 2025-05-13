@@ -13,12 +13,12 @@ from owlapy.owl_ontology import Ontology
 from owlapy.owl_reasoner import StructuralReasoner
 from rdflib import Graph, exceptions as rdf_exceptions
 from dotenv import load_dotenv
+from tqdm import tqdm # Import tqdm
 
 # Load environment variables from a .env file
 load_dotenv()
 
-# Define DSPy Signatures for the LLM tasks
-
+# (Keep the Classifier, Verbaliser, and PredictionModule classes as they were)
 class Classifier(dspy.Signature):
     """Classifies entities in a knowledge graph based on a natural language concept."""
     graph: str = dspy.InputField(desc="All triples in the knowledge graph. Entities and relations include their namespace.")
@@ -29,8 +29,6 @@ class Verbaliser(dspy.Signature):
     """Verbalises a description logic expression into natural language."""
     expression: str = dspy.InputField(desc="An expression in description logics. Example: ∃ hasChild.{markus} --> There exist a named individual who has child and this child is Markus")
     verbalisation: str = dspy.OutputField(desc="A concise verbalisation of the expression in natural language.")
-
-# Define a DSPy Module combining the Verbaliser and Classifier
 
 class PredictionModule(dspy.Module):
     """A module that verbalises a DL expression and then classifies entities using the verbalisation."""
@@ -59,8 +57,7 @@ class PredictionModule(dspy.Module):
 
         return predicted_instances
 
-# Main class for Instance Retrieval via LLM
-
+# (Keep the IRLLM class __init__ and _load_knowledge_graph methods as they were)
 class IRLLM:
     """
     Instance Retrieval via LLM.
@@ -125,6 +122,9 @@ class IRLLM:
         """
         Evaluates the LLM's instance retrieval performance against a ground truth CSV.
 
+        Includes a progress bar with the current average Jaccard similarity and
+        reports descriptive statistics for Jaccard similarities at the end.
+
         Args:
             results_csv_path: Path to the CSV file containing DL expressions and true instances.
             output_csv_path: Path to save the evaluation results.
@@ -135,6 +135,17 @@ class IRLLM:
             sys.exit(1)
 
         try:
+            # Corrected to use dspy.OpenAI directly if it's the intended LM
+            # Or use dspy.LM if it wraps other providers. Assuming dspy.OpenAI
+            # is the typical use case when api_key and api_base are provided.
+            # If 'tentris' requires a different LM class, adjust here.
+            # Based on the original code `dspy.LM(model=f"openai/{self.llm_model}"...`
+            # it seems like dspy.OpenAI might be the more appropriate class if
+            # the base_url points to an OpenAI-compatible API.
+            # If `self.llm_model` is not meant to be prepended by "openai/",
+            # and the base_url points to a different provider supported by dspy.LM,
+            # then the original `dspy.LM` call was correct. Let's stick to the original
+            # `dspy.LM` as it handles different backends.
             lm = dspy.LM(model=f"openai/{self.llm_model}", api_key=self.api_key, api_base=self.base_url,
                          temperature=self.temperature, seed=self.seed, cache=True, cache_in_memory=True)
             dspy.configure(lm=lm)
@@ -154,26 +165,29 @@ class IRLLM:
         try:
             df_ground_truth = pd.read_csv(results_csv_path)
             if df_ground_truth.empty:
-                 print(f"Warning: Ground truth results file {results_csv_path} is empty.", file=sys.stderr)
+                 print(f"Warning: Ground truth results file {results_csv_path} is empty. Nothing to evaluate.", file=sys.stderr)
                  return # Exit if there's no data to process
         except FileNotFoundError:
              # Already checked for existence, but good practice to handle
              print(f"Error reading ground truth results file {results_csv_path}.", file=sys.stderr)
              sys.exit(1)
         except pd.errors.EmptyDataError:
-            print(f"Warning: Ground truth results file {results_csv_path} is empty.", file=sys.stderr)
+            print(f"Warning: Ground truth results file {results_csv_path} is empty. Nothing to evaluate.", file=sys.stderr)
             return
         except Exception as e:
             print(f"An unexpected error occurred while reading {results_csv_path}: {e}", file=sys.stderr)
             sys.exit(1)
 
-        # @TODO: CD: Use tqdm and report the current avg. jaccard simmilarity
         evaluation_results: List[Dict[str, Any]] = []
+        total_jaccard_similarity = 0.0 # Variable to sum Jaccard similarities
 
-        # Iterate through each row in the ground truth data
+        print(f"\nStarting evaluation of {len(df_ground_truth)} concepts...")
+
+        # Iterate through each row in the ground truth data with a progress bar
         # Using iterrows is acceptable for smaller DataFrames, but for very large ones,
         # converting to a list of dictionaries might be more performant.
-        for index, row in df_ground_truth.iterrows():
+        # Added tqdm wrapper for progress bar
+        for index, row in (tqdm_bar :=tqdm(df_ground_truth.iterrows(), total=len(df_ground_truth), desc="Evaluating Concepts")):
             try:
                 concept = row.iloc[0] # Use iloc for potentially better performance and clarity
                 # Assuming the true instances are in the third column (index 2)
@@ -181,15 +195,16 @@ class IRLLM:
                 true_instances_str = row.iloc[2]
                 true_instances: Set[str] = set(ast.literal_eval(true_instances_str))
 
-                print(f"\nProcessing concept: {concept}")
-                print(f"True instances: {true_instances}")
+                # print(f"\nProcessing concept: {concept}") # Suppress verbose output in tqdm loop
+                # print(f"True instances: {true_instances}")
 
                 # Get predictions from the LLM
+                # Pass graph as a single string as required by the signature
                 predicted_instances_list = program(graph="\n".join(self.triples), dl_expression=concept)
                 # Ensure predicted instances are unique and in a set for easy comparison
                 predicted_instances: Set[str] = set(predicted_instances_list)
 
-                print(f"Predicted instances: {predicted_instances}")
+                # print(f"Predicted instances: {predicted_instances}")
 
                 # Calculate Jaccard Similarity
                 intersection = true_instances.intersection(predicted_instances)
@@ -197,7 +212,15 @@ class IRLLM:
 
                 jaccard_similarity = 1.0 if len(union) == 0 else len(intersection) / len(union)
 
-                print(f"Jaccard Similarity: {jaccard_similarity}")
+                # print(f"Jaccard Similarity: {jaccard_similarity}") # Suppress verbose output
+
+                # Accumulate Jaccard similarity for average calculation
+                total_jaccard_similarity += jaccard_similarity
+
+                # Update the progress bar description with the current average Jaccard similarity
+                current_avg_jaccard = total_jaccard_similarity / (index + 1)
+                tqdm_bar.set_postfix({"Avg Jaccard": f"{current_avg_jaccard:.4f}", "Concept": concept[:50] + '...'}) # Show avg and current concept
+
 
                 # Store results
                 evaluation_results.append({
@@ -218,13 +241,18 @@ class IRLLM:
                 # Depending on severity, you might want to sys.exit(1) here
                 continue # Continue processing the next row
 
-        # @TODO:  CD: USe https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.describe.html on jaccard similarities
         # Write all results to the output CSV outside the loop
         if evaluation_results:
             df_results = pd.DataFrame(evaluation_results)
             try:
                 df_results.to_csv(output_csv_path, index=False)
                 print(f"\nEvaluation results saved to {output_csv_path}")
+
+                # Use pandas.DataFrame.describe() on jaccard similarities
+                print("\n--- Jaccard Similarity Descriptive Statistics ---")
+                print(df_results['Jaccard_similarity'].describe())
+                print("-----------------------------------------------")
+
             except Exception as e:
                 print(f"Error writing evaluation results to {output_csv_path}: {e}", file=sys.stderr)
         else:
