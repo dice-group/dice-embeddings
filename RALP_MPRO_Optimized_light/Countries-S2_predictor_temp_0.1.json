@@ -1,0 +1,67 @@
+{
+  "finder.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [],
+    "signature": {
+      "instructions": "Finds multiple tail entities for a given subject and predicate",
+      "fields": [
+        {
+          "prefix": "Subject:",
+          "description": "An entity as a subject in a triple."
+        },
+        {
+          "prefix": "Predicate:",
+          "description": "A predicate in a triple."
+        },
+        {
+          "prefix": "Context:",
+          "description": "Background knowledge."
+        },
+        {
+          "prefix": "Entities:",
+          "description": "A list of all possible entities in the knowledge graph."
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "Candidates found in entities."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "scorer.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [],
+    "signature": {
+      "instructions": "Predict likelihoods of multiple tail entities for a given subject and predicate.",
+      "fields": [
+        {
+          "prefix": "Predicted Entities:",
+          "description": "A list of predicted entities"
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "A list of scores for each entity"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.10",
+      "dspy": "2.6.16",
+      "cloudpickle": "3.1"
+    }
+  }
+}

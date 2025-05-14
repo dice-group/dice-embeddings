@@ -1,0 +1,292 @@
+{
+  "finder.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [],
+    "signature": {
+      "instructions": "You are a geography expert. Given a subject and a predicate, find multiple tail entities that could be connected to the subject via the given predicate. Use the provided context and the list of all possible entities in the knowledge graph to make your predictions. Provide reasoning for each prediction and list the predicted entities.",
+      "fields": [
+        {
+          "prefix": "Subject:",
+          "description": "An entity as a subject in a triple."
+        },
+        {
+          "prefix": "Predicate:",
+          "description": "A predicate in a triple."
+        },
+        {
+          "prefix": "Context:",
+          "description": "Background knowledge."
+        },
+        {
+          "prefix": "Entities:",
+          "description": "A list of all possible entities in the knowledge graph."
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "Candidates found in entities."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "scorer.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "sudan",
+          "congo",
+          "kenya",
+          "ethiopia",
+          "uganda"
+        ],
+        "reasoning": "The task here seems to be about predicting the likelihood of a given subject-predicate relationship ending with one of the African countries listed. Without specific context or data on the nature of the subject and predicate, I'll assume that we're dealing with a somewhat balanced distribution across these five countries. Therefore, the likelihood can be assumed to be equally distributed among them.",
+        "target": [
+          0.2,
+          0.2,
+          0.2,
+          0.2,
+          0.2
+        ]
+      },
+      {
+        "subject": "gabon",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "cameroon",
+            1.0
+          ],
+          [
+            "equatorial_guinea",
+            1.0
+          ],
+          [
+            "republic_of_the_congo",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "namibia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "southern_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "paraguay",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "argentina",
+            1.0
+          ],
+          [
+            "bolivia",
+            1.0
+          ],
+          [
+            "brazil",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "colombia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "south_america",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "southern_africa",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "brunei",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "malaysia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "cook_islands",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "oceania",
+            1.0
+          ],
+          [
+            "polynesia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "venezuela",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "south_america",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "brunei",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "south-eastern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "france",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "western_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "togo",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "western_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "peru",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "south_america",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "vietnam",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "south-eastern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "western_asia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "south_africa",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "southern_africa",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "You are a geographical expert tasked with predicting the likelihood of multiple tail entities for a given subject and predicate. Based on the provided list of predicted entities, reason about their relevance and provide a step-by-step explanation. Then, assign a score to each entity reflecting its likelihood of being correct.",
+      "fields": [
+        {
+          "prefix": "Predicted Entities:",
+          "description": "A list of predicted entities"
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "A list of scores for each entity"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.10",
+      "dspy": "2.6.16",
+      "cloudpickle": "3.1"
+    }
+  }
+}

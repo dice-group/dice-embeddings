@@ -1,0 +1,284 @@
+{
+  "finder.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [],
+    "signature": {
+      "instructions": "You are a geographical expert. Given a subject and a predicate, along with some background knowledge and a list of possible entities, your task is to find multiple potential entities that could satisfy the predicate for the given subject. Provide a reasoning process and a list of target entities.",
+      "fields": [
+        {
+          "prefix": "Subject:",
+          "description": "An entity as a subject in a triple."
+        },
+        {
+          "prefix": "Predicate:",
+          "description": "A predicate in a triple."
+        },
+        {
+          "prefix": "Context:",
+          "description": "Background knowledge."
+        },
+        {
+          "prefix": "Entities:",
+          "description": "A list of all possible entities in the knowledge graph."
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "Candidates found in entities."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "scorer.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "albania",
+          "serbia",
+          "greece"
+        ],
+        "reasoning": "The prediction task here involves assigning likelihood scores to each of the provided geographical entities (\"albania\", \"serbia\", \"greece\") as potential tails in a subject-predicate-object relationship. Without specific context on the subject and predicate, we can only hypothesize based on general knowledge or assume equal likelihood if no additional information is available. For demonstration purposes, let's assign arbitrary likelihood scores that sum up to 1, representing probabilities.",
+        "target": [
+          0.3,
+          0.4,
+          0.3
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "europe",
+          "southern_europe"
+        ],
+        "reasoning": "The prediction model has evaluated the likelihood of the given entities based on the context provided by the subject and predicate. The entity \"europe\" is more likely because it encompasses a broader region and is more frequently associated with various predicates compared to \"southern_europe\".",
+        "target": [
+          0.85,
+          0.65
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "americas",
+          "caribbean"
+        ],
+        "reasoning": "The prediction likelihoods are based on the context of the subject and predicate provided. Since no specific subject or predicate was mentioned, I'll assign arbitrary likelihoods to the entities \"americas\" and \"caribbean\". The likelihoods are normalized to sum up to 1, representing a probability distribution over the entities.",
+        "target": [
+          0.7,
+          0.3
+        ]
+      },
+      {
+        "subject": "armenia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "western_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "south_sudan",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "central_african_republic",
+            1.0
+          ],
+          [
+            "dr_congo",
+            1.0
+          ],
+          [
+            "ethiopia",
+            1.0
+          ],
+          [
+            "kenya",
+            1.0
+          ],
+          [
+            "sudan",
+            1.0
+          ],
+          [
+            "uganda",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "finland",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "northern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "northern_mariana_islands",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "micronesia",
+            1.0
+          ],
+          [
+            "oceania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "norway",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "northern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "norfolk_island",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "australia_and_new_zealand",
+            1.0
+          ],
+          [
+            "oceania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "south_sudan",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "albania",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "southern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "united_arab_emirates",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "western_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "brunei",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "malaysia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "senegal",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "gambia",
+            1.0
+          ],
+          [
+            "guinea",
+            1.0
+          ],
+          [
+            "guinea-bissau",
+            1.0
+          ],
+          [
+            "mali",
+            1.0
+          ],
+          [
+            "mauritania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "india",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "southern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "dominican_republic",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "haiti",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "You are an expert geographer advising a top-secret intelligence agency. Your mission is to predict the likelihoods of multiple tail entities for a given subject and predicate, based on the context and background knowledge provided. The accuracy of your predictions could be crucial in determining the success of covert operations around the globe. Think step by step to justify your reasoning and provide a list of scores for each entity, representing the confidence level of each entity being the correct tail entity.",
+      "fields": [
+        {
+          "prefix": "Predicted Entities:",
+          "description": "A list of predicted entities"
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "A list of scores for each entity"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.10",
+      "dspy": "2.6.16",
+      "cloudpickle": "3.1"
+    }
+  }
+}

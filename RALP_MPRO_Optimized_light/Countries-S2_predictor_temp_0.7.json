@@ -1,0 +1,557 @@
+{
+  "finder.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "subject": "chad",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "cameroon",
+            1.0
+          ],
+          [
+            "central_african_republic",
+            1.0
+          ],
+          [
+            "libya",
+            1.0
+          ],
+          [
+            "niger",
+            1.0
+          ],
+          [
+            "nigeria",
+            1.0
+          ],
+          [
+            "south_sudan",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "qatar",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "saudi_arabia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "dr_congo",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "middle_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "united_states",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "northern_america",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "saint_vincent_and_the_grenadines",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "zimbabwe",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "botswana",
+            1.0
+          ],
+          [
+            "mozambique",
+            1.0
+          ],
+          [
+            "south_africa",
+            1.0
+          ],
+          [
+            "zambia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "united_kingdom",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "ireland",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "southern_asia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "cambodia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "south-eastern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "mongolia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "eastern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "indonesia",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "malaysia",
+            1.0
+          ],
+          [
+            "papua_new_guinea",
+            1.0
+          ],
+          [
+            "timor-leste",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "martinique",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "uzbekistan",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "afghanistan",
+            1.0
+          ],
+          [
+            "kazakhstan",
+            1.0
+          ],
+          [
+            "kyrgyzstan",
+            1.0
+          ],
+          [
+            "tajikistan",
+            1.0
+          ],
+          [
+            "turkmenistan",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "portugal",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "southern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "suriname",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "brazil",
+            1.0
+          ],
+          [
+            "french_guiana",
+            1.0
+          ],
+          [
+            "guyana",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "spain",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "southern_europe",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "Given a subject and a predicate, use the provided context and list of entities to identify potential tail entities (objects) that could complete the triple (subject, predicate, object). Generate a reasoning process that explains the thought steps leading to the identified candidates and provide a list of these candidate tail entities.",
+      "fields": [
+        {
+          "prefix": "Subject:",
+          "description": "An entity as a subject in a triple."
+        },
+        {
+          "prefix": "Predicate:",
+          "description": "A predicate in a triple."
+        },
+        {
+          "prefix": "Context:",
+          "description": "Background knowledge."
+        },
+        {
+          "prefix": "Entities:",
+          "description": "A list of all possible entities in the knowledge graph."
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "Candidates found in entities."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "scorer.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "subject": "new_zealand",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "australia_and_new_zealand",
+            1.0
+          ],
+          [
+            "oceania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "timor-leste",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "indonesia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "southern_europe",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "colombia",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "brazil",
+            1.0
+          ],
+          [
+            "ecuador",
+            1.0
+          ],
+          [
+            "panama",
+            1.0
+          ],
+          [
+            "peru",
+            1.0
+          ],
+          [
+            "venezuela",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "laos",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "cambodia",
+            1.0
+          ],
+          [
+            "china",
+            1.0
+          ],
+          [
+            "myanmar",
+            1.0
+          ],
+          [
+            "thailand",
+            1.0
+          ],
+          [
+            "vietnam",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "nigeria",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "western_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "united_states_virgin_islands",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "swaziland",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "mozambique",
+            1.0
+          ],
+          [
+            "south_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "namibia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "southern_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "maldives",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "southern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "niger",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "nepal",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "china",
+            1.0
+          ],
+          [
+            "india",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "united_arab_emirates",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "western_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "north_korea",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "eastern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "san_marino",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "italy",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "malta",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "southern_europe",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "Predict likelihoods of multiple tail entities for a given subject and predicate.",
+      "fields": [
+        {
+          "prefix": "Predicted Entities:",
+          "description": "A list of predicted entities"
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "A list of scores for each entity"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.10",
+      "dspy": "2.6.16",
+      "cloudpickle": "3.1"
+    }
+  }
+}

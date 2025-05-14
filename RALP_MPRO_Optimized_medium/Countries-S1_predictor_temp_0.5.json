@@ -1,0 +1,607 @@
+{
+  "finder.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "subject": "sudan",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "northern_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "benin",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "burkina_faso",
+            1.0
+          ],
+          [
+            "niger",
+            1.0
+          ],
+          [
+            "nigeria",
+            1.0
+          ],
+          [
+            "togo",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "new_zealand",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "australia_and_new_zealand",
+            1.0
+          ],
+          [
+            "oceania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "finland",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "norway",
+            1.0
+          ],
+          [
+            "russia",
+            1.0
+          ],
+          [
+            "sweden",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "samoa",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "oceania",
+            1.0
+          ],
+          [
+            "polynesia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "mauritius",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "eastern_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "georgia",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "armenia",
+            1.0
+          ],
+          [
+            "azerbaijan",
+            1.0
+          ],
+          [
+            "russia",
+            1.0
+          ],
+          [
+            "turkey",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "croatia",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "bosnia_and_herzegovina",
+            1.0
+          ],
+          [
+            "hungary",
+            1.0
+          ],
+          [
+            "montenegro",
+            1.0
+          ],
+          [
+            "serbia",
+            1.0
+          ],
+          [
+            "slovenia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "mali",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "western_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "comoros",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "eastern_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "tokelau",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "oceania",
+            1.0
+          ],
+          [
+            "polynesia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "ivory_coast",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "burkina_faso",
+            1.0
+          ],
+          [
+            "ghana",
+            1.0
+          ],
+          [
+            "guinea",
+            1.0
+          ],
+          [
+            "liberia",
+            1.0
+          ],
+          [
+            "mali",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "albania",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "southern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "guyana",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "south_america",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "jamaica",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "oman",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "saudi_arabia",
+            1.0
+          ],
+          [
+            "united_arab_emirates",
+            1.0
+          ],
+          [
+            "yemen",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "You are an expert geographer working on a critical project to map out the geopolitical landscape of the world. Your mission is to identify multiple potential tail entities for a given subject and predicate based on the context provided by the knowledge graph. This information is crucial for understanding the complex relationships between different geographical entities. For instance, you might need to find the regions where a specific country is located or determine its neighboring countries. Your task is to provide reasoning steps and a list of candidate entities that could potentially be the tail entities for the given subject-predicate pair. Failure to accurately complete this task could result in significant errors in the geopolitical map, affecting international relations and policy-making.",
+      "fields": [
+        {
+          "prefix": "Subject:",
+          "description": "An entity as a subject in a triple."
+        },
+        {
+          "prefix": "Predicate:",
+          "description": "A predicate in a triple."
+        },
+        {
+          "prefix": "Context:",
+          "description": "Background knowledge."
+        },
+        {
+          "prefix": "Entities:",
+          "description": "A list of all possible entities in the knowledge graph."
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "Candidates found in entities."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "scorer.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "asia",
+          "western_asia"
+        ],
+        "reasoning": "The prediction model has generated likelihood scores for the given entities based on their relevance to the subject and predicate provided. The entity \"asia\" has a higher probability score because it is a broader and more commonly referenced region compared to \"western_asia\".",
+        "target": [
+          0.7,
+          0.3
+        ]
+      },
+      {
+        "subject": "finland",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "norway",
+            1.0
+          ],
+          [
+            "russia",
+            1.0
+          ],
+          [
+            "sweden",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "norway",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "northern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "malawi",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "mozambique",
+            1.0
+          ],
+          [
+            "tanzania",
+            1.0
+          ],
+          [
+            "zambia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "united_states",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "northern_america",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "denmark",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "germany",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "south_africa",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "botswana",
+            1.0
+          ],
+          [
+            "lesotho",
+            1.0
+          ],
+          [
+            "mozambique",
+            1.0
+          ],
+          [
+            "namibia",
+            1.0
+          ],
+          [
+            "swaziland",
+            1.0
+          ],
+          [
+            "zimbabwe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "lithuania",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "belarus",
+            1.0
+          ],
+          [
+            "latvia",
+            1.0
+          ],
+          [
+            "poland",
+            1.0
+          ],
+          [
+            "russia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "saint_barth\u00e9lemy",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "dominican_republic",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "haiti",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "zambia",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "angola",
+            1.0
+          ],
+          [
+            "botswana",
+            1.0
+          ],
+          [
+            "dr_congo",
+            1.0
+          ],
+          [
+            "malawi",
+            1.0
+          ],
+          [
+            "mozambique",
+            1.0
+          ],
+          [
+            "namibia",
+            1.0
+          ],
+          [
+            "tanzania",
+            1.0
+          ],
+          [
+            "zimbabwe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "burkina_faso",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "western_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "el_salvador",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "guatemala",
+            1.0
+          ],
+          [
+            "honduras",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "christmas_island",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "australia_and_new_zealand",
+            1.0
+          ],
+          [
+            "oceania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "iran",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "southern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "svalbard_and_jan_mayen",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "northern_europe",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "You are an expert geographer advising a top-secret intelligence agency. Your mission is to predict the likelihoods of multiple tail entities for a given subject and predicate, based on the provided list of predicted entities. The accuracy of your predictions could impact critical decisions regarding global security and geopolitical strategies. Provide detailed reasoning for each prediction to justify your likelihood scores.",
+      "fields": [
+        {
+          "prefix": "Predicted Entities:",
+          "description": "A list of predicted entities"
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "A list of scores for each entity"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.10",
+      "dspy": "2.6.16",
+      "cloudpickle": "3.1"
+    }
+  }
+}

@@ -1,0 +1,300 @@
+{
+  "finder.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [],
+    "signature": {
+      "instructions": "Finds multiple tail entities for a given subject and predicate",
+      "fields": [
+        {
+          "prefix": "Subject:",
+          "description": "An entity as a subject in a triple."
+        },
+        {
+          "prefix": "Predicate:",
+          "description": "A predicate in a triple."
+        },
+        {
+          "prefix": "Context:",
+          "description": "Background knowledge."
+        },
+        {
+          "prefix": "Entities:",
+          "description": "A list of all possible entities in the knowledge graph."
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "Candidates found in entities."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "scorer.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "eastern_asia",
+          "asia"
+        ],
+        "reasoning": "The prediction is based on the geographical relationship between the entities. \"Eastern Asia\" is more specific and likely to be correct if the context is about a country or region within that area. \"Asia\" is a broader term and less likely to be the sole answer but still has a reasonable probability as it encompasses Eastern Asia.",
+        "target": [
+          0.7,
+          0.3
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "americas",
+          "caribbean"
+        ],
+        "reasoning": "The predicted entities \"americas\" and \"caribbean\" are related geographically. The Americas is a broader term that encompasses both North and South America, while the Caribbean refers to the islands situated off the southeastern coast of North America. Given this relationship, we can assign higher probabilities to these entities compared to unrelated ones.",
+        "target": [
+          0.7,
+          0.3
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "armenia",
+          "azerbaijan",
+          "iran",
+          "georgia",
+          "iraq"
+        ],
+        "reasoning": "The task is to predict likelihoods for the given entities related to a certain subject and predicate. Since no specific context or data is provided, I'll assign arbitrary probability scores that sum up to 1, representing a distribution of likelihoods among the entities.",
+        "target": [
+          0.3,
+          0.25,
+          0.2,
+          0.15,
+          0.1
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "sint_maarten"
+        ],
+        "reasoning": "The single predicted entity \"sint_maarten\" appears to be the only option available for prediction. Without further context or additional entities to compare against, I'll assign it a score of 1.0, indicating maximum certainty.",
+        "target": [
+          1.0
+        ]
+      },
+      {
+        "subject": "british_virgin_islands",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "maldives",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "southern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "jamaica",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "nicaragua",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "central_america",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "somalia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "dr_congo",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "angola",
+            1.0
+          ],
+          [
+            "burundi",
+            1.0
+          ],
+          [
+            "central_african_republic",
+            1.0
+          ],
+          [
+            "republic_of_the_congo",
+            1.0
+          ],
+          [
+            "rwanda",
+            1.0
+          ],
+          [
+            "south_sudan",
+            1.0
+          ],
+          [
+            "tanzania",
+            1.0
+          ],
+          [
+            "uganda",
+            1.0
+          ],
+          [
+            "zambia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "panama",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "colombia",
+            1.0
+          ],
+          [
+            "costa_rica",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "fiji",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "melanesia",
+            1.0
+          ],
+          [
+            "oceania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "haiti",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "dominican_republic",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "western_europe",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "wallis_and_futuna",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "oceania",
+            1.0
+          ],
+          [
+            "polynesia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "mongolia",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "china",
+            1.0
+          ],
+          [
+            "russia",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "Given a list of predicted entities, provide a detailed reasoning for why these entities are relevant and assign a score to each entity representing the likelihood of it being the correct tail entity. The reasoning should consider the geographical relationships between the entities and any other relevant factors. The scores should sum up to 1 and reflect the distribution of likelihoods among the entities.",
+      "fields": [
+        {
+          "prefix": "Predicted Entities:",
+          "description": "A list of predicted entities"
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "A list of scores for each entity"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.10",
+      "dspy": "2.6.16",
+      "cloudpickle": "3.1"
+    }
+  }
+}

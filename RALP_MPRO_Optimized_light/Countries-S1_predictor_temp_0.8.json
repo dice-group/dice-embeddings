@@ -1,0 +1,579 @@
+{
+  "finder.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "subject": "guyana",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "brazil",
+            1.0
+          ],
+          [
+            "suriname",
+            1.0
+          ],
+          [
+            "venezuela",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "oman",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "saudi_arabia",
+            1.0
+          ],
+          [
+            "united_arab_emirates",
+            1.0
+          ],
+          [
+            "yemen",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "burundi",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "dr_congo",
+            1.0
+          ],
+          [
+            "rwanda",
+            1.0
+          ],
+          [
+            "tanzania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "tonga",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "oceania",
+            1.0
+          ],
+          [
+            "polynesia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "bhutan",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "southern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "cura\u00e7ao",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "egypt",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "israel",
+            1.0
+          ],
+          [
+            "libya",
+            1.0
+          ],
+          [
+            "sudan",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "estonia",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "latvia",
+            1.0
+          ],
+          [
+            "russia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "nigeria",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "benin",
+            1.0
+          ],
+          [
+            "cameroon",
+            1.0
+          ],
+          [
+            "chad",
+            1.0
+          ],
+          [
+            "niger",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "belarus",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "latvia",
+            1.0
+          ],
+          [
+            "lithuania",
+            1.0
+          ],
+          [
+            "poland",
+            1.0
+          ],
+          [
+            "russia",
+            1.0
+          ],
+          [
+            "ukraine",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "saint_martin",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "austria",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "western_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "western_asia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "mozambique",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "malawi",
+            1.0
+          ],
+          [
+            "south_africa",
+            1.0
+          ],
+          [
+            "swaziland",
+            1.0
+          ],
+          [
+            "tanzania",
+            1.0
+          ],
+          [
+            "zambia",
+            1.0
+          ],
+          [
+            "zimbabwe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "albania",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "greece",
+            1.0
+          ],
+          [
+            "kosovo",
+            1.0
+          ],
+          [
+            "macedonia",
+            1.0
+          ],
+          [
+            "montenegro",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "spain",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "southern_europe",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "Finds multiple tail entities for a given subject and predicate",
+      "fields": [
+        {
+          "prefix": "Subject:",
+          "description": "An entity as a subject in a triple."
+        },
+        {
+          "prefix": "Predicate:",
+          "description": "A predicate in a triple."
+        },
+        {
+          "prefix": "Context:",
+          "description": "Background knowledge."
+        },
+        {
+          "prefix": "Entities:",
+          "description": "A list of all possible entities in the knowledge graph."
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "Candidates found in entities."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "scorer.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "asia",
+          "central_asia"
+        ],
+        "reasoning": "The subject and predicate are not explicitly provided, but based on the context, we can infer that the subject might be related to geographical regions. Given the options \"asia\" and \"central_asia,\" it's likely that \"asia\" would have a higher probability because it is a broader region that encompasses \"central_asia.\"",
+        "target": [
+          0.8,
+          0.2
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "china",
+          "iran",
+          "pakistan",
+          "tajikistan",
+          "turkmenistan",
+          "uzbekistan"
+        ],
+        "reasoning": "The given subject and predicate seem to suggest a focus on countries in Central Asia and Western Asia. Given that, it's logical to assign higher probabilities to countries more central to this region, like Iran and Pakistan, and slightly lower probabilities to those a bit further away, such as China and Tajikistan.",
+        "target": [
+          0.15,
+          0.25,
+          0.2,
+          0.1,
+          0.15,
+          0.15
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "africa"
+        ],
+        "reasoning": "The model has predicted the entity \"africa\" based on the subject and predicate provided. However, since we only have one entity in the list, it's not possible to compare the likelihood between multiple entities. Thus, we assign a score of 1.0 to \"africa\".",
+        "target": [
+          1.0
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "europe",
+          "southern_europe"
+        ],
+        "reasoning": "The predicted entities are \"europe\" and \"southern_europe\". Given that southern_europe is a region within europe, it's reasonable to assume that if the context is about regions, \"southern_europe\" might be more specific and thus have a higher likelihood score. However, without additional context on the subject and predicate, we'll assign slightly higher confidence to \"southern_europe\".",
+        "target": [
+          0.3,
+          0.7
+        ]
+      },
+      {
+        "subject": "bulgaria",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "eastern_europe",
+            1.0
+          ],
+          [
+            "europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "guinea",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "western_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "indonesia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "south-eastern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "middle_africa",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "tanzania",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "eastern_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "brunei",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "south-eastern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "martinique",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "slovenia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "southern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "liberia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "western_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "austria",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "western_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "belarus",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "latvia",
+            1.0
+          ],
+          [
+            "lithuania",
+            1.0
+          ],
+          [
+            "poland",
+            1.0
+          ],
+          [
+            "russia",
+            1.0
+          ],
+          [
+            "ukraine",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "japan",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "eastern_asia",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "Given a list of predicted entities, provide reasoning for the likelihood of each entity being a valid tail entity, and generate a list of scores representing these likelihoods. Each score should be a float between 0.0 and 1.0, inclusive. If there is only one entity, assign it a score of 1.0. \n\nExample:\n\nPredicted Entities: ['asia', 'central_asia']\nReasoning: The subject and predicate suggest a focus on geographical regions. Given the options \"asia\" and \"central_asia,\" it's likely that \"asia\" would have a higher probability because it is a broader region that encompasses \"central_asia.\"\nTarget: [0.8, 0.2]",
+      "fields": [
+        {
+          "prefix": "Predicted Entities:",
+          "description": "A list of predicted entities"
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "A list of scores for each entity"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.10",
+      "dspy": "2.6.16",
+      "cloudpickle": "3.1"
+    }
+  }
+}

@@ -1,0 +1,320 @@
+{
+  "finder.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [],
+    "signature": {
+      "instructions": "You are a geographical expert who specializes in understanding the relationships between countries and regions. Your task is to find multiple tail entities (such as neighboring countries or regions where a country is located) for a given subject and predicate. For example, if the subject is \"Switzerland\" and the predicate is \"neighbor,\" you should provide a list of countries that share a border with Switzerland. If the predicate is \"locatedin,\" you should provide the continent and any sub-region where the country is situated. Use the provided context and the full list of entities to determine the most accurate and comprehensive answers.",
+      "fields": [
+        {
+          "prefix": "Subject:",
+          "description": "An entity as a subject in a triple."
+        },
+        {
+          "prefix": "Predicate:",
+          "description": "A predicate in a triple."
+        },
+        {
+          "prefix": "Context:",
+          "description": "Background knowledge."
+        },
+        {
+          "prefix": "Entities:",
+          "description": "A list of all possible entities in the knowledge graph."
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "Candidates found in entities."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "scorer.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "china",
+          "russia"
+        ],
+        "reasoning": "For the given subject and predicate, we have two predicted entities: \"china\" and \"russia\". Given that both are major world powers and could potentially fit the context of many subject-predicate relationships, we assign them relatively high probabilities. However, without more specific information about the subject and predicate, it's challenging to definitively favor one over the other. Thus, we'll distribute the probability somewhat evenly between the two.",
+        "target": [
+          0.4,
+          0.6
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "albania",
+          "bulgaria",
+          "turkey"
+        ],
+        "reasoning": "The prediction task here involves assigning likelihood scores to each country based on some unspecified criteria or context. Since no specific context or data is provided, I'll assign arbitrary probability scores that sum up to 1, representing a distribution of likelihoods among the countries.",
+        "target": [
+          0.4,
+          0.3,
+          0.3
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "asia",
+          "southern_asia"
+        ],
+        "reasoning": "The prediction model has generated likelihood scores for the given entities based on the context of the subject and predicate provided. The entity \"asia\" is a broader geographical term and might have a higher probability score compared to \"southern_asia,\" which is more specific.",
+        "target": [
+          0.7,
+          0.3
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "bahrain",
+          "iraq",
+          "jordan",
+          "kuwait",
+          "oman",
+          "qatar",
+          "yemen"
+        ],
+        "reasoning": "The provided entities are all countries or regions in the Middle East. Without specific context about the subject and predicate, it's challenging to assign precise probabilities. However, for the sake of providing a response, I'll assume an even distribution of likelihood across these entities.",
+        "target": [
+          0.143,
+          0.143,
+          0.143,
+          0.143,
+          0.143,
+          0.143,
+          0.143
+        ]
+      },
+      {
+        "subject": "slovakia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "central_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "india",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "southern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "anguilla",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "dominica",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "south_korea",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "eastern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "central_african_republic",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "middle_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "ecuador",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "colombia",
+            1.0
+          ],
+          [
+            "peru",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "liechtenstein",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "western_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "brazil",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "argentina",
+            1.0
+          ],
+          [
+            "bolivia",
+            1.0
+          ],
+          [
+            "colombia",
+            1.0
+          ],
+          [
+            "french_guiana",
+            1.0
+          ],
+          [
+            "guyana",
+            1.0
+          ],
+          [
+            "paraguay",
+            1.0
+          ],
+          [
+            "peru",
+            1.0
+          ],
+          [
+            "suriname",
+            1.0
+          ],
+          [
+            "uruguay",
+            1.0
+          ],
+          [
+            "venezuela",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "equatorial_guinea",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "cameroon",
+            1.0
+          ],
+          [
+            "gabon",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "rwanda",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "burundi",
+            1.0
+          ],
+          [
+            "dr_congo",
+            1.0
+          ],
+          [
+            "tanzania",
+            1.0
+          ],
+          [
+            "uganda",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "san_marino",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "italy",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "Given a list of predicted entities, generate a reasoning process that explains the thought process behind the prediction and return a list of scores for each entity. Consider the geographical context and the relationship between the subject and predicate when assigning scores.",
+      "fields": [
+        {
+          "prefix": "Predicted Entities:",
+          "description": "A list of predicted entities"
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "A list of scores for each entity"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.10",
+      "dspy": "2.6.16",
+      "cloudpickle": "3.1"
+    }
+  }
+}

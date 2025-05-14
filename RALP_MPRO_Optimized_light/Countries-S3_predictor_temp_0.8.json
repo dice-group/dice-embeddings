@@ -1,0 +1,619 @@
+{
+  "finder.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "subject": "russia",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "azerbaijan",
+            1.0
+          ],
+          [
+            "belarus",
+            1.0
+          ],
+          [
+            "china",
+            1.0
+          ],
+          [
+            "estonia",
+            1.0
+          ],
+          [
+            "finland",
+            1.0
+          ],
+          [
+            "georgia",
+            1.0
+          ],
+          [
+            "kazakhstan",
+            1.0
+          ],
+          [
+            "latvia",
+            1.0
+          ],
+          [
+            "lithuania",
+            1.0
+          ],
+          [
+            "mongolia",
+            1.0
+          ],
+          [
+            "north_korea",
+            1.0
+          ],
+          [
+            "norway",
+            1.0
+          ],
+          [
+            "poland",
+            1.0
+          ],
+          [
+            "ukraine",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "comoros",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "eastern_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "costa_rica",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "nicaragua",
+            1.0
+          ],
+          [
+            "panama",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "vietnam",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "south-eastern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "peru",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "bolivia",
+            1.0
+          ],
+          [
+            "brazil",
+            1.0
+          ],
+          [
+            "chile",
+            1.0
+          ],
+          [
+            "colombia",
+            1.0
+          ],
+          [
+            "ecuador",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "vanuatu",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "melanesia",
+            1.0
+          ],
+          [
+            "oceania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "ukraine",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "belarus",
+            1.0
+          ],
+          [
+            "hungary",
+            1.0
+          ],
+          [
+            "moldova",
+            1.0
+          ],
+          [
+            "poland",
+            1.0
+          ],
+          [
+            "romania",
+            1.0
+          ],
+          [
+            "russia",
+            1.0
+          ],
+          [
+            "slovakia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "pakistan",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "southern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "luxembourg",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "western_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "anguilla",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "micronesia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "micronesia",
+            1.0
+          ],
+          [
+            "oceania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "guinea",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "guinea-bissau",
+            1.0
+          ],
+          [
+            "ivory_coast",
+            1.0
+          ],
+          [
+            "liberia",
+            1.0
+          ],
+          [
+            "mali",
+            1.0
+          ],
+          [
+            "senegal",
+            1.0
+          ],
+          [
+            "sierra_leone",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "australia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "australia_and_new_zealand",
+            1.0
+          ],
+          [
+            "oceania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "central_america",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "bulgaria",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "eastern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "panama",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "colombia",
+            1.0
+          ],
+          [
+            "costa_rica",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "Finds multiple tail entities for a given subject and predicate",
+      "fields": [
+        {
+          "prefix": "Subject:",
+          "description": "An entity as a subject in a triple."
+        },
+        {
+          "prefix": "Predicate:",
+          "description": "A predicate in a triple."
+        },
+        {
+          "prefix": "Context:",
+          "description": "Background knowledge."
+        },
+        {
+          "prefix": "Entities:",
+          "description": "A list of all possible entities in the knowledge graph."
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "Candidates found in entities."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "scorer.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "israel",
+          "syria"
+        ],
+        "reasoning": "The subject and predicate are not explicitly provided, but based on the context, it seems we are dealing with geopolitical entities. Israel and Syria have a complex relationship due to historical conflicts and border disputes. Given this, both entities could potentially be linked to the predicate, but without more specific information about the predicate, we cannot assign precise probabilities. Here, I'll assign a higher score to \"israel\" as it might be more frequently associated with certain predicates in comparison to \"syria\".",
+        "target": [
+          0.6,
+          0.4
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "americas",
+          "caribbean"
+        ],
+        "reasoning": "The subject and predicate are not explicitly provided, but based on the context, it seems like we are trying to determine the likelihood of \"americas\" and \"caribbean\" as possible answers to a query. Without additional context or data, it's challenging to assign precise probabilities. However, considering geographical proximity and inclusion, the Caribbean is a region within the Americas. Therefore, if the query is about regions in the Americas, both could be relevant, but the Americas might have a slightly higher probability due to its broader scope.",
+        "target": [
+          0.6,
+          0.4
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "asia",
+          "south-eastern_asia"
+        ],
+        "reasoning": "The predicted entities are \"asia\" and \"south-eastern_asia\". Given that south-eastern_asia is a more specific region within asia, it could be considered to have a higher likelihood score. However, without additional context about the subject and predicate, we'll assign relatively high scores to both entities.",
+        "target": [
+          0.7,
+          0.9
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "argentina",
+          "brazil",
+          "chile",
+          "paraguay",
+          "peru"
+        ],
+        "reasoning": "To determine the likelihoods of the given countries, we'll consider their relative sizes (population or area) and economic influence in South America. Argentina, Brazil, Chile, Paraguay, and Peru are all significant, but Brazil tends to dominate in terms of population and economy, followed closely by Argentina and Peru. Chile and Paraguay have notable influence but are smaller. Therefore, the likelihoods will reflect this hierarchy.",
+        "target": [
+          0.2,
+          0.35,
+          0.15,
+          0.1,
+          0.2
+        ]
+      },
+      {
+        "subject": "ukraine",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "belarus",
+            1.0
+          ],
+          [
+            "hungary",
+            1.0
+          ],
+          [
+            "moldova",
+            1.0
+          ],
+          [
+            "poland",
+            1.0
+          ],
+          [
+            "romania",
+            1.0
+          ],
+          [
+            "russia",
+            1.0
+          ],
+          [
+            "slovakia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "trinidad_and_tobago",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "yemen",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "oman",
+            1.0
+          ],
+          [
+            "saudi_arabia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "kuwait",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "western_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "melanesia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "oceania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "nepal",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "china",
+            1.0
+          ],
+          [
+            "india",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "australia_and_new_zealand",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "oceania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "georgia",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "armenia",
+            1.0
+          ],
+          [
+            "azerbaijan",
+            1.0
+          ],
+          [
+            "russia",
+            1.0
+          ],
+          [
+            "turkey",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "timor-leste",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "indonesia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "peru",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "south_america",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "cocos_keeling_islands",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "australia_and_new_zealand",
+            1.0
+          ],
+          [
+            "oceania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "republic_of_the_congo",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "angola",
+            1.0
+          ],
+          [
+            "cameroon",
+            1.0
+          ],
+          [
+            "central_african_republic",
+            1.0
+          ],
+          [
+            "dr_congo",
+            1.0
+          ],
+          [
+            "gabon",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "Given a list of predicted tail entities, use your understanding of geopolitical and geographical relationships to reason about the likelihood of each entity being a valid tail entity for a given subject and predicate. Generate a detailed reasoning process and assign a score to each entity, reflecting its likelihood of being a valid tail entity. Consider factors such as historical relationships, geographical proximity, and regional inclusion when making your predictions.",
+      "fields": [
+        {
+          "prefix": "Predicted Entities:",
+          "description": "A list of predicted entities"
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "A list of scores for each entity"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.10",
+      "dspy": "2.6.16",
+      "cloudpickle": "3.1"
+    }
+  }
+}

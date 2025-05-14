@@ -1,0 +1,302 @@
+{
+  "finder.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [],
+    "signature": {
+      "instructions": "Finds multiple tail entities for a given subject and predicate",
+      "fields": [
+        {
+          "prefix": "Subject:",
+          "description": "An entity as a subject in a triple."
+        },
+        {
+          "prefix": "Predicate:",
+          "description": "A predicate in a triple."
+        },
+        {
+          "prefix": "Context:",
+          "description": "Background knowledge."
+        },
+        {
+          "prefix": "Entities:",
+          "description": "A list of all possible entities in the knowledge graph."
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "Candidates found in entities."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "scorer.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "africa",
+          "indian_ocean"
+        ],
+        "reasoning": "The predicted entities are \"africa\" and \"indian_ocean\". Given that both are large geographical features but \"africa\" is a continent while \"indian_ocean\" is an ocean, it's reasonable to assign higher likelihood to \"africa\" since continents might generally have a higher relevance or occurrence rate compared to oceans in many contexts.",
+        "target": [
+          0.7,
+          0.3
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "africa",
+          "middle_africa"
+        ],
+        "reasoning": "The subject and predicate are not explicitly provided, but based on the context, we can infer that the subject is likely a country or region and the predicate could be 'located_in' or something similar. Given this, \"africa\" is a broader continent which has a higher probability of being correct compared to \"middle_africa\", which is a sub-region within Africa.",
+        "target": [
+          0.8,
+          0.2
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "asia",
+          "western_asia"
+        ],
+        "reasoning": "The prediction is based on the relevance of the region to the context of the question or statement. \"Asia\" is a very broad term that covers a large geographical area and might be more likely to be relevant in most contexts due to its size and diversity. On the other hand, \"Western Asia\" is a more specific region and might be less likely to be mentioned unless the context specifically deals with that part of the world.",
+        "target": [
+          0.7,
+          0.3
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "china"
+        ],
+        "reasoning": "The model has predicted the entity \"china\" as the only possible tail entity. Since there's no information on other potential entities or their probabilities, we assume that the probability of \"china\" being the correct answer is 1.",
+        "target": [
+          1.0
+        ]
+      },
+      {
+        "subject": "burundi",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "dr_congo",
+            1.0
+          ],
+          [
+            "rwanda",
+            1.0
+          ],
+          [
+            "tanzania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "guernsey",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "northern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "austria",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "western_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "antigua_and_barbuda",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "kuwait",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "western_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "kenya",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "ethiopia",
+            1.0
+          ],
+          [
+            "somalia",
+            1.0
+          ],
+          [
+            "south_sudan",
+            1.0
+          ],
+          [
+            "tanzania",
+            1.0
+          ],
+          [
+            "uganda",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "nepal",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "southern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "faroe_islands",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "northern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "albania",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "southern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "malawi",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "mozambique",
+            1.0
+          ],
+          [
+            "tanzania",
+            1.0
+          ],
+          [
+            "zambia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "czechia",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "austria",
+            1.0
+          ],
+          [
+            "germany",
+            1.0
+          ],
+          [
+            "poland",
+            1.0
+          ],
+          [
+            "slovakia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "bhutan",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "southern_asia",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "Given a list of predicted entities, use your reasoning abilities to determine the likelihood of each entity being the correct answer. Consider factors such as the size, prominence, and relevance of the entity to the context of the subject and predicate. Provide a detailed reasoning process and output a list of scores representing the likelihood of each entity being the correct answer.",
+      "fields": [
+        {
+          "prefix": "Predicted Entities:",
+          "description": "A list of predicted entities"
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "A list of scores for each entity"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.10",
+      "dspy": "2.6.16",
+      "cloudpickle": "3.1"
+    }
+  }
+}

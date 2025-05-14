@@ -1,0 +1,634 @@
+{
+  "finder.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "subject": "equatorial_guinea",
+        "predicate": "neighbor",
+        "context": "afghanistan locatedin asia\nafghanistan locatedin southern_asia\nafghanistan neighbor china\nafghanistan neighbor iran\nafghanistan neighbor pakistan\nafghanistan neighbor tajikistan\nafghanistan neighbor turkmenistan\nafghanistan neighbor uzbekistan\nalbania locatedin europe\nalbania locatedin southern_europe\nalbania neighbor greece\nalbania neighbor kosovo\nalbania neighbor macedonia\nalbania neighbor montenegro\nalgeria locatedin africa\nalgeria locatedin northern_africa\nalgeria neighbor libya\nalgeria neighbor mali\nalgeria neighbor mauritania\nalgeria neighbor morocco\nalgeria neighbor niger\nalgeria neighbor tunisia\nalgeria neighbor western_sahara\namerican_samoa locatedin oceania\namerican_samoa locatedin polynesia\nandorra locatedin europe\nandorra locatedin southern_europe\nandorra neighbor france\nandorra neighbor spain\nangola locatedin africa\nangola locatedin middle_africa\nangola neighbor dr_congo\nangola neighbor namibia\nangola neighbor republic_of_the_congo\nangola neighbor zambia\nanguilla locatedin americas\nanguilla locatedin caribbean\nantigua_and_barbuda locatedin americas\nantigua_and_barbuda locatedin caribbean\nargentina locatedin americas\nargentina locatedin south_america\nargentina neighbor bolivia\nargentina neighbor brazil\nargentina neighbor chile\nargentina neighbor paraguay\nargentina neighbor uruguay\narmenia locatedin asia\narmenia locatedin western_asia\narmenia neighbor azerbaijan\narmenia neighbor georgia\narmenia neighbor iran\narmenia neighbor turkey\naruba locatedin americas\naruba locatedin caribbean\naustralia locatedin australia_and_new_zealand\naustralia locatedin oceania\naustralia_and_new_zealand locatedin oceania\naustria locatedin europe\naustria locatedin western_europe\naustria neighbor czechia\naustria neighbor germany\naustria neighbor hungary\naustria neighbor italy\naustria neighbor liechtenstein\naustria neighbor slovakia\naustria neighbor slovenia\naustria neighbor switzerland\nazerbaijan locatedin asia\nazerbaijan locatedin western_asia\nazerbaijan neighbor armenia\nazerbaijan neighbor georgia\nazerbaijan neighbor iran\nazerbaijan neighbor russia\nazerbaijan neighbor turkey\nbahamas locatedin americas\nbahamas locatedin caribbean\nbahrain locatedin asia\nbahrain locatedin western_asia\nbangladesh locatedin asia\nbangladesh locatedin southern_asia\nbangladesh neighbor india\nbangladesh neighbor myanmar\nbarbados locatedin americas\nbarbados locatedin caribbean\nbelarus locatedin eastern_europe\nbelarus locatedin europe\nbelarus neighbor latvia\nbelarus neighbor lithuania\nbelarus neighbor poland\nbelarus neighbor russia\nbelarus neighbor ukraine\nbelgium locatedin western_europe\nbelgium neighbor france\nbelgium neighbor germany\nbelgium neighbor luxembourg\nbelgium neighbor netherlands\nbelize locatedin americas\nbelize locatedin central_america\nbelize neighbor guatemala\nbelize neighbor mexico",
+        "entities": [
+          "afghanistan",
+          "africa",
+          "albania",
+          "algeria",
+          "american_samoa",
+          "americas",
+          "andorra",
+          "angola",
+          "anguilla",
+          "antigua_and_barbuda",
+          "argentina",
+          "armenia",
+          "aruba",
+          "asia",
+          "australia",
+          "australia_and_new_zealand",
+          "austria",
+          "azerbaijan",
+          "bahamas",
+          "bahrain",
+          "bangladesh",
+          "barbados",
+          "belarus",
+          "belgium",
+          "belize",
+          "benin",
+          "bermuda",
+          "bhutan",
+          "bolivia",
+          "bosnia_and_herzegovina",
+          "botswana",
+          "brazil",
+          "british_indian_ocean_territory",
+          "british_virgin_islands",
+          "brunei",
+          "bulgaria",
+          "burkina_faso",
+          "burundi",
+          "cambodia",
+          "cameroon",
+          "canada",
+          "cape_verde",
+          "caribbean",
+          "cayman_islands",
+          "central_african_republic",
+          "central_america",
+          "central_asia",
+          "central_europe",
+          "chad",
+          "chile",
+          "china",
+          "christmas_island",
+          "cocos_keeling_islands",
+          "colombia",
+          "comoros",
+          "cook_islands",
+          "costa_rica",
+          "croatia",
+          "cuba",
+          "cura\u00e7ao",
+          "cyprus",
+          "czechia",
+          "denmark",
+          "djibouti",
+          "dominica",
+          "dominican_republic",
+          "dr_congo",
+          "eastern_africa",
+          "eastern_asia",
+          "eastern_europe",
+          "ecuador",
+          "egypt",
+          "el_salvador",
+          "equatorial_guinea",
+          "eritrea",
+          "estonia",
+          "ethiopia",
+          "europe",
+          "falkland_islands",
+          "faroe_islands",
+          "fiji",
+          "finland",
+          "france",
+          "french_guiana",
+          "french_polynesia",
+          "gabon",
+          "gambia",
+          "georgia",
+          "germany",
+          "ghana",
+          "gibraltar",
+          "greece",
+          "greenland",
+          "grenada",
+          "guadeloupe",
+          "guam",
+          "guatemala",
+          "guernsey",
+          "guinea",
+          "guinea-bissau",
+          "guyana",
+          "haiti",
+          "honduras",
+          "hong_kong",
+          "hungary",
+          "iceland",
+          "india",
+          "indonesia",
+          "iran",
+          "iraq",
+          "ireland",
+          "isle_of_man",
+          "israel",
+          "italy",
+          "ivory_coast",
+          "jamaica",
+          "japan",
+          "jersey",
+          "jordan",
+          "kazakhstan",
+          "kenya",
+          "kiribati",
+          "kosovo",
+          "kuwait",
+          "kyrgyzstan",
+          "laos",
+          "latvia",
+          "lebanon",
+          "lesotho",
+          "liberia",
+          "libya",
+          "liechtenstein",
+          "lithuania",
+          "luxembourg",
+          "macau",
+          "macedonia",
+          "madagascar",
+          "malawi",
+          "malaysia",
+          "maldives",
+          "mali",
+          "malta",
+          "marshall_islands",
+          "martinique",
+          "mauritania",
+          "mauritius",
+          "mayotte",
+          "melanesia",
+          "mexico",
+          "micronesia",
+          "middle_africa",
+          "moldova",
+          "monaco",
+          "mongolia",
+          "montenegro",
+          "montserrat",
+          "morocco",
+          "mozambique",
+          "myanmar",
+          "namibia",
+          "nauru",
+          "nepal",
+          "netherlands",
+          "new_caledonia",
+          "new_zealand",
+          "nicaragua",
+          "niger",
+          "nigeria",
+          "niue",
+          "norfolk_island",
+          "north_korea",
+          "northern_africa",
+          "northern_america",
+          "northern_europe",
+          "northern_mariana_islands",
+          "norway",
+          "oceania",
+          "oman",
+          "pakistan",
+          "palau",
+          "palestine",
+          "panama",
+          "papua_new_guinea",
+          "paraguay",
+          "peru",
+          "philippines",
+          "pitcairn_islands",
+          "poland",
+          "polynesia",
+          "portugal",
+          "puerto_rico",
+          "qatar",
+          "republic_of_the_congo",
+          "romania",
+          "russia",
+          "rwanda",
+          "r\u00e9union",
+          "saint_barth\u00e9lemy",
+          "saint_kitts_and_nevis",
+          "saint_lucia",
+          "saint_martin",
+          "saint_pierre_and_miquelon",
+          "saint_vincent_and_the_grenadines",
+          "samoa",
+          "san_marino",
+          "saudi_arabia",
+          "senegal",
+          "serbia",
+          "seychelles",
+          "sierra_leone",
+          "singapore",
+          "sint_maarten",
+          "slovakia",
+          "slovenia",
+          "solomon_islands",
+          "somalia",
+          "south-eastern_asia",
+          "south_africa",
+          "south_america",
+          "south_georgia",
+          "south_korea",
+          "south_sudan",
+          "southern_africa",
+          "southern_asia",
+          "southern_europe",
+          "spain",
+          "sri_lanka",
+          "sudan",
+          "suriname",
+          "svalbard_and_jan_mayen",
+          "swaziland",
+          "sweden",
+          "switzerland",
+          "syria",
+          "s\u00e3o_tom\u00e9_and_pr\u00edncipe",
+          "taiwan",
+          "tajikistan",
+          "tanzania",
+          "thailand",
+          "timor-leste",
+          "togo",
+          "tokelau",
+          "tonga",
+          "trinidad_and_tobago",
+          "tunisia",
+          "turkey",
+          "turkmenistan",
+          "turks_and_caicos_islands",
+          "tuvalu",
+          "uganda",
+          "ukraine",
+          "united_arab_emirates",
+          "united_kingdom",
+          "united_states",
+          "united_states_minor_outlying_islands",
+          "united_states_virgin_islands",
+          "uruguay",
+          "uzbekistan",
+          "vanuatu",
+          "vatican_city",
+          "venezuela",
+          "vietnam",
+          "wallis_and_futuna",
+          "western_africa",
+          "western_asia",
+          "western_europe",
+          "western_sahara",
+          "yemen",
+          "zambia",
+          "zimbabwe",
+          "\u00c5land_islands"
+        ],
+        "reasoning": "From the context provided, we can see that Equatorial Guinea is not directly mentioned. However, based on geographical knowledge, Equatorial Guinea is located in Western Africa and shares borders with Gabon and Cameroon.",
+        "target": [
+          "cameroon",
+          "gabon"
+        ]
+      },
+      {
+        "subject": "brazil",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "argentina",
+            1.0
+          ],
+          [
+            "bolivia",
+            1.0
+          ],
+          [
+            "colombia",
+            1.0
+          ],
+          [
+            "french_guiana",
+            1.0
+          ],
+          [
+            "guyana",
+            1.0
+          ],
+          [
+            "paraguay",
+            1.0
+          ],
+          [
+            "peru",
+            1.0
+          ],
+          [
+            "suriname",
+            1.0
+          ],
+          [
+            "uruguay",
+            1.0
+          ],
+          [
+            "venezuela",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "middle_africa",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "uganda",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "eastern_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "angola",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "dr_congo",
+            1.0
+          ],
+          [
+            "namibia",
+            1.0
+          ],
+          [
+            "republic_of_the_congo",
+            1.0
+          ],
+          [
+            "zambia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "china",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "eastern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "iran",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "southern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "south-eastern_asia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "egypt",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "israel",
+            1.0
+          ],
+          [
+            "libya",
+            1.0
+          ],
+          [
+            "sudan",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "algeria",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "libya",
+            1.0
+          ],
+          [
+            "mali",
+            1.0
+          ],
+          [
+            "mauritania",
+            1.0
+          ],
+          [
+            "morocco",
+            1.0
+          ],
+          [
+            "niger",
+            1.0
+          ],
+          [
+            "tunisia",
+            1.0
+          ],
+          [
+            "western_sahara",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "mauritania",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "western_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "uruguay",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "south_america",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "slovakia",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "austria",
+            1.0
+          ],
+          [
+            "czechia",
+            1.0
+          ],
+          [
+            "hungary",
+            1.0
+          ],
+          [
+            "poland",
+            1.0
+          ],
+          [
+            "ukraine",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "cayman_islands",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "switzerland",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "austria",
+            1.0
+          ],
+          [
+            "france",
+            1.0
+          ],
+          [
+            "germany",
+            1.0
+          ],
+          [
+            "italy",
+            1.0
+          ],
+          [
+            "liechtenstein",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "kenya",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "eastern_africa",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "Given a subject and a predicate, use the provided context and list of entities to identify and list potential tail entities that could satisfy the relationship defined by the predicate. Reason through the process step-by-step to ensure accurate identification.",
+      "fields": [
+        {
+          "prefix": "Subject:",
+          "description": "An entity as a subject in a triple."
+        },
+        {
+          "prefix": "Predicate:",
+          "description": "A predicate in a triple."
+        },
+        {
+          "prefix": "Context:",
+          "description": "Background knowledge."
+        },
+        {
+          "prefix": "Entities:",
+          "description": "A list of all possible entities in the knowledge graph."
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "Candidates found in entities."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "scorer.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [],
+    "signature": {
+      "instructions": "Given a list of predicted entities, provide a detailed reasoning for each entity and predict its likelihood of being the correct tail entity. Consider the geographical context, historical relationships, and any other relevant factors that could influence the likelihood of each entity. The output should include a step-by-step reasoning process and a list of scores representing the likelihood of each entity being the correct tail entity.",
+      "fields": [
+        {
+          "prefix": "Predicted Entities:",
+          "description": "A list of predicted entities"
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "A list of scores for each entity"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.10",
+      "dspy": "2.6.16",
+      "cloudpickle": "3.1"
+    }
+  }
+}

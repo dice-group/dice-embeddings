@@ -1,0 +1,290 @@
+{
+  "finder.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [],
+    "signature": {
+      "instructions": "You are a geographical expert. Your task is to find multiple tail entities for a given subject and predicate, based on the provided context and a list of all possible entities in the knowledge graph. Think step by step and provide reasoning for your answer.",
+      "fields": [
+        {
+          "prefix": "Subject:",
+          "description": "An entity as a subject in a triple."
+        },
+        {
+          "prefix": "Predicate:",
+          "description": "A predicate in a triple."
+        },
+        {
+          "prefix": "Context:",
+          "description": "Background knowledge."
+        },
+        {
+          "prefix": "Entities:",
+          "description": "A list of all possible entities in the knowledge graph."
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "Candidates found in entities."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "scorer.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "americas",
+          "caribbean"
+        ],
+        "reasoning": "The prediction likelihoods for the entities \"americas\" and \"caribbean\" are based on their relevance and frequency in relation to the given subject and predicate. Without specific context, these scores are somewhat arbitrary but can be assumed to reflect general knowledge or data distribution where \"americas\" might be more commonly referenced than \"caribbean\".",
+        "target": [
+          0.7,
+          0.3
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "burkina_faso",
+          "togo",
+          "ivory_coast"
+        ],
+        "reasoning": "The prediction likelihoods are based on the geographical proximity and historical relations between these countries. Burkina Faso, Togo, and Ivory Coast are all neighboring countries in West Africa, so they have relatively high likelihoods. However, since Burkina Faso shares a longer border with Ivory Coast and has more historical ties, it might have a slightly higher likelihood compared to Togo.",
+        "target": [
+          0.4,
+          0.3,
+          0.3
+        ]
+      },
+      {
+        "subject": "lesotho",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "sweden",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "northern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "middle_africa",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "cayman_islands",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "macau",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "china",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "south_sudan",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "central_african_republic",
+            1.0
+          ],
+          [
+            "dr_congo",
+            1.0
+          ],
+          [
+            "ethiopia",
+            1.0
+          ],
+          [
+            "kenya",
+            1.0
+          ],
+          [
+            "sudan",
+            1.0
+          ],
+          [
+            "uganda",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "western_asia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "tuvalu",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "oceania",
+            1.0
+          ],
+          [
+            "polynesia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "lithuania",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "northern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "nigeria",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "western_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "western_europe",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "romania",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "bulgaria",
+            1.0
+          ],
+          [
+            "hungary",
+            1.0
+          ],
+          [
+            "moldova",
+            1.0
+          ],
+          [
+            "serbia",
+            1.0
+          ],
+          [
+            "ukraine",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "\u00c5land_islands",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "northern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "united_states_minor_outlying_islands",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "northern_america",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "Given a list of predicted entities, provide reasoning and predict the likelihoods of these entities being the correct tail entities for a given subject and predicate. Your reasoning should consider the relevance of each entity to the context and the general likelihood based on the specificity and coverage of each entity.",
+      "fields": [
+        {
+          "prefix": "Predicted Entities:",
+          "description": "A list of predicted entities"
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "A list of scores for each entity"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.10",
+      "dspy": "2.6.16",
+      "cloudpickle": "3.1"
+    }
+  }
+}

@@ -1,0 +1,655 @@
+{
+  "finder.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "subject": "hong_kong",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "china",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "kyrgyzstan",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "china",
+            1.0
+          ],
+          [
+            "kazakhstan",
+            1.0
+          ],
+          [
+            "tajikistan",
+            1.0
+          ],
+          [
+            "uzbekistan",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "ireland",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "united_kingdom",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "spain",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "southern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "puerto_rico",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "tunisia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "northern_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "ireland",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "northern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "belize",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "guatemala",
+            1.0
+          ],
+          [
+            "mexico",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "azerbaijan",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "armenia",
+            1.0
+          ],
+          [
+            "georgia",
+            1.0
+          ],
+          [
+            "iran",
+            1.0
+          ],
+          [
+            "russia",
+            1.0
+          ],
+          [
+            "turkey",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "norfolk_island",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "australia_and_new_zealand",
+            1.0
+          ],
+          [
+            "oceania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "chile",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "argentina",
+            1.0
+          ],
+          [
+            "bolivia",
+            1.0
+          ],
+          [
+            "peru",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "ghana",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "burkina_faso",
+            1.0
+          ],
+          [
+            "ivory_coast",
+            1.0
+          ],
+          [
+            "togo",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "kazakhstan",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "china",
+            1.0
+          ],
+          [
+            "kyrgyzstan",
+            1.0
+          ],
+          [
+            "russia",
+            1.0
+          ],
+          [
+            "turkmenistan",
+            1.0
+          ],
+          [
+            "uzbekistan",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "guyana",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "brazil",
+            1.0
+          ],
+          [
+            "suriname",
+            1.0
+          ],
+          [
+            "venezuela",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "turks_and_caicos_islands",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "isle_of_man",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "northern_europe",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "Finds multiple tail entities for a given subject and predicate",
+      "fields": [
+        {
+          "prefix": "Subject:",
+          "description": "An entity as a subject in a triple."
+        },
+        {
+          "prefix": "Predicate:",
+          "description": "A predicate in a triple."
+        },
+        {
+          "prefix": "Context:",
+          "description": "Background knowledge."
+        },
+        {
+          "prefix": "Entities:",
+          "description": "A list of all possible entities in the knowledge graph."
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "Candidates found in entities."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "scorer.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "americas",
+          "caribbean"
+        ],
+        "reasoning": "The prediction task here involves assessing the likelihood of the given entities being relevant or correct in an unspecified context (since no specific subject-predicate relationship was provided). Without additional context, I'll assume a general geographical context and provide reasoning based on common knowledge.\n\n\"Americas\" refers to both North and South America, which are significant continents and widely recognized geographical terms. Therefore, it's likely to have a higher relevance score.\n\n\"Caribbean,\" on the other hand, refers to a region that includes islands and coastal areas of Central and South America. While also well-known, its scope is more limited compared to the Americas. Thus, it might have a slightly lower relevance score.",
+        "target": [
+          0.85,
+          0.65
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "chad",
+          "sudan",
+          "republic_of_the_congo",
+          "cameroon",
+          "dr_congo"
+        ],
+        "reasoning": "The predicted entities are all countries in Africa. Without additional context on the subject and predicate, I will assign equal probabilities to each entity.",
+        "target": [
+          0.2,
+          0.2,
+          0.2,
+          0.2,
+          0.2
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "africa",
+          "eastern_africa"
+        ],
+        "reasoning": "The predicted entities are \"africa\" and \"eastern_africa\". Given that eastern_africa is a region within africa, it's reasonable to assume that the likelihood of eastern_africa might be slightly higher than just africa, assuming the context is about a specific location within the continent.",
+        "target": [
+          0.3,
+          0.7
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "americas",
+          "central_america"
+        ],
+        "reasoning": "The prediction task here involves assessing the likelihood of the given entities being relevant to a certain context, which has not been explicitly defined. Given the limited information, I will assign probabilities based on a general understanding. \"americas\" refers to both North and South America, a broader geographical term, while \"central_america\" is a specific region within the Americas. Assuming the context is about geographical regions, \"americas\" might have a higher probability due to its broad coverage. However, without more specific details, these probabilities are somewhat arbitrary.",
+        "target": [
+          0.7,
+          0.3
+        ]
+      },
+      {
+        "subject": "saudi_arabia",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "iraq",
+            1.0
+          ],
+          [
+            "jordan",
+            1.0
+          ],
+          [
+            "kuwait",
+            1.0
+          ],
+          [
+            "oman",
+            1.0
+          ],
+          [
+            "qatar",
+            1.0
+          ],
+          [
+            "united_arab_emirates",
+            1.0
+          ],
+          [
+            "yemen",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "paraguay",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "argentina",
+            1.0
+          ],
+          [
+            "bolivia",
+            1.0
+          ],
+          [
+            "brazil",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "montserrat",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "united_states",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "northern_america",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "burundi",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "eastern_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "china",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "afghanistan",
+            1.0
+          ],
+          [
+            "bhutan",
+            1.0
+          ],
+          [
+            "hong_kong",
+            1.0
+          ],
+          [
+            "india",
+            1.0
+          ],
+          [
+            "kazakhstan",
+            1.0
+          ],
+          [
+            "kyrgyzstan",
+            1.0
+          ],
+          [
+            "laos",
+            1.0
+          ],
+          [
+            "macau",
+            1.0
+          ],
+          [
+            "mongolia",
+            1.0
+          ],
+          [
+            "myanmar",
+            1.0
+          ],
+          [
+            "north_korea",
+            1.0
+          ],
+          [
+            "pakistan",
+            1.0
+          ],
+          [
+            "russia",
+            1.0
+          ],
+          [
+            "tajikistan",
+            1.0
+          ],
+          [
+            "vietnam",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "romania",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "bulgaria",
+            1.0
+          ],
+          [
+            "hungary",
+            1.0
+          ],
+          [
+            "moldova",
+            1.0
+          ],
+          [
+            "serbia",
+            1.0
+          ],
+          [
+            "ukraine",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "somalia",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "djibouti",
+            1.0
+          ],
+          [
+            "ethiopia",
+            1.0
+          ],
+          [
+            "kenya",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "norway",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "finland",
+            1.0
+          ],
+          [
+            "russia",
+            1.0
+          ],
+          [
+            "sweden",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "ghana",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "burkina_faso",
+            1.0
+          ],
+          [
+            "ivory_coast",
+            1.0
+          ],
+          [
+            "togo",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "norfolk_island",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "australia_and_new_zealand",
+            1.0
+          ],
+          [
+            "oceania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "suriname",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "brazil",
+            1.0
+          ],
+          [
+            "french_guiana",
+            1.0
+          ],
+          [
+            "guyana",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "Given a list of predicted entities, provide a reasoning process and a list of scores representing the likelihood of each entity being a valid target. The reasoning should explain the steps taken to determine the likelihood of each entity, considering their relevance and context. The scores should range from 0 to 1, where a higher score indicates a higher likelihood of the entity being a valid target.",
+      "fields": [
+        {
+          "prefix": "Predicted Entities:",
+          "description": "A list of predicted entities"
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "A list of scores for each entity"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.10",
+      "dspy": "2.6.16",
+      "cloudpickle": "3.1"
+    }
+  }
+}

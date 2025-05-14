@@ -22,7 +22,7 @@ from typing import TypeAlias, Union, Literal, Optional
 load_dotenv()
 pd.set_option('display.max_columns', None)
 
-SAVE_DIR_BASE = "RALP_MPRO_Optimized"
+SAVE_DIR_BASE = "RALP_MPRO_Optimized_medium"
 TEST_SIZE = 0.1
 # --- Type Definitions ---
 # Represents the graph: {(subject, predicate): {object1, object2}}
@@ -338,7 +338,7 @@ class RALP_MPRO(AbstractBaseLinkPredictorClass):
     """
     def __init__(self, knowledge_graph: KG, base_url: str, api_key: str, llm_model: str,
                  temperature: float, seed: int, use_val: bool = True, ensemble_temperatures=None,
-                 save_dir: str = SAVE_DIR_BASE,auto: Optional[Literal["light", "medium", "heavy"]] = "light",num_ensemble:int=10):
+                 save_dir: str = SAVE_DIR_BASE,auto: Optional[Literal["light", "medium", "heavy"]] = "medium",num_ensemble:int=10):
         super().__init__(knowledge_graph, name="RALP_MPRO")
 
         # Configuration

@@ -1,0 +1,298 @@
+{
+  "finder.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [],
+    "signature": {
+      "instructions": "Finds multiple tail entities for a given subject and predicate",
+      "fields": [
+        {
+          "prefix": "Subject:",
+          "description": "An entity as a subject in a triple."
+        },
+        {
+          "prefix": "Predicate:",
+          "description": "A predicate in a triple."
+        },
+        {
+          "prefix": "Context:",
+          "description": "Background knowledge."
+        },
+        {
+          "prefix": "Entities:",
+          "description": "A list of all possible entities in the knowledge graph."
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "Candidates found in entities."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "scorer.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "europe"
+        ],
+        "reasoning": "The model has predicted a single entity, \"europe\". Since there's only one entity, it receives the highest possible score.",
+        "target": [
+          1.0
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "americas",
+          "caribbean"
+        ],
+        "reasoning": "The prediction likelihoods for the entities \"americas\" and \"caribbean\" are based on their relevance and frequency in relation to the given subject and predicate. Without specific context, these scores are somewhat arbitrary but can be assumed to reflect general knowledge or data distribution where \"americas\" might be more commonly referenced than \"caribbean\".",
+        "target": [
+          0.7,
+          0.3
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "africa"
+        ],
+        "reasoning": "The model has predicted the entity 'africa' as the only possible tail entity. Since there's only one entity, it gets the highest confidence score.",
+        "target": [
+          1.0
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "iran",
+          "kuwait",
+          "saudi_arabia",
+          "syria",
+          "turkey"
+        ],
+        "reasoning": "The likelihood of each country being related to a given subject and predicate depends on the context provided by the subject and predicate. Without specific context, I'll assume a general geopolitical scenario where countries closer to each other or more frequently mentioned together have higher likelihoods. Iran, Saudi Arabia, and Turkey share borders or are geographically close, while Kuwait and Syria are somewhat less directly connected but still within the same region. Thus, I'll assign higher probabilities to Iran, Saudi Arabia, and Turkey, with moderate probabilities for Kuwait and Syria.",
+        "target": [
+          0.25,
+          0.15,
+          0.25,
+          0.15,
+          0.2
+        ]
+      },
+      {
+        "subject": "republic_of_the_congo",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "angola",
+            1.0
+          ],
+          [
+            "cameroon",
+            1.0
+          ],
+          [
+            "central_african_republic",
+            1.0
+          ],
+          [
+            "dr_congo",
+            1.0
+          ],
+          [
+            "gabon",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "cyprus",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "eastern_europe",
+            1.0
+          ],
+          [
+            "europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "burundi",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "dr_congo",
+            1.0
+          ],
+          [
+            "rwanda",
+            1.0
+          ],
+          [
+            "tanzania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "north_korea",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "eastern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "caribbean",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "guinea-bissau",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "guinea",
+            1.0
+          ],
+          [
+            "senegal",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "puerto_rico",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ],
+          [
+            "caribbean",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "tuvalu",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "oceania",
+            1.0
+          ],
+          [
+            "polynesia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "guyana",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "brazil",
+            1.0
+          ],
+          [
+            "suriname",
+            1.0
+          ],
+          [
+            "venezuela",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "colombia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "americas",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "slovenia",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "southern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "benin",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "western_africa",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "Given a list of predicted tail entities, provide a reasoning for each entity and assign a score between 0 and 1 representing the likelihood of the entity being the correct tail entity. The reasoning should include a step-by-step explanation of how the scores were derived, considering the relevance and frequency of each entity in relation to the given subject and predicate. Be creative in your approach, as the scores can be somewhat arbitrary without specific context.",
+      "fields": [
+        {
+          "prefix": "Predicted Entities:",
+          "description": "A list of predicted entities"
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "A list of scores for each entity"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.10",
+      "dspy": "2.6.16",
+      "cloudpickle": "3.1"
+    }
+  }
+}

@@ -1,0 +1,338 @@
+{
+  "finder.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [],
+    "signature": {
+      "instructions": "You are an expert geographer working on a critical project to update a global geographical database. Your mission is to accurately determine the location of various geopolitical entities based on limited background information. For a given subject (country or region), you need to identify all possible locations (tail entities) where it might be situated, based on the provided context and a list of all possible geopolitical entities. You must provide a detailed reasoning for each potential location to ensure the accuracy of the database. Failure to do so could lead to significant errors in geographical knowledge systems worldwide.",
+      "fields": [
+        {
+          "prefix": "Subject:",
+          "description": "An entity as a subject in a triple."
+        },
+        {
+          "prefix": "Predicate:",
+          "description": "A predicate in a triple."
+        },
+        {
+          "prefix": "Context:",
+          "description": "Background knowledge."
+        },
+        {
+          "prefix": "Entities:",
+          "description": "A list of all possible entities in the knowledge graph."
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "Candidates found in entities."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "scorer.predict": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "southern_africa",
+          "africa"
+        ],
+        "reasoning": "The prediction is based on the geographical context. Given that \"southern_africa\" is a region within \"africa,\" it's more specific and thus might have a higher probability. However, \"africa\" encompasses all regions within it, including southern_africa, so it also has a significant probability but slightly lower due to its broader scope.",
+        "target": [
+          0.7,
+          0.3
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "micronesia",
+          "oceania"
+        ],
+        "reasoning": "The subject and predicate are not explicitly provided, but based on the context, it seems we are evaluating the likelihood of different regions or geographical areas being related to some subject and predicate. Given that Micronesia is part of Oceania, there's a higher probability that Oceania would be a relevant answer compared to Micronesia alone, as Oceania encompasses a broader region which includes Micronesia.",
+        "target": [
+          0.3,
+          0.7
+        ]
+      },
+      {
+        "augmented": true,
+        "predicted_entities": [
+          "europe",
+          "western_europe"
+        ],
+        "reasoning": "The prediction is based on the geographical context. Europe is a broad continent, while Western Europe is a more specific region within Europe. Given that Western Europe is part of Europe, it's more likely to be the correct answer if the question is about a specific region. However, both have some likelihood of being correct depending on the context.",
+        "target": [
+          0.3,
+          0.7
+        ]
+      },
+      {
+        "subject": "romania",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "pakistan",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "asia",
+            1.0
+          ],
+          [
+            "southern_asia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "solomon_islands",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "melanesia",
+            1.0
+          ],
+          [
+            "oceania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "monaco",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "france",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "croatia",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "bosnia_and_herzegovina",
+            1.0
+          ],
+          [
+            "hungary",
+            1.0
+          ],
+          [
+            "montenegro",
+            1.0
+          ],
+          [
+            "serbia",
+            1.0
+          ],
+          [
+            "slovenia",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "el_salvador",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "guatemala",
+            1.0
+          ],
+          [
+            "honduras",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "sweden",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "northern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "vanuatu",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "melanesia",
+            1.0
+          ],
+          [
+            "oceania",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "tanzania",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "eastern_africa",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "brazil",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "argentina",
+            1.0
+          ],
+          [
+            "bolivia",
+            1.0
+          ],
+          [
+            "colombia",
+            1.0
+          ],
+          [
+            "french_guiana",
+            1.0
+          ],
+          [
+            "guyana",
+            1.0
+          ],
+          [
+            "paraguay",
+            1.0
+          ],
+          [
+            "peru",
+            1.0
+          ],
+          [
+            "suriname",
+            1.0
+          ],
+          [
+            "uruguay",
+            1.0
+          ],
+          [
+            "venezuela",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "chad",
+        "predicate": "neighbor",
+        "target": [
+          [
+            "cameroon",
+            1.0
+          ],
+          [
+            "central_african_republic",
+            1.0
+          ],
+          [
+            "libya",
+            1.0
+          ],
+          [
+            "niger",
+            1.0
+          ],
+          [
+            "nigeria",
+            1.0
+          ],
+          [
+            "south_sudan",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "spain",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "europe",
+            1.0
+          ],
+          [
+            "southern_europe",
+            1.0
+          ]
+        ]
+      },
+      {
+        "subject": "sierra_leone",
+        "predicate": "locatedin",
+        "target": [
+          [
+            "africa",
+            1.0
+          ],
+          [
+            "western_africa",
+            1.0
+          ]
+        ]
+      }
+    ],
+    "signature": {
+      "instructions": "Imagine you are a critical component of a high-stakes geographical intelligence system, tasked with providing accurate predictions to support decision-making processes. Your mission is to predict the likelihoods of multiple tail entities for a given subject and predicate. Each prediction you make could influence strategic decisions, so it's essential to provide detailed reasoning for each prediction, along with a score indicating the likelihood of each entity being the correct tail entity. The reasoning should follow a step-by-step thought process that justifies the prediction based on the geographical context and any other relevant factors.",
+      "fields": [
+        {
+          "prefix": "Predicted Entities:",
+          "description": "A list of predicted entities"
+        },
+        {
+          "prefix": "Reasoning: Let's think step by step in order to",
+          "description": "${reasoning}"
+        },
+        {
+          "prefix": "Target:",
+          "description": "A list of scores for each entity"
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.10",
+      "dspy": "2.6.16",
+      "cloudpickle": "3.1"
+    }
+  }
+}
