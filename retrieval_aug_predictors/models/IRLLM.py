@@ -14,6 +14,7 @@ from owlapy.owl_reasoner import StructuralReasoner
 from rdflib import Graph, exceptions as rdf_exceptions
 from dotenv import load_dotenv
 from tqdm import tqdm # Import tqdm
+from owlapy import owl_expression_to_manchester, dl_to_owl_expression
 
 # Load environment variables from a .env file
 load_dotenv()
@@ -30,7 +31,47 @@ class Verbaliser(dspy.Signature):
     expression: str = dspy.InputField(desc="An expression in description logics. Example: ∃ hasChild.{markus} --> There exist a named individual who has child and this child is Markus")
     verbalisation: str = dspy.OutputField(desc="A concise verbalisation of the expression in natural language.")
 
-class PredictionModule(dspy.Module):
+class Classifier2(dspy.Signature):
+    graph: str = dspy.InputField(desc="All triples in the knowledge graph. Entities and relations are represented as an IRI, so they include their namespace.")
+    concept: str = dspy.InputField(desc="A concept in description logics which are a family of formal knowledge representation languages.")
+    classified_entities: List[str] = dspy.OutputField(desc="Every entity on the provided knowledge graph that can be classified by the given concept. Result must be a list of unique entities.")
+
+class Classifier3(dspy.Signature):
+    graph: str = dspy.InputField(desc="All triples in the knowledge graph.")
+    concept: str = dspy.InputField(desc="A concept in Manchester syntax.")
+    classified_entities: List[str] = dspy.OutputField(desc="Every entity on the provided knowledge graph that can be classified by the given concept Result must be a list of unique entities.")
+
+class Classifier4(dspy.Signature):
+    graph: str = dspy.InputField(desc="All triples in the knowledge graph.Entities and relations are represented as an IRI, so they include their namespace")
+    concept: str = dspy.InputField(desc="A concept in Manchester syntax.")
+    examples: str = dspy.InputField(desc="Few-shot examples on this task.")
+    classified_entities: List[str] = dspy.OutputField(desc="Every entity on the provided knowledge graph that can be classified by the given concept Result must be a list of unique entities.")
+
+class Examples(dspy.Signature):
+    expression: str = dspy.InputField(desc="An expression in manchester syntax.")
+    syntax: str = dspy.InputField(desc="An explanation of the syntax used in the given expression")
+    expected_result = dspy.InputField(desc="The set of true values for the given expression.")
+    graph: str = dspy.InputField(desc = "All triples in the knowledge graph. Entities and relations are represented as an IRI, so they include their namespace")
+    example: str = dspy.OutputField(desc="An example that shows the way an LLM should reason in chain of thought fashion to reach the expected result from the given expression using information in the graph. Include the expression and the result in the example as well.")
+
+
+
+class PredictionModuleWithExamples(dspy.Module):
+    def __init__(self):
+        super().__init__()
+        self.example_generator = dspy.Predict(Examples)
+        self.classifier = dspy.ChainOfThought(Classifier4)
+
+    def forward(self, graph: str, expression: str, true_set) -> List[str]:
+        single_example = self.example_generator(expression=expression, expected_result=true_set, graph= graph).example
+        print(single_example)
+        predicted_instances = self.classifier(graph=graph, concept=expression, example= single_example)
+        print(predicted_instances)
+        predicted_instances = predicted_instances.classified_entities
+
+        return predicted_instances
+
+class PredictionModuleWithVerbalisation(dspy.Module):
     """A module that verbalises a DL expression and then classifies entities using the verbalisation."""
     def __init__(self):
         super().__init__()
@@ -84,8 +125,17 @@ class IRLLM:
         self.seed = seed
         self.llm_model = llm_model
         self.triples: List[str] = [] # Using type hint for clarity
-
+        self.namespaces_to_remove = [
+            "http://example.com/father#",
+            "http://www.w3.org/2002/07/owl#",
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+            "http://www.w3.org/XML/1998/namespace",
+            "http://www.w3.org/2001/XMLSchema#",
+            "http://www.w3.org/2000/01/rdf-schema#"
+        ]
         self._load_knowledge_graph()
+        manager = OntologyManager()
+        self.ontology = manager.load_ontology(self.kg_path)
 
     def _load_knowledge_graph(self):
         """Loads the knowledge graph from the specified path."""
@@ -117,6 +167,12 @@ class IRLLM:
         self.triples = [f"{str(s)} {str(p)} {str(o)}" for s, p, o in g]
         print(f"Successfully loaded {len(self.triples)} triples from {self.kg_path}")
 
+    def strip_namespaces(self, term):
+        term_str = str(term)
+        for ns in self.namespaces_to_remove:
+            if term_str.startswith(ns):
+                return term_str.replace(ns, "")
+        return term_str
 
     def evaluate(self, results_csv_path: str = "ALCQHI_Retrieval_Results.csv", output_csv_path: str = "Results.csv"):
         """
@@ -155,7 +211,56 @@ class IRLLM:
             sys.exit(1)
 
 
-        program = PredictionModule()
+        examples_generator = dspy.Predict(Examples)
+        syntax = """Manchester Syntax is a user-friendly, text-based format for writing OWL (Web Ontology Language) 
+        class expressions. It's designed to be more readable than XML or RDF serializations. It's commonly used in tools
+        like Protégé to define logical descriptions of concepts in an ontology.
+
+        Key Features:
+        Classes, properties, and individuals are written by name.
+        
+        Logical operators are written in a readable way:
+        
+        and for intersection (⊓)
+        
+        or for union (⊔)
+        
+        not for negation (¬)
+        
+        Property restrictions use natural language-like constructs:
+        
+        some for existential quantification (∃)
+        
+        only for universal quantification (∀)
+        
+        Examples:
+        Person and (hasChild some Doctor)
+        
+        A person who has at least one child who is a doctor.
+        
+        Animal and (hasPart only Leg)
+        
+        An animal all of whose parts are legs.
+        """
+        example_ce_result = {"hasChild some {markus , michelle , anna}": ['http://example.com/father#markus',
+                                                                          'http://example.com/father#stefan'],
+                             "hasChild min 1 person": ['http://example.com/father#markus',
+                                                       'http://example.com/father#martin',
+                                                       'http://example.com/father#anna',
+                                                       'http://example.com/father#stefan']}
+        examples = ""
+
+        for expression, true_set in example_ce_result.items():
+            examples += "\n\nExample {}:\n\n".format(list(example_ce_result.keys()).index(expression) + 1)
+            examples += examples_generator(expression=expression,
+                                           syntax=syntax,
+                                           expected_result={str(i) for i in true_set},
+                                           graph=self.triples).example
+
+
+        print(f"Examples: {examples}")
+
+        program = dspy.ChainOfThought(Classifier4)
 
         # Load the ground truth results CSV once
         if not os.path.exists(results_csv_path):
@@ -180,6 +285,7 @@ class IRLLM:
 
         evaluation_results: List[Dict[str, Any]] = []
         total_jaccard_similarity = 0.0 # Variable to sum Jaccard similarities
+        named_individuals = {ind.str for ind in self.ontology.individuals_in_signature()}
 
         print(f"\nStarting evaluation of {len(df_ground_truth)} concepts...")
 
@@ -190,19 +296,24 @@ class IRLLM:
         for index, row in (tqdm_bar :=tqdm(df_ground_truth.iterrows(), total=len(df_ground_truth), desc="Evaluating Concepts")):
             try:
                 concept = row.iloc[0] # Use iloc for potentially better performance and clarity
+                concept = owl_expression_to_manchester(dl_to_owl_expression(concept, namespace="http://example.com/father#"))
                 # Assuming the true instances are in the third column (index 2)
                 # and are stored as a string representation of a Python list/set
                 true_instances_str = row.iloc[2]
                 true_instances: Set[str] = set(ast.literal_eval(true_instances_str))
+                true_instances = {str(instance) for instance in true_instances}
 
                 # print(f"\nProcessing concept: {concept}") # Suppress verbose output in tqdm loop
                 # print(f"True instances: {true_instances}")
 
                 # Get predictions from the LLM
                 # Pass graph as a single string as required by the signature
-                predicted_instances_list = program(graph="\n".join(self.triples), dl_expression=concept)
+                predicted_instances_list = program(graph="\n".join(self.triples), concept=concept, examples=examples).classified_entities
+                # predicted_instances_list = program(graph="\n".join(self.triples), concept=concept).classified_entities
+
                 # Ensure predicted instances are unique and in a set for easy comparison
-                predicted_instances: Set[str] = set(predicted_instances_list)
+                predicted_instances: Set[str] = set(predicted_instances_list).intersection(named_individuals)
+
 
                 # print(f"Predicted instances: {predicted_instances}")
 
@@ -261,7 +372,7 @@ class IRLLM:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Instance Retrieval via LLM")
-    parser.add_argument("--kg_path", type=str, default="/home/cdemir/Desktop/Softwares/Ontolearn/KGs/Family/father.owl",
+    parser.add_argument("--kg_path", type=str, default="/home/alkid/PycharmProjects/dice-embeddings/KGs/Family/father.owl",
                         help="Path to the knowledge graph file (e.g., in OWL/XML format).")
     parser.add_argument("--base_url", type=str, default="http://harebell.cs.upb.de:8501/v1",
                         help="Base URL for the LLM API (e.g., OpenAI compatible endpoint).")
@@ -273,9 +384,9 @@ if __name__ == "__main__":
                         help="Seed for the LLM (for reproducibility if the LLM supports it).")
     parser.add_argument("--llm_model", type=str, default="tentris",
                         help="The name or identifier of the LLM model to use.")
-    parser.add_argument("--results_csv_path", type=str, default="ALCQHI_Retrieval_Results.csv",
+    parser.add_argument("--results_csv_path", type=str, default="ALCQHI_Retrieval_Results2.csv",
                         help="Path to the CSV file containing ground truth DL expressions and instances.")
-    parser.add_argument("--output_csv_path", type=str, default="Results.csv",
+    parser.add_argument("--output_csv_path", type=str, default="Results9.csv",
                         help="Path to save the evaluation results CSV.")
 
     args = parser.parse_args()
