@@ -332,76 +332,84 @@ class KGE(BaseInteractiveKGE):
         else:
             return torch.sigmoid(scores)
 
-    def predict_topk(self, *, h: Union[str, List[str]] = None,
-                     r: Union[str, List[str]] = None,
-                     t: Union[str, List[str]] = None,
-                     topk: int = 10, within: List[str] = None):
+    def predict_topk(
+        self,
+        *,
+        h: Union[str, List[str]] = None,
+        r: Union[str, List[str]] = None,
+        t: Union[str, List[str]] = None,
+        topk: int = 10,
+        within: List[str] = None
+    ):
         """
         Predict missing item in a given triple.
 
-
-
-        Parameter
-        ---------
-        head_entity: Union[str, List[str]]
-
-        String representation of selected entities.
-
-        relation: Union[str, List[str]]
-
-        String representation of selected relations.
-
-        tail_entity: Union[str, List[str]]
-
-        String representation of selected entities.
-
-
-        k: int
-
-        Highest ranked k item.
-
-        Returns: Tuple
-        ---------
-
-        Highest K scores and items
+        Returns:
+            - If you query a single (h, r, ?) or (?, r, t) or (h, ?, t), returns List[(item, score)]
+            - If you query a batch of B, returns List of B such lists.
         """
 
-        # (1) Sanity checking.
+        # (1) Sanity checking
         if h is not None:
-            assert isinstance(h, list) or isinstance(h,str)
+            assert isinstance(h, (list, str))
         if r is not None:
-            assert isinstance(r, list) or isinstance(r,str)
+            assert isinstance(r, (list, str))
         if t is not None:
-            assert isinstance(t, list) or isinstance(t,str)
-        # (2) Predict missing head entity given a relation and a tail entity.
+            assert isinstance(t, (list, str))
+
+        # --- Missing HEAD: (?, r, t) ---
         if h is None:
-            assert r is not None
-            assert t is not None
-            # ? r, t
-            scores = self.predict_missing_head_entity(r, t, within=within).flatten()
-            sort_scores, sort_idxs = torch.topk(scores, topk)
-            return [(self.idx_to_entity[idx_top_entity], scores.item()) for idx_top_entity, scores in
-                    zip(sort_idxs.tolist(), torch.sigmoid(sort_scores))]
+            assert r is not None and t is not None
+            flat   = self.predict_missing_head_entity(r, t, within).flatten()
+            H      = len(self.entity_to_idx)
+            T      = flat.numel() // H
+            scores = flat.view(H, T).t()     # now row i is [ f(h₁,r,tᵢ), …, f(h_H,r,tᵢ) ]
 
-        # (3) Predict missing relation given a head entity and a tail entity.
+            topk_scores, topk_idxs = torch.topk(scores, topk, dim=1)
+            topk_scores = torch.sigmoid(topk_scores).tolist()
+            topk_idxs   = topk_idxs.tolist()
+            lookup = self.idx_to_entity
+            all_results = [
+                [(lookup[idx], score) for idx, score in zip(row_idxs, row_scores)]
+                for row_idxs, row_scores in zip(topk_idxs, topk_scores)
+            ]
+            return all_results
+
+        # --- Missing RELATION: (h, ?, t) ---
         elif r is None:
-            assert h is not None
-            assert t is not None
-            # h ? t
-            scores = self.predict_missing_relations(h, t, within=within).flatten()
-            sort_scores, sort_idxs = torch.topk(scores, topk)
-            return [(self.idx_to_relations[idx_top_entity], scores.item()) for idx_top_entity, scores in
-                    zip(sort_idxs.tolist(), torch.sigmoid(sort_scores))]
+            assert h is not None and t is not None
+            flat   = self.predict_missing_relations(h, t, within).flatten()
+            H      = len(self.relation_to_idx)
+            T      = flat.numel() // H
+            scores = flat.view(H, T).t()     # now row i is [ f(h₁,r,tᵢ), …, f(h_H,r,tᵢ) ]
 
-        # (4) Predict missing tail entity given a head entity and a relation
+            topk_scores, topk_idxs = torch.topk(scores, topk, dim=1)
+            topk_scores = torch.sigmoid(topk_scores).tolist()
+            topk_idxs   = topk_idxs.tolist()
+            lookup = self.idx_to_relations
+            all_results = [
+                [(lookup[idx], score) for idx, score in zip(row_idxs, row_scores)]
+                for row_idxs, row_scores in zip(topk_idxs, topk_scores)
+            ]
+            return all_results
+
+        # --- Missing TAIL: (h, r, ?) ---
         elif t is None:
-            assert h is not None
-            assert r is not None
-            # h r ?t
-            scores = self.predict_missing_tail_entity(h, r, within=within).flatten()
-            sort_scores, sort_idxs = torch.topk(scores, topk)
-            return [(self.idx_to_entity[idx_top_entity], scores.item()) for idx_top_entity, scores in
-                    zip(sort_idxs.tolist(), torch.sigmoid(sort_scores))]
+            assert h is not None and r is not None
+            flat   = self.predict_missing_tail_entity(h, r, within).flatten()
+            H      = len(self.entity_to_idx)
+            T      = flat.numel() // H
+            scores = flat.view(H, T).t()     # now row i is [ f(h₁,r,tᵢ), …, f(h_H,r,tᵢ) ]
+
+            topk_scores, topk_idxs = torch.topk(scores, topk, dim=1)
+            topk_scores = torch.sigmoid(topk_scores).tolist()
+            topk_idxs   = topk_idxs.tolist()
+            lookup = self.idx_to_entity
+            all_results = [
+                [(lookup[idx], score) for idx, score in zip(row_idxs, row_scores)]
+                for row_idxs, row_scores in zip(topk_idxs, topk_scores)
+            ]
+            return all_results
         else:
             raise AttributeError('Use triple_score method')
 
