@@ -173,11 +173,8 @@ class KGE(BaseInteractiveKGE):
         else:
             tail_entity = torch.LongTensor([self.entity_to_idx[tail_entity]])
 
-        x = torch.stack((head_entity,
-                         relation.repeat(self.num_entities, ),
-                         tail_entity.repeat(self.num_entities, )), dim=1)
-        x = x.to(self.model.device)
-        return self.model(x)
+        x = torch.cartesian_prod(head_entity, relation, tail_entity)  # shape = (N * N_rels * T, 3)
+        return self.model(x.to(self.model.device))
 
     def predict_missing_relations(self, head_entity: Union[List[str], str],
                                   tail_entity: Union[List[str], str], within=None) -> Tuple:
@@ -218,10 +215,8 @@ class KGE(BaseInteractiveKGE):
             tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity])
         else:
             tail_entity = torch.LongTensor([self.entity_to_idx[tail_entity]])
-        x = torch.stack((head_entity.repeat(self.num_relations, ),
-                         relation,
-                         tail_entity.repeat(self.num_relations, )), dim=1)
-        return self.model(x)
+        x = torch.cartesian_prod(head_entity, relation, tail_entity)  # shape = (N * N_rels * T, 3)
+        return self.model(x.to(self.model.device))
 
     def predict_missing_tail_entity(self, head_entity: Union[List[str], str],
                                     relation: Union[List[str], str], within: List[str] = None) -> torch.FloatTensor:
@@ -272,7 +267,6 @@ class KGE(BaseInteractiveKGE):
                              t_encode), dim=1)
         else:
             tail_entity = torch.arange(0, len(self.entity_to_idx))
-
             if isinstance(head_entity, list):
                 head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity])
             else:
@@ -281,12 +275,9 @@ class KGE(BaseInteractiveKGE):
                 relation = torch.LongTensor([self.relation_to_idx[i] for i in relation])
             else:
                 relation = torch.LongTensor([self.relation_to_idx[relation]])
-
-            x = torch.stack((head_entity.repeat(self.num_entities, ),
-                             relation.repeat(self.num_entities, ),
-                             tail_entity), dim=1)
-        x = x.to(self.model.device)
-        return self.model(x)
+            x = torch.cartesian_prod(head_entity, relation, tail_entity)  # shape = (N * N_rels * T, 3)
+        return self.model(x.to(self.model.device))
+ 
 
     def predict(self, *, h: Union[List[str], str] = None, r: Union[List[str], str] = None,
                 t: Union[List[str], str] = None, within=None, logits=True) -> torch.FloatTensor:
