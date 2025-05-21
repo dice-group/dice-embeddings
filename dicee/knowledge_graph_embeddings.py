@@ -174,7 +174,16 @@ class KGE(BaseInteractiveKGE):
             tail_entity = torch.LongTensor([self.entity_to_idx[tail_entity]])
 
         x = torch.cartesian_prod(head_entity, relation, tail_entity)  # shape = (N * N_rels * T, 3)
-        return self.model(x.to(self.model.device))
+
+        scores = self.model(x.to(self.model.device))
+        H, R, T = head_entity.size(0), relation.size(0), tail_entity.size(0)
+        scores = scores.view(H, R, T)
+        scores = scores.permute(1, 2, 0)
+        scores = scores.contiguous().view(-1) 
+        #LF: we need this because the model returns the scores in the order:
+        # score in the from [h1 t times, h2 t times, h3 t times, ...]
+        # idk if this is the ideal fix, but seems to be working :v
+        return scores
 
     def predict_missing_relations(self, head_entity: Union[List[str], str],
                                   tail_entity: Union[List[str], str], within=None) -> Tuple:
@@ -360,10 +369,10 @@ class KGE(BaseInteractiveKGE):
         # --- Missing HEAD: (?, r, t) ---
         if h is None:
             assert r is not None and t is not None
-            flat   = self.predict_missing_head_entity(r, t, within).flatten()
-            H      = len(self.entity_to_idx)
-            T      = flat.numel() // H
-            scores = flat.view(H, T).t()     # now row i is [ f(h₁,r,tᵢ), …, f(h_H,r,tᵢ) ]
+            flat_scores   = self.predict_missing_head_entity(r, t, within)
+            all_entities      = len(self.entity_to_idx)
+            number_of_predictions = flat_scores.numel() // all_entities
+            scores = flat_scores.view(number_of_predictions, all_entities)
 
             topk_scores, topk_idxs = torch.topk(scores, topk, dim=1)
             topk_scores = torch.sigmoid(topk_scores).tolist()
@@ -378,10 +387,10 @@ class KGE(BaseInteractiveKGE):
         # --- Missing RELATION: (h, ?, t) ---
         elif r is None:
             assert h is not None and t is not None
-            flat   = self.predict_missing_relations(h, t, within).flatten()
-            H      = len(self.relation_to_idx)
-            T      = flat.numel() // H
-            scores = flat.view(H, T).t()     # now row i is [ f(h₁,r,tᵢ), …, f(h_H,r,tᵢ) ]
+            flat_scores   = self.predict_missing_relations(h, t, within)
+            all_relations      = len(self.relation_to_idx)
+            number_of_predictions = flat_scores.numel() // all_relations
+            scores = flat_scores.view(number_of_predictions, all_relations)
 
             topk_scores, topk_idxs = torch.topk(scores, topk, dim=1)
             topk_scores = torch.sigmoid(topk_scores).tolist()
@@ -396,10 +405,12 @@ class KGE(BaseInteractiveKGE):
         # --- Missing TAIL: (h, r, ?) ---
         elif t is None:
             assert h is not None and r is not None
-            flat   = self.predict_missing_tail_entity(h, r, within).flatten()
-            H      = len(self.entity_to_idx)
-            T      = flat.numel() // H
-            scores = flat.view(H, T).t()     # now row i is [ f(h₁,r,tᵢ), …, f(h_H,r,tᵢ) ]
+            
+            flat_scores   = self.predict_missing_tail_entity(h, r, within)
+            
+            all_entities      = len(self.entity_to_idx)
+            number_of_predictions = flat_scores.numel() // all_entities
+            scores = flat_scores.view(number_of_predictions, all_entities)
 
             topk_scores, topk_idxs = torch.topk(scores, topk, dim=1)
             topk_scores = torch.sigmoid(topk_scores).tolist()
