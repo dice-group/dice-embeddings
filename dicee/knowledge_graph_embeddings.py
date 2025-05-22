@@ -162,7 +162,6 @@ class KGE(BaseInteractiveKGE):
 
         Highest K scores and entities
         """
-
         head_entity = torch.arange(0, len(self.entity_to_idx))
         if isinstance(relation, list):
             relation = torch.LongTensor([self.relation_to_idx[i] for i in relation])
@@ -173,15 +172,34 @@ class KGE(BaseInteractiveKGE):
         else:
             tail_entity = torch.LongTensor([self.entity_to_idx[tail_entity]])
 
-        number_of_rows = tail_entity.size(0) * relation.size(0)  # this is the number of queries we need to compute in total 
-                                                                     # -> each query computes scores for all head entities
-        scores = torch.zeros(number_of_rows * head_entity.size(0))
-        x_ = torch.cartesian_prod(tail_entity, relation, head_entity)  # shape = (N * N_rels * T, 3)
-        x = x_[:, [2, 1, 0]] 
-        for i in range(0, number_of_rows, batch_size):
-            batch_end = min(i + batch_size, number_of_rows)
-            y = x[i*head_entity.size(0):batch_end * head_entity.size(0), :]  # shape = (N * N_rels * T, 3)
-            scores[i*head_entity.size(0):batch_end * head_entity.size(0)] = self.model(y.to(self.model.device))
+        # Generate all (tail, relation) pairs
+        tr_pairs = torch.cartesian_prod(tail_entity, relation)  # Shape: (num_tr_pairs, 2)
+        num_tr_pairs = tr_pairs.size(0)
+        H = head_entity.size(0)
+        scores = torch.zeros(num_tr_pairs * H)  # Pre-allocate scores
+
+        # Process in batches of (t, r) pairs
+        batch_size_tr = batch_size  # Adjust batch_size to control memory usage
+        device = self.model.device
+
+        for i in range(0, num_tr_pairs, batch_size_tr):
+            batch_tr = tr_pairs[i:i + batch_size_tr]  # Current batch of (t, r)
+            t_batch = batch_tr[:, 0]
+            r_batch = batch_tr[:, 1]
+            B = t_batch.size(0)
+            
+            # Generate triples (h, r, t) for this batch
+            h = head_entity.repeat(B).to(device)  # h: [h0, h1..., hN, h0, h1..., ... (B times)]
+            r = r_batch.repeat_interleave(H).to(device)
+            t = t_batch.repeat_interleave(H).to(device)
+            triples = torch.stack([h, r, t], dim=1)
+            
+            # Compute scores and store
+            batch_scores = self.model(triples)  # Move to CPU if needed
+            start_idx = i * H
+            end_idx = start_idx + B * H
+            scores[start_idx:end_idx] = batch_scores
+
         return scores
 
     def predict_missing_relations(self, head_entity: Union[List[str], str],
@@ -212,9 +230,7 @@ class KGE(BaseInteractiveKGE):
 
         Highest K scores and entities
         """
-
         relation = torch.arange(0, len(self.relation_to_idx))
-
         if isinstance(head_entity, list):
             head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity])
         else:
@@ -223,14 +239,33 @@ class KGE(BaseInteractiveKGE):
             tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity])
         else:
             tail_entity = torch.LongTensor([self.entity_to_idx[tail_entity]])
-        number_of_rows = head_entity.size(0) * tail_entity.size(0)
-        scores = torch.zeros(number_of_rows * relation.size(0))
-        x_ = torch.cartesian_prod(relation, head_entity, tail_entity)  # shape = (N * N_rels * T, 3)
-        x = x_[:, [1, 0, 2]] 
-        for i in range(0, number_of_rows, batch_size):
-            batch_end = min(i + batch_size, number_of_rows)
-            y = x[i*relation.size(0):batch_end * relation.size(0), :]  # shape = (N * N_rels * T, 3)
-            scores[i*relation.size(0):batch_end * relation.size(0)] = self.model(y.to(self.model.device))
+
+        # Generate all (head, tail) pairs
+        ht_pairs = torch.cartesian_prod(head_entity, tail_entity)  # Shape: (num_ht_pairs, 2)
+        num_ht_pairs = ht_pairs.size(0)
+        R = relation.size(0)
+        scores = torch.zeros(num_ht_pairs * R)  # Pre-allocate score tensor
+
+        batch_size_ht = batch_size
+        device = self.model.device
+
+        for i in range(0, num_ht_pairs, batch_size_ht):
+            batch_ht = ht_pairs[i:i + batch_size_ht]
+            h_batch = batch_ht[:, 0]
+            t_batch = batch_ht[:, 1]
+            B = h_batch.size(0)
+
+            # Generate triples (h, r, t)
+            h = h_batch.repeat_interleave(R).to(device)
+            r = relation.repeat(B).to(device)
+            t = t_batch.repeat_interleave(R).to(device)
+            triples = torch.stack([h, r, t], dim=1)
+
+            batch_scores = self.model(triples)
+            start_idx = i * R
+            end_idx = start_idx + B * R
+            scores[start_idx:end_idx] = batch_scores
+
         return scores
 
     def predict_missing_tail_entity(self, head_entity: Union[List[str], str],
@@ -290,13 +325,35 @@ class KGE(BaseInteractiveKGE):
                 relation = torch.LongTensor([self.relation_to_idx[i] for i in relation])
             else:
                 relation = torch.LongTensor([self.relation_to_idx[relation]])
-            number_of_rows = head_entity.size(0) * relation.size(0)
-            scores = torch.zeros(number_of_rows * tail_entity.size(0))
-            x = torch.cartesian_prod(head_entity, relation, tail_entity)  # shape = (N * N_rels * T, 3)
-            for i in range(0, number_of_rows, batch_size):
-                batch_end = min(i + batch_size, number_of_rows)
-                y = x[i*tail_entity.size(0):batch_end * tail_entity.size(0), :]  # shape = (N * N_rels * T, 3)
-                scores[i*tail_entity.size(0):batch_end * tail_entity.size(0)] = self.model(y.to(self.model.device))
+
+            # Generate all (head, relation) pairs
+            hr_pairs = torch.cartesian_prod(head_entity, relation)  # Shape: (num_hr_pairs, 2)
+            num_hr_pairs = hr_pairs.size(0)
+            T = tail_entity.size(0)
+            scores = torch.zeros(num_hr_pairs * T)  # Pre-allocate score tensor
+
+            # Process in batches
+            batch_size_hr = batch_size  # Adjust as needed
+            device = self.model.device
+
+            for i in range(0, num_hr_pairs, batch_size_hr):
+                batch_hr = hr_pairs[i:i + batch_size_hr]  # Current batch of (h, r)
+                h_batch = batch_hr[:, 0]
+                r_batch = batch_hr[:, 1]
+                B = h_batch.size(0)
+
+                # Generate triples (h, r, t) for this batch
+                h = h_batch.repeat_interleave(T).to(device)
+                r = r_batch.repeat_interleave(T).to(device)
+                t = tail_entity.repeat(B).to(device)
+                triples = torch.stack([h, r, t], dim=1)
+
+                # Compute scores and store
+                batch_scores = self.model(triples)
+                start_idx = i * T
+                end_idx = start_idx + B * T
+                scores[start_idx:end_idx] = batch_scores
+
         return scores
 
     def predict(self, *, h: Union[List[str], str] = None, r: Union[List[str], str] = None,
