@@ -136,7 +136,7 @@ class KGE(BaseInteractiveKGE):
                                er_vocab=None, re_vocab=None)
 
     def predict_missing_head_entity(self, relation: Union[List[str], str], tail_entity: Union[List[str], str],
-                                    within=None) -> Tuple:
+                                    within=None, batch_size = 2) -> Tuple:
         """
         Given a relation and a tail entity, return top k ranked head entity.
 
@@ -173,20 +173,19 @@ class KGE(BaseInteractiveKGE):
         else:
             tail_entity = torch.LongTensor([self.entity_to_idx[tail_entity]])
 
-        x = torch.cartesian_prod(head_entity, relation, tail_entity)  # shape = (N * N_rels * T, 3)
-
-        scores = self.model(x.to(self.model.device))
-        H, R, T = head_entity.size(0), relation.size(0), tail_entity.size(0)
-        scores = scores.view(H, R, T)
-        scores = scores.permute(1, 2, 0)
-        scores = scores.contiguous().view(-1) 
-        #LF: we need this because the model returns the scores in the order:
-        # score in the from [h1 t times, h2 t times, h3 t times, ...]
-        # idk if this is the ideal fix, but seems to be working :v
+        number_of_rows = tail_entity.size(0) * relation.size(0)  # this is the number of queries we need to compute in total 
+                                                                     # -> each query computes scores for all head entities
+        scores = torch.zeros(number_of_rows * head_entity.size(0))
+        x_ = torch.cartesian_prod(tail_entity, relation, head_entity)  # shape = (N * N_rels * T, 3)
+        x = x_[:, [2, 1, 0]] 
+        for i in range(0, number_of_rows, batch_size):
+            batch_end = min(i + batch_size, number_of_rows)
+            y = x[i*head_entity.size(0):batch_end * head_entity.size(0), :]  # shape = (N * N_rels * T, 3)
+            scores[i*head_entity.size(0):batch_end * head_entity.size(0)] = self.model(y.to(self.model.device))
         return scores
 
     def predict_missing_relations(self, head_entity: Union[List[str], str],
-                                  tail_entity: Union[List[str], str], within=None) -> Tuple:
+                                  tail_entity: Union[List[str], str], within=None, batch_size = 2) -> Tuple:
         """
         Given a head entity and a tail entity, return top k ranked relations.
 
@@ -224,11 +223,18 @@ class KGE(BaseInteractiveKGE):
             tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity])
         else:
             tail_entity = torch.LongTensor([self.entity_to_idx[tail_entity]])
-        x = torch.cartesian_prod(head_entity, relation, tail_entity)  # shape = (N * N_rels * T, 3)
-        return self.model(x.to(self.model.device))
+        number_of_rows = head_entity.size(0) * tail_entity.size(0)
+        scores = torch.zeros(number_of_rows * relation.size(0))
+        x_ = torch.cartesian_prod(relation, head_entity, tail_entity)  # shape = (N * N_rels * T, 3)
+        x = x_[:, [1, 0, 2]] 
+        for i in range(0, number_of_rows, batch_size):
+            batch_end = min(i + batch_size, number_of_rows)
+            y = x[i*relation.size(0):batch_end * relation.size(0), :]  # shape = (N * N_rels * T, 3)
+            scores[i*relation.size(0):batch_end * relation.size(0)] = self.model(y.to(self.model.device))
+        return scores
 
     def predict_missing_tail_entity(self, head_entity: Union[List[str], str],
-                                    relation: Union[List[str], str], within: List[str] = None) -> torch.FloatTensor:
+                                    relation: Union[List[str], str], within: List[str] = None, batch_size = 2) -> torch.FloatTensor:
         """
         Given a head entity and a relation, return top k ranked entities
 
@@ -284,9 +290,14 @@ class KGE(BaseInteractiveKGE):
                 relation = torch.LongTensor([self.relation_to_idx[i] for i in relation])
             else:
                 relation = torch.LongTensor([self.relation_to_idx[relation]])
+            number_of_rows = head_entity.size(0) * relation.size(0)
+            scores = torch.zeros(number_of_rows * tail_entity.size(0))
             x = torch.cartesian_prod(head_entity, relation, tail_entity)  # shape = (N * N_rels * T, 3)
-        return self.model(x.to(self.model.device))
- 
+            for i in range(0, number_of_rows, batch_size):
+                batch_end = min(i + batch_size, number_of_rows)
+                y = x[i*tail_entity.size(0):batch_end * tail_entity.size(0), :]  # shape = (N * N_rels * T, 3)
+                scores[i*tail_entity.size(0):batch_end * tail_entity.size(0)] = self.model(y.to(self.model.device))
+        return scores
 
     def predict(self, *, h: Union[List[str], str] = None, r: Union[List[str], str] = None,
                 t: Union[List[str], str] = None, within=None, logits=True) -> torch.FloatTensor:
@@ -348,7 +359,8 @@ class KGE(BaseInteractiveKGE):
         r: Union[str, List[str]] = None,
         t: Union[str, List[str]] = None,
         topk: int = 10,
-        within: List[str] = None
+        within: List[str] = None,
+        batch_size: int = 1024
     ):
         """
         Predict missing item in a given triple.
@@ -369,7 +381,7 @@ class KGE(BaseInteractiveKGE):
         # --- Missing HEAD: (?, r, t) ---
         if h is None:
             assert r is not None and t is not None
-            flat_scores   = self.predict_missing_head_entity(r, t, within)
+            flat_scores   = self.predict_missing_head_entity(r, t, within, batch_size)
             all_entities      = len(self.entity_to_idx)
             number_of_predictions = flat_scores.numel() // all_entities
             scores = flat_scores.view(number_of_predictions, all_entities)
@@ -387,7 +399,7 @@ class KGE(BaseInteractiveKGE):
         # --- Missing RELATION: (h, ?, t) ---
         elif r is None:
             assert h is not None and t is not None
-            flat_scores   = self.predict_missing_relations(h, t, within)
+            flat_scores   = self.predict_missing_relations(h, t, within, batch_size)
             all_relations      = len(self.relation_to_idx)
             number_of_predictions = flat_scores.numel() // all_relations
             scores = flat_scores.view(number_of_predictions, all_relations)
@@ -406,7 +418,7 @@ class KGE(BaseInteractiveKGE):
         elif t is None:
             assert h is not None and r is not None
             
-            flat_scores   = self.predict_missing_tail_entity(h, r, within)
+            flat_scores   = self.predict_missing_tail_entity(h, r, within, batch_size)
             
             all_entities      = len(self.entity_to_idx)
             number_of_predictions = flat_scores.numel() // all_entities
