@@ -315,6 +315,7 @@ class KGE(BaseInteractiveKGE):
             x = torch.stack((torch.repeat_interleave(input=h_encode, repeats=num_entities, dim=0),
                              torch.repeat_interleave(input=r_encode, repeats=num_entities, dim=0),
                              t_encode), dim=1)
+            return self.model(x)
         else:
             tail_entity = torch.arange(0, len(self.entity_to_idx))
             if isinstance(head_entity, list):
