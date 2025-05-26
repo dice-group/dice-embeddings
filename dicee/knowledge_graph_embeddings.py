@@ -382,18 +382,12 @@ class KGE(BaseInteractiveKGE):
 
             for i in range(0, num_hr_pairs, batch_size_hr):
                 batch_hr = hr_pairs[i:i + batch_size_hr]  # Current batch of (h, r)
-                h_batch = batch_hr[:, 0]
-                r_batch = batch_hr[:, 1]
-                B = h_batch.size(0)
+                batch_hr = batch_hr.to(device)
+                B = batch_hr.size(0)
 
-                # Generate triples (h, r, t) for this batch
-                h = h_batch.repeat_interleave(T).to(device)
-                r = r_batch.repeat_interleave(T).to(device)
-                t = tail_entity.repeat(B).to(device)
-                triples = torch.stack([h, r, t], dim=1)
 
                 # Compute scores and store
-                batch_scores = self.model(triples).view(B, T)
+                batch_scores = self.model(batch_hr).view(B, T)
                 
                 if return_indices:
                     # Store top-k scores and indices
