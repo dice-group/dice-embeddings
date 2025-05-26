@@ -136,7 +136,7 @@ class KGE(BaseInteractiveKGE):
                                er_vocab=None, re_vocab=None)
 
     def predict_missing_head_entity(self, relation: Union[List[str], str], tail_entity: Union[List[str], str],
-                                    within=None, batch_size = 2) -> Tuple:
+                                    within=None, batch_size = 2, topk = 1, return_indices = False) -> Tuple:
         """
         Given a relation and a tail entity, return top k ranked head entity.
 
@@ -176,7 +176,14 @@ class KGE(BaseInteractiveKGE):
         tr_pairs = torch.cartesian_prod(tail_entity, relation)  # Shape: (num_tr_pairs, 2)
         num_tr_pairs = tr_pairs.size(0)
         H = head_entity.size(0)
-        scores = torch.zeros(num_tr_pairs * H)  # Pre-allocate scores
+        
+        if return_indices:
+            # For predict_topk: store only top-k scores and indices
+            scores = torch.zeros(num_tr_pairs, topk)  # Pre-allocate score tensor
+            indices = torch.zeros(num_tr_pairs, topk, dtype=torch.long)  # Pre-allocate indices tensor
+        else:
+            # For predict: store all entity scores
+            scores = torch.zeros(num_tr_pairs * H)  # Pre-allocate scores
 
         # Process in batches of (t, r) pairs
         batch_size_tr = batch_size  # Adjust batch_size to control memory usage
@@ -195,15 +202,26 @@ class KGE(BaseInteractiveKGE):
             triples = torch.stack([h, r, t], dim=1)
             
             # Compute scores and store
-            batch_scores = self.model(triples)  # Move to CPU if needed
-            start_idx = i * H
-            end_idx = start_idx + B * H
-            scores[start_idx:end_idx] = batch_scores
+            batch_scores = self.model(triples).view(B, H)
+            
+            if return_indices:
+                # Store top-k scores and indices
+                topk_scores, topk_idxs = torch.topk(batch_scores, topk, dim=1)
+                scores[i:i + batch_size_tr, :] = topk_scores
+                indices[i:i + batch_size_tr, :] = topk_idxs
+            else:
+                # Store all scores
+                start_idx = i * H
+                end_idx = start_idx + B * H
+                scores[start_idx:end_idx] = batch_scores.flatten()
 
-        return scores
+        if return_indices:
+            return scores.flatten(), indices.flatten()
+        else:
+            return scores
 
     def predict_missing_relations(self, head_entity: Union[List[str], str],
-                                  tail_entity: Union[List[str], str], within=None, batch_size = 2) -> Tuple:
+                                  tail_entity: Union[List[str], str], within=None, batch_size = 2, topk = 1, return_indices = False) -> Tuple:
         """
         Given a head entity and a tail entity, return top k ranked relations.
 
@@ -244,7 +262,14 @@ class KGE(BaseInteractiveKGE):
         ht_pairs = torch.cartesian_prod(head_entity, tail_entity)  # Shape: (num_ht_pairs, 2)
         num_ht_pairs = ht_pairs.size(0)
         R = relation.size(0)
-        scores = torch.zeros(num_ht_pairs * R)  # Pre-allocate score tensor
+        
+        if return_indices:
+            # For predict_topk: store only top-k scores and indices
+            scores = torch.zeros(num_ht_pairs, topk)  # Pre-allocate score tensor
+            indices = torch.zeros(num_ht_pairs, topk, dtype=torch.long)  # Pre-allocate indices tensor
+        else:
+            # For predict: store all relation scores
+            scores = torch.zeros(num_ht_pairs * R)  # Pre-allocate score tensor
 
         batch_size_ht = batch_size
         device = self.model.device
@@ -261,15 +286,26 @@ class KGE(BaseInteractiveKGE):
             t = t_batch.repeat_interleave(R).to(device)
             triples = torch.stack([h, r, t], dim=1)
 
-            batch_scores = self.model(triples)
-            start_idx = i * R
-            end_idx = start_idx + B * R
-            scores[start_idx:end_idx] = batch_scores
+            batch_scores = self.model(triples).view(B, R)
+            
+            if return_indices:
+                # Store top-k scores and indices
+                topk_scores, topk_idxs = torch.topk(batch_scores, topk, dim=1)
+                scores[i:i + batch_size_ht, :] = topk_scores
+                indices[i:i + batch_size_ht, :] = topk_idxs
+            else:
+                # Store all scores
+                start_idx = i * R
+                end_idx = start_idx + B * R
+                scores[start_idx:end_idx] = batch_scores.flatten()
 
-        return scores
+        if return_indices:
+            return scores.flatten(), indices.flatten()
+        else:
+            return scores
 
     def predict_missing_tail_entity(self, head_entity: Union[List[str], str],
-                                    relation: Union[List[str], str], within: List[str] = None, batch_size = 2) -> torch.FloatTensor:
+                                    relation: Union[List[str], str], within: List[str] = None, batch_size = 2, topk = 1, return_indices = False) -> torch.FloatTensor:
         """
         Given a head entity and a relation, return top k ranked entities
 
@@ -331,7 +367,14 @@ class KGE(BaseInteractiveKGE):
             hr_pairs = torch.cartesian_prod(head_entity, relation)  # Shape: (num_hr_pairs, 2)
             num_hr_pairs = hr_pairs.size(0)
             T = tail_entity.size(0)
-            scores = torch.zeros(num_hr_pairs * T)  # Pre-allocate score tensor
+            
+            if return_indices:
+                # For predict_topk: store only top-k scores and indices
+                scores = torch.zeros(num_hr_pairs, topk)  # Pre-allocate score tensor
+                indices = torch.zeros(num_hr_pairs, topk, dtype=torch.long)  # Pre-allocate indices tensor
+            else:
+                # For predict: store all entity scores
+                scores = torch.zeros(num_hr_pairs * T)  # Flat tensor for all scores
 
             # Process in batches
             batch_size_hr = batch_size  # Adjust as needed
@@ -350,12 +393,23 @@ class KGE(BaseInteractiveKGE):
                 triples = torch.stack([h, r, t], dim=1)
 
                 # Compute scores and store
-                batch_scores = self.model(triples)
-                start_idx = i * T
-                end_idx = start_idx + B * T
-                scores[start_idx:end_idx] = batch_scores
+                batch_scores = self.model(triples).view(B, T)
+                
+                if return_indices:
+                    # Store top-k scores and indices
+                    topk_scores, topk_idxs = torch.topk(batch_scores, topk, dim=1)
+                    scores[i:i + batch_size_hr, :] = topk_scores
+                    indices[i:i + batch_size_hr, :] = topk_idxs
+                else:
+                    # Store all scores
+                    start_idx = i * T
+                    end_idx = start_idx + B * T
+                    scores[start_idx:end_idx] = batch_scores.flatten()
 
-        return scores
+        if return_indices:
+            return scores.flatten(), indices.flatten()
+        else:
+            return scores
 
     def predict(self, *, h: Union[List[str], str] = None, r: Union[List[str], str] = None,
                 t: Union[List[str], str] = None, within=None, logits=True) -> torch.FloatTensor:
@@ -389,19 +443,19 @@ class KGE(BaseInteractiveKGE):
             assert r is not None
             assert t is not None
             # ? r, t
-            scores = self.predict_missing_head_entity(r, t, within)
+            scores = self.predict_missing_head_entity(r, t, within, batch_size=2, topk=len(self.entity_to_idx), return_indices=False)
         # (3) Predict missing relation given a head entity and a tail entity.
         elif r is None:
             assert h is not None
             assert t is not None
             # h ? t
-            scores = self.predict_missing_relations(h, t, within)
+            scores = self.predict_missing_relations(h, t, within, batch_size=2, topk=len(self.relation_to_idx), return_indices=False)
         # (4) Predict missing tail entity given a head entity and a relation
         elif t is None:
             assert h is not None
             assert r is not None
             # h r ?
-            scores = self.predict_missing_tail_entity(h, r, within)
+            scores = self.predict_missing_tail_entity(h, r, within, batch_size=2, topk=len(self.entity_to_idx), return_indices=False)
         else:
             scores = self.triple_score(h, r, t, logits=True)
 
@@ -439,15 +493,25 @@ class KGE(BaseInteractiveKGE):
         # --- Missing HEAD: (?, r, t) ---
         if h is None:
             assert r is not None and t is not None
-            flat_scores   = self.predict_missing_head_entity(r, t, within, batch_size)
-            all_entities      = len(self.entity_to_idx)
-            number_of_predictions = flat_scores.numel() // all_entities
-            scores = flat_scores.view(number_of_predictions, all_entities)
-
-            topk_scores, topk_idxs = torch.topk(scores, topk, dim=1)
-            topk_scores = torch.sigmoid(topk_scores).tolist()
-            topk_idxs   = topk_idxs.tolist()
+            flat_scores, flat_indices = self.predict_missing_head_entity(r, t, within, batch_size, topk, return_indices=True)
+            
+            # Convert input to lists if they're strings
+            if isinstance(r, str):
+                r = [r]
+            if isinstance(t, str):
+                t = [t]
+            
+            num_rt_pairs = len(r) * len(t)
+            
+            # Reshape to (num_rt_pairs, topk)
+            scores_2d = flat_scores.view(num_rt_pairs, topk)
+            indices_2d = flat_indices.view(num_rt_pairs, topk)
+            
+            # Convert to the expected format
+            topk_scores = torch.sigmoid(scores_2d).tolist()
+            topk_idxs = indices_2d.tolist()
             lookup = self.idx_to_entity
+            
             all_results = [
                 [(lookup[idx], score) for idx, score in zip(row_idxs, row_scores)]
                 for row_idxs, row_scores in zip(topk_idxs, topk_scores)
@@ -457,15 +521,25 @@ class KGE(BaseInteractiveKGE):
         # --- Missing RELATION: (h, ?, t) ---
         elif r is None:
             assert h is not None and t is not None
-            flat_scores   = self.predict_missing_relations(h, t, within, batch_size)
-            all_relations      = len(self.relation_to_idx)
-            number_of_predictions = flat_scores.numel() // all_relations
-            scores = flat_scores.view(number_of_predictions, all_relations)
-
-            topk_scores, topk_idxs = torch.topk(scores, topk, dim=1)
-            topk_scores = torch.sigmoid(topk_scores).tolist()
-            topk_idxs   = topk_idxs.tolist()
+            flat_scores, flat_indices = self.predict_missing_relations(h, t, within, batch_size, topk, return_indices=True)
+            
+            # Convert input to lists if they're strings
+            if isinstance(h, str):
+                h = [h]
+            if isinstance(t, str):
+                t = [t]
+            
+            num_ht_pairs = len(h) * len(t)
+            
+            # Reshape to (num_ht_pairs, topk)
+            scores_2d = flat_scores.view(num_ht_pairs, topk)
+            indices_2d = flat_indices.view(num_ht_pairs, topk)
+            
+            # Convert to the expected format
+            topk_scores = torch.sigmoid(scores_2d).tolist()
+            topk_idxs = indices_2d.tolist()
             lookup = self.idx_to_relations
+            
             all_results = [
                 [(lookup[idx], score) for idx, score in zip(row_idxs, row_scores)]
                 for row_idxs, row_scores in zip(topk_idxs, topk_scores)
@@ -476,20 +550,31 @@ class KGE(BaseInteractiveKGE):
         elif t is None:
             assert h is not None and r is not None
             
-            flat_scores   = self.predict_missing_tail_entity(h, r, within, batch_size)
+            # predict_missing_tail_entity now returns both scores and indices
+            flat_scores, flat_indices = self.predict_missing_tail_entity(h, r, within, batch_size, topk, return_indices=True)
             
-            all_entities      = len(self.entity_to_idx)
-            number_of_predictions = flat_scores.numel() // all_entities
-            scores = flat_scores.view(number_of_predictions, all_entities)
-
-            topk_scores, topk_idxs = torch.topk(scores, topk, dim=1)
-            topk_scores = torch.sigmoid(topk_scores).tolist()
-            topk_idxs   = topk_idxs.tolist()
+            # Convert input to lists if they're strings
+            if isinstance(h, str):
+                h = [h]
+            if isinstance(r, str):
+                r = [r]
+            
+            num_hr_pairs = len(h) * len(r)
+            
+            # Reshape to (num_hr_pairs, topk)
+            scores_2d = flat_scores.view(num_hr_pairs, topk)
+            indices_2d = flat_indices.view(num_hr_pairs, topk)
+            
+            # Convert to the expected format
+            topk_scores = torch.sigmoid(scores_2d).tolist()
+            topk_idxs = indices_2d.tolist()
             lookup = self.idx_to_entity
+            
             all_results = [
                 [(lookup[idx], score) for idx, score in zip(row_idxs, row_scores)]
                 for row_idxs, row_scores in zip(topk_idxs, topk_scores)
             ]
+            
             return all_results
         else:
             raise AttributeError('Use triple_score method')
