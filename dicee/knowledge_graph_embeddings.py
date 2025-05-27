@@ -1633,6 +1633,7 @@ class KGE(BaseInteractiveKGE):
         norm_type: str = "z-norm",
         batch_size: int = 1024,
         sampling_ratio: float = None,
+        random_seed = 1
     ):
         """
         Trains the Literal Embeddings model using literal data.
@@ -1648,6 +1649,8 @@ class KGE(BaseInteractiveKGE):
             sampling_ratio (float): Ratio of training triples to use.
         """
         # TODO : assign torch.seed to reproduice experiments
+        torch.manual_seed(random_seed)
+        torch.cuda.manual_seed_all(random_seed)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         dataset_name = os.path.basename(self.configs["dataset_dir"])
 
@@ -1699,6 +1702,7 @@ class KGE(BaseInteractiveKGE):
                 optimizer.zero_grad()
                 lit_entities = batch_x[:, 0].long().to(device)
                 lit_properties = batch_x[:, 1].long().to(device)
+                batch_y = batch_y.to(device)
                 yhat = literal_model(lit_entities, lit_properties)
                 lit_loss = F.l1_loss(yhat, batch_y)
                 lit_loss.backward()
@@ -1734,6 +1738,7 @@ class KGE(BaseInteractiveKGE):
             eval_file_path
         ), f"Path does not lead to a valid file: {eval_file_path}"
 
+        @staticmethod
         def denormalize(row, normalization_params, norm_type="z-norm"):
             """
             Reverts normalization of prediction values.
@@ -1784,9 +1789,8 @@ class KGE(BaseInteractiveKGE):
             prediction_path = os.path.join(self.path, "lit_predictions.csv")
             prediction_df.to_csv(prediction_path, index=False)
 
-        # Calculate and print error metrics
+        # Calculate,print and store error metrics
         if eval_literals:
-
             def compute_errors(group):
                 """
                 Computes MAE and RMSE for a group of predictions.

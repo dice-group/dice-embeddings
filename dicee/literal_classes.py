@@ -7,19 +7,6 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset
 from dicee.models.transformers import LayerNorm
 
-
-class GatedLinearUnit(nn.Module):
-    def __init__(self, input_dim):
-        super().__init__()
-        # output_dim * 2 because half for values, half for gates
-        self.proj = nn.Linear(input_dim, input_dim)
-
-    def forward(self, x):
-        x_proj = self.proj(x)
-        value, gate = x_proj.chunk(2, dim=-1)
-        return value * torch.sigmoid(gate)
-
-
 class GatedLinearUnit(nn.Module):
     """
     Applies a gated linear unit (GLU) operation:
@@ -27,16 +14,20 @@ class GatedLinearUnit(nn.Module):
     applies a sigmoid gate to one half and multiplies it with the other.
     """
 
-    def __init__(self, input_dim):
+    def __init__(self, input_dim, gated_residual = True):
         super().__init__()
-        self.proj = nn.Linear(
-            input_dim, input_dim
-        )  # Projection for both value and gate
+        self.proj1 = nn.Linear(input_dim, input_dim)
+        self.proj2 = nn.Linear(input_dim, input_dim)
+        self.gate_residual =  gated_residual 
 
-    def forward(self, x):
-        x_proj = self.proj(x)
-        value, gate = x_proj.chunk(2, dim=-1)  # Split into two parts
-        return value * torch.sigmoid(gate)  # Apply gating
+    def forward(self, x1, x2):
+        if self.gate_residual:
+            x1_proj = self.proj1(x1)
+            x2_proj = self.proj2(x2)
+            # Split into two parts
+            return x1_proj * torch.sigmoid(x2_proj)  # Apply gating
+        else:
+            return x1 + x2
 
 
 class LiteralEmbeddings(nn.Module):
@@ -50,6 +41,8 @@ class LiteralEmbeddings(nn.Module):
         embedding_dims: int,
         entity_embeddings: torch.tensor,
         dropout: float = 0.3,
+        gate_residual = True
+
     ):
         super().__init__()
         self.embedding_dim = embedding_dims
@@ -73,7 +66,7 @@ class LiteralEmbeddings(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
 
         # Gated residual layer with layer norm
-        self.gated_residual = GatedLinearUnit(self.hidden_dim * 2)
+        self.residual = GatedLinearUnit(self.hidden_dim, gate_residual)
         self.layer_norm = LayerNorm(self.hidden_dim, bias=True)
 
     def forward(self, e_idx, relation_idx):
@@ -96,12 +89,10 @@ class LiteralEmbeddings(nn.Module):
         z = self.dropout(F.relu(self.fc(tuple_emb)))  # [batch, 2 * emb_dim]
 
         # Gated residual connection: combine original (tuple) + transformed embeddings
-        gated = self.gated_residual(
-            torch.cat((z, tuple_emb), dim=1)
-        )  # [batch, 2 * hidden]
+        residual = self.residual(z, tuple_emb)  # [batch, 2 * hidden]
 
         # Output scalar prediction and flatten to 1D
-        out = self.fc_out(gated).flatten()  # [batch]
+        out = self.fc_out(residual).flatten()  # [batch]
         return out
 
 
