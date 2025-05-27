@@ -2,9 +2,11 @@ import os.path
 from typing import List, Tuple, Set, Iterable, Dict, Union
 import torch
 from torch import optim
+from tqdm import tqdm
 from torch.utils.data import DataLoader
 from .abstracts import BaseInteractiveKGE
 from .dataset_classes import TriplePredictionDataset
+from .literal_classes import LiteralDataset, LiteralEmbeddings
 from .static_funcs import (
     random_prediction,
     deploy_triple_prediction,
@@ -20,7 +22,6 @@ import sys
 import traceback
 import torch.nn.functional as F
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
-from collections import defaultdict
 
 
 class KGE(BaseInteractiveKGE):
@@ -1624,301 +1625,183 @@ class KGE(BaseInteractiveKGE):
 
     def train_literals(
         self,
-        file_path: str = None,
-        num_epochs: int = 1000,
-        lr: int = 0.01,
-        train_rel: list = None,
+        train_file_path: str = None,
+        num_epochs: int = 100,
+        lit_lr: float = 0.001,
+        eval_litreal_preds: bool = True,
+        eval_file_path: str = None,
+        norm_type: str = "z-norm",
+        batch_size: int = 1024,
+        sampling_ratio: float = None,
     ):
-        "Function to train regression model for literals with pre-trained KG-Embeddings"
+        """
+        Trains the Literal Embeddings model using literal data.
 
-        assert os.path.isfile(file_path), f"Path is not lead to a file see {file_path}"
+        Args:
+            train_file_path (str): Path to the training data file.
+            num_epochs (int): Number of training epochs.
+            lit_lr (float): Learning rate for the literal model.
+            eval_litreal_preds (bool): If True, evaluate the model after training.
+            eval_file_path (str): Path to evaluation data file.
+            norm_type (str): Normalization type to use ('z-norm', 'min-max', or None).
+            batch_size (int): Batch size for training.
+            sampling_ratio (float): Ratio of training triples to use.
+        """
+        # TODO : assign torch.seed to reproduice experiments
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        dataset_name = os.path.basename(self.configs["dataset_dir"])
 
-        ## TODOs : make sure the triples have literal tails
+        # Literal configs
+        literal_configs = dict()
+        literal_configs["norm_type"] = norm_type
+        literal_configs["dataset_name"] = dataset_name
+        literal_configs["lit_lr"] = lit_lr
+        literal_configs["num_epochs"] = num_epochs
+        literal_configs["model_name"] = self.model.name
 
-        df = pd.read_csv(
-            file_path, sep="\t", header=None, names=["head", "relation", "tail"]
-        )
-        df = df[df["head"].isin(self.entity_to_idx) & df["relation"].isin(train_rel)]
-        df["tail"] = df["tail"].astype(float)
-
-        unique_relations = df["relation"].unique()
-        self.data_property_to_idx = {
-            relation: idx for idx, relation in enumerate(unique_relations)
-        }
-
-        df["head_idx"] = df["head"].map(self.entity_to_idx)
-        df["rel_idx"] = df["relation"].map(self.data_property_to_idx)
-
-        # Calculate normalization parameters for each relation group
-        self.normalization_params = {}
-        for relation in unique_relations:
-            group_data = df.loc[df["relation"] == relation, "tail"]
-            mean = group_data.mean()
-            std = group_data.std()
-            self.normalization_params[relation] = {"mean": mean, "std": std}
-
-        # Normalize the tail values using the stored parameters
-        df["normalized_tail"] = df.apply(
-            lambda row: (
-                row["tail"] - self.normalization_params[row["relation"]]["mean"]
-            )
-            / self.normalization_params[row["relation"]]["std"],
-            axis=1,
+        # Prepare the dataset and DataLoader
+        literal_dataset = LiteralDataset(
+            file_path=train_file_path,
+            ent_idx=self.entity_to_idx,
+            normalization=literal_configs["norm_type"],
+            sampling_ratio=sampling_ratio,
         )
 
-        # Convert normalized tails and indices into PyTorch tensors
-        y_train = torch.FloatTensor(df["normalized_tail"].tolist())
-        X_train = torch.LongTensor(df[["head_idx", "rel_idx"]].values)
+        self.normalization_params = literal_dataset.normalization_params
+        self.data_property_to_idx = literal_dataset.data_property_to_idx
 
-        # # TODO:Refactoring needed.
-        class LiteralEmbeddings(torch.nn.Module):
-            def __init__(
-                self,
-                entity_embeddings=None,
-                num_of_data_properties: int = None,
-                dropout: float = 0.3,
-            ):
-                super().__init__()
-                self.pretrained_entity_embeddings = torch.nn.Embedding.from_pretrained(
-                    entity_embeddings, freeze=True
-                )
-                self.embeddings_dim = self.pretrained_entity_embeddings.embedding_dim
-
-                self.data_property_embeddings = torch.nn.Embedding(
-                    num_embeddings=num_of_data_properties,
-                    embedding_dim=self.embeddings_dim,
-                )
-                self.fc1 = torch.nn.Linear(
-                    in_features=self.embeddings_dim * 2,
-                    out_features=self.embeddings_dim * 2,
-                    bias=True,
-                )
-
-                self.fc2 = torch.nn.Linear(
-                    in_features=self.embeddings_dim * 2,
-                    out_features=1,
-                    bias=True,
-                )
-
-                self.dropout = torch.nn.Dropout(p=dropout)
-
-            def forward(self, x):
-                entity_idx, relation_idx = x[:, 0], x[:, 1]
-                head_entity_embeddings = self.pretrained_entity_embeddings(entity_idx)
-                relation_embeddings = self.data_property_embeddings(relation_idx)
-                tuple_embeddings = torch.concat(
-                    (head_entity_embeddings, relation_embeddings), dim=1
-                )
-                # Residual connection.
-                out1 = F.relu(self.fc1(tuple_embeddings))
-                out1 = self.dropout(out1)
-                out2 = self.fc2(out1 + tuple_embeddings)
-                return out2.flatten()
-
-        self.literal_model = LiteralEmbeddings(
-            entity_embeddings=self.model.entity_embeddings.weight,
-            num_of_data_properties=len(self.data_property_to_idx),
-        )
-        self.literal_model.train()
-        optimizer = torch.optim.Adam(self.literal_model.parameters(), lr=lr)
-        for i in range(num_epochs):
-            yhat = self.literal_model.forward(X_train)
-            loss = F.l1_loss(yhat, y_train)
-            if i % 100 == 0:
-                print(
-                    f"Epoch {i+1}/{num_epochs} - Loss: {loss.item():.4f}, Mean Prediction: {yhat.detach().mean().item():.4f}"
-                )
-
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad(set_to_none=True)
-
-    def predict_literals(self, h: Union[str, List[str]], r: Union[str, List[str]]):
-
-        h = [h] if isinstance(h, str) else h
-        r = [r] if isinstance(r, str) else r
-        assert len(h) == len(r)
-
-        x = torch.LongTensor(
-            [
-                (self.entity_to_idx[h_item], self.data_property_to_idx[r_item])
-                for h_item, r_item in zip(h, r)
-            ]
+        batch_data = DataLoader(
+            dataset=literal_dataset,
+            shuffle=True,
+            batch_size=batch_size,
         )
 
-        # x = torch.LongTensor([self.entity_to_idx[h], self.data_property_to_idx[r]]).reshape(1,2)
-        self.literal_model.eval()
-        with torch.no_grad():
-            pred = (self.literal_model.forward(x)).tolist()
-            # print(f"Prediction for Triple: {h},{r},\tPrediction:{pred}")
-        return pred
+        # Initialize the model
+        literal_model = LiteralEmbeddings(
+            num_of_data_properties=literal_dataset.num_data_properties,
+            embedding_dims=self.model.embedding_dim,
+            entity_embeddings=self.model.entity_embeddings,
+        ).to(device)
 
-    def evaluate_literal_prediction(
-        self, file_path: str = None, train_rel: list = None
+        optimizer = optim.Adam(literal_model.parameters(), lr=literal_configs["lit_lr"])
+        loss_log = {"lit_loss": []}
+        literal_model.train()
+
+        print(
+            f"Training Literal Embedding model on '{dataset_name}' dataset "
+            f"using pre-trained '{self.model.name}' embeddings."
+        )
+
+        # Training loop
+        for epoch in (tqdm_bar := tqdm(range(literal_configs["num_epochs"]))):
+            epoch_loss = 0
+            for batch_x, batch_y in batch_data:
+                optimizer.zero_grad()
+                lit_entities = batch_x[:, 0].long().to(device)
+                lit_properties = batch_x[:, 1].long().to(device)
+                yhat = literal_model(lit_entities, lit_properties)
+                lit_loss = F.l1_loss(yhat, batch_y)
+                lit_loss.backward()
+                optimizer.step()
+                epoch_loss += lit_loss
+
+            avg_epoch_loss = epoch_loss / len(batch_data)
+            tqdm_bar.set_postfix_str(f"loss_lit={lit_loss:.5f}")
+            loss_log["lit_loss"].append(avg_epoch_loss.item())
+
+        self.literal_model = literal_model
+        self.literal_configs = literal_configs
+        torch.save(literal_model.state_dict(), self.path + "/literal_model.pt")
+        if eval_litreal_preds:
+            self.predict_literals(eval_file_path=eval_file_path)
+
+    def predict_literals(
+        self,
+        eval_file_path: str = None,
+        store_lit_preds: bool = True,
+        eval_literals=True,
     ):
+        """
+        Evaluates the trained literal prediction model on a test file.
+
+        Args:
+            eval_file_path (str): Path to the evaluation file.
+
+        Returns:
+            None
+        """
         assert os.path.isfile(
-            file_path
-        ), f"Path does not lead to a file see {file_path}"
+            eval_file_path
+        ), f"Path does not lead to a valid file: {eval_file_path}"
 
-        def denormalize(
-            row,
-            normalization_params,
-        ):
-            type_stats = normalization_params[row["relation"]]
-            return (row["preds"] * type_stats["std"]) + type_stats["mean"]
+        def denormalize(row, normalization_params, norm_type="z-norm"):
+            """
+            Reverts normalization of prediction values.
+            """
+            if norm_type is None:
+                return row["preds_norm"]
+            type_stats = normalization_params[row["attr_idx"]]
 
-        # Compute MAE and RMSE for each relation
-        def compute_errors(group):
-            actuals = group["tail"]
-            predictions = group["denormalized_preds"]
-            mae = mean_absolute_error(actuals, predictions)
-            rmse = root_mean_squared_error(actuals, predictions)
-            return pd.Series({"MAE": mae, "RMSE": rmse})
+            if norm_type == "z-norm":
+                return (row["preds_norm"] * type_stats["std"]) + type_stats["mean"]
+            elif norm_type == "min-max":
+                return (
+                    row["preds_norm"] * (type_stats["max"] - type_stats["min"])
+                ) + type_stats["min"]
+            else:
+                raise ValueError(
+                    "Unsupported normalization type. Use 'z-norm', 'min-max', or None."
+                )
 
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        # Load and preprocess evaluation data
         test_df = pd.read_csv(
-            file_path, sep="\t", header=None, names=["head", "relation", "tail"]
+            eval_file_path, sep="\t", header=None, names=["head", "attribute", "tail"]
         )
         test_df = test_df[test_df["head"].isin(self.entity_to_idx.keys())]
-        lit_entities_test = test_df["head"].values
-        lit_properties_test = test_df["relation"].values
+        test_df["head_idx"] = test_df["head"].map(self.entity_to_idx)
+        test_df["attr_idx"] = test_df["attribute"].map(self.data_property_to_idx)
 
-        test_df["preds"] = self.predict_literals(lit_entities_test, lit_properties_test)
-        test_df["denormalized_preds"] = test_df.apply(
-            denormalize, axis=1, args=(self.normalization_params,)
+        entities = torch.LongTensor(test_df["head_idx"].values).to(device)
+        properties = torch.LongTensor(test_df["attr_idx"].values).to(device)
+
+        # Generate predictions
+        with torch.no_grad():
+            predictions = self.literal_model(entities, properties)
+
+        test_df["preds_norm"] = predictions.cpu().numpy()
+
+        # Apply denormalization
+        test_df["predictions"] = test_df.apply(
+            denormalize,
+            axis=1,
+            args=(self.normalization_params, self.literal_configs["norm_type"]),
         )
-        error_metrics = test_df.groupby("relation").apply(compute_errors).reset_index()
-        pd.options.display.float_format = "{:.6f}".format  # 6 decimal places
-        print(error_metrics)
 
-    """
-    
-    kg = KG(path_single_kg=path, backend="rdflib")
-    # Unique relations
-    unique_relations_str = kg.relations_str
-    # Iterate over relations
-    for rel in unique_relations_str:
-        # Extract relation index
-        rel_idx = kg.relation_to_idx[rel]
-        # Extract triples containing the given relation
-        filtered_rows = kg.train_set[kg.train_set[:, 1] == rel_idx]
+        if store_lit_preds:
+            prediction_df = test_df[["head", "attribute", "predictions"]]
+            prediction_path = os.path.join(self.path, "lit_predictions.csv")
+            prediction_df.to_csv(prediction_path, index=False)
 
-        print(filtered_rows)
+        # Calculate and print error metrics
+        if eval_literals:
 
-        exit(1)
-        h_idx=filtered_rows[:,0]
+            def compute_errors(group):
+                """
+                Computes MAE and RMSE for a group of predictions.
+                """
+                actuals = group["tail"]
+                predictions = group["predictions"]
+                mae = mean_absolute_error(actuals, predictions)
+                rmse = root_mean_squared_error(actuals, predictions)
+                return pd.Series({"MAE": mae, "RMSE": rmse})
 
-        # TODO: CD: We need to find a more generic approach
-        t_idx=filtered_rows[:,2].astype(float)
-        print("###")
-        print(h_idx)
-        print(rel_idx)
-        print(t_idx)
-
-    exit(1)
-
-    self.weight_dict  = {}
-    dataset = self.literal_KG
-    for rel in dataset.relations_str:
-        rel_name =rel.split(sep="#")[-1]
-        if rel_name in rel_to_predict:
-            rel_idx = dataset.relation_to_idx[rel]
-            filtered_rows = dataset.train_set[dataset.train_set[:, 1] == rel_idx]
-            h_idx, _, t_indx = filtered_rows.T.tolist()
-            head_entites = [dataset.idx_to_entity[idx] for idx in h_idx]
-            literal_values = [float(dataset.idx_to_entity[idx]) for idx in t_indx]
-            inputs  = self.get_entity_embeddings(head_entites)
-            assert len(inputs) == len(literal_values)
-            weights = torch.randn(inputs.shape[1], requires_grad=True)
-            y = torch.tensor([int(x) for x in literal_values])
-
-            learning_rate = 0.1
-            epochs = 100
-            losses = []
-            loss_fn = MSELoss()
-            for epoch in range(epochs):
-                # Zero the gradients from previous iteration
-                if weights.grad is not None:
-                    weights.grad.zero_()
-
-                product = inputs * weights # Dot product of weights and inputs
-                yhat = product.sum(dim=1)
-        
-                loss = loss_fn(yhat, y.float())
-
-                loss.backward()
-
-                with torch.no_grad(): 
-                    weights -= learning_rate * weights.grad
-
-                # # Step 8: Store and print the loss for tracking
-                losses.append(loss.item())
-                # if epoch % 10 == 0:
-                #     print(f'for relation {rel_name}, Epoch {epoch+1}/{epochs}, Loss: {loss.item()}')
-        self.weight_dict[rel] = weights
-    """
-
-    """
-    def predict_literals(self, h, r):
-        "Funtion to predict literals using pre-trained KGE models"
-        h_embed = self.get_entity_embeddings([h])[0]
-        w = self.weight_dict[r]
-        prod_sum = torch.sum(h_embed * w)
-        literal_value = prod_sum.item()
-        return literal_value
-
-    """
-    """
-    g = rdflib.Graph().parse(path)
-        # Extract unique data properties without brackets
-        self.data_property_to_idx = {
-            v: i
-            for i, v in enumerate(
-                (
-                    i.n3()[1:-1]
-                    for i in g.predicates(unique=True)
-                    if "type" not in i.n3()
-                )
+            lit_pred_errors = (
+                test_df.groupby("attribute").apply(compute_errors).reset_index()
             )
-        }
-        X, y = [], []
-        # Construct the training data.
-        data_list = []
-        for s, p, o in g:
-            if isinstance(o, rdflib.term.Literal):
-                X.append(
-                    (
-                        self.entity_to_idx[s.n3()[1:-1]],
-                        self.data_property_to_idx[p.n3()[1:-1]],
-                    )
-                )
-                y.append(float(o.toPython()))
-                data_list.append((s.n3()[1:-1], p.n3()[1:-1]))
-            else:
-                "We are only interested in data properties"
-                continue
-    
-    # from sklearn.metrics import mean_absolute_error
-
-        # self.literal_model.eval()
-        # with torch.no_grad():
-        #     y_pred = self.literal_model.forward(X_test)
-        # loss_item = mean_absolute_error(y_pred, y_test)
-        # print("Loss : ", loss_item)
-        # print("Eval")
-        # for s, p, o in g:
-        #     if isinstance(o, rdflib.term.Literal):
-
-        #         str_subject = s.n3()[1:-1]
-        #         str_predicate = p.n3()[1:-1]
-        #         numerical_literal = o.toPython()
-        #         pred = self.predict_literals(str_subject, str_predicate)
-        #         print(
-        #             f"Triple: {str_subject},{str_predicate}, {numerical_literal}\tPrediction:{round(pred[0],3)}"
-        #         )
-        #         # x= torch.LongTensor([self.entity_to_idx[str_subject], self.data_property_to_idx[str_predicate]]).reshape(1,2)
-        #         # with torch.no_grad():
-        #         #     print(f"Triple: {str_subject},{str_predicate}, {numerical_literal}\tPrediction:{round((self.literal_model.forward(x)).item(),3)}")
-        #     else:
-        #         "We are only interested in data properties"
-        #         continue
-    """
+            pd.options.display.float_format = "{:.6f}".format
+            print("Literal Prediction Results on Test Set")
+            print(lit_pred_errors)
+            results_path = os.path.join(self.path, "lit_results.csv")
+            lit_pred_errors.to_csv(results_path, index=False)
