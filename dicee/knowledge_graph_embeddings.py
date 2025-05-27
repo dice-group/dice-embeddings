@@ -17,6 +17,7 @@ class KGE(BaseInteractiveKGE):
 
     def __init__(self, path=None, url=None, construct_ensemble=False,
                  model_name=None):
+        self.all_have_inverse = all(f"{rel}_inverse" in self.relation_to_idx for rel in self.relation_to_idx.keys())
         super().__init__(path=path, url=url, construct_ensemble=construct_ensemble, model_name=model_name)
 
     def __str__(self):
@@ -487,14 +488,18 @@ class KGE(BaseInteractiveKGE):
         # --- Missing HEAD: (?, r, t) ---
         if h is None:
             assert r is not None and t is not None
-            flat_scores, flat_indices = self.predict_missing_head_entity(r, t, within, batch_size, topk, return_indices=True)
-            
             # Convert input to lists if they're strings
             if isinstance(r, str):
                 r = [r]
             if isinstance(t, str):
                 t = [t]
-            
+            if self.all_have_inverse:
+                # Use inverse relations for more efficient tail prediction
+                # (?, r, t) becomes (t, r_inverse, ?)
+                inverse_relations = [f"{rel}_inverse" for rel in r]
+                return self.predict_topk(h=t, r=inverse_relations, t=None, topk=topk, within=within, batch_size=batch_size)
+
+            flat_scores, flat_indices = self.predict_missing_head_entity(r, t, within, batch_size, topk, return_indices=True)
             num_rt_pairs = len(r) * len(t)
             
             # Reshape to (num_rt_pairs, topk)
