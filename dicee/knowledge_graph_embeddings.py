@@ -17,9 +17,11 @@ class KGE(BaseInteractiveKGE):
 
     def __init__(self, path=None, url=None, construct_ensemble=False,
                  model_name=None):
-        self.all_have_inverse = all(f"{rel}_inverse" in self.relation_to_idx for rel in self.relation_to_idx.keys())
         super().__init__(path=path, url=url, construct_ensemble=construct_ensemble, model_name=model_name)
 
+        # Only check base relations (those without "_inverse" suffix) for their inverse counterparts
+        base_relations = [rel for rel in self.relation_to_idx.keys() if not rel.endswith("_inverse")]
+        self.all_have_inverse = all(f"{rel}_inverse" in self.relation_to_idx for rel in base_relations)
     def __str__(self):
         return "KGE | " + str(self.model)
 
@@ -163,7 +165,9 @@ class KGE(BaseInteractiveKGE):
 
         Highest K scores and entities
         """
-        head_entity = torch.arange(0, len(self.entity_to_idx))
+        if self.all_have_inverse:
+            relation = [f"{rel}_inverse" for rel in relation]
+            return self.predict_missing_tail_entity(tail_entity, relation, within, batch_size, topk, return_indices)
         if isinstance(relation, list):
             relation = torch.LongTensor([self.relation_to_idx[i] for i in relation])
         else:
@@ -173,6 +177,7 @@ class KGE(BaseInteractiveKGE):
         else:
             tail_entity = torch.LongTensor([self.entity_to_idx[tail_entity]])
 
+        head_entity = torch.arange(0, len(self.entity_to_idx))
         # Generate all (tail, relation) pairs
         tr_pairs = torch.cartesian_prod(tail_entity, relation)  # Shape: (num_tr_pairs, 2)
         num_tr_pairs = tr_pairs.size(0)
@@ -493,12 +498,6 @@ class KGE(BaseInteractiveKGE):
                 r = [r]
             if isinstance(t, str):
                 t = [t]
-            if self.all_have_inverse:
-                # Use inverse relations for more efficient tail prediction
-                # (?, r, t) becomes (t, r_inverse, ?)
-                inverse_relations = [f"{rel}_inverse" for rel in r]
-                return self.predict_topk(h=t, r=inverse_relations, t=None, topk=topk, within=within, batch_size=batch_size)
-
             flat_scores, flat_indices = self.predict_missing_head_entity(r, t, within, batch_size, topk, return_indices=True)
             num_rt_pairs = len(r) * len(t)
             
