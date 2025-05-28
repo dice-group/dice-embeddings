@@ -3,6 +3,7 @@ import os
 import torch
 import torch.nn as nn
 import pandas as pd
+import numpy as np
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 from dicee.models.transformers import LayerNorm
@@ -14,18 +15,17 @@ class GatedLinearUnit(nn.Module):
     applies a sigmoid gate to one half and multiplies it with the other.
     """
 
-    def __init__(self, input_dim, gated_residual = True):
+    def __init__(self, input_dim, gated_residual=True):
         super().__init__()
-        self.proj1 = nn.Linear(input_dim, input_dim)
-        self.proj2 = nn.Linear(input_dim, input_dim)
-        self.gate_residual =  gated_residual 
+        self.proj = nn.Linear(input_dim * 2, input_dim * 2)
+        self.gate_residual = gated_residual
 
     def forward(self, x1, x2):
         if self.gate_residual:
-            x1_proj = self.proj1(x1)
-            x2_proj = self.proj2(x2)
+            x_proj = self.proj(torch.cat((x1, x2), dim=1))
+            value, gate = x_proj.chunk(2, dim=-1)
             # Split into two parts
-            return x1_proj * torch.sigmoid(x2_proj)  # Apply gating
+            return value * torch.sigmoid(gate)  # Apply gating
         else:
             return x1 + x2
 
@@ -33,6 +33,14 @@ class GatedLinearUnit(nn.Module):
 class LiteralEmbeddings(nn.Module):
     """
     A model for learning and predicting numerical literals using pre-trained KGE.
+    
+    Attributes:
+        num_of_data_properties (int): Number of data properties (attributes).
+        embedding_dims (int): Dimension of the embeddings.
+        entity_embeddings (torch.tensor): Pre-trained entity embeddings.
+        dropout (float): Dropout rate for regularization.
+        gate_residual (bool): Whether to use gated residual connections.
+        freeze_entity_embeddings (bool): Whether to freeze the entity embeddings during training.
     """
 
     def __init__(
@@ -41,7 +49,8 @@ class LiteralEmbeddings(nn.Module):
         embedding_dims: int,
         entity_embeddings: torch.tensor,
         dropout: float = 0.3,
-        gate_residual = True
+        gate_residual=True,
+        freeze_entity_embeddings=True,
 
     ):
         super().__init__()
@@ -51,7 +60,7 @@ class LiteralEmbeddings(nn.Module):
 
         # Use pre-trained entity embeddings
         self.entity_embeddings = nn.Embedding.from_pretrained(
-            entity_embeddings.weight, freeze=True
+            entity_embeddings.weight, freeze=freeze_entity_embeddings
         )
 
         #  data property (literal) embeddings
@@ -66,8 +75,8 @@ class LiteralEmbeddings(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
 
         # Gated residual layer with layer norm
-        self.residual = GatedLinearUnit(self.hidden_dim, gate_residual)
-        self.layer_norm = LayerNorm(self.hidden_dim, bias=True)
+        self.residual = GatedLinearUnit(self.hidden_dim, gated_residual=gate_residual)
+        self.layer_norm = nn.LayerNorm(self.hidden_dim)
 
     def forward(self, e_idx, relation_idx):
         """
@@ -86,10 +95,12 @@ class LiteralEmbeddings(nn.Module):
         tuple_emb = torch.cat((e_emb, a_emb), dim=1)  # [batch, 2 * emb_dim]
 
         # MLP with dropout and ReLU
-        z = self.dropout(F.relu(self.fc(tuple_emb)))  # [batch, 2 * emb_dim]
+        z = self.dropout(
+            F.relu(self.layer_norm(self.fc(tuple_emb)))
+        )  # [batch, 2 * emb_dim]
 
         # Gated residual connection: combine original (tuple) + transformed embeddings
-        residual = self.residual(z, tuple_emb)  # [batch, 2 * hidden]
+        residual = self.residual(z, tuple_emb)  # [batch, 2 * emb_dim]
 
         # Output scalar prediction and flatten to 1D
         out = self.fc_out(residual).flatten()  # [batch]
@@ -97,39 +108,53 @@ class LiteralEmbeddings(nn.Module):
 
 
 class LiteralDataset(Dataset):
+    """ Dataset for loading and processing literal data for training Literal Embedding model.
+    This dataset handles the loading, normalization, and preparation of triples
+    for training a literal embedding model.
+
+    Extends torch.utils.data.Dataset for supporting PyTorch dataloaders.
+
+    Attributes:
+        train_file_path (str): Path to the training data file.
+        normalization (str): Type of normalization to apply ('z-norm', 'min-max', or None).
+        normalization_params (dict): Parameters used for normalization.
+        sampling_ratio (float): Fraction of the training set to use for ablations.
+        entity_to_idx (dict): Mapping of entities to their indices.
+        num_entities (int): Total number of entities.
+        data_property_to_idx (dict): Mapping of data properties to their indices.
+        num_data_properties (int): Total number of data properties.
+    """
+        
     def __init__(
-        self, file_path: str, ent_idx, normalization="z-norm", sampling_ratio=None
+        self, file_path: str,
+        ent_idx :dict = None,
+        normalization_type : str ="z-norm", 
+        sampling_ratio : float=None,
+    
     ):
         self.train_file_path = file_path
-        self.normalization = normalization
+        self.normalization_type = normalization_type
         self.normalization_params = {}
         self.sampling_ratio = sampling_ratio
-
         self.entity_to_idx = ent_idx
         self.num_entities = len(self.entity_to_idx)
+
+        if self.entity_to_idx is None:
+            raise ValueError("entity_to_idx must be provided to initialize LiteralDataset.")
 
         self._load_data()
 
     def _load_data(self):
-        # Load mapping from train
-        if not os.path.exists(self.train_file_path):
-            raise FileNotFoundError(f"Data file not found at {self.train_file_path}")
-        train_df = pd.read_csv(
-            self.train_file_path,
-            sep="\t",
-            header=None,
-            names=["head", "relation", "tail"],
-        )
+        train_df = self.load_and_validate_literal_data(self.train_file_path, )
         train_df = train_df[train_df["head"].isin(self.entity_to_idx)]
         self.data_property_to_idx = {
             rel: idx for idx, rel in enumerate(train_df["relation"].unique())
         }
-
+        self.num_data_properties = len(self.data_property_to_idx)
         if self.sampling_ratio is not None:
             # reduce the train set for ablations using sampling ratio
             # keeps the sampling_ratio * 100 % of full training set in the train_df
             if 0 < self.sampling_ratio <= 1:
-
                 train_df = (
                     train_df.groupby("relation", group_keys=False)
                     .apply(
@@ -142,8 +167,6 @@ class LiteralDataset(Dataset):
                 )
             else:
                 raise ValueError("Split Fraction must be between 0 and 1.")
-
-        self.num_data_properties = len(self.data_property_to_idx)
 
         train_df["head_idx"] = train_df["head"].map(self.entity_to_idx)
         train_df["rel_idx"] = train_df["relation"].map(self.data_property_to_idx)
@@ -158,24 +181,28 @@ class LiteralDataset(Dataset):
         )
 
     def _apply_normalization(self, df):
-        if self.normalization == "z-norm":
-            stats = df.groupby("rel_idx")["tail"].agg(["mean", "std"])
+        """ Applies normalization to the tail values based on the specified type."""
+        if self.normalization_type == "z-norm":
+            stats = df.groupby("relation")["tail"].agg(["mean", "std"])
             self.normalization_params = stats.to_dict(orient="index")
-            df["tail_norm"] = df.groupby("rel_idx")["tail"].transform(
+            df["tail_norm"] = df.groupby("relation")["tail"].transform(
                 lambda x: (x - x.mean()) / x.std()
             )
+            self.normalization_params['type'] = "z-norm"
 
-        elif self.normalization == "min-max":
-            stats = df.groupby("rel_idx")["tail"].agg(["min", "max"])
+        elif self.normalization_type == "min-max":
+            stats = df.groupby("relation")["tail"].agg(["min", "max"])
             self.normalization_params = stats.to_dict(orient="index")
-            df["tail_norm"] = df.groupby("rel_idx")["tail"].transform(
+            df["tail_norm"] = df.groupby("relation")["tail"].transform(
                 lambda x: (x - x.min()) / (x.max() - x.min())
             )
+            self.normalization_params['type'] = "min-max"
 
         else:
             print(" No normalization applied.")
             df["tail_norm"] = df["tail"]
             self.normalization_params = None
+            self.normalization_params['type'] = None
 
         return df
 
@@ -184,3 +211,84 @@ class LiteralDataset(Dataset):
 
     def __len__(self):
         return len(self.triples)
+
+    
+    @staticmethod
+    def load_and_validate_literal_data(file_path: str  = None) -> pd.DataFrame:
+        """ Loads and validates the literal data file.
+        Args:
+            file_path (str): Path to the literal data file.
+        Returns:
+            pd.DataFrame: DataFrame containing the loaded and validated data.
+        """
+
+        # Check if the file exists
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Data file not found at {file_path}")
+            
+        # Try loading the file with either tab or comma separator
+        last_exception = None
+        df = None
+        for sep in ['\t', ',']:
+            try:
+                df = pd.read_csv(
+                    file_path,
+                    sep=sep,
+                    header=None,
+                    index_col=False
+                )
+                # Success—break out of the loop
+                break
+            except Exception as e:
+                last_exception = e
+
+        # After loop, check if df was successfully loaded
+        if df is None or df.empty:
+            raise ValueError(
+                f"Could not read file '{file_path}' with tab or comma separator. Last error: {last_exception}"
+            )
+        
+        assert df.shape[1] == 3, "Data file must contain exactly 3 columns: head, relation, tail"
+        # Name the columns
+        df.columns = ["head", "relation", "tail"]
+
+        # Validate column types
+        if not pd.api.types.is_string_dtype(df["head"]):
+            raise TypeError("Column 'head' must be of string type.")
+        if not pd.api.types.is_string_dtype(df["relation"]):
+            raise TypeError("Column 'relation' must be of string type.")
+        if not pd.api.types.is_numeric_dtype(df["tail"]):
+            raise TypeError("Column 'tail' must be numeric.")
+
+        return df
+
+
+    @staticmethod
+    def denormalize(preds_norm, attributes, normalization_params) ->   np.ndarray:
+        """ Denormalizes the predictions based on the normalization type.
+        
+        Args: test_df (pd.DataFrame): DataFrame containing predictions and attribute indices.
+        normalization_params (dict): Dictionary containing normalization parameters for each attribute.
+        norm_type (str): Type of normalization used ('z-norm', 'min-max', or None).
+
+        Returns:
+            np.ndarray: Denormalized predictions.
+           
+        """
+        if normalization_params["type"] == "z-norm":
+            # Extract means and stds only if z-norm is used
+            means = np.array([normalization_params[i]["mean"] for i in attributes])
+            stds = np.array([normalization_params[i]["std"] for i in attributes])
+            return preds_norm * stds + means
+
+        elif normalization_params["type"] == "min-max":
+            # Extract mins and maxs only if min-max is used
+            mins = np.array([normalization_params[i]["min"] for i in attributes])
+            maxs = np.array([normalization_params[i]["max"] for i in attributes])
+            return preds_norm * (maxs - mins) + mins
+
+        elif normalization_params["type"] is None:
+            return preds_norm
+
+        else:
+            raise ValueError("Unsupported normalization type. Use 'z-norm', 'min-max', or None.")
