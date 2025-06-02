@@ -24,7 +24,6 @@ import torch.nn.functional as F
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 
-
 class KGE(BaseInteractiveKGE):
     """Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
@@ -1634,7 +1633,7 @@ class KGE(BaseInteractiveKGE):
         lit_normalization_type: str = "z-norm",
         batch_size: int = 1024,
         sampling_ratio: float = None,
-        random_seed = 1
+        random_seed=1,
     ):
         """
         Trains the Literal Embeddings model using literal data.
@@ -1653,7 +1652,7 @@ class KGE(BaseInteractiveKGE):
         torch.manual_seed(random_seed)
         torch.cuda.manual_seed_all(random_seed)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        dataset_name = os.path.basename(self.configs["dataset_dir"])
+        # dataset_name = os.path.basename(self.configs["dataset_dir"])
 
         # Prepare the dataset and DataLoader
         literal_dataset = LiteralDataset(
@@ -1676,7 +1675,7 @@ class KGE(BaseInteractiveKGE):
             num_of_data_properties=literal_dataset.num_data_properties,
             embedding_dims=self.model.embedding_dim,
             entity_embeddings=self.model.entity_embeddings,
-            freeze_entity_embeddings=False
+            freeze_entity_embeddings=False,
         ).to(device)
 
         optimizer = optim.Adam(literal_model.parameters(), lr=lit_lr)
@@ -1684,7 +1683,7 @@ class KGE(BaseInteractiveKGE):
         literal_model.train()
 
         print(
-            f"Training Literal Embedding model on '{dataset_name}' dataset "
+            f"Training Literal Embedding model on dataset "
             f"using pre-trained '{self.model.name}' embeddings."
         )
 
@@ -1706,24 +1705,42 @@ class KGE(BaseInteractiveKGE):
             tqdm_bar.set_postfix_str(f"loss_lit={lit_loss:.5f}")
             loss_log["lit_loss"].append(avg_epoch_loss.item())
 
-        self.literal_model = literal_model.to('cpu')
+        self.literal_model = literal_model.to("cpu")
         self.literal_dataset = literal_dataset
         torch.save(literal_model.state_dict(), self.path + "/literal_model.pt")
-        
+
         if eval_litreal_preds:
             self.evaluate_literal_prediction(eval_file_path=eval_file_path)
 
+    def predict_literals(
+        self,
+        entity: Union[List[str], str] = None,
+        attribute: Union[List[str], str] = None,
+        denormalize_preds: bool = True,
+    ) -> torch.FloatTensor:
+        """Predicts literal values for given entities and attributes.
 
-    def predict_literals(self, entity: Union[List[str], str] = None,
-                         attribute: Union[List[str], str] = None,
-                         denormalize_preds : bool = True)    -> torch.FloatTensor:
+        Args:
+            entity (Union[List[str], str]): Entity or list of entities to predict literals for.
+            attribute (Union[List[str], str]): Attribute or list of attributes to predict literals for.
+            denormalize_preds (bool): If True, denormalizes the predictions.
+        Returns:
+
+            torch.FloatTensor: Predictions for the given entities and attributes.
+        """
         # sanity checking
+        # Check if the literal model is trained or loaded
+        if not hasattr(self, "literal_model") or self.literal_model is None:
+            raise RuntimeError("Literal model is not trained or loaded.")
+
+        # TODO :Should we initialize self.literal_model in __init__ ?
+
         if entity is None or attribute is None:
             raise RuntimeError("Entity and Attribute cannot be of type None")
-        
+
         assert isinstance(entity, list) or isinstance(entity, str)
         assert isinstance(entity[0], str)
-        
+
         assert isinstance(attribute, list) or isinstance(attribute, str)
         assert isinstance(attribute[0], str)
 
@@ -1732,10 +1749,12 @@ class KGE(BaseInteractiveKGE):
         else:
             entity_idx = torch.LongTensor([self.entity_to_idx[entity]])
         if isinstance(attribute, list):
-            attribute_idx = torch.LongTensor([self.data_property_to_idx[i] for i in attribute])
+            attribute_idx = torch.LongTensor(
+                [self.data_property_to_idx[i] for i in attribute]
+            )
         else:
             attribute_idx = torch.LongTensor([self.data_property_to_idx[attribute]])
-        
+
         # device allocation
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.literal_model, entity_idx, attribute_idx = (
@@ -1746,43 +1765,48 @@ class KGE(BaseInteractiveKGE):
 
         with torch.no_grad():
             predictions = self.literal_model(entity_idx, attribute_idx)
-        
+
         # move predictions to cpu and convert to numpy
         predictions = predictions.cpu().numpy()
         if denormalize_preds:
             predictions = self.literal_dataset.denormalize(
                 preds_norm=predictions,
-                attributes= attribute,
-                normalization_params= self.literal_dataset.normalization_params, 
+                attributes=attribute,
+                normalization_params=self.literal_dataset.normalization_params,
             )
         return predictions
-    
 
     def evaluate_literal_prediction(
         self,
         eval_file_path: str = None,
         store_lit_preds: bool = True,
-        eval_literals : bool =True,
+        eval_literals: bool = True,
     ):
         """
         Evaluates the trained literal prediction model on a test file.
 
         Args:
             eval_file_path (str): Path to the evaluation file.
+            store_lit_preds (bool): If True, stores the predictions in a CSV file.
+            eval_literals (bool): If True, evaluates the literal predictions and prints error metrics.
 
         Returns:
             None
         """
         # sanity checking done in load_and_validate_literal_data
-        test_df = self.literal_dataset.load_and_validate_literal_data(file_path=eval_file_path)
-        
+        test_df = self.literal_dataset.load_and_validate_literal_data(
+            file_path=eval_file_path
+        )
+
         entities = test_df["head"].to_list()
-        attributes = test_df["relation"].to_list()
-        test_df["predictions"] = self.predict_literals(entity=entities, attribute=attributes)
+        attributes = test_df["attribute"].to_list()
+        test_df["predictions"] = self.predict_literals(
+            entity=entities, attribute=attributes
+        )
 
         # If store_lit_preds is True, save the predictions to a CSV file
         if store_lit_preds:
-            prediction_df = test_df[["head", "relation", "predictions"]]
+            prediction_df = test_df[["head", "attribute", "predictions"]]
             prediction_path = os.path.join(self.path, "lit_predictions.csv")
             prediction_df.to_csv(prediction_path, index=False)
             print(f"Literal predictions saved to {prediction_path}")
@@ -1790,10 +1814,24 @@ class KGE(BaseInteractiveKGE):
         # Calculate,print and store error metrics
         if eval_literals:
             # Calculate error metrics for literal predictions
-            lit_pred_errors = test_df.groupby("relation").agg(
-                MAE=("tail", lambda x: mean_absolute_error(x, test_df.loc[x.index, "predictions"])),
-                RMSE=("tail", lambda x: root_mean_squared_error(x, test_df.loc[x.index, "predictions"]))
-            ).reset_index()
+            lit_pred_errors = (
+                test_df.groupby("attribute")
+                .agg(
+                    MAE=(
+                        "value",
+                        lambda x: mean_absolute_error(
+                            x, test_df.loc[x.index, "predictions"]
+                        ),
+                    ),
+                    RMSE=(
+                        "value",
+                        lambda x: root_mean_squared_error(
+                            x, test_df.loc[x.index, "predictions"]
+                        ),
+                    ),
+                )
+                .reset_index()
+            )
 
             pd.options.display.float_format = "{:.6f}".format
             print("Literal-Prediction evaluation results  on Test Set")
@@ -1801,5 +1839,5 @@ class KGE(BaseInteractiveKGE):
             results_path = os.path.join(self.path, "lit_eval_results.csv")
             lit_pred_errors.to_csv(results_path, index=False)
             print(f"Literal-Prediction evaluation results saved to {results_path}")
-    
+
     # TODO : should we return the predictions or not ?
