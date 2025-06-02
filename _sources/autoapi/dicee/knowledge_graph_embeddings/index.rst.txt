@@ -329,6 +329,19 @@ Module Contents
 
    .. py:method:: predict_literals(entity: Union[List[str], str] = None, attribute: Union[List[str], str] = None, denormalize_preds: bool = True) -> torch.FloatTensor
 
+      Predicts literal values for given entities and attributes.
+
+      :param entity: Entity or list of entities to predict literals for.
+      :type entity: Union[List[str], str]
+      :param attribute: Attribute or list of attributes to predict literals for.
+      :type attribute: Union[List[str], str]
+      :param denormalize_preds: If True, denormalizes the predictions.
+      :type denormalize_preds: bool
+
+      :returns: Predictions for the given entities and attributes.
+      :rtype: torch.FloatTensor
+
+
 
    .. py:method:: evaluate_literal_prediction(eval_file_path: str = None, store_lit_preds: bool = True, eval_literals: bool = True)
 
@@ -336,6 +349,10 @@ Module Contents
 
       :param eval_file_path: Path to the evaluation file.
       :type eval_file_path: str
+      :param store_lit_preds: If True, stores the predictions in a CSV file.
+      :type store_lit_preds: bool
+      :param eval_literals: If True, evaluates the literal predictions and prints error metrics.
+      :type eval_literals: bool
 
       :returns: None
 

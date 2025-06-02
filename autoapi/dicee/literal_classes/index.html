@@ -341,12 +341,12 @@ applies a sigmoid gate to one half and multiplies it with the other.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.literal_classes.LiteralEmbeddings.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relation_idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/literal_classes.html#LiteralEmbeddings.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.literal_classes.LiteralEmbeddings.forward" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attr_idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/literal_classes.html#LiteralEmbeddings.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.literal_classes.LiteralEmbeddings.forward" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>e_idx</strong> (<em>Tensor</em>) – Entity indices (batch).</p></li>
-<li><p><strong>relation_idx</strong> (<em>Tensor</em>) – Data property indices (batch).</p></li>
+<li><p><strong>entity_idx</strong> (<em>Tensor</em>) – Entity indices (batch).</p></li>
+<li><p><strong>attr_idx</strong> (<em>Tensor</em>) – Attribute (Data property)  indices (batch).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -516,9 +516,10 @@ for training a literal embedding model.</p>
 <dt class="sig sig-object py" id="dicee.literal_classes.LiteralDataset.denormalize">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">denormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">preds_norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalization_params</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="../../../_modules/dicee/literal_classes.html#LiteralDataset.denormalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.literal_classes.LiteralDataset.denormalize" title="Link to this definition"></a></dt>
 <dd><p>Denormalizes the predictions based on the normalization type.</p>
-<p>Args: test_df (pd.DataFrame): DataFrame containing predictions and attribute indices.
-normalization_params (dict): Dictionary containing normalization parameters for each attribute.
-norm_type (str): Type of normalization used (‘z-norm’, ‘min-max’, or None).</p>
+<p>Args:
+preds_norm (np.ndarray): Normalized predictions to be denormalized.
+attributes (list): List of attributes corresponding to the predictions.
+normalization_params (dict): Dictionary containing normalization parameters for each attribute.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Denormalized predictions.</p>

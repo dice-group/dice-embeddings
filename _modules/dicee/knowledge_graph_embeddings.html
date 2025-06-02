@@ -114,7 +114,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">mean_absolute_error</span><span class="p">,</span> <span class="n">root_mean_squared_error</span>
 
 
-
 <div class="viewcode-block" id="KGE">
 <a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">KGE</span><span class="p">(</span><span class="n">BaseInteractiveKGE</span><span class="p">):</span>
@@ -1800,7 +1799,7 @@
         <span class="n">lit_normalization_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;z-norm&quot;</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">,</span>
         <span class="n">sampling_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">random_seed</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">random_seed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Trains the Literal Embeddings model using literal data.</span>
@@ -1819,7 +1818,7 @@
         <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">manual_seed_all</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
         <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
-        <span class="n">dataset_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="p">[</span><span class="s2">&quot;dataset_dir&quot;</span><span class="p">])</span>
+        <span class="c1"># dataset_name = os.path.basename(self.configs[&quot;dataset_dir&quot;])</span>
 
         <span class="c1"># Prepare the dataset and DataLoader</span>
         <span class="n">literal_dataset</span> <span class="o">=</span> <span class="n">LiteralDataset</span><span class="p">(</span>
@@ -1842,7 +1841,7 @@
             <span class="n">num_of_data_properties</span><span class="o">=</span><span class="n">literal_dataset</span><span class="o">.</span><span class="n">num_data_properties</span><span class="p">,</span>
             <span class="n">embedding_dims</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">,</span>
             <span class="n">entity_embeddings</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">,</span>
-            <span class="n">freeze_entity_embeddings</span><span class="o">=</span><span class="kc">False</span>
+            <span class="n">freeze_entity_embeddings</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 
         <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">literal_model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lit_lr</span><span class="p">)</span>
@@ -1850,7 +1849,7 @@
         <span class="n">literal_model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
 
         <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Training Literal Embedding model on &#39;</span><span class="si">{</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2">&#39; dataset &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Training Literal Embedding model on dataset &quot;</span>
             <span class="sa">f</span><span class="s2">&quot;using pre-trained &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; embeddings.&quot;</span>
         <span class="p">)</span>
 
@@ -1872,27 +1871,45 @@
             <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_postfix_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loss_lit=</span><span class="si">{</span><span class="n">lit_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">loss_log</span><span class="p">[</span><span class="s2">&quot;lit_loss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg_epoch_loss</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">literal_model</span> <span class="o">=</span> <span class="n">literal_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">literal_model</span> <span class="o">=</span> <span class="n">literal_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">literal_dataset</span> <span class="o">=</span> <span class="n">literal_dataset</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">literal_model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="s2">&quot;/literal_model.pt&quot;</span><span class="p">)</span>
-        
+
         <span class="k">if</span> <span class="n">eval_litreal_preds</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_literal_prediction</span><span class="p">(</span><span class="n">eval_file_path</span><span class="o">=</span><span class="n">eval_file_path</span><span class="p">)</span></div>
 
 
-
 <div class="viewcode-block" id="KGE.predict_literals">
 <a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.predict_literals">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">predict_literals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                         <span class="n">attribute</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                         <span class="n">denormalize_preds</span> <span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>    <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_literals</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">entity</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">attribute</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">denormalize_preds</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predicts literal values for given entities and attributes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            entity (Union[List[str], str]): Entity or list of entities to predict literals for.</span>
+<span class="sd">            attribute (Union[List[str], str]): Attribute or list of attributes to predict literals for.</span>
+<span class="sd">            denormalize_preds (bool): If True, denormalizes the predictions.</span>
+<span class="sd">        Returns:</span>
+
+<span class="sd">            torch.FloatTensor: Predictions for the given entities and attributes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># sanity checking</span>
+        <span class="c1"># Check if the literal model is trained or loaded</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;literal_model&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">literal_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Literal model is not trained or loaded.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># TODO :Should we initialize self.literal_model in __init__ ?</span>
+
         <span class="k">if</span> <span class="n">entity</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">attribute</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Entity and Attribute cannot be of type None&quot;</span><span class="p">)</span>
-        
+
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span>
-        
+
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attribute</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attribute</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attribute</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span>
 
@@ -1901,10 +1918,12 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">entity_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">entity</span><span class="p">]])</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attribute</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="n">attribute_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">data_property_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">attribute</span><span class="p">])</span>
+            <span class="n">attribute_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span>
+                <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_property_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">attribute</span><span class="p">]</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">attribute_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">data_property_to_idx</span><span class="p">[</span><span class="n">attribute</span><span class="p">]])</span>
-        
+
         <span class="c1"># device allocation</span>
         <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">literal_model</span><span class="p">,</span> <span class="n">entity_idx</span><span class="p">,</span> <span class="n">attribute_idx</span> <span class="o">=</span> <span class="p">(</span>
@@ -1915,18 +1934,17 @@
 
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
             <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">literal_model</span><span class="p">(</span><span class="n">entity_idx</span><span class="p">,</span> <span class="n">attribute_idx</span><span class="p">)</span>
-        
+
         <span class="c1"># move predictions to cpu and convert to numpy</span>
         <span class="n">predictions</span> <span class="o">=</span> <span class="n">predictions</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">denormalize_preds</span><span class="p">:</span>
             <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">literal_dataset</span><span class="o">.</span><span class="n">denormalize</span><span class="p">(</span>
                 <span class="n">preds_norm</span><span class="o">=</span><span class="n">predictions</span><span class="p">,</span>
-                <span class="n">attributes</span><span class="o">=</span> <span class="n">attribute</span><span class="p">,</span>
-                <span class="n">normalization_params</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">literal_dataset</span><span class="o">.</span><span class="n">normalization_params</span><span class="p">,</span> 
+                <span class="n">attributes</span><span class="o">=</span><span class="n">attribute</span><span class="p">,</span>
+                <span class="n">normalization_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">literal_dataset</span><span class="o">.</span><span class="n">normalization_params</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">predictions</span></div>
 
-    
 
 <div class="viewcode-block" id="KGE.evaluate_literal_prediction">
 <a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.evaluate_literal_prediction">[docs]</a>
@@ -1934,27 +1952,33 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">eval_file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">store_lit_preds</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">eval_literals</span> <span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">eval_literals</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Evaluates the trained literal prediction model on a test file.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            eval_file_path (str): Path to the evaluation file.</span>
+<span class="sd">            store_lit_preds (bool): If True, stores the predictions in a CSV file.</span>
+<span class="sd">            eval_literals (bool): If True, evaluates the literal predictions and prints error metrics.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># sanity checking done in load_and_validate_literal_data</span>
-        <span class="n">test_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">literal_dataset</span><span class="o">.</span><span class="n">load_and_validate_literal_data</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="n">eval_file_path</span><span class="p">)</span>
-        
+        <span class="n">test_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">literal_dataset</span><span class="o">.</span><span class="n">load_and_validate_literal_data</span><span class="p">(</span>
+            <span class="n">file_path</span><span class="o">=</span><span class="n">eval_file_path</span>
+        <span class="p">)</span>
+
         <span class="n">entities</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="s2">&quot;head&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
-        <span class="n">attributes</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="s2">&quot;relation&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
-        <span class="n">test_df</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_literals</span><span class="p">(</span><span class="n">entity</span><span class="o">=</span><span class="n">entities</span><span class="p">,</span> <span class="n">attribute</span><span class="o">=</span><span class="n">attributes</span><span class="p">)</span>
+        <span class="n">attributes</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="s2">&quot;attribute&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+        <span class="n">test_df</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_literals</span><span class="p">(</span>
+            <span class="n">entity</span><span class="o">=</span><span class="n">entities</span><span class="p">,</span> <span class="n">attribute</span><span class="o">=</span><span class="n">attributes</span>
+        <span class="p">)</span>
 
         <span class="c1"># If store_lit_preds is True, save the predictions to a CSV file</span>
         <span class="k">if</span> <span class="n">store_lit_preds</span><span class="p">:</span>
-            <span class="n">prediction_df</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[[</span><span class="s2">&quot;head&quot;</span><span class="p">,</span> <span class="s2">&quot;relation&quot;</span><span class="p">,</span> <span class="s2">&quot;predictions&quot;</span><span class="p">]]</span>
+            <span class="n">prediction_df</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[[</span><span class="s2">&quot;head&quot;</span><span class="p">,</span> <span class="s2">&quot;attribute&quot;</span><span class="p">,</span> <span class="s2">&quot;predictions&quot;</span><span class="p">]]</span>
             <span class="n">prediction_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;lit_predictions.csv&quot;</span><span class="p">)</span>
             <span class="n">prediction_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">prediction_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Literal predictions saved to </span><span class="si">{</span><span class="n">prediction_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -1962,10 +1986,24 @@
         <span class="c1"># Calculate,print and store error metrics</span>
         <span class="k">if</span> <span class="n">eval_literals</span><span class="p">:</span>
             <span class="c1"># Calculate error metrics for literal predictions</span>
-            <span class="n">lit_pred_errors</span> <span class="o">=</span> <span class="n">test_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;relation&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span>
-                <span class="n">MAE</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;tail&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">mean_absolute_error</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">test_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s2">&quot;predictions&quot;</span><span class="p">])),</span>
-                <span class="n">RMSE</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;tail&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">root_mean_squared_error</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">test_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s2">&quot;predictions&quot;</span><span class="p">]))</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+            <span class="n">lit_pred_errors</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">test_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;attribute&quot;</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+                    <span class="n">MAE</span><span class="o">=</span><span class="p">(</span>
+                        <span class="s2">&quot;value&quot;</span><span class="p">,</span>
+                        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">mean_absolute_error</span><span class="p">(</span>
+                            <span class="n">x</span><span class="p">,</span> <span class="n">test_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s2">&quot;predictions&quot;</span><span class="p">]</span>
+                        <span class="p">),</span>
+                    <span class="p">),</span>
+                    <span class="n">RMSE</span><span class="o">=</span><span class="p">(</span>
+                        <span class="s2">&quot;value&quot;</span><span class="p">,</span>
+                        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">root_mean_squared_error</span><span class="p">(</span>
+                            <span class="n">x</span><span class="p">,</span> <span class="n">test_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s2">&quot;predictions&quot;</span><span class="p">]</span>
+                        <span class="p">),</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+                <span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+            <span class="p">)</span>
 
             <span class="n">pd</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">float_format</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{:.6f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Literal-Prediction evaluation results  on Test Set&quot;</span><span class="p">)</span>
@@ -1975,7 +2013,7 @@
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Literal-Prediction evaluation results saved to </span><span class="si">{</span><span class="n">results_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
 
-    
+
     <span class="c1"># TODO : should we return the predictions or not ?</span>
 </pre></div>
 

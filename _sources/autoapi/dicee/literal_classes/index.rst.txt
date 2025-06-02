@@ -112,12 +112,12 @@ Module Contents
    .. py:attribute:: layer_norm
 
 
-   .. py:method:: forward(e_idx, relation_idx)
+   .. py:method:: forward(entity_idx, attr_idx)
 
-      :param e_idx: Entity indices (batch).
-      :type e_idx: Tensor
-      :param relation_idx: Data property indices (batch).
-      :type relation_idx: Tensor
+      :param entity_idx: Entity indices (batch).
+      :type entity_idx: Tensor
+      :param attr_idx: Attribute (Data property)  indices (batch).
+      :type attr_idx: Tensor
 
       :returns: scalar predictions.
       :rtype: Tensor
@@ -233,9 +233,10 @@ Module Contents
 
       Denormalizes the predictions based on the normalization type.
 
-      Args: test_df (pd.DataFrame): DataFrame containing predictions and attribute indices.
+      Args:
+      preds_norm (np.ndarray): Normalized predictions to be denormalized.
+      attributes (list): List of attributes corresponding to the predictions.
       normalization_params (dict): Dictionary containing normalization parameters for each attribute.
-      norm_type (str): Type of normalization used ('z-norm', 'min-max', or None).
 
       :returns: Denormalized predictions.
       :rtype: np.ndarray

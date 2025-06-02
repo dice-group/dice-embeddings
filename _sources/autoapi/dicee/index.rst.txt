@@ -70,7 +70,6 @@ Classes
    dicee.EnsembleKGE
    dicee.DICE_Trainer
    dicee.KGE
-   dicee.Execute
    dicee.BPE_NegativeSamplingDataset
    dicee.MultiLabelDataset
    dicee.MultiClassClassificationDataset
@@ -2592,6 +2591,19 @@ Package Contents
 
    .. py:method:: predict_literals(entity: Union[List[str], str] = None, attribute: Union[List[str], str] = None, denormalize_preds: bool = True) -> torch.FloatTensor
 
+      Predicts literal values for given entities and attributes.
+
+      :param entity: Entity or list of entities to predict literals for.
+      :type entity: Union[List[str], str]
+      :param attribute: Attribute or list of attributes to predict literals for.
+      :type attribute: Union[List[str], str]
+      :param denormalize_preds: If True, denormalizes the predictions.
+      :type denormalize_preds: bool
+
+      :returns: Predictions for the given entities and attributes.
+      :rtype: torch.FloatTensor
+
+
 
    .. py:method:: evaluate_literal_prediction(eval_file_path: str = None, store_lit_preds: bool = True, eval_literals: bool = True)
 
@@ -2599,109 +2611,12 @@ Package Contents
 
       :param eval_file_path: Path to the evaluation file.
       :type eval_file_path: str
+      :param store_lit_preds: If True, stores the predictions in a CSV file.
+      :type store_lit_preds: bool
+      :param eval_literals: If True, evaluates the literal predictions and prints error metrics.
+      :type eval_literals: bool
 
       :returns: None
-
-
-
-.. py:class:: Execute(args, continuous_training=False)
-
-   A class for Training, Retraining and Evaluation a model.
-
-   (1) Loading & Preprocessing & Serializing input data.
-   (2) Training & Validation & Testing
-   (3) Storing all necessary info
-
-
-   .. py:attribute:: args
-
-
-   .. py:attribute:: is_continual_training
-      :value: False
-
-
-
-   .. py:attribute:: trainer
-      :value: None
-
-
-
-   .. py:attribute:: trained_model
-      :value: None
-
-
-
-   .. py:attribute:: knowledge_graph
-      :value: None
-
-
-
-   .. py:attribute:: report
-
-
-   .. py:attribute:: evaluator
-      :value: None
-
-
-
-   .. py:attribute:: start_time
-      :value: None
-
-
-
-   .. py:method:: setup_executor() -> None
-
-
-   .. py:method:: save_trained_model() -> None
-
-      Save a knowledge graph embedding model
-
-      (1) Send model to eval mode and cpu.
-      (2) Store the memory footprint of the model.
-      (3) Save the model into disk.
-      (4) Update the stats of KG again ?
-
-      Parameter
-      ----------
-
-      :rtype: None
-
-
-
-   .. py:method:: end(form_of_labelling: str) -> dict
-
-      End training
-
-      (1) Store trained model.
-      (2) Report runtimes.
-      (3) Eval model if required.
-
-      Parameter
-      ---------
-
-      :rtype: A dict containing information about the training and/or evaluation
-
-
-
-   .. py:method:: write_report() -> None
-
-      Report training related information in a report.json file
-
-
-
-   .. py:method:: start() -> dict
-
-      Start training
-
-      # (1) Loading the Data
-      # (2) Create an evaluator object.
-      # (3) Create a trainer object.
-      # (4) Start the training
-
-      Parameter
-      ---------
-
-      :rtype: A dict containing information about the training and/or evaluation
 
 
 

@@ -98,6 +98,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dataset</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dicee.models.transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">LayerNorm</span>
 
+
 <div class="viewcode-block" id="GatedLinearUnit">
 <a class="viewcode-back" href="../../autoapi/dicee/literal_classes/index.html#dicee.literal_classes.GatedLinearUnit">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">GatedLinearUnit</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -131,7 +132,7 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">LiteralEmbeddings</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A model for learning and predicting numerical literals using pre-trained KGE.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Attributes:</span>
 <span class="sd">        num_of_data_properties (int): Number of data properties (attributes).</span>
 <span class="sd">        embedding_dims (int): Dimension of the embeddings.</span>
@@ -149,7 +150,6 @@
         <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span>
         <span class="n">gate_residual</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">freeze_entity_embeddings</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">=</span> <span class="n">embedding_dims</span>
@@ -178,18 +178,18 @@
 
 <div class="viewcode-block" id="LiteralEmbeddings.forward">
 <a class="viewcode-back" href="../../autoapi/dicee/literal_classes/index.html#dicee.literal_classes.LiteralEmbeddings.forward">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e_idx</span><span class="p">,</span> <span class="n">relation_idx</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_idx</span><span class="p">,</span> <span class="n">attr_idx</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
-<span class="sd">            e_idx (Tensor): Entity indices (batch).</span>
-<span class="sd">            relation_idx (Tensor): Data property indices (batch).</span>
+<span class="sd">            entity_idx (Tensor): Entity indices (batch).</span>
+<span class="sd">            attr_idx (Tensor): Attribute (Data property)  indices (batch).</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Tensor: scalar predictions.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># embeddings lookup</span>
-        <span class="n">e_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span><span class="n">e_idx</span><span class="p">)</span>  <span class="c1"># [batch, emb_dim]</span>
-        <span class="n">a_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_property_embeddings</span><span class="p">(</span><span class="n">relation_idx</span><span class="p">)</span>  <span class="c1"># [batch, emb_dim]</span>
+        <span class="n">e_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span><span class="n">entity_idx</span><span class="p">)</span>  <span class="c1"># [batch, emb_dim]</span>
+        <span class="n">a_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_property_embeddings</span><span class="p">(</span><span class="n">attr_idx</span><span class="p">)</span>  <span class="c1"># [batch, emb_dim]</span>
 
         <span class="c1"># Concatenate entity and property embeddings</span>
         <span class="n">tuple_emb</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">e_emb</span><span class="p">,</span> <span class="n">a_emb</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [batch, 2 * emb_dim]</span>
@@ -212,7 +212,7 @@
 <div class="viewcode-block" id="LiteralDataset">
 <a class="viewcode-back" href="../../autoapi/dicee/literal_classes/index.html#dicee.literal_classes.LiteralDataset">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LiteralDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Dataset for loading and processing literal data for training Literal Embedding model.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dataset for loading and processing literal data for training Literal Embedding model.</span>
 <span class="sd">    This dataset handles the loading, normalization, and preparation of triples</span>
 <span class="sd">    for training a literal embedding model.</span>
 
@@ -228,13 +228,13 @@
 <span class="sd">        data_property_to_idx (dict): Mapping of data properties to their indices.</span>
 <span class="sd">        num_data_properties (int): Total number of data properties.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-        
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">ent_idx</span> <span class="p">:</span><span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">normalization_type</span> <span class="p">:</span> <span class="nb">str</span> <span class="o">=</span><span class="s2">&quot;z-norm&quot;</span><span class="p">,</span> 
-        <span class="n">sampling_ratio</span> <span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">ent_idx</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">normalization_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;z-norm&quot;</span><span class="p">,</span>
+        <span class="n">sampling_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train_file_path</span> <span class="o">=</span> <span class="n">file_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">normalization_type</span> <span class="o">=</span> <span class="n">normalization_type</span>
@@ -244,15 +244,19 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;entity_to_idx must be provided to initialize LiteralDataset.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;entity_to_idx must be provided to initialize LiteralDataset.&quot;</span>
+            <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_load_data</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">train_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_and_validate_literal_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_file_path</span><span class="p">,</span> <span class="p">)</span>
+        <span class="n">train_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_and_validate_literal_data</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">train_file_path</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="n">train_df</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">[</span><span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;head&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">)]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_property_to_idx</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">rel</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">rel</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;relation&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+            <span class="n">rel</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">rel</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;attribute&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_data_properties</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_property_to_idx</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_ratio</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -260,7 +264,7 @@
             <span class="c1"># keeps the sampling_ratio * 100 % of full training set in the train_df</span>
             <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_ratio</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="n">train_df</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">train_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;relation&quot;</span><span class="p">,</span> <span class="n">group_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="n">train_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;attribute&quot;</span><span class="p">,</span> <span class="n">group_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                     <span class="o">.</span><span class="n">apply</span><span class="p">(</span>
                         <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">frac</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sampling_ratio</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
                     <span class="p">)</span>
@@ -273,47 +277,47 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Split Fraction must be between 0 and 1.&quot;</span><span class="p">)</span>
 
         <span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;head_idx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;head&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">)</span>
-        <span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;rel_idx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;relation&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_property_to_idx</span><span class="p">)</span>
+        <span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;attr_idx&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;attribute&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_property_to_idx</span><span class="p">)</span>
         <span class="n">train_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_normalization</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">triples</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
-            <span class="n">train_df</span><span class="p">[[</span><span class="s2">&quot;head_idx&quot;</span><span class="p">,</span> <span class="s2">&quot;rel_idx&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span>
+            <span class="n">train_df</span><span class="p">[[</span><span class="s2">&quot;head_idx&quot;</span><span class="p">,</span> <span class="s2">&quot;attr_idx&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tails</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;tail&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tails_norm</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
-            <span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;tail_norm&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">values_norm</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+            <span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;value_norm&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_apply_normalization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; Applies normalization to the tail values based on the specified type.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies normalization to the tail values based on the specified type.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalization_type</span> <span class="o">==</span> <span class="s2">&quot;z-norm&quot;</span><span class="p">:</span>
-            <span class="n">stats</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;relation&quot;</span><span class="p">)[</span><span class="s2">&quot;tail&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">])</span>
+            <span class="n">stats</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;attribute&quot;</span><span class="p">)[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">normalization_params</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">)</span>
-            <span class="n">df</span><span class="p">[</span><span class="s2">&quot;tail_norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;relation&quot;</span><span class="p">)[</span><span class="s2">&quot;tail&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span>
+            <span class="n">df</span><span class="p">[</span><span class="s2">&quot;value_norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;attribute&quot;</span><span class="p">)[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span>
                 <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">x</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">/</span> <span class="n">x</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">normalization_params</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;z-norm&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">normalization_params</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;z-norm&quot;</span>
 
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalization_type</span> <span class="o">==</span> <span class="s2">&quot;min-max&quot;</span><span class="p">:</span>
-            <span class="n">stats</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;relation&quot;</span><span class="p">)[</span><span class="s2">&quot;tail&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">])</span>
+            <span class="n">stats</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;attribute&quot;</span><span class="p">)[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">agg</span><span class="p">([</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">normalization_params</span> <span class="o">=</span> <span class="n">stats</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">)</span>
-            <span class="n">df</span><span class="p">[</span><span class="s2">&quot;tail_norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;relation&quot;</span><span class="p">)[</span><span class="s2">&quot;tail&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span>
+            <span class="n">df</span><span class="p">[</span><span class="s2">&quot;value_norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;attribute&quot;</span><span class="p">)[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span>
                 <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">x</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="o">/</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">x</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">normalization_params</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;min-max&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">normalization_params</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;min-max&quot;</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; No normalization applied.&quot;</span><span class="p">)</span>
-            <span class="n">df</span><span class="p">[</span><span class="s2">&quot;tail_norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;tail&quot;</span><span class="p">]</span>
+            <span class="n">df</span><span class="p">[</span><span class="s2">&quot;value_norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">normalization_params</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">normalization_params</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">normalization_params</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">return</span> <span class="n">df</span>
 
 <div class="viewcode-block" id="LiteralDataset.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/literal_classes/index.html#dicee.literal_classes.LiteralDataset.__getitem__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">triples</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">tails_norm</span><span class="p">[</span><span class="n">index</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">triples</span><span class="p">[</span><span class="n">index</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">values_norm</span><span class="p">[</span><span class="n">index</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="LiteralDataset.__len__">
@@ -322,12 +326,11 @@
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">triples</span><span class="p">)</span></div>
 
 
-    
 <div class="viewcode-block" id="LiteralDataset.load_and_validate_literal_data">
 <a class="viewcode-back" href="../../autoapi/dicee/literal_classes/index.html#dicee.literal_classes.LiteralDataset.load_and_validate_literal_data">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_and_validate_literal_data</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span>  <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; Loads and validates the literal data file.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_and_validate_literal_data</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads and validates the literal data file.</span>
 <span class="sd">        Args:</span>
 <span class="sd">            file_path (str): Path to the literal data file.</span>
 <span class="sd">        Returns:</span>
@@ -337,18 +340,13 @@
         <span class="c1"># Check if the file exists</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Data file not found at </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            
+
         <span class="c1"># Try loading the file with either tab or comma separator</span>
         <span class="n">last_exception</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">df</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">for</span> <span class="n">sep</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;,&#39;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">sep</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">]:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
-                    <span class="n">file_path</span><span class="p">,</span>
-                    <span class="n">sep</span><span class="o">=</span><span class="n">sep</span><span class="p">,</span>
-                    <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                    <span class="n">index_col</span><span class="o">=</span><span class="kc">False</span>
-                <span class="p">)</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="n">sep</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                 <span class="c1"># Success—break out of the loop</span>
                 <span class="k">break</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -359,36 +357,38 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Could not read file &#39;</span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&#39; with tab or comma separator. Last error: </span><span class="si">{</span><span class="n">last_exception</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
-        
-        <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;Data file must contain exactly 3 columns: head, relation, tail&quot;</span>
+
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
+        <span class="p">),</span> <span class="s2">&quot;Data file must contain exactly 3 columns: head, attribute, and value.&quot;</span>
         <span class="c1"># Name the columns</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;head&quot;</span><span class="p">,</span> <span class="s2">&quot;relation&quot;</span><span class="p">,</span> <span class="s2">&quot;tail&quot;</span><span class="p">]</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;head&quot;</span><span class="p">,</span> <span class="s2">&quot;attribute&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">]</span>
 
         <span class="c1"># Validate column types</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_string_dtype</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;head&quot;</span><span class="p">]):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Column &#39;head&#39; must be of string type.&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_string_dtype</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;relation&quot;</span><span class="p">]):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Column &#39;relation&#39; must be of string type.&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;tail&quot;</span><span class="p">]):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Column &#39;tail&#39; must be numeric.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_string_dtype</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;attribute&quot;</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Column &#39;attribute&#39; must be of string type.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_numeric_dtype</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Column &#39;value&#39; must be numeric.&quot;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">df</span></div>
-
 
 
 <div class="viewcode-block" id="LiteralDataset.denormalize">
 <a class="viewcode-back" href="../../autoapi/dicee/literal_classes/index.html#dicee.literal_classes.LiteralDataset.denormalize">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">denormalize</span><span class="p">(</span><span class="n">preds_norm</span><span class="p">,</span> <span class="n">attributes</span><span class="p">,</span> <span class="n">normalization_params</span><span class="p">)</span> <span class="o">-&gt;</span>   <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; Denormalizes the predictions based on the normalization type.</span>
-<span class="sd">        </span>
-<span class="sd">        Args: test_df (pd.DataFrame): DataFrame containing predictions and attribute indices.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">denormalize</span><span class="p">(</span><span class="n">preds_norm</span><span class="p">,</span> <span class="n">attributes</span><span class="p">,</span> <span class="n">normalization_params</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Denormalizes the predictions based on the normalization type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">        preds_norm (np.ndarray): Normalized predictions to be denormalized.</span>
+<span class="sd">        attributes (list): List of attributes corresponding to the predictions.</span>
 <span class="sd">        normalization_params (dict): Dictionary containing normalization parameters for each attribute.</span>
-<span class="sd">        norm_type (str): Type of normalization used (&#39;z-norm&#39;, &#39;min-max&#39;, or None).</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            np.ndarray: Denormalized predictions.</span>
-<span class="sd">           </span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">normalization_params</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;z-norm&quot;</span><span class="p">:</span>
             <span class="c1"># Extract means and stds only if z-norm is used</span>
@@ -406,7 +406,9 @@
             <span class="k">return</span> <span class="n">preds_norm</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported normalization type. Use &#39;z-norm&#39;, &#39;min-max&#39;, or None.&quot;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Unsupported normalization type. Use &#39;z-norm&#39;, &#39;min-max&#39;, or None.&quot;</span>
+            <span class="p">)</span></div>
 </div>
 
 </pre></div>
