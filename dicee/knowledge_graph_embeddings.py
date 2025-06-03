@@ -2,7 +2,7 @@ from typing import List, Tuple, Set, Iterable, Dict, Union
 import torch
 from torch import optim
 from torch.utils.data import DataLoader
-from .abstracts import BaseInteractiveKGE
+from .abstracts import BaseInteractiveKGE, InteractiveQueryDecomposition
 from .dataset_classes import TriplePredictionDataset
 from .static_funcs import random_prediction, deploy_triple_prediction, deploy_tail_entity_prediction, \
     deploy_relation_prediction, deploy_head_entity_prediction, load_pickle
@@ -12,7 +12,7 @@ import sys
 import traceback
 
 
-class KGE(BaseInteractiveKGE):
+class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
     def __init__(self, path=None, url=None, construct_ensemble=False,
@@ -650,42 +650,6 @@ class KGE(BaseInteractiveKGE):
                     return self.model(x)
                 else:
                     return torch.sigmoid(self.model(x))
-
-    def t_norm(self, tens_1: torch.Tensor, tens_2: torch.Tensor, tnorm: str = 'min') -> torch.Tensor:
-        if 'min' in tnorm:
-            return torch.min(tens_1, tens_2)
-        elif 'prod' in tnorm:
-            return tens_1 * tens_2
-
-    def tensor_t_norm(self, subquery_scores: torch.FloatTensor, tnorm: str = "min") -> torch.FloatTensor:
-        """
-        Compute T-norm over [0,1] ^{n \times d} where n denotes the number of hops and d denotes number of entities
-        """
-        if "min" == tnorm:
-            return torch.min(subquery_scores, dim=0)
-        elif "prod" == tnorm:
-            print(subquery_scores.shape)
-            print(subquery_scores[:, :10])
-            # Take the last row of the cumulative product over subquery scores
-            print(torch.cumprod(subquery_scores, dim=0)[-1, :10])
-            exit(1)
-            return torch.cumprod(subquery_scores, dim=0)[-1, :]
-        else:
-            raise NotImplementedError(f"{tnorm} is not implemented")
-
-    def t_conorm(self, tens_1: torch.Tensor, tens_2: torch.Tensor, tconorm: str = 'min') -> torch.Tensor:
-        if 'min' in tconorm:
-            return torch.max(tens_1, tens_2)
-        elif 'prod' in tconorm:
-            return (tens_1 + tens_2) - (tens_1 * tens_2)
-
-    def negnorm(self, tens_1: torch.Tensor, lambda_: float, neg_norm: str = 'standard') -> torch.Tensor:
-        if 'standard' in neg_norm:
-            return 1 - tens_1
-        elif 'sugeno' in neg_norm:
-            return (1 - tens_1) / (1 + lambda_ * tens_1)
-        elif 'yager' in neg_norm:
-            return (1 - torch.pow(tens_1, lambda_)) ** (1 / lambda_)
 
     def return_multi_hop_query_results(self, aggregated_query_for_all_entities, k: int, only_scores):
         # @TODO: refactor by torchargmax(aggregated_query_for_all_entities)
