@@ -575,6 +575,58 @@
 </div>
 
 
+<div class="viewcode-block" id="InteractiveQueryDecomposition">
+<a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.InteractiveQueryDecomposition">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">InteractiveQueryDecomposition</span><span class="p">:</span>
+
+<div class="viewcode-block" id="InteractiveQueryDecomposition.t_norm">
+<a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.InteractiveQueryDecomposition.t_norm">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">t_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tens_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tens_2</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tnorm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;min&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;min&#39;</span> <span class="ow">in</span> <span class="n">tnorm</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">tens_1</span><span class="p">,</span> <span class="n">tens_2</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s1">&#39;prod&#39;</span> <span class="ow">in</span> <span class="n">tnorm</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">tens_1</span> <span class="o">*</span> <span class="n">tens_2</span></div>
+
+
+<div class="viewcode-block" id="InteractiveQueryDecomposition.tensor_t_norm">
+<a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.InteractiveQueryDecomposition.tensor_t_norm">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tensor_t_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subquery_scores</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">tnorm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;min&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute T-norm over [0,1] ^{n \times d} where n denotes the number of hops and d denotes number of entities</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;min&quot;</span> <span class="o">==</span> <span class="n">tnorm</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">subquery_scores</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s2">&quot;prod&quot;</span> <span class="o">==</span> <span class="n">tnorm</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">subquery_scores</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">subquery_scores</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">10</span><span class="p">])</span>
+            <span class="c1"># Take the last row of the cumulative product over subquery scores</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cumprod</span><span class="p">(</span><span class="n">subquery_scores</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:</span><span class="mi">10</span><span class="p">])</span>
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cumprod</span><span class="p">(</span><span class="n">subquery_scores</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tnorm</span><span class="si">}</span><span class="s2"> is not implemented&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InteractiveQueryDecomposition.t_conorm">
+<a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.InteractiveQueryDecomposition.t_conorm">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">t_conorm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tens_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tens_2</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tconorm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;min&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;min&#39;</span> <span class="ow">in</span> <span class="n">tconorm</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">tens_1</span><span class="p">,</span> <span class="n">tens_2</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s1">&#39;prod&#39;</span> <span class="ow">in</span> <span class="n">tconorm</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">tens_1</span> <span class="o">+</span> <span class="n">tens_2</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">tens_1</span> <span class="o">*</span> <span class="n">tens_2</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InteractiveQueryDecomposition.negnorm">
+<a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.InteractiveQueryDecomposition.negnorm">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">negnorm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tens_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">lambda_</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">neg_norm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;standard&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;standard&#39;</span> <span class="ow">in</span> <span class="n">neg_norm</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">tens_1</span>
+        <span class="k">elif</span> <span class="s1">&#39;sugeno&#39;</span> <span class="ow">in</span> <span class="n">neg_norm</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">tens_1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">lambda_</span> <span class="o">*</span> <span class="n">tens_1</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s1">&#39;yager&#39;</span> <span class="ow">in</span> <span class="n">neg_norm</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="n">tens_1</span><span class="p">,</span> <span class="n">lambda_</span><span class="p">))</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">lambda_</span><span class="p">)</span></div>
+</div>
+
 
 <div class="viewcode-block" id="AbstractCallback">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback">[docs]</a>

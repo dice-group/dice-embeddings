@@ -11,6 +11,7 @@ Classes
 
    dicee.abstracts.AbstractTrainer
    dicee.abstracts.BaseInteractiveKGE
+   dicee.abstracts.InteractiveQueryDecomposition
    dicee.abstracts.AbstractCallback
    dicee.abstracts.AbstractPPECallback
 
@@ -288,6 +289,23 @@ Module Contents
 
 
    .. py:method:: parameters()
+
+
+.. py:class:: InteractiveQueryDecomposition
+
+   .. py:method:: t_norm(tens_1: torch.Tensor, tens_2: torch.Tensor, tnorm: str = 'min') -> torch.Tensor
+
+
+   .. py:method:: tensor_t_norm(subquery_scores: torch.FloatTensor, tnorm: str = 'min') -> torch.FloatTensor
+
+      Compute T-norm over [0,1] ^{n   imes d} where n denotes the number of hops and d denotes number of entities
+
+
+
+   .. py:method:: t_conorm(tens_1: torch.Tensor, tens_2: torch.Tensor, tconorm: str = 'min') -> torch.Tensor
+
+
+   .. py:method:: negnorm(tens_1: torch.Tensor, lambda_: float, neg_norm: str = 'standard') -> torch.Tensor
 
 
 .. py:class:: AbstractCallback

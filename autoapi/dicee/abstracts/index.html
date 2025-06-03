@@ -107,6 +107,13 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.BaseInteractiveKGE.parameters"><code class="docutils literal notranslate"><span class="pre">BaseInteractiveKGE.parameters()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.abstracts.InteractiveQueryDecomposition"><code class="docutils literal notranslate"><span class="pre">InteractiveQueryDecomposition</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.InteractiveQueryDecomposition.t_norm"><code class="docutils literal notranslate"><span class="pre">InteractiveQueryDecomposition.t_norm()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.InteractiveQueryDecomposition.tensor_t_norm"><code class="docutils literal notranslate"><span class="pre">InteractiveQueryDecomposition.tensor_t_norm()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.InteractiveQueryDecomposition.t_conorm"><code class="docutils literal notranslate"><span class="pre">InteractiveQueryDecomposition.t_conorm()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.InteractiveQueryDecomposition.negnorm"><code class="docutils literal notranslate"><span class="pre">InteractiveQueryDecomposition.negnorm()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.abstracts.AbstractCallback"><code class="docutils literal notranslate"><span class="pre">AbstractCallback</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractCallback.on_init_start"><code class="docutils literal notranslate"><span class="pre">AbstractCallback.on_init_start()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractCallback.on_init_end"><code class="docutils literal notranslate"><span class="pre">AbstractCallback.on_init_end()</span></code></a></li>
@@ -140,7 +147,6 @@
 <li class="toctree-l3"><a class="reference internal" href="../executer/index.html">dicee.executer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../literal_classes/index.html">dicee.literal_classes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../models/index.html">dicee.models</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../query_generator/index.html">dicee.query_generator</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
@@ -197,10 +203,13 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.abstracts.BaseInteractiveKGE" title="dicee.abstracts.BaseInteractiveKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseInteractiveKGE</span></code></a></p></td>
 <td><p>Abstract/base class for using knowledge graph embedding models interactively.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AbstractCallback</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.abstracts.InteractiveQueryDecomposition" title="dicee.abstracts.InteractiveQueryDecomposition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InteractiveQueryDecomposition</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AbstractCallback</span></code></a></p></td>
 <td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.abstracts.AbstractPPECallback" title="dicee.abstracts.AbstractPPECallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AbstractPPECallback</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.abstracts.AbstractPPECallback" title="dicee.abstracts.AbstractPPECallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AbstractPPECallback</span></code></a></p></td>
 <td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
 </tr>
 </tbody>
@@ -510,6 +519,32 @@ apply_semantic_constraint : boolean</p>
 <dd></dd></dl>
 
 </section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.abstracts.InteractiveQueryDecomposition">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.abstracts.</span></span><span class="sig-name descname"><span class="pre">InteractiveQueryDecomposition</span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#InteractiveQueryDecomposition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.InteractiveQueryDecomposition" title="Link to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.InteractiveQueryDecomposition.t_norm">
+<span class="sig-name descname"><span class="pre">t_norm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tens_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tens_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tnorm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'min'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#InteractiveQueryDecomposition.t_norm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.InteractiveQueryDecomposition.t_norm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.InteractiveQueryDecomposition.tensor_t_norm">
+<span class="sig-name descname"><span class="pre">tensor_t_norm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subquery_scores</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tnorm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'min'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#InteractiveQueryDecomposition.tensor_t_norm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.InteractiveQueryDecomposition.tensor_t_norm" title="Link to this definition"></a></dt>
+<dd><p>Compute T-norm over [0,1] ^{n   imes d} where n denotes the number of hops and d denotes number of entities</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.InteractiveQueryDecomposition.t_conorm">
+<span class="sig-name descname"><span class="pre">t_conorm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tens_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tens_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tconorm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'min'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#InteractiveQueryDecomposition.t_conorm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.InteractiveQueryDecomposition.t_conorm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.InteractiveQueryDecomposition.negnorm">
+<span class="sig-name descname"><span class="pre">negnorm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tens_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lambda_</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_norm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'standard'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#InteractiveQueryDecomposition.negnorm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.InteractiveQueryDecomposition.negnorm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
