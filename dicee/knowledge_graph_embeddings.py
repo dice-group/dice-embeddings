@@ -11,7 +11,6 @@ import numpy as np
 import sys
 import traceback
 
-
 class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
@@ -169,7 +168,10 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         Highest K scores and entities
         """
         if self.all_have_inverse:
-            relation = [f"{rel}_inverse" for rel in relation]
+            if isinstance(relation, str):
+                relation = [f"{relation}_inverse"]
+            else:
+                relation = [f"{rel}_inverse" for rel in relation]
             return self.predict_missing_tail_entity(tail_entity, relation, within, batch_size, topk, return_indices)
         if isinstance(relation, list):
             relation = torch.LongTensor([self.relation_to_idx[i] for i in relation])
