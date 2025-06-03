@@ -18,10 +18,13 @@ class KGE(BaseInteractiveKGE):
     def __init__(self, path=None, url=None, construct_ensemble=False,
                  model_name=None):
         super().__init__(path=path, url=url, construct_ensemble=construct_ensemble, model_name=model_name)
-
         # Only check base relations (those without "_inverse" suffix) for their inverse counterparts
-        base_relations = [rel for rel in self.relation_to_idx.keys() if not rel.endswith("_inverse")]
-        self.all_have_inverse = all(f"{rel}_inverse" in self.relation_to_idx for rel in base_relations)
+        if hasattr(self, 'relation_to_idx'):
+            base_relations = [rel for rel in self.relation_to_idx.keys() if not rel.endswith("_inverse")]
+            self.all_have_inverse = all(f"{rel}_inverse" in self.relation_to_idx for rel in base_relations)
+        else:
+            # For BPE models, we don't have explicit relation mappings
+            self.all_have_inverse = False
     def __str__(self):
         return "KGE | " + str(self.model)
 
