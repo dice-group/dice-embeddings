@@ -428,12 +428,7 @@ class InteractiveQueryDecomposition:
         if "min" == tnorm:
             return torch.min(subquery_scores, dim=0)
         elif "prod" == tnorm:
-            print(subquery_scores.shape)
-            print(subquery_scores[:, :10])
-            # Take the last row of the cumulative product over subquery scores
-            print(torch.cumprod(subquery_scores, dim=0)[-1, :10])
-            exit(1)
-            return torch.cumprod(subquery_scores, dim=0)[-1, :]
+            raise NotImplementedError("Product T-norm is not implemented")
         else:
             raise NotImplementedError(f"{tnorm} is not implemented")
 
