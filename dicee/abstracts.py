@@ -413,6 +413,38 @@ class BaseInteractiveKGE:
     def parameters(self):
         return self.model.parameters()
 
+class InteractiveQueryDecomposition:
+
+    def t_norm(self, tens_1: torch.Tensor, tens_2: torch.Tensor, tnorm: str = 'min') -> torch.Tensor:
+        if 'min' in tnorm:
+            return torch.min(tens_1, tens_2)
+        elif 'prod' in tnorm:
+            return tens_1 * tens_2
+
+    def tensor_t_norm(self, subquery_scores: torch.FloatTensor, tnorm: str = "min") -> torch.FloatTensor:
+        """
+        Compute T-norm over [0,1] ^{n \times d} where n denotes the number of hops and d denotes number of entities
+        """
+        if "min" == tnorm:
+            return torch.min(subquery_scores, dim=0)
+        elif "prod" == tnorm:
+            raise NotImplementedError("Product T-norm is not implemented")
+        else:
+            raise NotImplementedError(f"{tnorm} is not implemented")
+
+    def t_conorm(self, tens_1: torch.Tensor, tens_2: torch.Tensor, tconorm: str = 'min') -> torch.Tensor:
+        if 'min' in tconorm:
+            return torch.max(tens_1, tens_2)
+        elif 'prod' in tconorm:
+            return (tens_1 + tens_2) - (tens_1 * tens_2)
+
+    def negnorm(self, tens_1: torch.Tensor, lambda_: float, neg_norm: str = 'standard') -> torch.Tensor:
+        if 'standard' in neg_norm:
+            return 1 - tens_1
+        elif 'sugeno' in neg_norm:
+            return (1 - tens_1) / (1 + lambda_ * tens_1)
+        elif 'yager' in neg_norm:
+            return (1 - torch.pow(tens_1, lambda_)) ** (1 / lambda_)
 
 class AbstractCallback(ABC, lightning.pytorch.callbacks.Callback):
     """
