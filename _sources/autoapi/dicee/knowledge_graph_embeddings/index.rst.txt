@@ -268,3 +268,57 @@ Module Contents
 
 
 
+   .. py:method:: train_literals(train_file_path: str = None, num_epochs: int = 100, lit_lr: float = 0.001, eval_litreal_preds: bool = True, eval_file_path: str = None, lit_normalization_type: str = 'z-norm', batch_size: int = 1024, sampling_ratio: float = None, random_seed=1)
+
+      Trains the Literal Embeddings model using literal data.
+
+      :param train_file_path: Path to the training data file.
+      :type train_file_path: str
+      :param num_epochs: Number of training epochs.
+      :type num_epochs: int
+      :param lit_lr: Learning rate for the literal model.
+      :type lit_lr: float
+      :param eval_litreal_preds: If True, evaluate the model after training.
+      :type eval_litreal_preds: bool
+      :param eval_file_path: Path to evaluation data file.
+      :type eval_file_path: str
+      :param norm_type: Normalization type to use ('z-norm', 'min-max', or None).
+      :type norm_type: str
+      :param batch_size: Batch size for training.
+      :type batch_size: int
+      :param sampling_ratio: Ratio of training triples to use.
+      :type sampling_ratio: float
+
+
+
+   .. py:method:: predict_literals(entity: Union[List[str], str] = None, attribute: Union[List[str], str] = None, denormalize_preds: bool = True) -> torch.FloatTensor
+
+      Predicts literal values for given entities and attributes.
+
+      :param entity: Entity or list of entities to predict literals for.
+      :type entity: Union[List[str], str]
+      :param attribute: Attribute or list of attributes to predict literals for.
+      :type attribute: Union[List[str], str]
+      :param denormalize_preds: If True, denormalizes the predictions.
+      :type denormalize_preds: bool
+
+      :returns: Predictions for the given entities and attributes.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: evaluate_literal_prediction(eval_file_path: str = None, store_lit_preds: bool = True, eval_literals: bool = True)
+
+      Evaluates the trained literal prediction model on a test file.
+
+      :param eval_file_path: Path to the evaluation file.
+      :type eval_file_path: str
+      :param store_lit_preds: If True, stores the predictions in a CSV file.
+      :type store_lit_preds: bool
+      :param eval_literals: If True, evaluates the literal predictions and prints error metrics.
+      :type eval_literals: bool
+
+      :returns: None
+
+
+

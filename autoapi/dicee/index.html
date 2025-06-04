@@ -77,6 +77,7 @@
 <li class="toctree-l3"><a class="reference internal" href="executer/index.html">dicee.executer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="knowledge_graph/index.html">dicee.knowledge_graph</a></li>
 <li class="toctree-l3"><a class="reference internal" href="knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="literal_classes/index.html">dicee.literal_classes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="models/index.html">dicee.models</a></li>
 <li class="toctree-l3"><a class="reference internal" href="query_generator/index.html">dicee.query_generator</a></li>
 <li class="toctree-l3"><a class="reference internal" href="read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
@@ -476,6 +477,9 @@
 <li class="toctree-l4"><a class="reference internal" href="#dicee.KGE.train_triples"><code class="docutils literal notranslate"><span class="pre">KGE.train_triples()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.KGE.train_k_vs_all"><code class="docutils literal notranslate"><span class="pre">KGE.train_k_vs_all()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.KGE.train"><code class="docutils literal notranslate"><span class="pre">KGE.train()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KGE.train_literals"><code class="docutils literal notranslate"><span class="pre">KGE.train_literals()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KGE.predict_literals"><code class="docutils literal notranslate"><span class="pre">KGE.predict_literals()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KGE.evaluate_literal_prediction"><code class="docutils literal notranslate"><span class="pre">KGE.evaluate_literal_prediction()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.mapping_from_first_two_cols_to_third"><code class="docutils literal notranslate"><span class="pre">mapping_from_first_two_cols_to_third()</span></code></a></li>
@@ -685,6 +689,7 @@
 <li class="toctree-l1"><a class="reference internal" href="executer/index.html">dicee.executer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="knowledge_graph/index.html">dicee.knowledge_graph</a></li>
 <li class="toctree-l1"><a class="reference internal" href="knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="literal_classes/index.html">dicee.literal_classes</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models/index.html">dicee.models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="query_generator/index.html">dicee.query_generator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
@@ -3822,6 +3827,65 @@ orall r in R f(e,r,x)</p>
 <dt class="sig sig-object py" id="dicee.KGE.train">
 <span class="sig-name descname"><span class="pre">train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_sample_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../_modules/dicee/knowledge_graph_embeddings.html#KGE.train"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.KGE.train" title="Link to this definition"></a></dt>
 <dd><p>Retrained a pretrain model on an input KG via negative sampling.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.KGE.train_literals">
+<span class="sig-name descname"><span class="pre">train_literals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lit_lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_litreal_preds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lit_normalization_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'z-norm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1024</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/knowledge_graph_embeddings.html#KGE.train_literals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.KGE.train_literals" title="Link to this definition"></a></dt>
+<dd><p>Trains the Literal Embeddings model using literal data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_file_path</strong> (<em>str</em>) – Path to the training data file.</p></li>
+<li><p><strong>num_epochs</strong> (<em>int</em>) – Number of training epochs.</p></li>
+<li><p><strong>lit_lr</strong> (<em>float</em>) – Learning rate for the literal model.</p></li>
+<li><p><strong>eval_litreal_preds</strong> (<em>bool</em>) – If True, evaluate the model after training.</p></li>
+<li><p><strong>eval_file_path</strong> (<em>str</em>) – Path to evaluation data file.</p></li>
+<li><p><strong>norm_type</strong> (<em>str</em>) – Normalization type to use (‘z-norm’, ‘min-max’, or None).</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) – Batch size for training.</p></li>
+<li><p><strong>sampling_ratio</strong> (<em>float</em>) – Ratio of training triples to use.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.KGE.predict_literals">
+<span class="sig-name descname"><span class="pre">predict_literals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">denormalize_preds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../_modules/dicee/knowledge_graph_embeddings.html#KGE.predict_literals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.KGE.predict_literals" title="Link to this definition"></a></dt>
+<dd><p>Predicts literal values for given entities and attributes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>entity</strong> (<em>Union</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>str</em><em>]</em>) – Entity or list of entities to predict literals for.</p></li>
+<li><p><strong>attribute</strong> (<em>Union</em><em>[</em><em>List</em><em>[</em><em>str</em><em>]</em><em>, </em><em>str</em><em>]</em>) – Attribute or list of attributes to predict literals for.</p></li>
+<li><p><strong>denormalize_preds</strong> (<em>bool</em>) – If True, denormalizes the predictions.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Predictions for the given entities and attributes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.KGE.evaluate_literal_prediction">
+<span class="sig-name descname"><span class="pre">evaluate_literal_prediction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eval_file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_lit_preds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_literals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/knowledge_graph_embeddings.html#KGE.evaluate_literal_prediction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.KGE.evaluate_literal_prediction" title="Link to this definition"></a></dt>
+<dd><p>Evaluates the trained literal prediction model on a test file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>eval_file_path</strong> (<em>str</em>) – Path to the evaluation file.</p></li>
+<li><p><strong>store_lit_preds</strong> (<em>bool</em>) – If True, stores the predictions in a CSV file.</p></li>
+<li><p><strong>eval_literals</strong> (<em>bool</em>) – If True, evaluates the literal predictions and prints error metrics.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
