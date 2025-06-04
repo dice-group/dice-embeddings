@@ -6,7 +6,6 @@ import os
 import psutil
 from tqdm import tqdm
 
-
 class TorchTrainer(AbstractTrainer):
     """
         TorchTrainer for using single GPU or multi CPUs on a single node

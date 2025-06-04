@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import datetime
 from typing import Tuple, List
-from .models import CMult, Pyke, DistMult, KeciBase, Keci, TransE, DeCaL, DualE,\
+from .models import Pyke, DistMult, CKeci, Keci, TransE, DeCaL, DualE,\
     ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom, LFMult
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
@@ -16,8 +16,10 @@ import psutil
 from .models.base_model import BaseKGE
 import pickle
 from collections import defaultdict
-
+import polars as pl
 import requests
+import csv
+from .models.ensemble import EnsembleKGE
 
 def create_recipriocal_triples(x):
     """
@@ -75,17 +77,23 @@ def timeit(func):
 
     return timeit_wrapper
 
-
+# TODO:CD: Deprecate the pickle usage for data serialization.
 def save_pickle(*, data: object=None, file_path=str):
     if data:
         pickle.dump(data, open(file_path, "wb"))
     else:
         print("Input data is None. Nothing to save.")
-
+# TODO:CD: Deprecate the pickle usage for data serialization.
 def load_pickle(file_path=str):
     with open(file_path, 'rb') as f:
         return pickle.load(f)
 
+def load_term_mapping(file_path=str):
+    try:
+        return load_pickle(file_path=file_path+".p")
+    except FileNotFoundError:
+        print(f"python file not found\t{file_path} with .p extension")
+    return pl.read_csv(file_path + ".csv")
 
 # @TODO: Could these funcs can be merged?
 def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None):
@@ -94,20 +102,40 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
     assert isinstance(is_continual_training, bool)
     assert isinstance(storage_path, str)
     if is_continual_training:
-        print('Loading pre-trained model...')
-        model, _ = intialize_model(args)
-        try:
-            weights = torch.load(storage_path + '/model.pt', torch.device('cpu'))
-            model.load_state_dict(weights)
-            for parameter in model.parameters():
-                parameter.requires_grad = True
-            model.train()
-        except FileNotFoundError:
-            print(f"{storage_path}/model.pt is not found. The model will be trained with random weights")
-        return model, _
+        # Check whether we have tensor parallelized KGE.
+        files_under_storage_path = [f for f in os.listdir(storage_path) if os.path.isfile(os.path.join(storage_path, f))]
+        num_of_partial_models_for_tensor_parallel= len([ i for i in files_under_storage_path if "partial" in i ])
+        if num_of_partial_models_for_tensor_parallel >= 1:
+            models=[]
+            labelling_flag=None
+            for i in range(num_of_partial_models_for_tensor_parallel):
+                model, labelling_flag = intialize_model(args)
+                weights = torch.load(storage_path + f'/model_partial_{i}.pt', torch.device('cpu'),weights_only=False)
+                model.load_state_dict(weights)
+                for parameter in model.parameters():
+                    parameter.requires_grad = True
+                model.train()
+                models.append(model)
+            return EnsembleKGE(pretrained_models=models), labelling_flag
+        else:
+            print('Loading pre-trained model...')
+            model, labelling_flag = intialize_model(args)
+            try:
+                weights = torch.load(storage_path + '/model.pt', torch.device('cpu'))
+                model.load_state_dict(weights)
+                for parameter in model.parameters():
+                    parameter.requires_grad = True
+                model.train()
+            except FileNotFoundError as e:
+                print(f"{storage_path}/model.pt is not found. The model will be trained with random weights")
+                raise e
+            return model, labelling_flag
     else:
-        return intialize_model(args)
+        model, labelling_flag= intialize_model(args)
+        if args["trainer"]=="TP":
+            model=EnsembleKGE(seed_model=model)
 
+    return model, labelling_flag
 
 def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) -> Tuple[object, Tuple[dict, dict]]:
     """ Load weights and initialize pytorch module from namespace arguments"""
@@ -156,15 +184,20 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
             print('Loading entity and relation indexes...', end=' ')
         try:
             # Maybe ? https://docs.python.org/3/library/mmap.html
+            # TODO:CD: Deprecate the pickle usage for data serialization.
+            # TODO: CD: We do not need to keep the mapping in memory
             with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
                 entity_to_idx = pickle.load(f)
         except FileNotFoundError:
-            entity_to_idx = load_json(path_of_experiment_folder + '/entity_to_idx.json')
+            entity_to_idx = { v["entity"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv",index_col=0).to_dict(orient='index').items()}
+
         try:
+            # TODO:CD: Deprecate the pickle usage for data serialization.
+            # TODO: CD: We do not need to keep the mapping in memory
             with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
                 relation_to_idx = pickle.load(f)
         except FileNotFoundError:
-            relation_to_idx = load_json(path_of_experiment_folder + '/relation_to_idx.json')
+            relation_to_idx = { v["relation"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv",index_col=0).to_dict(orient='index').items()}
         if verbose > 0:
             print(f'Done! It took {time.time() - start_time:.4f}')
         return model, (entity_to_idx, relation_to_idx)
@@ -220,10 +253,16 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, Tuple[
     model.eval()
     start_time = time.time()
     print('Loading entity and relation indexes...', end=' ')
-    with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
-        entity_to_idx = pickle.load(f)
-    with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
-        relation_to_idx = pickle.load(f)
+    # TODO: CD: We do not need to keep the mapping in memory
+    # TODO:CD: Deprecate the pickle usage for data serialization.
+
+    entity_to_idx = {v["entity"]: k for k, v in
+                     pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv", index_col=0).to_dict(
+                         orient='index').items()}
+    relation_to_idx = {v["relation"]: k for k, v in
+                     pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv", index_col=0).to_dict(
+                         orient='index').items()}
+
     assert isinstance(entity_to_idx, dict)
     assert isinstance(relation_to_idx, dict)
     print(f'Done! It took {time.time() - start_time:.4f}')
@@ -260,53 +299,37 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
 def save_checkpoint_model(model, path: str) -> None:
     """ Store Pytorch model into disk"""
     if isinstance(model, BaseKGE):
-        try:
-            torch.save(model.state_dict(), path)
-        except ReferenceError as e:
-            print(e)
-            print(model.name)
-            print('Could not save the model correctly')
+        torch.save(model.state_dict(), path)
+    elif isinstance(model, EnsembleKGE):
+        # path comes with ../model_...
+        for i, partial_model in enumerate(model):
+            new_path=path.replace("model.pt",f"model_partial_{i}.pt")
+            torch.save(partial_model.state_dict(), new_path)
     else:
         torch.save(model.model.state_dict(), path)
 
 
-def store(trainer,
-          trained_model, model_name: str = 'model', full_storage_path: str = None,
+def store(trained_model, model_name: str = 'model', full_storage_path: str = None,
           save_embeddings_as_csv=False) -> None:
-    """
-    Store trained_model model and save embeddings into csv file.
-    :param trainer: an instance of trainer class
-    :param full_storage_path: path to save parameters.
-    :param model_name: string representation of the name of the model.
-    :param trained_model: an instance of BaseKGE see core.models.base_model .
-    :param save_embeddings_as_csv: for easy access of embeddings.
-    :return:
-    """
     assert full_storage_path is not None
     assert isinstance(model_name, str)
     assert len(model_name) > 1
-
-    # (1) Save pytorch model in trained_model .
     save_checkpoint_model(model=trained_model, path=full_storage_path + f'/{model_name}.pt')
+
     if save_embeddings_as_csv:
         entity_emb, relation_ebm = trained_model.get_embeddings()
-        entity_to_idx = pickle.load(open(full_storage_path + '/entity_to_idx.p', 'rb'))
-        entity_str = entity_to_idx.keys()
-        # Ensure that the ordering is correct.
-        assert list(range(0, len(entity_str))) == list(entity_to_idx.values())
-        save_embeddings(entity_emb.numpy(), indexes=entity_str,
-                        path=full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
-        del entity_to_idx, entity_str, entity_emb
+        print("Saving entity embeddings...")
+        entity=pd.read_csv(f"{full_storage_path}/entity_to_idx.csv",index_col=0)["entity"]
+        assert entity.index.is_monotonic_increasing
+        save_embeddings(entity_emb.numpy(), indexes=entity.to_list(), path=full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
+        del entity, entity_emb
         if relation_ebm is not None:
-            relation_to_idx = pickle.load(open(full_storage_path + '/relation_to_idx.p', 'rb'))
-            relations_str = relation_to_idx.keys()
-
-            save_embeddings(relation_ebm.numpy(), indexes=relations_str,
-                            path=full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
-            del relation_ebm, relations_str, relation_to_idx
+            print("Saving relation embeddings...")
+            relations = pd.read_csv(f"{full_storage_path}/relation_to_idx.csv", index_col=0)["relation"]
+            assert relations.index.is_monotonic_increasing
+            save_embeddings(relation_ebm.numpy(), indexes=relations, path=full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
         else:
             pass
-
 
 def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.DataFrame:
     """
@@ -337,22 +360,24 @@ def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.Data
     assert num_triples + num_noisy_triples == len(train_set)
     return train_set
 
-
 def read_or_load_kg(args, cls):
     print('*** Read or Load Knowledge Graph  ***')
     start_time = time.time()
     kg = cls(dataset_dir=args.dataset_dir,
              byte_pair_encoding=args.byte_pair_encoding,
+             padding=True if args.byte_pair_encoding and args.model != "BytE" else False,
              add_noise_rate=args.add_noise_rate,
              sparql_endpoint=args.sparql_endpoint,
              path_single_kg=args.path_single_kg,
-             add_reciprical=args.apply_reciprical_or_noise,
+             add_reciprocal=args.apply_reciprical_or_noise,
              eval_model=args.eval_model,
              read_only_few=args.read_only_few,
              sample_triples_ratio=args.sample_triples_ratio,
              path_for_serialization=args.full_storage_path,
              path_for_deserialization=args.path_experiment_folder if hasattr(args, 'path_experiment_folder') else None,
-             backend=args.backend)
+             backend=args.backend,
+             training_technique=args.scoring_technique,
+             separator=args.separator)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     # (2) Share some info about data for easy access.
     print(kg.description_of_input)
@@ -408,11 +433,8 @@ def intialize_model(args: dict,verbose=0) -> Tuple[object, str]:
     elif model_name == 'Keci':
         model = Keci(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif model_name == 'KeciBase':
-        model = KeciBase(args=args)
-        form_of_labelling = 'EntityPrediction'
-    elif model_name == 'CMult':
-        model = CMult(args=args)
+    elif model_name == 'CKeci':
+        model = CKeci(args=args)
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'BytE':
         model = BytE(args=args)
@@ -513,19 +535,14 @@ def create_experiment_folder(folder_name='Experiments'):
 
 
 def continual_training_setup_executor(executor) -> None:
-    """
-    storage_path:str A path leading to a parent directory, where a subdirectory containing KGE related data
-
-    full_storage_path:str A path leading to a subdirectory containing KGE related data
-
-    """
+    # TODO:CD:Deprecate it
     if executor.is_continual_training:
         # (4.1) If it is continual, then store new models on previous path.
         executor.storage_path = executor.args.full_storage_path
     else:
         # Create a single directory containing KGE and all related data
         if executor.args.path_to_store_single_run:
-            os.makedirs(executor.args.path_to_store_single_run, exist_ok=True)
+            os.makedirs(executor.args.path_to_store_single_run, exist_ok=False)
             executor.args.full_storage_path = executor.args.path_to_store_single_run
         else:
             # Create a parent and subdirectory.
@@ -643,8 +660,11 @@ def download_files_from_url(base_url:str, destination_folder=".")->None:
 
     """
     # lazy import
-    from bs4 import BeautifulSoup
-
+    try:
+        from bs4 import BeautifulSoup
+    except ModuleNotFoundError:
+        print("Please install the 'beautifulsoup4' package by running: pip install beautifulsoup4")
+        raise
     response = requests.get(base_url)
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -669,3 +689,83 @@ def download_pretrained_model(url: str) -> str:
         os.mkdir(dir_name)
         download_files_from_url(url_to_download_from, destination_folder=dir_name)
     return dir_name
+
+def write_csv_from_model_parallel(path: str) :
+    """Create"""
+    assert os.path.exists(path), "Path does not exist"
+    # Detect files that start with model_ and end with .pt
+    model_files = [f for f in os.listdir(path) if f.startswith("model_") and f.endswith(".pt")]
+    model_files.sort()  # Sort to maintain order if necessary (e.g., model_0.pt, model_1.pt)
+
+    entity_embeddings=[]
+    relation_embeddings=[]
+
+    # Process each model file
+    for model_file in model_files:
+        model_path = os.path.join(path, model_file)
+        # Load model
+        model = torch.load(model_path)
+        # Assuming model has a get_embeddings method
+        entity_emb, relation_emb = model["_orig_mod.entity_embeddings.weight"], model["_orig_mod.relation_embeddings.weight"]
+        entity_embeddings.append(entity_emb)
+        relation_embeddings.append(relation_emb)
+
+    return torch.cat(entity_embeddings, dim=1), torch.cat(relation_embeddings, dim=1)
+
+
+def from_pretrained_model_write_embeddings_into_csv(path: str) -> None:
+    """ """
+    assert os.path.exists(path), "Path does not exist"
+    config = load_json(path + '/configuration.json')
+    entity_csv_path = os.path.join(path, f"{config['model']}_entity_embeddings.csv")
+    relation_csv_path = os.path.join(path, f"{config['model']}_relation_embeddings.csv")
+
+    if config["trainer"]=="TP":
+        entity_emb, relation_emb = write_csv_from_model_parallel(path)
+    else:
+        # Load model
+        model = torch.load(os.path.join(path, "model.pt"))
+        # Assuming model has a get_embeddings method
+        entity_emb, relation_emb = model["entity_embeddings.weight"], model["relation_embeddings.weight"]
+    str_entity = pd.read_csv(f"{path}/entity_to_idx.csv", index_col=0)["entity"]
+    assert str_entity.index.is_monotonic_increasing
+    str_entity=str_entity.to_list()
+    # Write entity embeddings with headers and indices
+    with open(entity_csv_path, "w", newline="") as f:
+        writer = csv.writer(f)
+        # Add header (e.g., "", "0", "1", ..., "N")
+        headers = [""] + [f"{i}" for i in range(entity_emb.size(1))]
+        writer.writerow(headers)
+        # Add rows with index
+        for i_row, (name,row) in enumerate(zip(str_entity,entity_emb)):
+            writer.writerow([name] + row.tolist())
+    str_relations = pd.read_csv(f"{path}/relation_to_idx.csv", index_col=0)["relation"]
+    assert str_relations.index.is_monotonic_increasing
+
+    # Write relation embeddings with headers and indices
+    with open(relation_csv_path, "w", newline="") as f:
+        writer = csv.writer(f)
+        # Add header (e.g., "", "0", "1", ..., "N")
+        headers = [""] + [f"{i}" for i in range(relation_emb.size(1))]
+        writer.writerow(headers)
+        # Add rows with index
+        for i_row, (name, row) in enumerate(zip(str_relations,relation_emb)):
+            writer.writerow([name]+ row.tolist())
+
+    """
+    
+    # Write entity embeddings directly to CSV
+    with open(entity_csv_path, "w") as f:
+        for row in entity_emb:
+            f.write(",".join(map(str, row.tolist())) + "\n")
+
+    # Write relation embeddings directly to CSV
+    with open(relation_csv_path, "w") as f:
+        for row in relation_emb:
+            f.write(",".join(map(str, row.tolist())) + "\n")
+
+    # Convert to numpy
+    pd.DataFrame(entity_emb.numpy()).to_csv(entity_csv_path, index=True, header=False)
+    # If CSV files do not exist, create them
+    pd.DataFrame(relation_emb.numpy()).to_csv(relation_csv_path, index=True, header=False)
+    """

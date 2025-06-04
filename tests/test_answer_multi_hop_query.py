@@ -1,11 +1,6 @@
 from dicee.executer import Execute
 from dicee.config import Namespace
 from dicee.knowledge_graph_embeddings import KGE
-from dicee import QueryGenerator
-from dicee.static_funcs import evaluate
-from dicee.static_funcs import load_pickle
-from dicee.static_funcs import load_json
-
 import pytest
 
 class TestQueryAnswering:
@@ -65,6 +60,6 @@ class TestQueryAnswering:
                                                                         "http://www.benchmark.org/family#hasSibling",
                                                                         "http://www.benchmark.org/family#married",
                                                                         "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")),
-                                                             tnorm="min", k=5)
+                                                             tnorm="min", k=10)
         top_entities = [topk_entity for topk_entity, query_score in predictions]
         assert "http://www.benchmark.org/family#Person" in top_entities

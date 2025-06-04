@@ -1,15 +1,14 @@
 import lightning as pl
-
-import gc
-
+import polars
 from typing import Union
-
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
 from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb
-from dicee.dataset_classes import construct_dataset, reload_dataset
+from dicee.dataset_classes import construct_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
+from .model_parallelism import TensorParallel
+from ..models.ensemble import EnsembleKGE
 from ..static_funcs import timeit
 import os
 import torch
@@ -17,19 +16,23 @@ import pandas as pd
 import copy
 from typing import List, Tuple
 from ..knowledge_graph import KG
+import numpy as np
+
+def load_term_mapping(file_path=str):
+    return polars.read_csv(file_path + ".csv")
 
 
-def initialize_trainer(args, callbacks):
+def initialize_trainer(args, callbacks)->TorchTrainer | TensorParallel | TorchDDPTrainer | pl.Trainer:
     if args.trainer == 'torchCPUTrainer':
         print('Initializing TorchTrainer CPU Trainer...', end='\t')
-        return TorchTrainer(args, callbacks=callbacks)
+        trainer = TorchTrainer(args, callbacks=callbacks)
+    elif args.trainer == 'TP':
+        print('Initializing TensorParallel...', end='\t')
+        trainer= TensorParallel(args, callbacks=callbacks)
     elif args.trainer == 'torchDDP':
-        if torch.cuda.is_available():
-            print('Initializing TorchDDPTrainer GPU', end='\t')
-            return TorchDDPTrainer(args, callbacks=callbacks)
-        else:
-            print('Initializing TorchTrainer CPU Trainer', end='\t')
-            return TorchTrainer(args, callbacks=callbacks)
+        assert torch.cuda.is_available()
+        print('Initializing TorchDDPTrainer GPU', end='\t')
+        trainer = TorchDDPTrainer(args, callbacks=callbacks)
     elif args.trainer == 'PL':
         print('Initializing Pytorch-lightning Trainer', end='\t')
         kwargs = vars(args)
@@ -63,7 +66,7 @@ def initialize_trainer(args, callbacks):
         default_root_dir: Optional[_PATH] = None,)
         """
         # @TODO: callbacks need to be ad
-        return pl.Trainer(accelerator=kwargs.get("accelerator", "auto"),
+        trainer= pl.Trainer(accelerator=kwargs.get("accelerator", "auto"),
                           strategy=kwargs.get("strategy", "auto"),
                           num_nodes=kwargs.get("num_nodes", 1),
                           precision=kwargs.get("precision", None),
@@ -77,8 +80,11 @@ def initialize_trainer(args, callbacks):
                           detect_anomaly=False,
                           barebones=False)
     else:
-        print('Initialize TorchTrainer CPU Trainer', end='\t')
-        return TorchTrainer(args, callbacks=callbacks)
+        print('Initializing TorchTrainer CPU Trainer...', end='\t')
+        trainer = TorchTrainer(args, callbacks=callbacks)
+    assert trainer is not None
+    return trainer
+
 
 
 def get_callbacks(args):
@@ -108,7 +114,6 @@ def get_callbacks(args):
             raise RuntimeError(f'Incorrect callback:{k}')
     return callbacks
 
-
 class DICE_Trainer:
     """
    DICE_Trainer implement
@@ -131,7 +136,7 @@ class DICE_Trainer:
     report:dict
     """
 
-    def __init__(self, args, is_continual_training, storage_path, evaluator=None):
+    def __init__(self, args, is_continual_training:bool, storage_path, evaluator=None):
         self.report = dict()
         self.args = args
         self.trainer = None
@@ -140,13 +145,13 @@ class DICE_Trainer:
         # Required for CV.
         self.evaluator = evaluator
         self.form_of_labelling = None
-        print(
-            f'# of CPUs:{os.cpu_count()} | # of GPUs:{torch.cuda.device_count()} | # of CPUs for dataloader:{self.args.num_core}')
-
+        print(f'# of CPUs:{os.cpu_count()} |'
+              f' # of GPUs:{torch.cuda.device_count()} |'
+              f' # of CPUs for dataloader:{self.args.num_core}')
         for i in range(torch.cuda.device_count()):
             print(torch.cuda.get_device_name(i))
 
-    def continual_start(self):
+    def continual_start(self,knowledge_graph):
         """
         (1) Initialize training.
         (2) Load model
@@ -164,18 +169,15 @@ class DICE_Trainer:
 
         self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
         model, form_of_labelling = self.initialize_or_load_model()
-        assert form_of_labelling in ['EntityPrediction', 'RelationPrediction', 'Pyke']
-        assert self.args.scoring_technique in ["AllvsAll",'KvsSample', '1vsAll', 'KvsAll', 'NegSample']
-        train_loader = self.initialize_dataloader(
-            reload_dataset(path=self.storage_path, form_of_labelling=form_of_labelling,
-                           scoring_technique=self.args.scoring_technique,
-                           neg_ratio=self.args.neg_ratio,
-                           label_smoothing_rate=self.args.label_smoothing_rate))
-        self.trainer.fit(model, train_dataloaders=train_loader)
+        # TODO: Here we need to load memory pag
+        self.trainer.evaluator = self.evaluator
+        self.trainer.dataset = knowledge_graph
+        self.trainer.form_of_labelling = form_of_labelling
+        self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
         return model, form_of_labelling
 
     @timeit
-    def initialize_trainer(self, callbacks: List) -> pl.Trainer:
+    def initialize_trainer(self, callbacks: List) -> pl.Trainer | TensorParallel | TorchTrainer | TorchDDPTrainer:
         """ Initialize Trainer from input arguments """
         return initialize_trainer(self.args, callbacks)
 
@@ -188,7 +190,7 @@ class DICE_Trainer:
         return model, form_of_labelling
 
     @timeit
-    def initialize_dataloader(self, dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader:
+    def init_dataloader(self, dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader:
         print('Initializing Dataloader...', end='\t')
         # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
         # https://github.com/pytorch/pytorch/issues/13246#issuecomment-905703662
@@ -197,42 +199,92 @@ class DICE_Trainer:
                                            num_workers=self.args.num_core, persistent_workers=False)
 
     @timeit
-    def initialize_dataset(self, dataset: KG, form_of_labelling) -> torch.utils.data.Dataset:
+    def init_dataset(self) -> torch.utils.data.Dataset:
         print('Initializing Dataset...', end='\t')
-        train_dataset = construct_dataset(train_set=dataset.train_set,
-                                          valid_set=dataset.valid_set,
-                                          test_set=dataset.test_set,
-                                          train_target_indices=dataset.train_target_indices,
-                                          target_dim=dataset.target_dim,
-                                          ordered_bpe_entities=dataset.ordered_bpe_entities,
-                                          entity_to_idx=dataset.entity_to_idx,
-                                          relation_to_idx=dataset.relation_to_idx,
-                                          form_of_labelling=form_of_labelling,
-                                          scoring_technique=self.args.scoring_technique,
-                                          neg_ratio=self.args.neg_ratio,
-                                          label_smoothing_rate=self.args.label_smoothing_rate,
-                                          byte_pair_encoding=self.args.byte_pair_encoding,
-                                          block_size=self.args.block_size)
-        if self.args.eval_model is None:
-            del dataset.train_set
-            gc.collect()
+        if isinstance(self.trainer.dataset,KG):
+            # Create a memory map of training dataset to reduce the memory usage
+            train_set_shape=self.trainer.dataset.train_set.shape
+            train_set_dtype=self.trainer.dataset.train_set.dtype
+            path_memory_map=self.trainer.dataset.path_for_serialization + '/memory_map_train_set.npy'
+            memmap_kg = np.memmap(path_memory_map, dtype=train_set_dtype, mode='w+', shape=train_set_shape)
+            memmap_kg[:] = self.trainer.dataset.train_set[:]
+            memmap_kg[:].flush()
+            del memmap_kg
+            self.trainer.dataset.train_se = np.memmap(path_memory_map,
+                                             mode='r',
+                                             dtype=train_set_dtype,
+                                             shape=train_set_shape)
+            train_dataset = construct_dataset(train_set=self.trainer.dataset.train_set,
+                                              valid_set=self.trainer.dataset.valid_set,
+                                              test_set=self.trainer.dataset.test_set,
+                                              train_target_indices=self.trainer.dataset.train_target_indices,
+                                              target_dim=self.trainer.dataset.target_dim,
+                                              ordered_bpe_entities=self.trainer.dataset.ordered_bpe_entities,
+                                              entity_to_idx=self.trainer.dataset.entity_to_idx,
+                                              relation_to_idx=self.trainer.dataset.relation_to_idx,
+                                              form_of_labelling=self.trainer.form_of_labelling,
+                                              scoring_technique=self.args.scoring_technique,
+                                              neg_ratio=self.args.neg_ratio,
+                                              label_smoothing_rate=self.args.label_smoothing_rate,
+                                              byte_pair_encoding=self.args.byte_pair_encoding,
+                                              block_size=self.args.block_size)
+        else:
+            assert isinstance(self.trainer.dataset, np.memmap), ("Train dataset must be an instance of memmap. "
+                                                                 f"Currently, {type(np.memmap)}!")
+            if self.args.continual_learning:
+                path = self.args.continual_learning
+            else:
+                path = self.args.path_to_store_single_run
+
+            train_dataset = construct_dataset(train_set=self.trainer.dataset,
+                                              valid_set=None,
+                                              test_set=None,
+                                              train_target_indices=None,
+                                              target_dim=None,
+                                              ordered_bpe_entities=None,
+                                              entity_to_idx={v["entity"]:k for k,v in pd.read_csv(f"{path}/entity_to_idx.csv",index_col=0).to_dict(orient='index').items()},
+                                              relation_to_idx={v["relation"]:k for k,v in pd.read_csv(f"{path}/relation_to_idx.csv",index_col=0).to_dict(orient='index').items()},
+                                              form_of_labelling=self.trainer.form_of_labelling,
+                                              scoring_technique=self.args.scoring_technique,
+                                              neg_ratio=self.args.neg_ratio,
+                                              label_smoothing_rate=self.args.label_smoothing_rate,
+                                              byte_pair_encoding=self.args.byte_pair_encoding,
+                                              block_size=self.args.block_size)
+
+
         return train_dataset
 
-    def start(self, knowledge_graph: KG) -> Tuple[BaseKGE, str]:
+    def start(self, knowledge_graph: Union[KG,np.memmap]) -> Tuple[BaseKGE, str]:
+        """
+        Start the training
+
+        (1) Initialize Trainer
+        (2) Initialize or load a pretrained KGE model
+
+        in DDP setup, we need to load the memory map of already read/index KG.
+        """
         """ Train selected model via the selected training strategy """
         print('------------------- Train -------------------')
-
+        assert isinstance(knowledge_graph, np.memmap) or isinstance(knowledge_graph, KG), \
+            f"knowledge_graph must be an instance of KG or np.memmap. Currently {type(knowledge_graph)}"
         if self.args.num_folds_for_cv == 0:
-            # Initialize Trainer
-            self.trainer: Union[TorchTrainer, TorchDDPTrainer, pl.Trainer]
+            self.trainer: Union[TensorParallel, TorchTrainer, TorchDDPTrainer, pl.Trainer]
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
-            # Initialize or load model
             model, form_of_labelling = self.initialize_or_load_model()
             self.trainer.evaluator = self.evaluator
             self.trainer.dataset = knowledge_graph
             self.trainer.form_of_labelling = form_of_labelling
-            self.trainer.fit(model, train_dataloaders=self.initialize_dataloader(
-                self.initialize_dataset(knowledge_graph, form_of_labelling)))
+            # TODO: Later, maybe we should write a callback to save the models in disk
+
+            if isinstance(self.trainer, TensorParallel):
+                assert isinstance(model, EnsembleKGE), type(model)
+
+                model = self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
+                assert isinstance(model,EnsembleKGE)
+            else:
+                self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
+
+
             return model, form_of_labelling
         else:
             return self.k_fold_cross_validation(knowledge_graph)
@@ -270,7 +322,7 @@ class DICE_Trainer:
             train_set_for_i_th_fold, test_set_for_i_th_fold = dataset.train_set[train_index], dataset.train_set[
                 test_index]
 
-            trainer.fit(model, train_dataloaders=self.initialize_dataloader(
+            trainer.fit(model, train_dataloaders=self.init_dataloader(
                 construct_dataset(train_set=train_set_for_i_th_fold,
                                   entity_to_idx=dataset.entity_to_idx,
                                   relation_to_idx=dataset.relation_to_idx,

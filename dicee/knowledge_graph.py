@@ -2,6 +2,7 @@ from typing import List
 from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveToDisk
 import sys
 import pandas as pd
+import polars as pl
 class KG:
     """ Knowledge Graph """
 
@@ -12,10 +13,10 @@ class KG:
                  sparql_endpoint: str = None,
                  path_single_kg: str = None,
                  path_for_deserialization: str = None,
-                 add_reciprical: bool = None, eval_model: str = None,
+                 add_reciprocal: bool = None, eval_model: str = None,
                  read_only_few: int = None, sample_triples_ratio: float = None,
                  path_for_serialization: str = None,
-                 entity_to_idx=None, relation_to_idx=None, backend=None, training_technique: str = None):
+                 entity_to_idx=None, relation_to_idx=None, backend=None, training_technique: str = None, separator:str=None):
         """
         :param dataset_dir: A path of a folder containing train.txt, valid.txt, test.text
         :param byte_pair_encoding: Apply Byte pair encoding.
@@ -25,7 +26,7 @@ class KG:
         :param path_single_kg: The path of a single file containing the input knowledge graph
         :param path_for_deserialization: A path of a folder containing previously parsed data
         :param num_core: Number of subprocesses used for data loading
-        :param add_reciprical: A flag for applying reciprocal data augmentation technique
+        :param add_reciprocal: A flag for applying reciprocal data augmentation technique
         :param eval_model: A flag indicating whether evaluation will be applied.
         If no eval, then entity relation mappings will be deleted to free memory.
         :param add_noise_rate: Add say 10% noise in the input data
@@ -33,15 +34,16 @@ class KG:
         :param training_technique
         """
         self.dataset_dir = dataset_dir
+        self.sparql_endpoint = sparql_endpoint
+        self.path_single_kg = path_single_kg
+
         self.byte_pair_encoding = byte_pair_encoding
         self.ordered_shaped_bpe_tokens = None
-        self.sparql_endpoint = sparql_endpoint
         self.add_noise_rate = add_noise_rate
         self.num_entities = None
         self.num_relations = None
-        self.path_single_kg = path_single_kg
         self.path_for_deserialization = path_for_deserialization
-        self.add_reciprical = add_reciprical
+        self.add_reciprocal = add_reciprocal
         self.eval_model = eval_model
 
         self.read_only_few = read_only_few
@@ -69,24 +71,33 @@ class KG:
         self.target_dim = None
         self.train_target_indices = None
         self.ordered_bpe_entities = None
+        self.separator=separator
 
         if self.path_for_deserialization is None:
+            # Read a knowledge graph into memory
             ReadFromDisk(kg=self).start()
+            # Map a knowledge graph into integer indexed.
             PreprocessKG(kg=self).start()
+            # Saving.
             LoadSaveToDisk(kg=self).save()
-
         else:
             LoadSaveToDisk(kg=self).load()
+        assert len(self.train_set) > 0, "Training set is empty"
+        self.description_of_input=None
+        self.describe()
 
-        assert len(self.train_set) > 0
-
-        self._describe()
         if self.entity_to_idx is not None:
-            self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
-            self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
+            assert isinstance(self.entity_to_idx, dict) or isinstance(self.entity_to_idx, pd.DataFrame) or isinstance(self.entity_to_idx,
+                                                                      pl.DataFrame), f"entity_to_idx must be a dict or a pandas/polars DataFrame: {type(self.entity_to_idx)}"
+            # TODO:CD: Why do we need to create this inverse mapping at this point?
+            if isinstance(self.entity_to_idx, dict):
+                self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
+                self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
+            else:
+                pass
 
-    def _describe(self) -> None:
-        self.description_of_input = f'\n------------------- Description of Dataset {self.dataset_dir} -------------------'
+    def describe(self) -> None:
+        self.description_of_input = f'\n------------------- Description of Dataset {self.dataset_dir if isinstance(self.dataset_dir, str) else self.sparql_endpoint if isinstance(self.sparql_endpoint, str) else self.path_single_kg} -------------------'
         if self.byte_pair_encoding:
             self.description_of_input += f'\nNumber of tokens:{self.num_tokens}' \
                                          f'\nNumber of max sequence of sub-words: {self.max_length_subword_tokens}' \
