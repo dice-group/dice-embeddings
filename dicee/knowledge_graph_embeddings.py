@@ -1787,26 +1787,30 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             raise RuntimeError("Literal model is not trained or loaded.")
 
         # TODO :Should we initialize self.literal_model in __init__ ?
+        # RS : Predict functions could also work with entity and attribute index 
 
         if entity is None or attribute is None:
             raise RuntimeError("Entity and Attribute cannot be of type None")
 
-        assert isinstance(entity, list) or isinstance(entity, str)
-        assert isinstance(entity[0], str)
+        # Convert entity and attribute to list if they are a single string
+        if isinstance(entity, str):
+            entity = [entity]
+        if isinstance(attribute, str):
+            attribute = [attribute]
 
-        assert isinstance(attribute, list) or isinstance(attribute, str)
-        assert isinstance(attribute[0], str)
+        # Validate that entity and attribute are lists of strings
+        assert isinstance(entity, list)
+        assert isinstance(attribute, list)
+        assert all(isinstance(e, str) for e in entity)      # Ensure all elements in entity are strings
+        assert all(isinstance(a, str) for a in attribute)   # Ensure all elements in attribute are strings
 
-        if isinstance(entity, list):
-            entity_idx = torch.LongTensor([self.entity_to_idx[i] for i in entity])
-        else:
-            entity_idx = torch.LongTensor([self.entity_to_idx[entity]])
-        if isinstance(attribute, list):
-            attribute_idx = torch.LongTensor(
-                [self.data_property_to_idx[i] for i in attribute]
-            )
-        else:
-            attribute_idx = torch.LongTensor([self.data_property_to_idx[attribute]])
+        # Ensure entity and attribute lists are the same length
+        assert len(entity) == len(attribute), "Entity and attribute lists must be of equal length"
+
+        # Convert entity and attribute names to their corresponding index tensor
+        entity_idx = torch.LongTensor([self.entity_to_idx[i] for i in entity])
+        attribute_idx = torch.LongTensor([self.data_property_to_idx[i] for i in attribute])
+
 
         # device allocation
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
