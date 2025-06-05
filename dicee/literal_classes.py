@@ -320,25 +320,3 @@ class LiteralDataset(Dataset):
             raise ValueError(
                 "Unsupported normalization type. Use 'z-norm', 'min-max', or None."
             )
-
-    @staticmethod
-    def get_literals_rdflib(path: str):
-        """Loads triples from an RDF file and extracts numerical literals.
-
-        Args:
-            path (str): The path to the RDF file.
-        Returns:
-            pd.DataFrame: DataFrame containing the extracted triples with literals.
-        """
-        assert os.path.isfile(path), f"Path does not lead to a file: {path}"
-
-        g = rdflib.Graph().parse(path)
-        triples = []
-
-        for s, p, o in g:
-            if isinstance(o, rdflib.Literal):
-                value = o.toPython()
-                if isinstance(value, (int, float)):
-                    triples.append((s.n3()[1:-1], p.n3()[1:-1], float(value)))
-
-        return pd.DataFrame(triples)
