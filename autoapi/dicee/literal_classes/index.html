@@ -126,7 +126,6 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.literal_classes.LiteralDataset.__len__"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.__len__()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.literal_classes.LiteralDataset.load_and_validate_literal_data"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.load_and_validate_literal_data()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.literal_classes.LiteralDataset.denormalize"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.denormalize()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.literal_classes.LiteralDataset.get_literals_rdflib"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.get_literals_rdflib()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -545,23 +544,6 @@ normalization_params (dict): Dictionary containing normalization parameters for 
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>np.ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.literal_classes.LiteralDataset.get_literals_rdflib">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_literals_rdflib</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/literal_classes.html#LiteralDataset.get_literals_rdflib"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.literal_classes.LiteralDataset.get_literals_rdflib" title="Link to this definition"></a></dt>
-<dd><p>Loads triples from an RDF file and extracts numerical literals.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – The path to the RDF file.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>DataFrame containing the extracted triples with literals.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pd.DataFrame</p>
 </dd>
 </dl>
 </dd></dl>

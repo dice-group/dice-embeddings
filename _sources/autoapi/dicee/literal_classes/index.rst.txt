@@ -254,17 +254,3 @@ Module Contents
 
 
 
-   .. py:method:: get_literals_rdflib(path: str)
-      :staticmethod:
-
-
-      Loads triples from an RDF file and extracts numerical literals.
-
-      :param path: The path to the RDF file.
-      :type path: str
-
-      :returns: DataFrame containing the extracted triples with literals.
-      :rtype: pd.DataFrame
-
-
-
