@@ -90,6 +90,7 @@
   <h1>Source code for dicee.literal_classes</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">rdflib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
@@ -226,6 +227,7 @@
 <span class="sd">        num_entities (int): Total number of entities.</span>
 <span class="sd">        data_property_to_idx (dict): Mapping of data properties to their indices.</span>
 <span class="sd">        num_data_properties (int): Total number of data properties.</span>
+<span class="sd">        loader_backend (str): Backend to use for loading data (&#39;pandas&#39; or &#39;rdflib&#39;).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -234,8 +236,10 @@
         <span class="n">ent_idx</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">normalization_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;z-norm&quot;</span><span class="p">,</span>
         <span class="n">sampling_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">loader_backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pandas&quot;</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train_file_path</span> <span class="o">=</span> <span class="n">file_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loader_backend</span> <span class="o">=</span> <span class="n">loader_backend</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">normalization_type</span> <span class="o">=</span> <span class="n">normalization_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">normalization_params</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sampling_ratio</span> <span class="o">=</span> <span class="n">sampling_ratio</span>
@@ -251,9 +255,11 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_load_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">train_df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_and_validate_literal_data</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">train_file_path</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">train_file_path</span><span class="p">,</span><span class="n">loader_backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loader_backend</span>
         <span class="p">)</span>
         <span class="n">train_df</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">[</span><span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;head&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">)]</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">train_df</span><span class="o">.</span><span class="n">empty</span><span class="p">,</span> <span class="s2">&quot;Filtered train_df is empty — no entities match entity_to_idx.&quot;</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">data_property_to_idx</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">rel</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">rel</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;attribute&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
         <span class="p">}</span>
@@ -328,7 +334,7 @@
 <div class="viewcode-block" id="LiteralDataset.load_and_validate_literal_data">
 <a class="viewcode-back" href="../../autoapi/dicee/literal_classes/index.html#dicee.literal_classes.LiteralDataset.load_and_validate_literal_data">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_and_validate_literal_data</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_and_validate_literal_data</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">loader_backend</span> <span class="p">:</span> <span class="nb">str</span> <span class="o">=</span><span class="s2">&quot;pandas&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads and validates the literal data file.</span>
 <span class="sd">        Args:</span>
 <span class="sd">            file_path (str): Path to the literal data file.</span>
@@ -341,15 +347,36 @@
             <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Data file not found at </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="c1"># Try loading the file with either tab or comma separator</span>
-        <span class="n">last_exception</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">for</span> <span class="n">sep</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">loader_backend</span> <span class="o">==</span> <span class="s2">&quot;rdflib&quot;</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="n">sep</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-                <span class="c1"># Success—break out of the loop</span>
-                <span class="k">break</span>
+                <span class="n">g</span> <span class="o">=</span> <span class="n">rdflib</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">last_exception</span> <span class="o">=</span> <span class="n">e</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to parse RDF file: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="n">triples</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">g</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">rdflib</span><span class="o">.</span><span class="n">Literal</span><span class="p">):</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">o</span><span class="o">.</span><span class="n">toPython</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+                        <span class="n">triples</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">s</span><span class="o">.</span><span class="n">n3</span><span class="p">()[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">p</span><span class="o">.</span><span class="n">n3</span><span class="p">()[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)))</span>
+
+            <span class="c1"># Create DataFrame</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">triples</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">loader_backend</span> <span class="o">==</span> <span class="s2">&quot;pandas&quot;</span><span class="p">:</span>
+            <span class="n">last_exception</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">sep</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">]:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="n">sep</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="c1"># Success—break out of the loop</span>
+                    <span class="k">break</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">last_exception</span> <span class="o">=</span> <span class="n">e</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unsupported loader backend: </span><span class="si">{</span><span class="n">loader_backend</span><span class="si">}</span><span class="s2">. Use &#39;rdflib&#39; or &#39;pandas&#39;.&quot;</span>
+            <span class="p">)</span>
 
         <span class="c1"># After loop, check if df was successfully loaded</span>
         <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
@@ -408,6 +435,31 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;Unsupported normalization type. Use &#39;z-norm&#39;, &#39;min-max&#39;, or None.&quot;</span>
             <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LiteralDataset.get_literals_rdflib">
+<a class="viewcode-back" href="../../autoapi/dicee/literal_classes/index.html#dicee.literal_classes.LiteralDataset.get_literals_rdflib">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_literals_rdflib</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Loads triples from an RDF file and extracts numerical literals.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path (str): The path to the RDF file.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: DataFrame containing the extracted triples with literals.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Path does not lead to a file: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">g</span> <span class="o">=</span> <span class="n">rdflib</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">triples</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">g</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">rdflib</span><span class="o">.</span><span class="n">Literal</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">o</span><span class="o">.</span><span class="n">toPython</span><span class="p">()</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+                    <span class="n">triples</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">s</span><span class="o">.</span><span class="n">n3</span><span class="p">()[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">p</span><span class="o">.</span><span class="n">n3</span><span class="p">()[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)))</span>
+
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

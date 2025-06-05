@@ -268,7 +268,7 @@ Module Contents
 
 
 
-   .. py:method:: train_literals(train_file_path: str = None, num_epochs: int = 100, lit_lr: float = 0.001, eval_litreal_preds: bool = True, eval_file_path: str = None, lit_normalization_type: str = 'z-norm', batch_size: int = 1024, sampling_ratio: float = None, random_seed=1)
+   .. py:method:: train_literals(train_file_path: str = None, num_epochs: int = 100, lit_lr: float = 0.001, eval_litreal_preds: bool = True, eval_file_path: str = None, lit_normalization_type: str = 'z-norm', batch_size: int = 1024, sampling_ratio: float = None, random_seed=1, loader_backend: str = 'pandas', freeze_entity_embeddings: bool = True, gate_residual: bool = True)
 
       Trains the Literal Embeddings model using literal data.
 
@@ -288,6 +288,12 @@ Module Contents
       :type batch_size: int
       :param sampling_ratio: Ratio of training triples to use.
       :type sampling_ratio: float
+      :param loader_backend: Backend for loading the dataset ('pandas' or 'rdflib').
+      :type loader_backend: str
+      :param freeze_entity_embeddings: If True, freeze the entity embeddings during training.
+      :type freeze_entity_embeddings: bool
+      :param gate_residual: If True, use gate residual connections in the model.
+      :type gate_residual: bool
 
 
 
@@ -307,7 +313,7 @@ Module Contents
 
 
 
-   .. py:method:: evaluate_literal_prediction(eval_file_path: str = None, store_lit_preds: bool = True, eval_literals: bool = True)
+   .. py:method:: evaluate_literal_prediction(eval_file_path: str = None, store_lit_preds: bool = True, eval_literals: bool = True, loader_backend: str = 'pandas')
 
       Evaluates the trained literal prediction model on a test file.
 
@@ -317,6 +323,8 @@ Module Contents
       :type store_lit_preds: bool
       :param eval_literals: If True, evaluates the literal predictions and prints error metrics.
       :type eval_literals: bool
+      :param loader_backend: Backend for loading the dataset ('pandas' or 'rdflib').
+      :type loader_backend: str
 
       :returns: None
 

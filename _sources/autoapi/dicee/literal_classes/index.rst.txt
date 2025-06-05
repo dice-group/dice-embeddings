@@ -124,7 +124,7 @@ Module Contents
 
 
 
-.. py:class:: LiteralDataset(file_path: str, ent_idx: dict = None, normalization_type: str = 'z-norm', sampling_ratio: float = None)
+.. py:class:: LiteralDataset(file_path: str, ent_idx: dict = None, normalization_type: str = 'z-norm', sampling_ratio: float = None, loader_backend: str = 'pandas')
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
@@ -183,8 +183,19 @@ Module Contents
 
       :type: int
 
+   .. attribute:: loader_backend
+
+      Backend to use for loading data ('pandas' or 'rdflib').
+
+      :type: str
+
 
    .. py:attribute:: train_file_path
+
+
+   .. py:attribute:: loader_backend
+      :value: 'pandas'
+
 
 
    .. py:attribute:: normalization_type
@@ -214,7 +225,7 @@ Module Contents
    .. py:method:: __len__()
 
 
-   .. py:method:: load_and_validate_literal_data(file_path: str = None) -> pandas.DataFrame
+   .. py:method:: load_and_validate_literal_data(file_path: str = None, loader_backend: str = 'pandas') -> pandas.DataFrame
       :staticmethod:
 
 
@@ -240,6 +251,20 @@ Module Contents
 
       :returns: Denormalized predictions.
       :rtype: np.ndarray
+
+
+
+   .. py:method:: get_literals_rdflib(path: str)
+      :staticmethod:
+
+
+      Loads triples from an RDF file and extracts numerical literals.
+
+      :param path: The path to the RDF file.
+      :type path: str
+
+      :returns: DataFrame containing the extracted triples with literals.
+      :rtype: pd.DataFrame
 
 
 
