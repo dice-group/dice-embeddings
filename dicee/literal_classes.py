@@ -1,5 +1,6 @@
 import os
 
+import rdflib
 import torch
 import torch.nn as nn
 import pandas as pd
@@ -122,6 +123,7 @@ class LiteralDataset(Dataset):
         num_entities (int): Total number of entities.
         data_property_to_idx (dict): Mapping of data properties to their indices.
         num_data_properties (int): Total number of data properties.
+        loader_backend (str): Backend to use for loading data ('pandas' or 'rdflib').
     """
 
     def __init__(
@@ -130,8 +132,10 @@ class LiteralDataset(Dataset):
         ent_idx: dict = None,
         normalization_type: str = "z-norm",
         sampling_ratio: float = None,
+        loader_backend: str = "pandas",
     ):
         self.train_file_path = file_path
+        self.loader_backend = loader_backend 
         self.normalization_type = normalization_type
         self.normalization_params = {}
         self.sampling_ratio = sampling_ratio
@@ -147,9 +151,11 @@ class LiteralDataset(Dataset):
 
     def _load_data(self):
         train_df = self.load_and_validate_literal_data(
-            self.train_file_path,
+            self.train_file_path,loader_backend=self.loader_backend
         )
         train_df = train_df[train_df["head"].isin(self.entity_to_idx)]
+        assert not train_df.empty, "Filtered train_df is empty — no entities match entity_to_idx."
+
         self.data_property_to_idx = {
             rel: idx for idx, rel in enumerate(train_df["attribute"].unique())
         }
@@ -216,7 +222,7 @@ class LiteralDataset(Dataset):
         return len(self.triples)
 
     @staticmethod
-    def load_and_validate_literal_data(file_path: str = None) -> pd.DataFrame:
+    def load_and_validate_literal_data(file_path: str = None, loader_backend : str ="pandas") -> pd.DataFrame:
         """Loads and validates the literal data file.
         Args:
             file_path (str): Path to the literal data file.
@@ -229,15 +235,36 @@ class LiteralDataset(Dataset):
             raise FileNotFoundError(f"Data file not found at {file_path}")
 
         # Try loading the file with either tab or comma separator
-        last_exception = None
-        df = None
-        for sep in ["\t", ","]:
+        if loader_backend == "rdflib":
             try:
-                df = pd.read_csv(file_path, sep=sep, header=None, index_col=False)
-                # Success—break out of the loop
-                break
+                g = rdflib.Graph().parse(file_path)
             except Exception as e:
-                last_exception = e
+                raise ValueError(f"Failed to parse RDF file: {e}")
+            
+            triples = []
+            for s, p, o in g:
+                if isinstance(o, rdflib.Literal):
+                    value = o.toPython()
+                    if isinstance(value, (int, float)):
+                        triples.append((s.n3()[1:-1], p.n3()[1:-1], float(value)))
+
+            # Create DataFrame
+            df = pd.DataFrame(triples, columns=None)
+
+        elif loader_backend == "pandas":
+            last_exception = None
+            df = None
+            for sep in ["\t", ","]:
+                try:
+                    df = pd.read_csv(file_path, sep=sep, header=None, index_col=False)
+                    # Success—break out of the loop
+                    break
+                except Exception as e:
+                    last_exception = e
+        else:
+            raise ValueError(
+                f"Unsupported loader backend: {loader_backend}. Use 'rdflib' or 'pandas'."
+            )
 
         # After loop, check if df was successfully loaded
         if df is None or df.empty:
@@ -293,3 +320,25 @@ class LiteralDataset(Dataset):
             raise ValueError(
                 "Unsupported normalization type. Use 'z-norm', 'min-max', or None."
             )
+
+    @staticmethod
+    def get_literals_rdflib(path: str):
+        """Loads triples from an RDF file and extracts numerical literals.
+
+        Args:
+            path (str): The path to the RDF file.
+        Returns:
+            pd.DataFrame: DataFrame containing the extracted triples with literals.
+        """
+        assert os.path.isfile(path), f"Path does not lead to a file: {path}"
+
+        g = rdflib.Graph().parse(path)
+        triples = []
+
+        for s, p, o in g:
+            if isinstance(o, rdflib.Literal):
+                value = o.toPython()
+                if isinstance(value, (int, float)):
+                    triples.append((s.n3()[1:-1], p.n3()[1:-1], float(value)))
+
+        return pd.DataFrame(triples)

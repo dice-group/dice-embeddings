@@ -1687,6 +1687,9 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         batch_size: int = 1024,
         sampling_ratio: float = None,
         random_seed=1,
+        loader_backend: str = "pandas",
+        freeze_entity_embeddings: bool = True,
+        gate_residual: bool = True,
     ):
         """
         Trains the Literal Embeddings model using literal data.
@@ -1700,6 +1703,9 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             norm_type (str): Normalization type to use ('z-norm', 'min-max', or None).
             batch_size (int): Batch size for training.
             sampling_ratio (float): Ratio of training triples to use.
+            loader_backend (str): Backend for loading the dataset ('pandas' or 'rdflib').
+            freeze_entity_embeddings (bool): If True, freeze the entity embeddings during training.
+            gate_residual (bool): If True, use gate residual connections in the model.
         """
         # TODO : assign torch.seed to reproduice experiments
         torch.manual_seed(random_seed)
@@ -1713,6 +1719,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             ent_idx=self.entity_to_idx,
             normalization_type=lit_normalization_type,
             sampling_ratio=sampling_ratio,
+            loader_backend=loader_backend,
         )
 
         self.data_property_to_idx = literal_dataset.data_property_to_idx
@@ -1728,7 +1735,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             num_of_data_properties=literal_dataset.num_data_properties,
             embedding_dims=self.model.embedding_dim,
             entity_embeddings=self.model.entity_embeddings,
-            freeze_entity_embeddings=False,
+            freeze_entity_embeddings=freeze_entity_embeddings,
+            gate_residual=gate_residual
         ).to(device)
 
         optimizer = optim.Adam(literal_model.parameters(), lr=lit_lr)
@@ -1763,7 +1771,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         torch.save(literal_model.state_dict(), self.path + "/literal_model.pt")
 
         if eval_litreal_preds:
-            self.evaluate_literal_prediction(eval_file_path=eval_file_path)
+            self.evaluate_literal_prediction(eval_file_path=eval_file_path, loader_backend=loader_backend)
 
     def predict_literals(
         self,
@@ -1838,6 +1846,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         eval_file_path: str = None,
         store_lit_preds: bool = True,
         eval_literals: bool = True,
+        loader_backend: str = "pandas",
     ):
         """
         Evaluates the trained literal prediction model on a test file.
@@ -1846,17 +1855,26 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             eval_file_path (str): Path to the evaluation file.
             store_lit_preds (bool): If True, stores the predictions in a CSV file.
             eval_literals (bool): If True, evaluates the literal predictions and prints error metrics.
+            loader_backend (str): Backend for loading the dataset ('pandas' or 'rdflib').
 
         Returns:
             None
         """
         # sanity checking done in load_and_validate_literal_data
-        test_df = self.literal_dataset.load_and_validate_literal_data(
-            file_path=eval_file_path
+        test_df_unfiltered = self.literal_dataset.load_and_validate_literal_data(
+            file_path=eval_file_path,loader_backend=loader_backend
         )
+        test_df = test_df_unfiltered[
+            test_df_unfiltered["head"].isin(self.entity_to_idx.keys()) &
+            test_df_unfiltered["attribute"].isin(self.data_property_to_idx.keys())
+            ]
 
         entities = test_df["head"].to_list()
         attributes = test_df["attribute"].to_list()
+        
+        assert len(entities) > 0, "No valid entities in test set — check entity_to_idx."
+        assert len(attributes) > 0, "No valid attributes in test set — check data_property_to_idx."
+        
         test_df["predictions"] = self.predict_literals(
             entity=entities, attribute=attributes
         )
