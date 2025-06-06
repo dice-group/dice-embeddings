@@ -1935,7 +1935,7 @@
         <span class="n">entity</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">attribute</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">denormalize_preds</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Predicts literal values for given entities and attributes.</span>
 
 <span class="sd">        Args:</span>
@@ -2007,6 +2007,7 @@
         <span class="n">store_lit_preds</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">eval_literals</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">loader_backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pandas&quot;</span><span class="p">,</span>
+        <span class="n">return_attr_error_metrics</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Evaluates the trained literal prediction model on a test file.</span>
@@ -2049,7 +2050,7 @@
         <span class="c1"># Calculate,print and store error metrics</span>
         <span class="k">if</span> <span class="n">eval_literals</span><span class="p">:</span>
             <span class="c1"># Calculate error metrics for literal predictions</span>
-            <span class="n">lit_pred_errors</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">attr_error_metrics</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">test_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;attribute&quot;</span><span class="p">)</span>
                 <span class="o">.</span><span class="n">agg</span><span class="p">(</span>
                     <span class="n">MAE</span><span class="o">=</span><span class="p">(</span>
@@ -2070,14 +2071,15 @@
 
             <span class="n">pd</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">float_format</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{:.6f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Literal-Prediction evaluation results  on Test Set&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">lit_pred_errors</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">attr_error_metrics</span><span class="p">)</span>
             <span class="n">results_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;lit_eval_results.csv&quot;</span><span class="p">)</span>
-            <span class="n">lit_pred_errors</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">results_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Literal-Prediction evaluation results saved to </span><span class="si">{</span><span class="n">results_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+            <span class="n">attr_error_metrics</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">results_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Literal-Prediction evaluation results saved to </span><span class="si">{</span><span class="n">results_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">return_attr_error_metrics</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">attr_error_metrics</span></div>
 </div>
 
-
-    <span class="c1"># TODO : should we return the predictions or not ?</span>
 </pre></div>
 
            </div>

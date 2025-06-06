@@ -2559,7 +2559,7 @@ Package Contents
 
 
 
-   .. py:method:: predict_literals(entity: Union[List[str], str] = None, attribute: Union[List[str], str] = None, denormalize_preds: bool = True) -> torch.FloatTensor
+   .. py:method:: predict_literals(entity: Union[List[str], str] = None, attribute: Union[List[str], str] = None, denormalize_preds: bool = True) -> numpy.ndarray
 
       Predicts literal values for given entities and attributes.
 
@@ -2575,7 +2575,7 @@ Package Contents
 
 
 
-   .. py:method:: evaluate_literal_prediction(eval_file_path: str = None, store_lit_preds: bool = True, eval_literals: bool = True, loader_backend: str = 'pandas')
+   .. py:method:: evaluate_literal_prediction(eval_file_path: str = None, store_lit_preds: bool = True, eval_literals: bool = True, loader_backend: str = 'pandas', return_attr_error_metrics: bool = False)
 
       Evaluates the trained literal prediction model on a test file.
 
