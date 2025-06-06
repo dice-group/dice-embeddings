@@ -1778,7 +1778,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         entity: Union[List[str], str] = None,
         attribute: Union[List[str], str] = None,
         denormalize_preds: bool = True,
-    ) -> torch.FloatTensor:
+    ) -> np.ndarray:
         """Predicts literal values for given entities and attributes.
 
         Args:
@@ -1847,6 +1847,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         store_lit_preds: bool = True,
         eval_literals: bool = True,
         loader_backend: str = "pandas",
+        return_attr_error_metrics: bool = False,
     ):
         """
         Evaluates the trained literal prediction model on a test file.
@@ -1889,7 +1890,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         # Calculate,print and store error metrics
         if eval_literals:
             # Calculate error metrics for literal predictions
-            lit_pred_errors = (
+            attr_error_metrics = (
                 test_df.groupby("attribute")
                 .agg(
                     MAE=(
@@ -1910,9 +1911,10 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
 
             pd.options.display.float_format = "{:.6f}".format
             print("Literal-Prediction evaluation results  on Test Set")
-            print(lit_pred_errors)
+            print(attr_error_metrics)
             results_path = os.path.join(self.path, "lit_eval_results.csv")
-            lit_pred_errors.to_csv(results_path, index=False)
+            attr_error_metrics.to_csv(results_path, index=False)
             print(f"Literal-Prediction evaluation results saved to {results_path}")
 
-    # TODO : should we return the predictions or not ?
+            if return_attr_error_metrics:
+                return attr_error_metrics
