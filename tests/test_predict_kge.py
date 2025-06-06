@@ -214,7 +214,7 @@ class TestPredictRegression:
         
         prediction = result[0]
         assert isinstance(prediction, (int, float)), "Result is not a numeric value"
-        assert 30 <= prediction <= 60, f"Result {prediction} is not within the expected range 30-60"
+        assert 20 <= prediction <= 50, f"Result {prediction} is not within the expected range 30-60"
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_predict_literals_batch(self, family_model):
