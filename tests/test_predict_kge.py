@@ -1,13 +1,8 @@
-import os
 import pytest
 import torch
-import shutil
-import numpy as np
-import pandas as pd
 from dicee.executer import Execute
 from dicee.knowledge_graph_embeddings import KGE
 from dicee.config import Namespace
-
 
 class TestPredictRegression:
     """Regression tests for predict and predict_topk methods using Family dataset."""

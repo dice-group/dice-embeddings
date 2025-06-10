@@ -1,13 +1,11 @@
 import os
 import pytest
-import torch
 import shutil
 import numpy as np
 import pandas as pd
+from dicee.config import Namespace
 from dicee.executer import Execute
 from dicee.knowledge_graph_embeddings import KGE
-from dicee.config import Namespace
-
 
 class TestPredictLitRegression:
     """Regression tests for literal prediction using interactive KGE model Family dataset."""
