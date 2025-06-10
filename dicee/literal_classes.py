@@ -105,7 +105,11 @@ class LiteralEmbeddings(nn.Module):
         # Output scalar prediction and flatten to 1D
         out = self.fc_out(residual).flatten()  # [batch]
         return out
-
+    
+    @property
+    def device(self):
+        return next(self.parameters()).device
+    
 
 class LiteralDataset(Dataset):
     """Dataset for loading and processing literal data for training Literal Embedding model.
@@ -157,7 +161,8 @@ class LiteralDataset(Dataset):
         assert not train_df.empty, "Filtered train_df is empty — no entities match entity_to_idx."
 
         self.data_property_to_idx = {
-            rel: idx for idx, rel in enumerate(train_df["attribute"].unique())
+            rel: idx
+            for idx, rel in enumerate(sorted(train_df["attribute"].unique()))
         }
         self.num_data_properties = len(self.data_property_to_idx)
         if self.sampling_ratio is not None:
@@ -210,8 +215,10 @@ class LiteralDataset(Dataset):
         else:
             print(" No normalization applied.")
             df["value_norm"] = df["value"]
-            self.normalization_params = None
-            self.normalization_params["type"] = None
+            if self.normalization_type is None:
+                self.normalization_params = {}
+                self.normalization_params["type"] = None
+
 
         return df
 
@@ -314,7 +321,7 @@ class LiteralDataset(Dataset):
             return preds_norm * (maxs - mins) + mins
 
         elif normalization_params["type"] is None:
-            return preds_norm
+            return  preds_norm  # No normalization applied, return as is
 
         else:
             raise ValueError(

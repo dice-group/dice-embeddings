@@ -1690,6 +1690,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         loader_backend: str = "pandas",
         freeze_entity_embeddings: bool = True,
         gate_residual: bool = True,
+        device: str = None,
     ):
         """
         Trains the Literal Embeddings model using literal data.
@@ -1706,13 +1707,18 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             loader_backend (str): Backend for loading the dataset ('pandas' or 'rdflib').
             freeze_entity_embeddings (bool): If True, freeze the entity embeddings during training.
             gate_residual (bool): If True, use gate residual connections in the model.
+            device (str): Device to use for training ('cuda' or 'cpu'). If None, will use available GPU or CPU.
         """
-        # TODO : assign torch.seed to reproduice experiments
+        # Assign torch.seed to reproduice experiments
         torch.manual_seed(random_seed)
         torch.cuda.manual_seed_all(random_seed)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # dataset_name = os.path.basename(self.configs["dataset_dir"])
 
+        # Set the device for training
+        try:
+            device = torch.device(device)
+        except Exception:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                    
         # Prepare the dataset and DataLoader
         literal_dataset = LiteralDataset(
             file_path=train_file_path,
@@ -1766,7 +1772,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             tqdm_bar.set_postfix_str(f"loss_lit={lit_loss:.5f}")
             loss_log["lit_loss"].append(avg_epoch_loss.item())
 
-        self.literal_model = literal_model.to("cpu")
+        self.literal_model = literal_model
         self.literal_dataset = literal_dataset
         torch.save(literal_model.state_dict(), self.path + "/literal_model.pt")
 
@@ -1821,7 +1827,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
 
 
         # device allocation
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device = self.literal_model.device
         self.literal_model, entity_idx, attribute_idx = (
             self.literal_model.to(device),
             entity_idx.to(device),

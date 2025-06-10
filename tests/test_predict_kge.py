@@ -1,6 +1,7 @@
 import os
 import pytest
 import torch
+import shutil
 import numpy as np
 import pandas as pd
 from dicee.executer import Execute
@@ -30,7 +31,6 @@ class TestPredictRegression:
         
         result = Execute(args).start()
         model = KGE(path=result['path_experiment_folder'])
-        self.generate_literal_files(file_path="KGs/Family/literals")
         
         # Ground truth relationships from the dataset
         ground_truth = {
@@ -181,6 +181,7 @@ class TestPredictRegression:
         """Test training of literal embedding model using interactive KGE model."""
         model = family_model['model']
         
+        self.generate_literal_files(file_path="KGs/Family/literals")
         train_file_path="KGs/Family/literals/train.txt"
 
         # Train with literals
@@ -188,13 +189,17 @@ class TestPredictRegression:
         eval_litreal_preds=False,
         loader_backend="pandas",
         num_epochs=20,
-        batch_size=50)
+        batch_size=50, device='cpu')
+
+        # remove literal test artifacts
+        shutil.rmtree(os.path.dirname(train_file_path))
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_predict_literals_single(self, family_model):
         """Test Literal values prediction ( single subject-predicate pair) using interactive KGE model."""
         model = family_model['model']
 
+        self.generate_literal_files(file_path="KGs/Family/literals")
         train_file_path="KGs/Family/literals/train.txt"
 
         # Train with literals
@@ -202,25 +207,28 @@ class TestPredictRegression:
         eval_litreal_preds=False,
         loader_backend="pandas",
         num_epochs=100,
-        batch_size=512)
+        batch_size=50, device='cpu')
 
         # Predict literals for a known entity
-        entity = "http://www.benchmark.org/family#F3M50"
+        entity = "http://www.benchmark.org/family#F4F55"
         attribute = "http://www.benchmark.org/family#Age"
 
         result = model.predict_literals(entity=entity, attribute=attribute)
 
         assert result.shape == (1,), "Expected array with shape (1,)"
-        
         prediction = result[0]
         assert isinstance(prediction, (int, float)), "Result is not a numeric value"
-        assert 20 <= prediction <= 50, f"Result {prediction} is not within the expected range 30-60"
+        assert 30.0 <= prediction <= 35.0, f"Result {prediction} is not within the expected range"
+
+        # remove literal test artifacts
+        shutil.rmtree(os.path.dirname(train_file_path))
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_predict_literals_batch(self, family_model):
         """Test Literal values prediction(batch prediction) using interactive KGE model."""
         model = family_model['model']
 
+        self.generate_literal_files(file_path="KGs/Family/literals")
         train_file_path="KGs/Family/literals/train.txt"
 
         # Train with literals
@@ -246,19 +254,23 @@ class TestPredictRegression:
         results = model.predict_literals(entity=entities, attribute=attributes)
         
 
-        # Assert the result is a list of the same size as the input
-        assert isinstance(results, np.ndarray), "Results should be a list"
+        # Assert the result is a numpy array of the same size as the input
+        assert isinstance(results, np.ndarray), "Results should be a numpy array"
         assert len(results) == len(entities), "Results size does not match input size"
 
         # Assert all entries are numerical types
         for result in results:
             assert isinstance(result, (int, float)), f"Result {result} is not a numeric value"
         
+        # remove literal test artifacts
+        shutil.rmtree(os.path.dirname(train_file_path))
+        
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_evaluate_literal_prediction(self, family_model):
         """Test Evaluation of Literal Prediction using interactive KGE model."""
         model = family_model['model']
-
+        
+        self.generate_literal_files(file_path="KGs/Family/literals")
         train_file_path="KGs/Family/literals/train.txt"
 
         # Train with literals
@@ -269,7 +281,8 @@ class TestPredictRegression:
         batch_size=512)
 
         eval_file_path = "KGs/Family/literals/test.txt"
-        # Predict literals for a known entity
+        
+        # Evaluate literal predictions
         lit_prediction_errors = model.evaluate_literal_prediction(
             eval_file_path=eval_file_path,
             store_lit_preds = False,
@@ -281,6 +294,9 @@ class TestPredictRegression:
         assert isinstance(lit_prediction_errors, pd.DataFrame), "Results should be a DataFrame"
         assert not lit_prediction_errors.empty, "Results DataFrame should not be empty"
         assert not lit_prediction_errors.isnull().values.any() , "Results DataFrame should not contain NaN values"
+
+        # remove literal test artifacts
+        shutil.rmtree(os.path.dirname(eval_file_path))
 
     def generate_literal_files(self, file_path: str = None):
         """
@@ -318,7 +334,7 @@ class TestPredictRegression:
         ("http://www.benchmark.org/family#F2F10", "http://www.benchmark.org/family#Age", "89"),
         ("http://www.benchmark.org/family#F10M173", "http://www.benchmark.org/family#Height", "177"),
         ]
-        # Keep exactly 20 in training
+        #train test splits
         train_triples = literal_triples[:20]
         test_triples = literal_triples[20:]
 
