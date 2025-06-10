@@ -2530,7 +2530,7 @@ Package Contents
 
 
 
-   .. py:method:: train_literals(train_file_path: str = None, num_epochs: int = 100, lit_lr: float = 0.001, eval_litreal_preds: bool = True, eval_file_path: str = None, lit_normalization_type: str = 'z-norm', batch_size: int = 1024, sampling_ratio: float = None, random_seed=1, loader_backend: str = 'pandas', freeze_entity_embeddings: bool = True, gate_residual: bool = True)
+   .. py:method:: train_literals(train_file_path: str = None, num_epochs: int = 100, lit_lr: float = 0.001, eval_litreal_preds: bool = True, eval_file_path: str = None, lit_normalization_type: str = 'z-norm', batch_size: int = 1024, sampling_ratio: float = None, random_seed=1, loader_backend: str = 'pandas', freeze_entity_embeddings: bool = True, gate_residual: bool = True, device: str = None)
 
       Trains the Literal Embeddings model using literal data.
 
@@ -2556,6 +2556,8 @@ Package Contents
       :type freeze_entity_embeddings: bool
       :param gate_residual: If True, use gate residual connections in the model.
       :type gate_residual: bool
+      :param device: Device to use for training ('cuda' or 'cpu'). If None, will use available GPU or CPU.
+      :type device: str
 
 
 

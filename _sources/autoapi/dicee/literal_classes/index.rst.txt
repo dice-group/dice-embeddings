@@ -124,6 +124,9 @@ Module Contents
 
 
 
+   .. py:property:: device
+
+
 .. py:class:: LiteralDataset(file_path: str, ent_idx: dict = None, normalization_type: str = 'z-norm', sampling_ratio: float = None, loader_backend: str = 'pandas')
 
    Bases: :py:obj:`torch.utils.data.Dataset`

@@ -205,9 +205,13 @@
         <span class="c1"># Output scalar prediction and flatten to 1D</span>
         <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc_out</span><span class="p">(</span><span class="n">residual</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>  <span class="c1"># [batch]</span>
         <span class="k">return</span> <span class="n">out</span></div>
-</div>
 
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">device</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span><span class="o">.</span><span class="n">device</span></div>
 
+    
 
 <div class="viewcode-block" id="LiteralDataset">
 <a class="viewcode-back" href="../../autoapi/dicee/literal_classes/index.html#dicee.literal_classes.LiteralDataset">[docs]</a>
@@ -261,7 +265,8 @@
         <span class="k">assert</span> <span class="ow">not</span> <span class="n">train_df</span><span class="o">.</span><span class="n">empty</span><span class="p">,</span> <span class="s2">&quot;Filtered train_df is empty — no entities match entity_to_idx.&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">data_property_to_idx</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">rel</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">rel</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;attribute&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+            <span class="n">rel</span><span class="p">:</span> <span class="n">idx</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">rel</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">train_df</span><span class="p">[</span><span class="s2">&quot;attribute&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()))</span>
         <span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_data_properties</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_property_to_idx</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampling_ratio</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -314,8 +319,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot; No normalization applied.&quot;</span><span class="p">)</span>
             <span class="n">df</span><span class="p">[</span><span class="s2">&quot;value_norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">normalization_params</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">normalization_params</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalization_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">normalization_params</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">normalization_params</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
 
         <span class="k">return</span> <span class="n">df</span>
 
@@ -429,7 +436,7 @@
             <span class="k">return</span> <span class="n">preds_norm</span> <span class="o">*</span> <span class="p">(</span><span class="n">maxs</span> <span class="o">-</span> <span class="n">mins</span><span class="p">)</span> <span class="o">+</span> <span class="n">mins</span>
 
         <span class="k">elif</span> <span class="n">normalization_params</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">preds_norm</span>
+            <span class="k">return</span>  <span class="n">preds_norm</span>  <span class="c1"># No normalization applied, return as is</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
