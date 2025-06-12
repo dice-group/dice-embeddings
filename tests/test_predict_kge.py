@@ -4,6 +4,7 @@ from dicee.executer import Execute
 from dicee.knowledge_graph_embeddings import KGE
 from dicee.config import Namespace
 
+
 class TestPredictRegression:
     """Regression tests for predict and predict_topk methods using Family dataset."""
     
@@ -46,7 +47,7 @@ class TestPredictRegression:
                 ("http://www.benchmark.org/family#F9M139", "http://www.benchmark.org/family#F9F140"),
             ]
         }
-
+        
         return {
             'model': model,
             'ground_truth': ground_truth,

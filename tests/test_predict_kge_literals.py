@@ -10,6 +10,47 @@ from dicee.knowledge_graph_embeddings import KGE
 class TestPredictLitRegression:
     """Regression tests for literal prediction using interactive KGE model Family dataset."""
     
+    def create_train_triples(self, path : str = None):
+        """
+        Create training triples for the Family dataset.
+
+        Args:
+            path (str): The directory where the files will be saved.
+        """
+        # List of relation triples
+        relation_triples = [
+            ('F2M25', 'type', 'NamedIndividual'), ('F2F30', 'type', 'Grandmother'),
+            ('F10F201', 'hasParent', 'F10F198'), ('F6M90', 'type', 'Son'),
+            ('F2M35', 'hasParent', 'F2M34'), ('F10F179', 'hasParent', 'F10M171'),
+            ('F6F96', 'type', 'NamedIndividual'), ('F6M73', 'hasChild', 'F6M75'),
+            ('F7F121', 'type', 'Grandmother'), ('F10M173', 'type', 'Father'),
+            ('F9M167', 'married', 'F9F168'), ('F2F33', 'type', 'Daughter'),
+            ('F5F62', 'type', 'Daughter'), ('F6F79', 'type', 'Person'),
+            ('F10F181', 'type', 'Person'), ('F1F3', 'type', 'Female'),
+            ('F3F46', 'hasChild', 'F3M47'), ('F7F129', 'married', 'F7M130'),
+            ('F6M71', 'hasSibling', 'F6F84'), ('F9M162', 'type', 'NamedIndividual'),
+            ('F9M155', 'hasParent', 'F9F154'), ('F6F87', 'type', 'Sister'),
+            ('F3F41', 'married', 'F3M40'), ('F1F7', 'type', 'Female'),
+            ('F5M60', 'type', 'Grandfather'), ('F2M23', 'married', 'F2F24'),
+            ('F6M99', 'type', 'Person'), ('F6F97', 'type', 'Daughter'),
+            ('F6M92', 'hasParent', 'F6F70'), ('F6M92', 'type', 'Male'),
+            ('F9F141', 'hasParent', 'F9M139'), ('F7M125', 'type', 'Male'),
+            ('F7M123', 'type', 'Brother'), ('F2M16', 'hasChild', 'F2F17'),
+            ('F2M18', 'hasSibling', 'F2F17'), ('F6M78', 'hasChild', 'F6F79'),
+            ('F10F195', 'type', 'Grandmother'), ('F4M59', 'type', 'Male'),
+            ('F10F189', 'type', 'Person'), ('F6M92', 'hasSibling', 'F6F77'),
+            ('F8M138', 'hasParent', 'F8M136'), ('F7M104', 'hasParent', 'F7M102'),
+            ('F1M6', 'type', 'Person'), ('F6F72', 'married', 'F6M71'),
+            ('F6M90', 'type', 'Thing'), ('F1F5', 'type', 'Sister'),
+            ('F10M190', 'type', 'Male'), ('F6F89', 'type', 'Granddaughter'),
+            ('F2M11', 'type', 'Brother'), ('F2M11', 'hasSibling', 'F2F26')
+        ]
+        output_dir = path or "KGs/Family"
+        os.makedirs(output_dir, exist_ok=True)
+        train_df = pd.DataFrame(relation_triples)
+        train_df.to_csv(os.path.join(output_dir, "train.txt"), header=False, sep="\t", index=False)
+
+
     @pytest.fixture(scope="function", autouse=True)
     def generate_literal_files(self):
         """
@@ -189,45 +230,5 @@ class TestPredictLitRegression:
 
         # remove literal test artifacts
         shutil.rmtree(os.path.dirname(eval_file_path))
-
-    def create_train_triples(self, path : str = None):
-        """
-        Create training triples for the Family dataset.
-
-        Args:
-            path (str): The directory where the files will be saved.
-        """
-        # List of relation triples
-        relation_triples = [
-            ('F2M25', 'type', 'NamedIndividual'), ('F2F30', 'type', 'Grandmother'),
-            ('F10F201', 'hasParent', 'F10F198'), ('F6M90', 'type', 'Son'),
-            ('F2M35', 'hasParent', 'F2M34'), ('F10F179', 'hasParent', 'F10M171'),
-            ('F6F96', 'type', 'NamedIndividual'), ('F6M73', 'hasChild', 'F6M75'),
-            ('F7F121', 'type', 'Grandmother'), ('F10M173', 'type', 'Father'),
-            ('F9M167', 'married', 'F9F168'), ('F2F33', 'type', 'Daughter'),
-            ('F5F62', 'type', 'Daughter'), ('F6F79', 'type', 'Person'),
-            ('F10F181', 'type', 'Person'), ('F1F3', 'type', 'Female'),
-            ('F3F46', 'hasChild', 'F3M47'), ('F7F129', 'married', 'F7M130'),
-            ('F6M71', 'hasSibling', 'F6F84'), ('F9M162', 'type', 'NamedIndividual'),
-            ('F9M155', 'hasParent', 'F9F154'), ('F6F87', 'type', 'Sister'),
-            ('F3F41', 'married', 'F3M40'), ('F1F7', 'type', 'Female'),
-            ('F5M60', 'type', 'Grandfather'), ('F2M23', 'married', 'F2F24'),
-            ('F6M99', 'type', 'Person'), ('F6F97', 'type', 'Daughter'),
-            ('F6M92', 'hasParent', 'F6F70'), ('F6M92', 'type', 'Male'),
-            ('F9F141', 'hasParent', 'F9M139'), ('F7M125', 'type', 'Male'),
-            ('F7M123', 'type', 'Brother'), ('F2M16', 'hasChild', 'F2F17'),
-            ('F2M18', 'hasSibling', 'F2F17'), ('F6M78', 'hasChild', 'F6F79'),
-            ('F10F195', 'type', 'Grandmother'), ('F4M59', 'type', 'Male'),
-            ('F10F189', 'type', 'Person'), ('F6M92', 'hasSibling', 'F6F77'),
-            ('F8M138', 'hasParent', 'F8M136'), ('F7M104', 'hasParent', 'F7M102'),
-            ('F1M6', 'type', 'Person'), ('F6F72', 'married', 'F6M71'),
-            ('F6M90', 'type', 'Thing'), ('F1F5', 'type', 'Sister'),
-            ('F10M190', 'type', 'Male'), ('F6F89', 'type', 'Granddaughter'),
-            ('F2M11', 'type', 'Brother'), ('F2M11', 'hasSibling', 'F2F26')
-        ]
-        output_dir = path or "KGs/Family"
-        os.makedirs(output_dir, exist_ok=True)
-        train_df = pd.DataFrame(relation_triples)
-        train_df.to_csv(os.path.join(output_dir, "train.txt"), header=False, sep="\t", index=False)
 
     
