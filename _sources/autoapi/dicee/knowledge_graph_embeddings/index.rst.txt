@@ -311,7 +311,7 @@ Module Contents
       :type denormalize_preds: bool
 
       :returns: Predictions for the given entities and attributes.
-      :rtype: torch.FloatTensor
+      :rtype: numpy ndarray
 
 
 
