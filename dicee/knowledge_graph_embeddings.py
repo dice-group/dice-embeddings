@@ -1431,17 +1431,17 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
                 epoch_loss += loss.item()
                 loss.backward()
                 optimizer.step()
-            print(f"Epoch={epoch}\t Avg. Loss per epoch: {epoch_loss / num_data_point:.3f}")
+            print(f'Epoch={epoch}\t Avg. Loss per epoch: {epoch_loss / num_data_point:.3f}')
         # (5) Prepare For Saving
         self.set_model_eval_mode()
-        print("Eval starts...")
+        print('Eval starts...')
         # (6) Eval model on training data to check how much an Improvement
         last_avg_loss_per_triple = 0
         for x, y in train_dataloader:
             pred = self.model(x)
             last_avg_loss_per_triple += self.model.loss(pred, y)
         last_avg_loss_per_triple /= len(train_set)
-        print(f"On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple:.3f}")
+        print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple:.3f}')
 
     def train_literals(
         self,
