@@ -1,26 +1,20 @@
-import os.path
+import os
 from typing import List, Tuple, Set, Iterable, Dict, Union
 import torch
 from torch import optim
-from tqdm import tqdm
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
+import tqdm as tqdm
 from .abstracts import BaseInteractiveKGE, InteractiveQueryDecomposition
 from .dataset_classes import TriplePredictionDataset
 from .literal_classes import LiteralDataset, LiteralEmbeddings
-from .static_funcs import (
-    random_prediction,
-    deploy_triple_prediction,
-    deploy_tail_entity_prediction,
-    deploy_relation_prediction,
-    deploy_head_entity_prediction,
-    load_pickle,
-)
+from .static_funcs import random_prediction, deploy_triple_prediction, deploy_tail_entity_prediction, \
+    deploy_relation_prediction, deploy_head_entity_prediction, load_pickle
 from .static_funcs_training import evaluate_lp
 import numpy as np
 import pandas as pd
 import sys
 import traceback
-import torch.nn.functional as F
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
@@ -43,20 +37,16 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         assert "cpu" in device or "cuda" in device, "Device must be either cpu or cuda"
         self.model.to(device)
 
-    def get_transductive_entity_embeddings(
-        self,
-        indices: Union[torch.LongTensor, List[str]],
-        as_pytorch=False,
-        as_numpy=False,
-        as_list=True,
-    ) -> Union[torch.FloatTensor, np.ndarray, List[float]]:
+    def get_transductive_entity_embeddings(self,
+                                           indices: Union[torch.LongTensor, List[str]],
+                                           as_pytorch=False,
+                                           as_numpy=False,
+                                           as_list=True) -> Union[torch.FloatTensor, np.ndarray, List[float]]:
 
         if isinstance(indices, torch.LongTensor):
-            """Do nothing"""
+            """ Do nothing"""
         else:
-            assert isinstance(
-                indices, list
-            ), f"indices must be either torch.LongTensor or list of strings{indices}"
+            assert isinstance(indices, list), f"indices must be either torch.LongTensor or list of strings{indices}"
             indices = torch.LongTensor([self.entity_to_idx[i] for i in indices])
 
         if as_pytorch:
@@ -68,13 +58,9 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         else:
             raise RuntimeError("Something went wrong with the types")
 
-    def create_vector_database(
-        self,
-        collection_name: str,
-        distance: str,
-        location: str = "localhost",
-        port: int = 6333,
-    ):
+    def create_vector_database(self, collection_name: str, distance: str,
+                               location: str = "localhost",
+                               port: int = 6333):
         assert distance in ["cosine", "dot"]
         # lazy imports
         try:
@@ -86,7 +72,6 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
 
         from qdrant_client.http.models import Distance, VectorParams
         from qdrant_client.http.models import PointStruct
-
         # from qdrant_client.http.models import Filter, FieldCondition, MatchValue
 
         client = QdrantClient(location=location, port=port)
@@ -96,31 +81,19 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             client.delete_collection(collection_name=collection_name)
 
         print(f"Creating a collection {collection_name} with distance metric:Cosine")
-        client.create_collection(
-            collection_name=collection_name,
-            vectors_config=VectorParams(
-                size=self.model.embedding_dim, distance=Distance.COSINE
-            ),
-        )
+        client.create_collection(collection_name=collection_name,
+                                 vectors_config=VectorParams(size=self.model.embedding_dim, distance=Distance.COSINE))
 
         entities = list(self.idx_to_entity.values())
         print("Fetching entity embeddings..")
-        vectors = self.get_transductive_entity_embeddings(
-            indices=entities, as_list=True
-        )
+        vectors = self.get_transductive_entity_embeddings(indices=entities, as_list=True)
         print("Indexing....")
         points = []
         for str_ent, vec in zip(entities, vectors):
-            points.append(
-                PointStruct(
-                    id=self.entity_to_idx[str_ent],
-                    vector=vec,
-                    payload={"name": str_ent},
-                )
-            )
-        operation_info = client.upsert(
-            collection_name=collection_name, wait=True, points=points
-        )
+            points.append(PointStruct(id=self.entity_to_idx[str_ent],
+                                      vector=vec, payload={"name": str_ent}))
+        operation_info = client.upsert(collection_name=collection_name, wait=True,
+                                       points=points)
         print(operation_info)
 
     def generate(self, h="", r=""):
@@ -164,27 +137,14 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
     def eval_lp_performance(self, dataset=List[Tuple[str, str, str]], filtered=True):
         assert isinstance(dataset, list) and len(dataset) > 0
         idx_dataset = np.array(
-            [
-                (self.entity_to_idx[s], self.relation_to_idx[p], self.entity_to_idx[o])
-                for s, p, o in dataset
-            ]
-        )
+            [(self.entity_to_idx[s], self.relation_to_idx[p], self.entity_to_idx[o]) for s, p, o in dataset])
         if filtered:
-            return evaluate_lp(
-                model=self.model,
-                triple_idx=idx_dataset,
-                num_entities=len(self.entity_to_idx),
-                er_vocab=load_pickle(self.path + "/er_vocab.p"),
-                re_vocab=load_pickle(self.path + "/re_vocab.p"),
-            )
+            return evaluate_lp(model=self.model, triple_idx=idx_dataset, num_entities=len(self.entity_to_idx),
+                               er_vocab=load_pickle(self.path + '/er_vocab.p'),
+                               re_vocab=load_pickle(self.path + '/re_vocab.p'))
         else:
-            return evaluate_lp(
-                model=self.model,
-                triple_idx=idx_dataset,
-                num_entities=len(self.entity_to_idx),
-                er_vocab=None,
-                re_vocab=None,
-            )
+            return evaluate_lp(model=self.model, triple_idx=idx_dataset, num_entities=len(self.entity_to_idx),
+                               er_vocab=None, re_vocab=None)
 
     def predict_missing_head_entity(self, relation: Union[List[str], str], tail_entity: Union[List[str], str],
                                     within=None, batch_size = 2, topk = 1, return_indices = False) -> Tuple:
@@ -399,9 +359,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
 
             if len(t_encode) != length:
                 for i in range(len(t_encode)):
-                    t_encode[i].extend(
-                        [self.dummy_id for _ in range(length - len(t_encode[i]))]
-                    )
+                    t_encode[i].extend([self.dummy_id for _ in range(length - len(t_encode[i]))])
 
             h_encode = torch.LongTensor(h_encode).unsqueeze(0)
             r_encode = torch.LongTensor(r_encode).unsqueeze(0)
@@ -414,9 +372,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         else:
             tail_entity = torch.arange(0, len(self.entity_to_idx))
             if isinstance(head_entity, list):
-                head_entity = torch.LongTensor(
-                    [self.entity_to_idx[i] for i in head_entity]
-                )
+                head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity])
             else:
                 head_entity = torch.LongTensor([self.entity_to_idx[head_entity]])
             if isinstance(relation, list):
@@ -466,15 +422,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         else:
             return scores
 
-    def predict(
-        self,
-        *,
-        h: Union[List[str], str] = None,
-        r: Union[List[str], str] = None,
-        t: Union[List[str], str] = None,
-        within=None,
-        logits=True,
-    ) -> torch.FloatTensor:
+    def predict(self, *, h: Union[List[str], str] = None, r: Union[List[str], str] = None,
+                t: Union[List[str], str] = None, within=None, logits=True) -> torch.FloatTensor:
         """
 
         Parameters
@@ -637,15 +586,10 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             
             return all_results
         else:
-            raise AttributeError("Use triple_score method")
+            raise AttributeError('Use triple_score method')
 
-    def triple_score(
-        self,
-        h: Union[List[str], str] = None,
-        r: Union[List[str], str] = None,
-        t: Union[List[str], str] = None,
-        logits=False,
-    ) -> torch.FloatTensor:
+    def triple_score(self, h: Union[List[str], str] = None, r: Union[List[str], str] = None,
+                     t: Union[List[str], str] = None, logits=False) -> torch.FloatTensor:
         """
         Predict triple score
 
@@ -696,15 +640,9 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             x = torch.unsqueeze(x, dim=0)
         else:
             if isinstance(h, list) and isinstance(r, list) and isinstance(t, list):
-                h = torch.LongTensor([self.entity_to_idx[i] for i in h]).reshape(
-                    len(h), 1
-                )
-                r = torch.LongTensor([self.relation_to_idx[i] for i in r]).reshape(
-                    len(r), 1
-                )
-                t = torch.LongTensor([self.entity_to_idx[i] for i in t]).reshape(
-                    len(t), 1
-                )
+                h = torch.LongTensor([self.entity_to_idx[i] for i in h]).reshape(len(h), 1)
+                r = torch.LongTensor([self.relation_to_idx[i] for i in r]).reshape(len(r), 1)
+                t = torch.LongTensor([self.entity_to_idx[i] for i in t]).reshape(len(t), 1)
             else:
                 h = torch.LongTensor([self.entity_to_idx[h]]).reshape(1, 1)
                 r = torch.LongTensor([self.relation_to_idx[r]]).reshape(1, 1)
@@ -726,44 +664,23 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         if only_scores:
             return aggregated_query_for_all_entities
         # from idx obtain entity str
-        return sorted(
-            [
-                (ei, s)
-                for ei, s in zip(
-                    self.entity_to_idx.keys(), aggregated_query_for_all_entities
-                )
-            ],
-            key=lambda x: x[1],
-            reverse=True,
-        )[:k]
+        return sorted([(ei, s) for ei, s in zip(self.entity_to_idx.keys(), aggregated_query_for_all_entities)],
+                      key=lambda x: x[1], reverse=True)[:k]
 
-    def single_hop_query_answering(
-        self, query: tuple, only_scores: bool = True, k: int = None
-    ):
+    def single_hop_query_answering(self, query: tuple, only_scores: bool = True, k: int = None):
         h, r = query
         result = self.predict(h=h, r=r[0]).squeeze()
         if only_scores:
-            """do nothing"""
+            """ do nothing"""
         else:
-            query_score_of_all_entities = [
-                (ei, s) for ei, s in zip(self.entity_to_idx.keys(), result)
-            ]
-            result = sorted(
-                query_score_of_all_entities, key=lambda x: x[1], reverse=True
-            )[:k]
+            query_score_of_all_entities = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), result)]
+            result = sorted(query_score_of_all_entities, key=lambda x: x[1], reverse=True)[:k]
         return result
 
-    def answer_multi_hop_query(
-        self,
-        query_type: str = None,
-        query: Tuple[Union[str, Tuple[str, str]], ...] = None,
-        queries: List[Tuple[Union[str, Tuple[str, str]], ...]] = None,
-        tnorm: str = "prod",
-        neg_norm: str = "standard",
-        lambda_: float = 0.0,
-        k: int = 10,
-        only_scores=False,
-    ) -> List[Tuple[str, torch.Tensor]]:
+    def answer_multi_hop_query(self, query_type: str = None, query: Tuple[Union[str, Tuple[str, str]], ...] = None,
+                               queries: List[Tuple[Union[str, Tuple[str, str]], ...]] = None, tnorm: str = "prod",
+                               neg_norm: str = "standard", lambda_: float = 0.0, k: int = 10, only_scores=False) -> \
+            List[Tuple[str, torch.Tensor]]:
         """
         # @TODO: Refactoring is needed
         # @TODO: Score computation for each query type should be done in a static function
@@ -803,16 +720,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             for i in queries:
                 assert query is None
                 results.append(
-                    self.answer_multi_hop_query(
-                        query_type=query_type,
-                        query=i,
-                        tnorm=tnorm,
-                        neg_norm=neg_norm,
-                        lambda_=lambda_,
-                        k=k,
-                        only_scores=only_scores,
-                    )
-                )
+                    self.answer_multi_hop_query(query_type=query_type, query=i, tnorm=tnorm, neg_norm=neg_norm,
+                                                lambda_=lambda_, k=k, only_scores=only_scores))
             return results
 
         assert len(self.entity_to_idx) >= k >= 0
@@ -820,14 +729,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         query_name_dict = {
             ("e", ("r",)): "1p",
             ("e", ("r", "r")): "2p",
-            (
-                "e",
-                (
-                    "r",
-                    "r",
-                    "r",
-                ),
-            ): "3p",
+            ("e", ("r", "r", "r",),): "3p",
             (("e", ("r",)), ("e", ("r",))): "2i",
             (("e", ("r",)), ("e", ("r",)), ("e", ("r",))): "3i",
             ((("e", ("r",)), ("e", ("r",))), ("r",)): "ip",
@@ -838,9 +740,11 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             ((("e", ("r",)), ("e", ("r", "n"))), ("r",)): "inp",
             (("e", ("r", "r")), ("e", ("r", "n"))): "pin",
             (("e", ("r", "r", "n")), ("e", ("r",))): "pni",
+
             # union
             (("e", ("r",)), ("e", ("r",)), ("u",)): "2u",
             ((("e", ("r",)), ("e", ("r",)), ("u",)), ("r",)): "up",
+
         }
 
         # Create an inverse mapping
@@ -856,21 +760,14 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         if query_structure == ("e", ("r",)):
             return self.single_hop_query_answering(query, only_scores, k)
         # 2p
-        elif query_structure == (
-            "e",
-            (
-                "r",
-                "r",
-            ),
-        ):
+        elif query_structure == ("e", ("r", "r",)):
             # ?M : \exist A. r1(e,A) \land r2(A,M)
             e, (r1, r2) = query
             top_k_scores1 = []
             atom2_scores = []
             # (1) Iterate over top k substitutes of A in the first hop query: r1(e,A) s.t. A<-a
-            for top_k_entity, score_of_e_r1_a in self.answer_multi_hop_query(
-                query_type="1p", query=(e, (r1,)), only_scores=False, tnorm=tnorm, k=k
-            ):
+            for top_k_entity, score_of_e_r1_a in self.answer_multi_hop_query(query_type="1p", query=(e, (r1,)),
+                                                                             only_scores=False, tnorm=tnorm, k=k):
                 # (1.1) Store scores of (e, r1, a) s.t. a is a substitute of A and a is a top ranked entity.
                 top_k_scores1.append(score_of_e_r1_a)
                 # (1.2) Compute scores for (a, r2, M): Replace predict with answer_multi_hop_query.
@@ -885,28 +782,18 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             # k x E
             top_k_scores1 = top_k_scores1.repeat(1, E)
             # E scores
-            aggregated_query_for_all_entities, _ = torch.max(
-                self.t_norm(top_k_scores1, atom2_scores, tnorm), dim=0
-            )
-            return self.return_multi_hop_query_results(
-                aggregated_query_for_all_entities, k, only_scores
-            )
+            aggregated_query_for_all_entities, _ = torch.max(self.t_norm(top_k_scores1, atom2_scores, tnorm), dim=0)
+            return self.return_multi_hop_query_results(aggregated_query_for_all_entities, k, only_scores)
         # 3p
-        elif query_structure == (
-            "e",
-            (
-                "r",
-                "r",
-                "r",
-            ),
-        ):
+        elif query_structure == ("e", ("r", "r", "r",)):
             head1, (relation1, relation2, relation3) = query
             top_k_scores1 = []
             atom_scores = []
             # (1) Iterate over top k substitutes of A in the first hop query: r1(e,A) s.t. A<-a
-            for top_k_entity, score_of_e_r1_a in self.answer_multi_hop_query(
-                query_type="2p", query=(head1, (relation1, relation2)), tnorm=tnorm, k=k
-            ):
+            for top_k_entity, score_of_e_r1_a in self.answer_multi_hop_query(query_type="2p",
+                                                                             query=(head1, (relation1, relation2)),
+                                                                             tnorm=tnorm,
+                                                                             k=k):
                 top_k_scores1.append(score_of_e_r1_a)
                 # () Scores for all entities E
                 atom_scores.append(self.predict(h=[top_k_entity], r=[relation3]))
@@ -921,12 +808,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             # k x E
             top_k_scores1 = top_k_scores1.repeat(1, E)
             # E scores
-            aggregated_query_for_all_entities, _ = torch.max(
-                self.t_norm(top_k_scores1, atom_scores, tnorm), dim=0
-            )
-            return self.return_multi_hop_query_results(
-                aggregated_query_for_all_entities, k, only_scores
-            )
+            aggregated_query_for_all_entities, _ = torch.max(self.t_norm(top_k_scores1, atom_scores, tnorm), dim=0)
+            return self.return_multi_hop_query_results(aggregated_query_for_all_entities, k, only_scores)
 
         # 2in
         elif query_structure == (("e", ("r",)), ("e", ("r", "n"))):
@@ -947,9 +830,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             combined_scores = self.t_norm(atom1_scores, atom2_scores, tnorm)
             if only_scores:
                 return combined_scores
-            entity_scores = [
-                (ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)
-            ]
+            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
             return sorted(entity_scores, key=lambda x: x[1], reverse=True)
         # 3in
         elif query_structure == (("e", ("r",)), ("e", ("r",)), ("e", ("r", "n"))):
@@ -975,9 +856,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             combined_scores = self.t_norm(inter_scores, atom3_scores, tnorm)
             if only_scores:
                 return combined_scores
-            entity_scores = [
-                (ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)
-            ]
+            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
             return sorted(entity_scores, key=lambda x: x[1], reverse=True)
         # pni
         elif query_structure == (("e", ("r", "r", "n")), ("e", ("r",))):
@@ -998,9 +877,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
 
             # Get scores for the second atom
             # Initialize an empty tensor
-            atom2_scores = torch.empty(0, len(self.entity_to_idx)).to(
-                atom1_scores.device
-            )
+            atom2_scores = torch.empty(0, len(self.entity_to_idx)).to(atom1_scores.device)
 
             # Get scores for the second atom
             for head2 in top_k_heads:
@@ -1010,9 +887,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
                 # Concatenate the score tensor for the current head2 with the previous scores
                 atom2_scores = torch.cat([atom2_scores, neg_atom2_score], dim=0)
 
-            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(
-                1, atom2_scores.shape[1]
-            )
+            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(1, atom2_scores.shape[1])
 
             inter_scores = self.t_norm(topk_scores1_expanded, atom2_scores, tnorm)
 
@@ -1022,9 +897,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             combined_scores = self.t_norm(scores_2pn_query, scores_1p_query, tnorm)
             if only_scores:
                 return combined_scores
-            entity_scores = [
-                (ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)
-            ]
+            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
             return sorted(entity_scores, key=lambda x: x[1], reverse=True)
         # pin
         elif query_structure == (("e", ("r", "r")), ("e", ("r", "n"))):
@@ -1045,9 +918,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             top_k_heads = [entity_to_idx_keys[idx.item()] for idx in top_k_indices]
 
             # Initialize an empty tensor
-            atom2_scores = torch.empty(0, len(self.entity_to_idx)).to(
-                atom1_scores.device
-            )
+            atom2_scores = torch.empty(0, len(self.entity_to_idx)).to(atom1_scores.device)
 
             # Get scores for the second atom
             for head2 in top_k_heads:
@@ -1056,9 +927,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
                 # Concatenate the score tensor for the current head2 with the previous scores
                 atom2_scores = torch.cat([atom2_scores, atom2_score], dim=0)
 
-            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(
-                1, atom2_scores.shape[1]
-            )
+            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(1, atom2_scores.shape[1])
 
             inter_scores = self.t_norm(topk_scores1_expanded, atom2_scores, tnorm)
 
@@ -1070,9 +939,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             combined_scores = self.t_norm(scores_2p_query, neg_scores_1p_query, tnorm)
             if only_scores:
                 return combined_scores
-            entity_scores = [
-                (ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)
-            ]
+            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
             return sorted(entity_scores, key=lambda x: x[1], reverse=True)
         # inp
         elif query_structure == ((("e", ("r",)), ("e", ("r", "n"))), ("r",)):
@@ -1102,9 +969,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
 
             # Get scores for the second atom
             # Initialize an empty tensor
-            atom3_scores = torch.empty(0, len(self.entity_to_idx)).to(
-                scores_2in_query.device
-            )
+            atom3_scores = torch.empty(0, len(self.entity_to_idx)).to(scores_2in_query.device)
 
             # Get scores for the second atom
             for head3 in top_k_heads:
@@ -1113,9 +978,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
                 # Concatenate the score tensor for the current head2 with the previous scores
                 atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)
 
-            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(
-                1, atom3_scores.shape[1]
-            )
+            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(1, atom3_scores.shape[1])
 
             combined_scores = self.t_norm(topk_scores1_expanded, atom3_scores, tnorm)
 
@@ -1141,9 +1004,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             combined_scores = self.t_norm(atom1_scores, atom2_scores, tnorm)
             if only_scores:
                 return combined_scores
-            entity_scores = [
-                (ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)
-            ]
+            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
             return sorted(entity_scores, key=lambda x: x[1], reverse=True)
         # 3i
         elif query_structure == (("e", ("r",)), ("e", ("r",)), ("e", ("r",))):
@@ -1165,9 +1026,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             combined_scores = self.t_norm(inter_scores, atom3_scores, tnorm)
             if only_scores:
                 return combined_scores
-            entity_scores = [
-                (ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)
-            ]
+            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
             return sorted(entity_scores, key=lambda x: x[1], reverse=True)
         # pi
         elif query_structure == (("e", ("r", "r")), ("e", ("r",))):
@@ -1187,9 +1046,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             top_k_heads = [entity_to_idx_keys[idx.item()] for idx in top_k_indices]
 
             # Initialize an empty tensor
-            atom2_scores = torch.empty(0, len(self.entity_to_idx)).to(
-                atom1_scores.device
-            )
+            atom2_scores = torch.empty(0, len(self.entity_to_idx)).to(atom1_scores.device)
 
             # Get scores for the second atom
             for head2 in top_k_heads:
@@ -1198,9 +1055,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
                 # Concatenate the score tensor for the current head2 with the previous scores
                 atom2_scores = torch.cat([atom2_scores, atom2_score], dim=0)
 
-            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(
-                1, atom2_scores.shape[1]
-            )
+            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(1, atom2_scores.shape[1])
 
             inter_scores = self.t_norm(topk_scores1_expanded, atom2_scores, tnorm)
 
@@ -1211,9 +1066,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             combined_scores = self.t_norm(scores_2p_query, scores_1p_query, tnorm)
             if only_scores:
                 return combined_scores
-            entity_scores = [
-                (ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)
-            ]
+            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
             return sorted(entity_scores, key=lambda x: x[1], reverse=True)
         # ip
         elif query_structure == ((("e", ("r",)), ("e", ("r",))), ("r",)):
@@ -1241,9 +1094,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
 
             # Get scores for the second atom
             # Initialize an empty tensor
-            atom3_scores = torch.empty(0, len(self.entity_to_idx)).to(
-                scores_2i_query.device
-            )
+            atom3_scores = torch.empty(0, len(self.entity_to_idx)).to(scores_2i_query.device)
 
             # Get scores for the second atom
             for head3 in top_k_heads:
@@ -1253,9 +1104,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
                 # Concatenate the score tensor for the current head2 with the previous scores
                 atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)
 
-            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(
-                1, atom3_scores.shape[1]
-            )
+            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(1, atom3_scores.shape[1])
 
             combined_scores = self.t_norm(topk_scores1_expanded, atom3_scores, tnorm)
             res, _ = torch.max(combined_scores, dim=0)
@@ -1281,9 +1130,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             combined_scores = self.t_conorm(atom1_scores, atom2_scores, tnorm)
             if only_scores:
                 return combined_scores
-            entity_scores = [
-                (ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)
-            ]
+            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
             entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
 
             return entity_scores
@@ -1313,9 +1160,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             top_k_heads = [entity_to_idx_keys[idx.item()] for idx in top_k_indices]
 
             # Initialize an empty tensor
-            atom3_scores = torch.empty(0, len(self.entity_to_idx)).to(
-                scores_2u_query.device
-            )
+            atom3_scores = torch.empty(0, len(self.entity_to_idx)).to(scores_2u_query.device)
 
             for head3 in top_k_heads:
                 # The score tensor for the current head3
@@ -1324,9 +1169,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
                 # Concatenate the score tensor for the current head3 with the previous scores
                 atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)
 
-            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(
-                1, atom3_scores.shape[1]
-            )
+            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(1, atom3_scores.shape[1])
             combined_scores = self.t_norm(topk_scores1_expanded, atom3_scores, tnorm)
             res, _ = torch.max(combined_scores, dim=0)
             if only_scores:
@@ -1336,14 +1179,9 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         else:
             raise RuntimeError(f"Incorrect query_structure {query_structure}")
 
-    def find_missing_triples(
-        self,
-        confidence: float,
-        entities: List[str] = None,
-        relations: List[str] = None,
-        topk: int = 10,
-        at_most: int = sys.maxsize,
-    ) -> Set:
+    def find_missing_triples(self, confidence: float, entities: List[str] = None, relations: List[str] = None,
+                             topk: int = 10,
+                             at_most: int = sys.maxsize) -> Set:
         """
          Find missing triples
 
@@ -1373,9 +1211,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         assert 1.0 >= confidence >= 0.0
         assert topk >= 1
 
-        def select(
-            items: List[str], item_mapping: Dict[str, int]
-        ) -> Iterable[Tuple[str, int]]:
+        def select(items: List[str], item_mapping: Dict[str, int]) -> Iterable[Tuple[str, int]]:
             """
              Get selected entities and their indexes
 
@@ -1397,21 +1233,17 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
                 return ((i, item_mapping[i]) for i in items)
 
         extended_triples = set()
-        print(
-            f"Number of entities:{len(self.entity_to_idx)} \t Number of relations:{len(self.relation_to_idx)}"
-        )
+        print(f'Number of entities:{len(self.entity_to_idx)} \t Number of relations:{len(self.relation_to_idx)}')
 
         # (5) Cartesian Product over entities and relations
         # (5.1) Iterate over entities
-        print("Finding missing triples..")
+        print('Finding missing triples..')
         for str_head_entity, idx_entity in select(entities, self.entity_to_idx):
             # (5.1) Iterate over relations
             for str_relation, idx_relation in select(relations, self.relation_to_idx):
                 # (5.2) \forall e \in Entities store a tuple of scoring_func(head,relation,e) and e
                 # (5.3.) Sort (5.2) and return top  tuples
-                predictions = self.predict_topk(
-                    h=[str_head_entity], r=[str_relation], topk=topk
-                )
+                predictions = self.predict_topk(h=[str_head_entity], r=[str_relation], topk=topk)
                 # (5.4) Iterate over 5.3
                 for str_entity, predicted_score in predictions:
                     # (5.5) If score is less than 99% ignore it
@@ -1419,38 +1251,22 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
                         break
                     else:
                         # (5.8) Remember it
-                        extended_triples.add(
-                            (str_head_entity, str_relation, str_entity)
-                        )
-                        print(
-                            f"Number of found missing triples: {len(extended_triples)}"
-                        )
+                        extended_triples.add((str_head_entity, str_relation, str_entity))
+                        print(f'Number of found missing triples: {len(extended_triples)}')
                         if len(extended_triples) == at_most:
                             return extended_triples
                         # No need to store a large KG into memory
                         # /5.6) False if 0, otherwise 1
                         is_in = np.any(
-                            np.all(
-                                self.train_set
-                                == [
-                                    idx_entity,
-                                    idx_relation,
-                                    self.entity_to_idx[str_entity],
-                                ],
-                                axis=1,
-                            )
-                        )
+                            np.all(self.train_set == [idx_entity, idx_relation, self.entity_to_idx[str_entity]],
+                                   axis=1))
                         # (5.7) If (5.6) is true, ignore it
                         if is_in:
                             continue
                         else:
                             # (5.8) Remember it
-                            extended_triples.add(
-                                (str_head_entity, str_relation, str_entity)
-                            )
-                            print(
-                                f"Number of found missing triples: {len(extended_triples)}"
-                            )
+                            extended_triples.add((str_head_entity, str_relation, str_entity))
+                            print(f'Number of found missing triples: {len(extended_triples)}')
                             if len(extended_triples) == at_most:
                                 return extended_triples
         return extended_triples
@@ -1459,77 +1275,47 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         # Lazy import
         import gradio as gr
 
-        def predict(
-            str_subject: str, str_predicate: str, str_object: str, random_examples: bool
-        ):
+        def predict(str_subject: str, str_predicate: str, str_object: str, random_examples: bool):
 
             if random_examples:
                 return random_prediction(self)
             else:
-                if (
-                    self.is_seen(entity=str_subject)
-                    and self.is_seen(relation=str_predicate)
-                    and self.is_seen(entity=str_object)
-                ):
-                    """Triple Prediction"""
-                    return deploy_triple_prediction(
-                        self, str_subject, str_predicate, str_object
-                    )
+                if self.is_seen(entity=str_subject) and self.is_seen(
+                        relation=str_predicate) and self.is_seen(entity=str_object):
+                    """ Triple Prediction """
+                    return deploy_triple_prediction(self, str_subject, str_predicate, str_object)
 
                 elif self.is_seen(entity=str_subject) and self.is_seen(
-                    relation=str_predicate
-                ):
-                    """Tail Entity Prediction"""
-                    return deploy_tail_entity_prediction(
-                        self, str_subject, str_predicate, top_k
-                    )
+                        relation=str_predicate):
+                    """ Tail Entity Prediction """
+                    return deploy_tail_entity_prediction(self, str_subject, str_predicate, top_k)
                 elif self.is_seen(entity=str_object) and self.is_seen(
-                    relation=str_predicate
-                ):
-                    """Head Entity Prediction"""
-                    return deploy_head_entity_prediction(
-                        self, str_object, str_predicate, top_k
-                    )
-                elif self.is_seen(entity=str_subject) and self.is_seen(
-                    entity=str_object
-                ):
-                    """Relation Prediction"""
-                    return deploy_relation_prediction(
-                        self, str_subject, str_object, top_k
-                    )
+                        relation=str_predicate):
+                    """ Head Entity Prediction """
+                    return deploy_head_entity_prediction(self, str_object, str_predicate, top_k)
+                elif self.is_seen(entity=str_subject) and self.is_seen(entity=str_object):
+                    """ Relation Prediction """
+                    return deploy_relation_prediction(self, str_subject, str_object, top_k)
                 else:
-                    KeyError("Uncovered scenario")
+                    KeyError('Uncovered scenario')
             # If user simply select submit
             return random_prediction(self)
 
         gr.Interface(
             fn=predict,
-            inputs=[
-                gr.Textbox(lines=1, placeholder=None, label="Subject"),
-                gr.Textbox(lines=1, placeholder=None, label="Predicate"),
-                gr.Textbox(lines=1, placeholder=None, label="Object"),
-                "checkbox",
-            ],
-            outputs=[
-                gr.Textbox(label="Input Triple"),
-                gr.Dataframe(label="Outputs", type="pandas"),
-            ],
-            title=f"{self.name} Deployment",
-            description="1. Enter a triple to compute its score,\n"
-            "2. Enter a subject and predicate pair to obtain most likely top ten entities or\n"
-            "3. Checked the random examples box and click submit",
-        ).launch(share=share)
+            inputs=[gr.Textbox(lines=1, placeholder=None, label='Subject'),
+                    gr.Textbox(lines=1, placeholder=None, label='Predicate'),
+                    gr.Textbox(lines=1, placeholder=None, label='Object'), "checkbox"],
+            outputs=[gr.Textbox(label='Input Triple'),
+                     gr.Dataframe(label='Outputs', type='pandas')],
+            title=f'{self.name} Deployment',
+            description='1. Enter a triple to compute its score,\n'
+                        '2. Enter a subject and predicate pair to obtain most likely top ten entities or\n'
+                        '3. Checked the random examples box and click submit').launch(share=share)
 
     # @TODO: Do we really need this ?!
-    def train_triples(
-        self,
-        h: List[str],
-        r: List[str],
-        t: List[str],
-        labels: List[float],
-        iteration=2,
-        optimizer=None,
-    ):
+    def train_triples(self, h: List[str], r: List[str], t: List[str], labels: List[float],
+                      iteration=2, optimizer=None):
         assert len(h) == len(r) == len(t) == len(labels)
         # (1) From List of strings to TorchLongTensor.
         x = torch.LongTensor(self.index_triple(h, r, t)).reshape(1, 3)
@@ -1539,15 +1325,13 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         self.set_model_train_mode()
         if optimizer is None:
             optimizer = optim.Adam(self.model.parameters(), lr=0.1)
-        print("Iteration starts...")
+        print('Iteration starts...')
         # (4) Train.
         for epoch in range(iteration):
             optimizer.zero_grad()
             outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
-            print(
-                f"Iteration:{epoch}\t Loss:{loss.item()}\t Outputs:{outputs.detach().mean()}"
-            )
+            print(f"Iteration:{epoch}\t Loss:{loss.item()}\t Outputs:{outputs.detach().mean()}")
             loss.backward()
             optimizer.step()
         # (5) Eval
@@ -1558,7 +1342,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             loss = self.model.loss(outputs, labels)
             print(f"Eval Mode:\tLoss:{loss.item()}")
 
-    def train_k_vs_all(self, h, r, iteration=1, lr=0.001):
+    def train_k_vs_all(self, h, r, iteration=1, lr=.001):
         """
         Train k vs all
         :param head_entity:
@@ -1576,9 +1360,9 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         # (2) Train mode
         self.set_model_train_mode()
         # (3) Initialize optimizer # SGD considerably faster than ADAM.
-        optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=0.00001)
+        optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=.00001)
 
-        print("\nIteration starts.")
+        print('\nIteration starts.')
         # (3) Iterative training.
         for epoch in range(iteration):
             optimizer.zero_grad()
@@ -1588,56 +1372,43 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
                 print(
                     f"Iteration:{epoch}\t"
                     f"Loss:{loss.item()}\t"
-                    f"Avg. Logits for correct tails: {outputs[0, idx_tails].flatten().mean().detach()}"
-                )
+                    f"Avg. Logits for correct tails: {outputs[0, idx_tails].flatten().mean().detach()}")
             else:
                 print(
                     f"Iteration:{epoch}\t"
                     f"Loss:{loss.item()}\t"
-                    f"Avg. Logits for all negatives: {outputs[0].flatten().mean().detach()}"
-                )
+                    f"Avg. Logits for all negatives: {outputs[0].flatten().mean().detach()}")
 
             loss.backward()
             optimizer.step()
-            if loss.item() < 0.00001:
-                print(f"loss is {loss.item():.3f}. Converged !!!")
+            if loss.item() < .00001:
+                print(f'loss is {loss.item():.3f}. Converged !!!')
                 break
         # (4) Eval mode
         self.set_model_eval_mode()
         with torch.no_grad():
             outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
-        print(
-            f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}\n"
-        )
+        print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}\n")
 
-    def train(
-        self, kg, lr=0.1, epoch=10, batch_size=32, neg_sample_ratio=10, num_workers=1
-    ) -> None:
-        """Retrained a pretrain model on an input KG via negative sampling."""
+    def train(self, kg, lr=.1, epoch=10, batch_size=32, neg_sample_ratio=10, num_workers=1) -> None:
+        """ Retrained a pretrain model on an input KG via negative sampling."""
         # (1) Create Negative Sampling Setting for training
-        print("Creating Dataset...")
-        train_set = TriplePredictionDataset(
-            kg.train_set,
-            num_entities=len(kg.entity_to_idx),
-            num_relations=len(kg.relation_to_idx),
-            neg_sample_ratio=neg_sample_ratio,
-        )
+        print('Creating Dataset...')
+        train_set = TriplePredictionDataset(kg.train_set,
+                                            num_entities=len(kg.entity_to_idx),
+                                            num_relations=len(kg.relation_to_idx),
+                                            neg_sample_ratio=neg_sample_ratio)
         num_data_point = len(train_set)
-        print("Number of data points: ", num_data_point)
-        train_dataloader = DataLoader(
-            train_set,
-            batch_size=batch_size,
-            #  shuffle => to have the data reshuffled at every epoc
-            shuffle=True,
-            num_workers=num_workers,
-            collate_fn=train_set.collate_fn,
-            pin_memory=True,
-        )
+        print('Number of data points: ', num_data_point)
+        train_dataloader = DataLoader(train_set, batch_size=batch_size,
+                                      #  shuffle => to have the data reshuffled at every epoc
+                                      shuffle=True, num_workers=num_workers,
+                                      collate_fn=train_set.collate_fn, pin_memory=True)
 
         # (2) Go through valid triples + corrupted triples and compute scores.
         # Average loss per triple is stored. This will be used  to indicate whether we learned something.
-        print("First Eval..")
+        print('First Eval..')
         self.set_model_eval_mode()
         first_avg_loss_per_triple = 0
         for x, y in train_dataloader:
@@ -1648,7 +1419,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         # (3) Prepare Model for Training
         self.set_model_train_mode()
         optimizer = optim.Adam(self.model.parameters(), lr=lr)
-        print("Training Starts...")
+        print('Training Starts...')
         for epoch in range(epoch):  # loop over the dataset multiple times
             epoch_loss = 0
             for x, y in train_dataloader:
@@ -1750,7 +1521,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
         literal_model.train()
 
         print(
-            f"Training Literal Embedding model on dataset "
+            f"Training Literal Embedding model"
             f"using pre-trained '{self.model.name}' embeddings."
         )
 
@@ -1793,7 +1564,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             denormalize_preds (bool): If True, denormalizes the predictions.
         Returns:
 
-            torch.FloatTensor: Predictions for the given entities and attributes.
+            numpy ndarray : Predictions for the given entities and attributes.
         """
         # sanity checking
         # Check if the literal model is trained or loaded
