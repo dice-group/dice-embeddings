@@ -120,7 +120,7 @@ class TestPredictLitRegression:
         assert result.shape == (1,), "Expected array with shape (1,)"
         prediction = result[0]
         assert isinstance(prediction, (int, float)), "Result is not a numeric value"
-        assert 43.5 <= prediction <= 45.5, f"Result {prediction} is not within the expected range"
+        assert 44.3 <= prediction <= 44.9, f"Result {prediction} is not within the expected range"
 
         # remove literal test artifacts
         shutil.rmtree(os.path.dirname(train_file_path))
