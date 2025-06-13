@@ -131,7 +131,6 @@ class TestPredictLitRegression:
 
         # Train with literals
         model.train_literals(train_file_path=train_file_path,
-        eval_litreal_preds=False,
         loader_backend="pandas",
         num_epochs=20,
         batch_size=50, device='cpu')
@@ -148,7 +147,6 @@ class TestPredictLitRegression:
 
         # Train with literals
         model.train_literals(train_file_path=train_file_path,
-        eval_litreal_preds=False,
         loader_backend="pandas",
         num_epochs=100,
         batch_size=50, device='cpu')
@@ -177,7 +175,6 @@ class TestPredictLitRegression:
 
         # Train with literals
         model.train_literals(train_file_path=train_file_path,
-        eval_litreal_preds=False,
         loader_backend="pandas",
         num_epochs=20,
         batch_size=512)
@@ -209,7 +206,6 @@ class TestPredictLitRegression:
 
         # Train with literals
         model.train_literals(train_file_path=train_file_path,
-        eval_litreal_preds=False,
         loader_backend="pandas",
         num_epochs=20,
         batch_size=512)
