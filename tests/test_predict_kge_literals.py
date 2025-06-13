@@ -6,6 +6,7 @@ import pandas as pd
 from dicee.config import Namespace
 from dicee.executer import Execute
 from dicee.knowledge_graph_embeddings import KGE
+from dicee.eval_static_funcs import evaluate_literal_prediction
 
 class TestPredictLitRegression:
     """Regression tests for literal prediction using interactive KGE model Family dataset."""
@@ -130,7 +131,6 @@ class TestPredictLitRegression:
 
         # Train with literals
         model.train_literals(train_file_path=train_file_path,
-        eval_litreal_preds=False,
         loader_backend="pandas",
         num_epochs=20,
         batch_size=50, device='cpu')
@@ -147,7 +147,6 @@ class TestPredictLitRegression:
 
         # Train with literals
         model.train_literals(train_file_path=train_file_path,
-        eval_litreal_preds=False,
         loader_backend="pandas",
         num_epochs=100,
         batch_size=50, device='cpu')
@@ -176,7 +175,6 @@ class TestPredictLitRegression:
 
         # Train with literals
         model.train_literals(train_file_path=train_file_path,
-        eval_litreal_preds=False,
         loader_backend="pandas",
         num_epochs=20,
         batch_size=512)
@@ -208,7 +206,6 @@ class TestPredictLitRegression:
 
         # Train with literals
         model.train_literals(train_file_path=train_file_path,
-        eval_litreal_preds=False,
         loader_backend="pandas",
         num_epochs=20,
         batch_size=512)
@@ -216,7 +213,8 @@ class TestPredictLitRegression:
         eval_file_path = "KGs/Family/literals/test.txt"
         
         # Evaluate literal predictions
-        lit_prediction_errors = model.evaluate_literal_prediction(
+        lit_prediction_errors = evaluate_literal_prediction(
+            kge_model=model,
             eval_file_path=eval_file_path,
             store_lit_preds = False,
             eval_literals=True,
