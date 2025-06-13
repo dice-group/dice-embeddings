@@ -2,6 +2,72 @@ from .base_model import BaseKGE
 from typing import Tuple
 import torch
 import numpy as np
+from .transformers import Transformer
+import argparse
+
+class Tapire(BaseKGE):
+    """TrAnsformerPAIRE
+    
+    (1) A batch of tuples [(h,r),...,(h,r)]_b
+    (2) Retrieve embeddings emb_h, emb_r
+    (3) Concat emb_h and emb_r horizontally into emb_hr :(batch_size, 2d)
+    (4) Reshape emb_hr into ***(batch_size,2d,1)***: This batch is considered as a batch of 2d tokens with embedding size of 1.
+    (5) Apply transformer operation with a single classifer to compute logits for all entities
+
+
+    Potential operations (3)
+    We may want to explore shapes
+     ***(batch_size,2d,1)***
+     ***(batch_size,d,2)***
+     ***(batch_size,d//2,4)***
+     
+    """
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'Tapire'
+        # @TODO: These params should be modifyable
+        # Create a namespace object
+        config = argparse.Namespace(dropout=0.0, block_size=1, n_layer=2, n_head=1, n_embd=1,
+                                    bias=False,
+                                    in_features=self.embedding_dim+self.embedding_dim,
+                                    out_features=self.num_entities)        
+        self.transformer_model = Transformer(config=config)
+
+
+    def k_vs_all_score(self, emb_h: torch.FloatTensor, emb_r: torch.FloatTensor):
+        """
+
+        Parameters
+        ----------
+        emb_h : n by d tensor
+        emb_r : n by d tensor
+
+        Returns
+        -------
+
+        """
+        
+        return self.transformer_model(emb_h,emb_r)
+
+    def forward_k_vs_all(self, x: torch.LongTensor):
+        emb_head, emb_rel = self.get_head_relation_representation(x)
+        return self.k_vs_all_score(emb_h=emb_head, emb_r=emb_rel)
+
+    def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor):
+        # (b,d),     (b,d)
+        raise NotImplemented
+        self.k_vs_all_score(self.get_head_relation_representation(x))
+        # (b, d)
+        hr = torch.einsum('bd, bd -> bd', emb_head_real, emb_rel_real)
+        # (b, k, d)
+        t = self.entity_embeddings(target_entity_idx)
+        return torch.einsum('bd, bkd -> bk', hr, t)
+
+
+    def score(self, h, r, t):
+        self.transformer_model(h,r)
+        return (self.transformer_model(h,r) * t).sum(dim=1)
 
 
 class DistMult(BaseKGE):
@@ -18,9 +84,9 @@ class DistMult(BaseKGE):
 
         Parameters
         ----------
-        emb_h
-        emb_r
-        emb_E
+        emb_h : n by d tensor
+        emb_r : n by d tensor
+        emb_E : num_entity by d tensor
 
         Returns
         -------

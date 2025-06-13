@@ -5,6 +5,10 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from .adopt import ADOPT
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
 
 class BaseKGELightning(pl.LightningModule):
     def __init__(self, *args, **kwargs):
@@ -174,6 +178,7 @@ class BaseKGE(BaseKGELightning):
             self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
             self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
             self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+
 
     def forward_byte_pair_encoded_k_vs_all(self, x: torch.LongTensor):
         """

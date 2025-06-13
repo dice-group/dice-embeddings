@@ -408,3 +408,131 @@ class GPT(nn.Module):
         flops_promised = 312e12  # A100 GPU bfloat16 peak flops is 312 TFLOPS
         mfu = flops_achieved / flops_promised
         return mfu
+
+
+class Transformer(nn.Module):
+    """Transformer (d-dimensional entity, d-dimensional relation embeddings) => logits for all entities"""
+
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+        self.n_head = config.n_head
+        self.n_embd = config.n_embd
+        self.dropout = config.dropout
+        self.n_layer = config.n_layer
+        self.block_size = config.block_size
+        self.bias = config.bias
+
+        # Entity-relation emnedding into logis
+        self.lm_head = nn.Linear(in_features=config.in_features,out_features=config.out_features)
+
+        # Layer normalization weights and biases for all layers
+        self.ln_weights = nn.ParameterList([nn.Parameter(torch.ones(config.n_embd)) for _ in range(2 * config.n_layer)])
+        self.ln_biases = nn.ParameterList([
+            nn.Parameter(torch.zeros(config.n_embd)) if config.bias else None
+            for _ in range(2 * config.n_layer)
+        ])
+
+        # Attention projections for all layers
+        self.attn_projections = nn.ModuleList([
+            nn.Linear(config.n_embd, 3 * config.n_embd, bias=config.bias)
+            for _ in range(config.n_layer)
+        ])
+        self.attn_output_projections = nn.ModuleList([
+            nn.Linear(config.n_embd, config.n_embd, bias=config.bias)
+            for _ in range(config.n_layer)
+        ])
+
+        # MLP projections for all layers
+        self.mlp_fc = nn.ModuleList([
+            nn.Linear(config.n_embd, 4 * config.n_embd, bias=config.bias)
+            for _ in range(config.n_layer)
+        ])
+        self.mlp_proj = nn.ModuleList([
+            nn.Linear(4 * config.n_embd, config.n_embd, bias=config.bias)
+            for _ in range(config.n_layer)
+        ])
+
+        # Dropout layers
+        self.attn_dropout = nn.Dropout(config.dropout)
+        self.resid_dropout = nn.Dropout(config.dropout)
+        self.mlp_dropout = nn.Dropout(config.dropout)
+
+        # Flash attention support
+        self.flash = hasattr(torch.nn.functional, 'scaled_dot_product_attention')
+        if not self.flash:
+            print("WARNING: using slow attention. Flash Attention requires PyTorch >= 2.0")
+            # Causal mask for manual attention implementation
+            self.register_buffer("causal_mask", torch.tril(torch.ones(config.block_size, config.block_size))
+                                 .view(1, 1, config.block_size, config.block_size))
+
+    def layer_norm(self, x, layer_idx):
+        """Apply layer normalization with optional bias"""
+        weight = self.ln_weights[layer_idx]
+        bias = self.ln_biases[layer_idx] if self.bias else None
+        return F.layer_norm(x, weight.shape, weight, bias, 1e-5)
+
+    def causal_self_attention(self, x, layer_idx):
+        """Apply causal self-attention for a specific layer"""
+        B, T, C = x.size()  # batch size, sequence length, embedding dimensionality
+
+        # Calculate query, key, values for all heads in batch
+        q, k, v = self.attn_projections[layer_idx](x).split(self.n_embd, dim=2)
+        k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)  # (B, nh, T, hs)
+        q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)  # (B, nh, T, hs)
+        v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)  # (B, nh, T, hs)
+
+        # Causal self-attention
+        if self.flash:
+            # Efficient attention using Flash Attention CUDA kernels
+            y = torch.nn.functional.scaled_dot_product_attention(
+                q, k, v, attn_mask=None,
+                dropout_p=self.dropout if self.training else 0,
+                is_causal=True
+            )
+        else:
+            # Manual implementation of attention
+            att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
+            att = att.masked_fill(self.causal_mask[:, :, :T, :T] == 0, float('-inf'))
+            att = F.softmax(att, dim=-1)
+            att = self.attn_dropout(att)
+            y = att @ v  # (B, nh, T, T) x (B, nh, T, hs) -> (B, nh, T, hs)
+
+        y = y.transpose(1, 2).contiguous().view(B, T, C)  # re-assemble all head outputs
+
+        # Output projection
+        y = self.resid_dropout(self.attn_output_projections[layer_idx](y))
+        return y
+
+    def mlp(self, x, layer_idx):
+        """Apply MLP for a specific layer"""
+        x = self.mlp_fc[layer_idx](x)
+        x = F.gelu(x)
+        x = self.mlp_proj[layer_idx](x)
+        x = self.mlp_dropout(x)
+        return x
+
+    def transformer_block(self, x, layer_idx):
+        """Apply a complete transformer block (attention + MLP)"""
+        # Layer norm indices: layer_idx * 2 for attention, layer_idx * 2 + 1 for MLP
+        attn_ln_idx = layer_idx * 2
+        mlp_ln_idx = layer_idx * 2 + 1
+
+        # Attention with residual connection
+        x = x + self.causal_self_attention(self.layer_norm(x, attn_ln_idx), layer_idx)
+
+        # MLP with residual connection
+        x = x + self.mlp(self.layer_norm(x, mlp_ln_idx), layer_idx)
+
+        return x
+
+    def forward(self, emb_h,emb_r):
+        """Forward pass through all transformer blocks"""
+        # () Horizontally concapt d-dimensional head entity and relation embeddings
+        x = torch.cat([emb_h.unsqueeze(-1), emb_r.unsqueeze(-1)], dim=1)
+        # () Apply all transformer blocks sequentially
+        for layer_idx in range(self.n_layer):
+            x = self.transformer_block(x, layer_idx)
+        # () Reduce into d-dimensional embedding vectors.
+        x=torch.squeeze(x,dim=-1)
+        return self.lm_head(x)
