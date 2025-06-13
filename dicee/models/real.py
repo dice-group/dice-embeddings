@@ -1,9 +1,45 @@
 from .base_model import BaseKGE
-from typing import Tuple
+from typing import Tuple, Optional
 import torch
 import numpy as np
 from .transformers import Transformer
 import argparse
+from dataclasses import dataclass
+
+@dataclass
+class TapireConfig:
+    """Configuration for Tapire model
+    
+    Attributes:
+        embedding_dim: Dimension of entity and relation embeddings
+        num_entities: Number of entities in the knowledge graph
+        num_relations: Number of relations in the knowledge graph
+        token_size: Number of tokens to split embeddings into (default: 2)
+        inner_embedding_size: Size of inner embeddings for each token (default: 1)
+        n_layer: Number of transformer layers (default: 2)
+        n_head: Number of attention heads (default: 1)
+        dropout: Dropout rate (default: 0.0)
+        bias: Whether to use bias in linear layers (default: False)
+    """
+    embedding_dim: int
+    num_entities: int
+    num_relations: int
+    token_size: int = 2
+    inner_embedding_size: int = 1
+    n_layer: int = 2
+    n_head: int = 1
+    dropout: float = 0.0
+    bias: bool = False
+
+    def __post_init__(self):
+        # Validate configuration
+        assert self.embedding_dim % self.token_size == 0, \
+            f"embedding_dim ({self.embedding_dim}) must be divisible by token_size ({self.token_size})"
+        
+        # Calculate dimensions for transformer
+        self.in_features = self.embedding_dim * 2  # Combined head and relation embeddings
+        self.out_features = self.num_entities
+        self.n_embd = self.inner_embedding_size
 
 class Tapire(BaseKGE):
     """TrAnsformerPAIRE
@@ -11,8 +47,8 @@ class Tapire(BaseKGE):
     (1) A batch of tuples [(h,r),...,(h,r)]_b
     (2) Retrieve embeddings emb_h, emb_r
     (3) Concat emb_h and emb_r horizontally into emb_hr :(batch_size, 2d)
-    (4) Reshape emb_hr into ***(batch_size,2d,1)***: This batch is considered as a batch of 2d tokens with embedding size of 1.
-    (5) Apply transformer operation with a single classifer to compute logits for all entities
+    (4) Reshape emb_hr into (batch_size, token_size, inner_embedding_size)
+    (5) Apply transformer operation with a single classifier to compute logits for all entities
 
 
     Potential operations (3)
@@ -26,13 +62,31 @@ class Tapire(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'Tapire'
-        # @TODO: These params should be modifyable
-        # Create a namespace object
-        config = argparse.Namespace(dropout=0.0, block_size=1, n_layer=2, n_head=1, n_embd=1,
-                                    bias=False,
-                                    in_features=self.embedding_dim+self.embedding_dim,
-                                    out_features=self.num_entities)        
-        self.transformer_model = Transformer(config=config)
+        
+        # Create configuration
+        self.config = TapireConfig(
+            embedding_dim=self.embedding_dim,
+            num_entities=self.num_entities,
+            num_relations=self.num_relations,
+            token_size=args.get('token_size', 2),
+            inner_embedding_size=args.get('inner_embedding_size', 4),
+            n_layer=args.get('n_layer', 2),
+            n_head=args.get('n_head', 1),
+            dropout=args.get('dropout', 0.0),
+            bias=args.get('bias', False)
+        )
+        
+        # Create transformer model
+        transformer_config = argparse.Namespace(
+            dropout=self.config.dropout,
+            n_layer=self.config.n_layer,
+            n_head=self.config.n_head,
+            n_embd=self.config.n_embd,
+            bias=self.config.bias,
+            in_features=self.config.in_features,
+            out_features=self.config.out_features
+        )
+        self.transformer_model = Transformer(config=transformer_config)
 
 
     def k_vs_all_score(self, emb_h: torch.FloatTensor, emb_r: torch.FloatTensor):

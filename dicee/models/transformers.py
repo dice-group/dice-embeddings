@@ -411,7 +411,17 @@ class GPT(nn.Module):
 
 
 class Transformer(nn.Module):
-    """Transformer (d-dimensional entity, d-dimensional relation embeddings) => logits for all entities"""
+    """Transformer for knowledge graph embeddings
+    
+    Takes entity and relation embeddings and processes them through transformer layers
+    to predict entity scores.
+    
+    The input embeddings can be arranged in different ways:
+    - (batch_size, 2d, 1): 2d tokens with embedding size 1
+    - (batch_size, d, 2): d tokens with embedding size 2
+    - (batch_size, d/2, 4): d/2 tokens with embedding size 4
+    etc.
+    """
 
     def __init__(self, config):
         super().__init__()
@@ -420,11 +430,11 @@ class Transformer(nn.Module):
         self.n_embd = config.n_embd
         self.dropout = config.dropout
         self.n_layer = config.n_layer
-        self.block_size = config.block_size
         self.bias = config.bias
 
-        # Entity-relation emnedding into logis
-        self.lm_head = nn.Linear(in_features=config.in_features,out_features=config.out_features)
+        # Entity-relation embedding into logits
+        self.lm_head = nn.Linear(in_features=config.in_features,
+                                out_features=config.out_features)
 
         # Layer normalization weights and biases for all layers
         self.ln_weights = nn.ParameterList([nn.Parameter(torch.ones(config.n_embd)) for _ in range(2 * config.n_layer)])
@@ -460,11 +470,6 @@ class Transformer(nn.Module):
 
         # Flash attention support
         self.flash = hasattr(torch.nn.functional, 'scaled_dot_product_attention')
-        if not self.flash:
-            print("WARNING: using slow attention. Flash Attention requires PyTorch >= 2.0")
-            # Causal mask for manual attention implementation
-            self.register_buffer("causal_mask", torch.tril(torch.ones(config.block_size, config.block_size))
-                                 .view(1, 1, config.block_size, config.block_size))
 
     def layer_norm(self, x, layer_idx):
         """Apply layer normalization with optional bias"""
@@ -526,13 +531,33 @@ class Transformer(nn.Module):
 
         return x
 
-    def forward(self, emb_h,emb_r):
-        """Forward pass through all transformer blocks"""
-        # () Horizontally concapt d-dimensional head entity and relation embeddings
-        x = torch.cat([emb_h.unsqueeze(-1), emb_r.unsqueeze(-1)], dim=1)
-        # () Apply all transformer blocks sequentially
+    def forward(self, emb_h, emb_r):
+        """Forward pass through all transformer blocks
+        
+        Parameters
+        ----------
+        emb_h : torch.FloatTensor
+            Head entity embeddings of shape (batch_size, embedding_dim)
+        emb_r : torch.FloatTensor
+            Relation embeddings of shape (batch_size, embedding_dim)
+            
+        Returns
+        -------
+        torch.FloatTensor
+            Logits for all entities of shape (batch_size, num_entities)
+        """
+        # Concatenate head and relation embeddings
+        # Shape: (batch_size, 2*embedding_dim)
+        x = torch.cat([emb_h, emb_r], dim=1)
+        
+        # Reshape into tokens
+        # Shape: (batch_size, token_size, inner_embedding_size)
+        x = x.view(x.size(0), -1, self.n_embd)
+
+        # Apply transformer blocks
         for layer_idx in range(self.n_layer):
             x = self.transformer_block(x, layer_idx)
-        # () Reduce into d-dimensional embedding vectors.
-        x=torch.squeeze(x,dim=-1)
+
+        # Flatten and project to entity scores
+        x = torch.flatten(x, start_dim=1)
         return self.lm_head(x)
