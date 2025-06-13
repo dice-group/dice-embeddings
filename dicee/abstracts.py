@@ -752,8 +752,6 @@ class BaseInteractiveTrainKGE:
         train_file_path: str = None,
         num_epochs: int = 100,
         lit_lr: float = 0.001,
-        eval_litreal_preds: bool = True,
-        eval_file_path: str = None,
         lit_normalization_type: str = "z-norm",
         batch_size: int = 1024,
         sampling_ratio: float = None,
@@ -770,8 +768,6 @@ class BaseInteractiveTrainKGE:
             train_file_path (str): Path to the training data file.
             num_epochs (int): Number of training epochs.
             lit_lr (float): Learning rate for the literal model.
-            eval_litreal_preds (bool): If True, evaluate the model after training.
-            eval_file_path (str): Path to evaluation data file.
             norm_type (str): Normalization type to use ('z-norm', 'min-max', or None).
             batch_size (int): Batch size for training.
             sampling_ratio (float): Ratio of training triples to use.
