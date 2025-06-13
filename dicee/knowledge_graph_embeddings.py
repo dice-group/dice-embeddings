@@ -1,15 +1,21 @@
+import os
 from typing import List, Tuple, Set, Iterable, Dict, Union
 import torch
 from torch import optim
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 from .abstracts import BaseInteractiveKGE, InteractiveQueryDecomposition
 from .dataset_classes import TriplePredictionDataset
+from .literal_classes import LiteralDataset, LiteralEmbeddings
 from .static_funcs import random_prediction, deploy_triple_prediction, deploy_tail_entity_prediction, \
     deploy_relation_prediction, deploy_head_entity_prediction, load_pickle
 from .static_funcs_training import evaluate_lp
 import numpy as np
+import pandas as pd
 import sys
 import traceback
+from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
@@ -1436,3 +1442,252 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition):
             last_avg_loss_per_triple += self.model.loss(pred, y)
         last_avg_loss_per_triple /= len(train_set)
         print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple:.3f}')
+
+    def train_literals(
+        self,
+        train_file_path: str = None,
+        num_epochs: int = 100,
+        lit_lr: float = 0.001,
+        eval_litreal_preds: bool = True,
+        eval_file_path: str = None,
+        lit_normalization_type: str = "z-norm",
+        batch_size: int = 1024,
+        sampling_ratio: float = None,
+        random_seed=1,
+        loader_backend: str = "pandas",
+        freeze_entity_embeddings: bool = True,
+        gate_residual: bool = True,
+        device: str = None,
+    ):
+        """
+        Trains the Literal Embeddings model using literal data.
+
+        Args:
+            train_file_path (str): Path to the training data file.
+            num_epochs (int): Number of training epochs.
+            lit_lr (float): Learning rate for the literal model.
+            eval_litreal_preds (bool): If True, evaluate the model after training.
+            eval_file_path (str): Path to evaluation data file.
+            norm_type (str): Normalization type to use ('z-norm', 'min-max', or None).
+            batch_size (int): Batch size for training.
+            sampling_ratio (float): Ratio of training triples to use.
+            loader_backend (str): Backend for loading the dataset ('pandas' or 'rdflib').
+            freeze_entity_embeddings (bool): If True, freeze the entity embeddings during training.
+            gate_residual (bool): If True, use gate residual connections in the model.
+            device (str): Device to use for training ('cuda' or 'cpu'). If None, will use available GPU or CPU.
+        """
+        # Assign torch.seed to reproduice experiments
+        torch.manual_seed(random_seed)
+        torch.cuda.manual_seed_all(random_seed)
+
+        # Set the device for training
+        try:
+            device = torch.device(device)
+        except Exception:
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                    
+        # Prepare the dataset and DataLoader
+        literal_dataset = LiteralDataset(
+            file_path=train_file_path,
+            ent_idx=self.entity_to_idx,
+            normalization_type=lit_normalization_type,
+            sampling_ratio=sampling_ratio,
+            loader_backend=loader_backend,
+        )
+
+        self.data_property_to_idx = literal_dataset.data_property_to_idx
+
+        batch_data = DataLoader(
+            dataset=literal_dataset,
+            shuffle=True,
+            batch_size=batch_size,
+        )
+
+        # Initialize Literal Embedding model
+        literal_model = LiteralEmbeddings(
+            num_of_data_properties=literal_dataset.num_data_properties,
+            embedding_dims=self.model.embedding_dim,
+            entity_embeddings=self.model.entity_embeddings,
+            freeze_entity_embeddings=freeze_entity_embeddings,
+            gate_residual=gate_residual
+        ).to(device)
+
+        optimizer = optim.Adam(literal_model.parameters(), lr=lit_lr)
+        loss_log = {"lit_loss": []}
+        literal_model.train()
+
+        print(
+            f"Training Literal Embedding model"
+            f"using pre-trained '{self.model.name}' embeddings."
+        )
+
+        # Training loop
+        for epoch in (tqdm_bar := tqdm(range(num_epochs))):
+            epoch_loss = 0
+            for batch_x, batch_y in batch_data:
+                optimizer.zero_grad()
+                lit_entities = batch_x[:, 0].long().to(device)
+                lit_properties = batch_x[:, 1].long().to(device)
+                batch_y = batch_y.to(device)
+                yhat = literal_model(lit_entities, lit_properties)
+                lit_loss = F.l1_loss(yhat, batch_y)
+                lit_loss.backward()
+                optimizer.step()
+                epoch_loss += lit_loss
+
+            avg_epoch_loss = epoch_loss / len(batch_data)
+            tqdm_bar.set_postfix_str(f"loss_lit={lit_loss:.5f}")
+            loss_log["lit_loss"].append(avg_epoch_loss.item())
+
+        self.literal_model = literal_model
+        self.literal_dataset = literal_dataset
+        torch.save(literal_model.state_dict(), self.path + "/literal_model.pt")
+
+        if eval_litreal_preds:
+            self.evaluate_literal_prediction(eval_file_path=eval_file_path, loader_backend=loader_backend)
+
+    def predict_literals(
+        self,
+        entity: Union[List[str], str] = None,
+        attribute: Union[List[str], str] = None,
+        denormalize_preds: bool = True,
+    ) -> np.ndarray:
+        """Predicts literal values for given entities and attributes.
+
+        Args:
+            entity (Union[List[str], str]): Entity or list of entities to predict literals for.
+            attribute (Union[List[str], str]): Attribute or list of attributes to predict literals for.
+            denormalize_preds (bool): If True, denormalizes the predictions.
+        Returns:
+
+            numpy ndarray : Predictions for the given entities and attributes.
+        """
+        # sanity checking
+        # Check if the literal model is trained or loaded
+        if not hasattr(self, "literal_model") or self.literal_model is None:
+            raise RuntimeError("Literal model is not trained or loaded.")
+
+        # TODO :Should we initialize self.literal_model in __init__ ?
+        # RS : Predict functions could also work with entity and attribute index 
+
+        if entity is None or attribute is None:
+            raise RuntimeError("Entity and Attribute cannot be of type None")
+
+        # Convert entity and attribute to list if they are a single string
+        if isinstance(entity, str):
+            entity = [entity]
+        if isinstance(attribute, str):
+            attribute = [attribute]
+
+        # Validate that entity and attribute are lists of strings
+        assert isinstance(entity, list)
+        assert isinstance(attribute, list)
+        assert all(isinstance(e, str) for e in entity)      # Ensure all elements in entity are strings
+        assert all(isinstance(a, str) for a in attribute)   # Ensure all elements in attribute are strings
+
+        # Ensure entity and attribute lists are the same length
+        assert len(entity) == len(attribute), "Entity and attribute lists must be of equal length"
+
+        # Convert entity and attribute names to their corresponding index tensor
+        entity_idx = torch.LongTensor([self.entity_to_idx[i] for i in entity])
+        attribute_idx = torch.LongTensor([self.data_property_to_idx[i] for i in attribute])
+
+
+        # device allocation
+        device = self.literal_model.device
+        self.literal_model, entity_idx, attribute_idx = (
+            self.literal_model.to(device),
+            entity_idx.to(device),
+            attribute_idx.to(device),
+        )
+
+        with torch.no_grad():
+            predictions = self.literal_model(entity_idx, attribute_idx)
+
+        # move predictions to cpu and convert to numpy
+        predictions = predictions.cpu().numpy()
+        if denormalize_preds:
+            predictions = self.literal_dataset.denormalize(
+                preds_norm=predictions,
+                attributes=attribute,
+                normalization_params=self.literal_dataset.normalization_params,
+            )
+        return predictions
+
+    def evaluate_literal_prediction(
+        self,
+        eval_file_path: str = None,
+        store_lit_preds: bool = True,
+        eval_literals: bool = True,
+        loader_backend: str = "pandas",
+        return_attr_error_metrics: bool = False,
+    ):
+        """
+        Evaluates the trained literal prediction model on a test file.
+
+        Args:
+            eval_file_path (str): Path to the evaluation file.
+            store_lit_preds (bool): If True, stores the predictions in a CSV file.
+            eval_literals (bool): If True, evaluates the literal predictions and prints error metrics.
+            loader_backend (str): Backend for loading the dataset ('pandas' or 'rdflib').
+
+        Returns:
+            None
+        """
+        # sanity checking done in load_and_validate_literal_data
+        test_df_unfiltered = self.literal_dataset.load_and_validate_literal_data(
+            file_path=eval_file_path,loader_backend=loader_backend
+        )
+        test_df = test_df_unfiltered[
+            test_df_unfiltered["head"].isin(self.entity_to_idx.keys()) &
+            test_df_unfiltered["attribute"].isin(self.data_property_to_idx.keys())
+            ]
+
+        entities = test_df["head"].to_list()
+        attributes = test_df["attribute"].to_list()
+        
+        assert len(entities) > 0, "No valid entities in test set — check entity_to_idx."
+        assert len(attributes) > 0, "No valid attributes in test set — check data_property_to_idx."
+        
+        test_df["predictions"] = self.predict_literals(
+            entity=entities, attribute=attributes
+        )
+
+        # If store_lit_preds is True, save the predictions to a CSV file
+        if store_lit_preds:
+            prediction_df = test_df[["head", "attribute", "predictions"]]
+            prediction_path = os.path.join(self.path, "lit_predictions.csv")
+            prediction_df.to_csv(prediction_path, index=False)
+            print(f"Literal predictions saved to {prediction_path}")
+
+        # Calculate,print and store error metrics
+        if eval_literals:
+            # Calculate error metrics for literal predictions
+            attr_error_metrics = (
+                test_df.groupby("attribute")
+                .agg(
+                    MAE=(
+                        "value",
+                        lambda x: mean_absolute_error(
+                            x, test_df.loc[x.index, "predictions"]
+                        ),
+                    ),
+                    RMSE=(
+                        "value",
+                        lambda x: root_mean_squared_error(
+                            x, test_df.loc[x.index, "predictions"]
+                        ),
+                    ),
+                )
+                .reset_index()
+            )
+
+            pd.options.display.float_format = "{:.6f}".format
+            print("Literal-Prediction evaluation results  on Test Set")
+            print(attr_error_metrics)
+            results_path = os.path.join(self.path, "lit_eval_results.csv")
+            attr_error_metrics.to_csv(results_path, index=False)
+            print(f"Literal-Prediction evaluation results saved to {results_path}")
+
+            if return_attr_error_metrics:
+                return attr_error_metrics
