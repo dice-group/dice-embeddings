@@ -1,5 +1,5 @@
 from .base_model import BaseKGE
-from typing import Tuple, Optional
+from typing import Tuple
 import torch
 import numpy as np
 from .transformers import Transformer
@@ -8,26 +8,34 @@ from dataclasses import dataclass
 
 @dataclass
 class TapireConfig:
-    """Configuration for Tapire model
+    """Configuration class for the Tapire (TrAnsformerPAIRE) model.
+    
+    This class defines the configuration parameters for the Tapire model, which uses a transformer-based
+    architecture for knowledge graph embedding. The configuration ensures that the embedding dimensions
+    are properly aligned with the transformer architecture requirements.
     
     Attributes:
-        embedding_dim: Dimension of entity and relation embeddings
-        num_entities: Number of entities in the knowledge graph
-        num_relations: Number of relations in the knowledge graph
-        token_size: Number of tokens to split embeddings into (default: 2)
-        inner_embedding_size: Size of inner embeddings for each token (default: 1)
-        n_layer: Number of transformer layers (default: 2)
-        n_head: Number of attention heads (default: 1)
-        dropout: Dropout rate (default: 0.0)
-        bias: Whether to use bias in linear layers (default: False)
-    """
+        embedding_dim (int): Dimension of entity and relation embeddings.
+        num_entities (int): Number of entities in the knowledge graph.
+        num_relations (int): Number of relations in the knowledge graph.
+        token_size (int, optional): Number of tokens to split embeddings into. Defaults to 2.
+        inner_embedding_size (int, optional): Size of inner embeddings for each token. Defaults to 16.
+        n_layer (int, optional): Number of transformer layers. Defaults to 12.
+        n_head (int, optional): Number of attention heads. Defaults to 8.
+        dropout (float, optional): Dropout rate for regularization. Defaults to 0.0.
+        bias (bool, optional): Whether to use bias in linear layers. Defaults to False.
+    
+    Note:
+        The embedding dimensions must be divisible by the number of heads for proper operation.
+        This is enforced in the post-initialization validation.
+    """        
     embedding_dim: int
     num_entities: int
     num_relations: int
     token_size: int = 2
-    inner_embedding_size: int = 1
-    n_layer: int = 2
-    n_head: int = 1
+    inner_embedding_size: int = 16
+    n_layer: int = 12
+    n_head: int = 8
     dropout: float = 0.0
     bias: bool = False
 
@@ -35,6 +43,8 @@ class TapireConfig:
         # Validate configuration
         assert self.embedding_dim % self.token_size == 0, \
             f"embedding_dim ({self.embedding_dim}) must be divisible by token_size ({self.token_size})"
+        assert self.inner_embedding_size % self.n_head == 0, \
+            f"inner_embedding_size ({self.inner_embedding_size}) must be divisible by n_head ({self.n_head})"
         
         # Calculate dimensions for transformer
         self.in_features = self.embedding_dim * 2  # Combined head and relation embeddings
@@ -42,50 +52,63 @@ class TapireConfig:
         self.n_embd = self.inner_embedding_size
 
 class Tapire(BaseKGE):
-    """TrAnsformerPAIRE
+    """TrAnsformerPAIRE: A Transformer-based Knowledge Graph Embedding Model.
     
-    (1) A batch of tuples [(h,r),...,(h,r)]_b
-    (2) Retrieve embeddings emb_h, emb_r
-    (3) Concat emb_h and emb_r horizontally into emb_hr :(batch_size, 2d)
-    (4) Reshape emb_hr into (batch_size, token_size, inner_embedding_size)
-    (5) Apply transformer operation with a single classifier to compute logits for all entities
-
-
-    Potential operations (3)
-    We may want to explore shapes
-     ***(batch_size,2d,1)***
-     ***(batch_size,d,2)***
-     ***(batch_size,d//2,4)***
-     
+    Tapire is a novel knowledge graph embedding model that leverages transformer architecture
+    to capture complex relationships between entities and relations. The model processes
+    entity-relation pairs through a transformer network to predict the likelihood of
+    different tail entities.
+    
+    The model follows these key steps:
+    1. Takes a batch of (head, relation) pairs as input
+    2. Retrieves embeddings for heads and relations
+    3. Concatenates head and relation embeddings
+    4. Reshapes the concatenated embeddings into a sequence of tokens
+    5. Processes the sequence through a transformer network
+    6. Outputs scores for all possible tail entities
+    
+    The model supports different reshaping strategies for the concatenated embeddings:
+    - (batch_size, 2d, 1): Treats the entire concatenated embedding as a single token
+    - (batch_size, d, 2): Splits into two tokens of dimension d
+    - (batch_size, d//2, 4): Splits into four tokens of dimension d/2
+    
+    Args:
+        args (dict): Configuration dictionary containing model parameters including:
+            - embedding_dim: Dimension of embeddings
+            - num_entities: Number of entities
+            - num_relations: Number of relations
+            - token_size: Number of tokens (default: 2)
+            - inner_embedding_size: Size of inner embeddings (default: 16)
+            - n_layer: Number of transformer layers (default: 12)
+            - n_head: Number of attention heads (default: 8)
+    
+    Methods:
+        k_vs_all_score: Computes scores for all possible tail entities given head and relation embeddings
+        forward_k_vs_all: Forward pass for k-vs-all scoring
+        forward_k_vs_sample: Forward pass for k-vs-sample scoring (not implemented)
+        score: Computes the score for a specific triple (h,r,t)
     """
 
     def __init__(self, args):
         super().__init__(args)
         self.name = 'Tapire'
-        
+
+        # () inner_embedding_size determines the size of the token embeddings.
+        # () Remaining part of embedding_dim is used as the number of tokens.
+
         # Create configuration
         self.config = TapireConfig(
             embedding_dim=self.embedding_dim,
             num_entities=self.num_entities,
             num_relations=self.num_relations,
             token_size=args.get('token_size', 2),
-            inner_embedding_size=args.get('inner_embedding_size', 4),
-            n_layer=args.get('n_layer', 2),
-            n_head=args.get('n_head', 1),
-            dropout=args.get('dropout', 0.0),
-            bias=args.get('bias', False)
-        )
+            inner_embedding_size=args.get('inner_embedding_size', 16),
+            n_layer=args.get('n_layer', 12),
+            n_head=args.get('n_head', 8))
         
         # Create transformer model
-        transformer_config = argparse.Namespace(
-            dropout=self.config.dropout,
-            n_layer=self.config.n_layer,
-            n_head=self.config.n_head,
-            n_embd=self.config.n_embd,
-            bias=self.config.bias,
-            in_features=self.config.in_features,
-            out_features=self.config.out_features
-        )
+        transformer_config = argparse.Namespace(dropout=self.config.dropout, n_layer=self.config.n_layer, n_head=self.config.n_head,
+            n_embd=self.config.n_embd, bias=self.config.bias, in_features=self.config.in_features, out_features=self.config.out_features)
         self.transformer_model = Transformer(config=transformer_config)
 
 
