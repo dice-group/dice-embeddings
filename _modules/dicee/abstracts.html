@@ -975,8 +975,6 @@
         <span class="n">train_file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">num_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
         <span class="n">lit_lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.001</span><span class="p">,</span>
-        <span class="n">eval_litreal_preds</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">eval_file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">lit_normalization_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;z-norm&quot;</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">,</span>
         <span class="n">sampling_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -993,8 +991,6 @@
 <span class="sd">            train_file_path (str): Path to the training data file.</span>
 <span class="sd">            num_epochs (int): Number of training epochs.</span>
 <span class="sd">            lit_lr (float): Learning rate for the literal model.</span>
-<span class="sd">            eval_litreal_preds (bool): If True, evaluate the model after training.</span>
-<span class="sd">            eval_file_path (str): Path to evaluation data file.</span>
 <span class="sd">            norm_type (str): Normalization type to use (&#39;z-norm&#39;, &#39;min-max&#39;, or None).</span>
 <span class="sd">            batch_size (int): Batch size for training.</span>
 <span class="sd">            sampling_ratio (float): Ratio of training triples to use.</span>

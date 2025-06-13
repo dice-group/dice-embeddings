@@ -496,7 +496,7 @@ Module Contents
 
 
 
-   .. py:method:: train_literals(train_file_path: str = None, num_epochs: int = 100, lit_lr: float = 0.001, eval_litreal_preds: bool = True, eval_file_path: str = None, lit_normalization_type: str = 'z-norm', batch_size: int = 1024, sampling_ratio: float = None, random_seed=1, loader_backend: str = 'pandas', freeze_entity_embeddings: bool = True, gate_residual: bool = True, device: str = None)
+   .. py:method:: train_literals(train_file_path: str = None, num_epochs: int = 100, lit_lr: float = 0.001, lit_normalization_type: str = 'z-norm', batch_size: int = 1024, sampling_ratio: float = None, random_seed=1, loader_backend: str = 'pandas', freeze_entity_embeddings: bool = True, gate_residual: bool = True, device: str = None)
 
       Trains the Literal Embeddings model using literal data.
 
@@ -506,10 +506,6 @@ Module Contents
       :type num_epochs: int
       :param lit_lr: Learning rate for the literal model.
       :type lit_lr: float
-      :param eval_litreal_preds: If True, evaluate the model after training.
-      :type eval_litreal_preds: bool
-      :param eval_file_path: Path to evaluation data file.
-      :type eval_file_path: str
       :param norm_type: Normalization type to use ('z-norm', 'min-max', or None).
       :type norm_type: str
       :param batch_size: Batch size for training.
