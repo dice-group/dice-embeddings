@@ -20,6 +20,7 @@ Classes
    dicee.dataset_classes.NegSampleDataset
    dicee.dataset_classes.TriplePredictionDataset
    dicee.dataset_classes.CVDataModule
+   dicee.dataset_classes.LiteralDataset
 
 
 Functions
@@ -827,6 +828,136 @@ Module Contents
           model.test_dataloader()
           model.predict_dataloader()
 
+
+
+
+.. py:class:: LiteralDataset(file_path: str, ent_idx: dict = None, normalization_type: str = 'z-norm', sampling_ratio: float = None, loader_backend: str = 'pandas')
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   Dataset for loading and processing literal data for training Literal Embedding model.
+   This dataset handles the loading, normalization, and preparation of triples
+   for training a literal embedding model.
+
+   Extends torch.utils.data.Dataset for supporting PyTorch dataloaders.
+
+   .. attribute:: train_file_path
+
+      Path to the training data file.
+
+      :type: str
+
+   .. attribute:: normalization
+
+      Type of normalization to apply ('z-norm', 'min-max', or None).
+
+      :type: str
+
+   .. attribute:: normalization_params
+
+      Parameters used for normalization.
+
+      :type: dict
+
+   .. attribute:: sampling_ratio
+
+      Fraction of the training set to use for ablations.
+
+      :type: float
+
+   .. attribute:: entity_to_idx
+
+      Mapping of entities to their indices.
+
+      :type: dict
+
+   .. attribute:: num_entities
+
+      Total number of entities.
+
+      :type: int
+
+   .. attribute:: data_property_to_idx
+
+      Mapping of data properties to their indices.
+
+      :type: dict
+
+   .. attribute:: num_data_properties
+
+      Total number of data properties.
+
+      :type: int
+
+   .. attribute:: loader_backend
+
+      Backend to use for loading data ('pandas' or 'rdflib').
+
+      :type: str
+
+
+   .. py:attribute:: train_file_path
+
+
+   .. py:attribute:: loader_backend
+      :value: 'pandas'
+
+
+
+   .. py:attribute:: normalization_type
+      :value: 'z-norm'
+
+
+
+   .. py:attribute:: normalization_params
+
+
+   .. py:attribute:: sampling_ratio
+      :value: None
+
+
+
+   .. py:attribute:: entity_to_idx
+      :value: None
+
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:method:: __getitem__(index)
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: load_and_validate_literal_data(file_path: str = None, loader_backend: str = 'pandas') -> pandas.DataFrame
+      :staticmethod:
+
+
+      Loads and validates the literal data file.
+      :param file_path: Path to the literal data file.
+      :type file_path: str
+
+      :returns: DataFrame containing the loaded and validated data.
+      :rtype: pd.DataFrame
+
+
+
+   .. py:method:: denormalize(preds_norm, attributes, normalization_params) -> numpy.ndarray
+      :staticmethod:
+
+
+      Denormalizes the predictions based on the normalization type.
+
+      Args:
+      preds_norm (np.ndarray): Normalized predictions to be denormalized.
+      attributes (list): List of attributes corresponding to the predictions.
+      normalization_params (dict): Dictionary containing normalization parameters for each attribute.
+
+      :returns: Denormalized predictions.
+      :rtype: np.ndarray
 
 
 

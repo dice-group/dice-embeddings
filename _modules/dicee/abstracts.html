@@ -96,6 +96,12 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">lightning</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models.literal</span><span class="w"> </span><span class="kn">import</span> <span class="n">LiteralEmbeddings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.dataset_classes</span><span class="w"> </span><span class="kn">import</span> <span class="n">TriplePredictionDataset</span><span class="p">,</span> <span class="n">LiteralDataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.optim</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">optim</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
 
 <div class="viewcode-block" id="AbstractTrainer">
@@ -813,6 +819,259 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_counter</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sample_counter</span> <span class="o">+=</span> <span class="mi">1</span></div>
 </div>
+
+
+<div class="viewcode-block" id="BaseInteractiveTrainKGE">
+<a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveTrainKGE">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseInteractiveTrainKGE</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract/base class for training knowledge graph embedding models interactively.</span>
+<span class="sd">    This class provides methods for re-training KGE models and also Literal Embedding model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># @TODO: Do we really need this ?!</span>
+<div class="viewcode-block" id="BaseInteractiveTrainKGE.train_triples">
+<a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveTrainKGE.train_triples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">r</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">t</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">labels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+                      <span class="n">iteration</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+        <span class="c1"># (1) From List of strings to TorchLongTensor.</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index_triple</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="c1"># (2) From List of float to Torch Tensor.</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+        <span class="c1"># (3) Train mode.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_model_train_mode</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Iteration starts...&#39;</span><span class="p">)</span>
+        <span class="c1"># (4) Train.</span>
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iteration</span><span class="p">):</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Iteration:</span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="se">\t</span><span class="s2"> Loss:</span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="se">\t</span><span class="s2"> Outputs:</span><span class="si">{</span><span class="n">outputs</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="c1"># (5) Eval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_model_eval_mode</span><span class="p">()</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Eval Mode:</span><span class="se">\t</span><span class="s2">Loss:</span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseInteractiveTrainKGE.train_k_vs_all">
+<a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveTrainKGE.train_k_vs_all">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">iteration</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">.001</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Train k vs all</span>
+<span class="sd">        :param head_entity:</span>
+<span class="sd">        :param relation:</span>
+<span class="sd">        :param iteration:</span>
+<span class="sd">        :param lr:</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="c1"># (1) Construct input and output</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_input_and_output_k_vs_all</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">idx_tails</span> <span class="o">=</span> <span class="n">out</span>
+        <span class="c1"># (2) Train mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_model_train_mode</span><span class="p">()</span>
+        <span class="c1"># (3) Initialize optimizer # SGD considerably faster than ADAM.</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">.00001</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Iteration starts.&#39;</span><span class="p">)</span>
+        <span class="c1"># (3) Iterative training.</span>
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iteration</span><span class="p">):</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx_tails</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Iteration:</span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="se">\t</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Loss:</span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="se">\t</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Avg. Logits for correct tails: </span><span class="si">{</span><span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">idx_tails</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Iteration:</span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="se">\t</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Loss:</span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="se">\t</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Avg. Logits for all negatives: </span><span class="si">{</span><span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mf">.00001</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;loss is </span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">. Converged !!!&#39;</span><span class="p">)</span>
+                <span class="k">break</span>
+        <span class="c1"># (4) Eval mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_model_eval_mode</span><span class="p">()</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Eval Mode:Loss:</span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="se">\t</span><span class="s2"> Outputs:</span><span class="si">{</span><span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">idx_tails</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseInteractiveTrainKGE.train">
+<a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveTrainKGE.train">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kg</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">.1</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">neg_sample_ratio</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Retrained a pretrain model on an input KG via negative sampling.&quot;&quot;&quot;</span>
+        <span class="c1"># (1) Create Negative Sampling Setting for training</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Creating Dataset...&#39;</span><span class="p">)</span>
+        <span class="n">train_set</span> <span class="o">=</span> <span class="n">TriplePredictionDataset</span><span class="p">(</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span>
+                                            <span class="n">num_entities</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">kg</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">),</span>
+                                            <span class="n">num_relations</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">kg</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">),</span>
+                                            <span class="n">neg_sample_ratio</span><span class="o">=</span><span class="n">neg_sample_ratio</span><span class="p">)</span>
+        <span class="n">num_data_point</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_set</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Number of data points: &#39;</span><span class="p">,</span> <span class="n">num_data_point</span><span class="p">)</span>
+        <span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+                                      <span class="c1">#  shuffle =&gt; to have the data reshuffled at every epoc</span>
+                                      <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="n">num_workers</span><span class="p">,</span>
+                                      <span class="n">collate_fn</span><span class="o">=</span><span class="n">train_set</span><span class="o">.</span><span class="n">collate_fn</span><span class="p">,</span> <span class="n">pin_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># (2) Go through valid triples + corrupted triples and compute scores.</span>
+        <span class="c1"># Average loss per triple is stored. This will be used  to indicate whether we learned something.</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;First Eval..&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_model_eval_mode</span><span class="p">()</span>
+        <span class="n">first_avg_loss_per_triple</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">train_dataloader</span><span class="p">:</span>
+            <span class="n">pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">first_avg_loss_per_triple</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">first_avg_loss_per_triple</span> <span class="o">/=</span> <span class="n">num_data_point</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">first_avg_loss_per_triple</span><span class="p">)</span>
+        <span class="c1"># (3) Prepare Model for Training</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_model_train_mode</span><span class="p">()</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lr</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Training Starts...&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">epoch</span><span class="p">):</span>  <span class="c1"># loop over the dataset multiple times</span>
+            <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">train_dataloader</span><span class="p">:</span>
+                <span class="c1"># zero the parameter gradients</span>
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+                <span class="c1"># forward + backward + optimize</span>
+                <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+                <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Epoch=</span><span class="si">{</span><span class="n">epoch</span><span class="si">}</span><span class="se">\t</span><span class="s1"> Avg. Loss per epoch: </span><span class="si">{</span><span class="n">epoch_loss</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">num_data_point</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># (5) Prepare For Saving</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_model_eval_mode</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Eval starts...&#39;</span><span class="p">)</span>
+        <span class="c1"># (6) Eval model on training data to check how much an Improvement</span>
+        <span class="n">last_avg_loss_per_triple</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">train_dataloader</span><span class="p">:</span>
+            <span class="n">pred</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">last_avg_loss_per_triple</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">last_avg_loss_per_triple</span> <span class="o">/=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_set</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;On average Improvement: </span><span class="si">{</span><span class="n">first_avg_loss_per_triple</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">last_avg_loss_per_triple</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseInteractiveTrainKGE.train_literals">
+<a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveTrainKGE.train_literals">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">train_literals</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">train_file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">num_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="n">lit_lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.001</span><span class="p">,</span>
+        <span class="n">eval_litreal_preds</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">eval_file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">lit_normalization_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;z-norm&quot;</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">,</span>
+        <span class="n">sampling_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">random_seed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">loader_backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pandas&quot;</span><span class="p">,</span>
+        <span class="n">freeze_entity_embeddings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">gate_residual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Trains the Literal Embeddings model using literal data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            train_file_path (str): Path to the training data file.</span>
+<span class="sd">            num_epochs (int): Number of training epochs.</span>
+<span class="sd">            lit_lr (float): Learning rate for the literal model.</span>
+<span class="sd">            eval_litreal_preds (bool): If True, evaluate the model after training.</span>
+<span class="sd">            eval_file_path (str): Path to evaluation data file.</span>
+<span class="sd">            norm_type (str): Normalization type to use (&#39;z-norm&#39;, &#39;min-max&#39;, or None).</span>
+<span class="sd">            batch_size (int): Batch size for training.</span>
+<span class="sd">            sampling_ratio (float): Ratio of training triples to use.</span>
+<span class="sd">            loader_backend (str): Backend for loading the dataset (&#39;pandas&#39; or &#39;rdflib&#39;).</span>
+<span class="sd">            freeze_entity_embeddings (bool): If True, freeze the entity embeddings during training.</span>
+<span class="sd">            gate_residual (bool): If True, use gate residual connections in the model.</span>
+<span class="sd">            device (str): Device to use for training (&#39;cuda&#39; or &#39;cpu&#39;). If None, will use available GPU or CPU.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Assign torch.seed to reproduice experiments</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">manual_seed_all</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
+
+        <span class="c1"># Set the device for training</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+                    
+        <span class="c1"># Prepare the dataset and DataLoader</span>
+        <span class="n">literal_dataset</span> <span class="o">=</span> <span class="n">LiteralDataset</span><span class="p">(</span>
+            <span class="n">file_path</span><span class="o">=</span><span class="n">train_file_path</span><span class="p">,</span>
+            <span class="n">ent_idx</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">,</span>
+            <span class="n">normalization_type</span><span class="o">=</span><span class="n">lit_normalization_type</span><span class="p">,</span>
+            <span class="n">sampling_ratio</span><span class="o">=</span><span class="n">sampling_ratio</span><span class="p">,</span>
+            <span class="n">loader_backend</span><span class="o">=</span><span class="n">loader_backend</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_property_to_idx</span> <span class="o">=</span> <span class="n">literal_dataset</span><span class="o">.</span><span class="n">data_property_to_idx</span>
+
+        <span class="n">batch_data</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="o">=</span><span class="n">literal_dataset</span><span class="p">,</span>
+            <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Initialize Literal Embedding model</span>
+        <span class="n">literal_model</span> <span class="o">=</span> <span class="n">LiteralEmbeddings</span><span class="p">(</span>
+            <span class="n">num_of_data_properties</span><span class="o">=</span><span class="n">literal_dataset</span><span class="o">.</span><span class="n">num_data_properties</span><span class="p">,</span>
+            <span class="n">embedding_dims</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">,</span>
+            <span class="n">entity_embeddings</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">,</span>
+            <span class="n">freeze_entity_embeddings</span><span class="o">=</span><span class="n">freeze_entity_embeddings</span><span class="p">,</span>
+            <span class="n">gate_residual</span><span class="o">=</span><span class="n">gate_residual</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">literal_model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="n">lit_lr</span><span class="p">)</span>
+        <span class="n">loss_log</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;lit_loss&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+        <span class="n">literal_model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Training Literal Embedding model&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;using pre-trained &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; embeddings.&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Training loop</span>
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="p">(</span><span class="n">tqdm_bar</span> <span class="o">:=</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">num_epochs</span><span class="p">))):</span>
+            <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">batch_x</span><span class="p">,</span> <span class="n">batch_y</span> <span class="ow">in</span> <span class="n">batch_data</span><span class="p">:</span>
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+                <span class="n">lit_entities</span> <span class="o">=</span> <span class="n">batch_x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">long</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">lit_properties</span> <span class="o">=</span> <span class="n">batch_x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">long</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">batch_y</span> <span class="o">=</span> <span class="n">batch_y</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">yhat</span> <span class="o">=</span> <span class="n">literal_model</span><span class="p">(</span><span class="n">lit_entities</span><span class="p">,</span> <span class="n">lit_properties</span><span class="p">)</span>
+                <span class="n">lit_loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">l1_loss</span><span class="p">(</span><span class="n">yhat</span><span class="p">,</span> <span class="n">batch_y</span><span class="p">)</span>
+                <span class="n">lit_loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+                <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">lit_loss</span>
+
+            <span class="n">avg_epoch_loss</span> <span class="o">=</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch_data</span><span class="p">)</span>
+            <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_postfix_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loss_lit=</span><span class="si">{</span><span class="n">lit_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">loss_log</span><span class="p">[</span><span class="s2">&quot;lit_loss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg_epoch_loss</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">literal_model</span> <span class="o">=</span> <span class="n">literal_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">literal_dataset</span> <span class="o">=</span> <span class="n">literal_dataset</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">literal_model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="s2">&quot;/literal_model.pt&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Literal Embedding model saved to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/literal_model.pt&quot;</span><span class="p">)</span></div>
+</div>
+
 
 </pre></div>
 

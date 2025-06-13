@@ -79,6 +79,7 @@
 <li class="toctree-l5"><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe_reciprocals"><code class="docutils literal notranslate"><span class="pre">evaluate_link_prediction_performance_with_bpe_reciprocals()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe"><code class="docutils literal notranslate"><span class="pre">evaluate_link_prediction_performance_with_bpe()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_lp_bpe_k_vs_all"><code class="docutils literal notranslate"><span class="pre">evaluate_lp_bpe_k_vs_all()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_literal_prediction"><code class="docutils literal notranslate"><span class="pre">evaluate_literal_prediction()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -87,7 +88,6 @@
 <li class="toctree-l3"><a class="reference internal" href="../executer/index.html">dicee.executer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../literal_classes/index.html">dicee.literal_classes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../models/index.html">dicee.models</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../query_generator/index.html">dicee.query_generator</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
@@ -153,6 +153,9 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_lp_bpe_k_vs_all" title="dicee.eval_static_funcs.evaluate_lp_bpe_k_vs_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_lp_bpe_k_vs_all</span></code></a>(model, triples[, er_vocab, ...])</p></td>
 <td><p></p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_literal_prediction" title="dicee.eval_static_funcs.evaluate_literal_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_literal_prediction</span></code></a>(kge_model[, ...])</p></td>
+<td><p>Evaluates the trained literal prediction model on a test file.</p></td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -203,6 +206,34 @@
 <dt class="sig sig-object py" id="dicee.eval_static_funcs.evaluate_lp_bpe_k_vs_all">
 <span class="sig-prename descclassname"><span class="pre">dicee.eval_static_funcs.</span></span><span class="sig-name descname"><span class="pre">evaluate_lp_bpe_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">er_vocab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_triple_to_bpe_representation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str_to_bpe_entity_to_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/eval_static_funcs.html#evaluate_lp_bpe_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.eval_static_funcs.evaluate_lp_bpe_k_vs_all" title="Link to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.eval_static_funcs.evaluate_literal_prediction">
+<span class="sig-prename descclassname"><span class="pre">dicee.eval_static_funcs.</span></span><span class="sig-name descname"><span class="pre">evaluate_literal_prediction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kge_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph_embeddings/index.html#dicee.knowledge_graph_embeddings.KGE" title="dicee.knowledge_graph_embeddings.KGE"><span class="pre">dicee.knowledge_graph_embeddings.KGE</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store_lit_preds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_literals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loader_backend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'pandas'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_attr_error_metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/eval_static_funcs.html#evaluate_literal_prediction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.eval_static_funcs.evaluate_literal_prediction" title="Link to this definition"></a></dt>
+<dd><p>Evaluates the trained literal prediction model on a test file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>eval_file_path</strong> (<em>str</em>) – Path to the evaluation file.</p></li>
+<li><p><strong>store_lit_preds</strong> (<em>bool</em>) – If True, stores the predictions in a CSV file.</p></li>
+<li><p><strong>eval_literals</strong> (<em>bool</em>) – If True, evaluates the literal predictions and prints error metrics.</p></li>
+<li><p><strong>loader_backend</strong> (<em>str</em>) – Backend for loading the dataset (‘pandas’ or ‘rdflib’).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>DataFrame containing error metrics for each attribute if return_attr_error_metrics is True.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>RuntimeError</strong> – If the kGE model does not have a trained literal model.</p></li>
+<li><p><strong>AssertionError</strong> – If the kGE model is not an instance of KGE or if the test set has no valid entities or attributes.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 </section>
 </section>

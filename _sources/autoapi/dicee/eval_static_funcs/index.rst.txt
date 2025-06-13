@@ -14,6 +14,7 @@ Functions
    dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe_reciprocals
    dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe
    dicee.eval_static_funcs.evaluate_lp_bpe_k_vs_all
+   dicee.eval_static_funcs.evaluate_literal_prediction
 
 
 Module Contents
@@ -41,4 +42,24 @@ Module Contents
 
 
 .. py:function:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], er_vocab=None, batch_size=None, func_triple_to_bpe_representation: Callable = None, str_to_bpe_entity_to_idx=None)
+
+.. py:function:: evaluate_literal_prediction(kge_model: dicee.knowledge_graph_embeddings.KGE, eval_file_path: str = None, store_lit_preds: bool = True, eval_literals: bool = True, loader_backend: str = 'pandas', return_attr_error_metrics: bool = False)
+
+   Evaluates the trained literal prediction model on a test file.
+
+   :param eval_file_path: Path to the evaluation file.
+   :type eval_file_path: str
+   :param store_lit_preds: If True, stores the predictions in a CSV file.
+   :type store_lit_preds: bool
+   :param eval_literals: If True, evaluates the literal predictions and prints error metrics.
+   :type eval_literals: bool
+   :param loader_backend: Backend for loading the dataset ('pandas' or 'rdflib').
+   :type loader_backend: str
+
+   :returns: DataFrame containing error metrics for each attribute if return_attr_error_metrics is True.
+   :rtype: pd.DataFrame
+
+   :raises RuntimeError: If the kGE model does not have a trained literal model.
+   :raises AssertionError: If the kGE model is not an instance of KGE or if the test set has no valid entities or attributes.
+
 

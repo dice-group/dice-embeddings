@@ -88,11 +88,14 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.eval_static_funcs</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Callable</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.knowledge_graph_embeddings</span><span class="w"> </span><span class="kn">import</span> <span class="n">KGE</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">mean_absolute_error</span><span class="p">,</span> <span class="n">root_mean_squared_error</span>
 
 
 <div class="viewcode-block" id="evaluate_link_prediction_performance">
@@ -513,6 +516,80 @@
 
     <span class="n">results</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;H@1&#39;</span><span class="p">:</span> <span class="n">hit_1</span><span class="p">,</span> <span class="s1">&#39;H@3&#39;</span><span class="p">:</span> <span class="n">hit_3</span><span class="p">,</span> <span class="s1">&#39;H@10&#39;</span><span class="p">:</span> <span class="n">hit_10</span><span class="p">,</span> <span class="s1">&#39;MRR&#39;</span><span class="p">:</span> <span class="n">mean_reciprocal_rank</span><span class="p">}</span>
     <span class="k">return</span> <span class="n">results</span></div>
+
+
+<div class="viewcode-block" id="evaluate_literal_prediction">
+<a class="viewcode-back" href="../../autoapi/dicee/eval_static_funcs/index.html#dicee.eval_static_funcs.evaluate_literal_prediction">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_literal_prediction</span><span class="p">(</span>
+        <span class="n">kge_model</span><span class="p">:</span> <span class="n">KGE</span><span class="p">,</span>
+        <span class="n">eval_file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">store_lit_preds</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">eval_literals</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">loader_backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;pandas&quot;</span><span class="p">,</span>
+        <span class="n">return_attr_error_metrics</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluates the trained literal prediction model on a test file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            eval_file_path (str): Path to the evaluation file.</span>
+<span class="sd">            store_lit_preds (bool): If True, stores the predictions in a CSV file.</span>
+<span class="sd">            eval_literals (bool): If True, evaluates the literal predictions and prints error metrics.</span>
+<span class="sd">            loader_backend (str): Backend for loading the dataset (&#39;pandas&#39; or &#39;rdflib&#39;).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            pd.DataFrame: DataFrame containing error metrics for each attribute if return_attr_error_metrics is True.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            RuntimeError: If the kGE model does not have a trained literal model.</span>
+<span class="sd">            AssertionError: If the kGE model is not an instance of KGE or if the test set has no valid entities or attributes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># kGE Literal model sanity checking</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kge_model</span><span class="p">,</span> <span class="n">KGE</span><span class="p">),</span> <span class="s2">&quot;kge_model must be an instance of KGE.&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">kge_model</span><span class="p">,</span> <span class="s2">&quot;literal_model&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">kge_model</span><span class="o">.</span><span class="n">literal_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Literal model is not trained or loaded.&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># sanity checking done in load_and_validate_literal_data</span>
+        <span class="n">test_df_unfiltered</span> <span class="o">=</span> <span class="n">kge_model</span><span class="o">.</span><span class="n">literal_dataset</span><span class="o">.</span><span class="n">load_and_validate_literal_data</span><span class="p">(</span>
+            <span class="n">file_path</span><span class="o">=</span><span class="n">eval_file_path</span><span class="p">,</span><span class="n">loader_backend</span><span class="o">=</span><span class="n">loader_backend</span>
+        <span class="p">)</span>
+        <span class="n">test_df</span> <span class="o">=</span> <span class="n">test_df_unfiltered</span><span class="p">[</span>
+            <span class="n">test_df_unfiltered</span><span class="p">[</span><span class="s2">&quot;head&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">kge_model</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&amp;</span>
+            <span class="n">test_df_unfiltered</span><span class="p">[</span><span class="s2">&quot;attribute&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">kge_model</span><span class="o">.</span><span class="n">data_property_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="p">]</span>
+
+        <span class="n">entities</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="s2">&quot;head&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+        <span class="n">attributes</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[</span><span class="s2">&quot;attribute&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+        
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">entities</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;No valid entities in test set — check entity_to_idx.&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">attributes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;No valid attributes in test set — check data_property_to_idx.&quot;</span>
+        
+        <span class="n">test_df</span><span class="p">[</span><span class="s2">&quot;predictions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kge_model</span><span class="o">.</span><span class="n">predict_literals</span><span class="p">(</span>
+            <span class="n">entity</span><span class="o">=</span><span class="n">entities</span><span class="p">,</span> <span class="n">attribute</span><span class="o">=</span><span class="n">attributes</span>
+        <span class="p">)</span>
+
+        <span class="c1"># If store_lit_preds is True, save the predictions to a CSV file</span>
+        <span class="k">if</span> <span class="n">store_lit_preds</span><span class="p">:</span>
+            <span class="n">prediction_df</span> <span class="o">=</span> <span class="n">test_df</span><span class="p">[[</span><span class="s2">&quot;head&quot;</span><span class="p">,</span> <span class="s2">&quot;attribute&quot;</span><span class="p">,</span> <span class="s2">&quot;predictions&quot;</span><span class="p">]]</span>
+            <span class="n">prediction_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">kge_model</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;lit_predictions.csv&quot;</span><span class="p">)</span>
+            <span class="n">prediction_df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">prediction_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Literal predictions saved to </span><span class="si">{</span><span class="n">prediction_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Calculate,print and store error metrics</span>
+        <span class="k">if</span> <span class="n">eval_literals</span><span class="p">:</span>
+            <span class="n">attr_error_metrics</span> <span class="o">=</span> <span class="n">test_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;attribute&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span>
+                <span class="n">MAE</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">mean_absolute_error</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">test_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s2">&quot;predictions&quot;</span><span class="p">])),</span>
+                <span class="n">RMSE</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">root_mean_squared_error</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">test_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s2">&quot;predictions&quot;</span><span class="p">]))</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+
+            <span class="n">pd</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">display</span><span class="o">.</span><span class="n">float_format</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{:.6f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Literal-Prediction evaluation results  on Test Set&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">attr_error_metrics</span><span class="p">)</span>
+            <span class="n">results_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">kge_model</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;lit_eval_results.csv&quot;</span><span class="p">)</span>
+            <span class="n">attr_error_metrics</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">results_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Literal-Prediction evaluation results saved to </span><span class="si">{</span><span class="n">results_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">return_attr_error_metrics</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">attr_error_metrics</span></div>
 
 </pre></div>
 

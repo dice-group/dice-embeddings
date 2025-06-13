@@ -198,6 +198,29 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.CVDataModule.prepare_data"><code class="docutils literal notranslate"><span class="pre">CVDataModule.prepare_data()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.dataset_classes.LiteralDataset"><code class="docutils literal notranslate"><span class="pre">LiteralDataset</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.LiteralDataset.train_file_path"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.train_file_path</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.LiteralDataset.normalization"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.normalization</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.LiteralDataset.normalization_params"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.normalization_params</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.LiteralDataset.sampling_ratio"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.sampling_ratio</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.LiteralDataset.entity_to_idx"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.entity_to_idx</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.LiteralDataset.num_entities"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.num_entities</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.LiteralDataset.data_property_to_idx"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.data_property_to_idx</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.LiteralDataset.num_data_properties"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.num_data_properties</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.LiteralDataset.loader_backend"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.loader_backend</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id8"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.train_file_path</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id9"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.loader_backend</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.LiteralDataset.normalization_type"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.normalization_type</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id10"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.normalization_params</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id11"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.sampling_ratio</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id12"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.entity_to_idx</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id13"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.num_entities</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.LiteralDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.__getitem__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.LiteralDataset.__len__"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.__len__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.LiteralDataset.load_and_validate_literal_data"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.load_and_validate_literal_data()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.LiteralDataset.denormalize"><code class="docutils literal notranslate"><span class="pre">LiteralDataset.denormalize()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -207,7 +230,6 @@
 <li class="toctree-l3"><a class="reference internal" href="../executer/index.html">dicee.executer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../literal_classes/index.html">dicee.literal_classes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../models/index.html">dicee.models</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../query_generator/index.html">dicee.query_generator</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
@@ -290,6 +312,9 @@
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.dataset_classes.CVDataModule" title="dicee.dataset_classes.CVDataModule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CVDataModule</span></code></a></p></td>
 <td><p>Create a Dataset for cross validation</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.dataset_classes.LiteralDataset" title="dicee.dataset_classes.LiteralDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LiteralDataset</span></code></a></p></td>
+<td><p>Dataset for loading and processing literal data for training Literal Embedding model.</p></td>
 </tr>
 </tbody>
 </table>
@@ -550,7 +575,7 @@ dataset with non-integral indices/keys, a custom sampler must be provided.</p>
 <dl class="simple">
 <dt>Creates a dataset for KvsAll training by inheriting from torch.utils.data.Dataset.</dt><dd><p>Let D denote a dataset for KvsAll training and be defined as D:= {(x,y)_i}_i ^N, where
 x: (h,r) is an unique tuple of an entity h in E and a relation r in R that has been seed in the input graph.
-y: denotes a multi-label vector in [0,1]^{<a href="#id8"><span class="problematic" id="id9">|E|</span></a>} is a binary label.</p>
+y: denotes a multi-label vector in [0,1]^{<a href="#id14"><span class="problematic" id="id15">|E|</span></a>} is a binary label.</p>
 </dd>
 </dl>
 <p>orall y_i =1 s.t. (h r E_i) in KG</p>
@@ -612,8 +637,8 @@ y: denotes a multi-label vector in [0,1]^{<a href="#id8"><span class="problemati
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
 <dl class="simple">
 <dt>Creates a dataset for AllvsAll training by inheriting from torch.utils.data.Dataset.</dt><dd><p>Let D denote a dataset for AllvsAll training and be defined as D:= {(x,y)_i}_i ^N, where
-x: (h,r) is a possible unique tuple of an entity h in E and a relation r in R. Hence N = <a href="#id10"><span class="problematic" id="id11">|E|</span></a> x <a href="#id12"><span class="problematic" id="id13">|R|</span></a>
-y: denotes a multi-label vector in [0,1]^{<a href="#id14"><span class="problematic" id="id15">|E|</span></a>} is a binary label.</p>
+x: (h,r) is a possible unique tuple of an entity h in E and a relation r in R. Hence N = <a href="#id16"><span class="problematic" id="id17">|E|</span></a> x <a href="#id18"><span class="problematic" id="id19">|R|</span></a>
+y: denotes a multi-label vector in [0,1]^{<a href="#id20"><span class="problematic" id="id21">|E|</span></a>} is a binary label.</p>
 </dd>
 </dl>
 <p>orall y_i =1 s.t. (h r E_i) in KG</p>
@@ -837,7 +862,7 @@ negative samples, with label smoothing applied.</p></li>
 <div><dl class="simple">
 <dt>KvsSample a Dataset:</dt><dd><dl class="simple">
 <dt>D:= {(x,y)_i}_i ^N, where</dt><dd><p>. x:(h,r) is a unique h in E and a relation r in R and
-. y in [0,1]^{<a href="#id16"><span class="problematic" id="id17">|E|</span></a>} is a binary label.</p>
+. y in [0,1]^{<a href="#id22"><span class="problematic" id="id23">|E|</span></a>} is a binary label.</p>
 </dd>
 </dl>
 </dd>
@@ -846,7 +871,7 @@ negative samples, with label smoothing applied.</p></li>
 <dl>
 <dt>orall y_i =1 s.t. (h r E_i) in KG</dt><dd><blockquote>
 <div><dl class="simple">
-<dt>At each mini-batch construction, we subsample(y), hence n</dt><dd><p><a href="#id18"><span class="problematic" id="id19">|new_y|</span></a> &lt;&lt; <a href="#id20"><span class="problematic" id="id21">|E|</span></a>
+<dt>At each mini-batch construction, we subsample(y), hence n</dt><dd><p><a href="#id24"><span class="problematic" id="id25">|new_y|</span></a> &lt;&lt; <a href="#id26"><span class="problematic" id="id27">|E|</span></a>
 new_y contains all 1’s if sum(y)&lt; neg_sample ratio
 new_y contains</p>
 </dd>
@@ -1283,6 +1308,194 @@ since this is NOT called on every device</p>
 <span class="n">model</span><span class="o">.</span><span class="n">predict_dataloader</span><span class="p">()</span>
 </pre></div>
 </div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.dataset_classes.LiteralDataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.dataset_classes.</span></span><span class="sig-name descname"><span class="pre">LiteralDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ent_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalization_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'z-norm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampling_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loader_backend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'pandas'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/dataset_classes.html#LiteralDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.LiteralDataset" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
+<p>Dataset for loading and processing literal data for training Literal Embedding model.
+This dataset handles the loading, normalization, and preparation of triples
+for training a literal embedding model.</p>
+<p>Extends torch.utils.data.Dataset for supporting PyTorch dataloaders.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.dataset_classes.LiteralDataset.train_file_path">
+<span class="sig-name descname"><span class="pre">train_file_path</span></span><a class="headerlink" href="#dicee.dataset_classes.LiteralDataset.train_file_path" title="Link to this definition"></a></dt>
+<dd><p>Path to the training data file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.dataset_classes.LiteralDataset.normalization">
+<span class="sig-name descname"><span class="pre">normalization</span></span><a class="headerlink" href="#dicee.dataset_classes.LiteralDataset.normalization" title="Link to this definition"></a></dt>
+<dd><p>Type of normalization to apply (‘z-norm’, ‘min-max’, or None).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.dataset_classes.LiteralDataset.normalization_params">
+<span class="sig-name descname"><span class="pre">normalization_params</span></span><a class="headerlink" href="#dicee.dataset_classes.LiteralDataset.normalization_params" title="Link to this definition"></a></dt>
+<dd><p>Parameters used for normalization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.dataset_classes.LiteralDataset.sampling_ratio">
+<span class="sig-name descname"><span class="pre">sampling_ratio</span></span><a class="headerlink" href="#dicee.dataset_classes.LiteralDataset.sampling_ratio" title="Link to this definition"></a></dt>
+<dd><p>Fraction of the training set to use for ablations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.dataset_classes.LiteralDataset.entity_to_idx">
+<span class="sig-name descname"><span class="pre">entity_to_idx</span></span><a class="headerlink" href="#dicee.dataset_classes.LiteralDataset.entity_to_idx" title="Link to this definition"></a></dt>
+<dd><p>Mapping of entities to their indices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.dataset_classes.LiteralDataset.num_entities">
+<span class="sig-name descname"><span class="pre">num_entities</span></span><a class="headerlink" href="#dicee.dataset_classes.LiteralDataset.num_entities" title="Link to this definition"></a></dt>
+<dd><p>Total number of entities.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.dataset_classes.LiteralDataset.data_property_to_idx">
+<span class="sig-name descname"><span class="pre">data_property_to_idx</span></span><a class="headerlink" href="#dicee.dataset_classes.LiteralDataset.data_property_to_idx" title="Link to this definition"></a></dt>
+<dd><p>Mapping of data properties to their indices.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.dataset_classes.LiteralDataset.num_data_properties">
+<span class="sig-name descname"><span class="pre">num_data_properties</span></span><a class="headerlink" href="#dicee.dataset_classes.LiteralDataset.num_data_properties" title="Link to this definition"></a></dt>
+<dd><p>Total number of data properties.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.dataset_classes.LiteralDataset.loader_backend">
+<span class="sig-name descname"><span class="pre">loader_backend</span></span><a class="headerlink" href="#dicee.dataset_classes.LiteralDataset.loader_backend" title="Link to this definition"></a></dt>
+<dd><p>Backend to use for loading data (‘pandas’ or ‘rdflib’).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">train_file_path</span></span><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">loader_backend</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'pandas'</span></em><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.dataset_classes.LiteralDataset.normalization_type">
+<span class="sig-name descname"><span class="pre">normalization_type</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'z-norm'</span></em><a class="headerlink" href="#dicee.dataset_classes.LiteralDataset.normalization_type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">normalization_params</span></span><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">sampling_ratio</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id12">
+<span class="sig-name descname"><span class="pre">entity_to_idx</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id13">
+<span class="sig-name descname"><span class="pre">num_entities</span></span><a class="headerlink" href="#id13" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.dataset_classes.LiteralDataset.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/dataset_classes.html#LiteralDataset.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.LiteralDataset.__getitem__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.dataset_classes.LiteralDataset.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/dataset_classes.html#LiteralDataset.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.LiteralDataset.__len__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.dataset_classes.LiteralDataset.load_and_validate_literal_data">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load_and_validate_literal_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loader_backend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'pandas'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="reference internal" href="../../../_modules/dicee/dataset_classes.html#LiteralDataset.load_and_validate_literal_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.LiteralDataset.load_and_validate_literal_data" title="Link to this definition"></a></dt>
+<dd><p>Loads and validates the literal data file.
+:param file_path: Path to the literal data file.
+:type file_path: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>DataFrame containing the loaded and validated data.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.dataset_classes.LiteralDataset.denormalize">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">denormalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">preds_norm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalization_params</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="../../../_modules/dicee/dataset_classes.html#LiteralDataset.denormalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.LiteralDataset.denormalize" title="Link to this definition"></a></dt>
+<dd><p>Denormalizes the predictions based on the normalization type.</p>
+<p>Args:
+preds_norm (np.ndarray): Normalized predictions to be denormalized.
+attributes (list): List of attributes corresponding to the predictions.
+normalization_params (dict): Dictionary containing normalization parameters for each attribute.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Denormalized predictions.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>

@@ -21,7 +21,6 @@ Submodules
    /autoapi/dicee/executer/index
    /autoapi/dicee/knowledge_graph/index
    /autoapi/dicee/knowledge_graph_embeddings/index
-   /autoapi/dicee/literal_classes/index
    /autoapi/dicee/models/index
    /autoapi/dicee/query_generator/index
    /autoapi/dicee/read_preprocess_save_load_kg/index
@@ -81,6 +80,7 @@ Classes
    dicee.NegSampleDataset
    dicee.TriplePredictionDataset
    dicee.CVDataModule
+   dicee.LiteralDataset
    dicee.QueryGenerator
 
 
@@ -2279,7 +2279,7 @@ Package Contents
 
 .. py:class:: KGE(path=None, url=None, construct_ensemble=False, model_name=None)
 
-   Bases: :py:obj:`dicee.abstracts.BaseInteractiveKGE`, :py:obj:`dicee.abstracts.InteractiveQueryDecomposition`
+   Bases: :py:obj:`dicee.abstracts.BaseInteractiveKGE`, :py:obj:`dicee.abstracts.InteractiveQueryDecomposition`, :py:obj:`dicee.abstracts.BaseInteractiveTrainKGE`
 
 
    Knowledge Graph Embedding Class for interactive usage of pre-trained models
@@ -2510,57 +2510,6 @@ Package Contents
    .. py:method:: deploy(share: bool = False, top_k: int = 10)
 
 
-   .. py:method:: train_triples(h: List[str], r: List[str], t: List[str], labels: List[float], iteration=2, optimizer=None)
-
-
-   .. py:method:: train_k_vs_all(h, r, iteration=1, lr=0.001)
-
-      Train k vs all
-      :param head_entity:
-      :param relation:
-      :param iteration:
-      :param lr:
-      :return:
-
-
-
-   .. py:method:: train(kg, lr=0.1, epoch=10, batch_size=32, neg_sample_ratio=10, num_workers=1) -> None
-
-      Retrained a pretrain model on an input KG via negative sampling.
-
-
-
-   .. py:method:: train_literals(train_file_path: str = None, num_epochs: int = 100, lit_lr: float = 0.001, eval_litreal_preds: bool = True, eval_file_path: str = None, lit_normalization_type: str = 'z-norm', batch_size: int = 1024, sampling_ratio: float = None, random_seed=1, loader_backend: str = 'pandas', freeze_entity_embeddings: bool = True, gate_residual: bool = True, device: str = None)
-
-      Trains the Literal Embeddings model using literal data.
-
-      :param train_file_path: Path to the training data file.
-      :type train_file_path: str
-      :param num_epochs: Number of training epochs.
-      :type num_epochs: int
-      :param lit_lr: Learning rate for the literal model.
-      :type lit_lr: float
-      :param eval_litreal_preds: If True, evaluate the model after training.
-      :type eval_litreal_preds: bool
-      :param eval_file_path: Path to evaluation data file.
-      :type eval_file_path: str
-      :param norm_type: Normalization type to use ('z-norm', 'min-max', or None).
-      :type norm_type: str
-      :param batch_size: Batch size for training.
-      :type batch_size: int
-      :param sampling_ratio: Ratio of training triples to use.
-      :type sampling_ratio: float
-      :param loader_backend: Backend for loading the dataset ('pandas' or 'rdflib').
-      :type loader_backend: str
-      :param freeze_entity_embeddings: If True, freeze the entity embeddings during training.
-      :type freeze_entity_embeddings: bool
-      :param gate_residual: If True, use gate residual connections in the model.
-      :type gate_residual: bool
-      :param device: Device to use for training ('cuda' or 'cpu'). If None, will use available GPU or CPU.
-      :type device: str
-
-
-
    .. py:method:: predict_literals(entity: Union[List[str], str] = None, attribute: Union[List[str], str] = None, denormalize_preds: bool = True) -> numpy.ndarray
 
       Predicts literal values for given entities and attributes.
@@ -2574,23 +2523,6 @@ Package Contents
 
       :returns: Predictions for the given entities and attributes.
       :rtype: numpy ndarray
-
-
-
-   .. py:method:: evaluate_literal_prediction(eval_file_path: str = None, store_lit_preds: bool = True, eval_literals: bool = True, loader_backend: str = 'pandas', return_attr_error_metrics: bool = False)
-
-      Evaluates the trained literal prediction model on a test file.
-
-      :param eval_file_path: Path to the evaluation file.
-      :type eval_file_path: str
-      :param store_lit_preds: If True, stores the predictions in a CSV file.
-      :type store_lit_preds: bool
-      :param eval_literals: If True, evaluates the literal predictions and prints error metrics.
-      :type eval_literals: bool
-      :param loader_backend: Backend for loading the dataset ('pandas' or 'rdflib').
-      :type loader_backend: str
-
-      :returns: None
 
 
 
@@ -3393,6 +3325,136 @@ Package Contents
           model.test_dataloader()
           model.predict_dataloader()
 
+
+
+
+.. py:class:: LiteralDataset(file_path: str, ent_idx: dict = None, normalization_type: str = 'z-norm', sampling_ratio: float = None, loader_backend: str = 'pandas')
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   Dataset for loading and processing literal data for training Literal Embedding model.
+   This dataset handles the loading, normalization, and preparation of triples
+   for training a literal embedding model.
+
+   Extends torch.utils.data.Dataset for supporting PyTorch dataloaders.
+
+   .. attribute:: train_file_path
+
+      Path to the training data file.
+
+      :type: str
+
+   .. attribute:: normalization
+
+      Type of normalization to apply ('z-norm', 'min-max', or None).
+
+      :type: str
+
+   .. attribute:: normalization_params
+
+      Parameters used for normalization.
+
+      :type: dict
+
+   .. attribute:: sampling_ratio
+
+      Fraction of the training set to use for ablations.
+
+      :type: float
+
+   .. attribute:: entity_to_idx
+
+      Mapping of entities to their indices.
+
+      :type: dict
+
+   .. attribute:: num_entities
+
+      Total number of entities.
+
+      :type: int
+
+   .. attribute:: data_property_to_idx
+
+      Mapping of data properties to their indices.
+
+      :type: dict
+
+   .. attribute:: num_data_properties
+
+      Total number of data properties.
+
+      :type: int
+
+   .. attribute:: loader_backend
+
+      Backend to use for loading data ('pandas' or 'rdflib').
+
+      :type: str
+
+
+   .. py:attribute:: train_file_path
+
+
+   .. py:attribute:: loader_backend
+      :value: 'pandas'
+
+
+
+   .. py:attribute:: normalization_type
+      :value: 'z-norm'
+
+
+
+   .. py:attribute:: normalization_params
+
+
+   .. py:attribute:: sampling_ratio
+      :value: None
+
+
+
+   .. py:attribute:: entity_to_idx
+      :value: None
+
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:method:: __getitem__(index)
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: load_and_validate_literal_data(file_path: str = None, loader_backend: str = 'pandas') -> pandas.DataFrame
+      :staticmethod:
+
+
+      Loads and validates the literal data file.
+      :param file_path: Path to the literal data file.
+      :type file_path: str
+
+      :returns: DataFrame containing the loaded and validated data.
+      :rtype: pd.DataFrame
+
+
+
+   .. py:method:: denormalize(preds_norm, attributes, normalization_params) -> numpy.ndarray
+      :staticmethod:
+
+
+      Denormalizes the predictions based on the normalization type.
+
+      Args:
+      preds_norm (np.ndarray): Normalized predictions to be denormalized.
+      attributes (list): List of attributes corresponding to the predictions.
+      normalization_params (dict): Dictionary containing normalization parameters for each attribute.
+
+      :returns: Denormalized predictions.
+      :rtype: np.ndarray
 
 
 

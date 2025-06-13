@@ -1,0 +1,116 @@
+dicee.models.literal
+====================
+
+.. py:module:: dicee.models.literal
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   dicee.models.literal.LiteralEmbeddings
+
+
+Module Contents
+---------------
+
+.. py:class:: LiteralEmbeddings(num_of_data_properties: int, embedding_dims: int, entity_embeddings: torch.tensor, dropout: float = 0.3, gate_residual=True, freeze_entity_embeddings=True)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   A model for learning and predicting numerical literals using pre-trained KGE.
+
+   .. attribute:: num_of_data_properties
+
+      Number of data properties (attributes).
+
+      :type: int
+
+   .. attribute:: embedding_dims
+
+      Dimension of the embeddings.
+
+      :type: int
+
+   .. attribute:: entity_embeddings
+
+      Pre-trained entity embeddings.
+
+      :type: torch.tensor
+
+   .. attribute:: dropout
+
+      Dropout rate for regularization.
+
+      :type: float
+
+   .. attribute:: gate_residual
+
+      Whether to use gated residual connections.
+
+      :type: bool
+
+   .. attribute:: freeze_entity_embeddings
+
+      Whether to freeze the entity embeddings during training.
+
+      :type: bool
+
+
+   .. py:attribute:: embedding_dim
+
+
+   .. py:attribute:: num_of_data_properties
+
+
+   .. py:attribute:: hidden_dim
+
+
+   .. py:attribute:: gate_residual
+      :value: True
+
+
+
+   .. py:attribute:: freeze_entity_embeddings
+      :value: True
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: data_property_embeddings
+
+
+   .. py:attribute:: fc
+
+
+   .. py:attribute:: fc_out
+
+
+   .. py:attribute:: dropout
+
+
+   .. py:attribute:: gated_residual_proj
+
+
+   .. py:attribute:: layer_norm
+
+
+   .. py:method:: forward(entity_idx, attr_idx)
+
+      :param entity_idx: Entity indices (batch).
+      :type entity_idx: Tensor
+      :param attr_idx: Attribute (Data property)  indices (batch).
+      :type attr_idx: Tensor
+
+      :returns: scalar predictions.
+      :rtype: Tensor
+
+
+
+   .. py:property:: device
+
+
