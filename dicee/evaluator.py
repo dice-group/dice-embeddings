@@ -2,12 +2,11 @@ import pandas as pd
 import torch
 import numpy as np
 import json
-
-from . import load_json
 from .static_funcs import pickle
 from .static_funcs_training import evaluate_lp, evaluate_bpe_lp
 from typing import Tuple, List
 from .knowledge_graph import KG
+from .config import use_custom_tokenizer, tokenizer_path
 
 
 class Evaluator:
@@ -59,6 +58,16 @@ class Evaluator:
         else:
             self.ee_vocab = dataset.ee_vocab.result()
 
+        """
+        if isinstance(dataset.constraints, tuple):
+            self.domain_constraints_per_rel, self.range_constraints_per_rel = dataset.constraints
+        else:
+            try:
+                self.domain_constraints_per_rel, self.range_constraints_per_rel = dataset.constraints.result()
+            except RuntimeError:
+                print('Domain constraint exception occurred')
+        """
+
         self.num_entities = dataset.num_entities
         self.num_relations = dataset.num_relations
         self.func_triple_to_bpe_representation = dataset.func_triple_to_bpe_representation
@@ -69,7 +78,6 @@ class Evaluator:
 
     # @timeit
     def eval(self, dataset: KG, trained_model, form_of_labelling, during_training=False) -> None:
-        assert isinstance(dataset, KG), "dataset must be KG"
         # @TODO: Why this reassigment ?
         self.during_training = during_training
         # (1) Exit, if the flag is not set
@@ -90,7 +98,7 @@ class Evaluator:
                                                                      trained_model=trained_model)
         elif self.args.scoring_technique in ["AllvsAll",
                                              "KvsAll",
-                                             '1vsSample',
+                                             'KvsSample',
                                              "1vsAll"] and self.args.byte_pair_encoding:
             if self.args.model != "BytE":
                 self.eval_with_bpe_vs_all(raw_train_set=dataset.raw_train_set,
@@ -109,7 +117,7 @@ class Evaluator:
                                                    valid_set=dataset.valid_set,
                                                    test_set=dataset.test_set,
                                                    trained_model=trained_model)
-        elif self.args.scoring_technique in ["AllvsAll", "KvsAll", '1vsSample',"KvsSample", "1vsAll"]:
+        elif self.args.scoring_technique in ["AllvsAll", "KvsAll", 'KvsSample', "1vsAll"]:
             self.eval_with_vs_all(train_set=dataset.train_set,
                                   valid_set=dataset.valid_set,
                                   test_set=dataset.test_set,
@@ -143,9 +151,6 @@ class Evaluator:
         self.er_vocab = pickle.load(open(self.args.full_storage_path + "/er_vocab.p", "rb"))
         self.re_vocab = pickle.load(open(self.args.full_storage_path + "/re_vocab.p", "rb"))
         self.ee_vocab = pickle.load(open(self.args.full_storage_path + "/ee_vocab.p", "rb"))
-        report = load_json(self.args.full_storage_path + "/report.json")
-        self.num_entities = report["num_entities"]
-        self.num_relations = report["num_relations"]
 
     def eval_rank_of_head_and_tail_entity(self, *, train_set, valid_set=None, test_set=None, trained_model):
         # 4. Test model on the training dataset if it is needed.
@@ -339,9 +344,24 @@ class Evaluator:
         # (1) set model to eval model
         model.eval()
         num_triples = len(triples)
-        import tiktoken
+        # import tiktoken
 
-        enc = tiktoken.get_encoding("gpt2")
+        # enc = tiktoken.get_encoding("gpt2")
+
+        #######################################################
+        if use_custom_tokenizer and tokenizer_path:
+            from tokenizers import Tokenizer
+            enc = Tokenizer.from_file(tokenizer_path)
+
+        else:
+            import tiktoken
+            enc = tiktoken.get_encoding("gpt2")
+        ########################################################
+
+        ranks = []
+        # Hit range
+        hits_range = [i for i in range(1, 11)]
+        hits = {i: [] for i in hits_range}
         if info and self.during_training is False:
             print(info + ':', end=' ')
         # Iterate over integer indexed triples in mini batch fashion
@@ -349,10 +369,24 @@ class Evaluator:
             str_data_batch = triples[i:i + self.args.batch_size]
             for i in str_data_batch:
                 s, p, o = i
-                x = torch.LongTensor([enc.encode(s + " " + p)])
+
+                ############################################################
+                if use_custom_tokenizer and tokenizer_path:
+                    x = torch.LongTensor([enc.encode(s + " " + p.ids)])
+                else:
+                    x = torch.LongTensor([enc.encode(s + " " + p)])
+                ############################################################
+
                 print("Triple:", i, end="\t")
                 y = model.generate(x, max_new_tokens=100, temperature=model.temperature, top_k=model.topk).tolist()
-                print("Generated:", enc.decode(y[0]))
+
+                ############################################################
+                if use_custom_tokenizer and tokenizer_path:
+                    simple_ids = [enc.ids for enc in y]
+                    print("Generated:", enc.decode(simple_ids[0]))
+                else:
+                    print("Generated:", enc.decode(y[0]))
+                ############################################################
 
         results = {'H@1': -1, 'H@3': -1, 'H@10': -1, 'MRR': -1}
         return results
@@ -432,17 +466,11 @@ class Evaluator:
         return results
 
     def evaluate_lp(self, model, triple_idx, info: str):
-        assert self.num_entities is not None, "self.num_entities cannot be None"
-        assert self.er_vocab is not None, "self.er_vocab cannot be None"
-        assert self.re_vocab is not None, "self.re_vocab cannot be None"
-        return evaluate_lp(model, triple_idx,
-                           num_entities=self.num_entities,
-                           er_vocab=self.er_vocab,
+        return evaluate_lp(model, triple_idx, num_entities=self.num_entities, er_vocab=self.er_vocab,
                            re_vocab=self.re_vocab, info=info)
 
     def dummy_eval(self, trained_model, form_of_labelling: str):
-        assert trained_model is not None
-        # @TODO:CD: Why such naming! We need to document it better.
+
         if self.is_continual_training:
             self.__load_and_set_mappings()
 
@@ -453,14 +481,13 @@ class Evaluator:
                                                    valid_set=valid_set,
                                                    test_set=test_set,
                                                    trained_model=trained_model)
-        elif self.args.scoring_technique in ["AllvsAll",'KvsAll', '1vsSample', "KvsSample", '1vsAll']:
+        elif self.args.scoring_technique in ["AllvsAll",'KvsAll', 'KvsSample', '1vsAll']:
             self.eval_with_vs_all(train_set=train_set,
                                   valid_set=valid_set,
                                   test_set=test_set,
                                   trained_model=trained_model, form_of_labelling=form_of_labelling)
         else:
             raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-
         with open(self.args.full_storage_path + '/eval_report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor, indent=4)
 
@@ -472,7 +499,7 @@ class Evaluator:
             return self.evaluate_lp(trained_model, triple_idx,
                                     info=f'Evaluate {trained_model.name} on a given dataset', )
 
-        elif self.args.scoring_technique in ['KvsAll', '1vsSample', '1vsAll', 'PvsAll', 'CCvsAll']:
+        elif self.args.scoring_technique in ['KvsAll', 'KvsSample', '1vsAll', 'PvsAll', 'CCvsAll']:
             return self.evaluate_lp_k_vs_all(trained_model, triple_idx,
                                              info=f'Evaluate {trained_model.name} on a given dataset',
                                              form_of_labelling=form_of_labelling)

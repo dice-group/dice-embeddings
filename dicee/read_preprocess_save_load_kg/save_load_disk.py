@@ -1,6 +1,4 @@
 import numpy as np
-import polars
-import pandas
 from .util import load_pickle, load_numpy_ndarray
 import os
 from dicee.static_funcs import save_pickle, save_numpy_ndarray
@@ -23,19 +21,13 @@ class LoadSaveToDisk:
             save_pickle(data=self.kg.ordered_bpe_entities, file_path=self.kg.path_for_serialization + '/ordered_bpe_entities.p')
             save_pickle(data=self.kg.ordered_bpe_relations, file_path=self.kg.path_for_serialization + '/ordered_bpe_relations.p')
         else:
+            assert isinstance(self.kg.entity_to_idx, dict)
+            assert isinstance(self.kg.relation_to_idx, dict)
             assert isinstance(self.kg.train_set, np.ndarray)
+
             # (1) Save dictionary mappings into disk
-            if isinstance(self.kg.entity_to_idx, dict):
-                save_pickle(data=self.kg.entity_to_idx, file_path=self.kg.path_for_serialization + '/entity_to_idx.p')
-                save_pickle(data=self.kg.relation_to_idx, file_path=self.kg.path_for_serialization + '/relation_to_idx.p')
-            elif isinstance(self.kg.entity_to_idx, polars.DataFrame):
-                self.kg.entity_to_idx.write_csv(file=self.kg.path_for_serialization + "/entity_to_idx.csv", include_header=True)
-                self.kg.relation_to_idx.write_csv(file=self.kg.path_for_serialization + "/relation_to_idx.csv", include_header=True)
-            elif isinstance(self.kg.entity_to_idx, pandas.DataFrame):
-                self.kg.entity_to_idx.to_csv(path_or_buf=self.kg.path_for_serialization + "/entity_to_idx.csv", header=True)
-                self.kg.relation_to_idx.to_csv(path_or_buf=self.kg.path_for_serialization + "/relation_to_idx.csv", header=True)
-            else:
-                raise RuntimeError("Unexpected type for entity_to_idx or relation_to_idx")
+            save_pickle(data=self.kg.entity_to_idx, file_path=self.kg.path_for_serialization + '/entity_to_idx.p')
+            save_pickle(data=self.kg.relation_to_idx, file_path=self.kg.path_for_serialization + '/relation_to_idx.p')
 
             save_numpy_ndarray(data=self.kg.train_set, file_path=self.kg.path_for_serialization + '/train_set.npy')
             if self.kg.valid_set is not None:

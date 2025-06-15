@@ -39,29 +39,37 @@ def preprocesses_input_args(args):
     assert args.weight_decay >= 0.0
     args.learning_rate = args.lr
     args.deterministic = True
+
     assert args.init_param in ['xavier_normal', None]
+
     # No need to eval. Investigate runtime performance
     args.check_val_every_n_epoch = 10 ** 6  # ,i.e., no eval
     assert args.add_noise_rate is None or isinstance(args.add_noise_rate, float)
     args.logger = False
-    assert args.eval_model in [None, 'None', 'train', 'val', 'test', 'train_val', 'train_test', 'val_test',
-                                   'train_val_test'], f'Unexpected input for eval_model ***\t{args.eval_model}\t***'
+    try:
+        assert args.eval_model in [None, 'None', 'train', 'val', 'test', 'train_val', 'train_test', 'val_test',
+                                   'train_val_test']
+    except AssertionError:
+        raise AssertionError(f'Unexpected input for eval_model ***\t{args.eval_model}\t***')
+
     if args.eval_model == 'None':
         args.eval_model = None
+
     # reciprocal checking
-    if args.scoring_technique in ["AllvsAll", "1vsSample", "KvsAll", "1vsAll", "KvsSample"]:
+    if args.scoring_technique in ["AllvsAll", "KvsSample", "KvsAll", "1vsAll"]:
         args.apply_reciprical_or_noise = True
     elif args.scoring_technique in ["NegSample", "Sentence"]:
         args.apply_reciprical_or_noise = False
     else:
         raise KeyError(f'Unexpected input for scoring_technique \t{args.scoring_technique}')
+
     if args.sample_triples_ratio is not None:
         assert 1.0 >= args.sample_triples_ratio >= 0.0
     assert args.backend in ["pandas", "polars", "rdflib"]
     sanity_checking_with_arguments(args)
     if args.model == 'Shallom':
         args.scoring_technique = 'KvsAll'
-
+    # TODO: we need need to define as "NONE ?
     if args.normalization == 'None':
         args.normalization = None
     assert args.normalization in [None, 'LayerNorm', 'BatchNorm1d']

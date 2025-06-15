@@ -6,12 +6,13 @@ from types import SimpleNamespace
 import os
 import datetime
 from pytorch_lightning import seed_everything
-from .knowledge_graph import KG
-from .evaluator import Evaluator
-from .static_preprocess_funcs import preprocesses_input_args
-from .trainer import DICE_Trainer
-from .static_funcs import timeit, read_or_load_kg, load_json, store, create_experiment_folder
-import numpy as np
+
+from dicee.knowledge_graph import KG
+from dicee.evaluator import Evaluator
+# Avoid
+from dicee.static_preprocess_funcs import preprocesses_input_args
+from dicee.trainer import DICE_Trainer
+from dicee.static_funcs import timeit, continual_training_setup_executor, read_or_load_kg, load_json, store
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
@@ -33,7 +34,7 @@ class Execute:
         # (3) Set the continual training flag
         self.is_continual_training = continuous_training
         # (4) Create an experiment folder or use the previous one
-        self.setup_executor()
+        continual_training_setup_executor(self)
         # (5) A variable is initialized for pytorch lightning trainer or DICE_Trainer()
         self.trainer = None
         self.trained_model = None
@@ -41,26 +42,81 @@ class Execute:
         self.knowledge_graph = None
         # (7) Store few data in memory for numerical results, e.g. runtime, H@1 etc.
         self.report = dict()
-        # (8) Create an object to carry out link prediction evaluations,  e.g. Evaluator(self)
-        self.evaluator = None
+        # (8) Create an object to carry out link prediction evaluations
+        self.evaluator = None  # e.g. Evaluator(self)
         # (9) Execution start time
         self.start_time = None
 
-    def setup_executor(self) -> None:
-        if self.is_continual_training is False:
-            # Create a single directory containing KGE and all related data
-            if self.args.path_to_store_single_run is not None:
-                if os.path.exists(self.args.path_to_store_single_run):
-                    print(f"Deleting the existing directory of {self.args.path_to_store_single_run}")
-                    os.system(f'rm -rf {self.args.path_to_store_single_run}')
-                os.makedirs(self.args.path_to_store_single_run, exist_ok=False)
-                self.args.full_storage_path = self.args.path_to_store_single_run
-            else:
-                self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
+    def read_or_load_kg(self):
+        print('*** Read or Load Knowledge Graph  ***')
+        start_time = time.time()
+        # wrap args in a dict so KG.configs.get() will work
+        kg = KG(self.args,
+                dataset_dir=self.args.dataset_dir,
+                byte_pair_encoding=self.args.byte_pair_encoding,
+                padding=True if self.args.byte_pair_encoding and self.args.model != "BytE" else False,
+                add_noise_rate=self.args.add_noise_rate,
+                sparql_endpoint=self.args.sparql_endpoint,
+                path_single_kg=self.args.path_single_kg,
+                add_reciprical=self.args.apply_reciprical_or_noise,
+                eval_model=self.args.eval_model,
+                read_only_few=self.args.read_only_few,
+                sample_triples_ratio=self.args.sample_triples_ratio,
+                path_for_serialization=self.args.full_storage_path,
+                path_for_deserialization=(self.args.path_experiment_folder
+                                           if hasattr(self.args, 'path_experiment_folder')
+                                           else None),
+                backend=self.args.backend,
+                training_technique=self.args.scoring_technique)
+        print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
+        # (2) Share some info about data for easy access.
+        print(kg.description_of_input)
+        return kg
 
-            with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
-                temp = vars(self.args)
-                json.dump(temp, file_descriptor, indent=3)
+    def read_preprocess_index_serialize_data(self) -> None:
+        """ Read & Preprocess & Index & Serialize Input Data
+
+        (1) Read or load the data from disk into memory.
+        (2) Store the statistics of the data.
+
+        Parameter
+        ----------
+
+        Return
+        ----------
+        None
+
+        """
+        # (1) Read & Preprocess & Index & Serialize Input Data.
+        self.knowledge_graph = self.read_or_load_kg()
+
+        # (2) Store the stats and share parameters
+        self.args.num_entities = self.knowledge_graph.num_entities
+        self.args.num_relations = self.knowledge_graph.num_relations
+        self.args.num_tokens = self.knowledge_graph.num_tokens
+        self.args.max_length_subword_tokens = self.knowledge_graph.max_length_subword_tokens
+        self.args.ordered_bpe_entities=self.knowledge_graph.ordered_bpe_entities
+        self.report['num_train_triples'] = len(self.knowledge_graph.train_set)
+        self.report['num_entities'] = self.knowledge_graph.num_entities
+        self.report['num_relations'] = self.knowledge_graph.num_relations
+        self.report['num_relations'] = self.knowledge_graph.num_relations
+        self.report[
+            'max_length_subword_tokens'] = self.knowledge_graph.max_length_subword_tokens if self.knowledge_graph.max_length_subword_tokens else None
+
+        self.report['runtime_kg_loading'] = time.time() - self.start_time
+
+    def load_indexed_data(self) -> None:
+        """ Load the indexed data from disk into memory
+
+        Parameter
+        ----------
+
+        Return
+        ----------
+        None
+
+        """
+        self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
 
     @timeit
     def save_trained_model(self) -> None:
@@ -87,19 +143,21 @@ class Execute:
         self.report.update(self.trained_model.mem_of_model())
         # (3) Store/Serialize Model for further use.
         if self.is_continual_training is False:
-            store(trained_model=self.trained_model,
+            store(trainer=self.trainer,
+                  trained_model=self.trained_model,
                   model_name='model',
-                  full_storage_path=self.args.full_storage_path,
+                  full_storage_path=self.storage_path,
                   save_embeddings_as_csv=self.args.save_embeddings_as_csv)
         else:
-            store(trained_model=self.trained_model,
-                  model_name='model', # + str(datetime.datetime.now()),
-                  full_storage_path=self.args.full_storage_path,
-                  save_embeddings_as_csv=self.args.save_embeddings_as_csv)
+            store(trainer=self.trainer,
+                  trained_model=self.trained_model,
+                  model_name='model_' + str(datetime.datetime.now()),
+                  full_storage_path=self.storage_path, save_embeddings_as_csv=self.args.save_embeddings_as_csv)
 
-        self.report['path_experiment_folder'] = self.args.full_storage_path
+        self.report['path_experiment_folder'] = self.storage_path
         self.report['num_entities'] = self.args.num_entities
         self.report['num_relations'] = self.args.num_relations
+        self.report['path_experiment_folder'] = self.storage_path
 
     def end(self, form_of_labelling: str) -> dict:
         """
@@ -126,15 +184,13 @@ class Execute:
             self.write_report()
             return {**self.report}
         else:
-            self.evaluator.eval(dataset=self.knowledge_graph,
-                                trained_model=self.trained_model,
+            self.evaluator.eval(dataset=self.knowledge_graph, trained_model=self.trained_model,
                                 form_of_labelling=form_of_labelling)
             self.write_report()
             return {**self.report, **self.evaluator.report}
 
     def write_report(self) -> None:
         """ Report training related information in a report.json file """
-        # @TODO: Move to static funcs
         # Report total runtime.
         self.report['Runtime'] = time.time() - self.start_time
         print(f"Total Runtime: {self.report['Runtime']:.3f} seconds")
@@ -160,45 +216,15 @@ class Execute:
         """
         self.start_time = time.time()
         print(f"Start time:{datetime.datetime.now()}")
-        # (1) Reload the memory-map of index knowledge graph stored as a numpy ndarray.
-        if self.args.path_to_store_single_run and os.path.exists(self.args.path_to_store_single_run+"/memory_map_train_set.npy"):
-            # (1.1) Read information about memory-map of KG.
-            with open(self.args.path_to_store_single_run+'/memory_map_details.json', 'r') as file_descriptor:
-                memory_map_details = json.load(file_descriptor)
-            self.knowledge_graph = np.memmap(self.args.path_to_store_single_run + '/memory_map_train_set.npy',
-                                             mode='r',
-                                             dtype=memory_map_details["dtype"],
-                                             shape=tuple(memory_map_details["shape"]))
-            self.args.num_entities = memory_map_details["num_entities"]
-            self.args.num_relations = memory_map_details["num_relations"]
-            self.args.num_tokens = None
-            self.args.max_length_subword_tokens = None
-            self.args.ordered_bpe_entities = None
-        else:
-            self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
-            self.args.num_entities = self.knowledge_graph.num_entities
-            self.args.num_relations = self.knowledge_graph.num_relations
-            self.args.num_tokens = self.knowledge_graph.num_tokens
-            self.args.max_length_subword_tokens = self.knowledge_graph.max_length_subword_tokens
-            self.args.ordered_bpe_entities = self.knowledge_graph.ordered_bpe_entities
-            self.report['num_train_triples'] = len(self.knowledge_graph.train_set)
-            self.report['num_entities'] = self.knowledge_graph.num_entities
-            self.report['num_relations'] = self.knowledge_graph.num_relations
-            self.report['max_length_subword_tokens'] = self.knowledge_graph.max_length_subword_tokens if self.knowledge_graph.max_length_subword_tokens else None
-            self.report['runtime_kg_loading'] = time.time() - self.start_time
-            data={"shape":tuple(self.knowledge_graph.train_set.shape),
-                  "dtype":self.knowledge_graph.train_set.dtype.str,
-                  "num_entities":self.knowledge_graph.num_entities,
-                  "num_relations":self.knowledge_graph.num_relations}
-            with open(self.args.full_storage_path + '/memory_map_details.json', 'w') as file_descriptor:
-                json.dump(data, file_descriptor, indent=4)
-
+        # (1) Loading the Data
+        #  Load the indexed data from disk or read a raw data from disk into knowledge_graph attribute
+        self.load_indexed_data() if self.is_continual_training else self.read_preprocess_index_serialize_data()
         # (2) Create an evaluator object.
         self.evaluator = Evaluator(args=self.args)
         # (3) Create a trainer object.
         self.trainer = DICE_Trainer(args=self.args,
                                     is_continual_training=self.is_continual_training,
-                                    storage_path=self.args.full_storage_path,
+                                    storage_path=self.storage_path,
                                     evaluator=self.evaluator)
         # (4) Start the training
         self.trained_model, form_of_labelling = self.trainer.start(knowledge_graph=self.knowledge_graph)
@@ -219,7 +245,7 @@ class ContinuousExecute(Execute):
 
     def __init__(self, args):
         # (1) Current input configuration.
-        assert os.path.exists(args.continual_learning), f"Path doesn't exist {args.continual_learning}"
+        assert os.path.exists(args.continual_learning)
         assert os.path.isfile(args.continual_learning + '/configuration.json')
         # (2) Load previous input configuration.
         previous_args = load_json(args.continual_learning + '/configuration.json')
@@ -256,26 +282,11 @@ class ContinuousExecute(Execute):
 
         """
         # (1)
-        self.trainer = DICE_Trainer(args=self.args,
-                                    is_continual_training=True,
+        self.trainer = DICE_Trainer(args=self.args, is_continual_training=True,
                                     storage_path=self.args.continual_learning)
         # (2)
+        self.trained_model, form_of_labelling = self.trainer.continual_start()
 
-        assert os.path.exists(f"{self.args.continual_learning}/memory_map_train_set.npy")
-        # (1) Reload the memory-map of index knowledge graph stored as a numpy ndarray.
-        with open(f"{self.args.continual_learning}/memory_map_details.json", 'r') as file_descriptor:
-            memory_map_details = json.load(file_descriptor)
-        knowledge_graph = np.memmap(f"{self.args.continual_learning}/memory_map_train_set.npy",
-                                         mode='r',
-                                         dtype=memory_map_details["dtype"],
-                                         shape=tuple(memory_map_details["shape"]))
-        self.args.num_entities = memory_map_details["num_entities"]
-        self.args.num_relations = memory_map_details["num_relations"]
-        self.args.num_tokens = None
-        self.args.max_length_subword_tokens = None
-        self.args.ordered_bpe_entities = None
-
-        self.trained_model, form_of_labelling = self.trainer.continual_start(knowledge_graph)
         # (5) Store trained model.
         self.save_trained_model()
         # (6) Eval model.

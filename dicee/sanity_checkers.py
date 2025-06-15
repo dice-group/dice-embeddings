@@ -32,11 +32,11 @@ def validate_knowledge_graph(args):
 
     elif args.path_single_kg is not None:
         if args.sparql_endpoint is not None or args.path_single_kg is not None:
-            #print(f'The dataset_dir and sparql_endpoint arguments '
-            #      f'must be None if path_single_kg is given.'
-            #      f'***{args.dataset_dir}***\n'
-            #      f'***{args.sparql_endpoint}***\n'
-            #      f'These two parameters are set to None.')
+            print(f'The dataset_dir and sparql_endpoint arguments '
+                  f'must be None if path_single_kg is given.'
+                  f'***{args.dataset_dir}***\n'
+                  f'***{args.sparql_endpoint}***\n'
+                  f'These two parameters are set to None.')
             args.dataset_dir = None
             args.sparql_endpoint = None
 
@@ -61,11 +61,11 @@ def validate_knowledge_graph(args):
                 f"Use --path_single_kg **folder/dataset.format**, if you have a single file.")
 
         if args.sparql_endpoint is not None or args.path_single_kg is not None:
-            #print(f'The sparql_endpoint and path_single_kg arguments '
-            #      f'must be None if dataset_dir is given.'
-            #      f'***{args.sparql_endpoint}***\n'
-            #      f'***{args.path_single_kg}***\n'
-            #      f'These two parameters are set to None.')
+            print(f'The sparql_endpoint and path_single_kg arguments '
+                  f'must be None if dataset_dir is given.'
+                  f'***{args.sparql_endpoint}***\n'
+                  f'***{args.path_single_kg}***\n'
+                  f'These two parameters are set to None.')
             args.sparql_endpoint = None
             args.path_single_kg = None
 
@@ -80,11 +80,20 @@ def validate_knowledge_graph(args):
 
 
 def sanity_checking_with_arguments(args):
-    assert args.embedding_dim > 0,f"embedding_dim must be strictly positive. Currently:{args.embedding_dim}"
-    assert args.scoring_technique in ["AllvsAll", "1vsSample", "KvsSample","KvsAll", "NegSample", "1vsAll","Pyke", "Sentence"], f"Invalid training strategy => {args.scoring_technique}."
-    assert args.learning_rate > 0, f"Learning rate must be greater than 0. Currently:{args.learning_rate}"
+    try:
+        assert args.embedding_dim > 0
+    except AssertionError:
+        raise AssertionError(f'embedding_dim must be strictly positive. Currently:{args.embedding_dim}')
+
+    if args.scoring_technique not in ["AllvsAll", "KvsSample", "KvsAll", "NegSample", "1vsAll", "Pyke", "Sentence"]:
+        raise KeyError(f'Invalid training strategy => {args.scoring_technique}.')
+
+    assert args.learning_rate > 0
     if args.num_folds_for_cv is None:
         args.num_folds_for_cv = 0
-    assert args.num_folds_for_cv >= 0,f"num_folds_for_cv can not be negative. Currently:{args.num_folds_for_cv}"
+    try:
+        assert args.num_folds_for_cv >= 0
+    except AssertionError:
+        raise AssertionError(f'num_folds_for_cv can not be negative. Currently:{args.num_folds_for_cv}')
     validate_knowledge_graph(args)
 

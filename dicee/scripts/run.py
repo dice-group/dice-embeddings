@@ -4,20 +4,20 @@ import argparse
 
 def get_default_arguments(description=None):
     """ Extends pytorch_lightning Trainer's arguments with ours """
+    # From "pytorch-lightning==1.6.4" to "lightning>=2.1.3",  'Trainer' has no attribute 'add_argparse_args'
+    # parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     parser = argparse.ArgumentParser(add_help=False)
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Knowledge graph related arguments
-    parser.add_argument("--dataset_dir", type=str, default=None,
+    parser.add_argument("--dataset_dir", type=str, default="KGs/UMLS",
                         help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
                         help="An endpoint of a triple store, e.g. 'http://localhost:3030/mutagenesis/'. ")
-    # TODO: Deprecate --path_single_kg
-    # TODO: --dataset_dir either be a single KG file or a folder.
-    parser.add_argument("--path_single_kg", type=str, default=None,#"/home/cdemir/Desktop/Softwares/dice-embeddings/dice.nt",
+    parser.add_argument("--path_single_kg", type=str, default=None,
                         help="Path of a file corresponding to the input knowledge graph")
     # Saved files related arguments
-    parser.add_argument("--path_to_store_single_run", type=str, default=None,#"DBpedia",
+    parser.add_argument("--path_to_store_single_run", type=str, default=None,
                         help="A single directory created that contains related data about embeddings.")
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="A directory named with time of execution under --storage_path "
@@ -27,12 +27,10 @@ def get_default_arguments(description=None):
     parser.add_argument("--backend", type=str, default="pandas",
                         choices=["pandas", "polars", "rdflib"],
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
-    parser.add_argument("--separator", type=str, default="\s+",
-                        help='Pandas \s+, t for \t polars works with the last two.')
     # Model related arguments
     parser.add_argument("--model", type=str,
                         default="Keci",
-                        choices=["ComplEx", "Keci", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
+                        choices=["ComplEx", "Keci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "DualE",
                                  "BytE",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
@@ -42,26 +40,26 @@ def get_default_arguments(description=None):
                         help="Available knowledge graph embedding models. "
                              "To use other knowledge graph embedding models available in python, e.g.,"
                              "**Pykeen_BoxE** and add this into choices")
-    parser.add_argument('--optim', type=str, default='Adopt',
+    parser.add_argument('--optim', type=str, default='Adam',
                         help='An optimizer',
-                        choices=['Adam', 'AdamW', 'SGD',"NAdam", "Adagrad", "ASGD", "Adopt"])
-    parser.add_argument('--embedding_dim', type=int, default=32,
+                        choices=['Adam', 'AdamW', 'SGD',"NAdam", "Adagrad", "ASGD"])
+    parser.add_argument('--embedding_dim', type=int, default=256,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
-    parser.add_argument('--batch_size', type=int, default=32,
+    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
+    parser.add_argument('--batch_size', type=int, default=1024,
                         help='Mini batch size. If None, automatic batch finder is applied')
-    parser.add_argument("--lr", type=float, default=0.1)
+    parser.add_argument("--lr", type=float, default=0.01)
     parser.add_argument('--callbacks', type=json.loads,
                         default={},
                         help='{"PPE":{ "last_percent_to_consider": 10}}'
                              '"Perturb": {"level": "out", "ratio": 0.2, "method": "RN", "scaler": 0.3}')
     parser.add_argument("--trainer", type=str, default='PL',
-                        choices=['torchCPUTrainer', 'PL', 'torchDDP', "TP"],
-                        help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only), TP (Model Paralelisim)')
-    parser.add_argument('--scoring_technique', default="NegSample",
+                        choices=['torchCPUTrainer', 'PL', 'torchDDP'],
+                        help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
+    parser.add_argument('--scoring_technique', default="KvsAll",
                         help="Training technique for knowledge graph embedding model",
-                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "1vsSample", "KvsSample"])
-    parser.add_argument('--neg_ratio', type=int, default=2,
+                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "KvsSample"])
+    parser.add_argument('--neg_ratio', type=int, default=1,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
     parser.add_argument('--input_dropout_rate', type=float, default=0.0)
@@ -123,9 +121,6 @@ def get_default_arguments(description=None):
     parser.add_argument("--swa",
                         action="store_true",
                         help="Stochastic weight averaging")
-    parser.add_argument("--auto_batch_finding",
-                        action="store_true",
-                        help="Find a batch size fitting in GPUs. Only available for TP trainer")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
 

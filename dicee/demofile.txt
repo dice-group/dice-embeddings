@@ -1,0 +1,32 @@
+Train MRR:, 0.01423967350164949
+Test  MRR:, 0.009369994077696333
+{'num_train_triples': 624, 'num_entities': None, 'num_relations': None, 'max_length_subword_tokens': 13, 'runtime_kg_loading': 0.34502720832824707, 'EstimatedSizeMB': 3.11822509765625, 'NumParam': 3269696, 'path_experiment_folder': 'BytE_UMLS', 'Runtime': 9.244691371917725, 'Train': {'H@1': 0.0009000900090009, 'H@3': 0.0058505850585058505, 'H@10': 0.01755175517551755, 'MRR': 0.01423967350164949}, 'Val': {'H@1': 0.0, 'H@3': 0.0, 'H@10': 0.020833333333333332, 'MRR': 0.010236674702625568}, 'Test': {'H@1': 0.0, 'H@3': 0.0, 'H@10': 0.0, 'MRR': 0.009369994077696333}}
+
+Train MRR:, 0.01423967350164949
+Test  MRR:, 0.009369994077696333
+{'num_train_triples': 624, 'num_entities': None, 'num_relations': None, 'max_length_subword_tokens': 13, 'runtime_kg_loading': 0.34802722930908203, 'EstimatedSizeMB': 3.11822509765625, 'NumParam': 3269696, 'path_experiment_folder': 'BytE_UMLS', 'Runtime': 9.921741962432861, 'Train': {'H@1': 0.0009000900090009, 'H@3': 0.0058505850585058505, 'H@10': 0.01755175517551755, 'MRR': 0.01423967350164949}, 'Val': {'H@1': 0.0, 'H@3': 0.0, 'H@10': 0.020833333333333332, 'MRR': 0.010236674702625568}, 'Test': {'H@1': 0.0, 'H@3': 0.0, 'H@10': 0.0, 'MRR': 0.009369994077696333}}
+
+Train MRR:, 0.01423967350164949
+Test  MRR:, 0.009369994077696333
+{'num_train_triples': 624, 'num_entities': None, 'num_relations': None, 'max_length_subword_tokens': 13, 'runtime_kg_loading': 0.3500175476074219, 'EstimatedSizeMB': 3.11822509765625, 'NumParam': 3269696, 'path_experiment_folder': 'BytE_UMLS', 'Runtime': 10.010738372802734, 'Train': {'H@1': 0.0009000900090009, 'H@3': 0.0058505850585058505, 'H@10': 0.01755175517551755, 'MRR': 0.01423967350164949}, 'Val': {'H@1': 0.0, 'H@3': 0.0, 'H@10': 0.020833333333333332, 'MRR': 0.010236674702625568}, 'Test': {'H@1': 0.0, 'H@3': 0.0, 'H@10': 0.0, 'MRR': 0.009369994077696333}}
+
+Train MRR:, 0.014990282078150743
+Test  MRR:, 0.010473420705710992
+{'num_train_triples': 624, 'num_entities': None, 'num_relations': None, 'max_length_subword_tokens': 13, 'runtime_kg_loading': 0.36101531982421875, 'EstimatedSizeMB': 3.11822509765625, 'NumParam': 3269696, 'path_experiment_folder': 'BytE_UMLS', 'Runtime': 9.71171498298645, 'Train': {'H@1': 0.0009000900090009, 'H@3': 0.0027002700270027003, 'H@10': 0.016201620162016202, 'MRR': 0.014990282078150743}, 'Val': {'H@1': 0.0, 'H@3': 0.0, 'H@10': 0.020833333333333332, 'MRR': 0.01313292238527807}, 'Test': {'H@1': 0.0, 'H@3': 0.0, 'H@10': 0.0, 'MRR': 0.010473420705710992}}
+
+Train MRR:, 0.015742461232342197
+Test  MRR:, 0.010642427984490664
+{'num_train_triples': 624, 'num_entities': None, 'num_relations': None, 'max_length_subword_tokens': 13, 'runtime_kg_loading': 0.41703343391418457, 'EstimatedSizeMB': 3.11822509765625, 'NumParam': 3269696, 'path_experiment_folder': 'BytE_UMLS', 'Runtime': 9.812734603881836, 'Train': {'H@1': 0.0009000900090009, 'H@3': 0.0054005400540054005, 'H@10': 0.01485148514851485, 'MRR': 0.015742461232342197}, 'Val': {'H@1': 0.0, 'H@3': 0.0, 'H@10': 0.020833333333333332, 'MRR': 0.013933979898188667}, 'Test': {'H@1': 0.0, 'H@3': 0.0, 'H@10': 0.020833333333333332, 'MRR': 0.010642427984490664}}
+
+Train MRR:, 0.056964725763636335
+Test  MRR:, 0.22432723935192378
+{'num_train_triples': 624, 'num_entities': None, 'num_relations': None, 'max_length_subword_tokens': 5, 'runtime_kg_loading': 0.14300227165222168, 'EstimatedSizeMB': 0.1407470703125, 'NumParam': 147584, 'path_experiment_folder': 'BytE_UMLS', 'Runtime': 9.954647064208984, 'Train': {'H@1': 0.02025202520252025, 'H@3': 0.045004500450045004, 'H@10': 0.11296129612961296, 'MRR': 0.056964725763636335}, 'Val': {'H@1': 0.14583333333333334, 'H@3': 0.3125, 'H@10': 0.4166666666666667, 'MRR': 0.25204748435684876}, 'Test': {'H@1': 0.125, 'H@3': 0.2708333333333333, 'H@10': 0.375, 'MRR': 0.22432723935192378}}
+
+Train MRR:, 0.015742461232342197
+Test  MRR:, 0.010642427984490664
+{'num_train_triples': 624, 'num_entities': None, 'num_relations': None, 'max_length_subword_tokens': 13, 'runtime_kg_loading': 0.3820207118988037, 'EstimatedSizeMB': 3.11822509765625, 'NumParam': 3269696, 'path_experiment_folder': 'BytE_UMLS', 'Runtime': 9.891654014587402, 'Train': {'H@1': 0.0009000900090009, 'H@3': 0.0054005400540054005, 'H@10': 0.01485148514851485, 'MRR': 0.015742461232342197}, 'Val': {'H@1': 0.0, 'H@3': 0.0, 'H@10': 0.020833333333333332, 'MRR': 0.013933979898188667}, 'Test': {'H@1': 0.0, 'H@3': 0.0, 'H@10': 0.020833333333333332, 'MRR': 0.010642427984490664}}
+
+Train MRR:, 0.036501769520952534
+Test  MRR:, 0.08945205313350602
+{'num_train_triples': 624, 'num_entities': None, 'num_relations': None, 'max_length_subword_tokens': 5, 'runtime_kg_loading': 0.13901090621948242, 'EstimatedSizeMB': 0.1407470703125, 'NumParam': 147584, 'path_experiment_folder': 'BytE_UMLS', 'Runtime': 9.463574886322021, 'Train': {'H@1': 0.01485148514851485, 'H@3': 0.028352835283528353, 'H@10': 0.056255625562556255, 'MRR': 0.036501769520952534}, 'Val': {'H@1': 0.020833333333333332, 'H@3': 0.08333333333333333, 'H@10': 0.08333333333333333, 'MRR': 0.059327546659818764}, 'Test': {'H@1': 0.041666666666666664, 'H@3': 0.125, 'H@10': 0.125, 'MRR': 0.08945205313350602}}
+

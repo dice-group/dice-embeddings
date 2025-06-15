@@ -18,6 +18,7 @@ class FMult(BaseKGE):
         self.gamma = torch.randn(self.k, self.num_sample)  # N(0,1)
         # Lazy import
         from scipy.special import roots_legendre
+        from scipy.special import roots_legendre
         roots, weights = roots_legendre(self.num_sample)
         self.roots = torch.from_numpy(roots).repeat(self.k, 1).float()  # shape self.k by self.n
         self.weights = torch.from_numpy(weights).reshape(1, -1).float()  # shape 1 by self.n
@@ -80,8 +81,6 @@ class GFMult(BaseKGE):
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
         self.k = int(np.sqrt(self.embedding_dim // 2))
         self.num_sample = 250
-        # Lazy import
-        from scipy.special import roots_legendre
         roots, weights = roots_legendre(self.num_sample)
         self.roots = torch.from_numpy(roots).repeat(self.k, 1).float()  # shape self.k by self.n
         self.weights = torch.from_numpy(weights).reshape(1, -1).float()  # shape 1 by self.n

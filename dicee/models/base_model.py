@@ -4,7 +4,8 @@ import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
-from .adopt import ADOPT
+from ..config import Namespace
+
 
 class BaseKGELightning(pl.LightningModule):
     def __init__(self, *args, **kwargs):
@@ -23,17 +24,8 @@ class BaseKGELightning(pl.LightningModule):
         return {'EstimatedSizeMB': (num_params + buffer_size) / 1024 ** 2, 'NumParam': num_params}
 
     def training_step(self, batch, batch_idx=None):
-        if len(batch)==2:
-            # Default
-            x_batch, y_batch = batch
-            yhat_batch = self.forward(x_batch)
-        elif len(batch)==3:
-            # KvsSample or 1vsSample
-            x_batch, y_select, y_batch = batch
-            yhat_batch = self.forward((x_batch,y_select))
-        else:
-            raise RuntimeError("Invalid batch received.")
-
+        x_batch, y_batch = batch
+        yhat_batch = self.forward(x_batch)
         loss_batch = self.loss_function(yhat_batch, y_batch)
         self.training_step_outputs.append(loss_batch.item())
         self.log("loss",
@@ -92,12 +84,9 @@ class BaseKGELightning(pl.LightningModule):
             self.selected_optimizer = torch.optim.SGD(params=parameters, lr=self.learning_rate,
                                                       momentum=0, dampening=0, weight_decay=self.weight_decay,
                                                       nesterov=False)
-
         elif self.optimizer_name == 'Adam':
             self.selected_optimizer = torch.optim.Adam(parameters, lr=self.learning_rate,
                                                        weight_decay=self.weight_decay)
-        elif self.optimizer_name == 'Adopt':
-            self.selected_optimizer = ADOPT(parameters, lr=self.learning_rate)
         elif self.optimizer_name == 'AdamW':
             self.selected_optimizer = torch.optim.AdamW(parameters, lr=self.learning_rate,
                                                        weight_decay=self.weight_decay)
@@ -113,8 +102,7 @@ class BaseKGELightning(pl.LightningModule):
                                                        lr=self.learning_rate, lambd=0.0001, alpha=0.75,
                                                        weight_decay=self.weight_decay)
         else:
-            raise KeyError(f"{self.optimizer_name} is not found!")
-        print(self.selected_optimizer)
+            raise KeyError()
         return self.selected_optimizer
 
 
@@ -154,26 +142,60 @@ class BaseKGE(BaseKGELightning):
         self.byte_pair_encoding = self.args.get("byte_pair_encoding", False)
         self.max_length_subword_tokens = self.args.get("max_length_subword_tokens", None)
         self.block_size=self.args.get("block_size", None)
-        if self.byte_pair_encoding and self.args['model'] != "BytE":
+
+        ################################################################################################
+        use_transformer = self.args.get("use_transformer", False)
+
+        if use_transformer and \
+           self.byte_pair_encoding and \
+           self.args.get("use_transformer_embeddings", False) and \
+           self.args["model"] != "BytE":
+            from .transformers import BytE
+            embed_args = dict(self.args)
+            embed_args["model"] = "BytE"
+            self.bytE_embedder = BytE(embed_args)
+            self.token_embeddings = self.bytE_embedder.transformer.wte
+        else:
+            # fallback to plain nn.Embedding whenever we didn’t load a transformer
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
             self.param_init(self.token_embeddings.weight.data)
 
-            # Reduces subword units embedding matrix from T x D into D.
-            self.lf = nn.Sequential(nn.Linear(self.embedding_dim * self.max_length_subword_tokens,
-                                              self.embedding_dim, bias=False))
+        if use_transformer:
+            # now it’s safe to build lf, etc.
+            self.lf = nn.Sequential(
+                nn.Linear(self.embedding_dim * self.max_length_subword_tokens,
+                          self.embedding_dim, bias=False)
+            )
             if self.args["scoring_technique"] in ["AllvsAll", "KvsAll"]:
                 self.str_to_bpe_entity_to_idx = {str_ent: idx for idx, (str_ent, bpe_ent, shaped_bpe_ent) in
                                                  enumerate(self.args["ordered_bpe_entities"])}
                 self.bpe_entity_to_idx = {shaped_bpe_ent: idx for idx, (str_ent, bpe_ent, shaped_bpe_ent) in
                                           enumerate(self.args["ordered_bpe_entities"])}
                 self.ordered_bpe_entities = torch.tensor(list(self.bpe_entity_to_idx.keys()), dtype=torch.long)
-        elif self.byte_pair_encoding and self.args['model'] == "BytE":
-            """ Transformer implements token embeddings"""
+        #################################################################################################
         else:
+            if self.byte_pair_encoding and self.args['model'] != "BytE":
+                self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
+                self.param_init(self.token_embeddings.weight.data)
 
-            self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-            self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-            self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+                # Reduces subword units embedding matrix from T x D into D.
+                self.lf = nn.Sequential(nn.Linear(self.embedding_dim * self.max_length_subword_tokens,
+                                                self.embedding_dim, bias=False))
+                if self.args["scoring_technique"] in ["AllvsAll", "KvsAll"]:
+                    self.str_to_bpe_entity_to_idx = {str_ent: idx for idx, (str_ent, bpe_ent, shaped_bpe_ent) in
+                                                    enumerate(self.args["ordered_bpe_entities"])}
+                    self.bpe_entity_to_idx = {shaped_bpe_ent: idx for idx, (str_ent, bpe_ent, shaped_bpe_ent) in
+                                            enumerate(self.args["ordered_bpe_entities"])}
+                    self.ordered_bpe_entities = torch.tensor(list(self.bpe_entity_to_idx.keys()), dtype=torch.long)
+                
+        #################################################################################################          
+            elif self.byte_pair_encoding and self.args['model'] == "BytE":
+                """ Transformer implements token embeddings"""
+            else:
+
+                self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+                self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
+                self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
     def forward_byte_pair_encoded_k_vs_all(self, x: torch.LongTensor):
         """
@@ -296,8 +318,11 @@ class BaseKGE(BaseKGELightning):
             self.normalizer_class = IdentityClass
         else:
             raise NotImplementedError()
-
-        self.optimizer_name = self.args.get('optim',None)
+        if self.args.get("optim") in ['AdamW', 'Adam', 'SGD']:
+            self.optimizer_name = self.args['optim']
+        else:
+            print(f'--optim (***{self.args.get("optim")}***) not found')
+            self.optimizer_name = 'Adam'
 
         if self.args.get("init_param") is None:
             self.param_init = IdentityClass

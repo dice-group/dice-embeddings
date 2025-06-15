@@ -166,10 +166,9 @@ class ASWA(AbstractCallback):
         if self.initial_eval_setting:
             # ADD this info back
             trainer.evaluator.args.eval_model = self.initial_eval_setting
-        
-        if trainer.global_rank==trainer.local_rank==0:
-            param_ensemble = torch.load(f"{self.path}/aswa.pt", torch.device("cpu"))
-            model.load_state_dict(param_ensemble)
+
+        param_ensemble = torch.load(f"{self.path}/aswa.pt", torch.device("cpu"))
+        model.load_state_dict(param_ensemble)
 
     @staticmethod
     def compute_mrr(trainer, model) -> float:
@@ -242,10 +241,6 @@ class ASWA(AbstractCallback):
             return True
 
     def on_train_epoch_end(self, trainer, model):
-        
-        if (trainer.global_rank == trainer.local_rank == 0) is False:
-            return None
-
         # (1) Increment epoch counter
         self.epoch_count += 1
         # (2) Save the given eval setting if it is not saved.

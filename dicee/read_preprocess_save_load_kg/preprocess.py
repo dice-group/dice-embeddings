@@ -1,12 +1,13 @@
 import pandas as pd
 import polars as pl
-from .util import timeit, pandas_dataframe_indexer, dataset_sanity_checking
+from .util import timeit, index_triples_with_pandas, dataset_sanity_checking
 from dicee.static_funcs import numpy_data_type_changer
-from .util import get_er_vocab, get_re_vocab, get_ee_vocab, apply_reciprical_or_noise, polars_dataframe_indexer
+from .util import get_er_vocab, get_re_vocab, get_ee_vocab, create_constraints, apply_reciprical_or_noise
 import numpy as np
 import concurrent
 from typing import List, Tuple
 from typing import Union
+import itertools
 
 
 class PreprocessKG:
@@ -38,9 +39,6 @@ class PreprocessKG:
         else:
             raise KeyError(f'{self.kg.backend} not found')
 
-        # TODO: Still we keep the raw and index data in memory
-        # print(self.kg.raw_train_set)
-        # print(self.kg.train_set)
         if self.kg.eval_model:
             if self.kg.byte_pair_encoding:
                 data = []
@@ -61,10 +59,14 @@ class PreprocessKG:
             self.kg.re_vocab = executor.submit(get_re_vocab, data, self.kg.path_for_serialization + '/re_vocab.p')
             self.kg.ee_vocab = executor.submit(get_ee_vocab, data, self.kg.path_for_serialization + '/ee_vocab.p')
 
+            self.kg.constraints = executor.submit(create_constraints, self.kg.train_set,
+                                                  self.kg.path_for_serialization + '/constraints.p')
+            self.kg.domain_constraints_per_rel, self.kg.range_constraints_per_rel = None, None
+
         # string containing
         assert isinstance(self.kg.raw_train_set, pd.DataFrame) or isinstance(self.kg.raw_train_set, pl.DataFrame)
 
-        # print("Creating dataset...")
+        print("Creating dataset...")
         if self.kg.byte_pair_encoding and self.kg.padding:
             assert isinstance(self.kg.train_set, list)
             assert isinstance(self.kg.train_set[0], tuple)
@@ -147,16 +149,22 @@ class PreprocessKG:
                 # print(self.kg.enc.decode(x))
                 triples.extend(x)
             self.kg.train_set = np.array(triples)
+
         else:
-            # No need to keep the raw data in memory
-            # TODO: If BPE used, no need to clearn data for the time being,.
-            self.kg.raw_train_set = None
-            self.kg.raw_valid_set = None
-            self.kg.raw_test_set  = None
+            """No need to do anything. We create datasets for other models in the pyorch dataset construction"""
+            # @TODO: Either we should move the all pytorch dataset construciton into here
+            # Or we should move the byte pair encoding data into
+            print('Finding suitable integer type for the index...')
+            self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
+                                                        num=max(self.kg.num_entities, self.kg.num_relations))
+            if self.kg.valid_set is not None:
+                self.kg.valid_set = numpy_data_type_changer(self.kg.valid_set,
+                                                            num=max(self.kg.num_entities, self.kg.num_relations))
+            if self.kg.test_set is not None:
+                self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
+                                                           num=max(self.kg.num_entities, self.kg.num_relations))
 
-
-    @staticmethod
-    def __replace_values_df(df: pd.DataFrame = None, f=None) -> Union[
+    def __replace_values_df(self, df: pd.DataFrame = None, f=None) -> Union[
         None, List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]]:
         """
         Map a n by 3 pandas dataframe containing n triples into a list of n tuples
@@ -173,14 +181,22 @@ class PreprocessKG:
         """
         if df is None:
             return []
+        # now driven by your runtime args on kg
+        if self.kg.use_custom_tokenizer and self.kg.tokenizer_path:
+            # f(x) is a tokenizers.Encoding – pull out `.ids`
+            mapper = lambda x: tuple(f(x).ids)
         else:
-            bpe_triples = list(df.map(lambda x: tuple(f(x))).itertuples(index=False, name=None))
-            assert isinstance(bpe_triples, list)
-            assert isinstance(bpe_triples[0], tuple)
-            assert len(bpe_triples[0]) == 3
-            assert isinstance(bpe_triples[0][0], tuple)
-            assert isinstance(bpe_triples[0][0][0], int)
-            return bpe_triples
+            # fallback (still unpack the Encoding if f returns one)
+            mapper = lambda x: tuple(f(x).ids) if hasattr(f(x), "ids") else tuple(f(x))
+        bpe_triples = list(df.map(mapper)
+                          .itertuples(index=False, name=None))
+
+        assert isinstance(bpe_triples, list)
+        assert isinstance(bpe_triples[0], tuple)
+        assert len(bpe_triples[0]) == 3
+        assert isinstance(bpe_triples[0][0], tuple)
+        assert isinstance(bpe_triples[0][0][0], int)
+        return bpe_triples
 
     def __finding_max_token(self, concat_of_train_val_test) -> int:
         max_length_subword_tokens = 0
@@ -221,13 +237,13 @@ class PreprocessKG:
         assert isinstance(self.kg.raw_train_set, pd.DataFrame)
         assert self.kg.raw_train_set.columns.tolist() == ['subject', 'relation', 'object']
         # (1)  Add recipriocal or noisy triples into raw_train_set, raw_valid_set, raw_test_set
-        self.kg.raw_train_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
+        self.kg.raw_train_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprical,
                                                           eval_model=self.kg.eval_model,
                                                           df=self.kg.raw_train_set, info="Train")
-        self.kg.raw_valid_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
+        self.kg.raw_valid_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprical,
                                                           eval_model=self.kg.eval_model,
                                                           df=self.kg.raw_valid_set, info="Validation")
-        self.kg.raw_test_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
+        self.kg.raw_test_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprical,
                                                          eval_model=self.kg.eval_model,
                                                          df=self.kg.raw_test_set, info="Test")
         # (2) Transformation from DataFrame to list of tuples.
@@ -295,13 +311,13 @@ class PreprocessKG:
         None
         """
         # (1)  Add recipriocal or noisy triples.
-        self.kg.raw_train_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
+        self.kg.raw_train_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprical,
                                                           eval_model=self.kg.eval_model,
                                                           df=self.kg.raw_train_set, info="Train")
-        self.kg.raw_valid_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
+        self.kg.raw_valid_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprical,
                                                           eval_model=self.kg.eval_model,
                                                           df=self.kg.raw_valid_set, info="Validation")
-        self.kg.raw_test_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
+        self.kg.raw_test_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprical,
                                                          eval_model=self.kg.eval_model,
                                                          df=self.kg.raw_test_set, info="Test")
 
@@ -310,17 +326,16 @@ class PreprocessKG:
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
 
         # (3) Index datasets
-        self.kg.train_set = pandas_dataframe_indexer(self.kg.raw_train_set,
+        self.kg.train_set = index_triples_with_pandas(self.kg.raw_train_set,
                                                       self.kg.entity_to_idx,
                                                       self.kg.relation_to_idx)
         assert isinstance(self.kg.train_set, pd.core.frame.DataFrame)
         self.kg.train_set = self.kg.train_set.values
         self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
                                                     num=max(self.kg.num_entities, self.kg.num_relations))
-
         dataset_sanity_checking(self.kg.train_set, self.kg.num_entities, self.kg.num_relations)
         if self.kg.raw_valid_set is not None:
-            self.kg.valid_set = pandas_dataframe_indexer(self.kg.raw_valid_set, self.kg.entity_to_idx,
+            self.kg.valid_set = index_triples_with_pandas(self.kg.raw_valid_set, self.kg.entity_to_idx,
                                                           self.kg.relation_to_idx)
             self.kg.valid_set = self.kg.valid_set.values
             dataset_sanity_checking(self.kg.valid_set, self.kg.num_entities, self.kg.num_relations)
@@ -328,7 +343,7 @@ class PreprocessKG:
                                                         num=max(self.kg.num_entities, self.kg.num_relations))
 
         if self.kg.raw_test_set is not None:
-            self.kg.test_set = pandas_dataframe_indexer(self.kg.raw_test_set, self.kg.entity_to_idx,
+            self.kg.test_set = index_triples_with_pandas(self.kg.raw_test_set, self.kg.entity_to_idx,
                                                          self.kg.relation_to_idx)
             # To numpy
             self.kg.test_set = self.kg.test_set.values
@@ -347,27 +362,27 @@ class PreprocessKG:
         print(f'*** Preprocessing Train Data:{self.kg.raw_train_set.shape} with Polars ***')
 
         # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
-        if self.kg.add_reciprocal and self.kg.eval_model:
+        if self.kg.add_reciprical and self.kg.eval_model:
             def adding_reciprocal_triples():
                 """ Add reciprocal triples """
                 # (1.1) Add reciprocal triples into training set
                 self.kg.raw_train_set.extend(self.kg.raw_train_set.select([
                     pl.col("object").alias('subject'),
-                    pl.col("relation")+'_inverse',
+                    pl.col("relation").apply(lambda x: x + '_inverse'),
                     pl.col("subject").alias('object')
                 ]))
                 if self.kg.raw_valid_set is not None:
                     # (1.2) Add reciprocal triples into valid_set set.
                     self.kg.raw_valid_set.extend(self.kg.raw_valid_set.select([
                         pl.col("object").alias('subject'),
-                        pl.col("relation")+'_inverse',
+                        pl.col("relation").apply(lambda x: x + '_inverse'),
                         pl.col("subject").alias('object')
                     ]))
                 if self.kg.raw_test_set is not None:
                     # (1.2) Add reciprocal triples into test set.
                     self.kg.raw_test_set.extend(self.kg.raw_test_set.select([
                         pl.col("object").alias('subject'),
-                        pl.col("relation")+'_inverse',
+                        pl.col("relation").apply(lambda x: x + '_inverse'),
                         pl.col("subject").alias('object')
                     ]))
 
@@ -381,6 +396,7 @@ class PreprocessKG:
             raise TypeError(f"{type(self.kg.raw_train_set)}")
         assert isinstance(self.kg.raw_valid_set, pl.DataFrame) or self.kg.raw_valid_set is None
         assert isinstance(self.kg.raw_test_set, pl.DataFrame) or self.kg.raw_test_set is None
+
         def concat_splits(train, val, test):
             x = [train]
             if val is not None:
@@ -388,39 +404,38 @@ class PreprocessKG:
             if test is not None:
                 x.append(test)
             return pl.concat(x)
+
         print('Concat Splits...')
         df_str_kg = concat_splits(self.kg.raw_train_set, self.kg.raw_valid_set, self.kg.raw_test_set)
-        # () Select unique subject entities.
-        print("Collecting subject entities...")
-        subjects = df_str_kg.select(pl.col("subject").unique(maintain_order=True).alias("entity"))
-        print(f"Unique number of subjects:{len(subjects)}")
-        # () Select unique object entities.
-        print("Collecting object entities...")
-        objects = df_str_kg.select(pl.col("object").unique(maintain_order=True).alias("entity"))
-        # () Select unique entities.
-        self.kg.entity_to_idx = pl.concat([subjects, objects], how="vertical").unique(maintain_order=True)
-        self.kg.entity_to_idx = self.kg.entity_to_idx.with_row_index("index").select(["index", "entity"])
-        # () Write unique entities with indices.
-        print('Relation Indexing...')
-        self.kg.relation_to_idx = df_str_kg.select(pl.col("relation").unique(maintain_order=True)).with_row_index(
-            "index").select(["index", "relation"])
-        del df_str_kg
-        print(f'Indexing Training Data {self.kg.raw_train_set.shape}...')
-        self.kg.train_set=polars_dataframe_indexer(self.kg.raw_train_set, self.kg.entity_to_idx, self.kg.relation_to_idx).to_numpy()
 
+        print('Entity Indexing...')
+        self.kg.entity_to_idx = pl.concat((df_str_kg['subject'],
+                                           df_str_kg['object'])).unique(maintain_order=True).rename('entity')
+        print('Relation Indexing...')
+        self.kg.relation_to_idx = df_str_kg['relation'].unique(maintain_order=True)
+        print('Creating index for entities...')
+        self.kg.entity_to_idx = {ent: idx for idx, ent in enumerate(self.kg.entity_to_idx.to_list())}
+        print('Creating index for relations...')
+        self.kg.relation_to_idx = {rel: idx for idx, rel in enumerate(self.kg.relation_to_idx.to_list())}
+        self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
+
+        print(f'Indexing Training Data {self.kg.raw_train_set.shape}...')
+        self.kg.train_set = self.kg.raw_train_set.with_columns(
+            pl.col("subject").map_dict(self.kg.entity_to_idx).alias("subject"),
+            pl.col("relation").map_dict(self.kg.relation_to_idx).alias("relation"),
+            pl.col("object").map_dict(self.kg.entity_to_idx).alias("object")).to_numpy()
         if self.kg.raw_valid_set is not None:
             print(f'Indexing Val Data {self.kg.raw_valid_set.shape}...')
-            self.kg.valid_set = polars_dataframe_indexer(self.kg.raw_valid_set, self.kg.entity_to_idx, self.kg.relation_to_idx).to_numpy()
-
+            self.kg.valid_set = self.kg.raw_valid_set.with_columns(
+                pl.col("subject").map_dict(self.kg.entity_to_idx).alias("subject"),
+                pl.col("relation").map_dict(self.kg.relation_to_idx).alias("relation"),
+                pl.col("object").map_dict(self.kg.entity_to_idx).alias("object")).to_numpy()
         if self.kg.raw_test_set is not None:
             print(f'Indexing Test Data {self.kg.raw_test_set.shape}...')
-            self.kg.test_set = polars_dataframe_indexer(self.kg.raw_test_set, self.kg.entity_to_idx, self.kg.relation_to_idx).to_numpy()
-
-        self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
-        """
-        self.kg.entity_to_idx=dict(zip(self.kg.entity_to_idx["entity"].to_list(), self.kg.entity_to_idx["index"].to_list()))
-        self.kg.relation_to_idx=dict(zip(self.kg.relation_to_idx["relation"].to_list(), self.kg.relation_to_idx["index"].to_list()))
-        """
+            self.kg.test_set = self.kg.raw_test_set.with_columns(
+                pl.col("subject").map_dict(self.kg.entity_to_idx).alias("subject"),
+                pl.col("relation").map_dict(self.kg.relation_to_idx).alias("relation"),
+                pl.col("object").map_dict(self.kg.entity_to_idx).alias("object")).to_numpy()
         print(f'*** Preprocessing Train Data:{self.kg.train_set.shape} with Polars DONE ***')
 
     def sequential_vocabulary_construction(self) -> None:
@@ -431,10 +446,18 @@ class PreprocessKG:
                     => the index is integer and
                     => a single column is string (e.g. URI)
         """
-        assert isinstance(self.kg.raw_train_set, pd.DataFrame)
+        try:
+            assert isinstance(self.kg.raw_train_set, pd.DataFrame)
+        except AssertionError:
+            raise AssertionError
+            print(type(self.kg.raw_train_set))
+            print('HEREE')
+            exit(1)
         assert isinstance(self.kg.raw_valid_set, pd.DataFrame) or self.kg.raw_valid_set is None
         assert isinstance(self.kg.raw_test_set, pd.DataFrame) or self.kg.raw_test_set is None
 
+        # (4) Remove triples from (1).
+        self.remove_triples_from_train_with_condition()
         # Concatenate dataframes.
         print('Concatenating data to obtain index...')
         x = [self.kg.raw_train_set]
@@ -449,13 +472,41 @@ class PreprocessKG:
         # ravel('K') => Return a contiguous flattened array.
         # ‘K’ means to read the elements in the order they occur in memory,
         # except for reversing the data when strides are negative.
-        # ordered_list = pd.unique(df_str_kg[['subject', 'object']].values.ravel('K')).tolist()
-        # self.kg.entity_to_idx = {k: i for i, k in enumerate(ordered_list)}
-        # Instead of dict, storing it in a pandas dataframe
-        self.kg.entity_to_idx=pd.concat((df_str_kg['subject'],df_str_kg['object'])).to_frame("entity").drop_duplicates(keep="first",ignore_index=True)
+        ordered_list = pd.unique(df_str_kg[['subject', 'object']].values.ravel('K')).tolist()
+        self.kg.entity_to_idx = {k: i for i, k in enumerate(ordered_list)}
         # 5. Create a bijection mapping  from relations to integer indexes.
-        # ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K')).tolist()
-        # self.kg.relation_to_idx = {k: i for i, k in enumerate(ordered_list)}
-        self.kg.relation_to_idx = df_str_kg['relation'].to_frame("relation").drop_duplicates(keep="first", ignore_index=True)
+        ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K')).tolist()
+        self.kg.relation_to_idx = {k: i for i, k in enumerate(ordered_list)}
+        del ordered_list
 
-        # del ordered_list
+    def remove_triples_from_train_with_condition(self):
+        if None:
+            # self.kg.min_freq_for_vocab is not
+            assert isinstance(self.kg.min_freq_for_vocab, int)
+            assert self.kg.min_freq_for_vocab > 0
+            print(
+                f'[5 / 14] Dropping triples having infrequent entities or relations (>{self.kg.min_freq_for_vocab})...',
+                end=' ')
+            num_triples = self.kg.raw_train_set.size
+            print('Total num triples:', num_triples, end=' ')
+            # Compute entity frequency: index is URI, val is number of occurrences.
+            entity_frequency = pd.concat(
+                [self.kg.raw_train_set['subject'], self.kg.raw_train_set['object']]).value_counts()
+            relation_frequency = self.kg.raw_train_set['relation'].value_counts()
+
+            # low_frequency_entities index and values are the same URIs: dask.dataframe.core.DataFrame
+            low_frequency_entities = entity_frequency[
+                entity_frequency <= self.kg.min_freq_for_vocab].index.values
+            low_frequency_relation = relation_frequency[
+                relation_frequency <= self.kg.min_freq_for_vocab].index.values
+            # If triple contains subject that is in low_freq, set False do not select
+            self.kg.raw_train_set = self.kg.raw_train_set[
+                ~self.kg.raw_train_set['subject'].isin(low_frequency_entities)]
+            # If triple contains object that is in low_freq, set False do not select
+            self.kg.raw_train_set = self.kg.raw_train_set[~self.kg.raw_train_set['object'].isin(low_frequency_entities)]
+            # If triple contains relation that is in low_freq, set False do not select
+            self.kg.raw_train_set = self.kg.raw_train_set[
+                ~self.kg.raw_train_set['relation'].isin(low_frequency_relation)]
+            # print('\t after dropping:', df_str_kg.size.compute(scheduler=scheduler_flag))
+            print('\t after dropping:', self.kg.raw_train_set.size)  # .compute(scheduler=scheduler_flag))
+            del low_frequency_entities

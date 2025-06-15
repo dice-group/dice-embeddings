@@ -1,0 +1,11 @@
+{
+    "num_train_triples": 624,
+    "num_entities": null,
+    "num_relations": null,
+    "max_length_subword_tokens": 5,
+    "runtime_kg_loading": 0.13901090621948242,
+    "EstimatedSizeMB": 0.1407470703125,
+    "NumParam": 147584,
+    "path_experiment_folder": "BytE_UMLS",
+    "Runtime": 9.463574886322021
+}

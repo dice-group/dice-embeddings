@@ -1,3 +1,6 @@
+from .base_model import BaseKGE
+import torch
+
 """
 Full definition of a GPT Language Model, all of it in this single file.
 References:
@@ -6,35 +9,62 @@ https://github.com/openai/gpt-2/blob/master/src/model.py
 2) huggingface/transformers PyTorch implementation:
 https://github.com/huggingface/transformers/blob/main/src/transformers/models/gpt2/modeling_gpt2.py
 """
-from .base_model import BaseKGE
+
 import math
 import inspect
 from dataclasses import dataclass
+
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+from ..config import use_custom_tokenizer, use_transformer, tokenizer_path
+
 
 
 class BytE(BaseKGE):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name="BytE"
+        current_device = torch.device('cpu')
+        current_dtype = torch.float32
+
         # lazy import
-        import tiktoken
-        self.config = GPTConfig(**{"block_size": self.block_size,
-                                   "vocab_size": tiktoken.get_encoding("gpt2").n_vocab,
-                                   "n_layer": 4, "n_head": 4, "n_embd": self.embedding_dim, "dropout": 0,
-                                   "bias": False})
+        if use_custom_tokenizer and tokenizer_path and use_transformer:
+            from tokenizers import Tokenizer
+
+            # Ensure block_size for GPTConfig is an integer
+            block_size_for_gpt_config = self.block_size
+            if self.block_size is None:
+                default_gpt_block_size = 1024 # Default from GPTConfig
+                print(f"[WARNING] BytE.__init__: self.block_size was None. Using default GPTConfig block_size: {default_gpt_block_size}")
+                block_size_for_gpt_config = default_gpt_block_size
+
+            self.config = GPTConfig(**{"block_size": block_size_for_gpt_config,
+                                    "vocab_size": Tokenizer.from_file("C:\\Users\\Harshit Purohit\\Tokenizer\\tokenizer.json").get_vocab_size(),
+                                    "n_layer": 4, "n_head": 4, "n_embd": self.embedding_dim, "dropout": 0,
+                                    "bias": False})
+        elif use_custom_tokenizer and tokenizer_path and not use_transformer:
+            from tokenizers import Tokenizer
+            self.config = GPTConfig(**{"block_size": self.block_size,
+                                    "vocab_size": Tokenizer.from_file("C:\\Users\\Harshit Purohit\\Tokenizer\\tokenizer.json").get_vocab_size(),
+                                    "n_layer": 4, "n_head": 4, "n_embd": self.embedding_dim, "dropout": 0,
+                                    "bias": False})
+        else:
+            import tiktoken
+            self.config = GPTConfig(**{"block_size": self.block_size,
+                                    "vocab_size": tiktoken.get_encoding("gpt2").n_vocab,
+                                    "n_layer": 4, "n_head": 4, "n_embd": self.embedding_dim, "dropout": 0,
+                                    "bias": False})
         self.temperature=0.5
         self.topk=2
         self.transformer = nn.ModuleDict(dict(
-            wte=nn.Embedding(self.config.vocab_size, self.config.n_embd),
-            wpe=nn.Embedding(self.config.block_size, self.config.n_embd),
+            wte=nn.Embedding(self.config.vocab_size, self.config.n_embd, device=current_device, dtype=current_dtype),
+            wpe=nn.Embedding(self.config.block_size, self.config.n_embd, device=current_device, dtype=current_dtype),
             drop=nn.Dropout(self.config.dropout),
-            h=nn.ModuleList([Block(self.config) for _ in range(self.config.n_layer)]),
-            ln_f=LayerNorm(self.config.n_embd, bias=self.config.bias),
+            h=nn.ModuleList([Block(self.config, device=current_device, dtype=current_dtype) for _ in range(self.config.n_layer)]),
+            ln_f=LayerNorm(self.config.n_embd, bias=self.config.bias, device=current_device, dtype=current_dtype),
         ))
-        self.lm_head = nn.Linear(self.config.n_embd, self.config.vocab_size, bias=False)
+        self.lm_head = nn.Linear(self.config.n_embd, self.config.vocab_size, bias=False, device=current_device, dtype=current_dtype)
         # https://paperswithcode.com/method/weight-tying
         self.transformer.wte.weight = self.lm_head.weight
 

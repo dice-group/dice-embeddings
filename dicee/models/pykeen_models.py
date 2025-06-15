@@ -16,12 +16,6 @@ class PykeenKGE(BaseKGE):
     Pykeen_CP:
     Pykeen_HolE:
     Pykeen_HolE:
-    Pykeen_HolE:
-    Pykeen_TransD:
-    Pykeen_TransE:
-    Pykeen_TransF:
-    Pykeen_TransH:
-    Pykeen_TransR:
     """
 
     def __init__(self, args: dict):
@@ -55,26 +49,15 @@ class PykeenKGE(BaseKGE):
             pass
         elif self.name == "RotatE":
             pass
-        elif self.name == "TransD":
-            #TransD does not support a 'regularizer' 
-            pass
         elif self.name == "TransE":
             self.model_kwargs["regularizer"] = None
-        elif self.name == "TransF":
-            #TransF does not support a 'regularizer' 
-            pass
-        elif self.name == "TransH":
-            self.model_kwargs["regularizer"] = None
-        elif self.name == "TransR":
-            #TransR does not support a 'regularizer'
-            pass
         else:
             print("Pykeen model have a memory leak caused by their implementation of regularizers")
             print(f"{self.name} does not seem to have any regularizer")
         try:
             # lazy import
             from pykeen.models import model_resolver
-        except ImportError:
+        except:
             print(traceback.format_exc())
             print("Pykeen does not work with pytorch>2.0.0. Current pytorch version:",torch.__version__)
             exit(1)

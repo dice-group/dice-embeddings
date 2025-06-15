@@ -50,9 +50,6 @@ class Namespace(argparse.Namespace):
         self.backend: str = "pandas"
         """Backend to read, process, and index input knowledge graph. pandas, polars and rdflib available"""
 
-        self.separator: str = "\s+"
-        """separator for extracting head, relation and tail from a triple"""
-
         self.trainer: str = 'torchCPUTrainer'
         """Trainer for knowledge graph embedding model"""
 
@@ -84,6 +81,7 @@ class Namespace(argparse.Namespace):
         """ Not tested """
 
         self.label_smoothing_rate: float = 0.0
+
 
         self.num_core: int = 0
         """Number of CPUs to be used in the mini-batch loading process"""
@@ -137,11 +135,30 @@ class Namespace(argparse.Namespace):
 
         self.continual_learning=None
         "Path of a pretrained model size of LLM"
+        ##################################################################
+        self.use_custom_tokenizer: bool = False
+        "Use a custom tokenizer"
 
-        self.auto_batch_finding=False
-        "A flag for using auto batch finding"
+        self.tokenizer_path: str = None
+        "Path of a custom tokenizer"
+
+        self.use_transformer: bool = False
+        "If true, pull all entity/relation embeddings from Byte's transformer.wte instead of nn.Embedding"
+        ##################################################################
+
 
     def __iter__(self):
         # Iterate
         for k, v in self.__dict__.items():
             yield k, v
+
+# Module‐level “constants” for legacy imports
+use_custom_tokenizer = Namespace().use_custom_tokenizer
+use_transformer       = Namespace().use_transformer
+tokenizer_path        = Namespace().tokenizer_path
+
+__all__ = [
+    "use_custom_tokenizer",
+    "use_transformer",
+    "tokenizer_path",
+]

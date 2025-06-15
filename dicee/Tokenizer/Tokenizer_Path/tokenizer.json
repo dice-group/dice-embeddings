@@ -1,0 +1,9814 @@
+{
+  "version": "1.0",
+  "truncation": null,
+  "padding": null,
+  "added_tokens": [
+    {
+      "id": 0,
+      "content": "[UNK]",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 1,
+      "content": "[CLS]",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 2,
+      "content": "[SEP]",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 3,
+      "content": "[PAD]",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 4,
+      "content": "[MASK]",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 1985,
+      "content": " ",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": true,
+      "special": false
+    }
+  ],
+  "normalizer": null,
+  "pre_tokenizer": {
+    "type": "WhitespaceSplit"
+  },
+  "post_processor": null,
+  "decoder": null,
+  "model": {
+    "type": "BPE",
+    "dropout": null,
+    "unk_token": "[UNK]",
+    "continuing_subword_prefix": null,
+    "end_of_word_suffix": null,
+    "fuse_unk": false,
+    "byte_fallback": false,
+    "ignore_merges": false,
+    "vocab": {
+      "[UNK]": 0,
+      "[CLS]": 1,
+      "[SEP]": 2,
+      "[PAD]": 3,
+      "[MASK]": 4,
+      "-": 5,
+      "0": 6,
+      "1": 7,
+      "2": 8,
+      "3": 9,
+      "4": 10,
+      "5": 11,
+      "6": 12,
+      "7": 13,
+      "8": 14,
+      "9": 15,
+      "_": 16,
+      "a": 17,
+      "b": 18,
+      "c": 19,
+      "d": 20,
+      "e": 21,
+      "f": 22,
+      "g": 23,
+      "h": 24,
+      "i": 25,
+      "j": 26,
+      "k": 27,
+      "l": 28,
+      "m": 29,
+      "n": 30,
+      "o": 31,
+      "p": 32,
+      "q": 33,
+      "r": 34,
+      "s": 35,
+      "t": 36,
+      "u": 37,
+      "v": 38,
+      "w": 39,
+      "x": 40,
+      "y": 41,
+      "z": 42,
+      "Å": 43,
+      "ã": 44,
+      "ç": 45,
+      "é": 46,
+      "í": 47,
+      "er": 48,
+      "on": 49,
+      "per": 50,
+      "son": 51,
+      "person": 52,
+      "ter": 53,
+      "term": 54,
+      "or": 55,
+      "ti": 56,
+      "al": 57,
+      "term1": 58,
+      "an": 59,
+      "oc": 60,
+      "es": 61,
+      "in": 62,
+      "ic": 63,
+      "tion": 64,
+      "en": 65,
+      "_or": 66,
+      "at": 67,
+      "un": 68,
+      "_or_": 69,
+      "ed": 70,
+      "fun": 71,
+      "ction": 72,
+      "person1": 73,
+      "function": 74,
+      "is": 75,
+      "al_": 76,
+      "of": 77,
+      "pr": 78,
+      "_of": 79,
+      "ne": 80,
+      "as": 81,
+      "it": 82,
+      "ec": 83,
+      "ar": 84,
+      "ol": 85,
+      "_function": 86,
+      "person9": 87,
+      "person3": 88,
+      "person7": 89,
+      "person2": 90,
+      "person8": 91,
+      "person4": 92,
+      "person6": 93,
+      "person5": 94,
+      "bor": 95,
+      "ur": 96,
+      "ia": 97,
+      "ig": 98,
+      "om": 99,
+      "hbor": 100,
+      "neig": 101,
+      "neighbor": 102,
+      "ac": 103,
+      "proc": 104,
+      "ent": 105,
+      "ts": 106,
+      "loc": 107,
+      "ce": 108,
+      "ul": 109,
+      "ated": 110,
+      "ess": 111,
+      "og": 112,
+      "af": 113,
+      "process": 114,
+      "located": 115,
+      "locatedin": 116,
+      "olog": 117,
+      "su": 118,
+      "ation": 119,
+      "dis": 120,
+      "ment": 121,
+      "ologic": 122,
+      "term16": 123,
+      "gan": 124,
+      "am": 125,
+      "us": 126,
+      "tic": 127,
+      "eas": 128,
+      "fec": 129,
+      "ys": 130,
+      "bi": 131,
+      "person10": 132,
+      "affec": 133,
+      "affects": 134,
+      "od": 135,
+      "pl": 136,
+      "ity": 137,
+      "up": 138,
+      "orm": 139,
+      "vi": 140,
+      "st": 141,
+      "ph": 142,
+      "organ": 143,
+      "e_": 144,
+      "term15": 145,
+      "ch": 146,
+      "y_": 147,
+      "t_of": 148,
+      "ical_": 149,
+      "res": 150,
+      "ologic_function": 151,
+      "ab": 152,
+      "ll": 153,
+      "term2": 154,
+      "el": 155,
+      "uc": 156,
+      "cell": 157,
+      "term7": 158,
+      "term8": 159,
+      "wit": 160,
+      "_wit": 161,
+      "diseas": 162,
+      "_with": 163,
+      "disease": 164,
+      "dys": 165,
+      "dysfunction": 166,
+      "mol": 167,
+      "th": 168,
+      "term11": 169,
+      "ecul": 170,
+      "molecul": 171,
+      "molecular": 172,
+      "mental_": 173,
+      "tiv": 174,
+      "ure": 175,
+      "gen": 176,
+      "resul": 177,
+      "be": 178,
+      "ha": 179,
+      "norm": 180,
+      "ality": 181,
+      "abnorm": 182,
+      "abnormality": 183,
+      "stan": 184,
+      "dr": 185,
+      "os": 186,
+      "tic_": 187,
+      "occ": 188,
+      "ed_": 189,
+      "bstan": 190,
+      "substan": 191,
+      "substance": 192,
+      "result_of": 193,
+      "id": 194,
+      "ation_of": 195,
+      "em": 196,
+      "term18": 197,
+      "vior": 198,
+      "beha": 199,
+      "behavior": 200,
+      "ine": 201,
+      "activ": 202,
+      "pe": 203,
+      "al_or_": 204,
+      "gr": 205,
+      "com": 206,
+      "ric": 207,
+      "con": 208,
+      "term5": 209,
+      "term10": 210,
+      "isa": 211,
+      "term4": 212,
+      "aus": 213,
+      "sy": 214,
+      "edure": 215,
+      "procedure": 216,
+      "man": 217,
+      "ome": 218,
+      "qu": 219,
+      "molecular_": 220,
+      "term9": 221,
+      "and": 222,
+      "term6": 223,
+      "inter": 224,
+      "n_": 225,
+      "acts": 226,
+      "interacts": 227,
+      "interacts_with": 228,
+      "_or_sy": 229,
+      "te": 230,
+      "term13": 231,
+      "ib": 232,
+      "ex": 233,
+      "gro": 234,
+      "process_of": 235,
+      "ism": 236,
+      "organism": 237,
+      "dia": 238,
+      "po": 239,
+      "ic_": 240,
+      "re": 241,
+      "_of_": 242,
+      "upation": 243,
+      "occupation": 244,
+      "mental_or_": 245,
+      "caus": 246,
+      "ator": 247,
+      "afric": 248,
+      "group": 249,
+      "term17": 250,
+      "pt": 251,
+      "chem": 252,
+      "ndr": 253,
+      "disease_or_sy": 254,
+      "ndrome": 255,
+      "disease_or_syndrome": 256,
+      "opl": 257,
+      "al_dysfunction": 258,
+      "neopl": 259,
+      "astic_": 260,
+      "behavioral_dysfunction": 261,
+      "mental_or_behavioral_dysfunction": 262,
+      "neoplastic_": 263,
+      "neoplastic_process": 264,
+      "term3": 265,
+      "hologic_function": 266,
+      "pat": 267,
+      "pathologic_function": 268,
+      "tis": 269,
+      "imental_": 270,
+      "mod": 271,
+      "perimental_": 272,
+      "el_of_": 273,
+      "experimental_": 274,
+      "model_of_": 275,
+      "experimental_model_of_": 276,
+      "experimental_model_of_disease": 277,
+      "_or_molecular_": 278,
+      "cell_or_molecular_": 279,
+      "cell_or_molecular_dysfunction": 280,
+      "ev": 281,
+      "la": 282,
+      "le": 283,
+      "_or_dis": 284,
+      "ope": 285,
+      "sue": 286,
+      "tissue": 287,
+      "africa": 288,
+      "causes": 289,
+      "ir": 290,
+      "gene": 291,
+      "anat": 292,
+      "omical_": 293,
+      "anatomical_": 294,
+      "par": 295,
+      "ates": 296,
+      "phys": 297,
+      "on_or_": 298,
+      "soc": 299,
+      "soci": 300,
+      "ou": 301,
+      "y_or_": 302,
+      "location_of": 303,
+      "est": 304,
+      "ci": 305,
+      "pline": 306,
+      "occupation_or_dis": 307,
+      "cipline": 308,
+      "occupation_or_discipline": 309,
+      "ther": 310,
+      "activity": 311,
+      "car": 312,
+      "eur": 313,
+      "term12": 314,
+      "prod": 315,
+      "europe": 316,
+      "produc": 317,
+      "gn": 318,
+      "all": 319,
+      "diagn": 320,
+      "diagnos": 321,
+      "br": 322,
+      "mental_process": 323,
+      "asia": 324,
+      "amer": 325,
+      "ison": 326,
+      "icates": 327,
+      "poison": 328,
+      "bod": 329,
+      "borator": 330,
+      "laborator": 331,
+      "ing": 332,
+      "produces": 333,
+      "term20": 334,
+      "organism_function": 335,
+      "tern_": 336,
+      "iologic_function": 337,
+      "issu": 338,
+      "e_in": 339,
+      "physiologic_function": 340,
+      "issue_in": 341,
+      "tr": 342,
+      "_or_tissue": 343,
+      "organ_or_tissue": 344,
+      "organ_or_tissue_function": 345,
+      "ania": 346,
+      "tic_function": 347,
+      "genetic_function": 348,
+      "molecular_function": 349,
+      "body_": 350,
+      "_com": 351,
+      "cell_function": 352,
+      "plicates": 353,
+      "complicates": 354,
+      "enom": 355,
+      "enon_or_": 356,
+      "phenom": 357,
+      "enon_or_process": 358,
+      "phenomenon_or_process": 359,
+      "ologic_": 360,
+      "arch": 361,
+      "sou": 362,
+      "e_substance": 363,
+      "active_substance": 364,
+      "_organ": 365,
+      "th_": 366,
+      "mal": 367,
+      "americ": 368,
+      "diagnostic_": 369,
+      "ruc": 370,
+      "struc": 371,
+      "struct": 372,
+      "gu": 373,
+      "meas": 374,
+      "ind": 375,
+      "tan": 376,
+      "associ": 377,
+      "ated_with": 378,
+      "associated_with": 379,
+      "land": 380,
+      "ver": 381,
+      "nuc": 382,
+      "nucle": 383,
+      "ical": 384,
+      "chemical": 385,
+      "term0": 386,
+      "acqu": 387,
+      "ed_abnormality": 388,
+      "ired_abnormality": 389,
+      "acquired_abnormality": 390,
+      "biologic_function": 391,
+      "ate": 392,
+      "anatomical_abnormality": 393,
+      "al_abnormality": 394,
+      "ital_abnormality": 395,
+      "genital_abnormality": 396,
+      "congenital_abnormality": 397,
+      "part_of": 398,
+      "omed": 399,
+      "biomed": 400,
+      "hu": 401,
+      "if": 402,
+      "ty": 403,
+      "amin": 404,
+      "person11": 405,
+      "person14": 406,
+      "person15": 407,
+      "person16": 408,
+      "person17": 409,
+      "person18": 410,
+      "person19": 411,
+      "person90": 412,
+      "person91": 413,
+      "person92": 414,
+      "person93": 415,
+      "person94": 416,
+      "person95": 417,
+      "person96": 418,
+      "person97": 419,
+      "person98": 420,
+      "person99": 421,
+      "person30": 422,
+      "person31": 423,
+      "person32": 424,
+      "person33": 425,
+      "person34": 426,
+      "person35": 427,
+      "person37": 428,
+      "person38": 429,
+      "person39": 430,
+      "person70": 431,
+      "person71": 432,
+      "person72": 433,
+      "person73": 434,
+      "person74": 435,
+      "person76": 436,
+      "person77": 437,
+      "person78": 438,
+      "person79": 439,
+      "person20": 440,
+      "person21": 441,
+      "person22": 442,
+      "person24": 443,
+      "person26": 444,
+      "person27": 445,
+      "person28": 446,
+      "person29": 447,
+      "person80": 448,
+      "person82": 449,
+      "person83": 450,
+      "person84": 451,
+      "person85": 452,
+      "person86": 453,
+      "person87": 454,
+      "person88": 455,
+      "person89": 456,
+      "person40": 457,
+      "person42": 458,
+      "person43": 459,
+      "person44": 460,
+      "person45": 461,
+      "person46": 462,
+      "person47": 463,
+      "person49": 464,
+      "person60": 465,
+      "person62": 466,
+      "person64": 467,
+      "person65": 468,
+      "person67": 469,
+      "person69": 470,
+      "person52": 471,
+      "person54": 472,
+      "person55": 473,
+      "person57": 474,
+      "person59": 475,
+      "person100": 476,
+      "person101": 477,
+      "person102": 478,
+      "person12": 479,
+      "person36": 480,
+      "person75": 481,
+      "person23": 482,
+      "person25": 483,
+      "person81": 484,
+      "person61": 485,
+      "person66": 486,
+      "person68": 487,
+      "person51": 488,
+      "person58": 489,
+      "person103": 490,
+      "person0": 491,
+      "person13": 492,
+      "person41": 493,
+      "person48": 494,
+      "person53": 495,
+      "e_or_": 496,
+      "person56": 497,
+      "person63": 498,
+      "ous": 499,
+      "manif": 500,
+      "estation_of": 501,
+      "manifestation_of": 502,
+      "earch": 503,
+      "research": 504,
+      "term22": 505,
+      "research_": 506,
+      "jur": 507,
+      "injur": 508,
+      "person50": 509,
+      "y_or_poison": 510,
+      "injury_or_poison": 511,
+      "injury_or_poisoning": 512,
+      "pon": 513,
+      "_compon": 514,
+      "_component": 515,
+      "mac": 516,
+      "rus": 517,
+      "ute": 518,
+      "attr": 519,
+      "ibute": 520,
+      "diagnostic_procedure": 521,
+      "attribute": 522,
+      "y_procedure": 523,
+      "laboratory_procedure": 524,
+      "ures": 525,
+      "measures": 526,
+      "vie": 527,
+      "thern_": 528,
+      "form": 529,
+      "structure": 530,
+      "istan": 531,
+      "cept": 532,
+      "concept": 533,
+      "human": 534,
+      "fac": 535,
+      "ore": 536,
+      "americas": 537,
+      "fact": 538,
+      "cl": 539,
+      "im": 540,
+      "tid": 541,
+      "ina": 542,
+      "acid": 543,
+      "acid_": 544,
+      "urs": 545,
+      "occurs": 546,
+      "rep": 547,
+      "anti": 548,
+      "pa": 549,
+      "tive_": 550,
+      "rup": 551,
+      "teri": 552,
+      "ece": 553,
+      "disrup": 554,
+      "disrupts": 555,
+      "go": 556,
+      "az": 557,
+      "il": 558,
+      "ical_vie": 559,
+      "chemical_vie": 560,
+      "ally": 561,
+      "chemical_view": 562,
+      "me": 563,
+      "ical_occupation_or_discipline": 564,
+      "biomedical_occupation_or_discipline": 565,
+      "bia": 566,
+      "oid": 567,
+      "ual_": 568,
+      "tebr": 569,
+      "vertebr": 570,
+      "vertebrate": 571,
+      "nat": 572,
+      "al_phenomenon_or_process": 573,
+      "ural_phenomenon_or_process": 574,
+      "natural_phenomenon_or_process": 575,
+      "ke": 576,
+      "nor": 577,
+      "organic_": 578,
+      "organic_chemical": 579,
+      "one": 580,
+      "ag": 581,
+      "ef": 582,
+      "inical_": 583,
+      "clinical_": 584,
+      "term21": 585,
+      "south_": 586,
+      "ion": 587,
+      "tity": 588,
+      "entity": 589,
+      "prev": 590,
+      "ra": 591,
+      "eastern_": 592,
+      "bo": 593,
+      "mun": 594,
+      "ologic_fact": 595,
+      "immun": 596,
+      "ologic_factor": 597,
+      "immunologic_factor": 598,
+      "wes": 599,
+      "western_": 600,
+      "ally_": 601,
+      "dev": 602,
+      "ologically_": 603,
+      "biologically_": 604,
+      "biologically_active_substance": 605,
+      "ma": 606,
+      "ech": 607,
+      "que": 608,
+      "ice": 609,
+      "device": 610,
+      "sa": 611,
+      "horm": 612,
+      "rece": 613,
+      "vit": 614,
+      "yme": 615,
+      "zyme": 616,
+      "enic_": 617,
+      "enzyme": 618,
+      "_or_bi": 619,
+      "neur": 620,
+      "ogenic_": 621,
+      "amine": 622,
+      "ptor": 623,
+      "active_substance_or_bi": 624,
+      "oreactive_substance_or_bi": 625,
+      "hormone": 626,
+      "receptor": 627,
+      "vitamin": 628,
+      "neuroreactive_substance_or_bi": 629,
+      "ogenic_amine": 630,
+      "neuroreactive_substance_or_biogenic_amine": 631,
+      "co": 632,
+      "otic": 633,
+      "armac": 634,
+      "biotic": 635,
+      "pharmac": 636,
+      "ologic_substance": 637,
+      "antibiotic": 638,
+      "pharmacologic_substance": 639,
+      "ad": 640,
+      "ug": 641,
+      "pro": 642,
+      "ect": 643,
+      "dan": 644,
+      "alg": 645,
+      "um": 646,
+      "anatomical_structure": 647,
+      "fect_of": 648,
+      "effect_of": 649,
+      "eal": 650,
+      "occupational_": 651,
+      "esia": 652,
+      "ov": 653,
+      "ape": 654,
+      "utic": 655,
+      "entive_": 656,
+      "_or_prev": 657,
+      "therape": 658,
+      "utic_or_prev": 659,
+      "entive_procedure": 660,
+      "therapeutic_or_prev": 661,
+      "therapeutic_or_preventive_procedure": 662,
+      "drug": 663,
+      "_resul": 664,
+      "test": 665,
+      "y_or_test": 666,
+      "laboratory_or_test": 667,
+      "_result": 668,
+      "laboratory_or_test_result": 669,
+      "iz": 670,
+      "und": 671,
+      "ard": 672,
+      "es_": 673,
+      "ob": 674,
+      "lands": 675,
+      "eria": 676,
+      "ofess": 677,
+      "profess": 678,
+      "ulation": 679,
+      "profession": 680,
+      "ub": 681,
+      "an_": 682,
+      "ana": 683,
+      "oce": 684,
+      "_substance": 685,
+      "_attribute": 686,
+      "o_": 687,
+      "t_organ": 688,
+      "zard": 689,
+      "_or_organ": 690,
+      "_or_poison": 691,
+      "china": 692,
+      "hazard": 693,
+      "reg": 694,
+      "part_organ": 695,
+      "body_part_organ": 696,
+      "ous_substance": 697,
+      "ous_or_poison": 698,
+      "_or_organ_component": 699,
+      "hazardous_or_poison": 700,
+      "body_part_organ_or_organ_component": 701,
+      "hazardous_or_poisonous_substance": 702,
+      "ject": 703,
+      "kistan": 704,
+      "object": 705,
+      "virus": 706,
+      "northern_": 707,
+      "li": 708,
+      "ni": 709,
+      "and_": 710,
+      "zam": 711,
+      "aly": 712,
+      "ene": 713,
+      "congo": 714,
+      "oceania": 715,
+      "cell_component": 716,
+      "_in": 717,
+      "perform": 718,
+      "occurs_in": 719,
+      "performs": 720,
+      "cent": 721,
+      "tur": 722,
+      "_and_": 723,
+      "bac": 724,
+      "heal": 725,
+      "lam": 726,
+      "sia": 727,
+      "tts": 728,
+      "ydia": 729,
+      "_or_ch": 730,
+      "_or_gen": 731,
+      "ia_or_ch": 732,
+      "ricke": 733,
+      "gene_or_gen": 734,
+      "care_": 735,
+      "th_care_": 736,
+      "russia": 737,
+      "terium": 738,
+      "ization": 739,
+      "nique": 740,
+      "bacterium": 741,
+      "health_care_": 742,
+      "lamydia": 743,
+      "ttsia_or_ch": 744,
+      "rickettsia_or_ch": 745,
+      "gene_or_genome": 746,
+      "rickettsia_or_chlamydia": 747,
+      "gus": 748,
+      "lic": 749,
+      "mar": 750,
+      "fungus": 751,
+      "sudan": 752,
+      "inea": 753,
+      "guinea": 754,
+      "repub": 755,
+      "republic": 756,
+      "otid": 757,
+      "ass": 758,
+      "nucleotid": 759,
+      "amino_": 760,
+      "amino_acid_": 761,
+      "pol": 762,
+      "organism_attribute": 763,
+      "clinical_attribute": 764,
+      "_is": 765,
+      "bean": 766,
+      "ibbean": 767,
+      "caribbean": 768,
+      "hy": 769,
+      "ral_": 770,
+      "carbo": 771,
+      "central_": 772,
+      "hydr": 773,
+      "carbohydr": 774,
+      "gar": 775,
+      "tech": 776,
+      "ology_": 777,
+      "biology_": 778,
+      "molecular_biology_": 779,
+      "research_tech": 780,
+      "molecular_biology_research_tech": 781,
+      "molecular_biology_research_technique": 782,
+      "icos": 783,
+      "southern_": 784,
+      "bel": 785,
+      "ful": 786,
+      "ly_": 787,
+      "ed_anatomical_structure": 788,
+      "research_activity": 789,
+      "formed_anatomical_structure": 790,
+      "fully_": 791,
+      "fully_formed_anatomical_structure": 792,
+      "ron": 793,
+      "ta": 794,
+      "eli": 795,
+      "austr": 796,
+      "america": 797,
+      "pati": 798,
+      "iv": 799,
+      "ed_function": 800,
+      "chemical_viewed_function": 801,
+      "chemical_viewed_functionally": 802,
+      "fr": 803,
+      "imal": 804,
+      "pid": 805,
+      "animal": 806,
+      "indi": 807,
+      "lipid": 808,
+      "eicos": 809,
+      "nig": 810,
+      "ptid": 811,
+      "ster": 812,
+      "ya": 813,
+      "anoid": 814,
+      "invertebrate": 815,
+      "urally": 816,
+      "osid": 817,
+      "ed_struct": 818,
+      "peptid": 819,
+      "tein": 820,
+      "ic_acid_": 821,
+      "nucleosid": 822,
+      "nucleic_acid_": 823,
+      "e_or_pro": 824,
+      "e_or_nucleotid": 825,
+      "chemical_viewed_struct": 826,
+      "amino_acid_peptid": 827,
+      "eicosanoid": 828,
+      "steroid": 829,
+      "nucleoside_or_nucleotid": 830,
+      "nucleic_acid_nucleoside_or_nucleotid": 831,
+      "e_or_protein": 832,
+      "chemical_viewed_structurally": 833,
+      "amino_acid_peptide_or_protein": 834,
+      "nucleic_acid_nucleoside_or_nucleotide": 835,
+      "oph": 836,
+      "orus": 837,
+      "phorus": 838,
+      "organoph": 839,
+      "osphorus": 840,
+      "pound": 841,
+      "_compound": 842,
+      "carbohydrate": 843,
+      "organophosphorus": 844,
+      "organophosphorus_compound": 845,
+      "edes": 846,
+      "prec": 847,
+      "precedes": 848,
+      "ot": 849,
+      "al_or_occupational_": 850,
+      "professional_or_occupational_": 851,
+      "_islands": 852,
+      "professional_or_occupational_group": 853,
+      "mam": 854,
+      "ant": 855,
+      "plant": 856,
+      "alga": 857,
+      "mammal": 858,
+      "ak": 859,
+      "dual_": 860,
+      "fis": 861,
+      "ibi": 862,
+      "rd": 863,
+      "tile": 864,
+      "amph": 865,
+      "bird": 866,
+      "vidual_": 867,
+      "reptile": 868,
+      "individual_": 869,
+      "fish": 870,
+      "ibian": 871,
+      "amphibian": 872,
+      "individual_behavior": 873,
+      "_group": 874,
+      "gh": 875,
+      "pulation": 876,
+      "alu": 877,
+      "population": 878,
+      "population_group": 879,
+      "ay": 880,
+      "mon": 881,
+      "gre": 882,
+      "-occurs": 883,
+      "da": 884,
+      "body_substance": 885,
+      "co-occurs": 886,
+      "co-occurs_with": 887,
+      "_i": 888,
+      "_re": 889,
+      "aid": 890,
+      "dent": 891,
+      "ement": 892,
+      "mpt": 893,
+      "n_or_sy": 894,
+      "sig": 895,
+      "inorganic_chemical": 896,
+      "ical_or_": 897,
+      "icator": 898,
+      "_or_diagnostic_": 899,
+      "isot": 900,
+      "al_ma": 901,
+      "ent_or_diagnostic_": 902,
+      "element": 903,
+      "on_or_isot": 904,
+      "indicator": 905,
+      "biomedical_or_": 906,
+      "terial": 907,
+      "agent_or_diagnostic_": 908,
+      "_ion_or_isot": 909,
+      "_reagent_or_diagnostic_": 910,
+      "dental_ma": 911,
+      "mptom": 912,
+      "n_or_symptom": 913,
+      "sign_or_symptom": 914,
+      "element_ion_or_isot": 915,
+      "indicator_reagent_or_diagnostic_": 916,
+      "biomedical_or_dental_ma": 917,
+      "element_ion_or_isotope": 918,
+      "indicator_reagent_or_diagnostic_aid": 919,
+      "biomedical_or_dental_material": 920,
+      "ae": 921,
+      "ai": 922,
+      "esses_": 923,
+      "uses": 924,
+      "body_s": 925,
+      "archae": 926,
+      "assesses_": 927,
+      "archaeon": 928,
+      "assesses_effect_of": 929,
+      "led_": 930,
+      "lib": 931,
+      "lov": 932,
+      "slov": 933,
+      "ent_or_dis": 934,
+      "ment_of": 935,
+      "ical_object": 936,
+      "abled_": 937,
+      "urement_of": 938,
+      "physical_object": 939,
+      "braz": 940,
+      "measurement_of": 941,
+      "patient_or_dis": 942,
+      "abled_group": 943,
+      "brazil": 944,
+      "patient_or_disabled_group": 945,
+      "bur": 946,
+      "arab": 947,
+      "evalu": 948,
+      "evaluation_of": 949,
+      "sau": 950,
+      "fam": 951,
+      "e_group": 952,
+      "y_group": 953,
+      "ily_group": 954,
+      "age_group": 955,
+      "family_group": 956,
+      "equ": 957,
+      "men": 958,
+      "unit": 959,
+      "united_": 960,
+      "_congo": 961,
+      "ger": 962,
+      "al_behavior": 963,
+      "dr_congo": 964,
+      "many": 965,
+      "social_behavior": 966,
+      "health_care_activity": 967,
+      "germany": 968,
+      "yon": 969,
+      "onia": 970,
+      "embr": 971,
+      "ic_structure": 972,
+      "_organization": 973,
+      "clinical_drug": 974,
+      "yonic_structure": 975,
+      "embryonic_structure": 976,
+      "conceptual_": 977,
+      "eastern_asia": 978,
+      "ge": 979,
+      "gy": 980,
+      "i_": 981,
+      "tre": 982,
+      "ats": 983,
+      "treats": 984,
+      "t_": 985,
+      "int_": 986,
+      "austria": 987,
+      "nam": 988,
+      "zania": 989,
+      "ance": 990,
+      "al_activity": 991,
+      "ational_activity": 992,
+      "tanzania": 993,
+      "key": 994,
+      "an_republic": 995,
+      "turkey": 996,
+      "france": 997,
+      "find": 998,
+      "ser": 999,
+      "zes": 1000,
+      "analy": 1001,
+      "zambia": 1002,
+      "finding": 1003,
+      "serbia": 1004,
+      "analyzes": 1005,
+      "eastern_africa": 1006,
+      "jun": 1007,
+      "pac": 1008,
+      "india": 1009,
+      "e_or_jun": 1010,
+      "body_spac": 1011,
+      "e_or_junction": 1012,
+      "body_space_or_junction": 1013,
+      "_d": 1014,
+      "_caus": 1015,
+      "_human": 1016,
+      "envi": 1017,
+      "y_device": 1018,
+      "mental_effect_of": 1019,
+      "ed_phenomenon_or_process": 1020,
+      "very_device": 1021,
+      "human_caus": 1022,
+      "drug_d": 1023,
+      "northern_europe": 1024,
+      "ronmental_effect_of": 1025,
+      "elivery_device": 1026,
+      "_humans": 1027,
+      "environmental_effect_of": 1028,
+      "human_caused_phenomenon_or_process": 1029,
+      "drug_delivery_device": 1030,
+      "environmental_effect_of_humans": 1031,
+      "med": 1032,
+      "ical_device": 1033,
+      "iran": 1034,
+      "diagnoses": 1035,
+      "medical_device": 1036,
+      "hun": 1037,
+      "kra": 1038,
+      "ukra": 1039,
+      "tin": 1040,
+      "mala": 1041,
+      "tive_concept": 1042,
+      "algeria": 1043,
+      "gary": 1044,
+      "hungary": 1045,
+      "ukraine": 1046,
+      "di_": 1047,
+      "gol": 1048,
+      "oa": 1049,
+      "alia": 1050,
+      "mali": 1051,
+      "poland": 1052,
+      "niger": 1053,
+      "arabia": 1054,
+      "saudi_": 1055,
+      "saudi_arabia": 1056,
+      "hib": 1057,
+      "op": 1058,
+      "anistan": 1059,
+      "its": 1060,
+      "afgh": 1061,
+      "exhib": 1062,
+      "afghanistan": 1063,
+      "exhibits": 1064,
+      "perty": 1065,
+      "out": 1066,
+      "property": 1067,
+      "property_of": 1068,
+      "term14": 1069,
+      "al_concept": 1070,
+      "south_sudan": 1071,
+      "western_africa": 1072,
+      "sequ": 1073,
+      "w_": 1074,
+      "ence": 1075,
+      "new_": 1076,
+      "western_asia": 1077,
+      "saint_": 1078,
+      "sequence": 1079,
+      "_f": 1080,
+      "aq": 1081,
+      "camer": 1082,
+      "ea": 1083,
+      "eth": 1084,
+      "iop": 1085,
+      "kina": 1086,
+      "mo": 1087,
+      "oon": 1088,
+      "edonia": 1089,
+      "aso": 1090,
+      "italy": 1091,
+      "bique": 1092,
+      "chad": 1093,
+      "african_republic": 1094,
+      "iraq": 1095,
+      "south_africa": 1096,
+      "zambique": 1097,
+      "central_african_republic": 1098,
+      "burkina": 1099,
+      "_faso": 1100,
+      "cameroon": 1101,
+      "ethiop": 1102,
+      "mozambique": 1103,
+      "burkina_faso": 1104,
+      "ethiopia": 1105,
+      "de": 1106,
+      "ara": 1107,
+      "olom": 1108,
+      "the_": 1109,
+      "south_america": 1110,
+      "libya": 1111,
+      "nesia": 1112,
+      "ynesia": 1113,
+      "guay": 1114,
+      "occupational_activity": 1115,
+      "polynesia": 1116,
+      "southern_europe": 1117,
+      "conceptual_entity": 1118,
+      "ies_": 1119,
+      "ries_": 1120,
+      "carries_": 1121,
+      "carries_out": 1122,
+      "tem": 1123,
+      "ji": 1124,
+      "pal": 1125,
+      "sw": 1126,
+      "swit": 1127,
+      "uz": 1128,
+      "zer": 1129,
+      "bekistan": 1130,
+      "event": 1131,
+      "laos": 1132,
+      "turk": 1133,
+      "switzer": 1134,
+      "uzbekistan": 1135,
+      "switzerland": 1136,
+      "bol": 1137,
+      "bul": 1138,
+      "bai": 1139,
+      "e_of": 1140,
+      "gal": 1141,
+      "gia": 1142,
+      "hstan": 1143,
+      "jan": 1144,
+      "ken": 1145,
+      "kore": 1146,
+      "kaz": 1147,
+      "my": 1148,
+      "spa": 1149,
+      "sene": 1150,
+      "tene": 1151,
+      "erbai": 1152,
+      "peru": 1153,
+      "ory_": 1154,
+      "orgia": 1155,
+      "alb": 1156,
+      "anmar": 1157,
+      "_or_reg": 1158,
+      "ast": 1159,
+      "arus": 1160,
+      "argen": 1161,
+      "location": 1162,
+      "body_location": 1163,
+      "macedonia": 1164,
+      "azerbai": 1165,
+      "coast": 1166,
+      "garia": 1167,
+      "belarus": 1168,
+      "ivia": 1169,
+      "ivory_": 1170,
+      "akia": 1171,
+      "akhstan": 1172,
+      "montene": 1173,
+      "slovakia": 1174,
+      "georgia": 1175,
+      "tina": 1176,
+      "bolivia": 1177,
+      "bulgaria": 1178,
+      "kenya": 1179,
+      "korea": 1180,
+      "kazakhstan": 1181,
+      "myanmar": 1182,
+      "spain": 1183,
+      "senegal": 1184,
+      "_or_region": 1185,
+      "argentina": 1186,
+      "body_location_or_region": 1187,
+      "azerbaijan": 1188,
+      "ivory_coast": 1189,
+      "montenegro": 1190,
+      "-eastern_asia": 1191,
+      "cr": 1192,
+      "colom": 1193,
+      "por": 1194,
+      "ria": 1195,
+      "rom": 1196,
+      "ugan": 1197,
+      "tia": 1198,
+      "th-eastern_asia": 1199,
+      "syria": 1200,
+      "_of_the_": 1201,
+      "south-eastern_asia": 1202,
+      "maur": 1203,
+      "ador": 1204,
+      "republic_of_the_": 1205,
+      "gree_of": 1206,
+      "oatia": 1207,
+      "degree_of": 1208,
+      "croatia": 1209,
+      "colombia": 1210,
+      "romania": 1211,
+      "uganda": 1212,
+      "republic_of_the_congo": 1213,
+      "ban": 1214,
+      "dom": 1215,
+      "fo": 1216,
+      "hon": 1217,
+      "mor": 1218,
+      "nmental_or_": 1219,
+      "ufact": 1220,
+      "educ": 1221,
+      "ured_": 1222,
+      "ents": 1223,
+      "ulator": 1224,
+      "y_activity": 1225,
+      "manufact": 1226,
+      "vernmental_or_": 1227,
+      "governmental_or_": 1228,
+      "prevents": 1229,
+      "regulator": 1230,
+      "food": 1231,
+      "educational_activity": 1232,
+      "ured_object": 1233,
+      "manufactured_object": 1234,
+      "governmental_or_regulator": 1235,
+      "governmental_or_regulatory_activity": 1236,
+      "jor": 1237,
+      "rel": 1238,
+      "_or_la": 1239,
+      "isra": 1240,
+      "research_device": 1241,
+      "ulation_or_la": 1242,
+      "regulation_or_la": 1243,
+      "jordan": 1244,
+      "related": 1245,
+      "israel": 1246,
+      "regulation_or_law": 1247,
+      "ky": 1248,
+      "mic": 1249,
+      "rgy": 1250,
+      "sur": 1251,
+      "ten": 1252,
+      "zstan": 1253,
+      "armen": 1254,
+      "organization": 1255,
+      "thai": 1256,
+      "pakistan": 1257,
+      "ronesia": 1258,
+      "taji": 1259,
+      "menistan": 1260,
+      "turkmenistan": 1261,
+      "kyrgy": 1262,
+      "micronesia": 1263,
+      "armenia": 1264,
+      "thailand": 1265,
+      "tajikistan": 1266,
+      "kyrgyzstan": 1267,
+      "_h": 1268,
+      "a_": 1269,
+      "ben": 1270,
+      "bab": 1271,
+      "cz": 1272,
+      "dl": 1273,
+      "f_h": 1274,
+      "lat": 1275,
+      "lit": 1276,
+      "mid": 1277,
+      "p_or_": 1278,
+      "reli": 1279,
+      "sel": 1280,
+      "via": 1281,
+      "we": 1282,
+      "wana": 1283,
+      "zim": 1284,
+      "angol": 1285,
+      "enia": 1286,
+      "tswana": 1287,
+      "states": 1288,
+      "e_africa": 1289,
+      "ela": 1290,
+      "elp_or_": 1291,
+      "ibia": 1292,
+      "huania": 1293,
+      "ef_organization": 1294,
+      "botswana": 1295,
+      "echia": 1296,
+      "health_care_related": 1297,
+      "nigeria": 1298,
+      "slovenia": 1299,
+      "united_states": 1300,
+      "namibia": 1301,
+      "albania": 1302,
+      "benin": 1303,
+      "babwe": 1304,
+      "czechia": 1305,
+      "dle_africa": 1306,
+      "f_help_or_": 1307,
+      "latvia": 1308,
+      "lithuania": 1309,
+      "middle_africa": 1310,
+      "relief_organization": 1311,
+      "self_help_or_": 1312,
+      "zimbabwe": 1313,
+      "angola": 1314,
+      "health_care_related_organization": 1315,
+      "self_help_or_relief_organization": 1316,
+      "ety": 1317,
+      "gi": 1318,
+      "ient": 1319,
+      "kos": 1320,
+      "rw": 1321,
+      "ala": 1322,
+      "ingr": 1323,
+      "atem": 1324,
+      "edient": 1325,
+      "al_soci": 1326,
+      "itania": 1327,
+      "anda": 1328,
+      "guatem": 1329,
+      "eastern_europe": 1330,
+      "ovo": 1331,
+      "professional_soci": 1332,
+      "belgi": 1333,
+      "greece": 1334,
+      "mauritania": 1335,
+      "kosovo": 1336,
+      "rwanda": 1337,
+      "ingredient": 1338,
+      "guatemala": 1339,
+      "professional_society": 1340,
+      "belgium": 1341,
+      "ingredient_of": 1342,
+      "indicates": 1343,
+      "egy": 1344,
+      "quanti": 1345,
+      "western_europe": 1346,
+      "southern_asia": 1347,
+      "tative_concept": 1348,
+      "egypt": 1349,
+      "quantitative_concept": 1350,
+      "od_of": 1351,
+      "thod_of": 1352,
+      "method_of": 1353,
+      "cam": 1354,
+      "ier": 1355,
+      "ile": 1356,
+      "tog": 1357,
+      "tnam": 1358,
+      "zeal": 1359,
+      "ysia": 1360,
+      "chile": 1361,
+      "bodia": 1362,
+      "vietnam": 1363,
+      "australia": 1364,
+      "ghana": 1365,
+      "liberia": 1366,
+      "malaysia": 1367,
+      "new_zeal": 1368,
+      "cambodia": 1369,
+      "togo": 1370,
+      "new_zealand": 1371,
+      "fin": 1372,
+      "gab": 1373,
+      "hara": 1374,
+      "iana": 1375,
+      "lu": 1376,
+      "tun": 1377,
+      "uela": 1378,
+      "vene": 1379,
+      "wi": 1380,
+      "way": 1381,
+      "xem": 1382,
+      "yana": 1383,
+      "zuela": 1384,
+      "erit": 1385,
+      "onesia": 1386,
+      "inte": 1387,
+      "ench": 1388,
+      "urg": 1389,
+      "uru": 1390,
+      "oman": 1391,
+      "llect": 1392,
+      "rea": 1393,
+      "product": 1394,
+      "th_korea": 1395,
+      "gua": 1396,
+      "guyana": 1397,
+      "indonesia": 1398,
+      "ual_product": 1399,
+      "norway": 1400,
+      "north_korea": 1401,
+      "bourg": 1402,
+      "western_sa": 1403,
+      "french": 1404,
+      "malawi": 1405,
+      "finland": 1406,
+      "gabon": 1407,
+      "luxem": 1408,
+      "venezuela": 1409,
+      "eritrea": 1410,
+      "intellect": 1411,
+      "western_sahara": 1412,
+      "french_": 1413,
+      "luxembourg": 1414,
+      "intellectual_product": 1415,
+      "aguay": 1416,
+      "bos": 1417,
+      "dj": 1418,
+      "dur": 1419,
+      "ego": 1420,
+      "her": 1421,
+      "mex": 1422,
+      "nia": 1423,
+      "pan": 1424,
+      "som": 1425,
+      "vina": 1426,
+      "zego": 1427,
+      "inam": 1428,
+      "ico": 1429,
+      "ama": 1430,
+      "occo": 1431,
+      "ibou": 1432,
+      "paraguay": 1433,
+      "undi": 1434,
+      "_and_her": 1435,
+      "burundi": 1436,
+      "tempor": 1437,
+      "hondur": 1438,
+      "morocco": 1439,
+      "surinam": 1440,
+      "bosnia": 1441,
+      "djibou": 1442,
+      "mexico": 1443,
+      "somalia": 1444,
+      "zegovina": 1445,
+      "_and_herzegovina": 1446,
+      "temporal_concept": 1447,
+      "honduras": 1448,
+      "suriname": 1449,
+      "bosnia_and_herzegovina": 1450,
+      "djibouti": 1451,
+      "ative_concept": 1452,
+      "rec": 1453,
+      "alit": 1454,
+      "ication": 1455,
+      "area": 1456,
+      "ogra": 1457,
+      "phic_": 1458,
+      "qualit": 1459,
+      "reational_activity": 1460,
+      "y_or_rec": 1461,
+      "ification": 1462,
+      "class": 1463,
+      "ily_or_rec": 1464,
+      "daily_or_rec": 1465,
+      "geogra": 1466,
+      "phic_area": 1467,
+      "qualitative_concept": 1468,
+      "classification": 1469,
+      "daily_or_recreational_activity": 1470,
+      "geographic_area": 1471,
+      "les": 1472,
+      "_or_concept": 1473,
+      "e_sequence": 1474,
+      "idea": 1475,
+      "northern_africa": 1476,
+      "northern_america": 1477,
+      "idea_or_concept": 1478,
+      "to": 1479,
+      "_le": 1480,
+      "bar": 1481,
+      "bhu": 1482,
+      "ca": 1483,
+      "ey": 1484,
+      "ein": 1485,
+      "iti": 1486,
+      "ial_": 1487,
+      "iland": 1488,
+      "mel": 1489,
+      "pu": 1490,
+      "sier": 1491,
+      "sey": 1492,
+      "anesia": 1493,
+      "inic": 1494,
+      "eden": 1495,
+      "stein": 1496,
+      "atorial_": 1497,
+      "aziland": 1498,
+      "ra_le": 1499,
+      "echten": 1500,
+      "liechten": 1501,
+      "_and_new_zealand": 1502,
+      "central_asia": 1503,
+      "central_america": 1504,
+      "equatorial_": 1505,
+      "conceptual_part_of": 1506,
+      "sweden": 1507,
+      "swaziland": 1508,
+      "dominic": 1509,
+      "australia_and_new_zealand": 1510,
+      "bhutan": 1511,
+      "melanesia": 1512,
+      "sierra_le": 1513,
+      "liechtenstein": 1514,
+      "equatorial_guinea": 1515,
+      "sierra_leone": 1516,
+      "_s": 1517,
+      "_em": 1518,
+      "ait": 1519,
+      "dov": 1520,
+      "ku": 1521,
+      "nic": 1522,
+      "uador": 1523,
+      "vador": 1524,
+      "wait": 1525,
+      "alvador": 1526,
+      "isia": 1527,
+      "nether": 1528,
+      "ecuador": 1529,
+      "sta_": 1530,
+      "el_s": 1531,
+      "moldov": 1532,
+      "rica": 1533,
+      "leban": 1534,
+      "irates": 1535,
+      "estonia": 1536,
+      "guiana": 1537,
+      "costa_": 1538,
+      "ize": 1539,
+      "belize": 1540,
+      "mongol": 1541,
+      "arab_em": 1542,
+      "united_arab_em": 1543,
+      "aragua": 1544,
+      "tunisia": 1545,
+      "uruguay": 1546,
+      "french_guiana": 1547,
+      "kuwait": 1548,
+      "nicaragua": 1549,
+      "netherlands": 1550,
+      "el_salvador": 1551,
+      "moldova": 1552,
+      "lebanon": 1553,
+      "costa_rica": 1554,
+      "mongolia": 1555,
+      "united_arab_emirates": 1556,
+      "-b": 1557,
+      "au": 1558,
+      "des": 1559,
+      "gla": 1560,
+      "yem": 1561,
+      "ong": 1562,
+      "orra": 1563,
+      "issau": 1564,
+      "eland": 1565,
+      "andorra": 1566,
+      "ada": 1567,
+      "guinea-b": 1568,
+      "southern_africa": 1569,
+      "bangla": 1570,
+      "panama": 1571,
+      "desh": 1572,
+      "yemen": 1573,
+      "guinea-bissau": 1574,
+      "bangladesh": 1575,
+      "tine": 1576,
+      "estine": 1577,
+      "nepal": 1578,
+      "ystem": 1579,
+      "body_system": 1580,
+      "palestine": 1581,
+      "hin": 1582,
+      "king": 1583,
+      "lan": 1584,
+      "spati": 1585,
+      "e_activity": 1586,
+      "machin": 1587,
+      "united_king": 1588,
+      "spatial_concept": 1589,
+      "machine_activity": 1590,
+      "united_kingdom": 1591,
+      "term19": 1592,
+      "group_attribute": 1593,
+      "_vi": 1594,
+      "ah": 1595,
+      "atic": 1596,
+      "bah": 1597,
+      "city": 1598,
+      "den": 1599,
+      "ei": 1600,
+      "gin": 1601,
+      "gam": 1602,
+      "gib": 1603,
+      "itis": 1604,
+      "ral": 1605,
+      "rgin": 1606,
+      "sam": 1607,
+      "sint_": 1608,
+      "tar": 1609,
+      "tug": 1610,
+      "uda": 1611,
+      "vatic": 1612,
+      "ines": 1613,
+      "unei": 1614,
+      "islands": 1615,
+      "arten": 1616,
+      "haiti": 1617,
+      "gren": 1618,
+      "britis": 1619,
+      "brunei": 1620,
+      "ing_islands": 1621,
+      "land_islands": 1622,
+      "papu": 1623,
+      "south_korea": 1624,
+      "may": 1625,
+      "maarten": 1626,
+      "uba": 1627,
+      "an_city": 1628,
+      "mark": 1629,
+      "martin": 1630,
+      "_island": 1631,
+      "new_guinea": 1632,
+      "saint_martin": 1633,
+      "portug": 1634,
+      "a_new_guinea": 1635,
+      "barb": 1636,
+      "dominican_republic": 1637,
+      "_virgin": 1638,
+      "denmark": 1639,
+      "gambia": 1640,
+      "gibral": 1641,
+      "samoa": 1642,
+      "sint_maarten": 1643,
+      "vatican_city": 1644,
+      "british": 1645,
+      "papua_new_guinea": 1646,
+      "portugal": 1647,
+      "_virgin_islands": 1648,
+      "gibraltar": 1649,
+      "ins": 1650,
+      "conta": 1651,
+      "molecular_sequence": 1652,
+      "nucleotide_sequence": 1653,
+      "amino_acid_sequence": 1654,
+      "contains": 1655,
+      "-les": 1656,
+      "_k": 1657,
+      "can": 1658,
+      "g_k": 1659,
+      "ka": 1660,
+      "oth": 1661,
+      "qat": 1662,
+      "ri_": 1663,
+      "san_": 1664,
+      "sri_": 1665,
+      "timor": 1666,
+      "ino": 1667,
+      "aco": 1668,
+      "ireland": 1669,
+      "macau": 1670,
+      "marino": 1671,
+      "monaco": 1672,
+      "hong_k": 1673,
+      "lesoth": 1674,
+      "lanka": 1675,
+      "-leste": 1676,
+      "canada": 1677,
+      "qatar": 1678,
+      "san_marino": 1679,
+      "sri_lanka": 1680,
+      "timor-leste": 1681,
+      "hong_kong": 1682,
+      "lesotho": 1683,
+      "_to": 1684,
+      "cy": 1685,
+      "sis": 1686,
+      "ate_sequence": 1687,
+      "prus": 1688,
+      "ts_of": 1689,
+      "consis": 1690,
+      "carbohydrate_sequence": 1691,
+      "cyprus": 1692,
+      "consists_of": 1693,
+      "ound": 1694,
+      "round": 1695,
+      "surround": 1696,
+      "surrounds": 1697,
+      "jac": 1698,
+      "functional_concept": 1699,
+      "ent_to": 1700,
+      "adjac": 1701,
+      "adjacent_to": 1702,
+      "_m": 1703,
+      "_ke": 1704,
+      "_indi": 1705,
+      "_out": 1706,
+      "ao": 1707,
+      "ap": 1708,
+      "aç": 1709,
+      "ati": 1710,
+      "ago": 1711,
+      "auru": 1712,
+      "apan": 1713,
+      "ber": 1714,
+      "cal": 1715,
+      "coc": 1716,
+      "cur": 1717,
+      "cay": 1718,
+      "cuba": 1719,
+      "dag": 1720,
+      "div": 1721,
+      "ell": 1722,
+      "fi": 1723,
+      "fu": 1724,
+      "fal": 1725,
+      "far": 1726,
+      "fol": 1727,
+      "hall": 1728,
+      "ip": 1729,
+      "iw": 1730,
+      "ill": 1731,
+      "iqu": 1732,
+      "jer": 1733,
+      "jan_": 1734,
+      "jama": 1735,
+      "japan": 1736,
+      "kit": 1737,
+      "kir": 1738,
+      "k_islands": 1739,
+      "kela": 1740,
+      "kland_islands": 1741,
+      "k_island": 1742,
+      "ly": 1743,
+      "luc": 1744,
+      "lem": 1745,
+      "mas": 1746,
+      "muda": 1747,
+      "miqu": 1748,
+      "nci": 1749,
+      "nsey": 1750,
+      "nauru": 1751,
+      "oup": 1752,
+      "oe_": 1753,
+      "ok_islands": 1754,
+      "pit": 1755,
+      "pe_": 1756,
+      "pier": 1757,
+      "pines": 1758,
+      "ré": 1759,
+      "rat": 1760,
+      "ris": 1761,
+      "rit": 1762,
+      "re_": 1763,
+      "sv": 1764,
+      "sã": 1765,
+      "sing": 1766,
+      "s_and_": 1767,
+      "solom": 1768,
+      "shall": 1769,
+      "tu": 1770,
+      "tom": 1771,
+      "tob": 1772,
+      "to_": 1773,
+      "tong": 1774,
+      "tmas": 1775,
+      "ue": 1776,
+      "uat": 1777,
+      "van": 1778,
+      "vin": 1779,
+      "vis": 1780,
+      "valu": 1781,
+      "wall": 1782,
+      "Åland_islands": 1783,
+      "é_and_": 1784,
+      "élem": 1785,
+      "ínci": 1786,
+      "ernsey": 1787,
+      "errat": 1788,
+      "erto_": 1789,
+      "on_islands": 1790,
+      "territ": 1791,
+      "ory": 1792,
+      "oros": 1793,
+      "or_out": 1794,
+      "tinique": 1795,
+      "angu": 1796,
+      "inid": 1797,
+      "inor_out": 1798,
+      "ica": 1799,
+      "iceland": 1800,
+      "enland": 1801,
+      "union": 1802,
+      "isle": 1803,
+      "is_and_": 1804,
+      "prínci": 1805,
+      "nec": 1806,
+      "nevis": 1807,
+      "ascar": 1808,
+      "aruba": 1809,
+      "ts_and_": 1810,
+      "tserrat": 1811,
+      "amas": 1812,
+      "phil": 1813,
+      "chell": 1814,
+      "chris": 1815,
+      "term25": 1816,
+      "elon": 1817,
+      "eling_islands": 1818,
+      "eloup": 1819,
+      "thélem": 1820,
+      "os_ke": 1821,
+      "comoros": 1822,
+      "rico": 1823,
+      "connec": 1824,
+      "manag": 1825,
+      "man_islands": 1826,
+      "n_islands": 1827,
+      "ibati": 1828,
+      "_of_man": 1829,
+      "irn_islands": 1830,
+      "trinid": 1831,
+      "malta": 1832,
+      "maldiv": 1833,
+      "american_": 1834,
+      "guam": 1835,
+      "guad": 1836,
+      "guernsey": 1837,
+      "verde": 1838,
+      "antigua": 1839,
+      "norfol": 1840,
+      "south_georgia": 1841,
+      "rain": 1842,
+      "madag": 1843,
+      "cook_islands": 1844,
+      "ados": 1845,
+      "ad_and_": 1846,
+      "adines": 1847,
+      "ard_and_": 1848,
+      "an_oce": 1849,
+      "an_territ": 1850,
+      "o_tom": 1851,
+      "northern_mar": 1852,
+      "niue": 1853,
+      "and_miqu": 1854,
+      "cent_and_": 1855,
+      "_and_barb": 1856,
+      "marshall": 1857,
+      "martinique": 1858,
+      "central_europe": 1859,
+      "icos_islands": 1860,
+      "taiw": 1861,
+      "otte": 1862,
+      "montserrat": 1863,
+      "greenland": 1864,
+      "new_cal": 1865,
+      "saint_bar": 1866,
+      "saint_kit": 1867,
+      "saint_luc": 1868,
+      "saint_pier": 1869,
+      "saint_vin": 1870,
+      "the_gren": 1871,
+      "palau": 1872,
+      "turks_and_": 1873,
+      "albard_and_": 1874,
+      "mauriti": 1875,
+      "united_states_virgin_islands": 1876,
+      "united_states_m": 1877,
+      "iana_islands": 1878,
+      "tuna": 1879,
+      "french_polynesia": 1880,
+      "tokela": 1881,
+      "cape_": 1882,
+      "cairn_islands": 1883,
+      "caicos_islands": 1884,
+      "puerto_": 1885,
+      "seychell": 1886,
+      "dominica": 1887,
+      "bahamas": 1888,
+      "bahrain": 1889,
+      "grenada": 1890,
+      "mayen": 1891,
+      "mayotte": 1892,
+      "barbados": 1893,
+      "british_virgin_islands": 1894,
+      "british_indi": 1895,
+      "apore": 1896,
+      "açao": 1897,
+      "bermuda": 1898,
+      "cocos_ke": 1899,
+      "curaçao": 1900,
+      "cayman_islands": 1901,
+      "fiji": 1902,
+      "futuna": 1903,
+      "falkland_islands": 1904,
+      "faroe_": 1905,
+      "ippines": 1906,
+      "illa": 1907,
+      "jersey": 1908,
+      "jan_mayen": 1909,
+      "jamaica": 1910,
+      "kiribati": 1911,
+      "lying_islands": 1912,
+      "pitcairn_islands": 1913,
+      "réunion": 1914,
+      "re_and_miqu": 1915,
+      "svalbard_and_": 1916,
+      "são_tom": 1917,
+      "singapore": 1918,
+      "solomon_islands": 1919,
+      "tuvalu": 1920,
+      "tobago": 1921,
+      "tonga": 1922,
+      "tmas_island": 1923,
+      "uatu": 1924,
+      "vanuatu": 1925,
+      "wallis_and_": 1926,
+      "é_and_prínci": 1927,
+      "anguilla": 1928,
+      "inor_outlying_islands": 1929,
+      "isle_of_man": 1930,
+      "ts_and_nevis": 1931,
+      "philippines": 1932,
+      "christmas_island": 1933,
+      "eloupe": 1934,
+      "thélemy": 1935,
+      "manages": 1936,
+      "trinidad_and_": 1937,
+      "maldives": 1938,
+      "american_samoa": 1939,
+      "guadeloupe": 1940,
+      "antigua_and_barb": 1941,
+      "norfolk_island": 1942,
+      "madagascar": 1943,
+      "an_ocean_territ": 1944,
+      "northern_mariana_islands": 1945,
+      "cent_and_the_gren": 1946,
+      "marshall_islands": 1947,
+      "taiwan": 1948,
+      "new_caledonia": 1949,
+      "saint_barthélemy": 1950,
+      "saint_kitts_and_nevis": 1951,
+      "saint_lucia": 1952,
+      "saint_pierre_and_miqu": 1953,
+      "saint_vincent_and_the_gren": 1954,
+      "turks_and_caicos_islands": 1955,
+      "mauritius": 1956,
+      "united_states_minor_outlying_islands": 1957,
+      "tokelau": 1958,
+      "cape_verde": 1959,
+      "puerto_rico": 1960,
+      "seychelles": 1961,
+      "british_indian_ocean_territ": 1962,
+      "cocos_keeling_islands": 1963,
+      "faroe_islands": 1964,
+      "svalbard_and_jan_mayen": 1965,
+      "são_tomé_and_prínci": 1966,
+      "wallis_and_futuna": 1967,
+      "trinidad_and_tobago": 1968,
+      "antigua_and_barbuda": 1969,
+      "saint_pierre_and_miquelon": 1970,
+      "saint_vincent_and_the_grenadines": 1971,
+      "british_indian_ocean_territory": 1972,
+      "são_tomé_and_príncipe": 1973,
+      "ted_": 1974,
+      "elop": 1975,
+      "mental_form": 1976,
+      "guag": 1977,
+      "develop": 1978,
+      "languag": 1979,
+      "connected_": 1980,
+      "mental_form_of": 1981,
+      "developmental_form_of": 1982,
+      "language": 1983,
+      "connected_to": 1984
+    },
+    "merges": [
+      [
+        "e",
+        "r"
+      ],
+      [
+        "o",
+        "n"
+      ],
+      [
+        "p",
+        "er"
+      ],
+      [
+        "s",
+        "on"
+      ],
+      [
+        "per",
+        "son"
+      ],
+      [
+        "t",
+        "er"
+      ],
+      [
+        "ter",
+        "m"
+      ],
+      [
+        "o",
+        "r"
+      ],
+      [
+        "t",
+        "i"
+      ],
+      [
+        "a",
+        "l"
+      ],
+      [
+        "term",
+        "1"
+      ],
+      [
+        "a",
+        "n"
+      ],
+      [
+        "o",
+        "c"
+      ],
+      [
+        "e",
+        "s"
+      ],
+      [
+        "i",
+        "n"
+      ],
+      [
+        "i",
+        "c"
+      ],
+      [
+        "ti",
+        "on"
+      ],
+      [
+        "e",
+        "n"
+      ],
+      [
+        "_",
+        "or"
+      ],
+      [
+        "a",
+        "t"
+      ],
+      [
+        "u",
+        "n"
+      ],
+      [
+        "_or",
+        "_"
+      ],
+      [
+        "e",
+        "d"
+      ],
+      [
+        "f",
+        "un"
+      ],
+      [
+        "c",
+        "tion"
+      ],
+      [
+        "person",
+        "1"
+      ],
+      [
+        "fun",
+        "ction"
+      ],
+      [
+        "i",
+        "s"
+      ],
+      [
+        "al",
+        "_"
+      ],
+      [
+        "o",
+        "f"
+      ],
+      [
+        "p",
+        "r"
+      ],
+      [
+        "_",
+        "of"
+      ],
+      [
+        "n",
+        "e"
+      ],
+      [
+        "a",
+        "s"
+      ],
+      [
+        "i",
+        "t"
+      ],
+      [
+        "e",
+        "c"
+      ],
+      [
+        "a",
+        "r"
+      ],
+      [
+        "o",
+        "l"
+      ],
+      [
+        "_",
+        "function"
+      ],
+      [
+        "person",
+        "9"
+      ],
+      [
+        "person",
+        "3"
+      ],
+      [
+        "person",
+        "7"
+      ],
+      [
+        "person",
+        "2"
+      ],
+      [
+        "person",
+        "8"
+      ],
+      [
+        "person",
+        "4"
+      ],
+      [
+        "person",
+        "6"
+      ],
+      [
+        "person",
+        "5"
+      ],
+      [
+        "b",
+        "or"
+      ],
+      [
+        "u",
+        "r"
+      ],
+      [
+        "i",
+        "a"
+      ],
+      [
+        "i",
+        "g"
+      ],
+      [
+        "o",
+        "m"
+      ],
+      [
+        "h",
+        "bor"
+      ],
+      [
+        "ne",
+        "ig"
+      ],
+      [
+        "neig",
+        "hbor"
+      ],
+      [
+        "a",
+        "c"
+      ],
+      [
+        "pr",
+        "oc"
+      ],
+      [
+        "en",
+        "t"
+      ],
+      [
+        "t",
+        "s"
+      ],
+      [
+        "l",
+        "oc"
+      ],
+      [
+        "c",
+        "e"
+      ],
+      [
+        "u",
+        "l"
+      ],
+      [
+        "at",
+        "ed"
+      ],
+      [
+        "es",
+        "s"
+      ],
+      [
+        "o",
+        "g"
+      ],
+      [
+        "a",
+        "f"
+      ],
+      [
+        "proc",
+        "ess"
+      ],
+      [
+        "loc",
+        "ated"
+      ],
+      [
+        "located",
+        "in"
+      ],
+      [
+        "ol",
+        "og"
+      ],
+      [
+        "s",
+        "u"
+      ],
+      [
+        "a",
+        "tion"
+      ],
+      [
+        "d",
+        "is"
+      ],
+      [
+        "m",
+        "ent"
+      ],
+      [
+        "olog",
+        "ic"
+      ],
+      [
+        "term1",
+        "6"
+      ],
+      [
+        "g",
+        "an"
+      ],
+      [
+        "a",
+        "m"
+      ],
+      [
+        "u",
+        "s"
+      ],
+      [
+        "ti",
+        "c"
+      ],
+      [
+        "e",
+        "as"
+      ],
+      [
+        "f",
+        "ec"
+      ],
+      [
+        "y",
+        "s"
+      ],
+      [
+        "b",
+        "i"
+      ],
+      [
+        "person1",
+        "0"
+      ],
+      [
+        "af",
+        "fec"
+      ],
+      [
+        "affec",
+        "ts"
+      ],
+      [
+        "o",
+        "d"
+      ],
+      [
+        "p",
+        "l"
+      ],
+      [
+        "it",
+        "y"
+      ],
+      [
+        "u",
+        "p"
+      ],
+      [
+        "or",
+        "m"
+      ],
+      [
+        "v",
+        "i"
+      ],
+      [
+        "s",
+        "t"
+      ],
+      [
+        "p",
+        "h"
+      ],
+      [
+        "or",
+        "gan"
+      ],
+      [
+        "e",
+        "_"
+      ],
+      [
+        "term1",
+        "5"
+      ],
+      [
+        "c",
+        "h"
+      ],
+      [
+        "y",
+        "_"
+      ],
+      [
+        "t",
+        "_of"
+      ],
+      [
+        "ic",
+        "al_"
+      ],
+      [
+        "r",
+        "es"
+      ],
+      [
+        "ologic",
+        "_function"
+      ],
+      [
+        "a",
+        "b"
+      ],
+      [
+        "l",
+        "l"
+      ],
+      [
+        "term",
+        "2"
+      ],
+      [
+        "e",
+        "l"
+      ],
+      [
+        "u",
+        "c"
+      ],
+      [
+        "ce",
+        "ll"
+      ],
+      [
+        "term",
+        "7"
+      ],
+      [
+        "term",
+        "8"
+      ],
+      [
+        "w",
+        "it"
+      ],
+      [
+        "_",
+        "wit"
+      ],
+      [
+        "dis",
+        "eas"
+      ],
+      [
+        "_wit",
+        "h"
+      ],
+      [
+        "diseas",
+        "e"
+      ],
+      [
+        "d",
+        "ys"
+      ],
+      [
+        "dys",
+        "function"
+      ],
+      [
+        "m",
+        "ol"
+      ],
+      [
+        "t",
+        "h"
+      ],
+      [
+        "term1",
+        "1"
+      ],
+      [
+        "ec",
+        "ul"
+      ],
+      [
+        "mol",
+        "ecul"
+      ],
+      [
+        "molecul",
+        "ar"
+      ],
+      [
+        "ment",
+        "al_"
+      ],
+      [
+        "ti",
+        "v"
+      ],
+      [
+        "ur",
+        "e"
+      ],
+      [
+        "g",
+        "en"
+      ],
+      [
+        "res",
+        "ul"
+      ],
+      [
+        "b",
+        "e"
+      ],
+      [
+        "h",
+        "a"
+      ],
+      [
+        "n",
+        "orm"
+      ],
+      [
+        "al",
+        "ity"
+      ],
+      [
+        "ab",
+        "norm"
+      ],
+      [
+        "abnorm",
+        "ality"
+      ],
+      [
+        "st",
+        "an"
+      ],
+      [
+        "d",
+        "r"
+      ],
+      [
+        "o",
+        "s"
+      ],
+      [
+        "tic",
+        "_"
+      ],
+      [
+        "oc",
+        "c"
+      ],
+      [
+        "ed",
+        "_"
+      ],
+      [
+        "b",
+        "stan"
+      ],
+      [
+        "su",
+        "bstan"
+      ],
+      [
+        "substan",
+        "ce"
+      ],
+      [
+        "resul",
+        "t_of"
+      ],
+      [
+        "i",
+        "d"
+      ],
+      [
+        "ation",
+        "_of"
+      ],
+      [
+        "e",
+        "m"
+      ],
+      [
+        "term1",
+        "8"
+      ],
+      [
+        "vi",
+        "or"
+      ],
+      [
+        "be",
+        "ha"
+      ],
+      [
+        "beha",
+        "vior"
+      ],
+      [
+        "in",
+        "e"
+      ],
+      [
+        "ac",
+        "tiv"
+      ],
+      [
+        "p",
+        "e"
+      ],
+      [
+        "al",
+        "_or_"
+      ],
+      [
+        "g",
+        "r"
+      ],
+      [
+        "c",
+        "om"
+      ],
+      [
+        "r",
+        "ic"
+      ],
+      [
+        "c",
+        "on"
+      ],
+      [
+        "term",
+        "5"
+      ],
+      [
+        "term1",
+        "0"
+      ],
+      [
+        "is",
+        "a"
+      ],
+      [
+        "term",
+        "4"
+      ],
+      [
+        "a",
+        "us"
+      ],
+      [
+        "s",
+        "y"
+      ],
+      [
+        "ed",
+        "ure"
+      ],
+      [
+        "proc",
+        "edure"
+      ],
+      [
+        "m",
+        "an"
+      ],
+      [
+        "om",
+        "e"
+      ],
+      [
+        "q",
+        "u"
+      ],
+      [
+        "molecular",
+        "_"
+      ],
+      [
+        "term",
+        "9"
+      ],
+      [
+        "an",
+        "d"
+      ],
+      [
+        "term",
+        "6"
+      ],
+      [
+        "in",
+        "ter"
+      ],
+      [
+        "n",
+        "_"
+      ],
+      [
+        "ac",
+        "ts"
+      ],
+      [
+        "inter",
+        "acts"
+      ],
+      [
+        "interacts",
+        "_with"
+      ],
+      [
+        "_or_",
+        "sy"
+      ],
+      [
+        "t",
+        "e"
+      ],
+      [
+        "term1",
+        "3"
+      ],
+      [
+        "i",
+        "b"
+      ],
+      [
+        "e",
+        "x"
+      ],
+      [
+        "gr",
+        "o"
+      ],
+      [
+        "process",
+        "_of"
+      ],
+      [
+        "is",
+        "m"
+      ],
+      [
+        "organ",
+        "ism"
+      ],
+      [
+        "d",
+        "ia"
+      ],
+      [
+        "p",
+        "o"
+      ],
+      [
+        "ic",
+        "_"
+      ],
+      [
+        "r",
+        "e"
+      ],
+      [
+        "_of",
+        "_"
+      ],
+      [
+        "up",
+        "ation"
+      ],
+      [
+        "occ",
+        "upation"
+      ],
+      [
+        "ment",
+        "al_or_"
+      ],
+      [
+        "c",
+        "aus"
+      ],
+      [
+        "at",
+        "or"
+      ],
+      [
+        "af",
+        "ric"
+      ],
+      [
+        "gro",
+        "up"
+      ],
+      [
+        "term1",
+        "7"
+      ],
+      [
+        "p",
+        "t"
+      ],
+      [
+        "ch",
+        "em"
+      ],
+      [
+        "n",
+        "dr"
+      ],
+      [
+        "disease",
+        "_or_sy"
+      ],
+      [
+        "ndr",
+        "ome"
+      ],
+      [
+        "disease_or_sy",
+        "ndrome"
+      ],
+      [
+        "o",
+        "pl"
+      ],
+      [
+        "al_",
+        "dysfunction"
+      ],
+      [
+        "ne",
+        "opl"
+      ],
+      [
+        "as",
+        "tic_"
+      ],
+      [
+        "behavior",
+        "al_dysfunction"
+      ],
+      [
+        "mental_or_",
+        "behavioral_dysfunction"
+      ],
+      [
+        "neopl",
+        "astic_"
+      ],
+      [
+        "neoplastic_",
+        "process"
+      ],
+      [
+        "term",
+        "3"
+      ],
+      [
+        "h",
+        "ologic_function"
+      ],
+      [
+        "p",
+        "at"
+      ],
+      [
+        "pat",
+        "hologic_function"
+      ],
+      [
+        "ti",
+        "s"
+      ],
+      [
+        "i",
+        "mental_"
+      ],
+      [
+        "m",
+        "od"
+      ],
+      [
+        "per",
+        "imental_"
+      ],
+      [
+        "el",
+        "_of_"
+      ],
+      [
+        "ex",
+        "perimental_"
+      ],
+      [
+        "mod",
+        "el_of_"
+      ],
+      [
+        "experimental_",
+        "model_of_"
+      ],
+      [
+        "experimental_model_of_",
+        "disease"
+      ],
+      [
+        "_or_",
+        "molecular_"
+      ],
+      [
+        "cell",
+        "_or_molecular_"
+      ],
+      [
+        "cell_or_molecular_",
+        "dysfunction"
+      ],
+      [
+        "e",
+        "v"
+      ],
+      [
+        "l",
+        "a"
+      ],
+      [
+        "l",
+        "e"
+      ],
+      [
+        "_or_",
+        "dis"
+      ],
+      [
+        "o",
+        "pe"
+      ],
+      [
+        "su",
+        "e"
+      ],
+      [
+        "tis",
+        "sue"
+      ],
+      [
+        "afric",
+        "a"
+      ],
+      [
+        "caus",
+        "es"
+      ],
+      [
+        "i",
+        "r"
+      ],
+      [
+        "gen",
+        "e"
+      ],
+      [
+        "an",
+        "at"
+      ],
+      [
+        "om",
+        "ical_"
+      ],
+      [
+        "anat",
+        "omical_"
+      ],
+      [
+        "p",
+        "ar"
+      ],
+      [
+        "at",
+        "es"
+      ],
+      [
+        "ph",
+        "ys"
+      ],
+      [
+        "on",
+        "_or_"
+      ],
+      [
+        "s",
+        "oc"
+      ],
+      [
+        "soc",
+        "i"
+      ],
+      [
+        "o",
+        "u"
+      ],
+      [
+        "y",
+        "_or_"
+      ],
+      [
+        "loc",
+        "ation_of"
+      ],
+      [
+        "es",
+        "t"
+      ],
+      [
+        "c",
+        "i"
+      ],
+      [
+        "pl",
+        "ine"
+      ],
+      [
+        "occupation",
+        "_or_dis"
+      ],
+      [
+        "ci",
+        "pline"
+      ],
+      [
+        "occupation_or_dis",
+        "cipline"
+      ],
+      [
+        "th",
+        "er"
+      ],
+      [
+        "activ",
+        "ity"
+      ],
+      [
+        "c",
+        "ar"
+      ],
+      [
+        "e",
+        "ur"
+      ],
+      [
+        "term1",
+        "2"
+      ],
+      [
+        "pr",
+        "od"
+      ],
+      [
+        "eur",
+        "ope"
+      ],
+      [
+        "prod",
+        "uc"
+      ],
+      [
+        "g",
+        "n"
+      ],
+      [
+        "al",
+        "l"
+      ],
+      [
+        "dia",
+        "gn"
+      ],
+      [
+        "diagn",
+        "os"
+      ],
+      [
+        "b",
+        "r"
+      ],
+      [
+        "mental_",
+        "process"
+      ],
+      [
+        "as",
+        "ia"
+      ],
+      [
+        "am",
+        "er"
+      ],
+      [
+        "i",
+        "son"
+      ],
+      [
+        "ic",
+        "ates"
+      ],
+      [
+        "po",
+        "ison"
+      ],
+      [
+        "b",
+        "od"
+      ],
+      [
+        "bor",
+        "ator"
+      ],
+      [
+        "la",
+        "borator"
+      ],
+      [
+        "in",
+        "g"
+      ],
+      [
+        "produc",
+        "es"
+      ],
+      [
+        "term2",
+        "0"
+      ],
+      [
+        "organism",
+        "_function"
+      ],
+      [
+        "ter",
+        "n_"
+      ],
+      [
+        "i",
+        "ologic_function"
+      ],
+      [
+        "is",
+        "su"
+      ],
+      [
+        "e_",
+        "in"
+      ],
+      [
+        "phys",
+        "iologic_function"
+      ],
+      [
+        "issu",
+        "e_in"
+      ],
+      [
+        "t",
+        "r"
+      ],
+      [
+        "_or_",
+        "tissue"
+      ],
+      [
+        "organ",
+        "_or_tissue"
+      ],
+      [
+        "organ_or_tissue",
+        "_function"
+      ],
+      [
+        "an",
+        "ia"
+      ],
+      [
+        "tic",
+        "_function"
+      ],
+      [
+        "gene",
+        "tic_function"
+      ],
+      [
+        "molecular",
+        "_function"
+      ],
+      [
+        "bod",
+        "y_"
+      ],
+      [
+        "_",
+        "com"
+      ],
+      [
+        "cell",
+        "_function"
+      ],
+      [
+        "pl",
+        "icates"
+      ],
+      [
+        "com",
+        "plicates"
+      ],
+      [
+        "en",
+        "om"
+      ],
+      [
+        "en",
+        "on_or_"
+      ],
+      [
+        "ph",
+        "enom"
+      ],
+      [
+        "enon_or_",
+        "process"
+      ],
+      [
+        "phenom",
+        "enon_or_process"
+      ],
+      [
+        "ologic",
+        "_"
+      ],
+      [
+        "ar",
+        "ch"
+      ],
+      [
+        "s",
+        "ou"
+      ],
+      [
+        "e_",
+        "substance"
+      ],
+      [
+        "activ",
+        "e_substance"
+      ],
+      [
+        "_or",
+        "gan"
+      ],
+      [
+        "th",
+        "_"
+      ],
+      [
+        "m",
+        "al"
+      ],
+      [
+        "amer",
+        "ic"
+      ],
+      [
+        "diagnos",
+        "tic_"
+      ],
+      [
+        "r",
+        "uc"
+      ],
+      [
+        "st",
+        "ruc"
+      ],
+      [
+        "struc",
+        "t"
+      ],
+      [
+        "g",
+        "u"
+      ],
+      [
+        "m",
+        "eas"
+      ],
+      [
+        "in",
+        "d"
+      ],
+      [
+        "t",
+        "an"
+      ],
+      [
+        "as",
+        "soci"
+      ],
+      [
+        "ated",
+        "_with"
+      ],
+      [
+        "associ",
+        "ated_with"
+      ],
+      [
+        "l",
+        "and"
+      ],
+      [
+        "v",
+        "er"
+      ],
+      [
+        "n",
+        "uc"
+      ],
+      [
+        "nuc",
+        "le"
+      ],
+      [
+        "ic",
+        "al"
+      ],
+      [
+        "chem",
+        "ical"
+      ],
+      [
+        "term",
+        "0"
+      ],
+      [
+        "ac",
+        "qu"
+      ],
+      [
+        "ed_",
+        "abnormality"
+      ],
+      [
+        "ir",
+        "ed_abnormality"
+      ],
+      [
+        "acqu",
+        "ired_abnormality"
+      ],
+      [
+        "bi",
+        "ologic_function"
+      ],
+      [
+        "at",
+        "e"
+      ],
+      [
+        "anatomical_",
+        "abnormality"
+      ],
+      [
+        "al_",
+        "abnormality"
+      ],
+      [
+        "it",
+        "al_abnormality"
+      ],
+      [
+        "gen",
+        "ital_abnormality"
+      ],
+      [
+        "con",
+        "genital_abnormality"
+      ],
+      [
+        "par",
+        "t_of"
+      ],
+      [
+        "om",
+        "ed"
+      ],
+      [
+        "bi",
+        "omed"
+      ],
+      [
+        "h",
+        "u"
+      ],
+      [
+        "i",
+        "f"
+      ],
+      [
+        "t",
+        "y"
+      ],
+      [
+        "am",
+        "in"
+      ],
+      [
+        "person1",
+        "1"
+      ],
+      [
+        "person1",
+        "4"
+      ],
+      [
+        "person1",
+        "5"
+      ],
+      [
+        "person1",
+        "6"
+      ],
+      [
+        "person1",
+        "7"
+      ],
+      [
+        "person1",
+        "8"
+      ],
+      [
+        "person1",
+        "9"
+      ],
+      [
+        "person9",
+        "0"
+      ],
+      [
+        "person9",
+        "1"
+      ],
+      [
+        "person9",
+        "2"
+      ],
+      [
+        "person9",
+        "3"
+      ],
+      [
+        "person9",
+        "4"
+      ],
+      [
+        "person9",
+        "5"
+      ],
+      [
+        "person9",
+        "6"
+      ],
+      [
+        "person9",
+        "7"
+      ],
+      [
+        "person9",
+        "8"
+      ],
+      [
+        "person9",
+        "9"
+      ],
+      [
+        "person3",
+        "0"
+      ],
+      [
+        "person3",
+        "1"
+      ],
+      [
+        "person3",
+        "2"
+      ],
+      [
+        "person3",
+        "3"
+      ],
+      [
+        "person3",
+        "4"
+      ],
+      [
+        "person3",
+        "5"
+      ],
+      [
+        "person3",
+        "7"
+      ],
+      [
+        "person3",
+        "8"
+      ],
+      [
+        "person3",
+        "9"
+      ],
+      [
+        "person7",
+        "0"
+      ],
+      [
+        "person7",
+        "1"
+      ],
+      [
+        "person7",
+        "2"
+      ],
+      [
+        "person7",
+        "3"
+      ],
+      [
+        "person7",
+        "4"
+      ],
+      [
+        "person7",
+        "6"
+      ],
+      [
+        "person7",
+        "7"
+      ],
+      [
+        "person7",
+        "8"
+      ],
+      [
+        "person7",
+        "9"
+      ],
+      [
+        "person2",
+        "0"
+      ],
+      [
+        "person2",
+        "1"
+      ],
+      [
+        "person2",
+        "2"
+      ],
+      [
+        "person2",
+        "4"
+      ],
+      [
+        "person2",
+        "6"
+      ],
+      [
+        "person2",
+        "7"
+      ],
+      [
+        "person2",
+        "8"
+      ],
+      [
+        "person2",
+        "9"
+      ],
+      [
+        "person8",
+        "0"
+      ],
+      [
+        "person8",
+        "2"
+      ],
+      [
+        "person8",
+        "3"
+      ],
+      [
+        "person8",
+        "4"
+      ],
+      [
+        "person8",
+        "5"
+      ],
+      [
+        "person8",
+        "6"
+      ],
+      [
+        "person8",
+        "7"
+      ],
+      [
+        "person8",
+        "8"
+      ],
+      [
+        "person8",
+        "9"
+      ],
+      [
+        "person4",
+        "0"
+      ],
+      [
+        "person4",
+        "2"
+      ],
+      [
+        "person4",
+        "3"
+      ],
+      [
+        "person4",
+        "4"
+      ],
+      [
+        "person4",
+        "5"
+      ],
+      [
+        "person4",
+        "6"
+      ],
+      [
+        "person4",
+        "7"
+      ],
+      [
+        "person4",
+        "9"
+      ],
+      [
+        "person6",
+        "0"
+      ],
+      [
+        "person6",
+        "2"
+      ],
+      [
+        "person6",
+        "4"
+      ],
+      [
+        "person6",
+        "5"
+      ],
+      [
+        "person6",
+        "7"
+      ],
+      [
+        "person6",
+        "9"
+      ],
+      [
+        "person5",
+        "2"
+      ],
+      [
+        "person5",
+        "4"
+      ],
+      [
+        "person5",
+        "5"
+      ],
+      [
+        "person5",
+        "7"
+      ],
+      [
+        "person5",
+        "9"
+      ],
+      [
+        "person10",
+        "0"
+      ],
+      [
+        "person10",
+        "1"
+      ],
+      [
+        "person10",
+        "2"
+      ],
+      [
+        "person1",
+        "2"
+      ],
+      [
+        "person3",
+        "6"
+      ],
+      [
+        "person7",
+        "5"
+      ],
+      [
+        "person2",
+        "3"
+      ],
+      [
+        "person2",
+        "5"
+      ],
+      [
+        "person8",
+        "1"
+      ],
+      [
+        "person6",
+        "1"
+      ],
+      [
+        "person6",
+        "6"
+      ],
+      [
+        "person6",
+        "8"
+      ],
+      [
+        "person5",
+        "1"
+      ],
+      [
+        "person5",
+        "8"
+      ],
+      [
+        "person10",
+        "3"
+      ],
+      [
+        "person",
+        "0"
+      ],
+      [
+        "person1",
+        "3"
+      ],
+      [
+        "person4",
+        "1"
+      ],
+      [
+        "person4",
+        "8"
+      ],
+      [
+        "person5",
+        "3"
+      ],
+      [
+        "e",
+        "_or_"
+      ],
+      [
+        "person5",
+        "6"
+      ],
+      [
+        "person6",
+        "3"
+      ],
+      [
+        "o",
+        "us"
+      ],
+      [
+        "man",
+        "if"
+      ],
+      [
+        "est",
+        "ation_of"
+      ],
+      [
+        "manif",
+        "estation_of"
+      ],
+      [
+        "e",
+        "arch"
+      ],
+      [
+        "res",
+        "earch"
+      ],
+      [
+        "term2",
+        "2"
+      ],
+      [
+        "research",
+        "_"
+      ],
+      [
+        "j",
+        "ur"
+      ],
+      [
+        "in",
+        "jur"
+      ],
+      [
+        "person5",
+        "0"
+      ],
+      [
+        "y_or_",
+        "poison"
+      ],
+      [
+        "injur",
+        "y_or_poison"
+      ],
+      [
+        "injury_or_poison",
+        "ing"
+      ],
+      [
+        "p",
+        "on"
+      ],
+      [
+        "_com",
+        "pon"
+      ],
+      [
+        "_compon",
+        "ent"
+      ],
+      [
+        "m",
+        "ac"
+      ],
+      [
+        "r",
+        "us"
+      ],
+      [
+        "u",
+        "te"
+      ],
+      [
+        "at",
+        "tr"
+      ],
+      [
+        "ib",
+        "ute"
+      ],
+      [
+        "diagnostic_",
+        "procedure"
+      ],
+      [
+        "attr",
+        "ibute"
+      ],
+      [
+        "y_",
+        "procedure"
+      ],
+      [
+        "laborator",
+        "y_procedure"
+      ],
+      [
+        "ur",
+        "es"
+      ],
+      [
+        "meas",
+        "ures"
+      ],
+      [
+        "vi",
+        "e"
+      ],
+      [
+        "ther",
+        "n_"
+      ],
+      [
+        "f",
+        "orm"
+      ],
+      [
+        "struct",
+        "ure"
+      ],
+      [
+        "is",
+        "tan"
+      ],
+      [
+        "ce",
+        "pt"
+      ],
+      [
+        "con",
+        "cept"
+      ],
+      [
+        "hu",
+        "man"
+      ],
+      [
+        "f",
+        "ac"
+      ],
+      [
+        "or",
+        "e"
+      ],
+      [
+        "americ",
+        "as"
+      ],
+      [
+        "fac",
+        "t"
+      ],
+      [
+        "c",
+        "l"
+      ],
+      [
+        "i",
+        "m"
+      ],
+      [
+        "ti",
+        "d"
+      ],
+      [
+        "in",
+        "a"
+      ],
+      [
+        "ac",
+        "id"
+      ],
+      [
+        "acid",
+        "_"
+      ],
+      [
+        "ur",
+        "s"
+      ],
+      [
+        "occ",
+        "urs"
+      ],
+      [
+        "re",
+        "p"
+      ],
+      [
+        "an",
+        "ti"
+      ],
+      [
+        "p",
+        "a"
+      ],
+      [
+        "tiv",
+        "e_"
+      ],
+      [
+        "r",
+        "up"
+      ],
+      [
+        "ter",
+        "i"
+      ],
+      [
+        "ec",
+        "e"
+      ],
+      [
+        "dis",
+        "rup"
+      ],
+      [
+        "disrup",
+        "ts"
+      ],
+      [
+        "g",
+        "o"
+      ],
+      [
+        "a",
+        "z"
+      ],
+      [
+        "i",
+        "l"
+      ],
+      [
+        "ical_",
+        "vie"
+      ],
+      [
+        "chem",
+        "ical_vie"
+      ],
+      [
+        "all",
+        "y"
+      ],
+      [
+        "chemical_vie",
+        "w"
+      ],
+      [
+        "m",
+        "e"
+      ],
+      [
+        "ical_",
+        "occupation_or_discipline"
+      ],
+      [
+        "biomed",
+        "ical_occupation_or_discipline"
+      ],
+      [
+        "b",
+        "ia"
+      ],
+      [
+        "o",
+        "id"
+      ],
+      [
+        "u",
+        "al_"
+      ],
+      [
+        "te",
+        "br"
+      ],
+      [
+        "ver",
+        "tebr"
+      ],
+      [
+        "vertebr",
+        "ate"
+      ],
+      [
+        "n",
+        "at"
+      ],
+      [
+        "al_",
+        "phenomenon_or_process"
+      ],
+      [
+        "ur",
+        "al_phenomenon_or_process"
+      ],
+      [
+        "nat",
+        "ural_phenomenon_or_process"
+      ],
+      [
+        "k",
+        "e"
+      ],
+      [
+        "n",
+        "or"
+      ],
+      [
+        "organ",
+        "ic_"
+      ],
+      [
+        "organic_",
+        "chemical"
+      ],
+      [
+        "on",
+        "e"
+      ],
+      [
+        "a",
+        "g"
+      ],
+      [
+        "e",
+        "f"
+      ],
+      [
+        "in",
+        "ical_"
+      ],
+      [
+        "cl",
+        "inical_"
+      ],
+      [
+        "term2",
+        "1"
+      ],
+      [
+        "sou",
+        "th_"
+      ],
+      [
+        "i",
+        "on"
+      ],
+      [
+        "ti",
+        "ty"
+      ],
+      [
+        "en",
+        "tity"
+      ],
+      [
+        "pr",
+        "ev"
+      ],
+      [
+        "r",
+        "a"
+      ],
+      [
+        "eas",
+        "tern_"
+      ],
+      [
+        "b",
+        "o"
+      ],
+      [
+        "m",
+        "un"
+      ],
+      [
+        "ologic_",
+        "fact"
+      ],
+      [
+        "im",
+        "mun"
+      ],
+      [
+        "ologic_fact",
+        "or"
+      ],
+      [
+        "immun",
+        "ologic_factor"
+      ],
+      [
+        "w",
+        "es"
+      ],
+      [
+        "wes",
+        "tern_"
+      ],
+      [
+        "all",
+        "y_"
+      ],
+      [
+        "d",
+        "ev"
+      ],
+      [
+        "ologic",
+        "ally_"
+      ],
+      [
+        "bi",
+        "ologically_"
+      ],
+      [
+        "biologically_",
+        "active_substance"
+      ],
+      [
+        "m",
+        "a"
+      ],
+      [
+        "ec",
+        "h"
+      ],
+      [
+        "qu",
+        "e"
+      ],
+      [
+        "ic",
+        "e"
+      ],
+      [
+        "dev",
+        "ice"
+      ],
+      [
+        "s",
+        "a"
+      ],
+      [
+        "h",
+        "orm"
+      ],
+      [
+        "r",
+        "ece"
+      ],
+      [
+        "v",
+        "it"
+      ],
+      [
+        "y",
+        "me"
+      ],
+      [
+        "z",
+        "yme"
+      ],
+      [
+        "en",
+        "ic_"
+      ],
+      [
+        "en",
+        "zyme"
+      ],
+      [
+        "_or_",
+        "bi"
+      ],
+      [
+        "ne",
+        "ur"
+      ],
+      [
+        "og",
+        "enic_"
+      ],
+      [
+        "am",
+        "ine"
+      ],
+      [
+        "pt",
+        "or"
+      ],
+      [
+        "active_substance",
+        "_or_bi"
+      ],
+      [
+        "ore",
+        "active_substance_or_bi"
+      ],
+      [
+        "horm",
+        "one"
+      ],
+      [
+        "rece",
+        "ptor"
+      ],
+      [
+        "vit",
+        "amin"
+      ],
+      [
+        "neur",
+        "oreactive_substance_or_bi"
+      ],
+      [
+        "ogenic_",
+        "amine"
+      ],
+      [
+        "neuroreactive_substance_or_bi",
+        "ogenic_amine"
+      ],
+      [
+        "c",
+        "o"
+      ],
+      [
+        "o",
+        "tic"
+      ],
+      [
+        "ar",
+        "mac"
+      ],
+      [
+        "bi",
+        "otic"
+      ],
+      [
+        "ph",
+        "armac"
+      ],
+      [
+        "ologic_",
+        "substance"
+      ],
+      [
+        "anti",
+        "biotic"
+      ],
+      [
+        "pharmac",
+        "ologic_substance"
+      ],
+      [
+        "a",
+        "d"
+      ],
+      [
+        "u",
+        "g"
+      ],
+      [
+        "pr",
+        "o"
+      ],
+      [
+        "ec",
+        "t"
+      ],
+      [
+        "d",
+        "an"
+      ],
+      [
+        "al",
+        "g"
+      ],
+      [
+        "u",
+        "m"
+      ],
+      [
+        "anatomical_",
+        "structure"
+      ],
+      [
+        "fec",
+        "t_of"
+      ],
+      [
+        "ef",
+        "fect_of"
+      ],
+      [
+        "e",
+        "al"
+      ],
+      [
+        "occupation",
+        "al_"
+      ],
+      [
+        "es",
+        "ia"
+      ],
+      [
+        "o",
+        "v"
+      ],
+      [
+        "a",
+        "pe"
+      ],
+      [
+        "u",
+        "tic"
+      ],
+      [
+        "en",
+        "tive_"
+      ],
+      [
+        "_or_",
+        "prev"
+      ],
+      [
+        "ther",
+        "ape"
+      ],
+      [
+        "utic",
+        "_or_prev"
+      ],
+      [
+        "entive_",
+        "procedure"
+      ],
+      [
+        "therape",
+        "utic_or_prev"
+      ],
+      [
+        "therapeutic_or_prev",
+        "entive_procedure"
+      ],
+      [
+        "dr",
+        "ug"
+      ],
+      [
+        "_",
+        "resul"
+      ],
+      [
+        "t",
+        "est"
+      ],
+      [
+        "y_or_",
+        "test"
+      ],
+      [
+        "laborator",
+        "y_or_test"
+      ],
+      [
+        "_resul",
+        "t"
+      ],
+      [
+        "laboratory_or_test",
+        "_result"
+      ],
+      [
+        "i",
+        "z"
+      ],
+      [
+        "un",
+        "d"
+      ],
+      [
+        "ar",
+        "d"
+      ],
+      [
+        "es",
+        "_"
+      ],
+      [
+        "o",
+        "b"
+      ],
+      [
+        "land",
+        "s"
+      ],
+      [
+        "er",
+        "ia"
+      ],
+      [
+        "of",
+        "ess"
+      ],
+      [
+        "pr",
+        "ofess"
+      ],
+      [
+        "ul",
+        "ation"
+      ],
+      [
+        "profess",
+        "ion"
+      ],
+      [
+        "u",
+        "b"
+      ],
+      [
+        "an",
+        "_"
+      ],
+      [
+        "an",
+        "a"
+      ],
+      [
+        "oc",
+        "e"
+      ],
+      [
+        "_",
+        "substance"
+      ],
+      [
+        "_",
+        "attribute"
+      ],
+      [
+        "o",
+        "_"
+      ],
+      [
+        "t",
+        "_organ"
+      ],
+      [
+        "z",
+        "ard"
+      ],
+      [
+        "_or",
+        "_organ"
+      ],
+      [
+        "_or_",
+        "poison"
+      ],
+      [
+        "ch",
+        "ina"
+      ],
+      [
+        "ha",
+        "zard"
+      ],
+      [
+        "re",
+        "g"
+      ],
+      [
+        "par",
+        "t_organ"
+      ],
+      [
+        "body_",
+        "part_organ"
+      ],
+      [
+        "ous",
+        "_substance"
+      ],
+      [
+        "ous",
+        "_or_poison"
+      ],
+      [
+        "_or_organ",
+        "_component"
+      ],
+      [
+        "hazard",
+        "ous_or_poison"
+      ],
+      [
+        "body_part_organ",
+        "_or_organ_component"
+      ],
+      [
+        "hazardous_or_poison",
+        "ous_substance"
+      ],
+      [
+        "j",
+        "ect"
+      ],
+      [
+        "k",
+        "istan"
+      ],
+      [
+        "ob",
+        "ject"
+      ],
+      [
+        "vi",
+        "rus"
+      ],
+      [
+        "nor",
+        "thern_"
+      ],
+      [
+        "l",
+        "i"
+      ],
+      [
+        "n",
+        "i"
+      ],
+      [
+        "and",
+        "_"
+      ],
+      [
+        "z",
+        "am"
+      ],
+      [
+        "al",
+        "y"
+      ],
+      [
+        "en",
+        "e"
+      ],
+      [
+        "con",
+        "go"
+      ],
+      [
+        "oce",
+        "ania"
+      ],
+      [
+        "cell",
+        "_component"
+      ],
+      [
+        "_",
+        "in"
+      ],
+      [
+        "per",
+        "form"
+      ],
+      [
+        "occurs",
+        "_in"
+      ],
+      [
+        "perform",
+        "s"
+      ],
+      [
+        "c",
+        "ent"
+      ],
+      [
+        "t",
+        "ur"
+      ],
+      [
+        "_",
+        "and_"
+      ],
+      [
+        "b",
+        "ac"
+      ],
+      [
+        "h",
+        "eal"
+      ],
+      [
+        "l",
+        "am"
+      ],
+      [
+        "s",
+        "ia"
+      ],
+      [
+        "t",
+        "ts"
+      ],
+      [
+        "y",
+        "dia"
+      ],
+      [
+        "_or_",
+        "ch"
+      ],
+      [
+        "_or_",
+        "gen"
+      ],
+      [
+        "ia",
+        "_or_ch"
+      ],
+      [
+        "ric",
+        "ke"
+      ],
+      [
+        "gene",
+        "_or_gen"
+      ],
+      [
+        "car",
+        "e_"
+      ],
+      [
+        "th_",
+        "care_"
+      ],
+      [
+        "rus",
+        "sia"
+      ],
+      [
+        "teri",
+        "um"
+      ],
+      [
+        "iz",
+        "ation"
+      ],
+      [
+        "ni",
+        "que"
+      ],
+      [
+        "bac",
+        "terium"
+      ],
+      [
+        "heal",
+        "th_care_"
+      ],
+      [
+        "lam",
+        "ydia"
+      ],
+      [
+        "tts",
+        "ia_or_ch"
+      ],
+      [
+        "ricke",
+        "ttsia_or_ch"
+      ],
+      [
+        "gene_or_gen",
+        "ome"
+      ],
+      [
+        "rickettsia_or_ch",
+        "lamydia"
+      ],
+      [
+        "g",
+        "us"
+      ],
+      [
+        "l",
+        "ic"
+      ],
+      [
+        "m",
+        "ar"
+      ],
+      [
+        "fun",
+        "gus"
+      ],
+      [
+        "su",
+        "dan"
+      ],
+      [
+        "ine",
+        "a"
+      ],
+      [
+        "gu",
+        "inea"
+      ],
+      [
+        "rep",
+        "ub"
+      ],
+      [
+        "repub",
+        "lic"
+      ],
+      [
+        "o",
+        "tid"
+      ],
+      [
+        "as",
+        "s"
+      ],
+      [
+        "nucle",
+        "otid"
+      ],
+      [
+        "amin",
+        "o_"
+      ],
+      [
+        "amino_",
+        "acid_"
+      ],
+      [
+        "p",
+        "ol"
+      ],
+      [
+        "organism",
+        "_attribute"
+      ],
+      [
+        "clinical_",
+        "attribute"
+      ],
+      [
+        "_",
+        "is"
+      ],
+      [
+        "be",
+        "an"
+      ],
+      [
+        "ib",
+        "bean"
+      ],
+      [
+        "car",
+        "ibbean"
+      ],
+      [
+        "h",
+        "y"
+      ],
+      [
+        "r",
+        "al_"
+      ],
+      [
+        "car",
+        "bo"
+      ],
+      [
+        "cent",
+        "ral_"
+      ],
+      [
+        "hy",
+        "dr"
+      ],
+      [
+        "carbo",
+        "hydr"
+      ],
+      [
+        "g",
+        "ar"
+      ],
+      [
+        "t",
+        "ech"
+      ],
+      [
+        "olog",
+        "y_"
+      ],
+      [
+        "bi",
+        "ology_"
+      ],
+      [
+        "molecular_",
+        "biology_"
+      ],
+      [
+        "research_",
+        "tech"
+      ],
+      [
+        "molecular_biology_",
+        "research_tech"
+      ],
+      [
+        "molecular_biology_research_tech",
+        "nique"
+      ],
+      [
+        "ic",
+        "os"
+      ],
+      [
+        "sou",
+        "thern_"
+      ],
+      [
+        "b",
+        "el"
+      ],
+      [
+        "f",
+        "ul"
+      ],
+      [
+        "l",
+        "y_"
+      ],
+      [
+        "ed_",
+        "anatomical_structure"
+      ],
+      [
+        "research_",
+        "activity"
+      ],
+      [
+        "form",
+        "ed_anatomical_structure"
+      ],
+      [
+        "ful",
+        "ly_"
+      ],
+      [
+        "fully_",
+        "formed_anatomical_structure"
+      ],
+      [
+        "r",
+        "on"
+      ],
+      [
+        "t",
+        "a"
+      ],
+      [
+        "el",
+        "i"
+      ],
+      [
+        "aus",
+        "tr"
+      ],
+      [
+        "americ",
+        "a"
+      ],
+      [
+        "pa",
+        "ti"
+      ],
+      [
+        "i",
+        "v"
+      ],
+      [
+        "ed",
+        "_function"
+      ],
+      [
+        "chemical_view",
+        "ed_function"
+      ],
+      [
+        "chemical_viewed_function",
+        "ally"
+      ],
+      [
+        "f",
+        "r"
+      ],
+      [
+        "i",
+        "mal"
+      ],
+      [
+        "p",
+        "id"
+      ],
+      [
+        "an",
+        "imal"
+      ],
+      [
+        "ind",
+        "i"
+      ],
+      [
+        "li",
+        "pid"
+      ],
+      [
+        "e",
+        "icos"
+      ],
+      [
+        "n",
+        "ig"
+      ],
+      [
+        "p",
+        "tid"
+      ],
+      [
+        "s",
+        "ter"
+      ],
+      [
+        "y",
+        "a"
+      ],
+      [
+        "an",
+        "oid"
+      ],
+      [
+        "in",
+        "vertebrate"
+      ],
+      [
+        "ur",
+        "ally"
+      ],
+      [
+        "os",
+        "id"
+      ],
+      [
+        "ed_",
+        "struct"
+      ],
+      [
+        "pe",
+        "ptid"
+      ],
+      [
+        "te",
+        "in"
+      ],
+      [
+        "ic_",
+        "acid_"
+      ],
+      [
+        "nucle",
+        "osid"
+      ],
+      [
+        "nucle",
+        "ic_acid_"
+      ],
+      [
+        "e_or_",
+        "pro"
+      ],
+      [
+        "e_or_",
+        "nucleotid"
+      ],
+      [
+        "chemical_view",
+        "ed_struct"
+      ],
+      [
+        "amino_acid_",
+        "peptid"
+      ],
+      [
+        "eicos",
+        "anoid"
+      ],
+      [
+        "ster",
+        "oid"
+      ],
+      [
+        "nucleosid",
+        "e_or_nucleotid"
+      ],
+      [
+        "nucleic_acid_",
+        "nucleoside_or_nucleotid"
+      ],
+      [
+        "e_or_pro",
+        "tein"
+      ],
+      [
+        "chemical_viewed_struct",
+        "urally"
+      ],
+      [
+        "amino_acid_peptid",
+        "e_or_protein"
+      ],
+      [
+        "nucleic_acid_nucleoside_or_nucleotid",
+        "e"
+      ],
+      [
+        "o",
+        "ph"
+      ],
+      [
+        "or",
+        "us"
+      ],
+      [
+        "ph",
+        "orus"
+      ],
+      [
+        "organ",
+        "oph"
+      ],
+      [
+        "os",
+        "phorus"
+      ],
+      [
+        "po",
+        "und"
+      ],
+      [
+        "_com",
+        "pound"
+      ],
+      [
+        "carbohydr",
+        "ate"
+      ],
+      [
+        "organoph",
+        "osphorus"
+      ],
+      [
+        "organophosphorus",
+        "_compound"
+      ],
+      [
+        "ed",
+        "es"
+      ],
+      [
+        "pr",
+        "ec"
+      ],
+      [
+        "prec",
+        "edes"
+      ],
+      [
+        "o",
+        "t"
+      ],
+      [
+        "al_or_",
+        "occupational_"
+      ],
+      [
+        "profession",
+        "al_or_occupational_"
+      ],
+      [
+        "_is",
+        "lands"
+      ],
+      [
+        "professional_or_occupational_",
+        "group"
+      ],
+      [
+        "m",
+        "am"
+      ],
+      [
+        "an",
+        "t"
+      ],
+      [
+        "pl",
+        "ant"
+      ],
+      [
+        "alg",
+        "a"
+      ],
+      [
+        "mam",
+        "mal"
+      ],
+      [
+        "a",
+        "k"
+      ],
+      [
+        "d",
+        "ual_"
+      ],
+      [
+        "f",
+        "is"
+      ],
+      [
+        "i",
+        "bi"
+      ],
+      [
+        "r",
+        "d"
+      ],
+      [
+        "ti",
+        "le"
+      ],
+      [
+        "am",
+        "ph"
+      ],
+      [
+        "bi",
+        "rd"
+      ],
+      [
+        "vi",
+        "dual_"
+      ],
+      [
+        "rep",
+        "tile"
+      ],
+      [
+        "indi",
+        "vidual_"
+      ],
+      [
+        "fis",
+        "h"
+      ],
+      [
+        "ibi",
+        "an"
+      ],
+      [
+        "amph",
+        "ibian"
+      ],
+      [
+        "individual_",
+        "behavior"
+      ],
+      [
+        "_",
+        "group"
+      ],
+      [
+        "g",
+        "h"
+      ],
+      [
+        "p",
+        "ulation"
+      ],
+      [
+        "al",
+        "u"
+      ],
+      [
+        "po",
+        "pulation"
+      ],
+      [
+        "population",
+        "_group"
+      ],
+      [
+        "a",
+        "y"
+      ],
+      [
+        "m",
+        "on"
+      ],
+      [
+        "gr",
+        "e"
+      ],
+      [
+        "-",
+        "occurs"
+      ],
+      [
+        "d",
+        "a"
+      ],
+      [
+        "body_",
+        "substance"
+      ],
+      [
+        "co",
+        "-occurs"
+      ],
+      [
+        "co-occurs",
+        "_with"
+      ],
+      [
+        "_",
+        "i"
+      ],
+      [
+        "_",
+        "re"
+      ],
+      [
+        "a",
+        "id"
+      ],
+      [
+        "d",
+        "ent"
+      ],
+      [
+        "e",
+        "ment"
+      ],
+      [
+        "m",
+        "pt"
+      ],
+      [
+        "n",
+        "_or_sy"
+      ],
+      [
+        "s",
+        "ig"
+      ],
+      [
+        "in",
+        "organic_chemical"
+      ],
+      [
+        "ic",
+        "al_or_"
+      ],
+      [
+        "ic",
+        "ator"
+      ],
+      [
+        "_or_",
+        "diagnostic_"
+      ],
+      [
+        "is",
+        "ot"
+      ],
+      [
+        "al_",
+        "ma"
+      ],
+      [
+        "ent",
+        "_or_diagnostic_"
+      ],
+      [
+        "el",
+        "ement"
+      ],
+      [
+        "on_or_",
+        "isot"
+      ],
+      [
+        "ind",
+        "icator"
+      ],
+      [
+        "biomed",
+        "ical_or_"
+      ],
+      [
+        "teri",
+        "al"
+      ],
+      [
+        "ag",
+        "ent_or_diagnostic_"
+      ],
+      [
+        "_i",
+        "on_or_isot"
+      ],
+      [
+        "_re",
+        "agent_or_diagnostic_"
+      ],
+      [
+        "dent",
+        "al_ma"
+      ],
+      [
+        "mpt",
+        "om"
+      ],
+      [
+        "n_or_sy",
+        "mptom"
+      ],
+      [
+        "sig",
+        "n_or_symptom"
+      ],
+      [
+        "element",
+        "_ion_or_isot"
+      ],
+      [
+        "indicator",
+        "_reagent_or_diagnostic_"
+      ],
+      [
+        "biomedical_or_",
+        "dental_ma"
+      ],
+      [
+        "element_ion_or_isot",
+        "ope"
+      ],
+      [
+        "indicator_reagent_or_diagnostic_",
+        "aid"
+      ],
+      [
+        "biomedical_or_dental_ma",
+        "terial"
+      ],
+      [
+        "a",
+        "e"
+      ],
+      [
+        "a",
+        "i"
+      ],
+      [
+        "ess",
+        "es_"
+      ],
+      [
+        "us",
+        "es"
+      ],
+      [
+        "body_",
+        "s"
+      ],
+      [
+        "arch",
+        "ae"
+      ],
+      [
+        "ass",
+        "esses_"
+      ],
+      [
+        "archae",
+        "on"
+      ],
+      [
+        "assesses_",
+        "effect_of"
+      ],
+      [
+        "l",
+        "ed_"
+      ],
+      [
+        "l",
+        "ib"
+      ],
+      [
+        "l",
+        "ov"
+      ],
+      [
+        "s",
+        "lov"
+      ],
+      [
+        "ent",
+        "_or_dis"
+      ],
+      [
+        "ment",
+        "_of"
+      ],
+      [
+        "ical_",
+        "object"
+      ],
+      [
+        "ab",
+        "led_"
+      ],
+      [
+        "ure",
+        "ment_of"
+      ],
+      [
+        "phys",
+        "ical_object"
+      ],
+      [
+        "br",
+        "az"
+      ],
+      [
+        "meas",
+        "urement_of"
+      ],
+      [
+        "pati",
+        "ent_or_dis"
+      ],
+      [
+        "abled_",
+        "group"
+      ],
+      [
+        "braz",
+        "il"
+      ],
+      [
+        "patient_or_dis",
+        "abled_group"
+      ],
+      [
+        "b",
+        "ur"
+      ],
+      [
+        "ar",
+        "ab"
+      ],
+      [
+        "ev",
+        "alu"
+      ],
+      [
+        "evalu",
+        "ation_of"
+      ],
+      [
+        "sa",
+        "u"
+      ],
+      [
+        "f",
+        "am"
+      ],
+      [
+        "e_",
+        "group"
+      ],
+      [
+        "y_",
+        "group"
+      ],
+      [
+        "il",
+        "y_group"
+      ],
+      [
+        "ag",
+        "e_group"
+      ],
+      [
+        "fam",
+        "ily_group"
+      ],
+      [
+        "e",
+        "qu"
+      ],
+      [
+        "m",
+        "en"
+      ],
+      [
+        "un",
+        "it"
+      ],
+      [
+        "unit",
+        "ed_"
+      ],
+      [
+        "_",
+        "congo"
+      ],
+      [
+        "g",
+        "er"
+      ],
+      [
+        "al_",
+        "behavior"
+      ],
+      [
+        "dr",
+        "_congo"
+      ],
+      [
+        "man",
+        "y"
+      ],
+      [
+        "soci",
+        "al_behavior"
+      ],
+      [
+        "health_care_",
+        "activity"
+      ],
+      [
+        "ger",
+        "many"
+      ],
+      [
+        "y",
+        "on"
+      ],
+      [
+        "on",
+        "ia"
+      ],
+      [
+        "em",
+        "br"
+      ],
+      [
+        "ic_",
+        "structure"
+      ],
+      [
+        "_organ",
+        "ization"
+      ],
+      [
+        "clinical_",
+        "drug"
+      ],
+      [
+        "yon",
+        "ic_structure"
+      ],
+      [
+        "embr",
+        "yonic_structure"
+      ],
+      [
+        "concept",
+        "ual_"
+      ],
+      [
+        "eastern_",
+        "asia"
+      ],
+      [
+        "g",
+        "e"
+      ],
+      [
+        "g",
+        "y"
+      ],
+      [
+        "i",
+        "_"
+      ],
+      [
+        "t",
+        "re"
+      ],
+      [
+        "at",
+        "s"
+      ],
+      [
+        "tre",
+        "ats"
+      ],
+      [
+        "t",
+        "_"
+      ],
+      [
+        "in",
+        "t_"
+      ],
+      [
+        "austr",
+        "ia"
+      ],
+      [
+        "n",
+        "am"
+      ],
+      [
+        "z",
+        "ania"
+      ],
+      [
+        "an",
+        "ce"
+      ],
+      [
+        "al_",
+        "activity"
+      ],
+      [
+        "ation",
+        "al_activity"
+      ],
+      [
+        "tan",
+        "zania"
+      ],
+      [
+        "ke",
+        "y"
+      ],
+      [
+        "an_",
+        "republic"
+      ],
+      [
+        "tur",
+        "key"
+      ],
+      [
+        "fr",
+        "ance"
+      ],
+      [
+        "f",
+        "ind"
+      ],
+      [
+        "s",
+        "er"
+      ],
+      [
+        "z",
+        "es"
+      ],
+      [
+        "an",
+        "aly"
+      ],
+      [
+        "zam",
+        "bia"
+      ],
+      [
+        "find",
+        "ing"
+      ],
+      [
+        "ser",
+        "bia"
+      ],
+      [
+        "analy",
+        "zes"
+      ],
+      [
+        "eastern_",
+        "africa"
+      ],
+      [
+        "j",
+        "un"
+      ],
+      [
+        "p",
+        "ac"
+      ],
+      [
+        "in",
+        "dia"
+      ],
+      [
+        "e_or_",
+        "jun"
+      ],
+      [
+        "body_s",
+        "pac"
+      ],
+      [
+        "e_or_jun",
+        "ction"
+      ],
+      [
+        "body_spac",
+        "e_or_junction"
+      ],
+      [
+        "_",
+        "d"
+      ],
+      [
+        "_",
+        "caus"
+      ],
+      [
+        "_",
+        "human"
+      ],
+      [
+        "en",
+        "vi"
+      ],
+      [
+        "y_",
+        "device"
+      ],
+      [
+        "mental_",
+        "effect_of"
+      ],
+      [
+        "ed_",
+        "phenomenon_or_process"
+      ],
+      [
+        "ver",
+        "y_device"
+      ],
+      [
+        "human",
+        "_caus"
+      ],
+      [
+        "drug",
+        "_d"
+      ],
+      [
+        "northern_",
+        "europe"
+      ],
+      [
+        "ron",
+        "mental_effect_of"
+      ],
+      [
+        "eli",
+        "very_device"
+      ],
+      [
+        "_human",
+        "s"
+      ],
+      [
+        "envi",
+        "ronmental_effect_of"
+      ],
+      [
+        "human_caus",
+        "ed_phenomenon_or_process"
+      ],
+      [
+        "drug_d",
+        "elivery_device"
+      ],
+      [
+        "environmental_effect_of",
+        "_humans"
+      ],
+      [
+        "m",
+        "ed"
+      ],
+      [
+        "ical_",
+        "device"
+      ],
+      [
+        "ir",
+        "an"
+      ],
+      [
+        "diagnos",
+        "es"
+      ],
+      [
+        "med",
+        "ical_device"
+      ],
+      [
+        "h",
+        "un"
+      ],
+      [
+        "k",
+        "ra"
+      ],
+      [
+        "u",
+        "kra"
+      ],
+      [
+        "ti",
+        "n"
+      ],
+      [
+        "mal",
+        "a"
+      ],
+      [
+        "tive_",
+        "concept"
+      ],
+      [
+        "alg",
+        "eria"
+      ],
+      [
+        "gar",
+        "y"
+      ],
+      [
+        "hun",
+        "gary"
+      ],
+      [
+        "ukra",
+        "ine"
+      ],
+      [
+        "d",
+        "i_"
+      ],
+      [
+        "g",
+        "ol"
+      ],
+      [
+        "o",
+        "a"
+      ],
+      [
+        "al",
+        "ia"
+      ],
+      [
+        "mal",
+        "i"
+      ],
+      [
+        "pol",
+        "and"
+      ],
+      [
+        "nig",
+        "er"
+      ],
+      [
+        "arab",
+        "ia"
+      ],
+      [
+        "sau",
+        "di_"
+      ],
+      [
+        "saudi_",
+        "arabia"
+      ],
+      [
+        "h",
+        "ib"
+      ],
+      [
+        "o",
+        "p"
+      ],
+      [
+        "an",
+        "istan"
+      ],
+      [
+        "it",
+        "s"
+      ],
+      [
+        "af",
+        "gh"
+      ],
+      [
+        "ex",
+        "hib"
+      ],
+      [
+        "afgh",
+        "anistan"
+      ],
+      [
+        "exhib",
+        "its"
+      ],
+      [
+        "per",
+        "ty"
+      ],
+      [
+        "ou",
+        "t"
+      ],
+      [
+        "pro",
+        "perty"
+      ],
+      [
+        "property",
+        "_of"
+      ],
+      [
+        "term1",
+        "4"
+      ],
+      [
+        "al_",
+        "concept"
+      ],
+      [
+        "south_",
+        "sudan"
+      ],
+      [
+        "western_",
+        "africa"
+      ],
+      [
+        "s",
+        "equ"
+      ],
+      [
+        "w",
+        "_"
+      ],
+      [
+        "en",
+        "ce"
+      ],
+      [
+        "ne",
+        "w_"
+      ],
+      [
+        "western_",
+        "asia"
+      ],
+      [
+        "sa",
+        "int_"
+      ],
+      [
+        "sequ",
+        "ence"
+      ],
+      [
+        "_",
+        "f"
+      ],
+      [
+        "a",
+        "q"
+      ],
+      [
+        "c",
+        "amer"
+      ],
+      [
+        "e",
+        "a"
+      ],
+      [
+        "e",
+        "th"
+      ],
+      [
+        "i",
+        "op"
+      ],
+      [
+        "k",
+        "ina"
+      ],
+      [
+        "m",
+        "o"
+      ],
+      [
+        "o",
+        "on"
+      ],
+      [
+        "ed",
+        "onia"
+      ],
+      [
+        "as",
+        "o"
+      ],
+      [
+        "it",
+        "aly"
+      ],
+      [
+        "bi",
+        "que"
+      ],
+      [
+        "ch",
+        "ad"
+      ],
+      [
+        "afric",
+        "an_republic"
+      ],
+      [
+        "ir",
+        "aq"
+      ],
+      [
+        "south_",
+        "africa"
+      ],
+      [
+        "zam",
+        "bique"
+      ],
+      [
+        "central_",
+        "african_republic"
+      ],
+      [
+        "bur",
+        "kina"
+      ],
+      [
+        "_f",
+        "aso"
+      ],
+      [
+        "camer",
+        "oon"
+      ],
+      [
+        "eth",
+        "iop"
+      ],
+      [
+        "mo",
+        "zambique"
+      ],
+      [
+        "burkina",
+        "_faso"
+      ],
+      [
+        "ethiop",
+        "ia"
+      ],
+      [
+        "d",
+        "e"
+      ],
+      [
+        "ar",
+        "a"
+      ],
+      [
+        "ol",
+        "om"
+      ],
+      [
+        "th",
+        "e_"
+      ],
+      [
+        "south_",
+        "america"
+      ],
+      [
+        "lib",
+        "ya"
+      ],
+      [
+        "n",
+        "esia"
+      ],
+      [
+        "y",
+        "nesia"
+      ],
+      [
+        "gu",
+        "ay"
+      ],
+      [
+        "occupational_",
+        "activity"
+      ],
+      [
+        "pol",
+        "ynesia"
+      ],
+      [
+        "southern_",
+        "europe"
+      ],
+      [
+        "conceptual_",
+        "entity"
+      ],
+      [
+        "i",
+        "es_"
+      ],
+      [
+        "r",
+        "ies_"
+      ],
+      [
+        "car",
+        "ries_"
+      ],
+      [
+        "carries_",
+        "out"
+      ],
+      [
+        "t",
+        "em"
+      ],
+      [
+        "j",
+        "i"
+      ],
+      [
+        "p",
+        "al"
+      ],
+      [
+        "s",
+        "w"
+      ],
+      [
+        "s",
+        "wit"
+      ],
+      [
+        "u",
+        "z"
+      ],
+      [
+        "z",
+        "er"
+      ],
+      [
+        "be",
+        "kistan"
+      ],
+      [
+        "ev",
+        "ent"
+      ],
+      [
+        "la",
+        "os"
+      ],
+      [
+        "tur",
+        "k"
+      ],
+      [
+        "swit",
+        "zer"
+      ],
+      [
+        "uz",
+        "bekistan"
+      ],
+      [
+        "switzer",
+        "land"
+      ],
+      [
+        "b",
+        "ol"
+      ],
+      [
+        "b",
+        "ul"
+      ],
+      [
+        "b",
+        "ai"
+      ],
+      [
+        "e",
+        "_of"
+      ],
+      [
+        "g",
+        "al"
+      ],
+      [
+        "g",
+        "ia"
+      ],
+      [
+        "h",
+        "stan"
+      ],
+      [
+        "j",
+        "an"
+      ],
+      [
+        "k",
+        "en"
+      ],
+      [
+        "k",
+        "ore"
+      ],
+      [
+        "k",
+        "az"
+      ],
+      [
+        "m",
+        "y"
+      ],
+      [
+        "s",
+        "pa"
+      ],
+      [
+        "s",
+        "ene"
+      ],
+      [
+        "t",
+        "ene"
+      ],
+      [
+        "er",
+        "bai"
+      ],
+      [
+        "per",
+        "u"
+      ],
+      [
+        "or",
+        "y_"
+      ],
+      [
+        "or",
+        "gia"
+      ],
+      [
+        "al",
+        "b"
+      ],
+      [
+        "an",
+        "mar"
+      ],
+      [
+        "_or_",
+        "reg"
+      ],
+      [
+        "as",
+        "t"
+      ],
+      [
+        "ar",
+        "us"
+      ],
+      [
+        "ar",
+        "gen"
+      ],
+      [
+        "loc",
+        "ation"
+      ],
+      [
+        "body_",
+        "location"
+      ],
+      [
+        "mac",
+        "edonia"
+      ],
+      [
+        "az",
+        "erbai"
+      ],
+      [
+        "co",
+        "ast"
+      ],
+      [
+        "gar",
+        "ia"
+      ],
+      [
+        "bel",
+        "arus"
+      ],
+      [
+        "iv",
+        "ia"
+      ],
+      [
+        "iv",
+        "ory_"
+      ],
+      [
+        "ak",
+        "ia"
+      ],
+      [
+        "ak",
+        "hstan"
+      ],
+      [
+        "mon",
+        "tene"
+      ],
+      [
+        "slov",
+        "akia"
+      ],
+      [
+        "ge",
+        "orgia"
+      ],
+      [
+        "tin",
+        "a"
+      ],
+      [
+        "bol",
+        "ivia"
+      ],
+      [
+        "bul",
+        "garia"
+      ],
+      [
+        "ken",
+        "ya"
+      ],
+      [
+        "kore",
+        "a"
+      ],
+      [
+        "kaz",
+        "akhstan"
+      ],
+      [
+        "my",
+        "anmar"
+      ],
+      [
+        "spa",
+        "in"
+      ],
+      [
+        "sene",
+        "gal"
+      ],
+      [
+        "_or_reg",
+        "ion"
+      ],
+      [
+        "argen",
+        "tina"
+      ],
+      [
+        "body_location",
+        "_or_region"
+      ],
+      [
+        "azerbai",
+        "jan"
+      ],
+      [
+        "ivory_",
+        "coast"
+      ],
+      [
+        "montene",
+        "gro"
+      ],
+      [
+        "-",
+        "eastern_asia"
+      ],
+      [
+        "c",
+        "r"
+      ],
+      [
+        "c",
+        "olom"
+      ],
+      [
+        "p",
+        "or"
+      ],
+      [
+        "r",
+        "ia"
+      ],
+      [
+        "r",
+        "om"
+      ],
+      [
+        "u",
+        "gan"
+      ],
+      [
+        "ti",
+        "a"
+      ],
+      [
+        "th",
+        "-eastern_asia"
+      ],
+      [
+        "sy",
+        "ria"
+      ],
+      [
+        "_of_",
+        "the_"
+      ],
+      [
+        "sou",
+        "th-eastern_asia"
+      ],
+      [
+        "ma",
+        "ur"
+      ],
+      [
+        "ad",
+        "or"
+      ],
+      [
+        "republic",
+        "_of_the_"
+      ],
+      [
+        "gre",
+        "e_of"
+      ],
+      [
+        "oa",
+        "tia"
+      ],
+      [
+        "de",
+        "gree_of"
+      ],
+      [
+        "cr",
+        "oatia"
+      ],
+      [
+        "colom",
+        "bia"
+      ],
+      [
+        "rom",
+        "ania"
+      ],
+      [
+        "ugan",
+        "da"
+      ],
+      [
+        "republic_of_the_",
+        "congo"
+      ],
+      [
+        "b",
+        "an"
+      ],
+      [
+        "d",
+        "om"
+      ],
+      [
+        "f",
+        "o"
+      ],
+      [
+        "h",
+        "on"
+      ],
+      [
+        "m",
+        "or"
+      ],
+      [
+        "n",
+        "mental_or_"
+      ],
+      [
+        "u",
+        "fact"
+      ],
+      [
+        "ed",
+        "uc"
+      ],
+      [
+        "ur",
+        "ed_"
+      ],
+      [
+        "ent",
+        "s"
+      ],
+      [
+        "ul",
+        "ator"
+      ],
+      [
+        "y_",
+        "activity"
+      ],
+      [
+        "man",
+        "ufact"
+      ],
+      [
+        "ver",
+        "nmental_or_"
+      ],
+      [
+        "go",
+        "vernmental_or_"
+      ],
+      [
+        "prev",
+        "ents"
+      ],
+      [
+        "reg",
+        "ulator"
+      ],
+      [
+        "fo",
+        "od"
+      ],
+      [
+        "educ",
+        "ational_activity"
+      ],
+      [
+        "ured_",
+        "object"
+      ],
+      [
+        "manufact",
+        "ured_object"
+      ],
+      [
+        "governmental_or_",
+        "regulator"
+      ],
+      [
+        "governmental_or_regulator",
+        "y_activity"
+      ],
+      [
+        "j",
+        "or"
+      ],
+      [
+        "r",
+        "el"
+      ],
+      [
+        "_or_",
+        "la"
+      ],
+      [
+        "is",
+        "ra"
+      ],
+      [
+        "research_",
+        "device"
+      ],
+      [
+        "ulation",
+        "_or_la"
+      ],
+      [
+        "reg",
+        "ulation_or_la"
+      ],
+      [
+        "jor",
+        "dan"
+      ],
+      [
+        "rel",
+        "ated"
+      ],
+      [
+        "isra",
+        "el"
+      ],
+      [
+        "regulation_or_la",
+        "w"
+      ],
+      [
+        "k",
+        "y"
+      ],
+      [
+        "m",
+        "ic"
+      ],
+      [
+        "r",
+        "gy"
+      ],
+      [
+        "s",
+        "ur"
+      ],
+      [
+        "t",
+        "en"
+      ],
+      [
+        "z",
+        "stan"
+      ],
+      [
+        "ar",
+        "men"
+      ],
+      [
+        "organ",
+        "ization"
+      ],
+      [
+        "th",
+        "ai"
+      ],
+      [
+        "pa",
+        "kistan"
+      ],
+      [
+        "ron",
+        "esia"
+      ],
+      [
+        "ta",
+        "ji"
+      ],
+      [
+        "men",
+        "istan"
+      ],
+      [
+        "turk",
+        "menistan"
+      ],
+      [
+        "ky",
+        "rgy"
+      ],
+      [
+        "mic",
+        "ronesia"
+      ],
+      [
+        "armen",
+        "ia"
+      ],
+      [
+        "thai",
+        "land"
+      ],
+      [
+        "taji",
+        "kistan"
+      ],
+      [
+        "kyrgy",
+        "zstan"
+      ],
+      [
+        "_",
+        "h"
+      ],
+      [
+        "a",
+        "_"
+      ],
+      [
+        "b",
+        "en"
+      ],
+      [
+        "b",
+        "ab"
+      ],
+      [
+        "c",
+        "z"
+      ],
+      [
+        "d",
+        "l"
+      ],
+      [
+        "f",
+        "_h"
+      ],
+      [
+        "l",
+        "at"
+      ],
+      [
+        "l",
+        "it"
+      ],
+      [
+        "m",
+        "id"
+      ],
+      [
+        "p",
+        "_or_"
+      ],
+      [
+        "r",
+        "eli"
+      ],
+      [
+        "s",
+        "el"
+      ],
+      [
+        "v",
+        "ia"
+      ],
+      [
+        "w",
+        "e"
+      ],
+      [
+        "w",
+        "ana"
+      ],
+      [
+        "z",
+        "im"
+      ],
+      [
+        "an",
+        "gol"
+      ],
+      [
+        "en",
+        "ia"
+      ],
+      [
+        "ts",
+        "wana"
+      ],
+      [
+        "st",
+        "ates"
+      ],
+      [
+        "e_",
+        "africa"
+      ],
+      [
+        "el",
+        "a"
+      ],
+      [
+        "el",
+        "p_or_"
+      ],
+      [
+        "ib",
+        "ia"
+      ],
+      [
+        "hu",
+        "ania"
+      ],
+      [
+        "ef",
+        "_organization"
+      ],
+      [
+        "bo",
+        "tswana"
+      ],
+      [
+        "ech",
+        "ia"
+      ],
+      [
+        "health_care_",
+        "related"
+      ],
+      [
+        "nig",
+        "eria"
+      ],
+      [
+        "slov",
+        "enia"
+      ],
+      [
+        "united_",
+        "states"
+      ],
+      [
+        "nam",
+        "ibia"
+      ],
+      [
+        "alb",
+        "ania"
+      ],
+      [
+        "ben",
+        "in"
+      ],
+      [
+        "bab",
+        "we"
+      ],
+      [
+        "cz",
+        "echia"
+      ],
+      [
+        "dl",
+        "e_africa"
+      ],
+      [
+        "f_h",
+        "elp_or_"
+      ],
+      [
+        "lat",
+        "via"
+      ],
+      [
+        "lit",
+        "huania"
+      ],
+      [
+        "mid",
+        "dle_africa"
+      ],
+      [
+        "reli",
+        "ef_organization"
+      ],
+      [
+        "sel",
+        "f_help_or_"
+      ],
+      [
+        "zim",
+        "babwe"
+      ],
+      [
+        "angol",
+        "a"
+      ],
+      [
+        "health_care_related",
+        "_organization"
+      ],
+      [
+        "self_help_or_",
+        "relief_organization"
+      ],
+      [
+        "e",
+        "ty"
+      ],
+      [
+        "g",
+        "i"
+      ],
+      [
+        "i",
+        "ent"
+      ],
+      [
+        "k",
+        "os"
+      ],
+      [
+        "r",
+        "w"
+      ],
+      [
+        "al",
+        "a"
+      ],
+      [
+        "in",
+        "gr"
+      ],
+      [
+        "at",
+        "em"
+      ],
+      [
+        "ed",
+        "ient"
+      ],
+      [
+        "al_",
+        "soci"
+      ],
+      [
+        "it",
+        "ania"
+      ],
+      [
+        "and",
+        "a"
+      ],
+      [
+        "gu",
+        "atem"
+      ],
+      [
+        "eastern_",
+        "europe"
+      ],
+      [
+        "ov",
+        "o"
+      ],
+      [
+        "profession",
+        "al_soci"
+      ],
+      [
+        "bel",
+        "gi"
+      ],
+      [
+        "gre",
+        "ece"
+      ],
+      [
+        "maur",
+        "itania"
+      ],
+      [
+        "kos",
+        "ovo"
+      ],
+      [
+        "rw",
+        "anda"
+      ],
+      [
+        "ingr",
+        "edient"
+      ],
+      [
+        "guatem",
+        "ala"
+      ],
+      [
+        "professional_soci",
+        "ety"
+      ],
+      [
+        "belgi",
+        "um"
+      ],
+      [
+        "ingredient",
+        "_of"
+      ],
+      [
+        "ind",
+        "icates"
+      ],
+      [
+        "e",
+        "gy"
+      ],
+      [
+        "qu",
+        "anti"
+      ],
+      [
+        "western_",
+        "europe"
+      ],
+      [
+        "southern_",
+        "asia"
+      ],
+      [
+        "ta",
+        "tive_concept"
+      ],
+      [
+        "egy",
+        "pt"
+      ],
+      [
+        "quanti",
+        "tative_concept"
+      ],
+      [
+        "od",
+        "_of"
+      ],
+      [
+        "th",
+        "od_of"
+      ],
+      [
+        "me",
+        "thod_of"
+      ],
+      [
+        "c",
+        "am"
+      ],
+      [
+        "i",
+        "er"
+      ],
+      [
+        "i",
+        "le"
+      ],
+      [
+        "t",
+        "og"
+      ],
+      [
+        "t",
+        "nam"
+      ],
+      [
+        "z",
+        "eal"
+      ],
+      [
+        "ys",
+        "ia"
+      ],
+      [
+        "ch",
+        "ile"
+      ],
+      [
+        "bod",
+        "ia"
+      ],
+      [
+        "vie",
+        "tnam"
+      ],
+      [
+        "austr",
+        "alia"
+      ],
+      [
+        "gh",
+        "ana"
+      ],
+      [
+        "lib",
+        "eria"
+      ],
+      [
+        "mala",
+        "ysia"
+      ],
+      [
+        "new_",
+        "zeal"
+      ],
+      [
+        "cam",
+        "bodia"
+      ],
+      [
+        "tog",
+        "o"
+      ],
+      [
+        "new_zeal",
+        "and"
+      ],
+      [
+        "f",
+        "in"
+      ],
+      [
+        "g",
+        "ab"
+      ],
+      [
+        "h",
+        "ara"
+      ],
+      [
+        "i",
+        "ana"
+      ],
+      [
+        "l",
+        "u"
+      ],
+      [
+        "t",
+        "un"
+      ],
+      [
+        "u",
+        "ela"
+      ],
+      [
+        "v",
+        "ene"
+      ],
+      [
+        "w",
+        "i"
+      ],
+      [
+        "w",
+        "ay"
+      ],
+      [
+        "x",
+        "em"
+      ],
+      [
+        "y",
+        "ana"
+      ],
+      [
+        "z",
+        "uela"
+      ],
+      [
+        "er",
+        "it"
+      ],
+      [
+        "on",
+        "esia"
+      ],
+      [
+        "in",
+        "te"
+      ],
+      [
+        "en",
+        "ch"
+      ],
+      [
+        "ur",
+        "g"
+      ],
+      [
+        "ur",
+        "u"
+      ],
+      [
+        "om",
+        "an"
+      ],
+      [
+        "ll",
+        "ect"
+      ],
+      [
+        "re",
+        "a"
+      ],
+      [
+        "produc",
+        "t"
+      ],
+      [
+        "th_",
+        "korea"
+      ],
+      [
+        "gu",
+        "a"
+      ],
+      [
+        "gu",
+        "yana"
+      ],
+      [
+        "ind",
+        "onesia"
+      ],
+      [
+        "ual_",
+        "product"
+      ],
+      [
+        "nor",
+        "way"
+      ],
+      [
+        "nor",
+        "th_korea"
+      ],
+      [
+        "bo",
+        "urg"
+      ],
+      [
+        "western_",
+        "sa"
+      ],
+      [
+        "fr",
+        "ench"
+      ],
+      [
+        "mala",
+        "wi"
+      ],
+      [
+        "fin",
+        "land"
+      ],
+      [
+        "gab",
+        "on"
+      ],
+      [
+        "lu",
+        "xem"
+      ],
+      [
+        "vene",
+        "zuela"
+      ],
+      [
+        "erit",
+        "rea"
+      ],
+      [
+        "inte",
+        "llect"
+      ],
+      [
+        "western_sa",
+        "hara"
+      ],
+      [
+        "french",
+        "_"
+      ],
+      [
+        "luxem",
+        "bourg"
+      ],
+      [
+        "intellect",
+        "ual_product"
+      ],
+      [
+        "a",
+        "guay"
+      ],
+      [
+        "b",
+        "os"
+      ],
+      [
+        "d",
+        "j"
+      ],
+      [
+        "d",
+        "ur"
+      ],
+      [
+        "e",
+        "go"
+      ],
+      [
+        "h",
+        "er"
+      ],
+      [
+        "m",
+        "ex"
+      ],
+      [
+        "n",
+        "ia"
+      ],
+      [
+        "p",
+        "an"
+      ],
+      [
+        "s",
+        "om"
+      ],
+      [
+        "v",
+        "ina"
+      ],
+      [
+        "z",
+        "ego"
+      ],
+      [
+        "in",
+        "am"
+      ],
+      [
+        "ic",
+        "o"
+      ],
+      [
+        "am",
+        "a"
+      ],
+      [
+        "occ",
+        "o"
+      ],
+      [
+        "ib",
+        "ou"
+      ],
+      [
+        "par",
+        "aguay"
+      ],
+      [
+        "und",
+        "i"
+      ],
+      [
+        "_and_",
+        "her"
+      ],
+      [
+        "bur",
+        "undi"
+      ],
+      [
+        "tem",
+        "por"
+      ],
+      [
+        "hon",
+        "dur"
+      ],
+      [
+        "mor",
+        "occo"
+      ],
+      [
+        "sur",
+        "inam"
+      ],
+      [
+        "bos",
+        "nia"
+      ],
+      [
+        "dj",
+        "ibou"
+      ],
+      [
+        "mex",
+        "ico"
+      ],
+      [
+        "som",
+        "alia"
+      ],
+      [
+        "zego",
+        "vina"
+      ],
+      [
+        "_and_her",
+        "zegovina"
+      ],
+      [
+        "tempor",
+        "al_concept"
+      ],
+      [
+        "hondur",
+        "as"
+      ],
+      [
+        "surinam",
+        "e"
+      ],
+      [
+        "bosnia",
+        "_and_herzegovina"
+      ],
+      [
+        "djibou",
+        "ti"
+      ],
+      [
+        "a",
+        "tive_concept"
+      ],
+      [
+        "r",
+        "ec"
+      ],
+      [
+        "al",
+        "it"
+      ],
+      [
+        "ic",
+        "ation"
+      ],
+      [
+        "ar",
+        "ea"
+      ],
+      [
+        "og",
+        "ra"
+      ],
+      [
+        "ph",
+        "ic_"
+      ],
+      [
+        "qu",
+        "alit"
+      ],
+      [
+        "re",
+        "ational_activity"
+      ],
+      [
+        "y_or_",
+        "rec"
+      ],
+      [
+        "if",
+        "ication"
+      ],
+      [
+        "cl",
+        "ass"
+      ],
+      [
+        "il",
+        "y_or_rec"
+      ],
+      [
+        "da",
+        "ily_or_rec"
+      ],
+      [
+        "ge",
+        "ogra"
+      ],
+      [
+        "phic_",
+        "area"
+      ],
+      [
+        "qualit",
+        "ative_concept"
+      ],
+      [
+        "class",
+        "ification"
+      ],
+      [
+        "daily_or_rec",
+        "reational_activity"
+      ],
+      [
+        "geogra",
+        "phic_area"
+      ],
+      [
+        "l",
+        "es"
+      ],
+      [
+        "_or_",
+        "concept"
+      ],
+      [
+        "e_",
+        "sequence"
+      ],
+      [
+        "id",
+        "ea"
+      ],
+      [
+        "northern_",
+        "africa"
+      ],
+      [
+        "northern_",
+        "america"
+      ],
+      [
+        "idea",
+        "_or_concept"
+      ],
+      [
+        "t",
+        "o"
+      ],
+      [
+        "_",
+        "le"
+      ],
+      [
+        "b",
+        "ar"
+      ],
+      [
+        "b",
+        "hu"
+      ],
+      [
+        "c",
+        "a"
+      ],
+      [
+        "e",
+        "y"
+      ],
+      [
+        "e",
+        "in"
+      ],
+      [
+        "i",
+        "ti"
+      ],
+      [
+        "i",
+        "al_"
+      ],
+      [
+        "i",
+        "land"
+      ],
+      [
+        "m",
+        "el"
+      ],
+      [
+        "p",
+        "u"
+      ],
+      [
+        "s",
+        "ier"
+      ],
+      [
+        "s",
+        "ey"
+      ],
+      [
+        "an",
+        "esia"
+      ],
+      [
+        "in",
+        "ic"
+      ],
+      [
+        "ed",
+        "en"
+      ],
+      [
+        "st",
+        "ein"
+      ],
+      [
+        "ator",
+        "ial_"
+      ],
+      [
+        "az",
+        "iland"
+      ],
+      [
+        "ra",
+        "_le"
+      ],
+      [
+        "ech",
+        "ten"
+      ],
+      [
+        "li",
+        "echten"
+      ],
+      [
+        "_and_",
+        "new_zealand"
+      ],
+      [
+        "central_",
+        "asia"
+      ],
+      [
+        "central_",
+        "america"
+      ],
+      [
+        "equ",
+        "atorial_"
+      ],
+      [
+        "conceptual_",
+        "part_of"
+      ],
+      [
+        "sw",
+        "eden"
+      ],
+      [
+        "sw",
+        "aziland"
+      ],
+      [
+        "dom",
+        "inic"
+      ],
+      [
+        "australia",
+        "_and_new_zealand"
+      ],
+      [
+        "bhu",
+        "tan"
+      ],
+      [
+        "mel",
+        "anesia"
+      ],
+      [
+        "sier",
+        "ra_le"
+      ],
+      [
+        "liechten",
+        "stein"
+      ],
+      [
+        "equatorial_",
+        "guinea"
+      ],
+      [
+        "sierra_le",
+        "one"
+      ],
+      [
+        "_",
+        "s"
+      ],
+      [
+        "_",
+        "em"
+      ],
+      [
+        "a",
+        "it"
+      ],
+      [
+        "d",
+        "ov"
+      ],
+      [
+        "k",
+        "u"
+      ],
+      [
+        "n",
+        "ic"
+      ],
+      [
+        "u",
+        "ador"
+      ],
+      [
+        "v",
+        "ador"
+      ],
+      [
+        "w",
+        "ait"
+      ],
+      [
+        "al",
+        "vador"
+      ],
+      [
+        "is",
+        "ia"
+      ],
+      [
+        "ne",
+        "ther"
+      ],
+      [
+        "ec",
+        "uador"
+      ],
+      [
+        "st",
+        "a_"
+      ],
+      [
+        "el",
+        "_s"
+      ],
+      [
+        "mol",
+        "dov"
+      ],
+      [
+        "ric",
+        "a"
+      ],
+      [
+        "le",
+        "ban"
+      ],
+      [
+        "ir",
+        "ates"
+      ],
+      [
+        "est",
+        "onia"
+      ],
+      [
+        "gu",
+        "iana"
+      ],
+      [
+        "co",
+        "sta_"
+      ],
+      [
+        "iz",
+        "e"
+      ],
+      [
+        "bel",
+        "ize"
+      ],
+      [
+        "mon",
+        "gol"
+      ],
+      [
+        "arab",
+        "_em"
+      ],
+      [
+        "united_",
+        "arab_em"
+      ],
+      [
+        "ara",
+        "gua"
+      ],
+      [
+        "tun",
+        "isia"
+      ],
+      [
+        "uru",
+        "guay"
+      ],
+      [
+        "french_",
+        "guiana"
+      ],
+      [
+        "ku",
+        "wait"
+      ],
+      [
+        "nic",
+        "aragua"
+      ],
+      [
+        "nether",
+        "lands"
+      ],
+      [
+        "el_s",
+        "alvador"
+      ],
+      [
+        "moldov",
+        "a"
+      ],
+      [
+        "leban",
+        "on"
+      ],
+      [
+        "costa_",
+        "rica"
+      ],
+      [
+        "mongol",
+        "ia"
+      ],
+      [
+        "united_arab_em",
+        "irates"
+      ],
+      [
+        "-",
+        "b"
+      ],
+      [
+        "a",
+        "u"
+      ],
+      [
+        "d",
+        "es"
+      ],
+      [
+        "g",
+        "la"
+      ],
+      [
+        "y",
+        "em"
+      ],
+      [
+        "on",
+        "g"
+      ],
+      [
+        "or",
+        "ra"
+      ],
+      [
+        "is",
+        "sau"
+      ],
+      [
+        "el",
+        "and"
+      ],
+      [
+        "and",
+        "orra"
+      ],
+      [
+        "ad",
+        "a"
+      ],
+      [
+        "guinea",
+        "-b"
+      ],
+      [
+        "southern_",
+        "africa"
+      ],
+      [
+        "ban",
+        "gla"
+      ],
+      [
+        "pan",
+        "ama"
+      ],
+      [
+        "des",
+        "h"
+      ],
+      [
+        "yem",
+        "en"
+      ],
+      [
+        "guinea-b",
+        "issau"
+      ],
+      [
+        "bangla",
+        "desh"
+      ],
+      [
+        "ti",
+        "ne"
+      ],
+      [
+        "es",
+        "tine"
+      ],
+      [
+        "ne",
+        "pal"
+      ],
+      [
+        "ys",
+        "tem"
+      ],
+      [
+        "body_s",
+        "ystem"
+      ],
+      [
+        "pal",
+        "estine"
+      ],
+      [
+        "h",
+        "in"
+      ],
+      [
+        "k",
+        "ing"
+      ],
+      [
+        "l",
+        "an"
+      ],
+      [
+        "s",
+        "pati"
+      ],
+      [
+        "e_",
+        "activity"
+      ],
+      [
+        "mac",
+        "hin"
+      ],
+      [
+        "united_",
+        "king"
+      ],
+      [
+        "spati",
+        "al_concept"
+      ],
+      [
+        "machin",
+        "e_activity"
+      ],
+      [
+        "united_king",
+        "dom"
+      ],
+      [
+        "term1",
+        "9"
+      ],
+      [
+        "group",
+        "_attribute"
+      ],
+      [
+        "_",
+        "vi"
+      ],
+      [
+        "a",
+        "h"
+      ],
+      [
+        "a",
+        "tic"
+      ],
+      [
+        "b",
+        "ah"
+      ],
+      [
+        "c",
+        "ity"
+      ],
+      [
+        "d",
+        "en"
+      ],
+      [
+        "e",
+        "i"
+      ],
+      [
+        "g",
+        "in"
+      ],
+      [
+        "g",
+        "am"
+      ],
+      [
+        "g",
+        "ib"
+      ],
+      [
+        "i",
+        "tis"
+      ],
+      [
+        "r",
+        "al"
+      ],
+      [
+        "r",
+        "gin"
+      ],
+      [
+        "s",
+        "am"
+      ],
+      [
+        "s",
+        "int_"
+      ],
+      [
+        "t",
+        "ar"
+      ],
+      [
+        "t",
+        "ug"
+      ],
+      [
+        "u",
+        "da"
+      ],
+      [
+        "v",
+        "atic"
+      ],
+      [
+        "in",
+        "es"
+      ],
+      [
+        "un",
+        "ei"
+      ],
+      [
+        "is",
+        "lands"
+      ],
+      [
+        "ar",
+        "ten"
+      ],
+      [
+        "ha",
+        "iti"
+      ],
+      [
+        "gr",
+        "en"
+      ],
+      [
+        "br",
+        "itis"
+      ],
+      [
+        "br",
+        "unei"
+      ],
+      [
+        "ing",
+        "_islands"
+      ],
+      [
+        "land",
+        "_islands"
+      ],
+      [
+        "pa",
+        "pu"
+      ],
+      [
+        "south_",
+        "korea"
+      ],
+      [
+        "ma",
+        "y"
+      ],
+      [
+        "ma",
+        "arten"
+      ],
+      [
+        "ub",
+        "a"
+      ],
+      [
+        "an_",
+        "city"
+      ],
+      [
+        "mar",
+        "k"
+      ],
+      [
+        "mar",
+        "tin"
+      ],
+      [
+        "_is",
+        "land"
+      ],
+      [
+        "new_",
+        "guinea"
+      ],
+      [
+        "saint_",
+        "martin"
+      ],
+      [
+        "por",
+        "tug"
+      ],
+      [
+        "a_",
+        "new_guinea"
+      ],
+      [
+        "bar",
+        "b"
+      ],
+      [
+        "dominic",
+        "an_republic"
+      ],
+      [
+        "_vi",
+        "rgin"
+      ],
+      [
+        "den",
+        "mark"
+      ],
+      [
+        "gam",
+        "bia"
+      ],
+      [
+        "gib",
+        "ral"
+      ],
+      [
+        "sam",
+        "oa"
+      ],
+      [
+        "sint_",
+        "maarten"
+      ],
+      [
+        "vatic",
+        "an_city"
+      ],
+      [
+        "britis",
+        "h"
+      ],
+      [
+        "papu",
+        "a_new_guinea"
+      ],
+      [
+        "portug",
+        "al"
+      ],
+      [
+        "_virgin",
+        "_islands"
+      ],
+      [
+        "gibral",
+        "tar"
+      ],
+      [
+        "in",
+        "s"
+      ],
+      [
+        "con",
+        "ta"
+      ],
+      [
+        "molecular_",
+        "sequence"
+      ],
+      [
+        "nucleotid",
+        "e_sequence"
+      ],
+      [
+        "amino_acid_",
+        "sequence"
+      ],
+      [
+        "conta",
+        "ins"
+      ],
+      [
+        "-",
+        "les"
+      ],
+      [
+        "_",
+        "k"
+      ],
+      [
+        "c",
+        "an"
+      ],
+      [
+        "g",
+        "_k"
+      ],
+      [
+        "k",
+        "a"
+      ],
+      [
+        "o",
+        "th"
+      ],
+      [
+        "q",
+        "at"
+      ],
+      [
+        "r",
+        "i_"
+      ],
+      [
+        "s",
+        "an_"
+      ],
+      [
+        "s",
+        "ri_"
+      ],
+      [
+        "ti",
+        "mor"
+      ],
+      [
+        "in",
+        "o"
+      ],
+      [
+        "ac",
+        "o"
+      ],
+      [
+        "ir",
+        "eland"
+      ],
+      [
+        "mac",
+        "au"
+      ],
+      [
+        "mar",
+        "ino"
+      ],
+      [
+        "mon",
+        "aco"
+      ],
+      [
+        "hon",
+        "g_k"
+      ],
+      [
+        "les",
+        "oth"
+      ],
+      [
+        "lan",
+        "ka"
+      ],
+      [
+        "-les",
+        "te"
+      ],
+      [
+        "can",
+        "ada"
+      ],
+      [
+        "qat",
+        "ar"
+      ],
+      [
+        "san_",
+        "marino"
+      ],
+      [
+        "sri_",
+        "lanka"
+      ],
+      [
+        "timor",
+        "-leste"
+      ],
+      [
+        "hong_k",
+        "ong"
+      ],
+      [
+        "lesoth",
+        "o"
+      ],
+      [
+        "_",
+        "to"
+      ],
+      [
+        "c",
+        "y"
+      ],
+      [
+        "s",
+        "is"
+      ],
+      [
+        "at",
+        "e_sequence"
+      ],
+      [
+        "pr",
+        "us"
+      ],
+      [
+        "ts",
+        "_of"
+      ],
+      [
+        "con",
+        "sis"
+      ],
+      [
+        "carbohydr",
+        "ate_sequence"
+      ],
+      [
+        "cy",
+        "prus"
+      ],
+      [
+        "consis",
+        "ts_of"
+      ],
+      [
+        "o",
+        "und"
+      ],
+      [
+        "r",
+        "ound"
+      ],
+      [
+        "sur",
+        "round"
+      ],
+      [
+        "surround",
+        "s"
+      ],
+      [
+        "j",
+        "ac"
+      ],
+      [
+        "function",
+        "al_concept"
+      ],
+      [
+        "ent",
+        "_to"
+      ],
+      [
+        "ad",
+        "jac"
+      ],
+      [
+        "adjac",
+        "ent_to"
+      ],
+      [
+        "_",
+        "m"
+      ],
+      [
+        "_",
+        "ke"
+      ],
+      [
+        "_",
+        "indi"
+      ],
+      [
+        "_",
+        "out"
+      ],
+      [
+        "a",
+        "o"
+      ],
+      [
+        "a",
+        "p"
+      ],
+      [
+        "a",
+        "ç"
+      ],
+      [
+        "a",
+        "ti"
+      ],
+      [
+        "a",
+        "go"
+      ],
+      [
+        "a",
+        "uru"
+      ],
+      [
+        "a",
+        "pan"
+      ],
+      [
+        "b",
+        "er"
+      ],
+      [
+        "c",
+        "al"
+      ],
+      [
+        "c",
+        "oc"
+      ],
+      [
+        "c",
+        "ur"
+      ],
+      [
+        "c",
+        "ay"
+      ],
+      [
+        "c",
+        "uba"
+      ],
+      [
+        "d",
+        "ag"
+      ],
+      [
+        "d",
+        "iv"
+      ],
+      [
+        "e",
+        "ll"
+      ],
+      [
+        "f",
+        "i"
+      ],
+      [
+        "f",
+        "u"
+      ],
+      [
+        "f",
+        "al"
+      ],
+      [
+        "f",
+        "ar"
+      ],
+      [
+        "f",
+        "ol"
+      ],
+      [
+        "h",
+        "all"
+      ],
+      [
+        "i",
+        "p"
+      ],
+      [
+        "i",
+        "w"
+      ],
+      [
+        "i",
+        "ll"
+      ],
+      [
+        "i",
+        "qu"
+      ],
+      [
+        "j",
+        "er"
+      ],
+      [
+        "j",
+        "an_"
+      ],
+      [
+        "j",
+        "ama"
+      ],
+      [
+        "j",
+        "apan"
+      ],
+      [
+        "k",
+        "it"
+      ],
+      [
+        "k",
+        "ir"
+      ],
+      [
+        "k",
+        "_islands"
+      ],
+      [
+        "k",
+        "ela"
+      ],
+      [
+        "k",
+        "land_islands"
+      ],
+      [
+        "k",
+        "_island"
+      ],
+      [
+        "l",
+        "y"
+      ],
+      [
+        "l",
+        "uc"
+      ],
+      [
+        "l",
+        "em"
+      ],
+      [
+        "m",
+        "as"
+      ],
+      [
+        "m",
+        "uda"
+      ],
+      [
+        "m",
+        "iqu"
+      ],
+      [
+        "n",
+        "ci"
+      ],
+      [
+        "n",
+        "sey"
+      ],
+      [
+        "n",
+        "auru"
+      ],
+      [
+        "o",
+        "up"
+      ],
+      [
+        "o",
+        "e_"
+      ],
+      [
+        "o",
+        "k_islands"
+      ],
+      [
+        "p",
+        "it"
+      ],
+      [
+        "p",
+        "e_"
+      ],
+      [
+        "p",
+        "ier"
+      ],
+      [
+        "p",
+        "ines"
+      ],
+      [
+        "r",
+        "é"
+      ],
+      [
+        "r",
+        "at"
+      ],
+      [
+        "r",
+        "is"
+      ],
+      [
+        "r",
+        "it"
+      ],
+      [
+        "r",
+        "e_"
+      ],
+      [
+        "s",
+        "v"
+      ],
+      [
+        "s",
+        "ã"
+      ],
+      [
+        "s",
+        "ing"
+      ],
+      [
+        "s",
+        "_and_"
+      ],
+      [
+        "s",
+        "olom"
+      ],
+      [
+        "s",
+        "hall"
+      ],
+      [
+        "t",
+        "u"
+      ],
+      [
+        "t",
+        "om"
+      ],
+      [
+        "t",
+        "ob"
+      ],
+      [
+        "t",
+        "o_"
+      ],
+      [
+        "t",
+        "ong"
+      ],
+      [
+        "t",
+        "mas"
+      ],
+      [
+        "u",
+        "e"
+      ],
+      [
+        "u",
+        "at"
+      ],
+      [
+        "v",
+        "an"
+      ],
+      [
+        "v",
+        "in"
+      ],
+      [
+        "v",
+        "is"
+      ],
+      [
+        "v",
+        "alu"
+      ],
+      [
+        "w",
+        "all"
+      ],
+      [
+        "Å",
+        "land_islands"
+      ],
+      [
+        "é",
+        "_and_"
+      ],
+      [
+        "é",
+        "lem"
+      ],
+      [
+        "í",
+        "nci"
+      ],
+      [
+        "er",
+        "nsey"
+      ],
+      [
+        "er",
+        "rat"
+      ],
+      [
+        "er",
+        "to_"
+      ],
+      [
+        "on",
+        "_islands"
+      ],
+      [
+        "ter",
+        "rit"
+      ],
+      [
+        "or",
+        "y"
+      ],
+      [
+        "or",
+        "os"
+      ],
+      [
+        "or",
+        "_out"
+      ],
+      [
+        "ti",
+        "nique"
+      ],
+      [
+        "an",
+        "gu"
+      ],
+      [
+        "in",
+        "id"
+      ],
+      [
+        "in",
+        "or_out"
+      ],
+      [
+        "ic",
+        "a"
+      ],
+      [
+        "ic",
+        "eland"
+      ],
+      [
+        "en",
+        "land"
+      ],
+      [
+        "un",
+        "ion"
+      ],
+      [
+        "is",
+        "le"
+      ],
+      [
+        "is",
+        "_and_"
+      ],
+      [
+        "pr",
+        "ínci"
+      ],
+      [
+        "ne",
+        "c"
+      ],
+      [
+        "ne",
+        "vis"
+      ],
+      [
+        "as",
+        "car"
+      ],
+      [
+        "ar",
+        "uba"
+      ],
+      [
+        "ts",
+        "_and_"
+      ],
+      [
+        "ts",
+        "errat"
+      ],
+      [
+        "am",
+        "as"
+      ],
+      [
+        "ph",
+        "il"
+      ],
+      [
+        "ch",
+        "ell"
+      ],
+      [
+        "ch",
+        "ris"
+      ],
+      [
+        "term2",
+        "5"
+      ],
+      [
+        "el",
+        "on"
+      ],
+      [
+        "el",
+        "ing_islands"
+      ],
+      [
+        "el",
+        "oup"
+      ],
+      [
+        "th",
+        "élem"
+      ],
+      [
+        "os",
+        "_ke"
+      ],
+      [
+        "com",
+        "oros"
+      ],
+      [
+        "ric",
+        "o"
+      ],
+      [
+        "con",
+        "nec"
+      ],
+      [
+        "man",
+        "ag"
+      ],
+      [
+        "man",
+        "_islands"
+      ],
+      [
+        "n_",
+        "islands"
+      ],
+      [
+        "ib",
+        "ati"
+      ],
+      [
+        "_of_",
+        "man"
+      ],
+      [
+        "ir",
+        "n_islands"
+      ],
+      [
+        "tr",
+        "inid"
+      ],
+      [
+        "mal",
+        "ta"
+      ],
+      [
+        "mal",
+        "div"
+      ],
+      [
+        "americ",
+        "an_"
+      ],
+      [
+        "gu",
+        "am"
+      ],
+      [
+        "gu",
+        "ad"
+      ],
+      [
+        "gu",
+        "ernsey"
+      ],
+      [
+        "ver",
+        "de"
+      ],
+      [
+        "anti",
+        "gua"
+      ],
+      [
+        "nor",
+        "fol"
+      ],
+      [
+        "south_",
+        "georgia"
+      ],
+      [
+        "ra",
+        "in"
+      ],
+      [
+        "ma",
+        "dag"
+      ],
+      [
+        "co",
+        "ok_islands"
+      ],
+      [
+        "ad",
+        "os"
+      ],
+      [
+        "ad",
+        "_and_"
+      ],
+      [
+        "ad",
+        "ines"
+      ],
+      [
+        "ard",
+        "_and_"
+      ],
+      [
+        "an_",
+        "oce"
+      ],
+      [
+        "an_",
+        "territ"
+      ],
+      [
+        "o_",
+        "tom"
+      ],
+      [
+        "northern_",
+        "mar"
+      ],
+      [
+        "ni",
+        "ue"
+      ],
+      [
+        "and_",
+        "miqu"
+      ],
+      [
+        "cent",
+        "_and_"
+      ],
+      [
+        "_and_",
+        "barb"
+      ],
+      [
+        "mar",
+        "shall"
+      ],
+      [
+        "mar",
+        "tinique"
+      ],
+      [
+        "central_",
+        "europe"
+      ],
+      [
+        "icos",
+        "_islands"
+      ],
+      [
+        "ta",
+        "iw"
+      ],
+      [
+        "ot",
+        "te"
+      ],
+      [
+        "mon",
+        "tserrat"
+      ],
+      [
+        "gre",
+        "enland"
+      ],
+      [
+        "new_",
+        "cal"
+      ],
+      [
+        "saint_",
+        "bar"
+      ],
+      [
+        "saint_",
+        "kit"
+      ],
+      [
+        "saint_",
+        "luc"
+      ],
+      [
+        "saint_",
+        "pier"
+      ],
+      [
+        "saint_",
+        "vin"
+      ],
+      [
+        "the_",
+        "gren"
+      ],
+      [
+        "pal",
+        "au"
+      ],
+      [
+        "turk",
+        "s_and_"
+      ],
+      [
+        "alb",
+        "ard_and_"
+      ],
+      [
+        "maur",
+        "iti"
+      ],
+      [
+        "united_states",
+        "_virgin_islands"
+      ],
+      [
+        "united_states",
+        "_m"
+      ],
+      [
+        "iana",
+        "_islands"
+      ],
+      [
+        "tun",
+        "a"
+      ],
+      [
+        "french_",
+        "polynesia"
+      ],
+      [
+        "to",
+        "kela"
+      ],
+      [
+        "ca",
+        "pe_"
+      ],
+      [
+        "ca",
+        "irn_islands"
+      ],
+      [
+        "ca",
+        "icos_islands"
+      ],
+      [
+        "pu",
+        "erto_"
+      ],
+      [
+        "sey",
+        "chell"
+      ],
+      [
+        "dominic",
+        "a"
+      ],
+      [
+        "bah",
+        "amas"
+      ],
+      [
+        "bah",
+        "rain"
+      ],
+      [
+        "gren",
+        "ada"
+      ],
+      [
+        "may",
+        "en"
+      ],
+      [
+        "may",
+        "otte"
+      ],
+      [
+        "barb",
+        "ados"
+      ],
+      [
+        "british",
+        "_virgin_islands"
+      ],
+      [
+        "british",
+        "_indi"
+      ],
+      [
+        "ap",
+        "ore"
+      ],
+      [
+        "aç",
+        "ao"
+      ],
+      [
+        "ber",
+        "muda"
+      ],
+      [
+        "coc",
+        "os_ke"
+      ],
+      [
+        "cur",
+        "açao"
+      ],
+      [
+        "cay",
+        "man_islands"
+      ],
+      [
+        "fi",
+        "ji"
+      ],
+      [
+        "fu",
+        "tuna"
+      ],
+      [
+        "fal",
+        "kland_islands"
+      ],
+      [
+        "far",
+        "oe_"
+      ],
+      [
+        "ip",
+        "pines"
+      ],
+      [
+        "ill",
+        "a"
+      ],
+      [
+        "jer",
+        "sey"
+      ],
+      [
+        "jan_",
+        "mayen"
+      ],
+      [
+        "jama",
+        "ica"
+      ],
+      [
+        "kir",
+        "ibati"
+      ],
+      [
+        "ly",
+        "ing_islands"
+      ],
+      [
+        "pit",
+        "cairn_islands"
+      ],
+      [
+        "ré",
+        "union"
+      ],
+      [
+        "re_",
+        "and_miqu"
+      ],
+      [
+        "sv",
+        "albard_and_"
+      ],
+      [
+        "sã",
+        "o_tom"
+      ],
+      [
+        "sing",
+        "apore"
+      ],
+      [
+        "solom",
+        "on_islands"
+      ],
+      [
+        "tu",
+        "valu"
+      ],
+      [
+        "tob",
+        "ago"
+      ],
+      [
+        "tong",
+        "a"
+      ],
+      [
+        "tmas",
+        "_island"
+      ],
+      [
+        "uat",
+        "u"
+      ],
+      [
+        "van",
+        "uatu"
+      ],
+      [
+        "wall",
+        "is_and_"
+      ],
+      [
+        "é_and_",
+        "prínci"
+      ],
+      [
+        "angu",
+        "illa"
+      ],
+      [
+        "inor_out",
+        "lying_islands"
+      ],
+      [
+        "isle",
+        "_of_man"
+      ],
+      [
+        "ts_and_",
+        "nevis"
+      ],
+      [
+        "phil",
+        "ippines"
+      ],
+      [
+        "chris",
+        "tmas_island"
+      ],
+      [
+        "eloup",
+        "e"
+      ],
+      [
+        "thélem",
+        "y"
+      ],
+      [
+        "manag",
+        "es"
+      ],
+      [
+        "trinid",
+        "ad_and_"
+      ],
+      [
+        "maldiv",
+        "es"
+      ],
+      [
+        "american_",
+        "samoa"
+      ],
+      [
+        "guad",
+        "eloupe"
+      ],
+      [
+        "antigua",
+        "_and_barb"
+      ],
+      [
+        "norfol",
+        "k_island"
+      ],
+      [
+        "madag",
+        "ascar"
+      ],
+      [
+        "an_oce",
+        "an_territ"
+      ],
+      [
+        "northern_mar",
+        "iana_islands"
+      ],
+      [
+        "cent_and_",
+        "the_gren"
+      ],
+      [
+        "marshall",
+        "_islands"
+      ],
+      [
+        "taiw",
+        "an"
+      ],
+      [
+        "new_cal",
+        "edonia"
+      ],
+      [
+        "saint_bar",
+        "thélemy"
+      ],
+      [
+        "saint_kit",
+        "ts_and_nevis"
+      ],
+      [
+        "saint_luc",
+        "ia"
+      ],
+      [
+        "saint_pier",
+        "re_and_miqu"
+      ],
+      [
+        "saint_vin",
+        "cent_and_the_gren"
+      ],
+      [
+        "turks_and_",
+        "caicos_islands"
+      ],
+      [
+        "mauriti",
+        "us"
+      ],
+      [
+        "united_states_m",
+        "inor_outlying_islands"
+      ],
+      [
+        "tokela",
+        "u"
+      ],
+      [
+        "cape_",
+        "verde"
+      ],
+      [
+        "puerto_",
+        "rico"
+      ],
+      [
+        "seychell",
+        "es"
+      ],
+      [
+        "british_indi",
+        "an_ocean_territ"
+      ],
+      [
+        "cocos_ke",
+        "eling_islands"
+      ],
+      [
+        "faroe_",
+        "islands"
+      ],
+      [
+        "svalbard_and_",
+        "jan_mayen"
+      ],
+      [
+        "são_tom",
+        "é_and_prínci"
+      ],
+      [
+        "wallis_and_",
+        "futuna"
+      ],
+      [
+        "trinidad_and_",
+        "tobago"
+      ],
+      [
+        "antigua_and_barb",
+        "uda"
+      ],
+      [
+        "saint_pierre_and_miqu",
+        "elon"
+      ],
+      [
+        "saint_vincent_and_the_gren",
+        "adines"
+      ],
+      [
+        "british_indian_ocean_territ",
+        "ory"
+      ],
+      [
+        "são_tomé_and_prínci",
+        "pe"
+      ],
+      [
+        "t",
+        "ed_"
+      ],
+      [
+        "el",
+        "op"
+      ],
+      [
+        "mental_",
+        "form"
+      ],
+      [
+        "gu",
+        "ag"
+      ],
+      [
+        "dev",
+        "elop"
+      ],
+      [
+        "lan",
+        "guag"
+      ],
+      [
+        "connec",
+        "ted_"
+      ],
+      [
+        "mental_form",
+        "_of"
+      ],
+      [
+        "develop",
+        "mental_form_of"
+      ],
+      [
+        "languag",
+        "e"
+      ],
+      [
+        "connected_",
+        "to"
+      ]
+    ]
+  }
+}

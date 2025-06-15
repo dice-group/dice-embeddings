@@ -1,0 +1,6 @@
+lr,dataset,embed_dim,train_mrr,test_mrr
+0.1,KGs/Countries-S1,64,1024,DistMult,0.036501769520952534,0.08945205313350602
+
+# BEST PER MODEL/DATASET
+model,dataset,lr,embed_dim,batch_size,train_mrr,test_mrr
+DistMult,KGs/Countries-S1,0.1,64,1024,0.036501769520952534,0.08945205313350602
