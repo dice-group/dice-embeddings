@@ -56,7 +56,7 @@ setup(
     name="dicee",
     description="Dice embedding is an hardware-agnostic framework for large-scale knowledge graph embedding applications",
     version="0.2.0",
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests", "tests.*"]),
     extras_require=extras,
     install_requires=list(install_requires),
     author='Caglar Demir',
