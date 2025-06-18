@@ -55,7 +55,7 @@ with open('README.md', 'r') as fh:
 setup(
     name="dicee",
     description="Dice embedding is an hardware-agnostic framework for large-scale knowledge graph embedding applications",
-    version="0.1.5",
+    version="0.2.0",
     packages=find_packages(),
     extras_require=extras,
     install_requires=list(install_requires),
