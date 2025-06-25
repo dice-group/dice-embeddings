@@ -2,6 +2,7 @@ from .base_model import BaseKGE
 from typing import Tuple
 import torch
 import numpy as np
+from .KAN import KAN
 
 
 class DistMult(BaseKGE):
@@ -127,3 +128,52 @@ class Pyke(BaseKGE):
         dist_rel_tail = self.dist_func(rel_ent_emb, tail_ent_emb)
         avg_dist = (dist_head_rel + dist_rel_tail) / 2
         return self.margin - avg_dist
+
+class DistMult_KAN(BaseKGE):
+    """
+    Augmenting KAN Networks with DistMult Scoring Function.
+    KAN: Kolmogorov-Arnold Networks
+    https://arxiv.org/abs/2404.19756
+    Embedding Entities and Relations for Learning and Inference in Knowledge Bases
+    https://arxiv.org/abs/1412.6575"""
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'DistMult_KAN'
+        self.kan_h = KAN(embedding_dim=self.embedding_dim, output_dim = self.embedding_dim, n_layers=4)
+        self.kan_r = KAN(embedding_dim=self.embedding_dim, output_dim = self.embedding_dim, n_layers=4)
+        self.kan_t = KAN(embedding_dim=self.embedding_dim, output_dim = self.embedding_dim, n_layers=4)
+
+    def k_vs_all_score(self, emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor):
+        """
+
+        Parameters
+        ----------
+        emb_h
+        emb_r
+        emb_E
+
+        Returns
+        -------
+
+        """
+        return torch.mm(self.hidden_dropout(self.hidden_normalizer(self.kan_h(emb_h) * self.kan_r(emb_r))), emb_E.transpose(1, 0))
+
+    def forward_k_vs_all(self, x: torch.LongTensor):
+        emb_head, emb_rel = self.get_head_relation_representation(x)
+        return self.k_vs_all_score(emb_h=emb_head, emb_r=emb_rel, emb_E=self.entity_embeddings.weight)
+
+    def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor):
+        # (b,d),     (b,d)
+        emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
+        emb_head_real, emb_rel_real = self.kan_h(emb_head_real), self.kan_r(emb_rel_real)
+        # (b, d)
+        hr = torch.einsum('bd, bd -> bd', emb_head_real, emb_rel_real)
+        # (b, k, d)
+        t = self.entity_embeddings(target_entity_idx)
+        return torch.einsum('bd, bkd -> bk', hr, t)
+
+
+    def score(self, h, r, t):
+        #RS: Should we also have self.kan_t(t) ? 
+        return (self.hidden_dropout(self.hidden_normalizer(self.kan_h(h) * self.kan_r(r))) * t).sum(dim=1)
