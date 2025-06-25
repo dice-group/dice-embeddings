@@ -2,7 +2,7 @@ from dicee.executer import Execute
 import pytest
 from dicee.config import Namespace
 
-class TestRegressionDistMult:
+class TestRegressionDistMult_KAN:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
         args = Namespace()
@@ -23,8 +23,32 @@ class TestRegressionDistMult:
         args.normalization = 'LayerNorm'
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
-        result = Execute(args).start()
-        assert 0.58 >= result['Val']['H@1'] >= 0.01
+        distmult_kan_result = Execute(args).start()
+        assert 0.58 >= distmult_kan_result['Val']['H@1'] >= 0.01
+
+        args = Namespace()
+        args.model = 'DistMult'
+        args.optim = 'Adam'
+        args.dataset_dir = 'KGs/UMLS'
+        args.num_epochs = 10
+        args.batch_size = 1024
+        args.lr = 0.01
+        args.embedding_dim = 32
+        args.input_dropout_rate = 0.0
+        args.hidden_dropout_rate = 0.0
+        args.feature_map_dropout_rate = 0.0
+        args.eval_model = 'train_val_test'
+        args.read_only_few = None
+        args.sample_triples_ratio = None
+        args.scoring_technique = 'KvsAll'
+        args.normalization = 'LayerNorm'
+        args.init_param = 'xavier_normal'
+        args.trainer = 'torchCPUTrainer'
+        distmult_result = Execute(args).start()
+        assert 0.58 >= distmult_result['Val']['H@1'] >= 0.01
+
+        assert distmult_kan_result["Train"]["MRR"] > distmult_result["Train"]["MRR"]
+        assert distmult_kan_result["Test"]["MRR"] > distmult_result["Test"]["MRR"]
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):

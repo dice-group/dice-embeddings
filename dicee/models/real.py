@@ -142,7 +142,6 @@ class DistMult_KAN(BaseKGE):
         self.name = 'DistMult_KAN'
         self.kan_h = KAN(embedding_dim=self.embedding_dim, output_dim = self.embedding_dim, n_layers=4)
         self.kan_r = KAN(embedding_dim=self.embedding_dim, output_dim = self.embedding_dim, n_layers=4)
-        self.kan_t = KAN(embedding_dim=self.embedding_dim, output_dim = self.embedding_dim, n_layers=4)
 
     def k_vs_all_score(self, emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor):
         """
