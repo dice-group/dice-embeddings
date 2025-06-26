@@ -98,7 +98,7 @@ def get_callbacks(args):
     elif args.adaptive_swa:
         callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
     elif args.adaptive_lr:
-        callbacks.append(LRScheduler(scheduler_name= args.lr_scheduler, total_epochs=args.num_epochs, experiment_dir= args.full_storage_path))
+        callbacks.append(LRScheduler(scheduler_name= args.lr_scheduler, total_epochs=args.num_epochs, experiment_dir= args.full_storage_path, eta_max=args.lr))
     else:
         """No SWA or ASWA applied"""
 

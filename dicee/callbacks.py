@@ -496,7 +496,11 @@ class LRScheduler(AbstractCallback):
     """
     Callback for managing learning rate scheduling and model snapshots.
 
-    Supports cosine annealing, MMCCLR, and their deferred (warmup) variants.
+    Supports cosine annealing ("cca"), MMCCLR ("mmcclr"), and their deferred (warmup) variants:
+    - "deferred_cca"
+    - "deferred_mmcclr"
+
+    At the end of each learning rate cycle, the model can optionally be saved as a snapshot.
     """
     def __init__(
         self,
@@ -509,6 +513,21 @@ class LRScheduler(AbstractCallback):
         eta_min: float = 0.001,
         snapshot_dir: str = "snaps",
     ):
+        """
+        Initialize the LR scheduler callback.
+
+        Args:
+            scheduler_name (str): Name of the scheduler. Must be one of:
+                "cca", "mmcclr", "deferred_cca", or "deferred_mmcclr".
+            total_epochs (int): Total number of training epochs (args.train_epochs)
+            experiment_dir (str): Directory for the experiment, used as base for snapshots.
+            n_cycles (int, optional): Number of learning rate cycles. Default is 5.
+            warmup_epochs (int, optional): Number of warmup epochs (only used in deferred schedulers). Default is 0.
+            eta_max (float, optional): Maximum learning rate at the start of each cycle.
+                passed from `args.lr`. Default is 0.1.
+            eta_min (float, optional): Minimum learning rate at the end of each cycle. Default is 0.001.
+            snapshot_dir (str, optional): Subdirectory inside experiment_dir where snapshots will be saved. Default is "snaps".
+        """
         self.scheduler_name = scheduler_name.lower()
         self.total_epochs = total_epochs
         self.n_cycles = n_cycles
