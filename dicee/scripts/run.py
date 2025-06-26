@@ -128,7 +128,15 @@ def get_default_arguments(description=None):
                         help="Find a batch size fitting in GPUs. Only available for TP trainer")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
-
+    parser.add_argument("--adaptive_lr",
+                        action="store_true",
+                        help="Enable adaptive learning rate scheduling")
+    parser.add_argument("--lr_scheduler",
+                        type=str,
+                        choices=["cca", "mmcclr", "deferred_cca", "deferred_mmcclr"],
+                        default="cca",
+                        help="Learning rate scheduler to use. Supported: cca, mmcclr, deferred_cca, deferred_mmcclr")
+    
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)

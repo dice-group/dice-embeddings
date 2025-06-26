@@ -7,6 +7,8 @@ import dicee.models.base_model
 from .static_funcs import save_checkpoint_model, save_pickle
 from .abstracts import AbstractCallback
 import pandas as pd
+import os
+from torch.optim.lr_scheduler import LambdaLR
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
@@ -489,3 +491,112 @@ class Perturb(AbstractCallback):
                 raise NotImplementedError(f"{self.level}")
         else:
             raise RuntimeError(f"--level is given as {self.level}!")
+
+class LRScheduler(AbstractCallback):
+    """
+    Callback for managing learning rate scheduling and model snapshots.
+
+    Supports cosine annealing, MMCCLR, and their deferred (warmup) variants.
+    """
+    def __init__(
+        self,
+        scheduler_name: str,
+        total_epochs: int,
+        experiment_dir: str,
+        n_cycles: int = 5,
+        warmup_epochs: int = 0,
+        eta_max: float = 0.1,
+        eta_min: float = 0.001,
+        snapshot_dir: str = "snaps",
+    ):
+        self.scheduler_name = scheduler_name.lower()
+        self.total_epochs = total_epochs
+        self.n_cycles = n_cycles
+        self.warmup_epochs = warmup_epochs
+        self.eta_max = eta_max
+        self.eta_min = eta_min
+        self.snapshot_dir = os.path.join(experiment_dir, snapshot_dir)
+        os.makedirs(self.snapshot_dir, exist_ok=True)
+
+        # Placeholders to be set during training
+        self.batches_per_epoch = None
+        self.total_steps = None
+        self.cycle_length = None
+        self.warmup_steps = None
+        self.lr_lambda = None
+        self.scheduler = None
+        self.step_count = 0
+
+    def _initialize_training_params(self, num_training_batches):
+        """Set batches per epoch, total steps, cycle length, and warmup steps."""
+        self.batches_per_epoch = num_training_batches
+        self.total_steps = self.total_epochs * self.batches_per_epoch
+        self.cycle_length = self.total_steps // self.n_cycles
+        self.warmup_steps = self.warmup_epochs * self.batches_per_epoch
+
+    def _get_lr_schedule(self):
+        def cosine_annealing(step):
+            cycle_step = step % self.cycle_length
+            return 0.5 * (1 + np.cos(np.pi * cycle_step / self.cycle_length))
+
+        def mmcclr(step):
+            cycle_step = step % self.cycle_length
+            lr = self.eta_min + 0.5 * (self.eta_max - self.eta_min) * \
+                 (1 + np.cos(np.pi * cycle_step / self.cycle_length))
+            return lr / self.eta_max
+
+        def deferred(base_schedule):
+            # Warmup returns 1.0; afterwards use base schedule shifted by warmup steps
+            return lambda step: 1.0 if step < self.warmup_steps else base_schedule(step - self.warmup_steps)
+
+        sched_map = {
+            "cca": cosine_annealing,
+            "mmcclr": mmcclr,
+            "deferred_cca": deferred(cosine_annealing),
+            "deferred_mmcclr": deferred(mmcclr),
+        }
+
+        if self.scheduler_name not in sched_map:
+            raise ValueError(f"Unknown scheduler name: {self.scheduler_name}")
+
+        return sched_map[self.scheduler_name]
+
+    def on_train_start(self, trainer, model):
+        """Initialize training parameters and LR scheduler at start of training."""
+        self._initialize_training_params(trainer.num_training_batches)
+        self.lr_lambda = self._get_lr_schedule()
+        self.scheduler = LambdaLR(trainer.optimizers[0], lr_lambda=self.lr_lambda)
+        self.step_count = 0
+
+        print(f"Using learning rate scheduler: {self.scheduler_name}")
+
+    def on_train_batch_end(self, trainer, model, *kwargs):
+        """Step the LR scheduler and save model snapshot if needed after each batch."""
+        self.scheduler.step()
+        self.step_count += 1
+
+        if self._is_snapshot_step(self.step_count):
+            snapshot_path = os.path.join(
+                self.snapshot_dir, f"snapshot_epoch_{trainer.current_epoch}.pt"
+            )
+            torch.save(model.state_dict(), snapshot_path)
+
+    def _is_snapshot_step(self, step):
+        """
+        Determine if the current step is a snapshot step (end of a LR cycle).
+
+        For deferred schedulers, no snapshots are taken during warmup.
+        After warmup, the step count is adjusted by subtracting warmup_steps
+        so snapshots align with cycle boundaries.
+
+        Returns True if the (adjusted) step is at the end of a cycle.
+        """
+        # During warmup for deferred schedulers, skip snapshots
+        if self.scheduler_name.startswith("deferred") and step < self.warmup_steps:
+            return False
+
+        # Adjust step to exclude warmup steps for deferred schedulers
+        adjusted_step = step - self.warmup_steps if self.scheduler_name.startswith("deferred") else step
+
+        # Check if adjusted step + 1 is divisible by cycle_length (end of cycle)
+        return (adjusted_step + 1) % self.cycle_length == 0

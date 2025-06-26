@@ -3,7 +3,7 @@ import polars
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb
+from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb, LRScheduler
 from dicee.dataset_classes import construct_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
@@ -97,6 +97,8 @@ def get_callbacks(args):
         callbacks.append(pl.pytorch.callbacks.StochasticWeightAveraging(swa_lrs=args.lr, swa_epoch_start=1))
     elif args.adaptive_swa:
         callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
+    elif args.adaptive_lr:
+        callbacks.append(LRScheduler(scheduler_name= args.lr_scheduler, total_epochs=args.num_epochs, experiment_dir= args.full_storage_path))
     else:
         """No SWA or ASWA applied"""
 

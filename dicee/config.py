@@ -141,6 +141,12 @@ class Namespace(argparse.Namespace):
         self.auto_batch_finding=False
         "A flag for using auto batch finding"
 
+        self.adaptive_lr: bool = False
+        "Enable adaptive learning rate scheduling"
+
+        self.lr_scheduler : str = "cca"
+        "Learning rate scheduler to use."
+
     def __iter__(self):
         # Iterate
         for k, v in self.__dict__.items():
