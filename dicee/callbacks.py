@@ -7,6 +7,7 @@ import dicee.models.base_model
 from .static_funcs import save_checkpoint_model, save_pickle
 from .abstracts import AbstractCallback
 import pandas as pd
+import math
 import os
 from torch.optim.lr_scheduler import LambdaLR
 
@@ -508,7 +509,7 @@ class LRScheduler(AbstractCallback):
         total_epochs: int,
         experiment_dir: str,
         n_cycles: int = 5,
-        warmup_epochs: int = 0,
+        warmup_epochs: int = 10,
         eta_max: float = 0.1,
         eta_min: float = 0.001,
         snapshot_dir: str = "snaps",
@@ -519,10 +520,10 @@ class LRScheduler(AbstractCallback):
         Args:
             scheduler_name (str): Name of the scheduler. Must be one of:
                 "cca", "mmcclr", "deferred_cca", or "deferred_mmcclr".
-            total_epochs (int): Total number of training epochs (args.train_epochs)
+            total_epochs (int): Total number of training epochs (args.num_epochs)
             experiment_dir (str): Directory for the experiment, used as base for snapshots.
             n_cycles (int, optional): Number of learning rate cycles. Default is 5.
-            warmup_epochs (int, optional): Number of warmup epochs (only used in deferred schedulers). Default is 0.
+            warmup_epochs (int, optional): Number of warmup epochs (only used in deferred schedulers). Default is 10.
             eta_max (float, optional): Maximum learning rate at the start of each cycle.
                 passed from `args.lr`. Default is 0.1.
             eta_min (float, optional): Minimum learning rate at the end of each cycle. Default is 0.001.
@@ -554,15 +555,18 @@ class LRScheduler(AbstractCallback):
         self.warmup_steps = self.warmup_epochs * self.batches_per_epoch
 
     def _get_lr_schedule(self):
+        
         def cosine_annealing(step):
-            cycle_step = step % self.cycle_length
-            return 0.5 * (1 + np.cos(np.pi * cycle_step / self.cycle_length))
+            cycle_length = math.ceil(self.total_steps / self.n_cycles)
+            cycle_step = step % cycle_length
+            return 0.5 * self.eta_max * (1 + np.cos(np.pi * cycle_step / cycle_length))
 
         def mmcclr(step):
-            cycle_step = step % self.cycle_length
-            lr = self.eta_min + 0.5 * (self.eta_max - self.eta_min) * \
-                 (1 + np.cos(np.pi * cycle_step / self.cycle_length))
-            return lr / self.eta_max
+            ceil_t_div_b = math.ceil(step / self.batches_per_epoch)
+            cycle_length = math.ceil(self.total_steps / (self.n_cycles * self.batches_per_epoch))
+            cycle_step = ceil_t_div_b % cycle_length
+            return self.eta_min + 0.5 * (self.eta_max - self.eta_min) * \
+                (1 + np.cos(np.pi * cycle_step / cycle_length))
 
         def deferred(base_schedule):
             # Warmup returns 1.0; afterwards use base schedule shifted by warmup steps
