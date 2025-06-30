@@ -486,13 +486,13 @@ def evaluate_literal_prediction(
 
 @torch.no_grad()
 def evaluate_ensemble_link_prediction_performance(models, triples, er_vocab: Dict[Tuple, List],
-    weights: List[float] = None, batch_size: int = 512) -> Dict:
+    weights: List[float] = None, batch_size: int = 512, combiner = "borda") -> Dict:
     """
     Evaluates link prediction performance of an ensemble of KGE models.
     Args:
         models : List of KGE models (snapshots)
         triples : np.ndarray or list of lists, shape (N,3), all integer indices (head, rel, tail)
-        er_vocab : Dict[Tuple[int, int], List[int]]
+        er_vocab : Dict[Tuple, List]
             Mapping (head_idx, rel_idx) → list of tail_idx to filter (incl. target).
         weights : Optional[List[float]]
             Weights for model averaging. If None, use uniform (=simple mean).
@@ -506,18 +506,18 @@ def evaluate_ensemble_link_prediction_performance(models, triples, er_vocab: Dic
     hits = {i: [] for i in hits_range}
     n_models = len(models)
 
-    if weights is None:
-        weights = [1.0] * n_models
-    assert len(weights) == n_models
-    weights_tensor = torch.tensor(weights, dtype=torch.float32)
-    weights_tensor = weights_tensor / weights_tensor.sum()  # normalize
+    if combiner == "weighted":
+        if weights is None:
+            weights = [1.0] * n_models
+        assert len(weights) == n_models
+        weights_tensor = torch.tensor(weights, dtype=torch.float32)
+        weights_tensor = weights_tensor / weights_tensor.sum()
 
     for i in range(0, num_triples, batch_size):
         data_batch = np.array(triples[i:i + batch_size])  # Ensure ndarray
         e1_idx_r_idx = torch.LongTensor(data_batch[:, [0, 1]])
         e2_idx = torch.LongTensor(data_batch[:, 2])
 
-        # 1. Generate predictions for each model
         preds_list = []
         for model in models:
             model.eval()
@@ -525,10 +525,26 @@ def evaluate_ensemble_link_prediction_performance(models, triples, er_vocab: Dic
             preds_list.append(preds)
         preds_stack = torch.stack(preds_list, dim=0)  # [n_models, batch, n_entities]
 
-        # 2. Weighted average predictions across models
-        avg_preds = torch.sum(preds_stack * weights_tensor.view(-1, 1, 1), dim=0)  # [batch, n_entities]
+        if combiner == "weighted":
+            # Weighted mean aggregation
+            avg_preds = torch.sum(preds_stack * weights_tensor.view(-1, 1, 1), dim=0)
+        elif combiner == "borda":
+            batch_size_, n_entities = preds_stack.shape[1], preds_stack.shape[2]
+            borda_scores = torch.zeros((batch_size_, n_entities))
+            for m in range(preds_stack.shape[0]):
+                # Descending sort: best entity (largest value) gets rank 0
+                _, broda_ranks = preds_stack[m].sort(dim=1, descending=True)
+                rank_values = torch.zeros_like(broda_ranks)
+                for bi in range(batch_size_):
+                    # ranks[bi] are indices: entity at ranks[bi][j] is in the j-th position
+                    rank_values[bi, broda_ranks[bi]] = torch.arange(n_entities)
+                borda_scores += rank_values
+            # Lower sum is better; for torch.sort descending, we take negative
+            avg_preds = -borda_scores
+        else:
+            raise ValueError(f"Unknown combiner: {combiner}")
 
-        # 3. Filtering
+        # Filtering and scoring
         for j in range(data_batch.shape[0]):
             id_e, id_r, id_e_target = data_batch[j]
             filt = er_vocab.get((id_e, id_r), [])
@@ -537,7 +553,7 @@ def evaluate_ensemble_link_prediction_performance(models, triples, er_vocab: Dic
                 avg_preds[j, filt] = -np.Inf
             avg_preds[j, id_e_target] = target_value
 
-        # 4. Ranking
+        # Ranking and metrics
         _, sort_idxs = torch.sort(avg_preds, dim=1, descending=True)
         for j in range(data_batch.shape[0]):
             rank = torch.where(sort_idxs[j] == e2_idx[j])[0].item() + 1

@@ -11,6 +11,7 @@ import math
 import os
 from torch.optim.lr_scheduler import LambdaLR
 from .eval_static_funcs import evaluate_ensemble_link_prediction_performance
+from collections import defaultdict
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
@@ -513,6 +514,7 @@ class LRScheduler(AbstractCallback):
         warmup_epochs: int = 10,
         eta_max: float = 0.1,
         eta_min: float = 0.001,
+        weighted_ensemble: bool = True,
         snapshot_dir: str = "snaps",
     ):
         """
@@ -536,6 +538,7 @@ class LRScheduler(AbstractCallback):
         self.warmup_epochs = warmup_epochs
         self.eta_max = eta_max
         self.eta_min = eta_min
+        self.weighted_ensemble = weighted_ensemble
         self.snapshot_dir = os.path.join(experiment_dir, snapshot_dir)
         os.makedirs(self.snapshot_dir, exist_ok=True)
 
@@ -547,6 +550,9 @@ class LRScheduler(AbstractCallback):
         self.lr_lambda = None
         self.scheduler = None
         self.step_count = 0
+
+        if self.weighted_ensemble:
+            self.snapshot_loss = defaultdict(float)
 
     def _initialize_training_params(self, num_training_batches):
         """Set batches per epoch, total steps, cycle length, and warmup steps."""
@@ -584,6 +590,32 @@ class LRScheduler(AbstractCallback):
             raise ValueError(f"Unknown scheduler name: {self.scheduler_name}")
 
         return sched_map[self.scheduler_name]
+    
+    def _calulate_snap_weights(self):
+        """
+        Calculate weights for model snapshots based on their loss values.
+        The weight for each snapshot is inversely proportional to its loss.
+        """
+        # Get losses in the order of the model names you intend to use in your ensemble:
+        model_names = list(self.snapshot_loss.keys())
+        losses = np.array([self.snapshot_loss[name] for name in model_names])
+
+        min_loss = losses.min()
+        max_loss = losses.max()
+
+        # SnapE weights: (max+min) - model_loss
+        raw_weights = (max_loss + min_loss) - losses
+
+        # Clip to avoid negative weights
+        raw_weights = np.clip(raw_weights, a_min=0, a_max=None)
+
+        # Normalize weights to sum to 1
+        if raw_weights.sum() > 0:
+            weights = raw_weights / raw_weights.sum()
+        else:
+            weights = np.ones_like(raw_weights) / len(raw_weights)
+        
+        self.snapshot_weights = dict(zip(model_names, weights))
 
     def on_train_start(self, trainer, model):
         """Initialize training parameters and LR scheduler at start of training."""
@@ -604,6 +636,7 @@ class LRScheduler(AbstractCallback):
                 self.snapshot_dir, f"snapshot_epoch_{trainer.current_epoch}.pt"
             )
             torch.save(model.state_dict(), snapshot_path)
+            self.snapshot_loss[os.path.basename(snapshot_path)] = model.loss_history[-1]  # Store loss at snapshot step
 
     def _is_snapshot_step(self, step):
         """
@@ -637,10 +670,22 @@ class LRScheduler(AbstractCallback):
             model_copy = type(model)(model.args)
             model_copy.load_state_dict(state_dict)
             self.model_snapshots.append(model_copy)
+
+        if self.snapshot_loss and self.weighted_ensemble:
+            self._calulate_snap_weights()
+            # 2. Build the weight list aligned to snapshot_files order:
+            weights = [self.snapshot_weights[fname] for fname in snapshot_files]
+        
+        else:
+            # 1. If no weights are provided, use equal weights for all snapshots.
+            weights = [1.0 / len(self.model_snapshots)] * len(self.model_snapshots)
+        
         result = evaluate_ensemble_link_prediction_performance(
             models = self.model_snapshots,
             triples = trainer.dataset.test_set,
             er_vocab= trainer.dataset.er_vocab.result(),
-            weights=None,
+            weights=weights,
+            combiner="weighted",  # Use Borda count for combining predictions
+            batch_size=trainer.num_training_batches
         )
         print(f"Ensemble Evaluations: {result}")
