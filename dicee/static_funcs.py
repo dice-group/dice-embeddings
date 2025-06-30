@@ -3,7 +3,7 @@ import torch
 import datetime
 from typing import Tuple, List
 from .models import Pyke, DistMult, CKeci, Keci, TransE, DeCaL, DualE,\
-    ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom, LFMult
+    ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom, LFMult, TapireCL
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
 import time
@@ -447,6 +447,9 @@ def intialize_model(args: dict,verbose=0) -> Tuple[object, str]:
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'DualE':
         model =DualE(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'TapireCL':
+        model = TapireCL(args=args)
         form_of_labelling = 'EntityPrediction'
     else:
         raise ValueError(f"--model_name: {model_name} is not found.")

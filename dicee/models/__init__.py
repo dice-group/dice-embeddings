@@ -7,3 +7,4 @@ from .clifford import Keci, CKeci, DeCaL # noqa
 from .pykeen_models import * # noqa
 from .function_space import * # noqa
 from .dualE import DualE # noqa
+from .transformer_clnn import TapireCL # noqa
