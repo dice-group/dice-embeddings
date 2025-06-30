@@ -485,127 +485,110 @@ def evaluate_literal_prediction(
                 return attr_error_metrics
 
 @torch.no_grad()
-def evaluate_link_prediction_ensemble_batched(
-    models: List[KGE],
-    triples: List[Tuple[str, str, str]],
-    er_vocab: Dict[Tuple[str, str], List[str]],
-    re_vocab: Dict[Tuple[str, str], List[str]],
-    weights: List[float] = None,
-    batch_size: int = 1024
-) -> Dict[str, float]:
+def evaluate_link_prediction_performance_ensemble(
+    models: List[KGE],    # List of models (snapshots)
+    triples, 
+    er_vocab: Dict[Tuple, List], 
+    re_vocab: Dict[Tuple, List], 
+    weights: List[float] = None
+) -> Dict:
     """
-    Batched version of ensemble link prediction evaluation (head+tail), filtered, standard metrics.
-
-    Args:
-        models: List of KGE model objects
-        triples: List of test (h, r, t) triples (as strings)
-        er_vocab: Dict mapping (h, r) -> list of filtered tails
-        re_vocab: Dict mapping (r, t) -> list of filtered heads
-        weights: Optional list of weights for each model (defaults to uniform)
-        batch_size: Number of test triples to process at a time
-
-    Returns:
-        Dict with 'MRR', 'H@1', 'H@3', 'H@10' keys.
+    Parameters
+    ----------
+    models : List of KGE models (snapshots)
+    triples
+    er_vocab
+    re_vocab
+    weights : Optional[List[float]]
+        Weights for model averaging. If None, use uniform (=simple mean).
+    Returns
+    -------
+    dict of metrics
     """
-    assert all(isinstance(m, KGE) for m in models), "All models must be KGE instances"
-    M = len(models)
-    if weights is None:
-        weights = [1.0] * M
-    assert len(weights) == M
-    W = float(sum(weights))
-
-    hits = {1: [], 3: [], 10: []}
-    reciprocal_ranks = []
-
-    num_triples = len(triples)
-    num_entities = models[0].num_entities
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    all_entities = torch.arange(num_entities, device=device)
-
-    # Ensure all models are on evaluation mode and sent to correct device
+    assert isinstance(models, list) and len(models) > 0
     for m in models:
         m.model.eval()
-        m.model.to(device)
-    
-    # Convert all test triples to idx for batch processing
-    h_indices = [models[0].get_entity_index(h) for (h, _, _) in triples]
-    r_indices = [models[0].get_relation_index(r) for (_, r, _) in triples]
-    t_indices = [models[0].get_entity_index(t) for (_, _, t) in triples]
+    hits = dict()
+    reciprocal_ranks = []
+    num_entities = models[0].num_entities  # assumes all models use same entity index
 
-    for start in tqdm(range(0, num_triples, batch_size)):
-        end = min(start + batch_size, num_triples)
-        batch_size_curr = end - start
+    if weights is None:
+        weights = [1.0] * len(models)
+    assert len(weights) == len(models)
+    weights_tensor = torch.tensor(weights, dtype=torch.float32)
 
-        # BATCH PREP HEADS/TAILS
-        # For tail prediction (h, r, ?)
-        batch_h = torch.tensor(h_indices[start:end], dtype=torch.long, device=device)
-        batch_r = torch.tensor(r_indices[start:end], dtype=torch.long, device=device)
-        batch_t = torch.tensor(t_indices[start:end], dtype=torch.long, device=device)
+    # Iterate over test triples
+    all_entities = torch.arange(0, num_entities).long()
+    all_entities = all_entities.reshape(len(all_entities), )
 
-        # Build (h, r, e) for all entities e for each triple in batch:
-        # Output shape: (batch_size, num_entities, 3)
-        hrt_queries = torch.stack([
-            batch_h[:, None].expand(-1, num_entities),         # (batch_size, num_entities)
-            batch_r[:, None].expand(-1, num_entities),         # (batch_size, num_entities)
-            all_entities[None, :].expand(batch_size_curr, -1)  # (batch_size, num_entities)
-        ], dim=2).reshape(-1, 3)  # (batch_size * num_entities, 3)
+    for i in tqdm(range(0, len(triples))):
+        data_point = triples[i]
+        str_h, str_r, str_t = data_point[0], data_point[1], data_point[2]
 
-        # For head prediction (?, r, t)
-        hrt_queries_head = torch.stack([
-            all_entities[None, :].expand(batch_size_curr, -1),          # (batch_size, num_entities)
-            batch_r[:, None].expand(-1, num_entities),                 # (batch_size, num_entities)
-            batch_t[:, None].expand(-1, num_entities)                  # (batch_size, num_entities)
-        ], dim=2).reshape(-1, 3)  # (batch_size * num_entities, 3)
+        h = models[0].get_entity_index(str_h)
+        r = models[0].get_relation_index(str_r)
+        t = models[0].get_entity_index(str_t)
 
-        # Aggregated ensemble scores for both directions
-        agg_scores_tail = torch.zeros(batch_size_curr * num_entities, device=device)
-        agg_scores_head = torch.zeros(batch_size_curr * num_entities, device=device)
-        for m, w in zip(models, weights):
-            sc_tail = m.model.forward_triples(hrt_queries)       # (batch_size * num_entities,)
-            sc_head = m.model.forward_triples(hrt_queries_head)  # (batch_size * num_entities,)
-            agg_scores_tail += w * sc_tail
-            agg_scores_head += w * sc_head
-        agg_scores_tail /= W
-        agg_scores_head /= W
+        # (2) Predict missing tails: need to aggregate predictions from all models
+        x_tails = torch.stack((
+            torch.tensor(h).repeat(num_entities, ),
+            torch.tensor(r).repeat(num_entities, ),
+            all_entities), dim=1)
+        
+        x_heads = torch.stack((
+            all_entities,
+            torch.tensor(r).repeat(num_entities, ),
+            torch.tensor(t).repeat(num_entities)
+        ), dim=1)
+        
+        # Stack predictions for all models
+        preds_tails = []
+        preds_heads = []
+        for m in models:
+            preds_tails.append(m.model.forward_triples(x_tails))
+            preds_heads.append(m.model.forward_triples(x_heads))
+        preds_tails = torch.stack(preds_tails, dim=0)  # [n_models, num_entities]
+        preds_heads = torch.stack(preds_heads, dim=0)  # [n_models, num_entities]
 
-        # Reshape to (batch_size, num_entities)
-        agg_scores_tail = agg_scores_tail.view(batch_size_curr, num_entities)
-        agg_scores_head = agg_scores_head.view(batch_size_curr, num_entities)
+        # Aggregation: weighted mean
+        # (broadcast weights for batch dim)
+        preds_tails = (preds_tails * weights_tensor[:, None]).sum(dim=0) / weights_tensor.sum()
+        preds_heads = (preds_heads * weights_tensor[:, None]).sum(dim=0) / weights_tensor.sum()
 
-        # For each triple in batch: filtered ranking logic and metrics
-        for i in range(batch_size_curr):
-            triple_idx = start + i
-            h_s, r_s, t_s = triples[triple_idx]
-            h, r, t = h_indices[triple_idx], r_indices[triple_idx], t_indices[triple_idx]
+        # 3. Filtered ranks for tails
+        filt_tails = [models[0].entity_to_idx[i] for i in er_vocab[(str_h, str_r)]]
+        target_value = preds_tails[t].item()
+        preds_tails[filt_tails] = -np.Inf
+        preds_tails[t] = target_value
+        _, sort_idxs = torch.sort(preds_tails, descending=True)
+        sort_idxs = sort_idxs.detach()
+        filt_tail_entity_rank = np.where(sort_idxs.cpu().numpy() == t)[0][0]
 
-            # TAIL: filter known correct tails for (h, r, ?)
-            filt_tails = [models[0].entity_to_idx[x] for x in er_vocab[(h_s, r_s)]]
-            predictions_t = agg_scores_tail[i, :].clone()
-            true_score_t = predictions_t[t].item()
-            predictions_t[filt_tails] = -np.inf
-            predictions_t[t] = true_score_t
-            _, sort_idx_t = torch.sort(predictions_t, descending=True)
-            rank_t = (sort_idx_t == t).nonzero().item() + 1
+        # 4. Filtered ranks for heads
+        filt_heads = [models[0].entity_to_idx[i] for i in re_vocab[(str_r, str_t)]]
+        target_value = preds_heads[h].item()
+        preds_heads[filt_heads] = -np.Inf
+        preds_heads[h] = target_value
+        _, sort_idxs = torch.sort(preds_heads, descending=True)
+        sort_idxs = sort_idxs.detach()
+        filt_head_entity_rank = np.where(sort_idxs.cpu().numpy() == h)[0][0]
 
-            # HEAD: filter known correct heads for (?, r, t)
-            filt_heads = [models[0].entity_to_idx[x] for x in re_vocab[(r_s, t_s)]]
-            predictions_h = agg_scores_head[i, :].clone()
-            true_score_h = predictions_h[h].item()
-            predictions_h[filt_heads] = -np.inf
-            predictions_h[h] = true_score_h
-            _, sort_idx_h = torch.sort(predictions_h, descending=True)
-            rank_h = (sort_idx_h == h).nonzero().item() + 1
+        # 5. Add 1 to ranks as numpy array indices start at 0
+        filt_head_entity_rank += 1
+        filt_tail_entity_rank += 1
 
-            # Add to metric trackers (standard: 2 predictions per triple)
-            reciprocal_ranks.append(1.0 / rank_t + 1.0 / rank_h)
-            for k in hits:
-                hits[k].append(int(rank_t <= k) + int(rank_h <= k))
-    
-    q2 = 2.0 * num_triples  # two queries per triple (head, tail)
-    results = {
-        'MRR': sum(reciprocal_ranks) / q2,
-        'H@1': sum(hits[1]) / q2,
-        'H@3': sum(hits[3]) / q2,
-        'H@10': sum(hits[10]) / q2
-    }
-    return results
+        rr = 1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
+        reciprocal_ranks.append(rr)
+
+        for hits_level in range(1, 11):
+            res = 1 if filt_head_entity_rank <= hits_level else 0
+            res += 1 if filt_tail_entity_rank <= hits_level else 0
+            if res > 0:
+                hits.setdefault(hits_level, []).append(res)
+
+    mean_reciprocal_rank = sum(reciprocal_ranks) / (float(len(triples) * 2))
+    hit_1 = sum(hits.get(1, [0])) / (float(len(triples) * 2))
+    hit_3 = sum(hits.get(3, [0])) / (float(len(triples) * 2))
+    hit_10 = sum(hits.get(10, [0])) / (float(len(triples) * 2))
+
+    return {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}

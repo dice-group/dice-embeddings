@@ -10,6 +10,7 @@ import pandas as pd
 import math
 import os
 from torch.optim.lr_scheduler import LambdaLR
+from .eval_static_funcs import evaluate_link_prediction_performance_ensemble
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
@@ -623,3 +624,24 @@ class LRScheduler(AbstractCallback):
 
         # Check if adjusted step + 1 is divisible by cycle_length (end of cycle)
         return (adjusted_step + 1) % self.cycle_length == 0
+    
+    def on_fit_end(self, trainer, model):
+        # Load all model snapshots from the snapshot directory
+        snapshot_files = sorted(
+            [f for f in os.listdir(self.snapshot_dir) if f.endswith('.pt')]
+        )
+        self.model_snapshots = []
+        for checkpoint in snapshot_files:
+            checkpoint_path = os.path.join(self.snapshot_dir, checkpoint)
+            state_dict = torch.load(checkpoint_path, map_location="cpu")
+            model_copy = type(model)(model.args)
+            model_copy.load_state_dict(state_dict)
+            self.model_snapshots.append(model_copy)
+        result = evaluate_link_prediction_performance_ensemble(
+            models=self.model_snapshots,
+            triples= trainer.dataset.test_set,
+            er_vocab= trainer.dataset.er_vocab,
+            re_vocab= trainer.dataset.re_vocab,
+            weights=None,
+        )
+        print(f"Final evaluation results: {result}")
