@@ -10,7 +10,7 @@ import pandas as pd
 import math
 import os
 from torch.optim.lr_scheduler import LambdaLR
-from .eval_static_funcs import evaluate_link_prediction_performance_ensemble
+from .eval_static_funcs import evaluate_ensemble_link_prediction_performance
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
@@ -637,11 +637,10 @@ class LRScheduler(AbstractCallback):
             model_copy = type(model)(model.args)
             model_copy.load_state_dict(state_dict)
             self.model_snapshots.append(model_copy)
-        result = evaluate_link_prediction_performance_ensemble(
-            models=self.model_snapshots,
-            triples= trainer.dataset.test_set,
-            er_vocab= trainer.dataset.er_vocab,
-            re_vocab= trainer.dataset.re_vocab,
+        result = evaluate_ensemble_link_prediction_performance(
+            models = self.model_snapshots,
+            triples = trainer.dataset.test_set,
+            er_vocab= trainer.dataset.er_vocab.result(),
             weights=None,
         )
-        print(f"Final evaluation results: {result}")
+        print(f"Ensemble Evaluations: {result}")
