@@ -313,7 +313,7 @@ class TapireCL(BaseKGE):
 
     def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor):
         # (b,d),     (b,d)
-        raise NotImplemented
+        raise NotImplementedError("forward_k_vs_sample method is not implemented in TapireCL model.")
 
 
     def score(self, h, r, t):

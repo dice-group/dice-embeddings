@@ -21,3 +21,4 @@ sphinx_rtd_theme>=2.0.0
 sphinx-theme>=1.0
 sphinxcontrib-plantuml>=0.27
 plantuml-local-client>=1.2022.6
+cliffordlayers==0.1.1
