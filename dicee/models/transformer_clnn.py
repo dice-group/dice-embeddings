@@ -45,6 +45,7 @@ class Transformer(nn.Module):
         self.dropout = config.dropout
         self.n_layer = config.n_layer
         self.bias = config.bias
+        self.causal_attention = config.causal_attention
         
         self.return_attention = config.return_attention
         # Entity-relation embedding into logits
@@ -119,7 +120,7 @@ class Transformer(nn.Module):
             y = torch.nn.functional.scaled_dot_product_attention(
                 q, k, v, attn_mask=None,
                 dropout_p=self.dropout if self.training else 0,
-                is_causal=True
+                is_causal=self.causal_attention
             )
         else:
             # Manual implementation of attention
@@ -233,12 +234,13 @@ class TapireCL(BaseKGE):
 
         # Create configuration
         n_layers = args.get('n_layer',8 )
-        n_heads = args.get('n_head', 2)
+        n_heads = args.get('n_head', 4)
         embedding_dim = args.get('embedding_dim', 32)
         in_features = embedding_dim * 2  # Concatenated head and relation embeddings
         out_features =   in_features  # Output features match input features
         dropout = args.get('dropout', 0)
-        inner_embedding_dim = args.get('inner_embedding_size', 8)
+        inner_embedding_dim = args.get('inner_embedding_size', 4)
+        causal_attention = args.get('causal_self_attention', False)
 
         assert n_layers > 0, "n_layer must be greater than 0"
         assert n_heads > 0, "n_head must be greater than 0"
@@ -262,7 +264,8 @@ class TapireCL(BaseKGE):
                                                 bias=True,
                                                 in_features=in_features,
                                                 out_features=out_features,
-                                                return_attention=True)
+                                                return_attention=False,
+                                                causal_attention=causal_attention)
         
         
         self.g = [-1]  # Clifford algebra basis elements
