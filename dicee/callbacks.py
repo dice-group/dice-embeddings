@@ -514,7 +514,7 @@ class LRScheduler(AbstractCallback):
         n_cycles: int = 10,
         warmup_epochs: int = 10,
         eta_max: float = 0.1,
-        eta_min: float = 0.001,
+        eta_min: float = 0.01,
         weighted_ensemble: bool = True,
         snapshot_dir: str = "snaps",
     ):
@@ -635,7 +635,7 @@ class LRScheduler(AbstractCallback):
         self.step_count += 1
 
         # Log the learning rate for this step
-        current_lr = self.scheduler.get_last_lr()[0] if hasattr(self.scheduler, "get_last_lr") else None
+        # current_lr = self.scheduler.get_last_lr()[0] if hasattr(self.scheduler, "get_last_lr") else None
 
         if self._is_snapshot_step(self.step_count):
             snapshot_path = os.path.join(
@@ -713,4 +713,4 @@ class LRScheduler(AbstractCallback):
         # Write the dictionary to the JSON file
         with open(ensemble_eval_report_path, 'w', encoding='utf-8') as f:
             json.dump(self.ensemble_eval_report, f, indent=4, ensure_ascii=False)
-        print(f"Ensemble Evaluations: {self.ensemble_eval_report}")
+        print(f"Ensemble Evaluations: {ensemble_eval_report}")
