@@ -556,6 +556,7 @@ class LRScheduler(AbstractCallback):
         if self.weighted_ensemble:
             self.snapshot_loss = defaultdict(float)
 
+
     def _initialize_training_params(self, num_training_batches):
         """Set batches per epoch, total steps, cycle length, and warmup steps."""
         self.batches_per_epoch = num_training_batches
@@ -633,6 +634,9 @@ class LRScheduler(AbstractCallback):
         self.scheduler.step()
         self.step_count += 1
 
+        # Log the learning rate for this step
+        current_lr = self.scheduler.get_last_lr()[0] if hasattr(self.scheduler, "get_last_lr") else None
+
         if self._is_snapshot_step(self.step_count):
             snapshot_path = os.path.join(
                 self.snapshot_dir, f"snapshot_epoch_{trainer.current_epoch}.pt"
@@ -682,14 +686,29 @@ class LRScheduler(AbstractCallback):
             # 1. If no weights are provided, use equal weights for all snapshots.
             weights = [1.0 / len(self.model_snapshots)] * len(self.model_snapshots)
         
-        self.ensemble_eval_report = evaluate_ensemble_link_prediction_performance(
-            models = self.model_snapshots,
-            triples = trainer.dataset.test_set,
-            er_vocab= trainer.dataset.er_vocab.result(),
+        ensemble_eval_report = evaluate_ensemble_link_prediction_performance(
+            models=self.model_snapshots,
+            triples=trainer.dataset.test_set,
+            er_vocab=trainer.dataset.er_vocab.result(),
             weights=weights,
-            combiner="weighted",  
+            combiner="weighted",
             batch_size=trainer.num_training_batches
-        )
+            )
+        # Prepare a single dictionary with LR scheduling info and nested ensemble eval report
+        self.ensemble_eval_report = {
+            "scheduler_name": self.scheduler_name,
+            "total_epochs": self.total_epochs,
+            "n_cycles": self.n_cycles,
+            "warmup_epochs": self.warmup_epochs,
+            "eta_max": self.eta_max,
+            "eta_min": self.eta_min,
+            "batches_per_epoch": self.batches_per_epoch,
+            "total_steps": self.total_steps,
+            "cycle_length": self.cycle_length,
+            "warmup_steps": self.warmup_steps,
+            "ensemble_eval_report": ensemble_eval_report
+        }
+
         ensemble_eval_report_path = os.path.join(self.experiment_dir, "ensemble_eval_report.json")
         # Write the dictionary to the JSON file
         with open(ensemble_eval_report_path, 'w', encoding='utf-8') as f:
