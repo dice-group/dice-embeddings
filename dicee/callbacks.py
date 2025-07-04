@@ -12,6 +12,7 @@ import os
 from torch.optim.lr_scheduler import LambdaLR
 from .eval_static_funcs import evaluate_ensemble_link_prediction_performance
 from collections import defaultdict
+import json
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
@@ -510,7 +511,7 @@ class LRScheduler(AbstractCallback):
         scheduler_name: str,
         total_epochs: int,
         experiment_dir: str,
-        n_cycles: int = 5,
+        n_cycles: int = 10,
         warmup_epochs: int = 10,
         eta_max: float = 0.1,
         eta_min: float = 0.001,
@@ -539,6 +540,7 @@ class LRScheduler(AbstractCallback):
         self.eta_max = eta_max
         self.eta_min = eta_min
         self.weighted_ensemble = weighted_ensemble
+        self.experiment_dir = experiment_dir
         self.snapshot_dir = os.path.join(experiment_dir, snapshot_dir)
         os.makedirs(self.snapshot_dir, exist_ok=True)
 
@@ -680,12 +682,16 @@ class LRScheduler(AbstractCallback):
             # 1. If no weights are provided, use equal weights for all snapshots.
             weights = [1.0 / len(self.model_snapshots)] * len(self.model_snapshots)
         
-        result = evaluate_ensemble_link_prediction_performance(
+        self.ensemble_eval_report = evaluate_ensemble_link_prediction_performance(
             models = self.model_snapshots,
             triples = trainer.dataset.test_set,
             er_vocab= trainer.dataset.er_vocab.result(),
             weights=weights,
-            combiner="weighted",  # Use Borda count for combining predictions
+            combiner="weighted",  
             batch_size=trainer.num_training_batches
         )
-        print(f"Ensemble Evaluations: {result}")
+        ensemble_eval_report_path = os.path.join(self.experiment_dir, "ensemble_eval_report.json")
+        # Write the dictionary to the JSON file
+        with open(ensemble_eval_report_path, 'w', encoding='utf-8') as f:
+            json.dump(self.ensemble_eval_report, f, indent=4, ensure_ascii=False)
+        print(f"Ensemble Evaluations: {self.ensemble_eval_report}")
