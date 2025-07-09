@@ -131,6 +131,13 @@ def forward_backward_update_loss(z:Tuple, ensemble_model)->float:
     ensemble_model.step()
     return loss.item()
 
+def update_embedding_layer(ensemble_model):
+    # () Update the embedding layer.
+    for model in ensemble_model:
+        if hasattr(model, 'update_embedding_layer'):
+            model.update_embedding_layer()
+    return ensemble_model
+
 class TensorParallel(AbstractTrainer):
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
@@ -177,6 +184,8 @@ class TensorParallel(AbstractTrainer):
             epoch_loss = 0
             # () Iterate over batches.
             for i, z in enumerate(train_dataloader):
+                # if i>0:
+                #     ensemble_model = update_embedding_layer(ensemble_model)
                 # () Forward, Loss, Backward, and Update on a given batch of data points.
                 batch_loss = forward_backward_update_loss(z,ensemble_model)
                 # () Accumulate the batch losses to compute the epoch loss.
