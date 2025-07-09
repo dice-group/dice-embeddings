@@ -331,7 +331,7 @@ pre_trained_kge.train_literals(train_file_path = "")
 # (4) Predict Literal value for Entity-Attribute pair
 pre_trained_kge.predict_literals(entity=[".."],attribute=[".."])
 ```
-A detailed illustration and explanation of literal prediction is provided in `examples/KGE_literal_prediction.ipynb`.
+A detailed illustration and explanation of literal prediction is provided in `examples/KGE_literal_prediction.py`.
 
 </details>
 
