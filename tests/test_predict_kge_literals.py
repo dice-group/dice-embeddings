@@ -291,7 +291,7 @@ class TestKGELiteralsRegression:
         model.train_literals(train_file_path=train_file_path,
         loader_backend="pandas",
         num_epochs=20,
-        batch_size=50, device='cpu')
+        batch_size=50, device='cpu', suffle_data=False)
 
         # remove literal test artifacts
         shutil.rmtree("Literal_KGs")
@@ -307,7 +307,7 @@ class TestKGELiteralsRegression:
         model.train_literals(train_file_path=train_file_path,
         loader_backend="pandas",
         num_epochs=100,
-        batch_size=50, device='cpu')
+        batch_size=50, device='cpu', suffle_data=False)
 
         # Predict literals for a known entity
         entity = "F6F72"
@@ -318,7 +318,7 @@ class TestKGELiteralsRegression:
         assert result.shape == (1,), "Expected array with shape (1,)"
         prediction = result[0]
         assert isinstance(prediction, (int, float)), "Result is not a numeric value"
-        assert 30.5 <= prediction <= 32.5, f"Result {prediction} is not within the expected range"
+        assert 25.5 <= prediction <= 27.3, f"Result {prediction} is not within the expected range"
 
         # remove literal test artifacts
         shutil.rmtree("Literal_KGs")

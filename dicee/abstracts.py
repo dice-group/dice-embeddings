@@ -760,6 +760,7 @@ class BaseInteractiveTrainKGE:
         freeze_entity_embeddings: bool = True,
         gate_residual: bool = True,
         device: str = None,
+        suffle_data: bool = True
     ):
         """
         Trains the Literal Embeddings model using literal data.
@@ -775,6 +776,7 @@ class BaseInteractiveTrainKGE:
             freeze_entity_embeddings (bool): If True, freeze the entity embeddings during training.
             gate_residual (bool): If True, use gate residual connections in the model.
             device (str): Device to use for training ('cuda' or 'cpu'). If None, will use available GPU or CPU.
+            suffle_data (bool): If True, shuffle the dataset before training.
         """
         # Assign torch.seed to reproduice experiments
         torch.manual_seed(random_seed)
@@ -799,7 +801,7 @@ class BaseInteractiveTrainKGE:
 
         batch_data = DataLoader(
             dataset=literal_dataset,
-            shuffle=True,
+            shuffle=suffle_data,
             batch_size=batch_size,
         )
 
@@ -818,7 +820,7 @@ class BaseInteractiveTrainKGE:
 
         print(
             f"Training Literal Embedding model"
-            f"using pre-trained '{self.model.name}' embeddings."
+            f" using pre-trained '{self.model.name}' embeddings."
         )
 
         # Training loop
