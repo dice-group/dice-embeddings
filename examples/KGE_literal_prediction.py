@@ -21,7 +21,7 @@ Setup Steps:
 
 # ---- DOWNLOAD & EXTRACT DATASET IF NOT PRESENT ----
 
-literal_kg_dir = "Literal_KGs/Family"
+literal_kg_dir = "Literal_KGs"
 # Check if the dataset directory exists, if not create it
 if not os.path.exists(literal_kg_dir):
     url = "https://files.dice-research.org/datasets/dice-embeddings/Literal_KGs.zip"
