@@ -983,6 +983,7 @@
         <span class="n">freeze_entity_embeddings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">gate_residual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">suffle_data</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Trains the Literal Embeddings model using literal data.</span>
@@ -998,6 +999,7 @@
 <span class="sd">            freeze_entity_embeddings (bool): If True, freeze the entity embeddings during training.</span>
 <span class="sd">            gate_residual (bool): If True, use gate residual connections in the model.</span>
 <span class="sd">            device (str): Device to use for training (&#39;cuda&#39; or &#39;cpu&#39;). If None, will use available GPU or CPU.</span>
+<span class="sd">            suffle_data (bool): If True, shuffle the dataset before training.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Assign torch.seed to reproduice experiments</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
@@ -1022,7 +1024,7 @@
 
         <span class="n">batch_data</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
             <span class="n">dataset</span><span class="o">=</span><span class="n">literal_dataset</span><span class="p">,</span>
-            <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">shuffle</span><span class="o">=</span><span class="n">suffle_data</span><span class="p">,</span>
             <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -1041,7 +1043,7 @@
 
         <span class="nb">print</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Training Literal Embedding model&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;using pre-trained &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; embeddings.&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; using pre-trained &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; embeddings.&quot;</span>
         <span class="p">)</span>
 
         <span class="c1"># Training loop</span>

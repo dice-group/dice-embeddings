@@ -496,7 +496,7 @@ Module Contents
 
 
 
-   .. py:method:: train_literals(train_file_path: str = None, num_epochs: int = 100, lit_lr: float = 0.001, lit_normalization_type: str = 'z-norm', batch_size: int = 1024, sampling_ratio: float = None, random_seed=1, loader_backend: str = 'pandas', freeze_entity_embeddings: bool = True, gate_residual: bool = True, device: str = None)
+   .. py:method:: train_literals(train_file_path: str = None, num_epochs: int = 100, lit_lr: float = 0.001, lit_normalization_type: str = 'z-norm', batch_size: int = 1024, sampling_ratio: float = None, random_seed=1, loader_backend: str = 'pandas', freeze_entity_embeddings: bool = True, gate_residual: bool = True, device: str = None, suffle_data: bool = True)
 
       Trains the Literal Embeddings model using literal data.
 
@@ -520,6 +520,8 @@ Module Contents
       :type gate_residual: bool
       :param device: Device to use for training ('cuda' or 'cpu'). If None, will use available GPU or CPU.
       :type device: str
+      :param suffle_data: If True, shuffle the dataset before training.
+      :type suffle_data: bool
 
 
 
