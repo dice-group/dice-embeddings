@@ -183,3 +183,6 @@ KGs/
 Experiments/
 checkpoints/
 *.zip
+KG/
+run_embeddings.sh
+.vscode/launch.json
