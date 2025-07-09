@@ -21,7 +21,7 @@ Setup Steps:
 
 # ---- DOWNLOAD & EXTRACT DATASET IF NOT PRESENT ----
 
-literal_kg_dir = "Literal_KGs"
+literal_kg_dir = "Literal_KGs/Family"
 # Check if the dataset directory exists, if not create it
 if not os.path.exists(literal_kg_dir):
     url = "https://files.dice-research.org/datasets/dice-embeddings/Literal_KGs.zip"
@@ -76,6 +76,9 @@ pre_trained_kge = KGE(path=result['path_experiment_folder'])
 # Path for literal training and eval file
 lit_train_file_path = "Literal_KGs/Family/literals/train.txt"
 lit_eval_file_path = "Literal_KGs/Family/literals/test.txt"
+
+assert os.path.exists(lit_train_file_path), "Literal train file not found!"
+assert os.path.exists(lit_eval_file_path), "Literal eval file not found!"
 
 print("Training literal embedding model...")
 pre_trained_kge.train_literals(
