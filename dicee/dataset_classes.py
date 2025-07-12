@@ -1,4 +1,7 @@
-from torch.utils.data import DataLoader
+from torch.utils.data import Dataset, DataLoader
+import os
+import pandas as pd
+import rdflib
 import numpy as np
 import torch
 import pytorch_lightning as pl
@@ -802,3 +805,220 @@ class CVDataModule(pl.LightningDataModule):
     def prepare_data(self, *args, **kwargs):
         # Nothing to be prepared for now.
         pass
+
+class LiteralDataset(Dataset):
+    """Dataset for loading and processing literal data for training Literal Embedding model.
+    This dataset handles the loading, normalization, and preparation of triples
+    for training a literal embedding model.
+
+    Extends torch.utils.data.Dataset for supporting PyTorch dataloaders.
+
+    Attributes:
+        train_file_path (str): Path to the training data file.
+        normalization (str): Type of normalization to apply ('z-norm', 'min-max', or None).
+        normalization_params (dict): Parameters used for normalization.
+        sampling_ratio (float): Fraction of the training set to use for ablations.
+        entity_to_idx (dict): Mapping of entities to their indices.
+        num_entities (int): Total number of entities.
+        data_property_to_idx (dict): Mapping of data properties to their indices.
+        num_data_properties (int): Total number of data properties.
+        loader_backend (str): Backend to use for loading data ('pandas' or 'rdflib').
+    """
+
+    def __init__(
+        self,
+        file_path: str,
+        ent_idx: dict = None,
+        normalization_type: str = "z-norm",
+        sampling_ratio: float = None,
+        loader_backend: str = "pandas",
+    ):
+        self.train_file_path = file_path
+        self.loader_backend = loader_backend 
+        self.normalization_type = normalization_type
+        self.normalization_params = {}
+        self.sampling_ratio = sampling_ratio
+        self.entity_to_idx = ent_idx
+        self.num_entities = len(self.entity_to_idx)
+
+        if self.entity_to_idx is None:
+            raise ValueError(
+                "entity_to_idx must be provided to initialize LiteralDataset."
+            )
+
+        self._load_data()
+
+    def _load_data(self):
+        train_df = self.load_and_validate_literal_data(
+            self.train_file_path,loader_backend=self.loader_backend
+        )
+        train_df = train_df[train_df["head"].isin(self.entity_to_idx)]
+        assert not train_df.empty, "Filtered train_df is empty — no entities match entity_to_idx."
+
+        self.data_property_to_idx = {
+            rel: idx
+            for idx, rel in enumerate(sorted(train_df["attribute"].unique()))
+        }
+        self.num_data_properties = len(self.data_property_to_idx)
+        if self.sampling_ratio is not None:
+            # reduce the train set for ablations using sampling ratio
+            # keeps the sampling_ratio * 100 % of full training set in the train_df
+            if 0 < self.sampling_ratio <= 1:
+                train_df = (
+                    train_df.groupby("attribute", group_keys=False)
+                    .apply(
+                        lambda x: x.sample(frac=self.sampling_ratio, random_state=42)
+                    )
+                    .reset_index(drop=True)
+                )
+                print(
+                    f"Training Literal Embedding model with {self.sampling_ratio*100:.1f}% of the train set."
+                )
+            else:
+                raise ValueError("Split Fraction must be between 0 and 1.")
+
+        train_df["head_idx"] = train_df["head"].map(self.entity_to_idx)
+        train_df["attr_idx"] = train_df["attribute"].map(self.data_property_to_idx)
+        train_df = self._apply_normalization(train_df)
+
+        self.triples = torch.tensor(
+            train_df[["head_idx", "attr_idx"]].values, dtype=torch.long
+        )
+        self.values = torch.tensor(train_df["value"].values, dtype=torch.float32)
+        self.values_norm = torch.tensor(
+            train_df["value_norm"].values, dtype=torch.float32
+        )
+
+    def _apply_normalization(self, df):
+        """Applies normalization to the tail values based on the specified type."""
+        if self.normalization_type == "z-norm":
+            stats = df.groupby("attribute")["value"].agg(["mean", "std"])
+            self.normalization_params = stats.to_dict(orient="index")
+            df["value_norm"] = df.groupby("attribute")["value"].transform(
+                lambda x: (x - x.mean()) / x.std()
+            )
+            self.normalization_params["type"] = "z-norm"
+
+        elif self.normalization_type == "min-max":
+            stats = df.groupby("attribute")["value"].agg(["min", "max"])
+            self.normalization_params = stats.to_dict(orient="index")
+            df["value_norm"] = df.groupby("attribute")["value"].transform(
+                lambda x: (x - x.min()) / (x.max() - x.min())
+            )
+            self.normalization_params["type"] = "min-max"
+
+        else:
+            print(" No normalization applied.")
+            df["value_norm"] = df["value"]
+            if self.normalization_type is None:
+                self.normalization_params = {}
+                self.normalization_params["type"] = None
+
+
+        return df
+
+    def __getitem__(self, index):
+        return self.triples[index], self.values_norm[index]
+
+    def __len__(self):
+        return len(self.triples)
+
+    @staticmethod
+    def load_and_validate_literal_data(file_path: str = None, loader_backend : str ="pandas") -> pd.DataFrame:
+        """Loads and validates the literal data file.
+        Args:
+            file_path (str): Path to the literal data file.
+        Returns:
+            pd.DataFrame: DataFrame containing the loaded and validated data.
+        """
+
+        # Check if the file exists
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Data file not found at {file_path}")
+
+        # Try loading the file with either tab or comma separator
+        if loader_backend == "rdflib":
+            try:
+                g = rdflib.Graph().parse(file_path)
+            except Exception as e:
+                raise ValueError(f"Failed to parse RDF file: {e}")
+            
+            triples = []
+            for s, p, o in g:
+                if isinstance(o, rdflib.Literal):
+                    value = o.toPython()
+                    if isinstance(value, (int, float)):
+                        triples.append((s.n3()[1:-1], p.n3()[1:-1], float(value)))
+
+            # Create DataFrame
+            df = pd.DataFrame(triples, columns=None)
+
+        elif loader_backend == "pandas":
+            last_exception = None
+            df = None
+            for sep in ["\t", ","]:
+                try:
+                    df = pd.read_csv(file_path, sep=sep, header=None, index_col=False)
+                    # Success—break out of the loop
+                    break
+                except Exception as e:
+                    last_exception = e
+        else:
+            raise ValueError(
+                f"Unsupported loader backend: {loader_backend}. Use 'rdflib' or 'pandas'."
+            )
+
+        # After loop, check if df was successfully loaded
+        if df is None or df.empty:
+            raise ValueError(
+                f"Could not read file '{file_path}' with tab or comma separator. Last error: {last_exception}"
+            )
+
+        assert (
+            df.shape[1] == 3
+        ), "Data file must contain exactly 3 columns: head, attribute, and value."
+        # Name the columns
+        df.columns = ["head", "attribute", "value"]
+
+        # Validate column types
+        if not pd.api.types.is_string_dtype(df["head"]):
+            raise TypeError("Column 'head' must be of string type.")
+        if not pd.api.types.is_string_dtype(df["attribute"]):
+            raise TypeError("Column 'attribute' must be of string type.")
+        if not pd.api.types.is_numeric_dtype(df["value"]):
+            raise TypeError("Column 'value' must be numeric.")
+
+        return df
+
+    @staticmethod
+    def denormalize(preds_norm, attributes, normalization_params) -> np.ndarray:
+        """Denormalizes the predictions based on the normalization type.
+
+        Args:
+        preds_norm (np.ndarray): Normalized predictions to be denormalized.
+        attributes (list): List of attributes corresponding to the predictions.
+        normalization_params (dict): Dictionary containing normalization parameters for each attribute.
+
+        Returns:
+            np.ndarray: Denormalized predictions.
+
+        """
+        if normalization_params["type"] == "z-norm":
+            # Extract means and stds only if z-norm is used
+            means = np.array([normalization_params[i]["mean"] for i in attributes])
+            stds = np.array([normalization_params[i]["std"] for i in attributes])
+            return preds_norm * stds + means
+
+        elif normalization_params["type"] == "min-max":
+            # Extract mins and maxs only if min-max is used
+            mins = np.array([normalization_params[i]["min"] for i in attributes])
+            maxs = np.array([normalization_params[i]["max"] for i in attributes])
+            return preds_norm * (maxs - mins) + mins
+
+        elif normalization_params["type"] is None:
+            return  preds_norm  # No normalization applied, return as is
+
+        else:
+            raise ValueError(
+                "Unsupported normalization type. Use 'z-norm', 'min-max', or None."
+            )
