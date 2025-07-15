@@ -154,6 +154,7 @@ class BaseKGE(BaseKGELightning):
         self.byte_pair_encoding = self.args.get("byte_pair_encoding", False)
         self.max_length_subword_tokens = self.args.get("max_length_subword_tokens", None)
         self.block_size=self.args.get("block_size", None)
+        self.vocab_size = self.args.get("vocab_size", None)
         if self.byte_pair_encoding and self.args['model'] != "BytE":
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
             self.param_init(self.token_embeddings.weight.data)
@@ -170,8 +171,9 @@ class BaseKGE(BaseKGELightning):
         elif self.byte_pair_encoding and self.args['model'] == "BytE":
             """ Transformer implements token embeddings"""
         else:
-
-            self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+            if self.vocab_size is None:
+                self.vocab_size = self.num_entities
+            self.entity_embeddings = torch.nn.Embedding(self.vocab_size, self.embedding_dim)
             self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
             self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
