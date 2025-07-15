@@ -105,7 +105,13 @@ def get_callbacks(args):
         if args.trainer in multi_gpu_trainers:
             raise NotImplementedError("PeriodicEvalCallback is not supported for multi-GPU trainers (TP or torchDDP).")
         if args.trainer == 'PL':
-            num_visible = len(os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",")) if os.environ.get("CUDA_VISIBLE_DEVICES") else torch.cuda.device_count()
+            visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES")
+            if visible_devices:
+                # Filter out empty strings caused by malformed input
+                devices = [d for d in visible_devices.split(",") if d.strip() != ""]
+                num_visible = len(devices)
+            else:
+                num_visible = torch.cuda.device_count()
             if num_visible > 1:
                 raise NotImplementedError("PeriodicEvalCallback is not supported for PL trainer with more than 1 CUDA visible device.")
         callbacks.append(PeriodicEvalCallback(experiment_path=args.full_storage_path, max_epochs=args.num_epochs,
