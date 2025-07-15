@@ -2,11 +2,14 @@ import datetime
 import time
 import numpy as np
 import torch
+import os
+import json
 
 import dicee.models.base_model
 from .static_funcs import save_checkpoint_model, save_pickle
 from .abstracts import AbstractCallback
 import pandas as pd
+from collections import defaultdict
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
@@ -489,3 +492,98 @@ class Perturb(AbstractCallback):
                 raise NotImplementedError(f"{self.level}")
         else:
             raise RuntimeError(f"--level is given as {self.level}!")
+
+class PeriodicEvalCallback(AbstractCallback):
+    """
+    Callback to periodically evaluate the model and optionally save checkpoints during training.
+
+    Evaluates at regular intervals (every N epochs) or at explicitly specified epochs.
+    Stores evaluation reports and model checkpoints.
+    """
+
+    def __init__(self, experiment_path: str, max_epochs: int,
+                 eval_every_n_epoch: int = 0, eval_at_epochs: list = None,
+                 save_model_every_n_epoch: bool = True):
+        """
+        Initialize the PeriodicEvalCallback.
+
+        Parameters
+        ----------
+        experiment_path : str
+            Directory where evaluation reports and model checkpoints will be saved.
+        max_epochs : int
+            Maximum number of training epochs.
+        eval_every_n_epoch : int, optional
+            Evaluate every N epochs. Ignored if eval_at_epochs is provided.
+        eval_at_epochs : list, optional
+            List of specific epochs at which to evaluate. If provided and non-empty, overrides eval_every_n_epoch.
+        save_model_every_n_epoch : bool, optional
+            Whether to save model checkpoints at each evaluation epoch.
+        """
+        super().__init__()
+        self.experiment_dir = experiment_path
+        self.max_epochs = max_epochs
+        self.epoch_counter = 0
+        self.save_model_every_n_epoch = save_model_every_n_epoch
+        self.reports = defaultdict(dict)
+
+        # Determine evaluation epochs: use explicit list if provided, else use interval
+        if eval_at_epochs and len(eval_at_epochs) > 0:
+            self.eval_epochs = set(eval_at_epochs)
+        elif eval_every_n_epoch > 0:
+            self.eval_epochs = set(range(eval_every_n_epoch, max_epochs + 1, eval_every_n_epoch))
+        else:
+            self.eval_epochs = set()  # No evaluation
+
+        # Remove max_epochs from the set if present
+        # Dice trainer evaluates at the end of training, so we do not need to evaluate at max_epochs
+        if max_epochs in self.eval_epochs:
+            self.eval_epochs.remove(max_epochs)
+
+        # Prepare directory for model checkpoints if needed
+        if save_model_every_n_epoch:
+            self.n_epochs_storage_path = os.path.join(self.experiment_dir, 'models_n_epochs')
+            os.makedirs(self.n_epochs_storage_path, exist_ok=True)
+
+    def on_fit_end(self, trainer, model):
+        """ Called at the end of training. Saves final evaluation report."""
+        report_path = os.path.join(self.experiment_dir, 'eval_report_n_epochs.json')
+        with open(report_path, 'w') as f:
+            json.dump(self.reports, f, indent=4)
+
+    def on_train_epoch_end(self, trainer, model):
+        """
+        Called at the end of each training epoch. Performs evaluation and checkpointing if scheduled.
+
+        Parameters
+        ----------
+        trainer : object
+            The training controller.
+        model : torch.nn.Module
+            The model being trained.
+        """
+        self.epoch_counter += 1
+        # Check if current epoch is scheduled for evaluation
+        if self.epoch_counter in self.eval_epochs:
+            device = model.device  # Save current device
+            model.to('cpu')        # Move model to CPU for evaluation
+            model.eval()           # Set model to evaluation mode
+
+            # Run evaluation using trainer's evaluator
+            report = trainer.evaluator.eval(
+                dataset=trainer.dataset,
+                trained_model=model,
+                form_of_labelling=trainer.form_of_labelling,
+                during_training=True
+            )
+
+            model.to(device)       # Restore model device
+            model.train()          # Set model back to training mode
+
+            # Store evaluation report
+            self.reports[f'epoch_{self.epoch_counter}_eval'] = report
+
+            # Optionally save model checkpoint
+            if self.save_model_every_n_epoch:
+                save_path = os.path.join(self.n_epochs_storage_path, f'model_at_epoch_{self.epoch_counter}.pt')
+                save_checkpoint_model(model, path=save_path)

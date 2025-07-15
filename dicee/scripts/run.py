@@ -128,6 +128,13 @@ def get_default_arguments(description=None):
                         help="Find a batch size fitting in GPUs. Only available for TP trainer")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
+    parser.add_argument('--eval_every_n_epochs', type=int, default=0,
+                        help='Evaluate model every n epochs. If 0, no evaluation is applied.')
+    parser.add_argument('--save_every_n_epochs', action='store_true',
+                        help='Save model every n epochs. If True, save model at every epoch.')
+    parser.add_argument('--eval_at_epochs',type=int,nargs='+', default=None,
+        help="List of epoch numbers at which to evaluate the model (e.g., 1 5 10)."
+    )
 
     if description is None:
         return parser.parse_args()
