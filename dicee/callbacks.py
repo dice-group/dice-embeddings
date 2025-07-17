@@ -666,6 +666,7 @@ class LRScheduler(AbstractCallback):
     
     def on_fit_end(self, trainer, model):
         # Load all model snapshots from the snapshot directory
+        self.ensembel_weights = None
         snapshot_files = sorted(
             [f for f in os.listdir(self.snapshot_dir) if f.endswith('.pt')]
         )
@@ -680,19 +681,16 @@ class LRScheduler(AbstractCallback):
         if self.snapshot_loss and self.weighted_ensemble:
             self._calulate_snap_weights()
             # 2. Build the weight list aligned to snapshot_files order:
-            weights = [self.snapshot_weights[fname] for fname in snapshot_files]
+            self.ensembel_weights = [self.snapshot_weights[fname] for fname in snapshot_files]
         
-        else:
-            # 1. If no weights are provided, use equal weights for all snapshots.
-            weights = [1.0 / len(self.model_snapshots)] * len(self.model_snapshots)
         
         ensemble_eval_report = evaluate_ensemble_link_prediction_performance(
             models=self.model_snapshots,
             triples=trainer.dataset.test_set,
             er_vocab=trainer.dataset.er_vocab.result(),
-            weights=weights,
-            combiner="weighted",
-            batch_size=trainer.num_training_batches
+            weights=self.ensembel_weights,
+            batch_size=trainer.num_training_batches,
+            weighted_averaging=self.weighted_ensemble
             )
         # Prepare a single dictionary with LR scheduling info and nested ensemble eval report
         self.ensemble_eval_report = {
@@ -706,7 +704,8 @@ class LRScheduler(AbstractCallback):
             "total_steps": self.total_steps,
             "cycle_length": self.cycle_length,
             "warmup_steps": self.warmup_steps,
-            "ensemble_eval_report": ensemble_eval_report
+            "ensemble_eval_report": ensemble_eval_report,
+            "snapshot_loss": self.snapshot_loss if self.weighted_ensemble else None,
         }
 
         ensemble_eval_report_path = os.path.join(self.experiment_dir, "ensemble_eval_report.json")

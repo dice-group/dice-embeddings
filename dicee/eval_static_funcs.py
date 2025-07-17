@@ -486,7 +486,7 @@ def evaluate_literal_prediction(
 
 @torch.no_grad()
 def evaluate_ensemble_link_prediction_performance(models, triples, er_vocab: Dict[Tuple, List],
-    weights: List[float] = None, batch_size: int = 512, combiner = "borda") -> Dict:
+    weights: List[float] = None, batch_size: int = 512, weighted_averaging : bool = True ) -> Dict:
     """
     Evaluates link prediction performance of an ensemble of KGE models.
     Args:
@@ -506,12 +506,10 @@ def evaluate_ensemble_link_prediction_performance(models, triples, er_vocab: Dic
     hits = {i: [] for i in hits_range}
     n_models = len(models)
 
-    if combiner == "weighted":
-        if weights is None:
-            weights = [1.0] * n_models
-        assert len(weights) == n_models
-        weights_tensor = torch.tensor(weights, dtype=torch.float32)
-        weights_tensor = weights_tensor / weights_tensor.sum()
+    if  weighted_averaging:
+        assert weights is not None, "Weights must be provided for weighted averaging."
+        assert len(weights) == n_models, "Number of weights must match number of models."
+        weights_tensor = torch.FloatTensor(weights)
 
     for i in range(0, num_triples, batch_size):
         data_batch = np.array(triples[i:i + batch_size])  # Ensure ndarray
@@ -525,24 +523,13 @@ def evaluate_ensemble_link_prediction_performance(models, triples, er_vocab: Dic
             preds_list.append(preds)
         preds_stack = torch.stack(preds_list, dim=0)  # [n_models, batch, n_entities]
 
-        if combiner == "weighted":
+        if weighted_averaging:
             # Weighted mean aggregation
             avg_preds = torch.sum(preds_stack * weights_tensor.view(-1, 1, 1), dim=0)
-        elif combiner == "borda":
-            batch_size_, n_entities = preds_stack.shape[1], preds_stack.shape[2]
-            borda_scores = torch.zeros((batch_size_, n_entities))
-            for m in range(preds_stack.shape[0]):
-                # Descending sort: best entity (largest value) gets rank 0
-                _, broda_ranks = preds_stack[m].sort(dim=1, descending=True)
-                rank_values = torch.zeros_like(broda_ranks)
-                for bi in range(batch_size_):
-                    # ranks[bi] are indices: entity at ranks[bi][j] is in the j-th position
-                    rank_values[bi, broda_ranks[bi]] = torch.arange(n_entities)
-                borda_scores += rank_values
-            # Lower sum is better; for torch.sort descending, we take negative
-            avg_preds = -borda_scores
         else:
-            raise ValueError(f"Unknown combiner: {combiner}")
+            # Simple mean aggregation
+            avg_preds = torch.mean(preds_stack, dim=0)
+        
 
         # Filtering and scoring
         for j in range(data_batch.shape[0]):
