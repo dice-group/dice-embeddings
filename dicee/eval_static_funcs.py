@@ -519,7 +519,11 @@ def evaluate_ensemble_link_prediction_performance(models, triples, er_vocab: Dic
         preds_list = []
         for model in models:
             model.eval()
-            preds = model(e1_idx_r_idx)  # [batch, n_entities]
+            preds_raw = model(e1_idx_r_idx) # [batch, n_entities]
+            preds_min = preds_raw.min(dim=1, keepdim=True)[0]
+            preds_max = preds_raw.max(dim=1, keepdim=True)[0]
+            preds = (preds_raw - preds_min) / (preds_max - preds_min + 1e-8)
+
             preds_list.append(preds)
         preds_stack = torch.stack(preds_list, dim=0)  # [n_models, batch, n_entities]
 

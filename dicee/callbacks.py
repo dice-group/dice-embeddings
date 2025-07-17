@@ -512,11 +512,12 @@ class LRScheduler(AbstractCallback):
         total_epochs: int,
         experiment_dir: str,
         n_cycles: int = 10,
-        warmup_epochs: int = 10,
+        warmup_epochs: int = None,
         eta_max: float = 0.1,
         eta_min: float = 0.01,
         weighted_ensemble: bool = True,
         snapshot_dir: str = "snaps",
+        n_snapshots: int = 5,
     ):
         """
         Initialize the LR scheduler callback.
@@ -527,22 +528,36 @@ class LRScheduler(AbstractCallback):
             total_epochs (int): Total number of training epochs (args.num_epochs)
             experiment_dir (str): Directory for the experiment, used as base for snapshots.
             n_cycles (int, optional): Number of learning rate cycles. Default is 5.
-            warmup_epochs (int, optional): Number of warmup epochs (only used in deferred schedulers). Default is 10.
+            warmup_epochs (int, optional): Number of warmup epochs (only used in deferred schedulers). 
+                If None, warmup will be calculated as (n_cycles - n_snapshots) / n_cycles * total_epochs. Default is None.
             eta_max (float, optional): Maximum learning rate at the start of each cycle.
                 passed from `args.lr`. Default is 0.1.
             eta_min (float, optional): Minimum learning rate at the end of each cycle. Default is 0.001.
             snapshot_dir (str, optional): Subdirectory inside experiment_dir where snapshots will be saved. Default is "snaps".
+            n_snapshots (int, optional): Number of snapshots to take. Default is 5.
         """
         self.scheduler_name = scheduler_name.lower()
         self.total_epochs = total_epochs
         self.n_cycles = n_cycles
-        self.warmup_epochs = warmup_epochs
         self.eta_max = eta_max
         self.eta_min = eta_min
         self.weighted_ensemble = weighted_ensemble
         self.experiment_dir = experiment_dir
         self.snapshot_dir = os.path.join(experiment_dir, snapshot_dir)
+        self.n_snapshots = n_snapshots
         os.makedirs(self.snapshot_dir, exist_ok=True)
+
+        # Calculate warmup epochs only for deferred schedulers
+        if self.scheduler_name.startswith("deferred"):
+            if warmup_epochs is None:
+                # Use formula: defer for (n_cycles - n_snapshots) cycles
+                deferred_cycles = self.n_cycles - self.n_snapshots
+                self.warmup_epochs = int(deferred_cycles / self.n_cycles * self.total_epochs)
+            else:
+                self.warmup_epochs = warmup_epochs
+        else:
+            # Non-deferred schedulers don't use warmup
+            self.warmup_epochs = 0
 
         # Placeholders to be set during training
         self.batches_per_epoch = None
@@ -562,6 +577,8 @@ class LRScheduler(AbstractCallback):
         self.batches_per_epoch = num_training_batches
         self.total_steps = self.total_epochs * self.batches_per_epoch
         self.cycle_length = self.total_steps // self.n_cycles
+        
+        # Convert warmup epochs to warmup steps (already calculated in __init__)
         self.warmup_steps = self.warmup_epochs * self.batches_per_epoch
 
     def _get_lr_schedule(self):
@@ -569,14 +586,22 @@ class LRScheduler(AbstractCallback):
         def cosine_annealing(step):
             cycle_length = math.ceil(self.total_steps / self.n_cycles)
             cycle_step = step % cycle_length
-            return 0.5 * self.eta_max * (1 + np.cos(np.pi * cycle_step / cycle_length))
+            # Return multiplier: cosine annealing between eta_min/base_lr and eta_max/base_lr
+            # Assuming base_lr is eta_max, we scale between eta_min/eta_max and 1.0
+            cosine_factor = 0.5 * (1 + np.cos(np.pi * cycle_step / cycle_length))
+            min_multiplier = self.eta_min / self.eta_max
+            return min_multiplier + (1.0 - min_multiplier) * cosine_factor
 
         def mmcclr(step):
-            ceil_t_div_b = math.ceil(step / self.batches_per_epoch)
-            cycle_length = math.ceil(self.total_steps / (self.n_cycles * self.batches_per_epoch))
-            cycle_step = ceil_t_div_b % cycle_length
-            return self.eta_min + 0.5 * (self.eta_max - self.eta_min) * \
-                (1 + np.cos(np.pi * cycle_step / cycle_length))
+            # Convert step to epoch-based calculation
+            current_epoch = step // self.batches_per_epoch
+            cycle_length_epochs = self.total_epochs // self.n_cycles
+            cycle_step = current_epoch % cycle_length_epochs
+            # Return multiplier: cosine annealing between eta_min/base_lr and eta_max/base_lr
+            # Assuming base_lr is eta_max, we scale between eta_min/eta_max and 1.0
+            cosine_factor = 0.5 * (1 + np.cos(np.pi * cycle_step / cycle_length_epochs))
+            min_multiplier = self.eta_min / self.eta_max
+            return min_multiplier + (1.0 - min_multiplier) * cosine_factor
 
         def deferred(base_schedule):
             # Warmup returns 1.0; afterwards use base schedule shifted by warmup steps
@@ -646,23 +671,26 @@ class LRScheduler(AbstractCallback):
 
     def _is_snapshot_step(self, step):
         """
-        Determine if the current step is a snapshot step (end of a LR cycle).
+        Determine if the current step is a snapshot step.
 
-        For deferred schedulers, no snapshots are taken during warmup.
-        After warmup, the step count is adjusted by subtracting warmup_steps
-        so snapshots align with cycle boundaries.
-
-        Returns True if the (adjusted) step is at the end of a cycle.
+        For deferred schedulers: Take n_snapshots evenly distributed in the active scheduling phase.
+        For regular schedulers: Take snapshots at the end of each cycle.
         """
-        # During warmup for deferred schedulers, skip snapshots
-        if self.scheduler_name.startswith("deferred") and step < self.warmup_steps:
-            return False
-
-        # Adjust step to exclude warmup steps for deferred schedulers
-        adjusted_step = step - self.warmup_steps if self.scheduler_name.startswith("deferred") else step
-
-        # Check if adjusted step + 1 is divisible by cycle_length (end of cycle)
-        return (adjusted_step + 1) % self.cycle_length == 0
+        if self.scheduler_name.startswith("deferred"):
+            # Skip snapshots during warmup
+            if step < self.warmup_steps:
+                return False
+            
+            # Take n_snapshots evenly distributed in the remaining steps after warmup
+            remaining_steps = self.total_steps - self.warmup_steps
+            snapshot_interval = remaining_steps // self.n_snapshots
+            steps_after_warmup = step - self.warmup_steps
+            
+            # Check if we're at a snapshot interval boundary
+            return (steps_after_warmup + 1) % snapshot_interval == 0
+        else:
+            # For non-deferred schedulers, use cycle-based snapshots
+            return (step + 1) % self.cycle_length == 0
     
     def on_fit_end(self, trainer, model):
         # Load all model snapshots from the snapshot directory
