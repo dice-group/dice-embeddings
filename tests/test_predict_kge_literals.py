@@ -3,10 +3,15 @@ import pytest
 import shutil
 import numpy as np
 import pandas as pd
+
+import zipfile
+import urllib.request
+
 from dicee.config import Namespace
 from dicee.executer import Execute
 from dicee.knowledge_graph_embeddings import KGE
 from dicee.eval_static_funcs import evaluate_literal_prediction
+
 
 class TestPredictLitRegression:
     """Regression tests for literal prediction using interactive KGE model Family dataset."""
@@ -229,4 +234,92 @@ class TestPredictLitRegression:
         # remove literal test artifacts
         shutil.rmtree(os.path.dirname(eval_file_path))
 
+class TestKGELiteralsRegression:
+    """Regression tests for literal prediction using interactive KGE model Family dataset."""
+
+    def download_family_dataset(self):
+        """
+        Download the Family dataset for testing.
+        """
+        url = "https://files.dice-research.org/datasets/dice-embeddings/Literal_KGs.zip"
+        output_path = "Literal_KGs.zip"
+        self.kgs_dir = "Literal_KGs"
+
+        # Download the zip file
+        urllib.request.urlretrieve(url, output_path)
+
+        # Unzip the file into the specified directory
+        with zipfile.ZipFile(output_path, 'r') as zip_ref:
+            zip_ref.extractall(self.kgs_dir)
+
+        # Remove the zip file after extraction
+        os.remove(output_path)
+    
+    @pytest.fixture(scope="function")
+    def family_model(self):
+        """Setup Keci model trained on Family dataset."""
+        """Download and prepare the Family dataset for testing."""
+        self.download_family_dataset()
+        # Set up the arguments for the Keci model
+        args = Namespace()
+        args.model = 'Keci'
+        args.p = 0
+        args.q = 1
+        args.optim = 'Adam'
+        args.scoring_technique = "KvsAll"
+        args.dataset_dir = "Literal_KGs/Family"
+        args.backend = "pandas"
+        args.num_epochs = 50
+        args.batch_size = 1024
+        args.lr = 0.1
+        args.embedding_dim = 64
+        args.trainer = 'torchCPUTrainer'  # Force CPU
+        
+        result = Execute(args).start()
+        model = KGE(path=result['path_experiment_folder'])
+
+        return {'model': model}
+
+    @pytest.mark.filterwarnings('ignore::UserWarning')
+    def test_train_literals(self, family_model):
+        """Test training of literal embedding model using interactive KGE model."""
+        
+        model = family_model['model']
+        train_file_path="Literal_KGs/Family/literals/train.txt"
+
+        # Train with literals
+        model.train_literals(train_file_path=train_file_path,
+        loader_backend="pandas",
+        num_epochs=20,
+        batch_size=50, device='cpu', suffle_data=False)
+
+        # remove literal test artifacts
+        shutil.rmtree("Literal_KGs")
+
+
+    @pytest.mark.filterwarnings('ignore::UserWarning')
+    def test_predict_literals_single(self, family_model ):
+        """Test Literal values prediction ( single subject-predicate pair) using interactive KGE model."""
+        model = family_model["model"]
+        train_file_path="Literal_KGs/Family/literals/train.txt"
+
+        # Train with literals
+        model.train_literals(train_file_path=train_file_path,
+        loader_backend="pandas",
+        num_epochs=100,
+        batch_size=50, device='cpu', suffle_data=False)
+
+        # Predict literals for a known entity
+        entity = "F6F72"
+        attribute = "Age"
+
+        result = model.predict_literals(entity=entity, attribute=attribute)
+
+        assert result.shape == (1,), "Expected array with shape (1,)"
+        prediction = result[0]
+        assert isinstance(prediction, (int, float)), "Result is not a numeric value"
+        assert 25.5 <= prediction <= 27.3, f"Result {prediction} is not within the expected range"
+
+        # remove literal test artifacts
+        shutil.rmtree("Literal_KGs")
     

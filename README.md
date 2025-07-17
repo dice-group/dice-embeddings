@@ -178,6 +178,15 @@ _:1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07
 ```bash
 dicee --continual_learning "KeciFamilyRun" --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --backend rdflib --eval_model None
 ```
+#### Single device training on Multi-Device setup
+
+When using a multi-GPU setup, `PL` Trainer  automatically utilizes all available CUDA devices. To perform training on a single device, set the environment variable `CUDA_VISIBLE_DEVICES=0` before running your command. For example:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test" --num_epochs 100
+``` 
+The `CUDA_VISIBLE_DEVICES=0` setting limits the program to access only the specified GPU(s), making all others invisible.  
+Multiple GPUs can be selected by providing a comma-separated list, for example: `CUDA_VISIBLE_DEVICES=0,1`.
 
 </details>
 
@@ -306,6 +315,23 @@ pre_trained_kge.predict_topk(h=[".."],t=[".."],topk=10)
 # (5) Predict missing links through tail entity rankings
 pre_trained_kge.predict_topk(r=[".."],t=[".."],topk=10)
 ```
+
+</details>
+
+## Literal Prediction using Pre-trained KGE
+<details> <summary> To see a code snippet</summary>
+
+```python
+from dicee import KGE
+# (1) Train a knowledge graph embedding model..
+# (2) Load a pretrained model
+pre_trained_kge = KGE(path='..')
+# (3) Train a literal Emebedding Model using interactive KGE
+pre_trained_kge.train_literals(train_file_path = "")
+# (4) Predict Literal value for Entity-Attribute pair
+pre_trained_kge.predict_literals(entity=[".."],attribute=[".."])
+```
+A detailed illustration and explanation of literal prediction is provided in `examples/KGE_literal_prediction.py`.
 
 </details>
 
