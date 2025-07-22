@@ -471,7 +471,7 @@ def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
     :return:
     """
     try:
-        pd.DataFrame(embeddings, index=indexes).to_csv(path)
+        pd.DataFrame(embeddings, index=indexes).to_csv(path, float_format='%.16f')
     except KeyError or AttributeError as e:
         print('Exception occurred at saving entity embeddings. Computation will continue')
         print(e)

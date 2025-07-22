@@ -1089,3 +1089,10 @@ class DeCaL(BaseKGE):
         sigma_qr = torch.einsum('nrq,nrk->nrqk', hq, rk) - torch.einsum('nrk,nrq->nrqk', hk, rq)
         assert sigma_qr.shape[1:] == (self.re, self.q, self.r)
         return sigma_qr
+
+    def get_entity_embeddings(self) -> torch.FloatTensor:
+        return self.entity_embeddings.weight.detach()
+
+    def get_relation_embeddings(self) -> torch.FloatTensor:
+        return self.relation_embeddings.weight.detach()
+

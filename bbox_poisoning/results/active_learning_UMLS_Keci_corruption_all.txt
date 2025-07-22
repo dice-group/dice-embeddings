@@ -1,0 +1,955 @@
+{'round': 1, 'labeled_size': 400}
+{'round': 2, 'labeled_size': 415}
+{'round': 3, 'labeled_size': 430}
+{'round': 4, 'labeled_size': 445}
+{'round': 5, 'labeled_size': 460}
+{'round': 6, 'labeled_size': 475}
+{'round': 7, 'labeled_size': 490}
+{'round': 8, 'labeled_size': 505}
+{'round': 9, 'labeled_size': 520}
+{'round': 10, 'labeled_size': 535}
+{'round': 11, 'labeled_size': 550}
+{'round': 12, 'labeled_size': 565}
+{'round': 12, 'labeled_size': 565}
+-----------------------
+{'round': 1, 'labeled_size': 400}
+{'round': 2, 'labeled_size': 415}
+{'round': 3, 'labeled_size': 430}
+{'round': 4, 'labeled_size': 445}
+{'round': 5, 'labeled_size': 460}
+{'round': 6, 'labeled_size': 475}
+{'round': 7, 'labeled_size': 490}
+{'round': 8, 'labeled_size': 505}
+{'round': 9, 'labeled_size': 520}
+{'round': 10, 'labeled_size': 535}
+{'round': 11, 'labeled_size': 550}
+{'round': 12, 'labeled_size': 565}
+{'round': 12, 'labeled_size': 565}
+-----------------------
+{'Start ': [('diagnostic_procedure', 'measures', 'immunologic_factor'), ('sign_or_symptom', 'associated_with', 'mental_or_behavioral_dysfunction'), ('age_group', 'interacts_with', 'group'), ('diagnostic_procedure', 'analyzes', 'steroid'), ('sign_or_symptom', 'evaluation_of', 'organism_function'), ('genetic_function', 'affects', 'bird'), ('group', 'performs', 'daily_or_recreational_activity'), ('neoplastic_process', 'affects', 'fish'), ('governmental_or_regulatory_activity', 'associated_with', 'anatomical_abnormality'), ('population_group', 'interacts_with', 'patient_or_disabled_group'), ('biomedical_or_dental_material', 'interacts_with', 'neuroreactive_substance_or_biogenic_amine'), ('natural_phenomenon_or_process', 'affects', 'mental_or_behavioral_dysfunction'), ('amino_acid_peptide_or_protein', 'affects', 'molecular_function'), ('clinical_attribute', 'result_of', 'cell_function'), ('chemical_viewed_functionally', 'isa', 'chemical'), ('disease_or_syndrome', 'result_of', 'diagnostic_procedure'), ('organism_function', 'degree_of', 'mental_process'), ('regulation_or_law', 'affects', 'family_group'), ('organ_or_tissue_function', 'affects', 'clinical_attribute'), ('body_part_organ_or_organ_component', 'location_of', 'neoplastic_process'), ('receptor', 'interacts_with', 'chemical'), ('medical_device', 'prevents', 'pathologic_function'), ('geographic_area', 'associated_with', 'pathologic_function'), ('organism_function', 'affects', 'cell_function'), ('organism_function', 'result_of', 'organ_or_tissue_function'), ('mental_process', 'process_of', 'organism_function'), ('laboratory_procedure', 'analyzes', 'immunologic_factor'), ('organism_attribute', 'isa', 'conceptual_entity'), ('disease_or_syndrome', 'occurs_in', 'age_group'), ('laboratory_procedure', 'diagnoses', 'acquired_abnormality'), ('neuroreactive_substance_or_biogenic_amine', 'causes', 'injury_or_poisoning'), ('organic_chemical', 'causes', 'pathologic_function'), ('mental_process', 'isa', 'phenomenon_or_process'), ('cell_or_molecular_dysfunction', 'manifestation_of', 'disease_or_syndrome'), ('enzyme', 'affects', 'pathologic_function'), ('element_ion_or_isotope', 'affects', 'neoplastic_process'), ('qualitative_concept', 'evaluation_of', 'social_behavior'), ('research_device', 'causes', 'neoplastic_process'), ('element_ion_or_isotope', 'interacts_with', 'indicator_reagent_or_diagnostic_aid'), ('hazardous_or_poisonous_substance', 'isa', 'substance'), ('patient_or_disabled_group', 'produces', 'research_device'), ('experimental_model_of_disease', 'result_of', 'injury_or_poisoning'), ('eicosanoid', 'interacts_with', 'enzyme'), ('laboratory_procedure', 'measures', 'immunologic_factor'), ('vitamin', 'interacts_with', 'immunologic_factor'), ('physiologic_function', 'process_of', 'pathologic_function'), ('clinical_attribute', 'result_of', 'organism_function'), ('body_location_or_region', 'location_of', 'experimental_model_of_disease'), ('genetic_function', 'affects', 'experimental_model_of_disease'), ('acquired_abnormality', 'result_of', 'natural_phenomenon_or_process'), ('sign_or_symptom', 'manifestation_of', 'genetic_function'), ('amino_acid_peptide_or_protein', 'interacts_with', 'receptor'), ('virus', 'causes', 'cell_or_molecular_dysfunction'), ('organism_attribute', 'manifestation_of', 'physiologic_function'), ('biomedical_or_dental_material', 'affects', 'genetic_function'), ('mental_or_behavioral_dysfunction', 'isa', 'pathologic_function'), ('research_activity', 'measures', 'pathologic_function'), ('antibiotic', 'affects', 'experimental_model_of_disease'), ('cell_or_molecular_dysfunction', 'affects', 'experimental_model_of_disease'), ('population_group', 'associated_with', 'mental_or_behavioral_dysfunction'), ('pharmacologic_substance', 'diagnoses', 'disease_or_syndrome'), ('anatomical_abnormality', 'affects', 'amphibian'), ('injury_or_poisoning', 'result_of', 'diagnostic_procedure'), ('body_system', 'isa', 'idea_or_concept'), ('cell_function', 'result_of', 'injury_or_poisoning'), ('mammal', 'isa', 'vertebrate'), ('mental_process', 'process_of', 'organism'), ('body_part_organ_or_organ_component', 'part_of', 'reptile'), ('mental_process', 'result_of', 'individual_behavior'), ('body_part_organ_or_organ_component', 'location_of', 'congenital_abnormality'), ('organism', 'issue_in', 'occupation_or_discipline'), ('molecular_function', 'process_of', 'fish'), ('body_substance', 'causes', 'congenital_abnormality'), ('mental_or_behavioral_dysfunction', 'complicates', 'neoplastic_process'), ('gene_or_genome', 'location_of', 'organism_function'), ('organism_function', 'affects', 'vertebrate'), ('amino_acid_peptide_or_protein', 'isa', 'organic_chemical'), ('bird', 'issue_in', 'biomedical_occupation_or_discipline'), ('diagnostic_procedure', 'measures', 'steroid'), ('steroid', 'affects', 'molecular_function'), ('health_care_related_organization', 'location_of', 'therapeutic_or_preventive_procedure'), ('animal', 'interacts_with', 'amphibian'), ('organ_or_tissue_function', 'isa', 'physiologic_function'), ('food', 'affects', 'cell_or_molecular_dysfunction'), ('cell_or_molecular_dysfunction', 'complicates', 'mental_or_behavioral_dysfunction'), ('food', 'isa', 'substance'), ('finding', 'evaluation_of', 'cell_or_molecular_dysfunction'), ('bacterium', 'interacts_with', 'animal'), ('body_space_or_junction', 'connected_to', 'tissue'), ('congenital_abnormality', 'occurs_in', 'age_group'), ('organism_function', 'process_of', 'bacterium'), ('injury_or_poisoning', 'disrupts', 'organism_function'), ('eicosanoid', 'causes', 'pathologic_function'), ('acquired_abnormality', 'result_of', 'experimental_model_of_disease'), ('organism_function', 'process_of', 'natural_phenomenon_or_process'), ('gene_or_genome', 'part_of', 'alga'), ('amino_acid_peptide_or_protein', 'affects', 'disease_or_syndrome'), ('research_device', 'issue_in', 'occupation_or_discipline'), ('alga', 'isa', 'plant'), ('body_part_organ_or_organ_component', 'produces', 'enzyme'), ('molecular_function', 'process_of', 'pathologic_function'), ('anatomical_structure', 'part_of', 'mammal'), ('pathologic_function', 'affects', 'disease_or_syndrome'), ('acquired_abnormality', 'affects', 'vertebrate'), ('health_care_activity', 'affects', 'genetic_function'), ('experimental_model_of_disease', 'occurs_in', 'population_group'), ('cell', 'location_of', 'bacterium'), ('inorganic_chemical', 'affects', 'organ_or_tissue_function'), ('animal', 'interacts_with', 'archaeon'), ('tissue', 'location_of', 'rickettsia_or_chlamydia'), ('disease_or_syndrome', 'complicates', 'anatomical_abnormality'), ('group', 'performs', 'governmental_or_regulatory_activity'), ('bacterium', 'location_of', 'hormone'), ('cell_or_molecular_dysfunction', 'complicates', 'acquired_abnormality'), ('individual_behavior', 'issue_in', 'biomedical_occupation_or_discipline'), ('physiologic_function', 'result_of', 'anatomical_abnormality'), ('experimental_model_of_disease', 'produces', 'enzyme'), ('congenital_abnormality', 'result_of', 'organ_or_tissue_function'), ('neoplastic_process', 'affects', 'bird'), ('patient_or_disabled_group', 'uses', 'medical_device'), ('disease_or_syndrome', 'result_of', 'pathologic_function'), ('mental_or_behavioral_dysfunction', 'affects', 'rickettsia_or_chlamydia'), ('tissue', 'part_of', 'alga'), ('molecular_function', 'process_of', 'mammal'), ('plant', 'location_of', 'hormone'), ('steroid', 'affects', 'mental_process'), ('pharmacologic_substance', 'disrupts', 'cell_component'), ('organ_or_tissue_function', 'isa', 'biologic_function'), ('biologically_active_substance', 'affects', 'organ_or_tissue_function'), ('alga', 'interacts_with', 'rickettsia_or_chlamydia'), ('neoplastic_process', 'occurs_in', 'age_group'), ('cell_function', 'issue_in', 'biomedical_occupation_or_discipline'), ('therapeutic_or_preventive_procedure', 'complicates', 'cell_or_molecular_dysfunction'), ('neoplastic_process', 'affects', 'animal'), ('chemical_viewed_structurally', 'isa', 'substance'), ('lipid', 'interacts_with', 'biomedical_or_dental_material'), ('laboratory_procedure', 'assesses_effect_of', 'organ_or_tissue_function'), ('cell_or_molecular_dysfunction', 'affects', 'molecular_function'), ('amino_acid_peptide_or_protein', 'issue_in', 'occupation_or_discipline'), ('amino_acid_peptide_or_protein', 'interacts_with', 'carbohydrate'), ('organ_or_tissue_function', 'affects', 'fungus'), ('chemical_viewed_structurally', 'affects', 'physiologic_function'), ('mental_or_behavioral_dysfunction', 'precedes', 'experimental_model_of_disease'), ('body_part_organ_or_organ_component', 'location_of', 'mental_or_behavioral_dysfunction'), ('body_part_organ_or_organ_component', 'produces', 'eicosanoid'), ('cell_or_molecular_dysfunction', 'process_of', 'rickettsia_or_chlamydia'), ('cell_or_molecular_dysfunction', 'affects', 'vertebrate'), ('sign_or_symptom', 'associated_with', 'disease_or_syndrome'), ('eicosanoid', 'interacts_with', 'neuroreactive_substance_or_biogenic_amine'), ('hazardous_or_poisonous_substance', 'affects', 'natural_phenomenon_or_process'), ('reptile', 'isa', 'animal'), ('population_group', 'associated_with', 'congenital_abnormality'), ('acquired_abnormality', 'occurs_in', 'group'), ('mental_or_behavioral_dysfunction', 'isa', 'phenomenon_or_process'), ('genetic_function', 'affects', 'mental_process'), ('genetic_function', 'issue_in', 'occupation_or_discipline'), ('cell', 'location_of', 'rickettsia_or_chlamydia'), ('chemical_viewed_structurally', 'interacts_with', 'hazardous_or_poisonous_substance'), ('cell_function', 'process_of', 'physiologic_function'), ('neoplastic_process', 'process_of', 'bacterium'), ('biologically_active_substance', 'affects', 'physiologic_function'), ('mental_process', 'degree_of', 'organism_function'), ('enzyme', 'affects', 'disease_or_syndrome'), ('cell_or_molecular_dysfunction', 'process_of', 'fungus'), ('professional_society', 'location_of', 'educational_activity'), ('bird', 'isa', 'physical_object'), ('cell_or_molecular_dysfunction', 'process_of', 'reptile'), ('anatomical_abnormality', 'affects', 'bacterium'), ('geographic_area', 'associated_with', 'experimental_model_of_disease'), ('congenital_abnormality', 'associated_with', 'clinical_attribute'), ('neuroreactive_substance_or_biogenic_amine', 'affects', 'experimental_model_of_disease'), ('chemical_viewed_functionally', 'affects', 'cell_or_molecular_dysfunction'), ('eicosanoid', 'isa', 'chemical'), ('genetic_function', 'produces', 'enzyme'), ('gene_or_genome', 'part_of', 'organism'), ('mental_or_behavioral_dysfunction', 'affects', 'bacterium'), ('anatomical_abnormality', 'manifestation_of', 'organism_function'), ('chemical_viewed_structurally', 'causes', 'acquired_abnormality'), ('disease_or_syndrome', 'manifestation_of', 'genetic_function'), ('gene_or_genome', 'issue_in', 'biomedical_occupation_or_discipline'), ('hormone', 'interacts_with', 'indicator_reagent_or_diagnostic_aid'), ('population_group', 'associated_with', 'anatomical_abnormality'), ('carbohydrate', 'issue_in', 'occupation_or_discipline'), ('immunologic_factor', 'complicates', 'congenital_abnormality'), ('biologic_function', 'process_of', 'amphibian'), ('antibiotic', 'treats', 'injury_or_poisoning'), ('lipid', 'affects', 'cell_or_molecular_dysfunction'), ('cell_or_molecular_dysfunction', 'isa', 'phenomenon_or_process'), ('phenomenon_or_process', 'result_of', 'acquired_abnormality'), ('clinical_attribute', 'property_of', 'plant'), ('inorganic_chemical', 'interacts_with', 'vitamin'), ('organophosphorus_compound', 'interacts_with', 'eicosanoid'), ('acquired_abnormality', 'associated_with', 'clinical_attribute'), ('laboratory_procedure', 'associated_with', 'neoplastic_process'), ('element_ion_or_isotope', 'interacts_with', 'receptor'), ('cell_or_molecular_dysfunction', 'affects', 'reptile'), ('professional_or_occupational_group', 'performs', 'activity'), ('anatomical_abnormality', 'part_of', 'fish'), ('chemical_viewed_structurally', 'interacts_with', 'antibiotic'), ('disease_or_syndrome', 'associated_with', 'organism_attribute'), ('disease_or_syndrome', 'result_of', 'experimental_model_of_disease'), ('experimental_model_of_disease', 'result_of', 'disease_or_syndrome'), ('disease_or_syndrome', 'result_of', 'cell_or_molecular_dysfunction'), ('cell_or_molecular_dysfunction', 'result_of', 'experimental_model_of_disease'), ('cell_or_molecular_dysfunction', 'result_of', 'physiologic_function'), ('experimental_model_of_disease', 'result_of', 'cell_or_molecular_dysfunction'), ('disease_or_syndrome', 'result_of', 'organ_or_tissue_function'), ('experimental_model_of_disease', 'result_of', 'mental_or_behavioral_dysfunction'), ('experimental_model_of_disease', 'result_of', 'organ_or_tissue_function'), ('cell_or_molecular_dysfunction', 'result_of', 'mental_or_behavioral_dysfunction'), ('experimental_model_of_disease', 'result_of', 'molecular_function'), ('experimental_model_of_disease', 'result_of', 'pathologic_function'), ('disease_or_syndrome', 'result_of', 'molecular_function'), ('experimental_model_of_disease', 'result_of', 'cell_function'), ('mental_or_behavioral_dysfunction', 'result_of', 'physiologic_function'), ('experimental_model_of_disease', 'result_of', 'genetic_function'), ('cell_or_molecular_dysfunction', 'result_of', 'cell_function'), ('cell_or_molecular_dysfunction', 'result_of', 'mental_process'), ('experimental_model_of_disease', 'result_of', 'organism_function'), ('cell_or_molecular_dysfunction', 'result_of', 'organ_or_tissue_function'), ('cell_or_molecular_dysfunction', 'result_of', 'genetic_function'), ('experimental_model_of_disease', 'result_of', 'biologic_function'), ('disease_or_syndrome', 'result_of', 'cell_function'), ('cell_or_molecular_dysfunction', 'result_of', 'biologic_function'), ('genetic_function', 'affects', 'vertebrate'), ('cell_or_molecular_dysfunction', 'result_of', 'neoplastic_process'), ('cell_or_molecular_dysfunction', 'result_of', 'pathologic_function'), ('cell_or_molecular_dysfunction', 'result_of', 'molecular_function'), ('organ_or_tissue_function', 'affects', 'vertebrate'), ('cell_or_molecular_dysfunction', 'result_of', 'natural_phenomenon_or_process'), ('biologic_function', 'affects', 'vertebrate'), ('physiologic_function', 'affects', 'vertebrate'), ('disease_or_syndrome', 'result_of', 'organism_function'), ('experimental_model_of_disease', 'result_of', 'natural_phenomenon_or_process'), ('neoplastic_process', 'result_of', 'cell_function'), ('mental_or_behavioral_dysfunction', 'result_of', 'cell_function'), ('cell_function', 'affects', 'vertebrate'), ('disease_or_syndrome', 'result_of', 'genetic_function'), ('neoplastic_process', 'result_of', 'biologic_function'), ('pathologic_function', 'result_of', 'cell_function'), ('physiologic_function', 'result_of', 'biologic_function'), ('biologic_function', 'result_of', 'cell_function'), ('neoplastic_process', 'result_of', 'cell_or_molecular_dysfunction'), ('biologic_function', 'result_of', 'mental_process'), ('physiologic_function', 'result_of', 'cell_function'), ('pathologic_function', 'result_of', 'cell_or_molecular_dysfunction'), ('pathologic_function', 'result_of', 'organ_or_tissue_function'), ('pathologic_function', 'result_of', 'mental_or_behavioral_dysfunction'), ('mental_or_behavioral_dysfunction', 'result_of', 'cell_or_molecular_dysfunction'), ('pathologic_function', 'result_of', 'genetic_function'), ('physiologic_function', 'result_of', 'molecular_function'), ('pathologic_function', 'result_of', 'natural_phenomenon_or_process'), ('disease_or_syndrome', 'result_of', 'natural_phenomenon_or_process'), ('mental_or_behavioral_dysfunction', 'result_of', 'genetic_function'), ('mental_or_behavioral_dysfunction', 'result_of', 'natural_phenomenon_or_process'), ('mental_or_behavioral_dysfunction', 'result_of', 'molecular_function'), ('mental_or_behavioral_dysfunction', 'result_of', 'experimental_model_of_disease'), ('organ_or_tissue_function', 'result_of', 'cell_function'), ('biologic_function', 'result_of', 'molecular_function'), ('biologic_function', 'result_of', 'organ_or_tissue_function'), ('pathologic_function', 'result_of', 'experimental_model_of_disease'), ('mental_or_behavioral_dysfunction', 'affects', 'vertebrate'), ('molecular_function', 'result_of', 'cell_function'), ('genetic_function', 'result_of', 'cell_function'), ('experimental_model_of_disease', 'affects', 'vertebrate'), ('molecular_function', 'result_of', 'biologic_function'), ('pathologic_function', 'result_of', 'physiologic_function'), ('genetic_function', 'result_of', 'biologic_function'), ('organ_or_tissue_function', 'affects', 'plant'), ('physiologic_function', 'result_of', 'organism_function'), ('physiologic_function', 'result_of', 'genetic_function'), ('organ_or_tissue_function', 'result_of', 'biologic_function'), ('organ_or_tissue_function', 'result_of', 'genetic_function'), ('mental_or_behavioral_dysfunction', 'result_of', 'disease_or_syndrome'), ('organ_or_tissue_function', 'affects', 'reptile'), ('cell_function', 'result_of', 'biologic_function'), ('genetic_function', 'result_of', 'organism_function'), ('genetic_function', 'result_of', 'molecular_function'), ('genetic_function', 'result_of', 'organ_or_tissue_function'), ('molecular_function', 'result_of', 'organ_or_tissue_function'), ('genetic_function', 'result_of', 'physiologic_function'), ('physiologic_function', 'affects', 'reptile'), ('molecular_function', 'result_of', 'organism_function'), ('cell_function', 'result_of', 'organ_or_tissue_function'), ('organ_or_tissue_function', 'affects', 'amphibian'), ('pathologic_function', 'affects', 'vertebrate'), ('cell_function', 'result_of', 'organism_function'), ('cell_function', 'result_of', 'natural_phenomenon_or_process'), ('mental_or_behavioral_dysfunction', 'result_of', 'pathologic_function'), ('organ_or_tissue_function', 'result_of', 'organism_function'), ('molecular_function', 'result_of', 'physiologic_function'), ('genetic_function', 'result_of', 'natural_phenomenon_or_process'), ('cell_function', 'result_of', 'cell_or_molecular_dysfunction'), ('genetic_function', 'affects', 'amphibian'), ('cell_function', 'result_of', 'mental_or_behavioral_dysfunction'), ('genetic_function', 'result_of', 'cell_or_molecular_dysfunction'), ('genetic_function', 'result_of', 'mental_or_behavioral_dysfunction'), ('neoplastic_process', 'result_of', 'natural_phenomenon_or_process'), ('molecular_function', 'affects', 'plant'), ('physiologic_function', 'affects', 'amphibian'), ('organism_function', 'result_of', 'cell_or_molecular_dysfunction'), ('genetic_function', 'affects', 'fungus'), ('cell_function', 'affects', 'plant'), ('genetic_function', 'affects', 'reptile'), ('organism_function', 'result_of', 'natural_phenomenon_or_process'), ('genetic_function', 'result_of', 'experimental_model_of_disease'), ('genetic_function', 'result_of', 'mental_process'), ('organ_or_tissue_function', 'result_of', 'natural_phenomenon_or_process'), ('biologic_function', 'affects', 'amphibian'), ('cell_function', 'affects', 'reptile'), ('cell_function', 'affects', 'amphibian'), ('genetic_function', 'result_of', 'pathologic_function'), ('molecular_function', 'result_of', 'genetic_function'), ('organ_or_tissue_function', 'result_of', 'physiologic_function'), ('organ_or_tissue_function', 'result_of', 'molecular_function'), ('pathologic_function', 'result_of', 'neoplastic_process'), ('mental_or_behavioral_dysfunction', 'result_of', 'mental_process'), ('pathologic_function', 'result_of', 'mental_process'), ('cell_or_molecular_dysfunction', 'affects', 'plant'), ('biologic_function', 'affects', 'reptile'), ('molecular_function', 'result_of', 'mental_process'), ('organism_function', 'affects', 'plant'), ('natural_phenomenon_or_process', 'result_of', 'cell_function'), ('organ_or_tissue_function', 'affects', 'rickettsia_or_chlamydia'), ('biologic_function', 'result_of', 'physiologic_function'), ('natural_phenomenon_or_process', 'result_of', 'biologic_function'), ('organ_or_tissue_function', 'affects', 'alga'), ('cell_function', 'affects', 'fungus'), ('organ_or_tissue_function', 'affects', 'bacterium'), ('organ_or_tissue_function', 'affects', 'fish'), ('neoplastic_process', 'result_of', 'disease_or_syndrome'), ('disease_or_syndrome', 'result_of', 'neoplastic_process'), ('physiologic_function', 'result_of', 'cell_or_molecular_dysfunction'), ('organ_or_tissue_function', 'affects', 'invertebrate'), ('cell_function', 'affects', 'invertebrate'), ('genetic_function', 'affects', 'alga'), ('cell_function', 'affects', 'bacterium'), ('genetic_function', 'affects', 'rickettsia_or_chlamydia'), ('genetic_function', 'affects', 'bacterium'), ('physiologic_function', 'affects', 'invertebrate'), ('genetic_function', 'affects', 'invertebrate'), ('molecular_function', 'affects', 'invertebrate'), ('physiologic_function', 'affects', 'rickettsia_or_chlamydia'), ('organ_or_tissue_function', 'affects', 'virus'), ('cell_function', 'affects', 'fish'), ('neoplastic_process', 'result_of', 'pathologic_function'), ('physiologic_function', 'affects', 'bacterium'), ('biologic_function', 'affects', 'rickettsia_or_chlamydia'), ('biologic_function', 'result_of', 'organism_function'), ('physiologic_function', 'affects', 'alga'), ('physiologic_function', 'affects', 'virus'), ('cell_function', 'affects', 'virus'), ('organ_or_tissue_function', 'affects', 'animal'), ('molecular_function', 'affects', 'virus'), ('molecular_function', 'affects', 'fish'), ('biologic_function', 'result_of', 'natural_phenomenon_or_process'), ('biologic_function', 'affects', 'alga'), ('biologic_function', 'affects', 'animal'), ('biologic_function', 'affects', 'fungus'), ('physiologic_function', 'affects', 'fish'), ('genetic_function', 'affects', 'fish'), ('mental_process', 'affects', 'vertebrate'), ('organ_or_tissue_function', 'affects', 'mammal'), ('neoplastic_process', 'result_of', 'genetic_function'), ('biologic_function', 'affects', 'human'), ('biologic_function', 'affects', 'mammal'), ('physiologic_function', 'affects', 'animal'), ('cell_function', 'affects', 'animal'), ('organism_function', 'affects', 'amphibian'), ('physiologic_function', 'affects', 'human'), ('genetic_function', 'affects', 'animal'), ('organ_or_tissue_function', 'result_of', 'mental_process'), ('genetic_function', 'affects', 'human'), ('organism_function', 'affects', 'virus'), ('molecular_function', 'affects', 'bacterium'), ('neoplastic_process', 'result_of', 'experimental_model_of_disease'), ('genetic_function', 'affects', 'mammal'), ('organism_function', 'affects', 'bacterium'), ('disease_or_syndrome', 'affects', 'vertebrate'), ('biologic_function', 'result_of', 'genetic_function'), ('organism_function', 'affects', 'human'), ('organism_function', 'affects', 'fish'), ('molecular_function', 'affects', 'human'), ('genetic_function', 'result_of', 'neoplastic_process'), ('organism_function', 'affects', 'reptile'), ('biologic_function', 'affects', 'bird'), ('congenital_abnormality', 'affects', 'vertebrate'), ('organism_function', 'affects', 'invertebrate'), ('genetic_function', 'result_of', 'anatomical_abnormality'), ('experimental_model_of_disease', 'affects', 'reptile'), ('biologic_function', 'result_of', 'experimental_model_of_disease'), ('cell_function', 'affects', 'bird'), ('genetic_function', 'result_of', 'injury_or_poisoning'), ('mental_process', 'affects', 'fish'), ('organism_function', 'affects', 'fungus'), ('physiologic_function', 'affects', 'bird'), ('molecular_function', 'affects', 'bird'), ('organism_function', 'affects', 'mammal'), ('cell_or_molecular_dysfunction', 'manifestation_of', 'genetic_function'), ('organ_or_tissue_function', 'affects', 'archaeon'), ('experimental_model_of_disease', 'affects', 'fish'), ('experimental_model_of_disease', 'result_of', 'anatomical_abnormality'), ('biologic_function', 'affects', 'archaeon'), ('cell_or_molecular_dysfunction', 'affects', 'fish'), ('genetic_function', 'result_of', 'congenital_abnormality'), ('natural_phenomenon_or_process', 'result_of', 'physiologic_function'), ('disease_or_syndrome', 'manifestation_of', 'organ_or_tissue_function'), ('cell_or_molecular_dysfunction', 'manifestation_of', 'organ_or_tissue_function'), ('cell_or_molecular_dysfunction', 'affects', 'amphibian'), ('cell_or_molecular_dysfunction', 'result_of', 'anatomical_abnormality'), ('cell_or_molecular_dysfunction', 'result_of', 'congenital_abnormality'), ('disease_or_syndrome', 'result_of', 'congenital_abnormality'), ('experimental_model_of_disease', 'result_of', 'congenital_abnormality'), ('genetic_function', 'result_of', 'acquired_abnormality'), ('cell_or_molecular_dysfunction', 'affects', 'human'), ('cell_function', 'result_of', 'congenital_abnormality'), ('organism_function', 'affects', 'archaeon'), ('organ_or_tissue_function', 'result_of', 'congenital_abnormality'), ('genetic_function', 'affects', 'archaeon'), ('cell_or_molecular_dysfunction', 'affects', 'invertebrate'), ('cell_function', 'affects', 'archaeon'), ('pathologic_function', 'result_of', 'congenital_abnormality'), ('experimental_model_of_disease', 'affects', 'invertebrate'), ('cell_or_molecular_dysfunction', 'result_of', 'injury_or_poisoning'), ('experimental_model_of_disease', 'result_of', 'acquired_abnormality'), ('mental_or_behavioral_dysfunction', 'result_of', 'congenital_abnormality'), ('mental_or_behavioral_dysfunction', 'affects', 'invertebrate'), ('experimental_model_of_disease', 'affects', 'human'), ('cell_or_molecular_dysfunction', 'affects', 'archaeon'), ('cell_or_molecular_dysfunction', 'manifestation_of', 'physiologic_function'), ('pathologic_function', 'manifestation_of', 'organ_or_tissue_function'), ('mental_or_behavioral_dysfunction', 'affects', 'fish'), ('natural_phenomenon_or_process', 'result_of', 'organism_function'), ('disease_or_syndrome', 'affects', 'invertebrate'), ('pathologic_function', 'manifestation_of', 'physiologic_function'), ('biologic_function', 'affects', 'organism'), ('molecular_function', 'result_of', 'mental_or_behavioral_dysfunction'), ('cell_or_molecular_dysfunction', 'manifestation_of', 'cell_function'), ('neoplastic_process', 'result_of', 'organism_function'), ('pathologic_function', 'manifestation_of', 'cell_function'), ('physiologic_function', 'affects', 'organism'), ('pathologic_function', 'affects', 'invertebrate'), ('organ_or_tissue_function', 'affects', 'organism'), ('cell_function', 'affects', 'organism'), ('mental_or_behavioral_dysfunction', 'affects', 'human'), ('disease_or_syndrome', 'result_of', 'anatomical_abnormality'), ('genetic_function', 'affects', 'organism'), ('molecular_function', 'affects', 'fungus'), ('pathologic_function', 'manifestation_of', 'organism_function'), ('mental_or_behavioral_dysfunction', 'result_of', 'anatomical_abnormality'), ('molecular_function', 'result_of', 'anatomical_abnormality'), ('pathologic_function', 'manifestation_of', 'molecular_function'), ('molecular_function', 'affects', 'organism'), ('disease_or_syndrome', 'manifestation_of', 'cell_function'), ('pathologic_function', 'affects', 'reptile'), ('organism_function', 'affects', 'organism'), ('disease_or_syndrome', 'affects', 'amphibian'), ('neoplastic_process', 'manifestation_of', 'organism_function'), ('disease_or_syndrome', 'manifestation_of', 'organism_function'), ('cell_function', 'result_of', 'anatomical_abnormality'), ('cell_or_molecular_dysfunction', 'manifestation_of', 'organism_function'), ('organism_function', 'result_of', 'cell_function'), ('mental_or_behavioral_dysfunction', 'affects', 'organism'), ('molecular_function', 'result_of', 'acquired_abnormality'), ('organ_or_tissue_function', 'result_of', 'anatomical_abnormality'), ('disease_or_syndrome', 'manifestation_of', 'molecular_function'), ('genetic_function', 'result_of', 'phenomenon_or_process'), ('neoplastic_process', 'manifestation_of', 'genetic_function'), ('experimental_model_of_disease', 'affects', 'organism'), ('organism_function', 'result_of', 'biologic_function'), ('neoplastic_process', 'manifestation_of', 'cell_function'), ('neoplastic_process', 'manifestation_of', 'physiologic_function'), ('mental_process', 'affects', 'organism'), ('organism_function', 'result_of', 'physiologic_function'), ('neoplastic_process', 'manifestation_of', 'molecular_function'), ('mental_or_behavioral_dysfunction', 'affects', 'bird'), ('mental_or_behavioral_dysfunction', 'manifestation_of', 'organ_or_tissue_function'), ('mental_or_behavioral_dysfunction', 'manifestation_of', 'cell_function'), ('physiologic_function', 'result_of', 'mental_or_behavioral_dysfunction'), ('experimental_model_of_disease', 'manifestation_of', 'organism_function'), ('neoplastic_process', 'result_of', 'physiologic_function'), ('organism_function', 'result_of', 'molecular_function'), ('biologic_function', 'result_of', 'cell_or_molecular_dysfunction'), ('neoplastic_process', 'result_of', 'congenital_abnormality'), ('organ_or_tissue_function', 'result_of', 'mental_or_behavioral_dysfunction'), ('pathologic_function', 'affects', 'human'), ('acquired_abnormality', 'affects', 'invertebrate'), ('experimental_model_of_disease', 'affects', 'virus'), ('disease_or_syndrome', 'result_of', 'acquired_abnormality'), ('organ_or_tissue_function', 'result_of', 'cell_or_molecular_dysfunction'), ('pathologic_function', 'result_of', 'injury_or_poisoning'), ('organism_function', 'result_of', 'genetic_function'), ('experimental_model_of_disease', 'affects', 'plant'), ('acquired_abnormality', 'affects', 'reptile'), ('natural_phenomenon_or_process', 'result_of', 'molecular_function'), ('experimental_model_of_disease', 'manifestation_of', 'molecular_function'), ('experimental_model_of_disease', 'affects', 'archaeon'), ('natural_phenomenon_or_process', 'result_of', 'genetic_function'), ('cell_function', 'result_of', 'pathologic_function'), ('experimental_model_of_disease', 'affects', 'animal'), ('cell_or_molecular_dysfunction', 'affects', 'virus'), ('experimental_model_of_disease', 'affects', 'rickettsia_or_chlamydia'), ('mental_or_behavioral_dysfunction', 'affects', 'virus'), ('anatomical_abnormality', 'affects', 'invertebrate'), ('pathologic_function', 'affects', 'virus'), ('mental_or_behavioral_dysfunction', 'result_of', 'acquired_abnormality'), ('experimental_model_of_disease', 'affects', 'alga'), ('congenital_abnormality', 'affects', 'invertebrate'), ('pathologic_function', 'manifestation_of', 'mental_process'), ('experimental_model_of_disease', 'affects', 'bird'), ('cell_function', 'result_of', 'acquired_abnormality'), ('cell_or_molecular_dysfunction', 'manifestation_of', 'mental_process'), ('pathologic_function', 'affects', 'fish'), ('disease_or_syndrome', 'manifestation_of', 'mental_process'), ('experimental_model_of_disease', 'affects', 'fungus'), ('disease_or_syndrome', 'affects', 'virus'), ('cell_or_molecular_dysfunction', 'affects', 'animal'), ('mental_or_behavioral_dysfunction', 'manifestation_of', 'mental_process'), ('cell_or_molecular_dysfunction', 'affects', 'rickettsia_or_chlamydia'), ('cell_or_molecular_dysfunction', 'affects', 'fungus'), ('cell_or_molecular_dysfunction', 'affects', 'bacterium'), ('cell_or_molecular_dysfunction', 'affects', 'alga'), ('cell_or_molecular_dysfunction', 'affects', 'organism'), ('cell_or_molecular_dysfunction', 'result_of', 'human_caused_phenomenon_or_process'), ('cell_or_molecular_dysfunction', 'result_of', 'phenomenon_or_process'), ('neoplastic_process', 'affects', 'invertebrate'), ('cell_or_molecular_dysfunction', 'affects', 'mammal'), ('congenital_abnormality', 'result_of', 'molecular_function'), ('disease_or_syndrome', 'affects', 'plant'), ('disease_or_syndrome', 'affects', 'fungus'), ('mental_or_behavioral_dysfunction', 'manifestation_of', 'organism_function'), ('mental_process', 'affects', 'virus'), ('experimental_model_of_disease', 'manifestation_of', 'organ_or_tissue_function'), ('experimental_model_of_disease', 'manifestation_of', 'cell_function'), ('experimental_model_of_disease', 'manifestation_of', 'mental_process'), ('organ_or_tissue_function', 'result_of', 'disease_or_syndrome'), ('neoplastic_process', 'affects', 'virus'), ('mental_or_behavioral_dysfunction', 'manifestation_of', 'molecular_function'), ('acquired_abnormality', 'result_of', 'biologic_function'), ('pathologic_function', 'affects', 'rickettsia_or_chlamydia'), ('pathologic_function', 'manifestation_of', 'mental_or_behavioral_dysfunction'), ('neoplastic_process', 'manifestation_of', 'mental_or_behavioral_dysfunction'), ('physiologic_function', 'result_of', 'disease_or_syndrome'), ('congenital_abnormality', 'result_of', 'cell_function'), ('acquired_abnormality', 'result_of', 'organ_or_tissue_function')], 'labeled_size': 200}
+{'round': 24, 'labeled_size': 545}
+{'round': 24, 'labeled_size': 545}
+-----------------------
+{'Start ': [('diagnostic_procedure', 'measures', 'immunologic_factor'), ('sign_or_symptom', 'associated_with', 'mental_or_behavioral_dysfunction'), ('age_group', 'interacts_with', 'group'), ('diagnostic_procedure', 'analyzes', 'steroid'), ('sign_or_symptom', 'evaluation_of', 'organism_function'), ('genetic_function', 'affects', 'bird'), ('group', 'performs', 'daily_or_recreational_activity'), ('neoplastic_process', 'affects', 'fish'), ('governmental_or_regulatory_activity', 'associated_with', 'anatomical_abnormality'), ('population_group', 'interacts_with', 'patient_or_disabled_group'), ('biomedical_or_dental_material', 'interacts_with', 'neuroreactive_substance_or_biogenic_amine'), ('natural_phenomenon_or_process', 'affects', 'mental_or_behavioral_dysfunction'), ('amino_acid_peptide_or_protein', 'affects', 'molecular_function'), ('clinical_attribute', 'result_of', 'cell_function'), ('chemical_viewed_functionally', 'isa', 'chemical'), ('disease_or_syndrome', 'result_of', 'diagnostic_procedure'), ('organism_function', 'degree_of', 'mental_process'), ('regulation_or_law', 'affects', 'family_group'), ('organ_or_tissue_function', 'affects', 'clinical_attribute'), ('body_part_organ_or_organ_component', 'location_of', 'neoplastic_process'), ('receptor', 'interacts_with', 'chemical'), ('medical_device', 'prevents', 'pathologic_function'), ('geographic_area', 'associated_with', 'pathologic_function'), ('organism_function', 'affects', 'cell_function'), ('organism_function', 'result_of', 'organ_or_tissue_function'), ('mental_process', 'process_of', 'organism_function'), ('laboratory_procedure', 'analyzes', 'immunologic_factor'), ('organism_attribute', 'isa', 'conceptual_entity'), ('disease_or_syndrome', 'occurs_in', 'age_group'), ('laboratory_procedure', 'diagnoses', 'acquired_abnormality'), ('neuroreactive_substance_or_biogenic_amine', 'causes', 'injury_or_poisoning'), ('organic_chemical', 'causes', 'pathologic_function'), ('mental_process', 'isa', 'phenomenon_or_process'), ('cell_or_molecular_dysfunction', 'manifestation_of', 'disease_or_syndrome'), ('enzyme', 'affects', 'pathologic_function'), ('element_ion_or_isotope', 'affects', 'neoplastic_process'), ('qualitative_concept', 'evaluation_of', 'social_behavior'), ('research_device', 'causes', 'neoplastic_process'), ('element_ion_or_isotope', 'interacts_with', 'indicator_reagent_or_diagnostic_aid'), ('hazardous_or_poisonous_substance', 'isa', 'substance'), ('patient_or_disabled_group', 'produces', 'research_device'), ('experimental_model_of_disease', 'result_of', 'injury_or_poisoning'), ('eicosanoid', 'interacts_with', 'enzyme'), ('laboratory_procedure', 'measures', 'immunologic_factor'), ('vitamin', 'interacts_with', 'immunologic_factor'), ('physiologic_function', 'process_of', 'pathologic_function'), ('clinical_attribute', 'result_of', 'organism_function'), ('body_location_or_region', 'location_of', 'experimental_model_of_disease'), ('genetic_function', 'affects', 'experimental_model_of_disease'), ('acquired_abnormality', 'result_of', 'natural_phenomenon_or_process'), ('sign_or_symptom', 'manifestation_of', 'genetic_function'), ('amino_acid_peptide_or_protein', 'interacts_with', 'receptor'), ('virus', 'causes', 'cell_or_molecular_dysfunction'), ('organism_attribute', 'manifestation_of', 'physiologic_function'), ('biomedical_or_dental_material', 'affects', 'genetic_function'), ('mental_or_behavioral_dysfunction', 'isa', 'pathologic_function'), ('research_activity', 'measures', 'pathologic_function'), ('antibiotic', 'affects', 'experimental_model_of_disease'), ('cell_or_molecular_dysfunction', 'affects', 'experimental_model_of_disease'), ('population_group', 'associated_with', 'mental_or_behavioral_dysfunction'), ('pharmacologic_substance', 'diagnoses', 'disease_or_syndrome'), ('anatomical_abnormality', 'affects', 'amphibian'), ('injury_or_poisoning', 'result_of', 'diagnostic_procedure'), ('body_system', 'isa', 'idea_or_concept'), ('cell_function', 'result_of', 'injury_or_poisoning'), ('mammal', 'isa', 'vertebrate'), ('mental_process', 'process_of', 'organism'), ('body_part_organ_or_organ_component', 'part_of', 'reptile'), ('mental_process', 'result_of', 'individual_behavior'), ('body_part_organ_or_organ_component', 'location_of', 'congenital_abnormality'), ('organism', 'issue_in', 'occupation_or_discipline'), ('molecular_function', 'process_of', 'fish'), ('body_substance', 'causes', 'congenital_abnormality'), ('mental_or_behavioral_dysfunction', 'complicates', 'neoplastic_process'), ('gene_or_genome', 'location_of', 'organism_function'), ('organism_function', 'affects', 'vertebrate'), ('amino_acid_peptide_or_protein', 'isa', 'organic_chemical'), ('bird', 'issue_in', 'biomedical_occupation_or_discipline'), ('diagnostic_procedure', 'measures', 'steroid'), ('steroid', 'affects', 'molecular_function'), ('health_care_related_organization', 'location_of', 'therapeutic_or_preventive_procedure'), ('animal', 'interacts_with', 'amphibian'), ('organ_or_tissue_function', 'isa', 'physiologic_function'), ('food', 'affects', 'cell_or_molecular_dysfunction'), ('cell_or_molecular_dysfunction', 'complicates', 'mental_or_behavioral_dysfunction'), ('food', 'isa', 'substance'), ('finding', 'evaluation_of', 'cell_or_molecular_dysfunction'), ('bacterium', 'interacts_with', 'animal'), ('body_space_or_junction', 'connected_to', 'tissue'), ('congenital_abnormality', 'occurs_in', 'age_group'), ('organism_function', 'process_of', 'bacterium'), ('injury_or_poisoning', 'disrupts', 'organism_function'), ('eicosanoid', 'causes', 'pathologic_function'), ('acquired_abnormality', 'result_of', 'experimental_model_of_disease'), ('organism_function', 'process_of', 'natural_phenomenon_or_process'), ('gene_or_genome', 'part_of', 'alga'), ('amino_acid_peptide_or_protein', 'affects', 'disease_or_syndrome'), ('research_device', 'issue_in', 'occupation_or_discipline'), ('alga', 'isa', 'plant'), ('body_part_organ_or_organ_component', 'produces', 'enzyme'), ('molecular_function', 'process_of', 'pathologic_function'), ('anatomical_structure', 'part_of', 'mammal'), ('pathologic_function', 'affects', 'disease_or_syndrome'), ('acquired_abnormality', 'affects', 'vertebrate'), ('health_care_activity', 'affects', 'genetic_function'), ('experimental_model_of_disease', 'occurs_in', 'population_group'), ('cell', 'location_of', 'bacterium'), ('inorganic_chemical', 'affects', 'organ_or_tissue_function'), ('animal', 'interacts_with', 'archaeon'), ('tissue', 'location_of', 'rickettsia_or_chlamydia'), ('disease_or_syndrome', 'complicates', 'anatomical_abnormality'), ('group', 'performs', 'governmental_or_regulatory_activity'), ('bacterium', 'location_of', 'hormone'), ('cell_or_molecular_dysfunction', 'complicates', 'acquired_abnormality'), ('individual_behavior', 'issue_in', 'biomedical_occupation_or_discipline'), ('physiologic_function', 'result_of', 'anatomical_abnormality'), ('experimental_model_of_disease', 'produces', 'enzyme'), ('congenital_abnormality', 'result_of', 'organ_or_tissue_function'), ('neoplastic_process', 'affects', 'bird'), ('patient_or_disabled_group', 'uses', 'medical_device'), ('disease_or_syndrome', 'result_of', 'pathologic_function'), ('mental_or_behavioral_dysfunction', 'affects', 'rickettsia_or_chlamydia'), ('tissue', 'part_of', 'alga'), ('molecular_function', 'process_of', 'mammal'), ('plant', 'location_of', 'hormone'), ('steroid', 'affects', 'mental_process'), ('pharmacologic_substance', 'disrupts', 'cell_component'), ('organ_or_tissue_function', 'isa', 'biologic_function'), ('biologically_active_substance', 'affects', 'organ_or_tissue_function'), ('alga', 'interacts_with', 'rickettsia_or_chlamydia'), ('neoplastic_process', 'occurs_in', 'age_group'), ('cell_function', 'issue_in', 'biomedical_occupation_or_discipline'), ('therapeutic_or_preventive_procedure', 'complicates', 'cell_or_molecular_dysfunction'), ('neoplastic_process', 'affects', 'animal'), ('chemical_viewed_structurally', 'isa', 'substance'), ('lipid', 'interacts_with', 'biomedical_or_dental_material'), ('laboratory_procedure', 'assesses_effect_of', 'organ_or_tissue_function'), ('cell_or_molecular_dysfunction', 'affects', 'molecular_function'), ('amino_acid_peptide_or_protein', 'issue_in', 'occupation_or_discipline'), ('amino_acid_peptide_or_protein', 'interacts_with', 'carbohydrate'), ('organ_or_tissue_function', 'affects', 'fungus'), ('chemical_viewed_structurally', 'affects', 'physiologic_function'), ('mental_or_behavioral_dysfunction', 'precedes', 'experimental_model_of_disease'), ('body_part_organ_or_organ_component', 'location_of', 'mental_or_behavioral_dysfunction'), ('body_part_organ_or_organ_component', 'produces', 'eicosanoid'), ('cell_or_molecular_dysfunction', 'process_of', 'rickettsia_or_chlamydia'), ('cell_or_molecular_dysfunction', 'affects', 'vertebrate'), ('sign_or_symptom', 'associated_with', 'disease_or_syndrome'), ('eicosanoid', 'interacts_with', 'neuroreactive_substance_or_biogenic_amine'), ('hazardous_or_poisonous_substance', 'affects', 'natural_phenomenon_or_process'), ('reptile', 'isa', 'animal'), ('population_group', 'associated_with', 'congenital_abnormality'), ('acquired_abnormality', 'occurs_in', 'group'), ('mental_or_behavioral_dysfunction', 'isa', 'phenomenon_or_process'), ('genetic_function', 'affects', 'mental_process'), ('genetic_function', 'issue_in', 'occupation_or_discipline'), ('cell', 'location_of', 'rickettsia_or_chlamydia'), ('chemical_viewed_structurally', 'interacts_with', 'hazardous_or_poisonous_substance'), ('cell_function', 'process_of', 'physiologic_function'), ('neoplastic_process', 'process_of', 'bacterium'), ('biologically_active_substance', 'affects', 'physiologic_function'), ('mental_process', 'degree_of', 'organism_function'), ('enzyme', 'affects', 'disease_or_syndrome'), ('cell_or_molecular_dysfunction', 'process_of', 'fungus'), ('professional_society', 'location_of', 'educational_activity'), ('bird', 'isa', 'physical_object'), ('cell_or_molecular_dysfunction', 'process_of', 'reptile'), ('anatomical_abnormality', 'affects', 'bacterium'), ('geographic_area', 'associated_with', 'experimental_model_of_disease'), ('congenital_abnormality', 'associated_with', 'clinical_attribute'), ('neuroreactive_substance_or_biogenic_amine', 'affects', 'experimental_model_of_disease'), ('chemical_viewed_functionally', 'affects', 'cell_or_molecular_dysfunction'), ('eicosanoid', 'isa', 'chemical'), ('genetic_function', 'produces', 'enzyme'), ('gene_or_genome', 'part_of', 'organism'), ('mental_or_behavioral_dysfunction', 'affects', 'bacterium'), ('anatomical_abnormality', 'manifestation_of', 'organism_function'), ('chemical_viewed_structurally', 'causes', 'acquired_abnormality'), ('disease_or_syndrome', 'manifestation_of', 'genetic_function'), ('gene_or_genome', 'issue_in', 'biomedical_occupation_or_discipline'), ('hormone', 'interacts_with', 'indicator_reagent_or_diagnostic_aid'), ('population_group', 'associated_with', 'anatomical_abnormality'), ('carbohydrate', 'issue_in', 'occupation_or_discipline'), ('immunologic_factor', 'complicates', 'congenital_abnormality'), ('biologic_function', 'process_of', 'amphibian'), ('antibiotic', 'treats', 'injury_or_poisoning'), ('lipid', 'affects', 'cell_or_molecular_dysfunction'), ('cell_or_molecular_dysfunction', 'isa', 'phenomenon_or_process'), ('phenomenon_or_process', 'result_of', 'acquired_abnormality'), ('clinical_attribute', 'property_of', 'plant'), ('inorganic_chemical', 'interacts_with', 'vitamin'), ('organophosphorus_compound', 'interacts_with', 'eicosanoid'), ('acquired_abnormality', 'associated_with', 'clinical_attribute'), ('laboratory_procedure', 'associated_with', 'neoplastic_process'), ('element_ion_or_isotope', 'interacts_with', 'receptor'), ('cell_or_molecular_dysfunction', 'affects', 'reptile'), ('professional_or_occupational_group', 'performs', 'activity'), ('anatomical_abnormality', 'part_of', 'fish'), ('chemical_viewed_structurally', 'interacts_with', 'antibiotic'), ('disease_or_syndrome', 'associated_with', 'organism_attribute'), ('disease_or_syndrome', 'result_of', 'experimental_model_of_disease'), ('experimental_model_of_disease', 'result_of', 'disease_or_syndrome'), ('disease_or_syndrome', 'result_of', 'cell_or_molecular_dysfunction'), ('cell_or_molecular_dysfunction', 'result_of', 'experimental_model_of_disease'), ('cell_or_molecular_dysfunction', 'result_of', 'physiologic_function'), ('experimental_model_of_disease', 'result_of', 'cell_or_molecular_dysfunction'), ('disease_or_syndrome', 'result_of', 'organ_or_tissue_function'), ('experimental_model_of_disease', 'result_of', 'mental_or_behavioral_dysfunction'), ('experimental_model_of_disease', 'result_of', 'organ_or_tissue_function'), ('cell_or_molecular_dysfunction', 'result_of', 'mental_or_behavioral_dysfunction'), ('experimental_model_of_disease', 'result_of', 'molecular_function'), ('experimental_model_of_disease', 'result_of', 'pathologic_function'), ('disease_or_syndrome', 'result_of', 'molecular_function'), ('experimental_model_of_disease', 'result_of', 'cell_function'), ('mental_or_behavioral_dysfunction', 'result_of', 'physiologic_function'), ('experimental_model_of_disease', 'result_of', 'genetic_function'), ('cell_or_molecular_dysfunction', 'result_of', 'cell_function'), ('cell_or_molecular_dysfunction', 'result_of', 'mental_process'), ('experimental_model_of_disease', 'result_of', 'organism_function'), ('cell_or_molecular_dysfunction', 'result_of', 'organ_or_tissue_function'), ('cell_or_molecular_dysfunction', 'result_of', 'genetic_function'), ('experimental_model_of_disease', 'result_of', 'biologic_function'), ('disease_or_syndrome', 'result_of', 'cell_function'), ('cell_or_molecular_dysfunction', 'result_of', 'biologic_function'), ('genetic_function', 'affects', 'vertebrate'), ('cell_or_molecular_dysfunction', 'result_of', 'neoplastic_process'), ('cell_or_molecular_dysfunction', 'result_of', 'pathologic_function'), ('cell_or_molecular_dysfunction', 'result_of', 'molecular_function'), ('organ_or_tissue_function', 'affects', 'vertebrate'), ('cell_or_molecular_dysfunction', 'result_of', 'natural_phenomenon_or_process'), ('biologic_function', 'affects', 'vertebrate'), ('physiologic_function', 'affects', 'vertebrate'), ('disease_or_syndrome', 'result_of', 'organism_function'), ('experimental_model_of_disease', 'result_of', 'natural_phenomenon_or_process'), ('neoplastic_process', 'result_of', 'cell_function'), ('mental_or_behavioral_dysfunction', 'result_of', 'cell_function'), ('cell_function', 'affects', 'vertebrate'), ('disease_or_syndrome', 'result_of', 'genetic_function'), ('neoplastic_process', 'result_of', 'biologic_function'), ('pathologic_function', 'result_of', 'cell_function'), ('physiologic_function', 'result_of', 'biologic_function'), ('biologic_function', 'result_of', 'cell_function'), ('neoplastic_process', 'result_of', 'cell_or_molecular_dysfunction'), ('biologic_function', 'result_of', 'mental_process'), ('physiologic_function', 'result_of', 'cell_function'), ('pathologic_function', 'result_of', 'cell_or_molecular_dysfunction'), ('pathologic_function', 'result_of', 'organ_or_tissue_function'), ('pathologic_function', 'result_of', 'mental_or_behavioral_dysfunction'), ('mental_or_behavioral_dysfunction', 'result_of', 'cell_or_molecular_dysfunction'), ('pathologic_function', 'result_of', 'genetic_function'), ('physiologic_function', 'result_of', 'molecular_function'), ('pathologic_function', 'result_of', 'natural_phenomenon_or_process'), ('disease_or_syndrome', 'result_of', 'natural_phenomenon_or_process'), ('mental_or_behavioral_dysfunction', 'result_of', 'genetic_function'), ('mental_or_behavioral_dysfunction', 'result_of', 'natural_phenomenon_or_process'), ('mental_or_behavioral_dysfunction', 'result_of', 'molecular_function'), ('mental_or_behavioral_dysfunction', 'result_of', 'experimental_model_of_disease'), ('organ_or_tissue_function', 'result_of', 'cell_function'), ('biologic_function', 'result_of', 'molecular_function'), ('biologic_function', 'result_of', 'organ_or_tissue_function'), ('pathologic_function', 'result_of', 'experimental_model_of_disease'), ('mental_or_behavioral_dysfunction', 'affects', 'vertebrate'), ('molecular_function', 'result_of', 'cell_function'), ('genetic_function', 'result_of', 'cell_function'), ('experimental_model_of_disease', 'affects', 'vertebrate'), ('molecular_function', 'result_of', 'biologic_function'), ('pathologic_function', 'result_of', 'physiologic_function'), ('genetic_function', 'result_of', 'biologic_function'), ('organ_or_tissue_function', 'affects', 'plant'), ('physiologic_function', 'result_of', 'organism_function'), ('physiologic_function', 'result_of', 'genetic_function'), ('organ_or_tissue_function', 'result_of', 'biologic_function'), ('organ_or_tissue_function', 'result_of', 'genetic_function'), ('mental_or_behavioral_dysfunction', 'result_of', 'disease_or_syndrome'), ('organ_or_tissue_function', 'affects', 'reptile'), ('cell_function', 'result_of', 'biologic_function'), ('genetic_function', 'result_of', 'organism_function'), ('genetic_function', 'result_of', 'molecular_function'), ('genetic_function', 'result_of', 'organ_or_tissue_function'), ('molecular_function', 'result_of', 'organ_or_tissue_function'), ('genetic_function', 'result_of', 'physiologic_function'), ('physiologic_function', 'affects', 'reptile'), ('molecular_function', 'result_of', 'organism_function'), ('cell_function', 'result_of', 'organ_or_tissue_function'), ('organ_or_tissue_function', 'affects', 'amphibian'), ('pathologic_function', 'affects', 'vertebrate'), ('cell_function', 'result_of', 'organism_function'), ('cell_function', 'result_of', 'natural_phenomenon_or_process'), ('mental_or_behavioral_dysfunction', 'result_of', 'pathologic_function'), ('organ_or_tissue_function', 'result_of', 'organism_function'), ('molecular_function', 'result_of', 'physiologic_function'), ('genetic_function', 'result_of', 'natural_phenomenon_or_process'), ('cell_function', 'result_of', 'cell_or_molecular_dysfunction'), ('genetic_function', 'affects', 'amphibian'), ('cell_function', 'result_of', 'mental_or_behavioral_dysfunction'), ('genetic_function', 'result_of', 'cell_or_molecular_dysfunction'), ('genetic_function', 'result_of', 'mental_or_behavioral_dysfunction'), ('neoplastic_process', 'result_of', 'natural_phenomenon_or_process'), ('molecular_function', 'affects', 'plant'), ('physiologic_function', 'affects', 'amphibian'), ('organism_function', 'result_of', 'cell_or_molecular_dysfunction'), ('genetic_function', 'affects', 'fungus'), ('cell_function', 'affects', 'plant'), ('genetic_function', 'affects', 'reptile'), ('organism_function', 'result_of', 'natural_phenomenon_or_process'), ('genetic_function', 'result_of', 'experimental_model_of_disease'), ('genetic_function', 'result_of', 'mental_process'), ('organ_or_tissue_function', 'result_of', 'natural_phenomenon_or_process'), ('biologic_function', 'affects', 'amphibian'), ('cell_function', 'affects', 'reptile'), ('cell_function', 'affects', 'amphibian'), ('genetic_function', 'result_of', 'pathologic_function'), ('molecular_function', 'result_of', 'genetic_function'), ('organ_or_tissue_function', 'result_of', 'physiologic_function'), ('organ_or_tissue_function', 'result_of', 'molecular_function'), ('pathologic_function', 'result_of', 'neoplastic_process'), ('mental_or_behavioral_dysfunction', 'result_of', 'mental_process'), ('pathologic_function', 'result_of', 'mental_process'), ('cell_or_molecular_dysfunction', 'affects', 'plant'), ('biologic_function', 'affects', 'reptile'), ('molecular_function', 'result_of', 'mental_process'), ('organism_function', 'affects', 'plant'), ('natural_phenomenon_or_process', 'result_of', 'cell_function'), ('organ_or_tissue_function', 'affects', 'rickettsia_or_chlamydia'), ('biologic_function', 'result_of', 'physiologic_function'), ('natural_phenomenon_or_process', 'result_of', 'biologic_function'), ('organ_or_tissue_function', 'affects', 'alga'), ('cell_function', 'affects', 'fungus'), ('organ_or_tissue_function', 'affects', 'bacterium'), ('organ_or_tissue_function', 'affects', 'fish'), ('neoplastic_process', 'result_of', 'disease_or_syndrome'), ('disease_or_syndrome', 'result_of', 'neoplastic_process'), ('physiologic_function', 'result_of', 'cell_or_molecular_dysfunction'), ('organ_or_tissue_function', 'affects', 'invertebrate'), ('cell_function', 'affects', 'invertebrate'), ('genetic_function', 'affects', 'alga'), ('cell_function', 'affects', 'bacterium'), ('genetic_function', 'affects', 'rickettsia_or_chlamydia'), ('genetic_function', 'affects', 'bacterium'), ('physiologic_function', 'affects', 'invertebrate'), ('genetic_function', 'affects', 'invertebrate'), ('molecular_function', 'affects', 'invertebrate'), ('physiologic_function', 'affects', 'rickettsia_or_chlamydia'), ('organ_or_tissue_function', 'affects', 'virus'), ('cell_function', 'affects', 'fish'), ('neoplastic_process', 'result_of', 'pathologic_function'), ('physiologic_function', 'affects', 'bacterium'), ('biologic_function', 'affects', 'rickettsia_or_chlamydia'), ('biologic_function', 'result_of', 'organism_function'), ('physiologic_function', 'affects', 'alga')], 'labeled_size': 200}
+{'round': 11, 'labeled_size': 350}
+{'round': 11, 'labeled_size': 350}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.0010711116213764737}
+{'round': 2, 'labeled_size': 215, 'mse': 9.0118160838028e-05}
+{'round': 3, 'labeled_size': 230, 'mse': 0.00011048518489816093}
+{'round': 4, 'labeled_size': 245, 'mse': 5.088575342351146e-05}
+{'round': 5, 'labeled_size': 260, 'mse': 7.186062251060522e-05}
+{'round': 6, 'labeled_size': 275, 'mse': 8.364326501604685e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 2.80256240403814e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 3.203459500919356e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 3.3146853249060644e-05}
+{'round': 10, 'labeled_size': 335, 'mse': 4.973233468186465e-05}
+{'round': 11, 'labeled_size': 350, 'mse': 2.5409768656877867e-05}
+{'round': 11, 'labeled_size': 350, 'mse': 2.5409768656877867e-05}
+-----------------------
+{'round': 1, 'labeled_size': 260, 'mse': 0.003332476178539917}
+{'round': 2, 'labeled_size': 286, 'mse': 0.0001494515770104531}
+{'round': 3, 'labeled_size': 312, 'mse': 0.00010020176795353271}
+{'round': 4, 'labeled_size': 338, 'mse': 8.077366391833872e-05}
+{'round': 5, 'labeled_size': 364, 'mse': 4.3588632588761745e-05}
+{'round': 6, 'labeled_size': 390, 'mse': 3.832792303910036e-05}
+{'round': 7, 'labeled_size': 416, 'mse': 3.454351275714428e-05}
+{'round': 8, 'labeled_size': 442, 'mse': 3.84517448841601e-05}
+{'round': 9, 'labeled_size': 468, 'mse': 3.8018354083331714e-05}
+{'round': 9, 'labeled_size': 468, 'mse': 3.8018354083331714e-05}
+-----------------------
+{'round': 1, 'labeled_size': 260, 'mse': 0.003332476178539917}
+{'round': 2, 'labeled_size': 265, 'mse': 9.452963919663551e-05}
+{'round': 3, 'labeled_size': 270, 'mse': 0.00012725981731048173}
+{'round': 4, 'labeled_size': 275, 'mse': 0.00024087464005910966}
+{'round': 5, 'labeled_size': 280, 'mse': 9.421432786545225e-05}
+{'round': 6, 'labeled_size': 285, 'mse': 8.581972890872163e-05}
+{'round': 6, 'labeled_size': 285, 'mse': 8.581972890872163e-05}
+-----------------------
+{'round': 1, 'labeled_size': 260, 'mse': 0.003332476178539917}
+{'round': 2, 'labeled_size': 265, 'mse': 9.452963919663551e-05}
+{'round': 3, 'labeled_size': 270, 'mse': 0.00012725981731048173}
+{'round': 4, 'labeled_size': 275, 'mse': 0.00024087464005910966}
+{'round': 5, 'labeled_size': 280, 'mse': 9.421432786545225e-05}
+{'round': 6, 'labeled_size': 285, 'mse': 8.581972890872163e-05}
+{'round': 6, 'labeled_size': 285, 'mse': 8.581972890872163e-05}
+-----------------------
+{'round': 1, 'labeled_size': 260, 'mse': 0.003332476178539917}
+{'round': 2, 'labeled_size': 270, 'mse': 9.284947060367421e-05}
+{'round': 3, 'labeled_size': 280, 'mse': 7.350592885703967e-05}
+{'round': 4, 'labeled_size': 290, 'mse': 0.00010451682732066884}
+{'round': 5, 'labeled_size': 300, 'mse': 7.15066693667767e-05}
+{'round': 6, 'labeled_size': 310, 'mse': 5.4687022945690175e-05}
+{'round': 7, 'labeled_size': 320, 'mse': 4.328389627425831e-05}
+{'round': 8, 'labeled_size': 330, 'mse': 5.5328085566989274e-05}
+{'round': 9, 'labeled_size': 340, 'mse': 3.4993852583183674e-05}
+{'round': 10, 'labeled_size': 350, 'mse': 1.9727632212876644e-05}
+{'round': 11, 'labeled_size': 360, 'mse': 2.849411418317454e-05}
+{'round': 12, 'labeled_size': 370, 'mse': 2.3314105157114073e-05}
+{'round': 13, 'labeled_size': 380, 'mse': 2.6258300296659726e-05}
+{'round': 14, 'labeled_size': 390, 'mse': 1.9481847000566915e-05}
+{'round': 14, 'labeled_size': 390, 'mse': 1.9481847000566915e-05}
+-----------------------
+{'round': 1, 'labeled_size': 260, 'mse': 0.003332476178539917}
+{'round': 2, 'labeled_size': 270, 'mse': 9.284947060367421e-05}
+{'round': 3, 'labeled_size': 280, 'mse': 7.350592885703967e-05}
+{'round': 4, 'labeled_size': 290, 'mse': 0.00010451682732066884}
+{'round': 5, 'labeled_size': 300, 'mse': 7.15066693667767e-05}
+{'round': 6, 'labeled_size': 310, 'mse': 5.4687022945690175e-05}
+{'round': 7, 'labeled_size': 320, 'mse': 4.328389627425831e-05}
+{'round': 8, 'labeled_size': 330, 'mse': 5.5328085566989274e-05}
+{'round': 9, 'labeled_size': 340, 'mse': 3.4993852583183674e-05}
+{'round': 10, 'labeled_size': 350, 'mse': 1.9727632212876644e-05}
+{'round': 11, 'labeled_size': 360, 'mse': 2.849411418317454e-05}
+{'round': 12, 'labeled_size': 370, 'mse': 2.3314105157114073e-05}
+{'round': 13, 'labeled_size': 380, 'mse': 2.6258300296659726e-05}
+{'round': 14, 'labeled_size': 390, 'mse': 1.9481847000566915e-05}
+{'round': 14, 'labeled_size': 390, 'mse': 1.9481847000566915e-05}
+-----------------------
+{'round': 1, 'labeled_size': 312, 'mse': 0.0037450088859889755}
+{'round': 2, 'labeled_size': 322, 'mse': 0.00010775826806314451}
+{'round': 3, 'labeled_size': 332, 'mse': 7.472631577142796e-05}
+{'round': 4, 'labeled_size': 342, 'mse': 0.00028129090954481903}
+{'round': 5, 'labeled_size': 352, 'mse': 9.505369976029809e-05}
+{'round': 6, 'labeled_size': 362, 'mse': 3.2107456460288807e-05}
+{'round': 7, 'labeled_size': 372, 'mse': 6.666362235767281e-05}
+{'round': 8, 'labeled_size': 382, 'mse': 6.307773347536862e-05}
+{'round': 9, 'labeled_size': 392, 'mse': 4.894330062301678e-05}
+{'round': 9, 'labeled_size': 392, 'mse': 4.894330062301678e-05}
+-----------------------
+{'round': 1, 'labeled_size': 260, 'mse': 0.017619846801593397}
+{'round': 2, 'labeled_size': 270, 'mse': 0.017365816966889873}
+{'round': 3, 'labeled_size': 280, 'mse': 0.017315820633480434}
+{'round': 4, 'labeled_size': 290, 'mse': 0.017112456584372798}
+{'round': 5, 'labeled_size': 300, 'mse': 0.01698519448082937}
+{'round': 6, 'labeled_size': 310, 'mse': 0.01683652875642082}
+{'round': 7, 'labeled_size': 320, 'mse': 0.016411800240602965}
+{'round': 8, 'labeled_size': 330, 'mse': 0.016278007020960182}
+{'round': 9, 'labeled_size': 340, 'mse': 0.016218053033055416}
+{'round': 10, 'labeled_size': 350, 'mse': 0.016184629528727165}
+{'round': 11, 'labeled_size': 360, 'mse': 0.015860847881328303}
+{'round': 12, 'labeled_size': 370, 'mse': 0.01594793003129542}
+{'round': 13, 'labeled_size': 380, 'mse': 0.016080700053017625}
+{'round': 14, 'labeled_size': 390, 'mse': 0.01612410685740724}
+{'round': 14, 'labeled_size': 390, 'mse': 0.01612410685740724}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.018929560647751656}
+{'round': 2, 'labeled_size': 210, 'mse': 0.018268322651602095}
+{'round': 3, 'labeled_size': 220, 'mse': 0.019279691910288957}
+{'round': 4, 'labeled_size': 230, 'mse': 0.018807878981927005}
+{'round': 5, 'labeled_size': 240, 'mse': 0.018588656547103764}
+{'round': 5, 'labeled_size': 240, 'mse': 0.018588656547103764}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.018929560647751656}
+{'round': 2, 'labeled_size': 210, 'mse': 0.01942903156771395}
+{'round': 3, 'labeled_size': 220, 'mse': 0.020391157948723853}
+{'round': 4, 'labeled_size': 230, 'mse': 0.02063580369581957}
+{'round': 4, 'labeled_size': 230, 'mse': 0.02063580369581957}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.0010711116213764737}
+{'round': 2, 'labeled_size': 210, 'mse': 0.00011729411087016063}
+{'round': 3, 'labeled_size': 220, 'mse': 9.955637174230169e-05}
+{'round': 4, 'labeled_size': 230, 'mse': 0.00029684277182472134}
+{'round': 5, 'labeled_size': 240, 'mse': 7.083413328585828e-05}
+{'round': 6, 'labeled_size': 250, 'mse': 5.547497828857197e-05}
+{'round': 7, 'labeled_size': 260, 'mse': 3.719337419888394e-05}
+{'round': 8, 'labeled_size': 270, 'mse': 2.7828927959242666e-05}
+{'round': 9, 'labeled_size': 280, 'mse': 2.6702469059826126e-05}
+{'round': 10, 'labeled_size': 290, 'mse': 2.558057330151472e-05}
+{'round': 11, 'labeled_size': 300, 'mse': 4.945934481036009e-05}
+{'round': 12, 'labeled_size': 310, 'mse': 1.9055370820160107e-05}
+{'round': 12, 'labeled_size': 310, 'mse': 1.9055370820160107e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.0045984218102521155}
+{'round': 2, 'labeled_size': 210, 'mse': 0.0006900403836307422}
+{'round': 3, 'labeled_size': 220, 'mse': 0.0003327934050132472}
+{'round': 4, 'labeled_size': 230, 'mse': 0.0003553463636381205}
+{'round': 5, 'labeled_size': 240, 'mse': 0.00031147218939327643}
+{'round': 6, 'labeled_size': 250, 'mse': 0.00040958948294381165}
+{'round': 7, 'labeled_size': 260, 'mse': 0.00020909944866200216}
+{'round': 8, 'labeled_size': 270, 'mse': 0.0003125117400034553}
+{'round': 9, 'labeled_size': 280, 'mse': 0.0002535125891544271}
+{'round': 10, 'labeled_size': 290, 'mse': 0.00027026658318346107}
+{'round': 10, 'labeled_size': 290, 'mse': 0.00027026658318346107}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.0045984218102521155}
+{'round': 2, 'labeled_size': 210, 'mse': 0.0006900403836307422}
+{'round': 3, 'labeled_size': 220, 'mse': 0.0003327934050132472}
+{'round': 4, 'labeled_size': 230, 'mse': 0.0003553463636381205}
+{'round': 5, 'labeled_size': 240, 'mse': 0.00031147218939327643}
+{'round': 6, 'labeled_size': 250, 'mse': 0.00040958948294381165}
+{'round': 7, 'labeled_size': 260, 'mse': 0.00020909944866200216}
+{'round': 8, 'labeled_size': 270, 'mse': 0.0003125117400034553}
+{'round': 9, 'labeled_size': 280, 'mse': 0.0002535125891544271}
+{'round': 10, 'labeled_size': 290, 'mse': 0.00027026658318346107}
+{'round': 10, 'labeled_size': 290, 'mse': 0.00027026658318346107}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.0010711116213764737}
+{'round': 2, 'labeled_size': 215, 'mse': 9.0118160838028e-05}
+{'round': 3, 'labeled_size': 230, 'mse': 0.00011048518489816093}
+{'round': 4, 'labeled_size': 245, 'mse': 5.088575342351146e-05}
+{'round': 5, 'labeled_size': 260, 'mse': 7.186062251060522e-05}
+{'round': 6, 'labeled_size': 275, 'mse': 8.364326501604685e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 2.80256240403814e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 3.203459500919356e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 3.3146853249060644e-05}
+{'round': 10, 'labeled_size': 335, 'mse': 4.973233468186465e-05}
+{'round': 10, 'labeled_size': 335, 'mse': 4.973233468186465e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.0010711116213764737}
+{'round': 2, 'labeled_size': 215, 'mse': 9.0118160838028e-05}
+{'round': 3, 'labeled_size': 230, 'mse': 0.00011048518489816093}
+{'round': 4, 'labeled_size': 245, 'mse': 5.088575342351146e-05}
+{'round': 5, 'labeled_size': 260, 'mse': 7.186062251060522e-05}
+{'round': 5, 'labeled_size': 260, 'mse': 7.186062251060522e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.0008614237396629788}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0002354727859255251}
+{'round': 3, 'labeled_size': 230, 'mse': 0.00012500183560223984}
+{'round': 4, 'labeled_size': 245, 'mse': 9.335719228155658e-05}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00012270647013287562}
+{'round': 6, 'labeled_size': 275, 'mse': 9.372176812583265e-05}
+{'round': 6, 'labeled_size': 275, 'mse': 9.372176812583265e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.0008614237396629788}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0002354727859255251}
+{'round': 3, 'labeled_size': 230, 'mse': 0.00012500183560223984}
+{'round': 4, 'labeled_size': 245, 'mse': 9.335719228155658e-05}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00012270647013287562}
+{'round': 6, 'labeled_size': 275, 'mse': 9.372176812583265e-05}
+{'round': 6, 'labeled_size': 275, 'mse': 9.372176812583265e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.0008849149773643874}
+{'round': 2, 'labeled_size': 215, 'mse': 8.017410066297703e-05}
+{'round': 3, 'labeled_size': 230, 'mse': 4.8698657297033676e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 7.215686778262239e-05}
+{'round': 5, 'labeled_size': 260, 'mse': 4.004442742008149e-05}
+{'round': 5, 'labeled_size': 260, 'mse': 4.004442742008149e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.0010711116213764737}
+{'round': 2, 'labeled_size': 215, 'mse': 9.0118160838028e-05}
+{'round': 3, 'labeled_size': 230, 'mse': 0.00011048518489816093}
+{'round': 4, 'labeled_size': 245, 'mse': 5.088575342351146e-05}
+{'round': 5, 'labeled_size': 260, 'mse': 7.186062251060522e-05}
+{'round': 5, 'labeled_size': 260, 'mse': 7.186062251060522e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.0005724385350172021}
+{'round': 2, 'labeled_size': 215, 'mse': 1.0323601739608238e-05}
+{'round': 3, 'labeled_size': 230, 'mse': 3.152697083060537e-06}
+{'round': 4, 'labeled_size': 245, 'mse': 7.88960334164282e-07}
+{'round': 5, 'labeled_size': 260, 'mse': 4.662780341492294e-06}
+{'round': 5, 'labeled_size': 260, 'mse': 4.662780341492294e-06}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.00014859739910727732}
+{'round': 2, 'labeled_size': 215, 'mse': 0.00010308977034582194}
+{'round': 3, 'labeled_size': 230, 'mse': 6.700204755244921e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00018049939079671626}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00018049939079671626}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.00014859739910727732}
+{'round': 2, 'labeled_size': 215, 'mse': 0.00010308977034582194}
+{'round': 3, 'labeled_size': 230, 'mse': 6.700204755244921e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00018049939079671626}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00018049939079671626}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.0008474165307313403}
+{'round': 2, 'labeled_size': 215, 'mse': 6.291525252011538e-05}
+{'round': 3, 'labeled_size': 230, 'mse': 4.971414334958228e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00010434364323835945}
+{'round': 5, 'labeled_size': 260, 'mse': 5.2213065572496776e-05}
+{'round': 6, 'labeled_size': 275, 'mse': 5.4615397201508404e-05}
+{'round': 6, 'labeled_size': 275, 'mse': 5.4615397201508404e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------

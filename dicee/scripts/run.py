@@ -130,7 +130,7 @@ def get_default_arguments(description=None):
                         help='degree for polynomial embeddings')
     parser.add_argument('--loss_fn', type=str, default="BCELoss",
                         help='The loss function used in the model')
-    parser.add_argument('--label_relaxation_alpha', type=float, default=0.1,
+    parser.add_argument('--label_relaxation_alpha', type=float, default=0.0,
                         help='The alpha value for label relaxation')
     #parser.add_argument('--Paramlogger', type=str, default="CSVLogger",
     #                    help='logger')
@@ -145,6 +145,7 @@ def main():
     if args.continual_learning:
         ContinuousExecute(args).continual_start()
     else:
+        print("#######################***************##################", get_default_arguments())
         Execute(get_default_arguments()).start()
 
 if __name__ == '__main__':

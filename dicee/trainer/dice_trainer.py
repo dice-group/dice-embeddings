@@ -103,12 +103,12 @@ def get_callbacks(args):
         PrintCallback(),
         AccumulateEpochLossCallback(path=args.full_storage_path)
     ]
-    if args.swa:
-        callbacks.append(pl.pytorch.callbacks.StochasticWeightAveraging(swa_lrs=args.lr, swa_epoch_start=1))
-    elif args.adaptive_swa:
-        callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
-    else:
-        """No SWA or ASWA applied"""
+    #if getattr(args, "swa", False):
+    #    callbacks.append(pl.pytorch.callbacks.StochasticWeightAveraging(swa_lrs=args.lr, swa_epoch_start=1))
+    #elif getattr(args, "adaptive_swa", False):
+    #    callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
+    #else:
+    #    """No SWA or ASWA applied"""
 
     if isinstance(args.callbacks, list):
         return callbacks
