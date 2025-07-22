@@ -953,3 +953,43 @@
 {'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
 {'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
 -----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.002168386999268947}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0001402341226274892}
+{'round': 3, 'labeled_size': 230, 'mse': 9.019432043916375e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 0.00019226898325036461}
+{'round': 5, 'labeled_size': 260, 'mse': 0.00010820278756470288}
+{'round': 6, 'labeled_size': 275, 'mse': 8.083171933091452e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 7.194832870847885e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 7.6128925658199e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+{'round': 9, 'labeled_size': 320, 'mse': 8.524581713030986e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.00032574085760250755}
+{'round': 2, 'labeled_size': 215, 'mse': 4.6999497604482964e-05}
+{'round': 3, 'labeled_size': 230, 'mse': 4.057943182235228e-05}
+{'round': 4, 'labeled_size': 245, 'mse': 3.0515171097224037e-05}
+{'round': 5, 'labeled_size': 260, 'mse': 2.4954236833044524e-05}
+{'round': 6, 'labeled_size': 275, 'mse': 3.960623915701935e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 4.070606332156038e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 4.070606332156038e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.009359285181605441}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0006634926095905738}
+{'round': 3, 'labeled_size': 230, 'mse': 0.00014350654972135153}
+{'round': 4, 'labeled_size': 245, 'mse': 8.86344292280197e-05}
+{'round': 5, 'labeled_size': 260, 'mse': 6.521683274891383e-05}
+{'round': 6, 'labeled_size': 275, 'mse': 8.286906276754506e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 8.356405523477724e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 6.360952300408811e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 6.360952300408811e-05}
+-----------------------
+{'round': 1, 'labeled_size': 200, 'mse': 0.009359285181605441}
+{'round': 2, 'labeled_size': 215, 'mse': 0.0006634926095905738}
+{'round': 3, 'labeled_size': 230, 'mse': 0.00014350654972135153}
+{'round': 4, 'labeled_size': 245, 'mse': 8.86344292280197e-05}
+{'round': 5, 'labeled_size': 260, 'mse': 6.521683274891383e-05}
+{'round': 6, 'labeled_size': 275, 'mse': 8.286906276754506e-05}
+{'round': 7, 'labeled_size': 290, 'mse': 8.356405523477724e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 6.360952300408811e-05}
+{'round': 8, 'labeled_size': 305, 'mse': 6.360952300408811e-05}
+-----------------------

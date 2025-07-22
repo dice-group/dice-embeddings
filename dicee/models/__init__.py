@@ -7,4 +7,3 @@ from .clifford import Keci, KeciBase, DeCaL # noqa
 from .pykeen_models import * # noqa
 from .function_space import * # noqa
 from .dualE import DualE # noqa
-from .subdue import SubdueWithDeCal # noqa

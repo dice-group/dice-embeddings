@@ -7,7 +7,7 @@
    "save_embeddings_as_csv": true,
    "backend": "pandas",
    "separator": "\\s+",
-   "model": "Keci",
+   "model": "Pykeen_RotatE",
    "optim": "Adopt",
    "embedding_dim": 64,
    "num_epochs": 100,
@@ -55,5 +55,5 @@
    "check_val_every_n_epoch": 1000000,
    "logger": false,
    "apply_reciprical_or_noise": false,
-   "full_storage_path": "/home/adel/Documents/dice-embeddings/dice-embeddings/bbox_poisoning/Experiments/2025-07-22 12-32-37.420174"
+   "full_storage_path": "/home/adel/Documents/dice-embeddings/dice-embeddings/bbox_poisoning/Experiments/2025-07-22 12-29-35.729801"
 }

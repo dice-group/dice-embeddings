@@ -4,7 +4,7 @@ import torch
 import random
 from executer import run_dicee_eval
 import numpy as np
-from utils import (set_seeds, load_embeddings, load_triples, select_harmful_triples, triples_with_high_gradient, select_easy_negative_triples, select_most_harmful_group,
+from utils import (set_seeds, load_embeddings, load_triples, select_harmful_triples, triples_with_high_gradient, select_easy_negative_triples,
                    save_triples)
 from active_learning import active_learning_loop
 from baselines import poison_random, poison_centrality
@@ -15,7 +15,7 @@ set_seeds(42)
 
 DB = "UMLS"
 MODEL = "Keci" #"DistMult" #"Keci" #"ComplEx" #"DistMult" #"Pykeen_BoxE" #  #  #"Keci"
-ORACLE_PATH = "Experiments/UMLS_Pykeen_RotatE"
+ORACLE_PATH = "./Experiments/UMLS_Keci"
 TRIPLES_PATH = "UMLS/clean/train.txt"
 VAL_TRIPLES_PATH = "UMLS/clean/train.txt"
 
@@ -97,7 +97,7 @@ harmful_triples = select_harmful_triples(
     entity_emb=entity_emb,
     relation_emb=relation_emb,
     loss_fn=loss_fn,
-    num_candidate=5000,
+    num_candidate=10000,
     val_triples=val_triples,
     device='cpu',
 )
@@ -123,7 +123,7 @@ for top_k in perturbation_ratios:
     # random poisoning
     random_corruption = poison_random(triples, top_k)
 
-    triples_after_random_poisoning = triples_after_random_removal + random_corruption #triples_after_random_removal + random_corruption
+    triples_after_random_poisoning = triples + random_corruption #triples_after_random_removal + random_corruption
 
     triples_after_random_poisoning_shuffled = random.sample(triples_after_random_poisoning, len(triples_after_random_poisoning))
     save_triples(triples_after_random_poisoning_shuffled, f"{DB}/random/{top_k}/{corruption}/train.txt")
@@ -168,7 +168,7 @@ for top_k in perturbation_ratios:
     print("group size: ", top_k, len(best_group))
     harmful_corrupted_triples = best_group
     """
-    triples_after_edits = triples_after_random_removal + harmful_corrupted_triples[:top_k] # triples_after_random_removal + gradient_based_corruptions
+    triples_after_edits = triples + harmful_corrupted_triples[:top_k] # triples_after_random_removal + gradient_based_corruptions
     #triples_after_edits = after_removing_high_gradient_triples + gradient_based_corruptions
 
     """
