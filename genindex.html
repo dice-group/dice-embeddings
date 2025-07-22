@@ -1069,6 +1069,8 @@
       </ul></li>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA.decide">decide() (dicee.callbacks.ASWA method)</a>
 </li>
+      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback.default_eval_model">default_eval_model (dicee.callbacks.PeriodicEvalCallback attribute)</a>
+</li>
       <li><a href="autoapi/dicee/index.html#dicee.LFMult.degree">degree (dicee.LFMult attribute)</a>
 
       <ul>
@@ -1267,6 +1269,8 @@
         <li><a href="autoapi/dicee/models/function_space/index.html#module-dicee.models.function_space">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     dicee.models.literal
 
@@ -1274,8 +1278,6 @@
         <li><a href="autoapi/dicee/models/literal/index.html#module-dicee.models.literal">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     dicee.models.octonion
 
@@ -1642,14 +1644,16 @@
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA.epoch_count">(dicee.callbacks.ASWA attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.Eval.epoch_counter">epoch_counter (dicee.callbacks.Eval attribute)</a>
 
       <ul>
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.KGESaveCallback.epoch_counter">(dicee.callbacks.KGESaveCallback attribute)</a>
 </li>
+        <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback.epoch_counter">(dicee.callbacks.PeriodicEvalCallback attribute)</a>
+</li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.Eval.epoch_ratio">epoch_ratio (dicee.callbacks.Eval attribute)</a>
 </li>
       <li><a href="autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.er_vocab">er_vocab (dicee.evaluator.Evaluator attribute)</a>
@@ -1668,6 +1672,12 @@
         <li><a href="autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.eval">(dicee.models.ensemble.EnsembleKGE method)</a>
 </li>
       </ul></li>
+      <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.eval_at_epochs">eval_at_epochs (dicee.config.Namespace attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback.eval_epochs">eval_epochs (dicee.callbacks.PeriodicEvalCallback attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.eval_every_n_epochs">eval_every_n_epochs (dicee.config.Namespace attribute)</a>
+</li>
       <li><a href="autoapi/dicee/index.html#dicee.KGE.eval_lp_performance">eval_lp_performance() (dicee.KGE method)</a>
 
       <ul>
@@ -1757,6 +1767,8 @@
       <li><a href="autoapi/dicee/knowledge_graph/index.html#dicee.knowledge_graph.KG.exists">exists() (dicee.knowledge_graph.KG method)</a>
 </li>
       <li><a href="autoapi/dicee/analyse_experiments/index.html#dicee.analyse_experiments.Experiment">Experiment (class in dicee.analyse_experiments)</a>
+</li>
+      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback.experiment_dir">experiment_dir (dicee.callbacks.PeriodicEvalCallback attribute)</a>
 </li>
       <li><a href="autoapi/dicee/models/index.html#dicee.models.QMult.explicit">explicit (dicee.models.QMult attribute)</a>
 
@@ -3071,7 +3083,11 @@
 </li>
       </ul></li>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.KGESaveCallback.max_epochs">max_epochs (dicee.callbacks.KGESaveCallback attribute)</a>
+
+      <ul>
+        <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback.max_epochs">(dicee.callbacks.PeriodicEvalCallback attribute)</a>
 </li>
+      </ul></li>
       <li><a href="autoapi/dicee/index.html#dicee.BaseKGE.max_length_subword_tokens">max_length_subword_tokens (dicee.BaseKGE attribute)</a>
 
       <ul>
@@ -3265,6 +3281,12 @@
 
       <ul>
         <li><a href="autoapi/dicee/models/transformers/index.html#dicee.models.transformers.GPTConfig.n_embd">(dicee.models.transformers.GPTConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback.n_epochs_eval_model">n_epochs_eval_model (dicee.callbacks.PeriodicEvalCallback attribute)</a>
+
+      <ul>
+        <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.n_epochs_eval_model">(dicee.config.Namespace attribute)</a>
 </li>
       </ul></li>
       <li><a href="autoapi/dicee/models/transformers/index.html#dicee.models.transformers.CausalSelfAttention.n_head">n_head (dicee.models.transformers.CausalSelfAttention attribute)</a>
@@ -3473,10 +3495,10 @@
 </li>
       <li><a href="autoapi/dicee/scripts/index_serve/index.html#dicee.scripts.index_serve.NeuralSearcher">NeuralSearcher (class in dicee.scripts.index_serve)</a>
 </li>
-      <li><a href="autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.NodeTrainer">NodeTrainer (class in dicee.trainer.torch_trainer_ddp)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.NodeTrainer">NodeTrainer (class in dicee.trainer.torch_trainer_ddp)</a>
+</li>
       <li><a href="autoapi/dicee/index.html#dicee.AConEx.norm_fc1">norm_fc1 (dicee.AConEx attribute)</a>
 
       <ul>
@@ -3790,6 +3812,8 @@
 </li>
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.KGESaveCallback.on_fit_end">(dicee.callbacks.KGESaveCallback method)</a>
 </li>
+        <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback.on_fit_end">(dicee.callbacks.PeriodicEvalCallback method)</a>
+</li>
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback.on_fit_end">(dicee.callbacks.PrintCallback method)</a>
 </li>
       </ul></li>
@@ -3839,6 +3863,8 @@
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.Eval.on_train_epoch_end">(dicee.callbacks.Eval method)</a>
 </li>
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.KGESaveCallback.on_train_epoch_end">(dicee.callbacks.KGESaveCallback method)</a>
+</li>
+        <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback.on_train_epoch_end">(dicee.callbacks.PeriodicEvalCallback method)</a>
 </li>
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback.on_train_epoch_end">(dicee.callbacks.PrintCallback method)</a>
 </li>
@@ -3952,6 +3978,8 @@
 </li>
       </ul></li>
       <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.path_to_store_single_run">path_to_store_single_run (dicee.config.Namespace attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback">PeriodicEvalCallback (class in dicee.callbacks)</a>
 </li>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.Perturb">Perturb (class in dicee.callbacks)</a>
 </li>
@@ -4320,7 +4348,11 @@
 </li>
       </ul></li>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.Eval.reports">reports (dicee.callbacks.Eval attribute)</a>
+
+      <ul>
+        <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback.reports">(dicee.callbacks.PeriodicEvalCallback attribute)</a>
 </li>
+      </ul></li>
       <li><a href="autoapi/dicee/index.html#dicee.CKeci.requires_grad_for_interactions">requires_grad_for_interactions (dicee.CKeci attribute)</a>
 
       <ul>
@@ -4449,9 +4481,13 @@
       </ul></li>
       <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.save_embeddings_as_csv">save_embeddings_as_csv (dicee.config.Namespace attribute)</a>
 </li>
+      <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.save_every_n_epochs">save_every_n_epochs (dicee.config.Namespace attribute)</a>
+</li>
       <li><a href="autoapi/dicee/analyse_experiments/index.html#dicee.analyse_experiments.Experiment.save_experiment">save_experiment() (dicee.analyse_experiments.Experiment method)</a>
 </li>
       <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.save_model_at_every_epoch">save_model_at_every_epoch (dicee.config.Namespace attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback.save_model_every_n_epoch">save_model_every_n_epoch (dicee.callbacks.PeriodicEvalCallback attribute)</a>
 </li>
       <li><a href="autoapi/dicee/index.html#dicee.save_numpy_ndarray">save_numpy_ndarray() (in module dicee)</a>
 

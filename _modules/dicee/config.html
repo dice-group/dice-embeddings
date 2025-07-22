@@ -233,6 +233,18 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">auto_batch_finding</span><span class="o">=</span><span class="kc">False</span>
         <span class="s2">&quot;A flag for using auto batch finding&quot;</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">eval_every_n_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate model every n epochs. If 0, no evaluation is applied.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_every_n_epochs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save model every n epochs. If True, save model at every epoch.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">eval_at_epochs</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;List of epoch numbers at which to evaluate the model (e.g., 1 5 10).&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_epochs_eval_model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;val_test&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluating link prediction performance on data splits while performing periodic evaluation.&quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="Namespace.__iter__">
 <a class="viewcode-back" href="../../autoapi/dicee/config/index.html#dicee.config.Namespace.__iter__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>

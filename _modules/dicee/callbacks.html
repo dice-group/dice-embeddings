@@ -92,11 +92,14 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">dicee.models.base_model</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_checkpoint_model</span><span class="p">,</span> <span class="n">save_pickle</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractCallback</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
 
 
 <div class="viewcode-block" id="AccumulateEpochLossCallback">
@@ -682,6 +685,124 @@
                 <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--level is given as </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="PeriodicEvalCallback">
+<a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PeriodicEvalCallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Callback to periodically evaluate the model and optionally save checkpoints during training.</span>
+
+<span class="sd">    Evaluates at regular intervals (every N epochs) or at explicitly specified epochs.</span>
+<span class="sd">    Stores evaluation reports and model checkpoints.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">experiment_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_epochs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="n">eval_every_n_epoch</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">eval_at_epochs</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">save_model_every_n_epoch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">n_epochs_eval_model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;val_test&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the PeriodicEvalCallback.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        experiment_path : str</span>
+<span class="sd">            Directory where evaluation reports and model checkpoints will be saved.</span>
+<span class="sd">        max_epochs : int</span>
+<span class="sd">            Maximum number of training epochs.</span>
+<span class="sd">        eval_every_n_epoch : int, optional</span>
+<span class="sd">            Evaluate every N epochs. Ignored if eval_at_epochs is provided.</span>
+<span class="sd">        eval_at_epochs : list, optional</span>
+<span class="sd">            List of specific epochs at which to evaluate. If provided and non-empty, overrides eval_every_n_epoch.</span>
+<span class="sd">        save_model_every_n_epoch : bool, optional</span>
+<span class="sd">            Whether to save model checkpoints at each evaluation epoch.</span>
+<span class="sd">        n_epochs_eval_model : str, optional</span>
+<span class="sd">            Evaluation mode for N epochs. Default is &quot;val_test&quot;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">experiment_dir</span> <span class="o">=</span> <span class="n">experiment_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_epochs</span> <span class="o">=</span> <span class="n">max_epochs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_model_every_n_epoch</span> <span class="o">=</span> <span class="n">save_model_every_n_epoch</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reports</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_epochs_eval_model</span> <span class="o">=</span> <span class="n">n_epochs_eval_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_eval_model</span> <span class="o">=</span>  <span class="kc">None</span>
+
+        <span class="c1"># Determine evaluation epochs: combine explicit list and interval if provided</span>
+        <span class="n">eval_epochs_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">eval_at_epochs</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">eval_at_epochs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">eval_epochs_set</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">eval_at_epochs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">eval_every_n_epoch</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">eval_epochs_set</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">eval_every_n_epoch</span><span class="p">,</span> <span class="n">max_epochs</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">eval_every_n_epoch</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eval_epochs</span> <span class="o">=</span> <span class="n">eval_epochs_set</span>
+
+        <span class="c1"># Prepare directory for model checkpoints if needed</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_model_every_n_epoch</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_epochs_storage_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment_dir</span><span class="p">,</span> <span class="s1">&#39;models_n_epochs&#39;</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_epochs_storage_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PeriodicEvalCallback.on_fit_end">
+<a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback.on_fit_end">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Called at the end of training. Saves final evaluation report.&quot;&quot;&quot;</span>
+        <span class="n">report_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment_dir</span><span class="p">,</span> <span class="s1">&#39;eval_report_n_epochs.json&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">report_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reports</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PeriodicEvalCallback.on_train_epoch_end">
+<a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback.on_train_epoch_end">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called at the end of each training epoch. Performs evaluation and checkpointing if scheduled.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        trainer : object</span>
+<span class="sd">            The training controller.</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            The model being trained.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># Check if current epoch is scheduled for evaluation</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">eval_epochs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_eval_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Store the initial evaluation mode</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">default_eval_model</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_epochs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">split</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_eval_model</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">split</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_epochs_eval_model</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)):</span>
+                    <span class="c1"># Skip evaluation at the end</span>
+                    <span class="k">return</span>
+
+            <span class="c1"># Set evaluation mode to the one specified in the callback</span>
+            <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_epochs_eval_model</span>
+            
+            <span class="n">device</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">device</span>  <span class="c1"># Save current device</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>        <span class="c1"># Move model to CPU for evaluation</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>           <span class="c1"># Set model to evaluation mode</span>
+
+            <span class="c1"># Run evaluation using trainer&#39;s evaluator</span>
+            <span class="n">report</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span>
+                <span class="n">dataset</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
+                <span class="n">trained_model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+                <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">form_of_labelling</span><span class="p">,</span>
+                <span class="n">during_training</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+
+            <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>       <span class="c1"># Restore model device</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>          <span class="c1"># Set model back to training mode</span>
+
+            <span class="c1"># Restore the initial evaluation mode</span>
+            <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_eval_model</span>
+
+            <span class="c1"># Store evaluation report</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reports</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;epoch_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span><span class="si">}</span><span class="s1">_eval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">report</span>
+
+            <span class="c1"># Optionally save model checkpoint</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_model_every_n_epoch</span><span class="p">:</span>
+                <span class="n">save_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_epochs_storage_path</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;model_at_epoch_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span><span class="si">}</span><span class="s1">.pt&#39;</span><span class="p">)</span>
+                <span class="n">save_checkpoint_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">save_path</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

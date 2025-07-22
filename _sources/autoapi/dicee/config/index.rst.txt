@@ -389,6 +389,38 @@ Module Contents
       A flag for using auto batch finding
 
 
+   .. py:attribute:: eval_every_n_epochs
+      :type:  int
+      :value: 0
+
+
+      Evaluate model every n epochs. If 0, no evaluation is applied.
+
+
+   .. py:attribute:: save_every_n_epochs
+      :type:  bool
+      :value: False
+
+
+      Save model every n epochs. If True, save model at every epoch.
+
+
+   .. py:attribute:: eval_at_epochs
+      :type:  list
+      :value: None
+
+
+      List of epoch numbers at which to evaluate the model (e.g., 1 5 10).
+
+
+   .. py:attribute:: n_epochs_eval_model
+      :type:  str
+      :value: 'val_test'
+
+
+      Evaluating link prediction performance on data splits while performing periodic evaluation.
+
+
    .. py:method:: __iter__()
 
 

@@ -17,6 +17,7 @@ Classes
    dicee.callbacks.Eval
    dicee.callbacks.KronE
    dicee.callbacks.Perturb
+   dicee.callbacks.PeriodicEvalCallback
 
 
 Functions
@@ -530,6 +531,66 @@ Module Contents
    .. py:method:: on_train_batch_start(trainer, model, batch, batch_idx)
 
       Called when the train batch begins.
+
+
+
+.. py:class:: PeriodicEvalCallback(experiment_path: str, max_epochs: int, eval_every_n_epoch: int = 0, eval_at_epochs: list = None, save_model_every_n_epoch: bool = True, n_epochs_eval_model: str = 'val_test')
+
+   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
+
+
+   Callback to periodically evaluate the model and optionally save checkpoints during training.
+
+   Evaluates at regular intervals (every N epochs) or at explicitly specified epochs.
+   Stores evaluation reports and model checkpoints.
+
+
+   .. py:attribute:: experiment_dir
+
+
+   .. py:attribute:: max_epochs
+
+
+   .. py:attribute:: epoch_counter
+      :value: 0
+
+
+
+   .. py:attribute:: save_model_every_n_epoch
+      :value: True
+
+
+
+   .. py:attribute:: reports
+
+
+   .. py:attribute:: n_epochs_eval_model
+      :value: 'val_test'
+
+
+
+   .. py:attribute:: default_eval_model
+      :value: None
+
+
+
+   .. py:attribute:: eval_epochs
+
+
+   .. py:method:: on_fit_end(trainer, model)
+
+      Called at the end of training. Saves final evaluation report.
+
+
+
+   .. py:method:: on_train_epoch_end(trainer, model)
+
+      Called at the end of each training epoch. Performs evaluation and checkpointing if scheduled.
+
+      :param trainer: The training controller.
+      :type trainer: object
+      :param model: The model being trained.
+      :type model: torch.nn.Module
 
 
 
