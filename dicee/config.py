@@ -150,6 +150,9 @@ class Namespace(argparse.Namespace):
         self.eval_at_epochs: list = None
         """List of epoch numbers at which to evaluate the model (e.g., 1 5 10)."""
 
+        self.n_epochs_eval_model: str = "val_test"
+        """Evaluating link prediction performance on data splits while performing periodic evaluation."""
+
     def __iter__(self):
         # Iterate
         for k, v in self.__dict__.items():

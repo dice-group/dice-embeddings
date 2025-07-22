@@ -503,7 +503,7 @@ class PeriodicEvalCallback(AbstractCallback):
 
     def __init__(self, experiment_path: str, max_epochs: int,
                  eval_every_n_epoch: int = 0, eval_at_epochs: list = None,
-                 save_model_every_n_epoch: bool = True):
+                 save_model_every_n_epoch: bool = True, n_epochs_eval_model: str = "val_test"):
         """
         Initialize the PeriodicEvalCallback.
 
@@ -519,6 +519,8 @@ class PeriodicEvalCallback(AbstractCallback):
             List of specific epochs at which to evaluate. If provided and non-empty, overrides eval_every_n_epoch.
         save_model_every_n_epoch : bool, optional
             Whether to save model checkpoints at each evaluation epoch.
+        n_epochs_eval_model : str, optional
+            Evaluation mode for N epochs. Default is "val_test".
         """
         super().__init__()
         self.experiment_dir = experiment_path
@@ -526,19 +528,16 @@ class PeriodicEvalCallback(AbstractCallback):
         self.epoch_counter = 0
         self.save_model_every_n_epoch = save_model_every_n_epoch
         self.reports = defaultdict(dict)
+        self.n_epochs_eval_model = n_epochs_eval_model
+        self.default_eval_model =  None
 
-        # Determine evaluation epochs: use explicit list if provided, else use interval
+        # Determine evaluation epochs: combine explicit list and interval if provided
+        eval_epochs_set = set()
         if eval_at_epochs and len(eval_at_epochs) > 0:
-            self.eval_epochs = set(eval_at_epochs)
-        elif eval_every_n_epoch > 0:
-            self.eval_epochs = set(range(eval_every_n_epoch, max_epochs + 1, eval_every_n_epoch))
-        else:
-            self.eval_epochs = set()  # No evaluation
-
-        # Remove max_epochs from the set if present
-        # Dice trainer evaluates at the end of training, so we do not need to evaluate at max_epochs
-        if max_epochs in self.eval_epochs:
-            self.eval_epochs.remove(max_epochs)
+            eval_epochs_set.update(eval_at_epochs)
+        if eval_every_n_epoch > 0:
+            eval_epochs_set.update(range(eval_every_n_epoch, max_epochs + 1, eval_every_n_epoch))
+        self.eval_epochs = eval_epochs_set
 
         # Prepare directory for model checkpoints if needed
         if save_model_every_n_epoch:
@@ -565,6 +564,18 @@ class PeriodicEvalCallback(AbstractCallback):
         self.epoch_counter += 1
         # Check if current epoch is scheduled for evaluation
         if self.epoch_counter in self.eval_epochs:
+            if self.default_eval_model is None:
+                # Store the initial evaluation mode
+                self.default_eval_model = trainer.evaluator.args.eval_model
+
+            if self.epoch_counter == self.max_epochs:
+                if all(split in self.default_eval_model.split('_') for split in self.n_epochs_eval_model.split('_')):
+                    # Skip evaluation at the end
+                    return
+
+            # Set evaluation mode to the one specified in the callback
+            trainer.evaluator.args.eval_model = self.n_epochs_eval_model
+            
             device = model.device  # Save current device
             model.to('cpu')        # Move model to CPU for evaluation
             model.eval()           # Set model to evaluation mode
@@ -579,6 +590,9 @@ class PeriodicEvalCallback(AbstractCallback):
 
             model.to(device)       # Restore model device
             model.train()          # Set model back to training mode
+
+            # Restore the initial evaluation mode
+            trainer.evaluator.args.eval_model = self.default_eval_model
 
             # Store evaluation report
             self.reports[f'epoch_{self.epoch_counter}_eval'] = report

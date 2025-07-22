@@ -116,7 +116,7 @@ def get_callbacks(args):
                 raise NotImplementedError("PeriodicEvalCallback is not supported for PL trainer with more than 1 CUDA visible device.")
         callbacks.append(PeriodicEvalCallback(experiment_path=args.full_storage_path, max_epochs=args.num_epochs,
             eval_every_n_epoch=args.eval_every_n_epochs, eval_at_epochs=args.eval_at_epochs,
-            save_model_every_n_epoch=args.save_every_n_epochs
+            save_model_every_n_epoch=args.save_every_n_epochs, n_epochs_eval_model=args.n_epochs_eval_model
         ))
 
     if isinstance(args.callbacks, list):
