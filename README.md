@@ -196,23 +196,23 @@ Configure automatic evaluation by setting `eval_every_n_epoch` to run evaluation
 
 ``` bash
 # Evaluate every 50 epochs on validation and test sets, saving a model checkpoint at each evaluation
-dicee --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
       --eval_every_n_epoch 50 --save_every_n_epochs --n_epochs_eval_model val_test
 
 # Evaluate only at epochs 128 and 256 on the validation set, saving the model each time
-dicee --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
       --eval_at_epochs 128 256 --save_every_n_epochs --n_epochs_eval_model val
 
 # Evaluate every 100 epochs on the test set only; model checkpoints are not saved
-dicee --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
       --eval_every_n_epoch 100 --n_epochs_eval_model test
 
 # Evaluate only at epochs 50 and 150 on both validation and test sets; no checkpoint is saved
-dicee --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+dicee  --dataset_dir "KGs/UMLS" --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
       --eval_at_epochs 50 150 --n_epochs_eval_model val_test
 
 # Evaluate every 100 epochs and additionally at epochs 45 and 275 on validation; models are saved at each evaluation point
-dicee --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
       --eval_every_n_epoch 100 --eval_at_epochs 45 275 --save_every_n_epochs --n_epochs_eval_model val
 ```
 </details>

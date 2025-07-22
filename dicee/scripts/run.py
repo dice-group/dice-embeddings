@@ -136,7 +136,7 @@ def get_default_arguments(description=None):
         help="List of epoch numbers at which to evaluate the model (e.g., 1 5 10)."
     )
     parser.add_argument("--n_epochs_eval_model", type=str, default="val_test",
-                        choices=["None", "train", "train_val", "train_val_test", "test"],
+                        choices=["None", "train", "train_val", "train_val_test", "val_test", "val", "train_test","test"],
                         help='Evaluating link prediction performance on data splits while performing periodic evaluation.')
 
     if description is None:

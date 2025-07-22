@@ -540,7 +540,7 @@ class PeriodicEvalCallback(AbstractCallback):
         self.eval_epochs = eval_epochs_set
 
         # Prepare directory for model checkpoints if needed
-        if save_model_every_n_epoch:
+        if self.save_model_every_n_epoch:
             self.n_epochs_storage_path = os.path.join(self.experiment_dir, 'models_n_epochs')
             os.makedirs(self.n_epochs_storage_path, exist_ok=True)
 
