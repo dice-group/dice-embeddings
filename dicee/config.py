@@ -141,11 +141,23 @@ class Namespace(argparse.Namespace):
         self.auto_batch_finding=False
         "A flag for using auto batch finding"
 
+        self.lr_min: float = 0.01
+        "Minimum learning rate for Learning Rate Scheduler"
+
         self.adaptive_lr: bool = False
         "Enable adaptive learning rate scheduling"
 
         self.lr_scheduler : str = "cca"
         "Learning rate scheduler to use."
+
+        self.num_cycles: float = 10
+        "Number of cycles for Learning Rate Scheduler"
+
+        self.weighted_ensemble: bool = False
+        "Perform weighted ensemble of models."
+
+        self.n_snapshots: int = 5
+        "Number of snapshots to be used in Ensemble Learning."
 
     def __iter__(self):
         # Iterate

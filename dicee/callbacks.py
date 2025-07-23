@@ -516,7 +516,7 @@ class LRScheduler(AbstractCallback):
         eta_max: float = 0.1,
         eta_min: float = 0.01,
         weighted_ensemble: bool = True,
-        snapshot_dir: str = "snaps",
+        snapshot_dir: str = "snapshots",
         n_snapshots: int = 5,
     ):
         """
@@ -546,6 +546,9 @@ class LRScheduler(AbstractCallback):
         self.snapshot_dir = os.path.join(experiment_dir, snapshot_dir)
         self.n_snapshots = n_snapshots
         os.makedirs(self.snapshot_dir, exist_ok=True)
+
+        assert self.eta_max > self.eta_min, \
+            f"Max Learning Rate ({self.eta_max}) must be greater than Min Learning Rate ({self.eta_min})"
 
         # Calculate warmup epochs only for deferred schedulers
         if self.scheduler_name.startswith("deferred"):
@@ -691,7 +694,7 @@ class LRScheduler(AbstractCallback):
         else:
             # For non-deferred schedulers, use cycle-based snapshots
             return (step + 1) % self.cycle_length == 0
-    
+
     def on_fit_end(self, trainer, model):
         # Load all model snapshots from the snapshot directory
         self.ensembel_weights = None
@@ -740,4 +743,4 @@ class LRScheduler(AbstractCallback):
         # Write the dictionary to the JSON file
         with open(ensemble_eval_report_path, 'w', encoding='utf-8') as f:
             json.dump(self.ensemble_eval_report, f, indent=4, ensure_ascii=False)
-        print(f"Ensemble Evaluations: {ensemble_eval_report}")
+        print(f"Ensemble Evaluations: Evaluate {model.name} on Test Set with an ensemble of {len(self.model_snapshots)} models: \n{ensemble_eval_report}")

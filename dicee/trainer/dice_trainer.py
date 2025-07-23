@@ -98,9 +98,12 @@ def get_callbacks(args):
     elif args.adaptive_swa:
         callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
     elif args.adaptive_lr:
-        callbacks.append(LRScheduler(scheduler_name= args.lr_scheduler, total_epochs=args.num_epochs, experiment_dir= args.full_storage_path, eta_max=args.lr))
+        callbacks.append(LRScheduler(scheduler_name= args.lr_scheduler, total_epochs=args.num_epochs,
+                                      experiment_dir= args.full_storage_path, eta_max=args.lr, eta_min=args.lr_min,
+                                      n_cycles=args.num_cycles, weighted_ensemble=args.weighted_ensemble,
+                                      n_snapshots=args.n_snapshots))
     else:
-        """No SWA or ASWA applied"""
+        """No SWA or ASWA or Learning Rate Scheduler applied"""
 
     if isinstance(args.callbacks, list):
         return callbacks

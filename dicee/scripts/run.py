@@ -128,6 +128,13 @@ def get_default_arguments(description=None):
                         help="Find a batch size fitting in GPUs. Only available for TP trainer")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
+    
+    # Learning rate scheduling
+    parser.add_argument("--lr_min", type=float, default=0.01, help="Minimum learning rate for Learning Rate Scheduler")
+    parser.add_argument("--num_cycles", type=float, default=10, help="Number of cycles for Learning Rate Scheduler")
+    parser.add_argument("--weighted_ensemble", action="store_true", help="Perform weighted ensemble of models.")
+    parser.add_argument("--n_snapshots", type=int, default=5,
+                        help="Number of snapshots to be used in Ensemble Learning.")
     parser.add_argument("--adaptive_lr",
                         action="store_true",
                         help="Enable adaptive learning rate scheduling")
@@ -137,6 +144,7 @@ def get_default_arguments(description=None):
                         default="cca",
                         help="Learning rate scheduler to use. Supported: cca, mmcclr, deferred_cca, deferred_mmcclr")
     
+
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)
