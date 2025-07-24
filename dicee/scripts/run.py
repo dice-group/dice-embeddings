@@ -128,7 +128,7 @@ def get_default_arguments(description=None):
                         help="Find a batch size fitting in GPUs. Only available for TP trainer")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
-    parser.add_argument('--vocab_size', type=int, default=50000,
+    parser.add_argument('--vocab_size', type=int,
                         help='number of embeddings (i.e. vocabulary size)')
 
     if description is None:
