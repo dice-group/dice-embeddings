@@ -175,51 +175,105 @@ class TensorParallel(AbstractTrainer):
             #    expected_training_time=batch_rt * len(train_dataloader) * self.attributes.num_epochs
             # print(f"Exp.Training Runtime: {expected_training_time/60 :.3f} in mins\t|\tBatch Size:{batch_size}\t|\tBatch RT:{batch_rt:.3f}\t|\t # of batches:{len(train_dataloader)}\t|\t# of epochs:{self.attributes.num_epochs}")
 
-        # () Number of batches to reach a single epoch.
-        num_of_batches = len(train_dataloader)
-        # () Start training.
-        for epoch in (tqdm_bar := make_iterable_verbose(range(self.attributes.num_epochs),
-                                                        verbose=True, position=0, leave=True)):
-            # () Accumulate the batch losses.
-            epoch_loss = 0
-            stacked_triples = []
-            unique_heads = set()
-            unique_tails = set()
+        # --- Use stacking if vocab_size is set ---
+        if getattr(self.attributes, "vocab_size", None) is not None:
             threshold = int(0.9 * self.attributes.vocab_size)
-            # () Iterate over batches.
-            for i, z in enumerate(train_dataloader):
-                x_batch, _ = extract_input_outputs(z)
-                if isinstance(x_batch, tuple):
-                    x_batch =  x_batch[0]
-                else:
-                    x_batch = x_batch
-                stacked_triples.append(x_batch)
-                unique_heads.update(x_batch[:, 0].tolist())
-                unique_tails.update(x_batch[:, 2].tolist())
-                # () If the number of unique heads and tails is above a threshold, update the embedding
-                if len(unique_heads) >= threshold:
-                    stacked_triples = torch.cat(stacked_triples, dim=0)
-                    break
-                # if i>0:
-                #     ensemble_model = update_embedding_layer(ensemble_model)
-                # () Forward, Loss, Backward, and Update on a given batch of data points.
-                batch_loss = forward_backward_update_loss(stacked_triples,ensemble_model)
-                # () Accumulate the batch losses to compute the epoch loss.
-                epoch_loss += batch_loss
-                # if verbose=TRue, show info.
-                if hasattr(tqdm_bar, 'set_description_str'):
-                    tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
-                    if i > 0:
-                        tqdm_bar.set_postfix_str(
-                            f"batch={i} | {num_of_batches}, loss_step={batch_loss:.5f}, loss_epoch={epoch_loss / i:.5f}")
-                    else:
-                        tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
-            # Store the epoch loss
-            ensemble_model.loss_history.append(epoch_loss)
+            for epoch in (tqdm_bar := make_iterable_verbose(range(self.attributes.num_epochs),
+                                                            verbose=True, position=0, leave=True)):
+                epoch_loss = 0
+                processed_indices = set()
+                while True:
+                    stacked_triples_tensor, stacked_labels_tensor, batch_indices = self.stack_triples_until_threshold(
+                        train_dataloader, threshold)
+                    if stacked_triples_tensor is None:
+                        break
+                    # Mark these batches as processed
+                    processed_indices.update(batch_indices)
+                    # Create a new DataLoader for the stacked triples
+                    stacked_dataset = torch.utils.data.TensorDataset(stacked_triples_tensor, stacked_labels_tensor)
+                    stacked_loader = torch.utils.data.DataLoader(
+                        stacked_dataset,
+                        batch_size=train_dataloader.batch_size,
+                        shuffle=True,
+                        num_workers=self.attributes.num_core,
+                        collate_fn=train_dataloader.dataset.collate_fn,
+                        pin_memory=False,
+                        drop_last=False,
+                        timeout=0,
+                        worker_init_fn=None,
+                        persistent_workers=False 
+                    )
+                    for i, z in enumerate(stacked_loader):
+                        batch_loss = forward_backward_update_loss(z, ensemble_model)
+                        epoch_loss += batch_loss
+                        if hasattr(tqdm_bar, 'set_description_str'):
+                            tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
+                            tqdm_bar.set_postfix_str(
+                                f"stack_size={len(stacked_triples_tensor)}, loss_step={batch_loss:.5f}")
+                    # Remove processed batches from train_dataloader for next stacking
+                    if len(processed_indices) >= len(train_dataloader):
+                        break
+                ensemble_model.loss_history.append(epoch_loss)
+        else:
+            # () Number of batches to reach a single epoch.
+            num_of_batches = len(train_dataloader)
+            # () Start training.
+            for epoch in (tqdm_bar := make_iterable_verbose(range(self.attributes.num_epochs),
+                                                            verbose=True, position=0, leave=True)):
+                # () Accumulate the batch losses.
+                epoch_loss = 0
+                # () Iterate over batches.
+                for i, z in enumerate(train_dataloader):
+                    # if i>0:
+                    #     ensemble_model = update_embedding_layer(ensemble_model)
+                    # () Forward, Loss, Backward, and Update on a given batch of data points.
+                    batch_loss = forward_backward_update_loss(z,ensemble_model)
+                    # () Accumulate the batch losses to compute the epoch loss.
+                    epoch_loss += batch_loss
+                    # if verbose=TRue, show info.
+                    if hasattr(tqdm_bar, 'set_description_str'):
+                        tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
+                        if i > 0:
+                            tqdm_bar.set_postfix_str(
+                                f"batch={i} | {num_of_batches}, loss_step={batch_loss:.5f}, loss_epoch={epoch_loss / i:.5f}")
+                        else:
+                            tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
+                # Store the epoch loss
+                ensemble_model.loss_history.append(epoch_loss)
         # Run on_fit_end callbacks after the training is done.
         self.on_fit_end(self, ensemble_model)
         # TODO: Later, maybe we should write a callback to save the models in disk
         return ensemble_model
+    
+    def stack_triples_until_threshold(self, dataloader, threshold):
+            """
+            Stacks triples and labels from the dataloader until the number of unique heads and tails
+            reaches the threshold. Returns a list of (triples, labels) tensors and a set of processed batch indices.
+            """
+            stacked_triples = []
+            stacked_labels = []
+            unique_heads = set()
+            unique_tails = set()
+            processed_indices = set()
+            for i, z in enumerate(dataloader):
+                x_batch, y_batch = extract_input_outputs(z)
+                if isinstance(x_batch, tuple):
+                    x_data = x_batch[0]
+                else:
+                    x_data = x_batch
+                stacked_triples.append(x_data)
+                stacked_labels.append(y_batch)
+                unique_heads.update(x_data[:, 0].tolist())
+                unique_tails.update(x_data[:, 2].tolist())
+                processed_indices.add(i)
+                if len(unique_heads) >= threshold and len(unique_tails) >= threshold:
+                    break
+            if stacked_triples:
+                stacked_triples_tensor = torch.cat(stacked_triples, dim=0)
+                stacked_labels_tensor = torch.cat(stacked_labels, dim=0)
+                return stacked_triples_tensor, stacked_labels_tensor, processed_indices
+            else:
+                return None, None, processed_indices
     
     """
     
