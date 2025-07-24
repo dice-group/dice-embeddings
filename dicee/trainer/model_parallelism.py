@@ -182,12 +182,28 @@ class TensorParallel(AbstractTrainer):
                                                         verbose=True, position=0, leave=True)):
             # () Accumulate the batch losses.
             epoch_loss = 0
+            stacked_triples = []
+            unique_heads = set()
+            unique_tails = set()
+            threshold = int(0.9 * self.attributes.vocab_size)
             # () Iterate over batches.
             for i, z in enumerate(train_dataloader):
+                x_batch, _ = extract_input_outputs(z)
+                if isinstance(x_batch, tuple):
+                    x_batch =  x_batch[0]
+                else:
+                    x_batch = x_batch
+                stacked_triples.append(x_batch)
+                unique_heads.update(x_batch[:, 0].tolist())
+                unique_tails.update(x_batch[:, 2].tolist())
+                # () If the number of unique heads and tails is above a threshold, update the embedding
+                if len(unique_heads) >= threshold:
+                    stacked_triples = torch.cat(stacked_triples, dim=0)
+                    break
                 # if i>0:
                 #     ensemble_model = update_embedding_layer(ensemble_model)
                 # () Forward, Loss, Backward, and Update on a given batch of data points.
-                batch_loss = forward_backward_update_loss(z,ensemble_model)
+                batch_loss = forward_backward_update_loss(stacked_triples,ensemble_model)
                 # () Accumulate the batch losses to compute the epoch loss.
                 epoch_loss += batch_loss
                 # if verbose=TRue, show info.
