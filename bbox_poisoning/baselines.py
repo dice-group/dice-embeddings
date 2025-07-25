@@ -1,10 +1,10 @@
 import random
 from collections import defaultdict
 
-"""
-def poison_random(triples, k, corruption_type, entity_emb, relation_emb):
-    entity_list = list(entity_emb.keys())
-    relation_list = list(relation_emb.keys())
+
+def poison_random(triples, k, corruption_type):
+    entity_list = list(set([h for h, _, _ in triples] + [t for _, _, t in triples]))
+    relation_list = list(set([r for _, r, _ in triples]))
 
     after_edits = []
     before_edits = []
@@ -14,32 +14,32 @@ def poison_random(triples, k, corruption_type, entity_emb, relation_emb):
     for idx in indices_to_corrupt:
         h, r, t = triples[idx]
 
-        for _ in range(10):  # Try up to 10 times to get a valid corruption
-            if corruption_type == 'all':
-                corrupt_h = random.choice(entity_list)
-                corrupt_r = random.choice(relation_list)
-                corrupt_t = random.choice(entity_list)
-                corrupted = (corrupt_h, corrupt_r, corrupt_t)
-            if corruption_type == 'head':
-                corrupt_h = random.choice(entity_list)
-                corrupted = (corrupt_h, r, t)
-            if corruption_type == 'rel':
-                corrupt_r = random.choice(relation_list)
-                corrupted = (h, corrupt_r, t)
-            if corruption_type == 'tail':
-                corrupt_t = random.choice(entity_list)
-                corrupted = (h, r, corrupt_t)
-            if corruption_type == 'head-tail':
-                corrupt_h = random.choice(entity_list)
-                corrupt_t = random.choice(entity_list)
-                corrupted = (corrupt_h, r, corrupt_t)
+        if corruption_type == 'all':
+            corrupt_h = random.choice(entity_list)
+            corrupt_r = random.choice(relation_list)
+            corrupt_t = random.choice(entity_list)
+            corrupted = (corrupt_h, corrupt_r, corrupt_t)
+        if corruption_type == 'head':
+            corrupt_h = random.choice(entity_list)
+            corrupted = (corrupt_h, r, t)
+        if corruption_type == 'rel':
+            relation_list_without_r = [i for i in relation_list if i != r]
+            corrupt_r = random.choice(relation_list_without_r)
+            corrupted = (h, corrupt_r, t)
+        if corruption_type == 'tail':
+            corrupt_t = random.choice(entity_list)
+            corrupted = (h, r, corrupt_t)
+        if corruption_type == 'head-tail':
+            corrupt_h = random.choice(entity_list)
+            corrupt_t = random.choice(entity_list)
+            corrupted = (corrupt_h, r, corrupt_t)
 
-            if corrupted != (h, r, t) and corrupted not in triples:
-                after_edits.append(corrupted)
-                before_edits.append((h, r, t))
-                break  # Stop after successful corruption
+        if corrupted != (h, r, t) and corrupted not in triples:
+            after_edits.append(corrupted)
+            before_edits.append((h, r, t))
+            break  # Stop after successful corruption
 
-    return after_edits, before_edits
+    return after_edits#, before_edits
 
 """
 
@@ -55,11 +55,11 @@ def poison_random(triples, k):
         corrupt_t = random.choice(entities)
         corrupted = (corrupt_h, corrupt_r, corrupt_t)
 
-        if corrupted not in triples:
+        if corrupted not in triples and corrupt_h != corrupt_t:
             perturbs.append(corrupted)
 
     return perturbs
-
+"""
 def poison_centrality(triples, k, corruption_type, entity_emb, relation_emb):
     entity_list = list(entity_emb.keys())
     relation_list = list(relation_emb.keys())

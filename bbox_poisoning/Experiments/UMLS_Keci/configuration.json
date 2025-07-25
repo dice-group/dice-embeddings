@@ -9,13 +9,13 @@
    "separator": "\\s+",
    "model": "Keci",
    "optim": "Adopt",
-   "embedding_dim": 64,
+   "embedding_dim": 32,
    "num_epochs": 100,
    "batch_size": 1024,
    "lr": 0.1,
    "callbacks": {},
    "trainer": "PL",
-   "scoring_technique": "NegSample",
+   "scoring_technique": "KvsAll",
    "neg_ratio": 2,
    "weight_decay": 0.0,
    "input_dropout_rate": 0.0,
@@ -54,6 +54,6 @@
    "deterministic": true,
    "check_val_every_n_epoch": 1000000,
    "logger": false,
-   "apply_reciprical_or_noise": false,
-   "full_storage_path": "/home/adel/Documents/dice-embeddings/dice-embeddings/bbox_poisoning/Experiments/2025-07-22 12-32-37.420174"
+   "apply_reciprical_or_noise": true,
+   "full_storage_path": "/home/adel/Documents/dice-embeddings/dice-embeddings/bbox_poisoning/Experiments/2025-07-22 12-53-12.719297"
 }

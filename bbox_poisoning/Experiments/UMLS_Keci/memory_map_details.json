@@ -1,9 +1,9 @@
 {
     "shape": [
-        5216,
+        10432,
         3
     ],
     "dtype": "<i2",
     "num_entities": 135,
-    "num_relations": 46
+    "num_relations": 92
 }

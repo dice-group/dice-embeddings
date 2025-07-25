@@ -18,6 +18,11 @@ from typing import List, Tuple, Dict, Iterable
 import torch, random, heapq, statistics
 from itertools import product, islice
 from typing import List, Tuple, Dict, Iterable
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+from scipy.stats import pearsonr
+import matplotlib.pyplot as plt
+
+from baselines import poison_random
 
 
 def set_seeds(seed):
@@ -28,77 +33,207 @@ def set_seeds(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
+"""
 def load_embeddings(entity_csv, relation_csv):
     ent_df = pd.read_csv(entity_csv, index_col=0)
     rel_df = pd.read_csv(relation_csv, index_col=0)
     entity_emb = {k.strip(): torch.tensor(v.values, dtype=torch.float32) for k, v in ent_df.iterrows()}
     relation_emb = {k.strip(): torch.tensor(v.values, dtype=torch.float32) for k, v in rel_df.iterrows()}
-    print("########## Embeddings dim: ", ent_df.iloc[0].shape)
+    return entity_emb, relation_emb
+"""
+
+def load_embeddings(entity_csv, relation_csv):
+    ent_df = pd.read_csv(entity_csv, index_col=0)
+    rel_df = pd.read_csv(relation_csv, index_col=0)
+
+    rel_df = rel_df[~rel_df.index.str.contains('_inverse')]
+    print("################################## len rel_df : ", len(rel_df))
+
+    entity_emb = {k.strip(): torch.tensor(v.values, dtype=torch.float32) for k, v in ent_df.iterrows()}
+    relation_emb = {k.strip(): torch.tensor(v.values, dtype=torch.float32) for k, v in rel_df.iterrows()}
+
     return entity_emb, relation_emb
 
 def load_triples(path):
     with open(path) as f:
         return [tuple(line.strip().split()[:3]) for line in f]
 
+def get_local_grad_norm(model, h_idx, r_idx, t_idx):
+    entity_grad = model.entity_embeddings.weight.grad
+    relation_grad = model.relation_embeddings.weight.grad
+
+    norm_parts = []
+    #if entity_grad is not None:
+    #    norm_parts.append(entity_grad[h_idx])
+    #    norm_parts.append(entity_grad[t_idx])
+    if relation_grad is not None:
+        norm_parts.append(relation_grad[r_idx])
+
+    if norm_parts:
+        return torch.sqrt(torch.stack(norm_parts).sum()).item()
+    return 0.0
+
+def compute_embedding_change(model, h_idx, r_idx, t_idx):
+    entity_grad = model.entity_embeddings.weight
+    relation_grad = model.relation_embeddings.weight
+
+    norm_parts = []
+    if entity_grad is not None:
+        norm_parts.append(entity_grad[h_idx])
+        norm_parts.append(entity_grad[t_idx])
+    if relation_grad is not None:
+        norm_parts.append(relation_grad[r_idx])
+
+    if norm_parts:
+        return torch.sqrt(torch.stack(norm_parts).sum()).item()
+    return 0.0
 
 def select_harmful_triples(
-    proxy_model,
+    #proxy_model,
     triples,
     entity_emb,
     relation_emb,
     loss_fn,
     num_candidate,
     val_triples,
-    device='cuda'
-):
-    proxy_model.eval()
+    oracle,
+    top_k,
+    corruption_type,
+    device='cuda'):
+
+    #proxy_model.eval()
     harmful_triples = []
+
+    for param in oracle.model.parameters():
+        param.requires_grad = True
+
+    #random_corruption = poison_random(triples, num_candidate, "rel")
 
     entity_list = list(set([h for h, _, _ in triples] + [t for _, _, t in triples]))
     relation_list = list(set([r for _, r, _ in triples]))
 
-    all_combinations = list(product(entity_list, relation_list, entity_list))
-    print("Number of possibilities: ", len(all_combinations))
+    for triples in triples:
+        h, r, t = triples
 
-    random.shuffle(all_combinations)
+        if corruption_type == 'all':
+            corrupt_h = random.choice(entity_list)
+            corrupt_r = random.choice(relation_list)
+            corrupt_t = random.choice(entity_list)
+            corrupted = (corrupt_h, corrupt_r, corrupt_t)
+        if corruption_type == 'head':
+            corrupt_h = random.choice(entity_list)
+            corrupted = (corrupt_h, r, t)
+        if corruption_type == 'rel':
+            relation_list_without_r = [i for i in relation_list if i != r]
+            corrupt_r = random.choice(relation_list_without_r)
+            corrupted = (h, corrupt_r, t)
+        if corruption_type == 'tail':
+            corrupt_t = random.choice(entity_list)
+            corrupted = (h, r, corrupt_t)
+        if corruption_type == 'head-tail':
+            corrupt_h = random.choice(entity_list)
+            corrupt_t = random.choice(entity_list)
+            corrupted = (corrupt_h, r, corrupt_t)
 
-    cnt = 0
-    for corrupted in all_combinations[:num_candidate]:
-        cnt += 1
-        if cnt % 1000 == 0:
-            print(cnt)
-        if corrupted not in triples:
+        if corrupted != (h, r, t) and corrupted not in triples:
 
-            h_str, r_str, t_str = corrupted
+            idxs = torch.LongTensor([
+                oracle.entity_to_idx[h],
+                oracle.relation_to_idx[r],
+                oracle.entity_to_idx[t]
+            ]).unsqueeze(0)
 
-            h_emb = entity_emb[h_str].to(device).detach().clone().requires_grad_()
-            r_emb = relation_emb[r_str].to(device).detach().clone().requires_grad_()
-            t_emb = entity_emb[t_str].to(device).detach().clone().requires_grad_()
+            old_local_grad_norm = get_local_grad_norm(oracle.model, oracle.entity_to_idx[h],
+                                                  oracle.relation_to_idx[r],
+                                                  oracle.entity_to_idx[t])
 
-            x = torch.cat([h_emb, r_emb, t_emb], dim=-1).unsqueeze(0)
-            label = torch.tensor([[1.0]], device=device)
+            old_embedding = compute_embedding_change(oracle.model, oracle.entity_to_idx[h],
+                                                     oracle.relation_to_idx[r],
+                                                     oracle.entity_to_idx[t])
 
-
-            proxy_model.zero_grad()
-            pred = proxy_model(x)
-            loss = loss_fn(pred, label)
+            oracle.model.train()
+            oracle.model.zero_grad()
+            pred = oracle.model.forward_triples(idxs)
+            pred_prob = torch.sigmoid(pred)
+            label = torch.tensor([1.0], dtype=torch.float)
+            loss = oracle.model.loss(pred_prob, label, current_epoch=101)
             loss.backward()
 
-            grads = []
-            for param in proxy_model.parameters():
-                if param.grad is not None:
-                    grad = param.grad.detach()
-                    grads.append(grad.pow(2).sum())
 
+            new_local_grad_norm = get_local_grad_norm(oracle.model, oracle.entity_to_idx[h],
+                                                    oracle.relation_to_idx[r],
+                                                    oracle.entity_to_idx[t])
 
-            #total_param_norm = torch.sqrt(sum(grads))
-            total_param_norm = torch.sqrt(torch.stack(grads).sum())
+            change = abs(old_local_grad_norm - new_local_grad_norm)
+            print("gradient: ", corrupted, change)
 
-            harmful_triples.append((corrupted, total_param_norm.item()))
+            new_embedding = compute_embedding_change(oracle.model, oracle.entity_to_idx[h],
+                                                  oracle.relation_to_idx[r],
+                                                  oracle.entity_to_idx[t])
+            #embedding_change = abs(old_embedding - new_embedding)
+            #print("embedding_change: ", corrupted, embedding_change)
+            harmful_triples.append((corrupted, change))
 
-    harmful_triples.sort(key=lambda x: x[1], reverse=True)
+    harmful_triples.sort(key=lambda x: x[1], reverse=True) #True
 
-    return harmful_triples
+    return harmful_triples[:top_k]
+
+#----------------------------------------------------------------------------------------------------------------------
+def get_oracle_score(triple, oracle):
+    h, r, t = triple
+    idxs = torch.LongTensor([
+        oracle.entity_to_idx[h],
+        oracle.relation_to_idx[r],
+        oracle.entity_to_idx[t]
+    ]).unsqueeze(0)
+    with torch.no_grad():
+        logit = oracle.model.forward_triples(idxs)
+        return torch.sigmoid(logit).item()
+
+def evaluate_proxy_model_against_oracle(
+    proxy_model,
+    oracle_model,
+    val_triples,
+    entity_emb,
+    relation_emb,
+    device='cpu'
+):
+    proxy_model.eval()
+    x_batch = []
+    oracle_scores = []
+
+    for h, r, t in val_triples:
+        try:
+            h_emb = entity_emb[h.strip()].to(device)
+            r_emb = relation_emb[r.strip()].to(device)
+            t_emb = entity_emb[t.strip()].to(device)
+        except KeyError as e:
+            print(f"Skipping triple due to missing key: {e}")
+            continue
+
+        x = torch.cat([h_emb, r_emb, t_emb], dim=-1)
+        x_batch.append(x)
+
+        oracle_score = get_oracle_score((h, r, t), oracle_model)
+        oracle_scores.append(float(oracle_score))
+
+    if not x_batch:
+        raise ValueError("No valid triples to evaluate.")
+
+    x_batch = torch.stack(x_batch).to(device)
+
+    with torch.no_grad():
+        proxy_scores = proxy_model(x_batch).squeeze().cpu().numpy()
+
+    mse = mean_squared_error(oracle_scores, proxy_scores)
+    mae = mean_absolute_error(oracle_scores, proxy_scores)
+    corr, _ = pearsonr(oracle_scores, proxy_scores)
+
+    return {
+        'mse': mse,
+        'mae': mae,
+        'pearson': corr
+    }
 
 #----------------------------------------------------------------------------------------------------------------------
 def select_easy_negative_triples(
@@ -221,17 +356,25 @@ def select_harmful_triples(
 
 
 def triples_with_high_gradient(
-    proxy_model,
+    model,
     triples,
     entity_emb,
     relation_emb,
     loss_fn,
-    device="cuda"
+    device="cpu"
 ):
-    proxy_model.eval()
-    gradient_ranked = []
 
+    ranked = []
+
+    cnt = 1
     for triple in triples:
+        cnt += 1
+        #print("########## cnt: ", cnt)
+
+        # proxy
+        """
+        model.model.eval()
+        
         h_str, r_str, t_str = triple
 
         h_emb = entity_emb[h_str].to(device).detach().clone().requires_grad_()
@@ -241,23 +384,29 @@ def triples_with_high_gradient(
         x = torch.cat([h_emb, r_emb, t_emb], dim=-1).unsqueeze(0)
         label = torch.tensor([[1.0]], device=device)  # clean triple
 
-        proxy_model.zero_grad()
-        pred = proxy_model(x)
+        model.zero_grad()
+        pred = model(x)
         loss = loss_fn(pred, label)
         loss.backward()
+        """
 
-        grads = []
-        for param in proxy_model.parameters():
-            if param.grad is not None:
-                grad = param.grad.detach()
-                grads.append(grad.pow(2).sum())
-        total_param_norm = torch.sqrt(sum(grads))
-        gradient_ranked.append((triple, total_param_norm.item()))
+        # oracle
+        h, r, t = triple
+        idxs = torch.LongTensor([
+            model.entity_to_idx[h],
+            model.relation_to_idx[r],
+            model.entity_to_idx[t]
+        ]).unsqueeze(0)
 
-    gradient_ranked.sort(key=lambda x: x[1], reverse=True)
+        model.model.eval()
 
-    return gradient_ranked
+        pred = model.model.forward_triples(idxs)
+        pred_prob = torch.sigmoid(pred)
 
+        ranked.append((triple, pred_prob.item()))
+
+    ranked.sort(key=lambda x: x[1], reverse=True)
+    return ranked
 
 def save_triples(triple_list, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
