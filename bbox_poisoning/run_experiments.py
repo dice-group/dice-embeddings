@@ -11,11 +11,11 @@ from baselines import poison_random, poison_centrality
 import shutil
 import csv
 
-set_seeds(42)
+set_seeds(random.randint(1, 1000000))
 
 DB = "UMLS"
 MODEL = "Keci" #"DistMult" #"Keci" #"ComplEx" #"DistMult" #"Pykeen_BoxE" #  #  #"Keci"
-ORACLE_PATH = "./Experiments/UMLS_Pykeen_RotatE"
+ORACLE_PATH = "./Experiments/UMLS_DeCaL_B1"
 TRIPLES_PATH = "UMLS/clean/train.txt"
 VAL_TRIPLES_PATH = "UMLS/clean/train.txt"
 
@@ -33,7 +33,6 @@ oracle = KGE(path=ORACLE_PATH)
 
 hidden_dims = [512, 256, 128, 64]
 
-corruption = "all" #"head-tail" #"head-tail" #"all" #"head-tail" #"all"
 active_learning_logs = "results/results_log.csv"
 
 triples_count = len(triples)
@@ -44,20 +43,22 @@ perturbation_ratios = [int(triples_count * p) for p in percentages]
 initial_k = int(0.05 * triples_count)
 query_k = int(0.002 * triples_count)
 
-perturbation_ratios = [20, 50, 100, 200, 300, 400, 500, 600, 800]
+perturbation_ratios = [20, 40, 100, 200, 300, 400, 600]
 
 initial_k = 500
 query_k = 15
 dropout = 0.0
 
-min_delta = 0.1 #0.000009135378513207402 #0.0000027751361271411227
+min_delta = 0.000009135378513207402 #0.0000027751361271411227
 train_proxy_lr = 0.0001469901537073097
+
+corruption_type = "rel"
 
 print("perturbation_ratios: ", perturbation_ratios)
 print("initial_k: ", initial_k)
 print("query_k: ", query_k)
 
-"""
+
 trained_proxy, active_learning_log = active_learning_loop(
     all_triples=triples,
     ee=entity_emb,
@@ -73,8 +74,7 @@ trained_proxy, active_learning_log = active_learning_loop(
     dropout=dropout
 )
 
-
-with open(f"results/active_learning_{DB}_{MODEL}_corruption_{corruption}.txt", "a") as f:
+with open(f"results/active_learning_{DB}_{MODEL}_corruption_{corruption_type}.txt", "a") as f:
     for item in active_learning_log:
         f.write(str(item) + "\n")
     f.write(str(item) + "\n-----------------------\n")
@@ -94,7 +94,7 @@ eval_res = evaluate_proxy_model_against_oracle(
 )
 print(eval_res)
 ###############################################################################################
-"""
+
 
 test_path = f"{DB}/clean/test.txt"
 valid_path = f"{DB}/clean/valid.txt"
@@ -107,8 +107,6 @@ res_adverserial_defend = []
 
 loss_fn = torch.nn.MSELoss()  # #torch.nn.BCELoss()
 
-
-
 """
 print("Selecting triples with high gradient...")
 high_gradient_triples_with_values = triples_with_high_gradient(
@@ -117,27 +115,30 @@ high_gradient_triples_with_values = triples_with_high_gradient(
     entity_emb=entity_emb,
     relation_emb=relation_emb,
     loss_fn=loss_fn,
+    oracle=oracle,
     device='cpu',
 )
 print("Selecting triples with high gradient DONE!")
 """
 
-corruption_type = "rel"
 
 for top_k in perturbation_ratios:
     to_remove = set(random.sample(range(len(triples)), top_k))
     triples_after_random_removal = [item for i, item in enumerate(triples) if i not in to_remove]
     # random poisoning
     random_corruption = poison_random(triples, top_k, corruption_type)
-    triples_after_random_poisoning =  triples + random_corruption #triples_after_random_removal + random_corruption
 
+    print("############RANDOM###############")
+    print(random_corruption)
+
+    triples_after_random_poisoning =  triples_after_random_removal + random_corruption #triples_after_random_removal + random_corruption
     triples_after_random_poisoning_shuffled = random.sample(triples_after_random_poisoning, len(triples_after_random_poisoning))
-    save_triples(triples_after_random_poisoning_shuffled, f"{DB}/random/{top_k}/{corruption}/train.txt")
-    shutil.copy2(test_path, f"{DB}/random/{top_k}/{corruption}/test.txt")
-    shutil.copy2(valid_path, f"{DB}/random/{top_k}/{corruption}/valid.txt")
+    save_triples(triples_after_random_poisoning_shuffled, f"{DB}/random/{top_k}/{corruption_type}/train.txt")
+    shutil.copy2(test_path, f"{DB}/random/{top_k}/{corruption_type}/test.txt")
+    shutil.copy2(valid_path, f"{DB}/random/{top_k}/{corruption_type}/valid.txt")
 
     result_random_poisoned = run_dicee_eval(
-        dataset_folder=f"{DB}/random/{top_k}/{corruption}/",
+        dataset_folder=f"{DB}/random/{top_k}/{corruption_type}/",
         model=MODEL,
         num_epochs="100",
         batch_size="1024",
@@ -149,21 +150,23 @@ for top_k in perturbation_ratios:
     #---------------------------------
     # active poisoning
 
-    harmful_triples = select_harmful_triples(
-        # proxy_model=trained_proxy,
+    harmful_triples1 = select_harmful_triples(
+        proxy_model=trained_proxy,
         triples=triples,
         entity_emb=entity_emb,
         relation_emb=relation_emb,
         loss_fn=loss_fn,
-        num_candidate=80000,
-        val_triples=val_triples,
         oracle=oracle,
         top_k=top_k,
         corruption_type=corruption_type,
-        device='cpu',
+        attack_type="black-box",
+        #attack_type="white-box",
     )
 
-    harmful_corrupted_triples = [item[0] for item in harmful_triples]
+    harmful_corrupted_triples1 = [item[0] for item in harmful_triples1]
+
+    harmful_corrupted_triples = harmful_corrupted_triples1
+
     gradient_based_corruptions = harmful_corrupted_triples
     #print(gradient_based_corruptions)
     #high_gradient_triples = [item[0] for item in high_gradient_triples_with_values]
@@ -185,7 +188,9 @@ for top_k in perturbation_ratios:
     print("group size: ", top_k, len(best_group))
     harmful_corrupted_triples = best_group
     """
-    triples_after_edits =  triples + harmful_corrupted_triples[:top_k] # triples_after_random_removal + gradient_based_corruptions
+    print("############Active###############")
+    #print( harmful_corrupted_triples)
+    triples_after_edits =  triples_after_random_removal + harmful_corrupted_triples # triples_after_random_removal + gradient_based_corruptions
     #triples_after_edits = after_removing_high_gradient_triples #+ gradient_based_corruptions
     """
     easy_negatives_with_values = select_easy_negative_triples(
@@ -204,12 +209,12 @@ for top_k in perturbation_ratios:
     triples_after_edits = triples_after_random_removal + easy_negatives
     """
     triples_after_edits_shuffled = random.sample(triples_after_edits, len(triples_after_edits))
-    save_triples(triples_after_edits_shuffled, f"{DB}/active_poisoning/{top_k}/{corruption}/train.txt")
+    save_triples(triples_after_edits_shuffled, f"{DB}/active_poisoning/{top_k}/{corruption_type}/train.txt")
 
-    shutil.copy2(test_path, f"{DB}/active_poisoning/{top_k}/{corruption}/test.txt")
-    shutil.copy2(valid_path, f"{DB}/active_poisoning/{top_k}/{corruption}/valid.txt")
+    shutil.copy2(test_path, f"{DB}/active_poisoning/{top_k}/{corruption_type}/test.txt")
+    shutil.copy2(valid_path, f"{DB}/active_poisoning/{top_k}/{corruption_type}/valid.txt")
     result_active_poisoning = run_dicee_eval(
-        dataset_folder=f"{DB}/active_poisoning/{top_k}/{corruption}/",
+        dataset_folder=f"{DB}/active_poisoning/{top_k}/{corruption_type}/",
         model=MODEL,
         num_epochs="100",
         batch_size="1024",
