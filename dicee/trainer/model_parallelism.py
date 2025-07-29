@@ -246,34 +246,49 @@ class TensorParallel(AbstractTrainer):
         return ensemble_model
     
     def stack_triples_until_threshold(self, dataloader, threshold):
-            """
-            Stacks triples and labels from the dataloader until the number of unique heads and tails
-            reaches the threshold. Returns a list of (triples, labels) tensors and a set of processed batch indices.
-            """
-            stacked_triples = []
-            stacked_labels = []
-            unique_heads = set()
-            unique_tails = set()
-            processed_indices = set()
-            for i, z in enumerate(dataloader):
-                x_batch, y_batch = extract_input_outputs(z)
-                if isinstance(x_batch, tuple):
-                    x_data = x_batch[0]
-                else:
-                    x_data = x_batch
-                stacked_triples.append(x_data)
-                stacked_labels.append(y_batch)
-                unique_heads.update(x_data[:, 0].tolist())
-                unique_tails.update(x_data[:, 2].tolist())
-                processed_indices.add(i)
-                if len(unique_heads) >= threshold and len(unique_tails) >= threshold:
-                    break
-            if stacked_triples:
-                stacked_triples_tensor = torch.cat(stacked_triples, dim=0)
-                stacked_labels_tensor = torch.cat(stacked_labels, dim=0)
-                return stacked_triples_tensor, stacked_labels_tensor, processed_indices
+        """
+        Stacks triples and labels from the dataloader until the total number of unique
+        head and tail entities reaches the threshold. Returns stacked tensors and processed batch indices.
+        """
+        stacked_triples = []
+        stacked_labels = []
+        unique_entities = set()
+        processed_indices = set()
+
+        for i, z in enumerate(dataloader):
+            x_batch, y_batch = extract_input_outputs(z)
+            # Unpack triples tensor
+            if isinstance(x_batch, tuple):
+                x_data = x_batch[0]
             else:
-                return None, None, processed_indices
+                x_data = x_batch
+
+            # Iterate through each triple in the batch
+            for j in range(x_data.size(0)):
+                h, _, t = x_data[j].tolist()
+                # Determine if adding this triple would exceed the threshold
+                new_ids = {h, t} - unique_entities
+                if len(unique_entities) + len(new_ids) > threshold:
+                    # Stop adding more triples
+                    break
+                # Add head and tail to the unique set
+                unique_entities.update(new_ids)
+                # Collect the triple and its label
+                stacked_triples.append(x_data[j].unsqueeze(0))
+                stacked_labels.append(y_batch[j].unsqueeze(0))
+
+            processed_indices.add(i)
+            # Break if threshold reached
+            if len(unique_entities) >= threshold:
+                break
+
+        if stacked_triples:
+            stacked_triples_tensor = torch.cat(stacked_triples, dim=0)
+            stacked_labels_tensor = torch.cat(stacked_labels, dim=0)
+            return stacked_triples_tensor, stacked_labels_tensor, processed_indices
+        else:
+            return None, None, processed_indices
+
     
     """
     
