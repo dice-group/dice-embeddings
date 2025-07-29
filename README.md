@@ -44,7 +44,12 @@ Deploy a pre-trained embedding model without writing a single line of code.
 ### Installation from Source
 ``` bash
 git clone https://github.com/dice-group/dice-embeddings.git
-conda create -n dice python=3.10.13 --no-default-packages && conda activate dice && pip3 install -e .
+
+conda create -n dice python=3.10.13 --no-default-packages && conda activate dice
+
+cd dice-embeddings
+
+pip3 install -e .
 # or
 pip3 install -e .["dev"]
 ```
