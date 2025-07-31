@@ -94,6 +94,9 @@ def get_callbacks(args):
         AccumulateEpochLossCallback(path=args.full_storage_path)
     ]
     if args.swa:
+        if args.swa_start_epoch is None:
+            args.swa_start_epoch = 1
+        assert args.swa_start_epoch > 0, "SWA Start Epoch must be greater than 0"
         callbacks.append(pl.pytorch.callbacks.StochasticWeightAveraging(swa_lrs=args.lr, swa_epoch_start=args.swa_start_epoch))
     elif args.adaptive_swa:
         callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))

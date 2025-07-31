@@ -156,7 +156,7 @@ class Namespace(argparse.Namespace):
         self.adaptive_lr = dict()
         """Adaptive learning rate parameters, e.g., {"lr_decay": 0.1}"""
 
-        self.swa_start_epoch: int = 1
+        self.swa_start_epoch: int = None
         """Epoch at which to start applying stochastic weight averaging."""
 
 
