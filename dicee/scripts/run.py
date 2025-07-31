@@ -136,6 +136,9 @@ def get_default_arguments(description=None):
                              '"weighted_ensemble": true, "n_snapshots": 5}. '
                              'Available schedulers: cca, mmcclr, deferred_cca, deferred_mmcclr')
     
+    parser.add_argument("--swa_start_epoch", type=int, default=1,
+                        help='Epoch at which to start applying stochastic weight averaging.')
+    
 
     parser.add_argument('--eval_every_n_epochs', type=int, default=0,
                         help='Evaluate model every n epochs. If 0, no evaluation is applied.')
