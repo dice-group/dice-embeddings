@@ -1,4 +1,6 @@
 import torch
+
+from dicee.dataset_classes import TriplesOnlyDataset
 from ..abstracts import AbstractTrainer
 from ..static_funcs_training import make_iterable_verbose
 from ..models.ensemble import EnsembleKGE
@@ -150,7 +152,7 @@ def _ensure_entity_mapping_history(ensemble_model):
     if not hasattr(ensemble_model, "entity_to_model_history"):
         # keeps a list of dicts: {epoch, batch_idx, mapping}
         ensemble_model.entity_to_model_history = []
-
+        
 class TensorParallel(AbstractTrainer):
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
@@ -206,7 +208,7 @@ class TensorParallel(AbstractTrainer):
                     # Mark these batches as processed
                     processed_indices.update(batch_indices)
                     # Create a new DataLoader for the stacked triples
-                    stacked_dataset = torch.utils.data.TensorDataset(stacked_triples_tensor, stacked_labels_tensor)
+                    stacked_dataset = TriplesOnlyDataset(stacked_triples_tensor)
                     stacked_loader = torch.utils.data.DataLoader(
                         stacked_dataset,
                         batch_size=train_dataloader.batch_size,
