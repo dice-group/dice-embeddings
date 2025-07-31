@@ -430,7 +430,7 @@ Module Contents
 
    .. py:attribute:: swa_start_epoch
       :type:  int
-      :value: 1
+      :value: None
 
 
       Epoch at which to start applying stochastic weight averaging.
