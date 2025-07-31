@@ -98,10 +98,14 @@ def get_callbacks(args):
     elif args.adaptive_swa:
         callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
     elif args.adaptive_lr:
-        callbacks.append(LRScheduler(scheduler_name= args.lr_scheduler, total_epochs=args.num_epochs,
-                                      experiment_dir= args.full_storage_path, eta_max=args.lr, eta_min=args.lr_min,
-                                      n_cycles=args.num_cycles, weighted_ensemble=args.weighted_ensemble,
-                                      n_snapshots=args.n_snapshots))
+        # Pass the adaptive_lr configuration directly to LRScheduler
+        # The callback will validate and set defaults for any missing parameters
+        callbacks.append(LRScheduler(
+            adaptive_lr_config=args.adaptive_lr,
+            total_epochs=args.num_epochs,
+            experiment_dir=args.full_storage_path,
+            eta_max=args.lr
+        ))
     else:
         """No SWA or ASWA or Learning Rate Scheduler applied"""
 

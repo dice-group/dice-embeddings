@@ -129,20 +129,12 @@ def get_default_arguments(description=None):
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
     
-    # Learning rate scheduling
-    parser.add_argument("--lr_min", type=float, default=0.01, help="Minimum learning rate for Learning Rate Scheduler")
-    parser.add_argument("--num_cycles", type=float, default=10, help="Number of cycles for Learning Rate Scheduler")
-    parser.add_argument("--weighted_ensemble", action="store_true", help="Perform weighted ensemble of models.")
-    parser.add_argument("--n_snapshots", type=int, default=5,
-                        help="Number of snapshots to be used in Ensemble Learning.")
-    parser.add_argument("--adaptive_lr",
-                        action="store_true",
-                        help="Enable adaptive learning rate scheduling")
-    parser.add_argument("--lr_scheduler",
-                        type=str,
-                        choices=["cca", "mmcclr", "deferred_cca", "deferred_mmcclr"],
-                        default="cca",
-                        help="Learning rate scheduler to use. Supported: cca, mmcclr, deferred_cca, deferred_mmcclr")
+    # Learning rate scheduling with configuration
+    parser.add_argument("--adaptive_lr", type=json.loads, default={},
+                        help='Enable adaptive learning rate scheduling with configuration. '
+                             'Example: {"scheduler_name": "cca", "lr_min": 0.01, "num_cycles": 10, '
+                             '"weighted_ensemble": true, "n_snapshots": 5}. '
+                             'Available schedulers: cca, mmcclr, deferred_cca, deferred_mmcclr')
     
 
     if description is None:

@@ -508,43 +508,30 @@ class LRScheduler(AbstractCallback):
     """
     def __init__(
         self,
-        scheduler_name: str,
+        adaptive_lr_config: dict,
         total_epochs: int,
         experiment_dir: str,
-        n_cycles: int = 10,
-        warmup_epochs: int = None,
         eta_max: float = 0.1,
-        eta_min: float = 0.01,
-        weighted_ensemble: bool = True,
         snapshot_dir: str = "snapshots",
-        n_snapshots: int = 5,
     ):
         """
         Initialize the LR scheduler callback.
 
         Args:
-            scheduler_name (str): Name of the scheduler. Must be one of:
-                "cca", "mmcclr", "deferred_cca", or "deferred_mmcclr".
+            adaptive_lr_config (dict): Configuration dictionary containing LR scheduling parameters.
+                Can include: scheduler_name, lr_min, num_cycles, weighted_ensemble, n_snapshots
             total_epochs (int): Total number of training epochs (args.num_epochs)
             experiment_dir (str): Directory for the experiment, used as base for snapshots.
-            n_cycles (int, optional): Number of learning rate cycles. Default is 5.
-            warmup_epochs (int, optional): Number of warmup epochs (only used in deferred schedulers). 
-                If None, warmup will be calculated as (n_cycles - n_snapshots) / n_cycles * total_epochs. Default is None.
             eta_max (float, optional): Maximum learning rate at the start of each cycle.
                 passed from `args.lr`. Default is 0.1.
-            eta_min (float, optional): Minimum learning rate at the end of each cycle. Default is 0.001.
-            snapshot_dir (str, optional): Subdirectory inside experiment_dir where snapshots will be saved. Default is "snaps".
-            n_snapshots (int, optional): Number of snapshots to take. Default is 5.
+            snapshot_dir (str, optional): Subdirectory inside experiment_dir where snapshots will be saved. Default is "snapshots".
         """
-        self.scheduler_name = scheduler_name.lower()
+        # Validate and set defaults for configuration
+        self._validate_and_set_config(adaptive_lr_config, eta_max)
+        
         self.total_epochs = total_epochs
-        self.n_cycles = n_cycles
-        self.eta_max = eta_max
-        self.eta_min = eta_min
-        self.weighted_ensemble = weighted_ensemble
         self.experiment_dir = experiment_dir
         self.snapshot_dir = os.path.join(experiment_dir, snapshot_dir)
-        self.n_snapshots = n_snapshots
         os.makedirs(self.snapshot_dir, exist_ok=True)
 
         assert self.eta_max > self.eta_min, \
@@ -552,12 +539,9 @@ class LRScheduler(AbstractCallback):
 
         # Calculate warmup epochs only for deferred schedulers
         if self.scheduler_name.startswith("deferred"):
-            if warmup_epochs is None:
-                # Use formula: defer for (n_cycles - n_snapshots) cycles
-                deferred_cycles = self.n_cycles - self.n_snapshots
-                self.warmup_epochs = int(deferred_cycles / self.n_cycles * self.total_epochs)
-            else:
-                self.warmup_epochs = warmup_epochs
+            # Use formula: defer for (n_cycles - n_snapshots) cycles
+            deferred_cycles = self.n_cycles - self.n_snapshots
+            self.warmup_epochs = int(deferred_cycles / self.n_cycles * self.total_epochs)
         else:
             # Non-deferred schedulers don't use warmup
             self.warmup_epochs = 0
@@ -573,6 +557,69 @@ class LRScheduler(AbstractCallback):
 
         if self.weighted_ensemble:
             self.snapshot_loss = defaultdict(float)
+
+    def _validate_and_set_config(self, config: dict, eta_max: float):
+        """
+        Validate the adaptive_lr_config and set default values for missing parameters.
+        """
+        # Default configuration
+        defaults = {
+            "scheduler_name": "cca",
+            "lr_min": 0.01,
+            "num_cycles": 10,
+            "weighted_ensemble": False,
+            "n_snapshots": 5
+        }
+        
+        # Validate config is a dictionary
+        if not isinstance(config, dict):
+            raise ValueError("adaptive_lr_config must be a dictionary")
+        
+        # Validate scheduler_name
+        if "scheduler_name" in config:
+            valid_schedulers = ["cca", "mmcclr", "deferred_cca", "deferred_mmcclr"]
+            if config["scheduler_name"] not in valid_schedulers:
+                raise ValueError(f"Invalid scheduler_name '{config['scheduler_name']}'. "
+                               f"Must be one of: {valid_schedulers}")
+        
+        # Validate lr_min
+        if "lr_min" in config:
+            lr_min = config["lr_min"]
+            if not isinstance(lr_min, (int, float)) or lr_min <= 0:
+                raise ValueError(f"lr_min must be a positive number, got: {lr_min}")
+            if lr_min >= eta_max:
+                raise ValueError(f"lr_min ({lr_min}) must be less than eta_max ({eta_max})")
+        
+        # Validate num_cycles
+        if "num_cycles" in config:
+            num_cycles = config["num_cycles"]
+            if not isinstance(num_cycles, (int, float)) or num_cycles <= 0:
+                raise ValueError(f"num_cycles must be a positive number, got: {num_cycles}")
+        
+        # Validate n_snapshots
+        if "n_snapshots" in config:
+            n_snapshots = config["n_snapshots"]
+            if not isinstance(n_snapshots, int) or n_snapshots <= 0:
+                raise ValueError(f"n_snapshots must be a positive integer, got: {n_snapshots}")
+        
+        # Validate weighted_ensemble
+        if "weighted_ensemble" in config:
+            weighted_ensemble = config["weighted_ensemble"]
+            if not isinstance(weighted_ensemble, bool):
+                raise ValueError(f"weighted_ensemble must be a boolean, got: {weighted_ensemble}")
+        
+        # Set attributes with defaults for missing values
+        self.scheduler_name = config.get("scheduler_name", defaults["scheduler_name"]).lower()
+        self.eta_min = config.get("lr_min", defaults["lr_min"])
+        self.n_cycles = config.get("num_cycles", defaults["num_cycles"])
+        self.weighted_ensemble = config.get("weighted_ensemble", defaults["weighted_ensemble"])
+        self.n_snapshots = config.get("n_snapshots", defaults["n_snapshots"])
+        self.eta_max = eta_max
+        
+        print(f"LRScheduler initialized with config: {config}")
+        print(f"Using: scheduler_name={self.scheduler_name}, eta_min={self.eta_min}, "
+              f"n_cycles={self.n_cycles}, weighted_ensemble={self.weighted_ensemble}, "
+              f"n_snapshots={self.n_snapshots}")
 
 
     def _initialize_training_params(self, num_training_batches):
