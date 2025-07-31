@@ -141,6 +141,18 @@ class Namespace(argparse.Namespace):
         self.auto_batch_finding=False
         "A flag for using auto batch finding"
 
+        self.eval_every_n_epochs: int = 0
+        """Evaluate model every n epochs. If 0, no evaluation is applied."""
+
+        self.save_every_n_epochs: bool = False
+        """Save model every n epochs. If True, save model at every epoch."""
+
+        self.eval_at_epochs: list = None
+        """List of epoch numbers at which to evaluate the model (e.g., 1 5 10)."""
+
+        self.n_epochs_eval_model: str = "val_test"
+        """Evaluating link prediction performance on data splits while performing periodic evaluation."""
+
     def __iter__(self):
         # Iterate
         for k, v in self.__dict__.items():
