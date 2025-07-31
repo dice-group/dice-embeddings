@@ -127,16 +127,29 @@ def forward_backward_update_loss(z:Tuple, ensemble_model)->float:
     loss = torch.nn.functional.binary_cross_entropy_with_logits(yhat, y_batch)
     # () Compute the gradient of the loss w.r.t. parameters.
     loss.backward()
+    
+    # Build mapping of entity IDs to model (GPU) IDs
+    entity_to_model_map = {}
+    for model_id, model in enumerate(ensemble_model):
+        # Check for embedding layer
+        if hasattr(model, 'entity_embeddings'):
+            grad = model.entity_embeddings.weight.grad
+            if grad is None:
+                continue
+            # Identify which rows (entities) have non-zero gradients
+            mask = grad.abs().sum(dim=1) > 0
+            updated_ids = mask.nonzero(as_tuple=True)[0].tolist()
+            # Map each updated entity ID to this model's ID
+            for eid in updated_ids:
+                entity_to_model_map[eid] = model_id
     # () Parameter update.
     ensemble_model.step()
-    return loss.item()
+    return loss.item(), entity_to_model_map
 
-def update_embedding_layer(ensemble_model):
-    # () Update the embedding layer.
-    for model in ensemble_model:
-        if hasattr(model, 'update_embedding_layer'):
-            model.update_embedding_layer()
-    return ensemble_model
+def _ensure_entity_mapping_history(ensemble_model):
+    if not hasattr(ensemble_model, "entity_to_model_history"):
+        # keeps a list of dicts: {epoch, batch_idx, mapping}
+        ensemble_model.entity_to_model_history = []
 
 class TensorParallel(AbstractTrainer):
     def __init__(self, args, callbacks):
@@ -174,7 +187,10 @@ class TensorParallel(AbstractTrainer):
             #if batch_rt is not None:
             #    expected_training_time=batch_rt * len(train_dataloader) * self.attributes.num_epochs
             # print(f"Exp.Training Runtime: {expected_training_time/60 :.3f} in mins\t|\tBatch Size:{batch_size}\t|\tBatch RT:{batch_rt:.3f}\t|\t # of batches:{len(train_dataloader)}\t|\t# of epochs:{self.attributes.num_epochs}")
-
+        
+        # ensure history container exists
+        _ensure_entity_mapping_history(ensemble_model)
+        
         # --- Use stacking if vocab_size is set ---
         if getattr(self.attributes, "vocab_size", None) is not None:
             threshold = int(0.9 * self.attributes.vocab_size)
@@ -204,7 +220,14 @@ class TensorParallel(AbstractTrainer):
                         persistent_workers=False 
                     )
                     for i, z in enumerate(stacked_loader):
-                        batch_loss = forward_backward_update_loss(z, ensemble_model)
+                        batch_loss, entity_map = forward_backward_update_loss(z, ensemble_model)
+                        # entity_map is a dict {entity_id: model_id}
+                        # record mapping for this stack iteration
+                        ensemble_model.entity_to_model_history.append({
+                            "epoch": epoch,
+                            "stack_iteration": i,
+                            "mapping": entity_map,
+                        })
                         epoch_loss += batch_loss
                         if hasattr(tqdm_bar, 'set_description_str'):
                             tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
@@ -227,7 +250,7 @@ class TensorParallel(AbstractTrainer):
                     # if i>0:
                     #     ensemble_model = update_embedding_layer(ensemble_model)
                     # () Forward, Loss, Backward, and Update on a given batch of data points.
-                    batch_loss = forward_backward_update_loss(z,ensemble_model)
+                    batch_loss, _ = forward_backward_update_loss(z,ensemble_model)
                     # () Accumulate the batch losses to compute the epoch loss.
                     epoch_loss += batch_loss
                     # if verbose=TRue, show info.
