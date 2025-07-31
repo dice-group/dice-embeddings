@@ -11,11 +11,8 @@ from .abstracts import AbstractCallback
 import pandas as pd
 from collections import defaultdict
 import math
-import os
 from torch.optim.lr_scheduler import LambdaLR
 from .eval_static_funcs import evaluate_ensemble_link_prediction_performance
-from collections import defaultdict
-import json
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
@@ -678,7 +675,7 @@ class LRScheduler(AbstractCallback):
             "scheduler_name": "cca",
             "lr_min": 0.01,
             "num_cycles": 10,
-            "weighted_ensemble": False,
+            "weighted_ensemble": True,
             "n_snapshots": 5
         }
         
