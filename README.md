@@ -44,9 +44,9 @@ Deploy a pre-trained embedding model without writing a single line of code.
 ### Installation from Source
 ``` bash
 git clone https://github.com/dice-group/dice-embeddings.git
-conda create -n dice python=3.10.13 --no-default-packages && conda activate dice && pip3 install -e .
+cd dice-embeddings && conda create -n dice python=3.10.13 --no-default-packages && conda activate dice && pip install -e .
 # or
-pip3 install -e .["dev"]
+pip install -e '.[dev]'       # installs core + dev dependencies
 ```
 or
 ```bash
@@ -188,6 +188,33 @@ CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_t
 The `CUDA_VISIBLE_DEVICES=0` setting limits the program to access only the specified GPU(s), making all others invisible.  
 Multiple GPUs can be selected by providing a comma-separated list, for example: `CUDA_VISIBLE_DEVICES=0,1`.
 
+#### Periodic Evaluation during training
+
+The Periodic evaluation method automates periodic model evaluation and checkpointing during training. It allows evaluations at fixed intervals or specific epochs. Results and model states are stored systematically for efficient hyperparameter search.
+
+Configure automatic evaluation by setting `eval_every_n_epoch` to run evaluations every N epochs, or `eval_at_epochs` for specific epochs—these options can be combined. Use `save_model_every_n_epoch` to save a checkpoint at each evaluation, and specify evaluation splits (`val`, `test`, or `val_test`) with `n_epochs_eval_model`. If the last training epoch matches a scheduled evaluation and the default trainer evaluates all specified splits, evaluation with `n_epochs` is skipped to prevent duplicate results.
+
+``` bash
+# Evaluate every 50 epochs on validation and test sets, saving a model checkpoint at each evaluation
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_every_n_epoch 50 --save_every_n_epochs --n_epochs_eval_model val_test
+
+# Evaluate only at epochs 128 and 256 on the validation set, saving the model each time
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_at_epochs 128 256 --save_every_n_epochs --n_epochs_eval_model val
+
+# Evaluate every 100 epochs on the test set only; model checkpoints are not saved
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_every_n_epoch 100 --n_epochs_eval_model test
+
+# Evaluate only at epochs 50 and 150 on both validation and test sets; no checkpoint is saved
+dicee  --dataset_dir "KGs/UMLS" --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_at_epochs 50 150 --n_epochs_eval_model val_test
+
+# Evaluate every 100 epochs and additionally at epochs 45 and 275 on validation; models are saved at each evaluation point
+dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_every_n_epoch 100 --eval_at_epochs 45 275 --save_every_n_epochs --n_epochs_eval_model val
+```
 </details>
 
 ## Search and Retrieval via Qdrant Vector Database

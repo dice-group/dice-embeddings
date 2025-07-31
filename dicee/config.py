@@ -141,23 +141,17 @@ class Namespace(argparse.Namespace):
         self.auto_batch_finding=False
         "A flag for using auto batch finding"
 
-        self.lr_min: float = 0.01
-        "Minimum learning rate for Learning Rate Scheduler"
+        self.eval_every_n_epochs: int = 0
+        """Evaluate model every n epochs. If 0, no evaluation is applied."""
 
-        self.adaptive_lr: bool = False
-        "Enable adaptive learning rate scheduling"
+        self.save_every_n_epochs: bool = False
+        """Save model every n epochs. If True, save model at every epoch."""
 
-        self.lr_scheduler : str = "cca"
-        "Learning rate scheduler to use."
+        self.eval_at_epochs: list = None
+        """List of epoch numbers at which to evaluate the model (e.g., 1 5 10)."""
 
-        self.num_cycles: float = 10
-        "Number of cycles for Learning Rate Scheduler"
-
-        self.weighted_ensemble: bool = False
-        "Perform weighted ensemble of models."
-
-        self.n_snapshots: int = 5
-        "Number of snapshots to be used in Ensemble Learning."
+        self.n_epochs_eval_model: str = "val_test"
+        """Evaluating link prediction performance on data splits while performing periodic evaluation."""
 
     def __iter__(self):
         # Iterate
