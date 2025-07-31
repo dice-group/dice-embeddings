@@ -421,6 +421,21 @@ Module Contents
       Evaluating link prediction performance on data splits while performing periodic evaluation.
 
 
+   .. py:attribute:: adaptive_lr
+
+      0.1}
+
+      :type: Adaptive learning rate parameters, e.g., {"lr_decay"
+
+
+   .. py:attribute:: swa_start_epoch
+      :type:  int
+      :value: 1
+
+
+      Epoch at which to start applying stochastic weight averaging.
+
+
    .. py:method:: __iter__()
 
 

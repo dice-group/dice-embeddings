@@ -80,6 +80,7 @@
 <li class="toctree-l5"><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe"><code class="docutils literal notranslate"><span class="pre">evaluate_link_prediction_performance_with_bpe()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_lp_bpe_k_vs_all"><code class="docutils literal notranslate"><span class="pre">evaluate_lp_bpe_k_vs_all()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_literal_prediction"><code class="docutils literal notranslate"><span class="pre">evaluate_literal_prediction()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_ensemble_link_prediction_performance"><code class="docutils literal notranslate"><span class="pre">evaluate_ensemble_link_prediction_performance()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -156,6 +157,9 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_literal_prediction" title="dicee.eval_static_funcs.evaluate_literal_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_literal_prediction</span></code></a>(kge_model[, ...])</p></td>
 <td><p>Evaluates the trained literal prediction model on a test file.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_ensemble_link_prediction_performance" title="dicee.eval_static_funcs.evaluate_ensemble_link_prediction_performance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_ensemble_link_prediction_performance</span></code></a>(→ Dict)</p></td>
+<td><p>Evaluates link prediction performance of an ensemble of KGE models.</p></td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -231,6 +235,30 @@
 <li><p><strong>RuntimeError</strong> – If the kGE model does not have a trained literal model.</p></li>
 <li><p><strong>AssertionError</strong> – If the kGE model is not an instance of KGE or if the test set has no valid entities or attributes.</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.eval_static_funcs.evaluate_ensemble_link_prediction_performance">
+<span class="sig-prename descclassname"><span class="pre">dicee.eval_static_funcs.</span></span><span class="sig-name descname"><span class="pre">evaluate_ensemble_link_prediction_performance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">models</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">er_vocab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">512</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weighted_averaging</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../../../_modules/dicee/eval_static_funcs.html#evaluate_ensemble_link_prediction_performance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.eval_static_funcs.evaluate_ensemble_link_prediction_performance" title="Link to this definition"></a></dt>
+<dd><p>Evaluates link prediction performance of an ensemble of KGE models.
+:param models: List of KGE models (snapshots)
+:param triples: np.ndarray or list of lists, shape (N,3), all integer indices (head, rel, tail)
+:param er_vocab: Dict[Tuple, List]</p>
+<blockquote>
+<div><p>Mapping (head_idx, rel_idx) → list of tail_idx to filter (incl. target).</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>weights</strong> – Optional[List[float]]
+Weights for model averaging. If None, use uniform (=simple mean).</p></li>
+<li><p><strong>batch_size</strong> – int</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict of link prediction metrics (H&#64;1, H&#64;3, <a class="reference external" href="mailto:H&#37;&#52;&#48;10">H<span>&#64;</span>10</a>, MRR)</p>
 </dd>
 </dl>
 </dd></dl>

@@ -15,6 +15,7 @@ Functions
    dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe
    dicee.eval_static_funcs.evaluate_lp_bpe_k_vs_all
    dicee.eval_static_funcs.evaluate_literal_prediction
+   dicee.eval_static_funcs.evaluate_ensemble_link_prediction_performance
 
 
 Module Contents
@@ -61,5 +62,19 @@ Module Contents
 
    :raises RuntimeError: If the kGE model does not have a trained literal model.
    :raises AssertionError: If the kGE model is not an instance of KGE or if the test set has no valid entities or attributes.
+
+
+.. py:function:: evaluate_ensemble_link_prediction_performance(models, triples, er_vocab: Dict[Tuple, List], weights: List[float] = None, batch_size: int = 512, weighted_averaging: bool = True) -> Dict
+
+   Evaluates link prediction performance of an ensemble of KGE models.
+   :param models: List of KGE models (snapshots)
+   :param triples: np.ndarray or list of lists, shape (N,3), all integer indices (head, rel, tail)
+   :param er_vocab: Dict[Tuple, List]
+                    Mapping (head_idx, rel_idx) → list of tail_idx to filter (incl. target).
+   :param weights: Optional[List[float]]
+                   Weights for model averaging. If None, use uniform (=simple mean).
+   :param batch_size: int
+
+   :returns: dict of link prediction metrics (H@1, H@3, H@10, MRR)
 
 

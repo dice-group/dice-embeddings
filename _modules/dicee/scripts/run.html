@@ -220,6 +220,18 @@
                         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Find a batch size fitting in GPUs. Only available for TP trainer&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--degree&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;degree for polynomial embeddings&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># Learning rate scheduling with configuration</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--adaptive_lr&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">{},</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Enable adaptive learning rate scheduling with configuration. &#39;</span>
+                             <span class="s1">&#39;Example: {&quot;scheduler_name&quot;: &quot;cca&quot;, &quot;lr_min&quot;: 0.01, &quot;num_cycles&quot;: 10, &#39;</span>
+                             <span class="s1">&#39;&quot;weighted_ensemble&quot;: true, &quot;n_snapshots&quot;: 5}. &#39;</span>
+                             <span class="s1">&#39;Available schedulers: cca, mmcclr, deferred_cca, deferred_mmcclr&#39;</span><span class="p">)</span>
+    
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--swa_start_epoch&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Epoch at which to start applying stochastic weight averaging.&#39;</span><span class="p">)</span>
+    
+
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--eval_every_n_epochs&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Evaluate model every n epochs. If 0, no evaluation is applied.&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--save_every_n_epochs&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>

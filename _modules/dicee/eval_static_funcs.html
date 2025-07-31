@@ -591,6 +591,85 @@
             <span class="k">if</span> <span class="n">return_attr_error_metrics</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">attr_error_metrics</span></div>
 
+
+<div class="viewcode-block" id="evaluate_ensemble_link_prediction_performance">
+<a class="viewcode-back" href="../../autoapi/dicee/eval_static_funcs/index.html#dicee.eval_static_funcs.evaluate_ensemble_link_prediction_performance">[docs]</a>
+<span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_ensemble_link_prediction_performance</span><span class="p">(</span><span class="n">models</span><span class="p">,</span> <span class="n">triples</span><span class="p">,</span> <span class="n">er_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">512</span><span class="p">,</span> <span class="n">weighted_averaging</span> <span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span> <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Evaluates link prediction performance of an ensemble of KGE models.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        models : List of KGE models (snapshots)</span>
+<span class="sd">        triples : np.ndarray or list of lists, shape (N,3), all integer indices (head, rel, tail)</span>
+<span class="sd">        er_vocab : Dict[Tuple, List]</span>
+<span class="sd">            Mapping (head_idx, rel_idx) → list of tail_idx to filter (incl. target).</span>
+<span class="sd">        weights : Optional[List[float]]</span>
+<span class="sd">            Weights for model averaging. If None, use uniform (=simple mean).</span>
+<span class="sd">        batch_size : int</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        dict of link prediction metrics (H@1, H@3, H@10, MRR)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num_triples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span>
+    <span class="n">ranks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">hits_range</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">))</span>
+    <span class="n">hits</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">hits_range</span><span class="p">}</span>
+    <span class="n">n_models</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">models</span><span class="p">)</span>
+
+    <span class="k">if</span>  <span class="n">weighted_averaging</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Weights must be provided for weighted averaging.&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_models</span><span class="p">,</span> <span class="s2">&quot;Number of weights must match number of models.&quot;</span>
+        <span class="n">weights_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_triples</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+        <span class="n">data_batch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">triples</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">])</span>  <span class="c1"># Ensure ndarray</span>
+        <span class="n">e1_idx_r_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">data_batch</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+        <span class="n">e2_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">data_batch</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span>
+
+        <span class="n">preds_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">models</span><span class="p">:</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+            <span class="n">preds_raw</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">e1_idx_r_idx</span><span class="p">)</span> <span class="c1"># [batch, n_entities]</span>
+            <span class="n">preds_min</span> <span class="o">=</span> <span class="n">preds_raw</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">preds_max</span> <span class="o">=</span> <span class="n">preds_raw</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdim</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">preds</span> <span class="o">=</span> <span class="p">(</span><span class="n">preds_raw</span> <span class="o">-</span> <span class="n">preds_min</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">preds_max</span> <span class="o">-</span> <span class="n">preds_min</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span>
+
+            <span class="n">preds_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">preds</span><span class="p">)</span>
+        <span class="n">preds_stack</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">preds_list</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># [n_models, batch, n_entities]</span>
+
+        <span class="k">if</span> <span class="n">weighted_averaging</span><span class="p">:</span>
+            <span class="c1"># Weighted mean aggregation</span>
+            <span class="n">avg_preds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">preds_stack</span> <span class="o">*</span> <span class="n">weights_tensor</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Simple mean aggregation</span>
+            <span class="n">avg_preds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">preds_stack</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        
+
+        <span class="c1"># Filtering and scoring</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">id_e</span><span class="p">,</span> <span class="n">id_r</span><span class="p">,</span> <span class="n">id_e_target</span> <span class="o">=</span> <span class="n">data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">filt</span> <span class="o">=</span> <span class="n">er_vocab</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">id_e</span><span class="p">,</span> <span class="n">id_r</span><span class="p">),</span> <span class="p">[])</span>
+            <span class="n">target_value</span> <span class="o">=</span> <span class="n">avg_preds</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">filt</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">avg_preds</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">filt</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+            <span class="n">avg_preds</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
+
+        <span class="c1"># Ranking and metrics</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">avg_preds</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">rank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">e2_idx</span><span class="p">[</span><span class="n">j</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">ranks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">hits_level</span> <span class="ow">in</span> <span class="n">hits_range</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">rank</span> <span class="o">&lt;=</span> <span class="n">hits_level</span><span class="p">:</span>
+                    <span class="n">hits</span><span class="p">[</span><span class="n">hits_level</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">ranks</span><span class="p">)</span> <span class="o">==</span> <span class="n">num_triples</span>
+    <span class="n">hit_1</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">num_triples</span>
+    <span class="n">hit_3</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">/</span> <span class="n">num_triples</span>
+    <span class="n">hit_10</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">10</span><span class="p">])</span> <span class="o">/</span> <span class="n">num_triples</span>
+    <span class="n">mean_reciprocal_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ranks</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;H@1&#39;</span><span class="p">:</span> <span class="n">hit_1</span><span class="p">,</span> <span class="s1">&#39;H@3&#39;</span><span class="p">:</span> <span class="n">hit_3</span><span class="p">,</span> <span class="s1">&#39;H@10&#39;</span><span class="p">:</span> <span class="n">hit_10</span><span class="p">,</span> <span class="s1">&#39;MRR&#39;</span><span class="p">:</span> <span class="n">mean_reciprocal_rank</span><span class="p">}</span></div>
+
 </pre></div>
 
            </div>
