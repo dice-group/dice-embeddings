@@ -663,8 +663,7 @@ class LRScheduler(AbstractCallback):
         self.scheduler = None
         self.step_count = 0
 
-        if self.weighted_ensemble:
-            self.snapshot_loss = defaultdict(float)
+        self.snapshot_loss = defaultdict(float)
 
     def _validate_and_set_config(self, config: dict, eta_max: float):
         """
@@ -723,6 +722,9 @@ class LRScheduler(AbstractCallback):
         self.weighted_ensemble = config.get("weighted_ensemble", defaults["weighted_ensemble"])
         self.n_snapshots = config.get("n_snapshots", defaults["n_snapshots"])
         self.eta_max = eta_max
+
+        assert self.n_snapshots <= self.n_cycles, \
+            f"n_snapshots ({self.n_snapshots}) must be less than or equal to num_cycles ({self.n_cycles})"
         
         print(f"LRScheduler initialized with config: {config}")
         print(f"Using: scheduler_name={self.scheduler_name}, eta_min={self.eta_min}, "
@@ -735,9 +737,19 @@ class LRScheduler(AbstractCallback):
         self.batches_per_epoch = num_training_batches
         self.total_steps = self.total_epochs * self.batches_per_epoch
         self.cycle_length = self.total_steps // self.n_cycles
+        # Ensure cycle length is at least 1 to avoid division by zero
+        if self.cycle_length < 1:
+            raise ValueError(f"Cycle length ({self.cycle_length}) must be at least 1. "
+                             f"Total steps: {self.total_steps}, n_cycles: {self.n_cycles}")
+        assert self.total_steps > self.n_cycles, \
+            f"Total steps ({self.total_steps}) must be greater than Total Cycles ({self.n_cycles})."
         
-        # Convert warmup epochs to warmup steps (already calculated in __init__)
-        self.warmup_steps = self.warmup_epochs * self.batches_per_epoch
+        # Calculate warmup steps based on warmup epochs
+        if self.warmup_epochs > 0:
+            self.warmup_steps = int(self.warmup_epochs * self.batches_per_epoch)
+            if self.warmup_steps >= self.total_steps:
+                raise ValueError(f"Warmup steps ({self.warmup_steps}) must be less than total steps ({self.total_steps}).")
+
 
     def _get_lr_schedule(self):
         
@@ -777,7 +789,7 @@ class LRScheduler(AbstractCallback):
 
         return sched_map[self.scheduler_name]
     
-    def _calulate_snap_weights(self):
+    def _calculate_snap_weights(self):
         """
         Calculate weights for model snapshots based on their loss values.
         The weight for each snapshot is inversely proportional to its loss.
@@ -812,7 +824,7 @@ class LRScheduler(AbstractCallback):
 
         print(f"Using learning rate scheduler: {self.scheduler_name}")
 
-    def on_train_batch_end(self, trainer, model, *kwargs):
+    def on_train_batch_end(self, trainer, model, outputs, batch, batch_idx):
         """Step the LR scheduler and save model snapshot if needed after each batch."""
         self.scheduler.step()
         self.step_count += 1
@@ -825,7 +837,7 @@ class LRScheduler(AbstractCallback):
                 self.snapshot_dir, f"snapshot_epoch_{trainer.current_epoch}.pt"
             )
             torch.save(model.state_dict(), snapshot_path)
-            self.snapshot_loss[os.path.basename(snapshot_path)] = model.loss_history[-1]  # Store loss at snapshot step
+            self.snapshot_loss[os.path.basename(snapshot_path)] = outputs['loss'].item()  # Store loss at snapshot step
 
     def _is_snapshot_step(self, step):
         """
@@ -852,7 +864,7 @@ class LRScheduler(AbstractCallback):
 
     def on_fit_end(self, trainer, model):
         # Load all model snapshots from the snapshot directory
-        self.ensembel_weights = None
+        self.ensemble_weights = None
         snapshot_files = sorted(
             [f for f in os.listdir(self.snapshot_dir) if f.endswith('.pt')]
         )
@@ -865,16 +877,16 @@ class LRScheduler(AbstractCallback):
             self.model_snapshots.append(model_copy)
 
         if self.snapshot_loss and self.weighted_ensemble:
-            self._calulate_snap_weights()
+            self._calculate_snap_weights()
             # 2. Build the weight list aligned to snapshot_files order:
-            self.ensembel_weights = [self.snapshot_weights[fname] for fname in snapshot_files]
+            self.ensemble_weights = [self.snapshot_weights[fname] for fname in snapshot_files]
         
         
         ensemble_eval_report = evaluate_ensemble_link_prediction_performance(
             models=self.model_snapshots,
             triples=trainer.dataset.test_set,
             er_vocab=trainer.dataset.er_vocab.result(),
-            weights=self.ensembel_weights,
+            weights=self.ensemble_weights,
             batch_size=trainer.num_training_batches,
             weighted_averaging=self.weighted_ensemble
             )
@@ -882,16 +894,18 @@ class LRScheduler(AbstractCallback):
         self.ensemble_eval_report = {
             "scheduler_name": self.scheduler_name,
             "total_epochs": self.total_epochs,
-            "n_cycles": self.n_cycles,
+            "num_cycles": self.n_cycles,
             "warmup_epochs": self.warmup_epochs,
-            "eta_max": self.eta_max,
-            "eta_min": self.eta_min,
+            "lr_max": self.eta_max,
+            "lr_min": self.eta_min,
             "batches_per_epoch": self.batches_per_epoch,
             "total_steps": self.total_steps,
             "cycle_length": self.cycle_length,
             "warmup_steps": self.warmup_steps,
+            "weighted_ensemble": self.weighted_ensemble,
+            "n_snapshots": self.n_snapshots,
             "ensemble_eval_report": ensemble_eval_report,
-            "snapshot_loss": self.snapshot_loss if self.weighted_ensemble else None,
+            "snapshot_loss": self.snapshot_loss
         }
 
         ensemble_eval_report_path = os.path.join(self.experiment_dir, "ensemble_eval_report.json")

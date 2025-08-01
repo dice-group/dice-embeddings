@@ -94,38 +94,35 @@ def get_callbacks(args):
         AccumulateEpochLossCallback(path=args.full_storage_path)
     ]
     if args.swa:
+        if args.trainer == 'TorchCPUTrainer':
+            raise NotImplementedError("SWA is not supported for TorchCPUTrainer. Use PL or TP trainer instead.")
         if args.swa_start_epoch is None:
             args.swa_start_epoch = 1
         assert args.swa_start_epoch > 0, "SWA Start Epoch must be greater than 0"
+        print(f"Starting Stochastic Weight Averaging at Epoch: {args.swa_start_epoch}")
         callbacks.append(pl.pytorch.callbacks.StochasticWeightAveraging(swa_lrs=args.lr, swa_epoch_start=args.swa_start_epoch))
     elif args.adaptive_swa:
         callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
     elif args.adaptive_lr:
-        # Pass the adaptive_lr configuration directly to LRScheduler
-        # The callback will validate and set defaults for any missing parameters
-        callbacks.append(LRScheduler(
+        gpu_device_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
+        if args.trainer =='PL' and gpu_device_count < 2:
+             callbacks.append(LRScheduler(
             adaptive_lr_config=args.adaptive_lr,
             total_epochs=args.num_epochs,
             experiment_dir=args.full_storage_path,
             eta_max=args.lr
         ))
+        else:
+            raise NotImplementedError("Adaptive LR is currently supported with PL Trainer on single GPU only.")
+       
     else:
         """No SWA or ASWA or Learning Rate Scheduler applied"""
 
     if args.eval_every_n_epochs > 0 or args.eval_at_epochs is not None:
         multi_gpu_trainers = {'TP', 'torchDDP'}
-        if args.trainer in multi_gpu_trainers:
-            raise NotImplementedError("PeriodicEvalCallback is not supported for multi-GPU trainers (TP or torchDDP).")
-        if args.trainer == 'PL':
-            visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES")
-            if visible_devices:
-                # Filter out empty strings caused by malformed input
-                devices = [d for d in visible_devices.split(",") if d.strip() != ""]
-                num_visible = len(devices)
-            else:
-                num_visible = torch.cuda.device_count()
-            if num_visible > 1:
-                raise NotImplementedError("PeriodicEvalCallback is not supported for PL trainer with more than 1 CUDA visible device.")
+        gpu_device_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
+        if args.trainer in multi_gpu_trainers or gpu_device_count > 1:
+            raise NotImplementedError("PeriodicEvalCallback is not supported for multi-GPU trainers or setup.")
         callbacks.append(PeriodicEvalCallback(experiment_path=args.full_storage_path, max_epochs=args.num_epochs,
             eval_every_n_epoch=args.eval_every_n_epochs, eval_at_epochs=args.eval_at_epochs,
             save_model_every_n_epoch=args.save_every_n_epochs, n_epochs_eval_model=args.n_epochs_eval_model
