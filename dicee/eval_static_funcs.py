@@ -483,3 +483,79 @@ def evaluate_literal_prediction(
 
             if return_attr_error_metrics:
                 return attr_error_metrics
+
+@torch.no_grad()
+def evaluate_ensemble_link_prediction_performance(models, triples, er_vocab: Dict[Tuple, List],
+    weights: List[float] = None, batch_size: int = 512, weighted_averaging : bool = True ) -> Dict:
+    """
+    Evaluates link prediction performance of an ensemble of KGE models.
+    Args:
+        models : List of KGE models (snapshots)
+        triples : np.ndarray or list of lists, shape (N,3), all integer indices (head, rel, tail)
+        er_vocab : Dict[Tuple, List]
+            Mapping (head_idx, rel_idx) → list of tail_idx to filter (incl. target).
+        weights : Optional[List[float]]
+            Weights for model averaging. If None, use uniform (=simple mean).
+        batch_size : int
+    Returns:
+        dict of link prediction metrics (H@1, H@3, H@10, MRR)
+    """
+    num_triples = len(triples)
+    ranks = []
+    hits_range = list(range(1, 11))
+    hits = {i: [] for i in hits_range}
+    n_models = len(models)
+
+    if  weighted_averaging:
+        assert weights is not None, "Weights must be provided for weighted averaging."
+        assert len(weights) == n_models, "Number of weights must match number of models."
+        weights_tensor = torch.FloatTensor(weights)
+
+    for i in range(0, num_triples, batch_size):
+        data_batch = np.array(triples[i:i + batch_size])  # Ensure ndarray
+        e1_idx_r_idx = torch.LongTensor(data_batch[:, [0, 1]])
+        e2_idx = torch.LongTensor(data_batch[:, 2])
+
+        preds_list = []
+        for model in models:
+            model.eval()
+            preds_raw = model(e1_idx_r_idx) # [batch, n_entities]
+            preds_min = preds_raw.min(dim=1, keepdim=True)[0]
+            preds_max = preds_raw.max(dim=1, keepdim=True)[0]
+            preds = (preds_raw - preds_min) / (preds_max - preds_min + 1e-8)
+
+            preds_list.append(preds)
+        preds_stack = torch.stack(preds_list, dim=0)  # [n_models, batch, n_entities]
+
+        if weighted_averaging:
+            # Weighted mean aggregation
+            avg_preds = torch.sum(preds_stack * weights_tensor.view(-1, 1, 1), dim=0)
+        else:
+            # Simple mean aggregation
+            avg_preds = torch.mean(preds_stack, dim=0)
+        
+
+        # Filtering and scoring
+        for j in range(data_batch.shape[0]):
+            id_e, id_r, id_e_target = data_batch[j]
+            filt = er_vocab.get((id_e, id_r), [])
+            target_value = avg_preds[j, id_e_target].item()
+            if len(filt) > 0:
+                avg_preds[j, filt] = -np.Inf
+            avg_preds[j, id_e_target] = target_value
+
+        # Ranking and metrics
+        _, sort_idxs = torch.sort(avg_preds, dim=1, descending=True)
+        for j in range(data_batch.shape[0]):
+            rank = torch.where(sort_idxs[j] == e2_idx[j])[0].item() + 1
+            ranks.append(rank)
+            for hits_level in hits_range:
+                if rank <= hits_level:
+                    hits[hits_level].append(1.0)
+
+    assert len(triples) == len(ranks) == num_triples
+    hit_1 = sum(hits[1]) / num_triples
+    hit_3 = sum(hits[3]) / num_triples
+    hit_10 = sum(hits[10]) / num_triples
+    mean_reciprocal_rank = np.mean(1. / np.array(ranks))
+    return {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}

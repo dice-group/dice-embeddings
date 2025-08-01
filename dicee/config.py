@@ -152,6 +152,13 @@ class Namespace(argparse.Namespace):
 
         self.n_epochs_eval_model: str = "val_test"
         """Evaluating link prediction performance on data splits while performing periodic evaluation."""
+        
+        self.adaptive_lr = dict()
+        """Adaptive learning rate parameters, e.g., {"lr_decay": 0.1}"""
+
+        self.swa_start_epoch: int = None
+        """Epoch at which to start applying stochastic weight averaging."""
+
 
     def __iter__(self):
         # Iterate

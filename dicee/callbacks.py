@@ -10,6 +10,9 @@ from .static_funcs import save_checkpoint_model, save_pickle
 from .abstracts import AbstractCallback
 import pandas as pd
 from collections import defaultdict
+import math
+from torch.optim.lr_scheduler import LambdaLR
+from .eval_static_funcs import evaluate_ensemble_link_prediction_performance
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
@@ -601,3 +604,312 @@ class PeriodicEvalCallback(AbstractCallback):
             if self.save_model_every_n_epoch:
                 save_path = os.path.join(self.n_epochs_storage_path, f'model_at_epoch_{self.epoch_counter}.pt')
                 save_checkpoint_model(model, path=save_path)
+class LRScheduler(AbstractCallback):
+    """
+    Callback for managing learning rate scheduling and model snapshots.
+
+    Supports cosine annealing ("cca"), MMCCLR ("mmcclr"), and their deferred (warmup) variants:
+    - "deferred_cca"
+    - "deferred_mmcclr"
+
+    At the end of each learning rate cycle, the model can optionally be saved as a snapshot.
+    """
+    def __init__(
+        self,
+        adaptive_lr_config: dict,
+        total_epochs: int,
+        experiment_dir: str,
+        eta_max: float = 0.1,
+        snapshot_dir: str = "snapshots",
+    ):
+        """
+        Initialize the LR scheduler callback.
+
+        Args:
+            adaptive_lr_config (dict): Configuration dictionary containing LR scheduling parameters.
+                Can include: scheduler_name, lr_min, num_cycles, weighted_ensemble, n_snapshots
+            total_epochs (int): Total number of training epochs (args.num_epochs)
+            experiment_dir (str): Directory for the experiment, used as base for snapshots.
+            eta_max (float, optional): Maximum learning rate at the start of each cycle.
+                passed from `args.lr`. Default is 0.1.
+            snapshot_dir (str, optional): Subdirectory inside experiment_dir where snapshots will be saved. Default is "snapshots".
+        """
+        # Validate and set defaults for configuration
+        self._validate_and_set_config(adaptive_lr_config, eta_max)
+        
+        self.total_epochs = total_epochs
+        self.experiment_dir = experiment_dir
+        self.snapshot_dir = os.path.join(experiment_dir, snapshot_dir)
+        os.makedirs(self.snapshot_dir, exist_ok=True)
+
+        assert self.eta_max > self.eta_min, \
+            f"Max Learning Rate ({self.eta_max}) must be greater than Min Learning Rate ({self.eta_min})"
+
+        # Calculate warmup epochs only for deferred schedulers
+        if self.scheduler_name.startswith("deferred"):
+            # Use formula: defer for (n_cycles - n_snapshots) cycles
+            deferred_cycles = self.n_cycles - self.n_snapshots
+            self.warmup_epochs = int(deferred_cycles / self.n_cycles * self.total_epochs)
+        else:
+            # Non-deferred schedulers don't use warmup
+            self.warmup_epochs = 0
+
+        # Placeholders to be set during training
+        self.batches_per_epoch = None
+        self.total_steps = None
+        self.cycle_length = None
+        self.warmup_steps = None
+        self.lr_lambda = None
+        self.scheduler = None
+        self.step_count = 0
+
+        self.snapshot_loss = defaultdict(float)
+
+    def _validate_and_set_config(self, config: dict, eta_max: float):
+        """
+        Validate the adaptive_lr_config and set default values for missing parameters.
+        """
+        # Default configuration
+        defaults = {
+            "scheduler_name": "cca",
+            "lr_min": 0.01,
+            "num_cycles": 10,
+            "weighted_ensemble": True,
+            "n_snapshots": 5
+        }
+        
+        # Validate config is a dictionary
+        if not isinstance(config, dict):
+            raise ValueError("adaptive_lr_config must be a dictionary")
+        
+        # Validate scheduler_name
+        if "scheduler_name" in config:
+            valid_schedulers = ["cca", "mmcclr", "deferred_cca", "deferred_mmcclr"]
+            if config["scheduler_name"] not in valid_schedulers:
+                raise ValueError(f"Invalid scheduler_name '{config['scheduler_name']}'. "
+                               f"Must be one of: {valid_schedulers}")
+        
+        # Validate lr_min
+        if "lr_min" in config:
+            lr_min = config["lr_min"]
+            if not isinstance(lr_min, (int, float)) or lr_min <= 0:
+                raise ValueError(f"lr_min must be a positive number, got: {lr_min}")
+            if lr_min >= eta_max:
+                raise ValueError(f"lr_min ({lr_min}) must be less than eta_max ({eta_max})")
+        
+        # Validate num_cycles
+        if "num_cycles" in config:
+            num_cycles = config["num_cycles"]
+            if not isinstance(num_cycles, (int, float)) or num_cycles <= 0:
+                raise ValueError(f"num_cycles must be a positive number, got: {num_cycles}")
+        
+        # Validate n_snapshots
+        if "n_snapshots" in config:
+            n_snapshots = config["n_snapshots"]
+            if not isinstance(n_snapshots, int) or n_snapshots <= 0:
+                raise ValueError(f"n_snapshots must be a positive integer, got: {n_snapshots}")
+        
+        # Validate weighted_ensemble
+        if "weighted_ensemble" in config:
+            weighted_ensemble = config["weighted_ensemble"]
+            if not isinstance(weighted_ensemble, bool):
+                raise ValueError(f"weighted_ensemble must be a boolean, got: {weighted_ensemble}")
+        
+        # Set attributes with defaults for missing values
+        self.scheduler_name = config.get("scheduler_name", defaults["scheduler_name"]).lower()
+        self.eta_min = config.get("lr_min", defaults["lr_min"])
+        self.n_cycles = config.get("num_cycles", defaults["num_cycles"])
+        self.weighted_ensemble = config.get("weighted_ensemble", defaults["weighted_ensemble"])
+        self.n_snapshots = config.get("n_snapshots", defaults["n_snapshots"])
+        self.eta_max = eta_max
+
+        assert self.n_snapshots <= self.n_cycles, \
+            f"n_snapshots ({self.n_snapshots}) must be less than or equal to num_cycles ({self.n_cycles})"
+        
+        print(f"LRScheduler initialized with config: {config}")
+        print(f"Using: scheduler_name={self.scheduler_name}, eta_min={self.eta_min}, "
+              f"n_cycles={self.n_cycles}, weighted_ensemble={self.weighted_ensemble}, "
+              f"n_snapshots={self.n_snapshots}")
+
+
+    def _initialize_training_params(self, num_training_batches):
+        """Set batches per epoch, total steps, cycle length, and warmup steps."""
+        self.batches_per_epoch = num_training_batches
+        self.total_steps = self.total_epochs * self.batches_per_epoch
+        self.cycle_length = self.total_steps // self.n_cycles
+        # Ensure cycle length is at least 1 to avoid division by zero
+        if self.cycle_length < 1:
+            raise ValueError(f"Cycle length ({self.cycle_length}) must be at least 1. "
+                             f"Total steps: {self.total_steps}, n_cycles: {self.n_cycles}")
+        assert self.total_steps > self.n_cycles, \
+            f"Total steps ({self.total_steps}) must be greater than Total Cycles ({self.n_cycles})."
+        
+        # Calculate warmup steps based on warmup epochs
+        if self.warmup_epochs > 0:
+            self.warmup_steps = int(self.warmup_epochs * self.batches_per_epoch)
+            if self.warmup_steps >= self.total_steps:
+                raise ValueError(f"Warmup steps ({self.warmup_steps}) must be less than total steps ({self.total_steps}).")
+
+
+    def _get_lr_schedule(self):
+        
+        def cosine_annealing(step):
+            cycle_length = math.ceil(self.total_steps / self.n_cycles)
+            cycle_step = step % cycle_length
+            # Return multiplier: cosine annealing between eta_min/base_lr and eta_max/base_lr
+            # Assuming base_lr is eta_max, we scale between eta_min/eta_max and 1.0
+            cosine_factor = 0.5 * (1 + np.cos(np.pi * cycle_step / cycle_length))
+            min_multiplier = self.eta_min / self.eta_max
+            return min_multiplier + (1.0 - min_multiplier) * cosine_factor
+
+        def mmcclr(step):
+            # Convert step to epoch-based calculation
+            current_epoch = step // self.batches_per_epoch
+            cycle_length_epochs = self.total_epochs // self.n_cycles
+            cycle_step = current_epoch % cycle_length_epochs
+            # Return multiplier: cosine annealing between eta_min/base_lr and eta_max/base_lr
+            # Assuming base_lr is eta_max, we scale between eta_min/eta_max and 1.0
+            cosine_factor = 0.5 * (1 + np.cos(np.pi * cycle_step / cycle_length_epochs))
+            min_multiplier = self.eta_min / self.eta_max
+            return min_multiplier + (1.0 - min_multiplier) * cosine_factor
+
+        def deferred(base_schedule):
+            # Warmup returns 1.0; afterwards use base schedule shifted by warmup steps
+            return lambda step: 1.0 if step < self.warmup_steps else base_schedule(step - self.warmup_steps)
+
+        sched_map = {
+            "cca": cosine_annealing,
+            "mmcclr": mmcclr,
+            "deferred_cca": deferred(cosine_annealing),
+            "deferred_mmcclr": deferred(mmcclr),
+        }
+
+        if self.scheduler_name not in sched_map:
+            raise ValueError(f"Unknown scheduler name: {self.scheduler_name}")
+
+        return sched_map[self.scheduler_name]
+    
+    def _calculate_snap_weights(self):
+        """
+        Calculate weights for model snapshots based on their loss values.
+        The weight for each snapshot is inversely proportional to its loss.
+        """
+        # Get losses in the order of the model names you intend to use in your ensemble:
+        model_names = list(self.snapshot_loss.keys())
+        losses = np.array([self.snapshot_loss[name] for name in model_names])
+
+        min_loss = losses.min()
+        max_loss = losses.max()
+
+        # SnapE weights: (max+min) - model_loss
+        raw_weights = (max_loss + min_loss) - losses
+
+        # Clip to avoid negative weights
+        raw_weights = np.clip(raw_weights, a_min=0, a_max=None)
+
+        # Normalize weights to sum to 1
+        if raw_weights.sum() > 0:
+            weights = raw_weights / raw_weights.sum()
+        else:
+            weights = np.ones_like(raw_weights) / len(raw_weights)
+        
+        self.snapshot_weights = dict(zip(model_names, weights))
+
+    def on_train_start(self, trainer, model):
+        """Initialize training parameters and LR scheduler at start of training."""
+        self._initialize_training_params(trainer.num_training_batches)
+        self.lr_lambda = self._get_lr_schedule()
+        self.scheduler = LambdaLR(trainer.optimizers[0], lr_lambda=self.lr_lambda)
+        self.step_count = 0
+
+        print(f"Using learning rate scheduler: {self.scheduler_name}")
+
+    def on_train_batch_end(self, trainer, model, outputs, batch, batch_idx):
+        """Step the LR scheduler and save model snapshot if needed after each batch."""
+        self.scheduler.step()
+        self.step_count += 1
+
+        # Log the learning rate for this step
+        # current_lr = self.scheduler.get_last_lr()[0] if hasattr(self.scheduler, "get_last_lr") else None
+
+        if self._is_snapshot_step(self.step_count):
+            snapshot_path = os.path.join(
+                self.snapshot_dir, f"snapshot_epoch_{trainer.current_epoch}.pt"
+            )
+            torch.save(model.state_dict(), snapshot_path)
+            self.snapshot_loss[os.path.basename(snapshot_path)] = outputs['loss'].item()  # Store loss at snapshot step
+
+    def _is_snapshot_step(self, step):
+        """
+        Determine if the current step is a snapshot step.
+
+        For deferred schedulers: Take n_snapshots evenly distributed in the active scheduling phase.
+        For regular schedulers: Take snapshots at the end of each cycle.
+        """
+        if self.scheduler_name.startswith("deferred"):
+            # Skip snapshots during warmup
+            if step < self.warmup_steps:
+                return False
+            
+            # Take n_snapshots evenly distributed in the remaining steps after warmup
+            remaining_steps = self.total_steps - self.warmup_steps
+            snapshot_interval = remaining_steps // self.n_snapshots
+            steps_after_warmup = step - self.warmup_steps
+            
+            # Check if we're at a snapshot interval boundary
+            return (steps_after_warmup + 1) % snapshot_interval == 0
+        else:
+            # For non-deferred schedulers, use cycle-based snapshots
+            return (step + 1) % self.cycle_length == 0
+
+    def on_fit_end(self, trainer, model):
+        # Load all model snapshots from the snapshot directory
+        self.ensemble_weights = None
+        snapshot_files = sorted(
+            [f for f in os.listdir(self.snapshot_dir) if f.endswith('.pt')]
+        )
+        self.model_snapshots = []
+        for checkpoint in snapshot_files:
+            checkpoint_path = os.path.join(self.snapshot_dir, checkpoint)
+            state_dict = torch.load(checkpoint_path, map_location="cpu")
+            model_copy = type(model)(model.args)
+            model_copy.load_state_dict(state_dict)
+            self.model_snapshots.append(model_copy)
+
+        if self.snapshot_loss and self.weighted_ensemble:
+            self._calculate_snap_weights()
+            # 2. Build the weight list aligned to snapshot_files order:
+            self.ensemble_weights = [self.snapshot_weights[fname] for fname in snapshot_files]
+        
+        
+        ensemble_eval_report = evaluate_ensemble_link_prediction_performance(
+            models=self.model_snapshots,
+            triples=trainer.dataset.test_set,
+            er_vocab=trainer.dataset.er_vocab.result(),
+            weights=self.ensemble_weights,
+            batch_size=trainer.num_training_batches,
+            weighted_averaging=self.weighted_ensemble
+            )
+        # Prepare a single dictionary with LR scheduling info and nested ensemble eval report
+        self.ensemble_eval_report = {
+            "scheduler_name": self.scheduler_name,
+            "total_epochs": self.total_epochs,
+            "num_cycles": self.n_cycles,
+            "warmup_epochs": self.warmup_epochs,
+            "lr_max": self.eta_max,
+            "lr_min": self.eta_min,
+            "batches_per_epoch": self.batches_per_epoch,
+            "total_steps": self.total_steps,
+            "cycle_length": self.cycle_length,
+            "warmup_steps": self.warmup_steps,
+            "weighted_ensemble": self.weighted_ensemble,
+            "n_snapshots": self.n_snapshots,
+            "ensemble_eval_report": ensemble_eval_report,
+            "snapshot_loss": self.snapshot_loss
+        }
+
+        ensemble_eval_report_path = os.path.join(self.experiment_dir, "ensemble_eval_report.json")
+        # Write the dictionary to the JSON file
+        with open(ensemble_eval_report_path, 'w', encoding='utf-8') as f:
+            json.dump(self.ensemble_eval_report, f, indent=4, ensure_ascii=False)
+        print(f"Ensemble Evaluations: Evaluate {model.name} on Test Set with an ensemble of {len(self.model_snapshots)} models: \n{ensemble_eval_report}")
