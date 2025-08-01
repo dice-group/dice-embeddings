@@ -653,13 +653,16 @@ Module Contents
 
 
 
+   .. py:attribute:: snapshot_loss
+
+
    .. py:method:: on_train_start(trainer, model)
 
       Initialize training parameters and LR scheduler at start of training.
 
 
 
-   .. py:method:: on_train_batch_end(trainer, model, *kwargs)
+   .. py:method:: on_train_batch_end(trainer, model, outputs, batch, batch_idx)
 
       Step the LR scheduler and save model snapshot if needed after each batch.
 

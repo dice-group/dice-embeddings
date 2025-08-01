@@ -174,6 +174,7 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.LRScheduler.lr_lambda"><code class="docutils literal notranslate"><span class="pre">LRScheduler.lr_lambda</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.LRScheduler.scheduler"><code class="docutils literal notranslate"><span class="pre">LRScheduler.scheduler</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.LRScheduler.step_count"><code class="docutils literal notranslate"><span class="pre">LRScheduler.step_count</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.LRScheduler.snapshot_loss"><code class="docutils literal notranslate"><span class="pre">LRScheduler.snapshot_loss</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.LRScheduler.on_train_start"><code class="docutils literal notranslate"><span class="pre">LRScheduler.on_train_start()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.LRScheduler.on_train_batch_end"><code class="docutils literal notranslate"><span class="pre">LRScheduler.on_train_batch_end()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.LRScheduler.on_fit_end"><code class="docutils literal notranslate"><span class="pre">LRScheduler.on_fit_end()</span></code></a></li>
@@ -962,6 +963,11 @@ Stores evaluation reports and model checkpoints.</p>
 <span class="sig-name descname"><span class="pre">step_count</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#dicee.callbacks.LRScheduler.step_count" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.callbacks.LRScheduler.snapshot_loss">
+<span class="sig-name descname"><span class="pre">snapshot_loss</span></span><a class="headerlink" href="#dicee.callbacks.LRScheduler.snapshot_loss" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.LRScheduler.on_train_start">
 <span class="sig-name descname"><span class="pre">on_train_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#LRScheduler.on_train_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.LRScheduler.on_train_start" title="Link to this definition"></a></dt>
@@ -970,7 +976,7 @@ Stores evaluation reports and model checkpoints.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.LRScheduler.on_train_batch_end">
-<span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#LRScheduler.on_train_batch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.LRScheduler.on_train_batch_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#LRScheduler.on_train_batch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.LRScheduler.on_train_batch_end" title="Link to this definition"></a></dt>
 <dd><p>Step the LR scheduler and save model snapshot if needed after each batch.</p>
 </dd></dl>
 
