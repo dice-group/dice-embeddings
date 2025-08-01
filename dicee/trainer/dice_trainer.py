@@ -106,12 +106,8 @@ def get_callbacks(args):
     elif args.adaptive_lr:
         gpu_device_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
         if args.trainer =='PL' and gpu_device_count < 2:
-             callbacks.append(LRScheduler(
-            adaptive_lr_config=args.adaptive_lr,
-            total_epochs=args.num_epochs,
-            experiment_dir=args.full_storage_path,
-            eta_max=args.lr
-        ))
+            callbacks.append(LRScheduler(adaptive_lr_config=args.adaptive_lr, total_epochs=args.num_epochs,
+            experiment_dir=args.full_storage_path, eta_max=args.lr))
         else:
             raise NotImplementedError("Adaptive LR is currently supported with PL Trainer on single GPU only.")
        
