@@ -183,3 +183,7 @@ KGs/
 Experiments/
 checkpoints/
 *.zip
+Literal_KGs/
+
+# VS code Stuff
+.vscode/
