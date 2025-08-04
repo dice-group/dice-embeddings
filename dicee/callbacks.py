@@ -578,21 +578,34 @@ class PeriodicEvalCallback(AbstractCallback):
 
             # Set evaluation mode to the one specified in the callback
             trainer.evaluator.args.eval_model = self.n_epochs_eval_model
+            if model.args["swa"]:
+                # If SWA is enabled, use the SWA model for evaluation
+                eval_model = trainer.swa_model
+            elif model.args["adaptive_swa"]:
+                # If ASWA is enabled, use the ASWA model for evaluation
+                aswa_ensemble_params = torch.load(f"{self.experiment_dir}/aswa.pt", torch.device("cpu"))
+                # Create a new model instance for evaluation
+                eval_model = type(model)(model.args)
+                eval_model.load_state_dict(aswa_ensemble_params)
+                eval_model = eval_model.to(model.device)
+            else:
+                eval_model = model
             
-            device = model.device  # Save current device
-            model.to('cpu')        # Move model to CPU for evaluation
-            model.eval()           # Set model to evaluation mode
+            # Ensure the model is in evaluation mode
+            device = eval_model.device  # Save current device
+            eval_model.to('cpu')        # Move model to CPU for evaluation
+            eval_model.eval()           # Set model to evaluation mode
 
             # Run evaluation using trainer's evaluator
             report = trainer.evaluator.eval(
                 dataset=trainer.dataset,
-                trained_model=model,
+                trained_model=eval_model,
                 form_of_labelling=trainer.form_of_labelling,
                 during_training=True
             )
 
-            model.to(device)       # Restore model device
-            model.train()          # Set model back to training mode
+            eval_model.to(device)       # Restore model device
+            eval_model.train()         # Set model back to training mode
 
             # Restore the initial evaluation mode
             trainer.evaluator.args.eval_model = self.default_eval_model
@@ -603,7 +616,7 @@ class PeriodicEvalCallback(AbstractCallback):
             # Optionally save model checkpoint
             if self.save_model_every_n_epoch:
                 save_path = os.path.join(self.n_epochs_storage_path, f'model_at_epoch_{self.epoch_counter}.pt')
-                save_checkpoint_model(model, path=save_path)
+                save_checkpoint_model(eval_model, path=save_path)
 class LRScheduler(AbstractCallback):
     """
     Callback for managing learning rate scheduling and model snapshots.
@@ -913,3 +926,99 @@ class LRScheduler(AbstractCallback):
         with open(ensemble_eval_report_path, 'w', encoding='utf-8') as f:
             json.dump(self.ensemble_eval_report, f, indent=4, ensure_ascii=False)
         print(f"Ensemble Evaluations: Evaluate {model.name} on Test Set with an ensemble of {len(self.model_snapshots)} models: \n{ensemble_eval_report}")
+
+class SWA(AbstractCallback):
+    """Stochastic Weight Averaging callbacks."""
+
+    def __init__(self, swa_start_epoch, swa_c_epochs:int=1, lr_init:float=0.1, swa_lr:float=0.05, max_epochs :int=None):
+        super().__init__()
+        """
+        Initialize SWA callback.
+        Parameters
+        ----------
+        swa_start_epoch: int
+            The epoch at which to start SWA.
+        swa_c_epochs: int
+            The number of epochs to use for SWA.
+        lr_init: float
+            The initial learning rate.
+        swa_lr: float
+            The learning rate to use during SWA.
+        max_epochs: int
+            The maximum number of epochs. args.num_epochs
+        """
+        self.swa_start_epoch = swa_start_epoch
+        self.swa_c_epochs = swa_c_epochs
+        self.swa_lr = swa_lr
+        self.lr_init = lr_init
+        self.max_epochs = max_epochs
+        self.swa_model = None
+        self.swa_n = 0
+        self.current_epoch = -1
+    
+    def moving_average(self, swa_model, model, alpha):
+        """Update SWA model with moving average of current model."""
+        with torch.no_grad():
+            for swa_param, param in zip(swa_model.parameters(), model.parameters()):
+                swa_param.data = (1.0 - alpha) * swa_param.data + alpha * param.data
+        
+    def on_fit_start(self, trainer, model):
+        """Initialize SWA model with same architecture as main model."""
+        self.swa_model = type(model)(model.args)
+        self.swa_model.load_state_dict(model.state_dict())
+        self.swa_model = self.swa_model.to(model.device)
+
+        # Check if trainer has optimizer attribute, if not, try to get from optimizers list
+        optimizer = getattr(trainer, 'optimizer', None)
+        if optimizer is None:
+            if not (hasattr(trainer, 'optimizers') and trainer.optimizers):
+                raise AttributeError("Trainer does not have a valid optimizer or optimizers list.")
+    
+    def on_train_epoch_start(self, trainer, model):
+        """Update learning rate according to SWA schedule."""
+        # Get current epoch - simplified with fallback
+        if hasattr(trainer, 'current_epoch'):
+            self.current_epoch = trainer.current_epoch
+        else:
+            self.current_epoch += 1
+            
+        # Calculate learning rate using the schedule
+        t = self.current_epoch / self.max_epochs
+        lr_ratio = self.swa_lr / self.lr_init
+        
+        if t <= 0.5:
+            factor = 1.0
+        elif t <= 0.9:
+            factor = 1.0 - (1.0 - lr_ratio) * (t - 0.5) / 0.4
+        else:
+            factor = lr_ratio
+            
+        new_lr = self.lr_init * factor
+
+        # Get the optimizer from the trainer
+        optimizer = getattr(trainer, 'optimizer', None)
+        if optimizer is None and hasattr(trainer, 'optimizers') and trainer.optimizers:
+            optimizer = trainer.optimizers[0] if isinstance(trainer.optimizers, list) else trainer.optimizers
+            
+        if optimizer is not None:
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = new_lr
+    
+    def on_train_epoch_end(self, trainer, model):
+        """Apply SWA averaging if conditions are met."""
+        #set swa_model in trainer if eval_every_n_epochs or eval_at_epochs is set
+        if model.args["eval_every_n_epochs"] > 0 or model.args["eval_at_epochs"] is not None:
+            trainer.swa_model = self.swa_model
+        # Check if we should apply SWA
+        if self.current_epoch >= self.swa_start_epoch and \
+           (self.current_epoch - self.swa_start_epoch) % self.swa_c_epochs == 0:
+            
+            # Perform moving average update with the model directly
+            self.moving_average(self.swa_model, model, 1.0 / (self.swa_n + 1))
+            self.swa_n += 1
+    
+    def on_fit_end(self, trainer, model):
+        """Replace main model with SWA model at the end of training."""
+        if self.swa_model is not None and self.swa_n > 0:
+            # Copy SWA weights back to main model directly
+            model.load_state_dict(self.swa_model.state_dict())

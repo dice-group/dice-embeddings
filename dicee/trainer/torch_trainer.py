@@ -90,6 +90,7 @@ class TorchTrainer(AbstractTrainer):
               f'| EpochBatchsize:{len(train_dataloaders)}')
 
         for epoch in (tqdm_bar := tqdm(range(self.attributes.max_epochs))):
+            self.on_train_epoch_start(self, self.model)
             epoch_loss = 0
             i = 0
             construct_mini_batch_time = None
