@@ -98,7 +98,7 @@ def get_callbacks(args):
             args.swa_start_epoch = 1
         assert args.swa_start_epoch > 0, "SWA Start Epoch must be greater than 0"
         print(f"Starting Stochastic Weight Averaging at Epoch: {args.swa_start_epoch}")
-        # Use custom SWA callback for all trainers (unified approach)
+        # Use custom SWA callback for all trainers
         callbacks.append(SWA(swa_start_epoch=args.swa_start_epoch, lr_init=args.lr,
                             max_epochs=args.num_epochs))
     elif args.adaptive_swa:
