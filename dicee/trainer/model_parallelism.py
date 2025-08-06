@@ -147,32 +147,118 @@ def forward_backward_update_loss(z:Tuple, ensemble_model)->float:
     # () Parameter update.
     ensemble_model.step()
     return loss.item(), entity_to_model_map
-
-def _ensure_entity_mapping_history(ensemble_model):
-    if not hasattr(ensemble_model, "entity_to_model_history"):
-        # keeps a list of dicts: {epoch, batch_idx, mapping}
-        ensemble_model.entity_to_model_history = []
-        
+      
 class TensorParallel(AbstractTrainer):
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
+        self.ensemble_model = None
+        
+    def _ensure_entity_mapping_history(self):
+        if not hasattr(self.ensemble_model, "entity_to_model_history"):
+            # keeps a list of dicts: {epoch, batch_idx, mapping}
+            self.ensemble_model.entity_to_model_history = []
 
+    def _ensure_entity_cache(self):
+        if not hasattr(self.ensemble_model, "entity_embed_cache"):
+            # dict[int -> List[Tensor per model]]; tensors live on CPU
+            self.ensemble_model.entity_embed_cache = {}
+
+
+    def _get_entity_ids_from_triples(triples_tensor: torch.Tensor):
+        """Return sorted unique entity ids appearing as head or tail in triples_tensor [N,3]."""
+        heads = triples_tensor[:, 0]
+        tails = triples_tensor[:, 2]
+        ids = torch.unique(torch.cat([heads, tails], dim=0))
+        return ids.to(torch.long).tolist()
+
+
+    def _hydrate_models_from_cache(self, entity_ids):
+        """Load cached embeddings (if any) for given entity_ids back into each sub-model."""
+        if not hasattr(self.ensemble_model, "entity_embed_cache") or not self.ensemble_model.entity_embed_cache:
+            return
+        ids_present = [eid for eid in entity_ids if eid in self.ensemble_model.entity_embed_cache]
+        if not ids_present:
+            return
+        for mi, model in enumerate(self.ensemble_model):
+            have = [eid for eid in ids_present if self.ensemble_model.entity_embed_cache[eid][mi] is not None]
+            if not have:
+                continue
+            dev = model.entity_embeddings.weight.device
+            idx = torch.tensor(have, dtype=torch.long, device=dev)
+            vecs = torch.stack([self.ensemble_model.entity_embed_cache[eid][mi] for eid in have]).to(dev)
+            with torch.no_grad():
+                model.entity_embeddings.weight.index_copy_(0, idx, vecs)
+
+
+    def _cache_update_from_models(self, entity_ids):
+        """Pull current embeddings for entity_ids from each sub-model into CPU cache."""
+        if not entity_ids:
+            return
+        ids_cpu = torch.tensor(entity_ids, dtype=torch.long)
+        for mi, model in enumerate(self.ensemble_model):
+            dev = model.entity_embeddings.weight.device
+            with torch.no_grad():
+                vecs = model.entity_embeddings.weight.index_select(0, ids_cpu.to(dev)).detach().cpu()
+            for j, eid in enumerate(entity_ids):
+                if eid not in self.ensemble_model.entity_embed_cache:
+                    self.ensemble_model.entity_embed_cache[eid] = [None] * len(self.ensemble_model)
+                self.ensemble_model.entity_embed_cache[eid][mi] = vecs[j].clone()
+
+
+    def _reinit_ensemble_embeddings(self):
+        """Reset the *entity embedding* layer of each sub-model using PyTorch's
+        `reset_parameters()` pattern (via iteration over children). Falls back to
+        searching all modules or simple init if needed, then refreshes optimizers.
+        """
+        for i, model in enumerate(self.ensemble_model):
+            target = getattr(model, 'entity_embeddings', None) or getattr(model, 'entity_embedding', None)
+            if target is None:
+                continue
+
+            reset_done = False
+            # Prefer resetting via a child traversal (as requested)
+            for layer in model.children():
+                if layer is target and hasattr(layer, 'reset_parameters'):
+                    layer.reset_parameters()
+                    reset_done = True
+                    break
+
+            # If not found among direct children, look deeper
+            if not reset_done:
+                for layer in model.modules():
+                    if layer is target and hasattr(layer, 'reset_parameters'):
+                        layer.reset_parameters()
+                        reset_done = True
+                        break
+
+            # Final fallback: call on the target itself or do a basic init
+            if not reset_done:
+                if hasattr(target, 'reset_parameters'):
+                    target.reset_parameters()
+                    reset_done = True
+                else:
+                    with torch.no_grad():
+                        torch.nn.init.normal_(target.weight, std=0.01)
+
+            # Refresh optimizer to clear stale state
+            if hasattr(model, 'configure_optimizers'):
+                self.ensemble_model.optimizers[i] = model.configure_optimizers()
 
     def fit(self, *args, **kwargs):
         """ Train model        """
         assert len(args) == 1
-        ensemble_model, = args
-        assert isinstance(ensemble_model,EnsembleKGE), (f"Selected model must "
-                                                        f"be an instance of EnsembleKGE{type(ensemble_model)}")
+        self.ensemble_model, = args
+        assert isinstance(self.ensemble_model,EnsembleKGE), (f"Selected model must "
+                                                        f"be an instance of EnsembleKGE{type(self.ensemble_model)}")
         # () Run on_fit_start callbacks.
-        self.on_fit_start(self, ensemble_model)
+        self.on_fit_start(self, ensemble_model=self.ensemble_model)
         # () Sanity checking
-        assert torch.cuda.device_count()== len(ensemble_model)
+        assert torch.cuda.device_count()== len(self.ensemble_model)
         # () Get DataLoader
         train_dataloader = kwargs['train_dataloaders']
         # () Find a batch size so that available GPU memory is *almost* fully used.
         if self.attributes.auto_batch_finding:
-            batch_size, batch_rt=find_good_batch_size(train_dataloader, ensemble_model)
+            batch_size, batch_rt=find_good_batch_size(train_dataloader, tp_ensemble_model=self.ensemble_model)
 
             train_dataloader = torch.utils.data.DataLoader(train_dataloader.dataset,
                                                             batch_size=batch_size,
@@ -191,7 +277,8 @@ class TensorParallel(AbstractTrainer):
             # print(f"Exp.Training Runtime: {expected_training_time/60 :.3f} in mins\t|\tBatch Size:{batch_size}\t|\tBatch RT:{batch_rt:.3f}\t|\t # of batches:{len(train_dataloader)}\t|\t# of epochs:{self.attributes.num_epochs}")
         
         # ensure history container exists
-        _ensure_entity_mapping_history(ensemble_model)
+        self._ensure_entity_mapping_history()
+        self._ensure_entity_cache()
         
         # --- Use stacking if vocab_size is set ---
         if getattr(self.attributes, "vocab_size", None) is not None:
@@ -207,6 +294,11 @@ class TensorParallel(AbstractTrainer):
                         break
                     # Mark these batches as processed
                     processed_indices.update(batch_indices)
+                    
+                    # -- hydrate (before creating/using the loader) --
+                    entity_ids = self._get_entity_ids_from_triples(stacked_triples_tensor)
+                    self._hydrate_models_from_cache(entity_ids)
+                    
                     # Create a new DataLoader for the stacked triples
                     stacked_dataset = TriplesOnlyDataset(stacked_triples_tensor)
                     stacked_loader = torch.utils.data.DataLoader(
@@ -221,11 +313,13 @@ class TensorParallel(AbstractTrainer):
                         worker_init_fn=None,
                         persistent_workers=False 
                     )
+                    
+                    # training on the stacked set
                     for i, z in enumerate(stacked_loader):
-                        batch_loss, entity_map = forward_backward_update_loss(z, ensemble_model)
+                        batch_loss, entity_map = forward_backward_update_loss(z, ensemble_model=self.ensemble_model)
                         # entity_map is a dict {entity_id: model_id}
                         # record mapping for this stack iteration
-                        ensemble_model.entity_to_model_history.append({
+                        self.ensemble_model.entity_to_model_history.append({
                             "epoch": epoch,
                             "stack_iteration": i,
                             "mapping": entity_map,
@@ -235,10 +329,15 @@ class TensorParallel(AbstractTrainer):
                             tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
                             tqdm_bar.set_postfix_str(
                                 f"stack_size={len(stacked_triples_tensor)}, loss_step={batch_loss:.5f}")
+                            
+                    # -- cache updated rows & reset embeddings for next round --
+                    self._cache_update_from_models(entity_ids)
+                    self._reinit_ensemble_embeddings()
+                    
                     # Remove processed batches from train_dataloader for next stacking
                     if len(processed_indices) >= len(train_dataloader):
                         break
-                ensemble_model.loss_history.append(epoch_loss)
+                self.ensemble_model.loss_history.append(epoch_loss)
         else:
             # () Number of batches to reach a single epoch.
             num_of_batches = len(train_dataloader)
@@ -249,10 +348,8 @@ class TensorParallel(AbstractTrainer):
                 epoch_loss = 0
                 # () Iterate over batches.
                 for i, z in enumerate(train_dataloader):
-                    # if i>0:
-                    #     ensemble_model = update_embedding_layer(ensemble_model)
                     # () Forward, Loss, Backward, and Update on a given batch of data points.
-                    batch_loss, _ = forward_backward_update_loss(z,ensemble_model)
+                    batch_loss, _ = forward_backward_update_loss(z,ensemble_model=self.ensemble_model)
                     # () Accumulate the batch losses to compute the epoch loss.
                     epoch_loss += batch_loss
                     # if verbose=TRue, show info.
@@ -264,11 +361,11 @@ class TensorParallel(AbstractTrainer):
                         else:
                             tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
                 # Store the epoch loss
-                ensemble_model.loss_history.append(epoch_loss)
+                self.ensemble_model.loss_history.append(epoch_loss)
         # Run on_fit_end callbacks after the training is done.
-        self.on_fit_end(self, ensemble_model)
+        self.on_fit_end(self, ensemble_model=self.ensemble_model)
         # TODO: Later, maybe we should write a callback to save the models in disk
-        return ensemble_model
+        return self.ensemble_model
     
     def stack_triples_until_threshold(self, dataloader, threshold):
         """
