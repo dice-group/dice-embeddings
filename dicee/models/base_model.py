@@ -143,6 +143,7 @@ class BaseKGE(BaseKGELightning):
         self.normalize_tail_entity_embeddings = IdentityClass()
         self.hidden_normalizer = IdentityClass()
         self.param_init = IdentityClass
+        self.vocab_size = None
         self.init_params_with_sanity_checking()
 
         # Dropouts
@@ -169,9 +170,8 @@ class BaseKGE(BaseKGELightning):
                 self.ordered_bpe_entities = torch.tensor(list(self.bpe_entity_to_idx.keys()), dtype=torch.long)
         elif self.byte_pair_encoding and self.args['model'] == "BytE":
             """ Transformer implements token embeddings"""
-        else:
-
-            self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+        else:    
+            self.entity_embeddings = torch.nn.Embedding(self.vocab_size, self.embedding_dim)
             self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
             self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
@@ -306,6 +306,10 @@ class BaseKGE(BaseKGELightning):
         else:
             print(f'--init_param (***{self.args.get("init_param")}***) not found')
             self.optimizer_name = IdentityClass
+            
+        self.vocab_size = self.args.get("vocab_size")
+        if self.vocab_size is None:
+            self.vocab_size = self.num_entities
 
     def forward(self, x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]],
                 y_idx: torch.LongTensor = None):

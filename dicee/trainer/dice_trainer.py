@@ -3,7 +3,7 @@ import polars
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb
+from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb, PeriodicEvalCallback
 from dicee.dataset_classes import construct_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
@@ -99,6 +99,25 @@ def get_callbacks(args):
         callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
     else:
         """No SWA or ASWA applied"""
+
+    if args.eval_every_n_epochs > 0 or args.eval_at_epochs is not None:
+        multi_gpu_trainers = {'TP', 'torchDDP'}
+        if args.trainer in multi_gpu_trainers:
+            raise NotImplementedError("PeriodicEvalCallback is not supported for multi-GPU trainers (TP or torchDDP).")
+        if args.trainer == 'PL':
+            visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES")
+            if visible_devices:
+                # Filter out empty strings caused by malformed input
+                devices = [d for d in visible_devices.split(",") if d.strip() != ""]
+                num_visible = len(devices)
+            else:
+                num_visible = torch.cuda.device_count()
+            if num_visible > 1:
+                raise NotImplementedError("PeriodicEvalCallback is not supported for PL trainer with more than 1 CUDA visible device.")
+        callbacks.append(PeriodicEvalCallback(experiment_path=args.full_storage_path, max_epochs=args.num_epochs,
+            eval_every_n_epoch=args.eval_every_n_epochs, eval_at_epochs=args.eval_at_epochs,
+            save_model_every_n_epoch=args.save_every_n_epochs, n_epochs_eval_model=args.n_epochs_eval_model
+        ))
 
     if isinstance(args.callbacks, list):
         return callbacks

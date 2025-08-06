@@ -1022,3 +1022,20 @@ class LiteralDataset(Dataset):
             raise ValueError(
                 "Unsupported normalization type. Use 'z-norm', 'min-max', or None."
             )
+            
+class TriplesOnlyDataset(torch.utils.data.Dataset):
+    """
+    Minimal dataset that yields only triple tensors (shape [N, 3] -> per item [3]).
+    Use this for stacked training so the original dataset's collate_fn
+    (which expects a list of triple tensors and makes labels/negatives)
+    can be reused safely.
+    """
+    def __init__(self, triples_tensor: torch.Tensor):
+        assert triples_tensor.dim() == 2 and triples_tensor.size(1) == 3, "Triples tensor must be of shape [N, 3]."
+        self.triples = triples_tensor
+
+    def __len__(self):
+        return self.triples.size(0)
+
+    def __getitem__(self, idx):
+        return self.triples[idx]

@@ -1,8 +1,9 @@
 [![Downloads](https://static.pepy.tech/badge/dicee)](https://pepy.tech/project/dicee)
 [![Downloads](https://img.shields.io/pypi/dm/dicee)](https://pypi.org/project/dicee/)
 [![Coverage](https://img.shields.io/badge/coverage-54%25-green)](https://dice-group.github.io/dice-embeddings/usage/main.html#coverage-report)
-[![Pypi](https://img.shields.io/badge/pypi-0.1.4-blue)](https://pypi.org/project/dicee/0.1.4/)
-[![Docs](https://img.shields.io/badge/documentation-0.1.4-yellow)](https://dice-group.github.io/dice-embeddings/index.html)
+[![Pypi](https://img.shields.io/badge/pypi-0.2.0-blue)](https://pypi.org/project/dicee/0.2.0/)
+[![Docs](https://img.shields.io/badge/documentation-0.2.0-yellow)](https://dice-group.github.io/dice-embeddings/index.html)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dice-group/dice-embeddings)
 
 ![dicee_logo](docs/_static/images/dicee_logo.png)
 
@@ -43,9 +44,9 @@ Deploy a pre-trained embedding model without writing a single line of code.
 ### Installation from Source
 ``` bash
 git clone https://github.com/dice-group/dice-embeddings.git
-conda create -n dice python=3.10.13 --no-default-packages && conda activate dice && pip3 install -e .
+cd dice-embeddings && conda create -n dice python=3.10.13 --no-default-packages && conda activate dice && pip install -e .
 # or
-pip3 install -e .["dev"]
+pip install -e '.[dev]'       # installs core + dev dependencies
 ```
 or
 ```bash
@@ -177,7 +178,43 @@ _:1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07
 ```bash
 dicee --continual_learning "KeciFamilyRun" --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --backend rdflib --eval_model None
 ```
+#### Single device training on Multi-Device setup
 
+When using a multi-GPU setup, `PL` Trainer  automatically utilizes all available CUDA devices. To perform training on a single device, set the environment variable `CUDA_VISIBLE_DEVICES=0` before running your command. For example:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test" --num_epochs 100
+``` 
+The `CUDA_VISIBLE_DEVICES=0` setting limits the program to access only the specified GPU(s), making all others invisible.  
+Multiple GPUs can be selected by providing a comma-separated list, for example: `CUDA_VISIBLE_DEVICES=0,1`.
+
+#### Periodic Evaluation during training
+
+The Periodic evaluation method automates periodic model evaluation and checkpointing during training. It allows evaluations at fixed intervals or specific epochs. Results and model states are stored systematically for efficient hyperparameter search.
+
+Configure automatic evaluation by setting `eval_every_n_epoch` to run evaluations every N epochs, or `eval_at_epochs` for specific epochs—these options can be combined. Use `save_model_every_n_epoch` to save a checkpoint at each evaluation, and specify evaluation splits (`val`, `test`, or `val_test`) with `n_epochs_eval_model`. If the last training epoch matches a scheduled evaluation and the default trainer evaluates all specified splits, evaluation with `n_epochs` is skipped to prevent duplicate results.
+
+``` bash
+# Evaluate every 50 epochs on validation and test sets, saving a model checkpoint at each evaluation
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_every_n_epoch 50 --save_every_n_epochs --n_epochs_eval_model val_test
+
+# Evaluate only at epochs 128 and 256 on the validation set, saving the model each time
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_at_epochs 128 256 --save_every_n_epochs --n_epochs_eval_model val
+
+# Evaluate every 100 epochs on the test set only; model checkpoints are not saved
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_every_n_epoch 100 --n_epochs_eval_model test
+
+# Evaluate only at epochs 50 and 150 on both validation and test sets; no checkpoint is saved
+dicee  --dataset_dir "KGs/UMLS" --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_at_epochs 50 150 --n_epochs_eval_model val_test
+
+# Evaluate every 100 epochs and additionally at epochs 45 and 275 on validation; models are saved at each evaluation point
+dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_every_n_epoch 100 --eval_at_epochs 45 275 --save_every_n_epochs --n_epochs_eval_model val
+```
 </details>
 
 ## Search and Retrieval via Qdrant Vector Database
@@ -305,6 +342,23 @@ pre_trained_kge.predict_topk(h=[".."],t=[".."],topk=10)
 # (5) Predict missing links through tail entity rankings
 pre_trained_kge.predict_topk(r=[".."],t=[".."],topk=10)
 ```
+
+</details>
+
+## Literal Prediction using Pre-trained KGE
+<details> <summary> To see a code snippet</summary>
+
+```python
+from dicee import KGE
+# (1) Train a knowledge graph embedding model..
+# (2) Load a pretrained model
+pre_trained_kge = KGE(path='..')
+# (3) Train a literal Emebedding Model using interactive KGE
+pre_trained_kge.train_literals(train_file_path = "")
+# (4) Predict Literal value for Entity-Attribute pair
+pre_trained_kge.predict_literals(entity=[".."],attribute=[".."])
+```
+A detailed illustration and explanation of literal prediction is provided in `examples/KGE_literal_prediction.py`.
 
 </details>
 
