@@ -19,6 +19,7 @@ def run_dicee_eval(
         "--lr", learning_rate,
         "--embedding_dim", embedding_dim,
         "--loss_fn", loss_function,
+        "--save_embeddings_as_csv",
     ])
     result = Execute(args=args).start()
 

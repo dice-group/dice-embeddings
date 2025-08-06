@@ -295,6 +295,8 @@ class PreprocessKG:
         None
         """
         # (1)  Add recipriocal or noisy triples.
+
+        """
         self.kg.raw_train_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
                                                           eval_model=self.kg.eval_model,
                                                           df=self.kg.raw_train_set, info="Train")
@@ -304,6 +306,7 @@ class PreprocessKG:
         self.kg.raw_test_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
                                                          eval_model=self.kg.eval_model,
                                                          df=self.kg.raw_test_set, info="Test")
+        """
 
         # (2) Construct integer indexing for entities and relations.
         self.sequential_vocabulary_construction()

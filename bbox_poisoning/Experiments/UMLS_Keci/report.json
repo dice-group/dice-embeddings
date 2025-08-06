@@ -1,11 +1,11 @@
 {
-    "num_train_triples": 10432,
+    "num_train_triples": 5216,
     "num_entities": 135,
-    "num_relations": 92,
+    "num_relations": 46,
     "max_length_subword_tokens": null,
-    "runtime_kg_loading": 0.20564889907836914,
-    "EstimatedSizeMB": 0.006928443908691406,
-    "NumParam": 7265,
-    "path_experiment_folder": "/home/adel/Documents/dice-embeddings/dice-embeddings/bbox_poisoning/Experiments/2025-07-22 12-53-12.719297",
-    "Runtime": 3.240387201309204
+    "runtime_kg_loading": 0.17608046531677246,
+    "EstimatedSizeMB": 0.005524635314941406,
+    "NumParam": 5793,
+    "path_experiment_folder": "/home/adel/Documents/dice-embeddings/dice-embeddings/bbox_poisoning/Experiments/2025-08-04 10-55-32.467329",
+    "Runtime": 4.601627349853516
 }

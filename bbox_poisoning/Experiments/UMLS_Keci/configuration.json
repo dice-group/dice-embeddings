@@ -1,5 +1,5 @@
 {
-   "dataset_dir": "UMLS/clean/",
+   "dataset_dir": "./KGs/UMLS",
    "sparql_endpoint": null,
    "path_single_kg": null,
    "path_to_store_single_run": null,
@@ -15,7 +15,7 @@
    "lr": 0.1,
    "callbacks": {},
    "trainer": "PL",
-   "scoring_technique": "KvsAll",
+   "scoring_technique": "NegSample",
    "neg_ratio": 2,
    "weight_decay": 0.0,
    "input_dropout_rate": 0.0,
@@ -54,6 +54,6 @@
    "deterministic": true,
    "check_val_every_n_epoch": 1000000,
    "logger": false,
-   "apply_reciprical_or_noise": true,
-   "full_storage_path": "/home/adel/Documents/dice-embeddings/dice-embeddings/bbox_poisoning/Experiments/2025-07-22 12-53-12.719297"
+   "apply_reciprical_or_noise": false,
+   "full_storage_path": "/home/adel/Documents/dice-embeddings/dice-embeddings/bbox_poisoning/Experiments/2025-08-04 10-55-32.467329"
 }

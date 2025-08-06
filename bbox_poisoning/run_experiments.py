@@ -43,7 +43,7 @@ perturbation_ratios = [int(triples_count * p) for p in percentages]
 initial_k = int(0.05 * triples_count)
 query_k = int(0.002 * triples_count)
 
-perturbation_ratios = [20, 40, 100, 200, 300, 400, 600]
+perturbation_ratios = [50]
 
 initial_k = 500
 query_k = 15
@@ -131,7 +131,7 @@ for top_k in perturbation_ratios:
     print("############RANDOM###############")
     print(random_corruption)
 
-    triples_after_random_poisoning =  triples_after_random_removal + random_corruption #triples_after_random_removal + random_corruption
+    triples_after_random_poisoning =  triples + random_corruption #triples_after_random_removal + random_corruption
     triples_after_random_poisoning_shuffled = random.sample(triples_after_random_poisoning, len(triples_after_random_poisoning))
     save_triples(triples_after_random_poisoning_shuffled, f"{DB}/random/{top_k}/{corruption_type}/train.txt")
     shutil.copy2(test_path, f"{DB}/random/{top_k}/{corruption_type}/test.txt")
@@ -190,7 +190,7 @@ for top_k in perturbation_ratios:
     """
     print("############Active###############")
     #print( harmful_corrupted_triples)
-    triples_after_edits =  triples_after_random_removal + harmful_corrupted_triples # triples_after_random_removal + gradient_based_corruptions
+    triples_after_edits =  triples + harmful_corrupted_triples # triples_after_random_removal + gradient_based_corruptions
     #triples_after_edits = after_removing_high_gradient_triples #+ gradient_based_corruptions
     """
     easy_negatives_with_values = select_easy_negative_triples(

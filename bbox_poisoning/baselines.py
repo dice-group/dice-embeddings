@@ -1,44 +1,62 @@
 import random
 from collections import defaultdict
+import random
 
 def poison_random(triples, k, corruption_type):
-    entity_list = list(set([h for h, _, _ in triples] + [t for _, _, t in triples]))
-    relation_list = list(set([r for _, r, _ in triples]))
+    entity_list = list({h for h, _, _ in triples} | {t for _, _, t in triples})
+    relation_list = list({r for _, r, _ in triples})
+
+    selected_triples = random.sample(triples, min(k, len(triples)))
 
     corrupted_triples = []
-    triples_before_corruption = []
+    seen = set(triples)
 
-    for i in range(k):
-        triple =  random.choice(triples)
+    for triple in selected_triples:
         h, r, t = triple
 
-        if corruption_type == 'all':
-            corrupt_h = random.choice([i for i in entity_list if i != h])
-            corrupt_r = random.choice([i for i in relation_list if i != r])
-            corrupt_t = random.choice([i for i in entity_list if i != t])
-            corrupted = (corrupt_h, corrupt_r, corrupt_t)
-        if corruption_type == 'head':
-            corrupt_h = random.choice([i for i in entity_list if i != h])
-            corrupted = (corrupt_h, r, t)
-        if corruption_type == 'rel':
-            corrupt_r = random.choice([i for i in relation_list if i != r])
-            corrupted = (h, corrupt_r, t)
-        if corruption_type == 'tail':
-            corrupt_t = random.choice([i for i in entity_list if i != t])
-            corrupted = (h, r, corrupt_t)
-        if corruption_type == 'head-tail':
-            corrupt_h = random.choice([i for i in entity_list if i != h])
-            corrupt_t = random.choice([i for i in entity_list if i != t])
-            corrupted = (corrupt_h, r, corrupt_t)
+        attempts = 0
+        max_attempts = 10
+        while True:
+            attempts += 1
+            if corruption_type == 'all':
+                corrupt_h = random.choice([i for i in entity_list if i != h])
+                corrupt_r = random.choice([i for i in relation_list if i != r])
+                corrupt_t = random.choice([i for i in entity_list if i != t])
+                corrupted = (corrupt_h, corrupt_r, corrupt_t)
+            elif corruption_type == 'head':
+                corrupt_h = random.choice([i for i in entity_list if i != h])
+                corrupted = (corrupt_h, r, t)
+            elif corruption_type == 'rel':
+                corrupt_r = random.choice([i for i in relation_list if i != r])
+                corrupted = (h, corrupt_r, t)
+            elif corruption_type == 'tail':
+                corrupt_t = random.choice([i for i in entity_list if i != t])
+                corrupted = (h, r, corrupt_t)
+            elif corruption_type == 'head-tail':
+                corrupt_h = random.choice([i for i in entity_list if i != h])
+                corrupt_t = random.choice([i for i in entity_list if i != t])
+                corrupted = (corrupt_h, r, corrupt_t)
+            else:
+                raise ValueError("Invalid corruption_type")
 
-        corrupted_triples.append(corrupted)
-        triples_before_corruption.append(triple)
+            if corrupted not in seen:
+                seen.add(corrupted)
+                corrupted_triples.append(corrupted)
+                break
 
-    remaining_triples = [item for item in triples if item not in triples_before_corruption]
+            if attempts >= max_attempts:
+                break
 
-    output  = remaining_triples + corrupted_triples
+    remaining_triples = [t for t in triples if t not in selected_triples]
 
-    return output, remaining_triples, corrupted_triples
+    return remaining_triples, corrupted_triples
+
+
+def remove_random_triples(triples, k):
+    removed_triples = random.sample(triples, k)
+    remaining_triples = [t for t in triples if t not in removed_triples]
+    return remaining_triples, removed_triples
+
 
 """
 
