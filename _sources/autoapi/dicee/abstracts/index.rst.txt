@@ -90,21 +90,6 @@ Module Contents
 
 
 
-   .. py:method:: on_train_epoch_start(*args, **kwargs)
-
-      A function to call callbacks at the start of an epoch.
-
-      Parameter
-      ---------
-      args
-
-      kwargs
-
-
-      :rtype: None
-
-
-
    .. py:method:: on_train_epoch_end(*args, **kwargs)
 
       A function to call callbacks at the end of an epoch.

@@ -19,7 +19,6 @@ Classes
    dicee.callbacks.Perturb
    dicee.callbacks.PeriodicEvalCallback
    dicee.callbacks.LRScheduler
-   dicee.callbacks.SWA
 
 
 Functions
@@ -680,82 +679,6 @@ Module Contents
       model:
 
       :rtype: None
-
-
-
-.. py:class:: SWA(swa_start_epoch, swa_c_epochs: int = 1, lr_init: float = 0.1, swa_lr: float = 0.05, max_epochs: int = None)
-
-   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
-
-
-   Stochastic Weight Averaging callbacks.
-
-
-   .. py:attribute:: swa_start_epoch
-
-
-   .. py:attribute:: swa_c_epochs
-      :value: 1
-
-
-
-   .. py:attribute:: swa_lr
-      :value: 0.05
-
-
-
-   .. py:attribute:: lr_init
-      :value: 0.1
-
-
-
-   .. py:attribute:: max_epochs
-      :value: None
-
-
-
-   .. py:attribute:: swa_model
-      :value: None
-
-
-
-   .. py:attribute:: swa_n
-      :value: 0
-
-
-
-   .. py:attribute:: current_epoch
-      :value: -1
-
-
-
-   .. py:method:: moving_average(swa_model, model, alpha)
-
-      Update SWA model with moving average of current model.
-
-
-
-   .. py:method:: on_fit_start(trainer, model)
-
-      Initialize SWA model with same architecture as main model.
-
-
-
-   .. py:method:: on_train_epoch_start(trainer, model)
-
-      Update learning rate according to SWA schedule.
-
-
-
-   .. py:method:: on_train_epoch_end(trainer, model)
-
-      Apply SWA averaging if conditions are met.
-
-
-
-   .. py:method:: on_fit_end(trainer, model)
-
-      Replace main model with SWA model at the end of training.
 
 
 

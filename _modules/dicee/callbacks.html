@@ -780,34 +780,21 @@
 
             <span class="c1"># Set evaluation mode to the one specified in the callback</span>
             <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_epochs_eval_model</span>
-            <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;swa&quot;</span><span class="p">]:</span>
-                <span class="c1"># If SWA is enabled, use the SWA model for evaluation</span>
-                <span class="n">eval_model</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">swa_model</span>
-            <span class="k">elif</span> <span class="n">model</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;adaptive_swa&quot;</span><span class="p">]:</span>
-                <span class="c1"># If ASWA is enabled, use the ASWA model for evaluation</span>
-                <span class="n">aswa_ensemble_params</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment_dir</span><span class="si">}</span><span class="s2">/aswa.pt&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">))</span>
-                <span class="c1"># Create a new model instance for evaluation</span>
-                <span class="n">eval_model</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="p">)(</span><span class="n">model</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
-                <span class="n">eval_model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">aswa_ensemble_params</span><span class="p">)</span>
-                <span class="n">eval_model</span> <span class="o">=</span> <span class="n">eval_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">eval_model</span> <span class="o">=</span> <span class="n">model</span>
             
-            <span class="c1"># Ensure the model is in evaluation mode</span>
-            <span class="n">device</span> <span class="o">=</span> <span class="n">eval_model</span><span class="o">.</span><span class="n">device</span>  <span class="c1"># Save current device</span>
-            <span class="n">eval_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>        <span class="c1"># Move model to CPU for evaluation</span>
-            <span class="n">eval_model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>           <span class="c1"># Set model to evaluation mode</span>
+            <span class="n">device</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">device</span>  <span class="c1"># Save current device</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>        <span class="c1"># Move model to CPU for evaluation</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>           <span class="c1"># Set model to evaluation mode</span>
 
             <span class="c1"># Run evaluation using trainer&#39;s evaluator</span>
             <span class="n">report</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span>
                 <span class="n">dataset</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
-                <span class="n">trained_model</span><span class="o">=</span><span class="n">eval_model</span><span class="p">,</span>
+                <span class="n">trained_model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
                 <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">form_of_labelling</span><span class="p">,</span>
                 <span class="n">during_training</span><span class="o">=</span><span class="kc">True</span>
             <span class="p">)</span>
 
-            <span class="n">eval_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>       <span class="c1"># Restore model device</span>
-            <span class="n">eval_model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>         <span class="c1"># Set model back to training mode</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>       <span class="c1"># Restore model device</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>          <span class="c1"># Set model back to training mode</span>
 
             <span class="c1"># Restore the initial evaluation mode</span>
             <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_eval_model</span>
@@ -818,7 +805,7 @@
             <span class="c1"># Optionally save model checkpoint</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_model_every_n_epoch</span><span class="p">:</span>
                 <span class="n">save_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_epochs_storage_path</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;model_at_epoch_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span><span class="si">}</span><span class="s1">.pt&#39;</span><span class="p">)</span>
-                <span class="n">save_checkpoint_model</span><span class="p">(</span><span class="n">eval_model</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">save_path</span><span class="p">)</span></div>
+                <span class="n">save_checkpoint_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">save_path</span><span class="p">)</span></div>
 </div>
 
 <div class="viewcode-block" id="LRScheduler">
@@ -1140,120 +1127,6 @@
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">ensemble_eval_report_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ensemble_eval_report</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ensemble Evaluations: Evaluate </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> on Test Set with an ensemble of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_snapshots</span><span class="p">)</span><span class="si">}</span><span class="s2"> models: </span><span class="se">\n</span><span class="si">{</span><span class="n">ensemble_eval_report</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
-</div>
-
-
-<div class="viewcode-block" id="SWA">
-<a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">SWA</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stochastic Weight Averaging callbacks.&quot;&quot;&quot;</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">swa_start_epoch</span><span class="p">,</span> <span class="n">swa_c_epochs</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">lr_init</span><span class="p">:</span><span class="nb">float</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">swa_lr</span><span class="p">:</span><span class="nb">float</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">max_epochs</span> <span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initialize SWA callback.</span>
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        swa_start_epoch: int</span>
-<span class="sd">            The epoch at which to start SWA.</span>
-<span class="sd">        swa_c_epochs: int</span>
-<span class="sd">            The number of epochs to use for SWA.</span>
-<span class="sd">        lr_init: float</span>
-<span class="sd">            The initial learning rate.</span>
-<span class="sd">        swa_lr: float</span>
-<span class="sd">            The learning rate to use during SWA.</span>
-<span class="sd">        max_epochs: int</span>
-<span class="sd">            The maximum number of epochs. args.num_epochs</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">swa_start_epoch</span> <span class="o">=</span> <span class="n">swa_start_epoch</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">swa_c_epochs</span> <span class="o">=</span> <span class="n">swa_c_epochs</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">swa_lr</span> <span class="o">=</span> <span class="n">swa_lr</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lr_init</span> <span class="o">=</span> <span class="n">lr_init</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_epochs</span> <span class="o">=</span> <span class="n">max_epochs</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">swa_n</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
-    
-<div class="viewcode-block" id="SWA.moving_average">
-<a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.moving_average">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">moving_average</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">swa_model</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update SWA model with moving average of current model.&quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-            <span class="k">for</span> <span class="n">swa_param</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">swa_model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()):</span>
-                <span class="n">swa_param</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">swa_param</span><span class="o">.</span><span class="n">data</span> <span class="o">+</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">param</span><span class="o">.</span><span class="n">data</span></div>
-
-        
-<div class="viewcode-block" id="SWA.on_fit_start">
-<a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.on_fit_start">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize SWA model with same architecture as main model.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="p">)(</span><span class="n">model</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">())</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-
-        <span class="c1"># Check if trainer has optimizer attribute, if not, try to get from optimizers list</span>
-        <span class="n">optimizer</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">trainer</span><span class="p">,</span> <span class="s1">&#39;optimizer&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">trainer</span><span class="p">,</span> <span class="s1">&#39;optimizers&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">trainer</span><span class="o">.</span><span class="n">optimizers</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Trainer does not have a valid optimizer or optimizers list.&quot;</span><span class="p">)</span></div>
-
-    
-<div class="viewcode-block" id="SWA.on_train_epoch_start">
-<a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.on_train_epoch_start">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">on_train_epoch_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update learning rate according to SWA schedule.&quot;&quot;&quot;</span>
-        <span class="c1"># Get current epoch - simplified with fallback</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">trainer</span><span class="p">,</span> <span class="s1">&#39;current_epoch&#39;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">current_epoch</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">+=</span> <span class="mi">1</span>
-            
-        <span class="c1"># Calculate learning rate using the schedule</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_epochs</span>
-        <span class="n">lr_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">swa_lr</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">lr_init</span>
-        
-        <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;=</span> <span class="mf">0.5</span><span class="p">:</span>
-            <span class="n">factor</span> <span class="o">=</span> <span class="mf">1.0</span>
-        <span class="k">elif</span> <span class="n">t</span> <span class="o">&lt;=</span> <span class="mf">0.9</span><span class="p">:</span>
-            <span class="n">factor</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">lr_ratio</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">t</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">/</span> <span class="mf">0.4</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">factor</span> <span class="o">=</span> <span class="n">lr_ratio</span>
-            
-        <span class="n">new_lr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lr_init</span> <span class="o">*</span> <span class="n">factor</span>
-
-        <span class="c1"># Get the optimizer from the trainer</span>
-        <span class="n">optimizer</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">trainer</span><span class="p">,</span> <span class="s1">&#39;optimizer&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">trainer</span><span class="p">,</span> <span class="s1">&#39;optimizers&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">trainer</span><span class="o">.</span><span class="n">optimizers</span><span class="p">:</span>
-            <span class="n">optimizer</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">optimizers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">trainer</span><span class="o">.</span><span class="n">optimizers</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="n">trainer</span><span class="o">.</span><span class="n">optimizers</span>
-            
-        <span class="k">if</span> <span class="n">optimizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">param_group</span> <span class="ow">in</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">param_groups</span><span class="p">:</span>
-                <span class="n">param_group</span><span class="p">[</span><span class="s1">&#39;lr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_lr</span></div>
-
-    
-<div class="viewcode-block" id="SWA.on_train_epoch_end">
-<a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.on_train_epoch_end">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply SWA averaging if conditions are met.&quot;&quot;&quot;</span>
-        <span class="c1">#set swa_model in trainer if eval_every_n_epochs or eval_at_epochs is set</span>
-        <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;eval_every_n_epochs&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">model</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;eval_at_epochs&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">trainer</span><span class="o">.</span><span class="n">swa_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span>
-        <span class="c1"># Check if we should apply SWA</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">swa_start_epoch</span> <span class="ow">and</span> \
-           <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">swa_start_epoch</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">swa_c_epochs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            
-            <span class="c1"># Perform moving average update with the model directly</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">swa_n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">swa_n</span> <span class="o">+=</span> <span class="mi">1</span></div>
-
-    
-<div class="viewcode-block" id="SWA.on_fit_end">
-<a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.on_fit_end">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Replace main model with SWA model at the end of training.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">swa_n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c1"># Copy SWA weights back to main model directly</span>
-            <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">())</span></div>
 </div>
 
 </pre></div>
