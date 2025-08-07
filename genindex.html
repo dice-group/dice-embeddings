@@ -1033,6 +1033,8 @@
 </li>
       <li><a href="autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.NodeTrainer.ctx">ctx (dicee.trainer.torch_trainer_ddp.NodeTrainer attribute)</a>
 </li>
+      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.current_epoch">current_epoch (dicee.callbacks.SWA attribute)</a>
+</li>
       <li><a href="autoapi/dicee/index.html#dicee.CVDataModule">CVDataModule (class in dicee)</a>
 
       <ul>
@@ -3042,6 +3044,8 @@
         <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.lr">(dicee.config.Namespace attribute)</a>
 </li>
       </ul></li>
+      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.lr_init">lr_init (dicee.callbacks.SWA attribute)</a>
+</li>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.LRScheduler.lr_lambda">lr_lambda (dicee.callbacks.LRScheduler attribute)</a>
 </li>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.LRScheduler">LRScheduler (class in dicee.callbacks)</a>
@@ -3102,6 +3106,8 @@
 
       <ul>
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback.max_epochs">(dicee.callbacks.PeriodicEvalCallback attribute)</a>
+</li>
+        <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.max_epochs">(dicee.callbacks.SWA attribute)</a>
 </li>
       </ul></li>
       <li><a href="autoapi/dicee/index.html#dicee.BaseKGE.max_length_subword_tokens">max_length_subword_tokens (dicee.BaseKGE attribute)</a>
@@ -3269,6 +3275,8 @@
         <li><a href="autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.modules">(dicee.models.ensemble.EnsembleKGE method)</a>
 </li>
       </ul></li>
+      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.moving_average">moving_average() (dicee.callbacks.SWA method)</a>
+</li>
       <li><a href="autoapi/dicee/index.html#dicee.MultiClassClassificationDataset">MultiClassClassificationDataset (class in dicee)</a>
 
       <ul>
@@ -3834,6 +3842,8 @@
 </li>
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback.on_fit_end">(dicee.callbacks.PrintCallback method)</a>
 </li>
+        <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.on_fit_end">(dicee.callbacks.SWA method)</a>
+</li>
       </ul></li>
       <li><a href="autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback.on_fit_start">on_fit_start() (dicee.abstracts.AbstractCallback method)</a>
 
@@ -3849,6 +3859,8 @@
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.KronE.on_fit_start">(dicee.callbacks.KronE method)</a>
 </li>
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback.on_fit_start">(dicee.callbacks.PrintCallback method)</a>
+</li>
+        <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.on_fit_start">(dicee.callbacks.SWA method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -3888,9 +3900,17 @@
 </li>
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback.on_train_epoch_end">(dicee.callbacks.PrintCallback method)</a>
 </li>
+        <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.on_train_epoch_end">(dicee.callbacks.SWA method)</a>
+</li>
         <li><a href="autoapi/dicee/models/base_model/index.html#dicee.models.base_model.BaseKGELightning.on_train_epoch_end">(dicee.models.base_model.BaseKGELightning method)</a>
 </li>
         <li><a href="autoapi/dicee/models/index.html#dicee.models.BaseKGELightning.on_train_epoch_end">(dicee.models.BaseKGELightning method)</a>
+</li>
+      </ul></li>
+      <li><a href="autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractTrainer.on_train_epoch_start">on_train_epoch_start() (dicee.abstracts.AbstractTrainer method)</a>
+
+      <ul>
+        <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.on_train_epoch_start">(dicee.callbacks.SWA method)</a>
 </li>
       </ul></li>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.LRScheduler.on_train_start">on_train_start() (dicee.callbacks.LRScheduler method)</a>
@@ -4613,8 +4633,6 @@
       </ul></li>
       <li><a href="autoapi/dicee/scripts/index_serve/index.html#dicee.scripts.index_serve.NeuralSearcher.search">search() (dicee.scripts.index_serve.NeuralSearcher method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/scripts/index_serve/index.html#dicee.scripts.index_serve.search_embeddings">search_embeddings() (in module dicee.scripts.index_serve)</a>
 </li>
       <li><a href="autoapi/dicee/scripts/index_serve/index.html#dicee.scripts.index_serve.search_embeddings_batch">search_embeddings_batch() (in module dicee.scripts.index_serve)</a>
@@ -4625,6 +4643,8 @@
         <li><a href="autoapi/dicee/index.html#dicee.QueryGenerator.seed">(dicee.QueryGenerator attribute)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/index.html#dicee.select_model">select_model() (in module dicee)</a>
 
       <ul>
@@ -4769,10 +4789,24 @@
 </li>
       <li><a href="autoapi/dicee/scripts/index_serve/index.html#dicee.scripts.index_serve.StringListRequest">StringListRequest (class in dicee.scripts.index_serve)</a>
 </li>
+      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA">SWA (class in dicee.callbacks)</a>
+</li>
       <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.swa">swa (dicee.config.Namespace attribute)</a>
 </li>
-      <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.swa_start_epoch">swa_start_epoch (dicee.config.Namespace attribute)</a>
+      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.swa_c_epochs">swa_c_epochs (dicee.callbacks.SWA attribute)</a>
 </li>
+      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.swa_lr">swa_lr (dicee.callbacks.SWA attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.swa_model">swa_model (dicee.callbacks.SWA attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.swa_n">swa_n (dicee.callbacks.SWA attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.swa_start_epoch">swa_start_epoch (dicee.callbacks.SWA attribute)</a>
+
+      <ul>
+        <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.swa_start_epoch">(dicee.config.Namespace attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 

@@ -174,6 +174,27 @@
             <span class="n">c</span><span class="o">.</span><span class="n">on_fit_end</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="AbstractTrainer.on_train_epoch_start">
+<a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractTrainer.on_train_epoch_start">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_train_epoch_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A function to call callbacks at the start of an epoch.</span>
+
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        args</span>
+
+<span class="sd">        kwargs</span>
+
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span><span class="p">:</span>
+            <span class="n">c</span><span class="o">.</span><span class="n">on_train_epoch_start</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="AbstractTrainer.on_train_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractTrainer.on_train_epoch_end">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
