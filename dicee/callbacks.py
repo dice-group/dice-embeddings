@@ -595,8 +595,9 @@ class PeriodicEvalCallback(AbstractCallback):
         else:
             eval_model = model
 
-        # save device and move to CPU for evaluation to save memory
-        device = model.device 
+        # Save device and training mode, move to CPU for evaluation to save memory
+        device = next(eval_model.parameters()).device
+        training_mode = eval_model.training
         eval_model.to('cpu')
         eval_model.eval()
 
@@ -607,7 +608,7 @@ class PeriodicEvalCallback(AbstractCallback):
 
         # Restore model to original device and mode
         eval_model.to(device)
-        eval_model.train()
+        eval_model.train(mode=training_mode)
 
         # Restore evaluation mode
         trainer.evaluator.args.eval_model = self.default_eval_model
