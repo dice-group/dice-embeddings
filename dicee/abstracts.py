@@ -76,6 +76,24 @@ class AbstractTrainer:
         for c in self.callbacks:
             c.on_fit_end(*args, **kwargs)
 
+    def on_train_epoch_start(self, *args, **kwargs):
+        """
+        A function to call callbacks at the start of an epoch.
+
+        Parameter
+        ---------
+        args
+
+        kwargs
+
+
+        Returns
+        -------
+        None
+        """
+        for c in self.callbacks:
+            c.on_train_epoch_start(*args, **kwargs)
+
     def on_train_epoch_end(self, *args, **kwargs):
         """
         A function to call callbacks at the end of an epoch.

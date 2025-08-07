@@ -3,7 +3,7 @@ import polars
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb, PeriodicEvalCallback, LRScheduler
+from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb, PeriodicEvalCallback, LRScheduler, SWA
 from dicee.dataset_classes import construct_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
@@ -94,13 +94,13 @@ def get_callbacks(args):
         AccumulateEpochLossCallback(path=args.full_storage_path)
     ]
     if args.swa:
-        if args.trainer == 'TorchCPUTrainer':
-            raise NotImplementedError("SWA is not supported for TorchCPUTrainer. Use PL or TP trainer instead.")
         if args.swa_start_epoch is None:
             args.swa_start_epoch = 1
         assert args.swa_start_epoch > 0, "SWA Start Epoch must be greater than 0"
         print(f"Starting Stochastic Weight Averaging at Epoch: {args.swa_start_epoch}")
-        callbacks.append(pl.pytorch.callbacks.StochasticWeightAveraging(swa_lrs=args.lr, swa_epoch_start=args.swa_start_epoch))
+        # Use custom SWA callback for all trainers
+        callbacks.append(SWA(swa_start_epoch=args.swa_start_epoch, lr_init=args.lr,
+                            max_epochs=args.num_epochs))
     elif args.adaptive_swa:
         callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
     elif args.adaptive_lr:
