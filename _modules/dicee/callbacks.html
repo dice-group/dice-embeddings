@@ -797,8 +797,9 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">eval_model</span> <span class="o">=</span> <span class="n">model</span>
 
-        <span class="c1"># save device and move to CPU for evaluation to save memory</span>
-        <span class="n">device</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">device</span> 
+        <span class="c1"># Save device and training mode, move to CPU for evaluation to save memory</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">eval_model</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span><span class="o">.</span><span class="n">device</span>
+        <span class="n">training_mode</span> <span class="o">=</span> <span class="n">eval_model</span><span class="o">.</span><span class="n">training</span>
         <span class="n">eval_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
         <span class="n">eval_model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
@@ -809,7 +810,7 @@
 
         <span class="c1"># Restore model to original device and mode</span>
         <span class="n">eval_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
-        <span class="n">eval_model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+        <span class="n">eval_model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">training_mode</span><span class="p">)</span>
 
         <span class="c1"># Restore evaluation mode</span>
         <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_eval_model</span>
