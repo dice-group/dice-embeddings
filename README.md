@@ -1048,8 +1048,25 @@ docker run --rm -v ~/.local/share/dicee/KGs:/dicee/KGs dice-embeddings ./main.py
 
 ## How to cite
 Currently, we are working on our manuscript describing our framework. 
-If you really like our work and want to cite it now, feel free to chose one :) 
+If you really like our work and want to cite it now, feel free to choose one :) 
 ```
+# DeCaL
+@incollection{kamdem2024embedding,
+  title={Embedding Knowledge Graphs in Degenerate Clifford Algebras},
+  author={Kamdem Teyou, Louis Mozart and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+  booktitle={ECAI 2024},
+  pages={1293--1300},
+  year={2024},
+  publisher={IOS Press}
+}
+# LFMult
+@inproceedings{kamdem2024embedding,
+  title={Embedding Knowledge Graphs in Function Spaces},
+  author={Kamdem Teyou, Louis Mozart and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+  booktitle={Proceedings of the 33rd ACM International Conference on Information and Knowledge Management},
+  pages={1070--1079},
+  year={2024}
+}
 # Keci
 @inproceedings{demir2023clifford,
   title={Clifford Embeddings--A Generalized Approach for Embedding in Normed Algebras},
