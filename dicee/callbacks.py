@@ -556,67 +556,74 @@ class PeriodicEvalCallback(AbstractCallback):
     def on_train_epoch_end(self, trainer, model):
         """
         Called at the end of each training epoch. Performs evaluation and checkpointing if scheduled.
-
-        Parameters
-        ----------
-        trainer : object
-            The training controller.
-        model : torch.nn.Module
-            The model being trained.
         """
         self.epoch_counter += 1
+
         # Check if current epoch is scheduled for evaluation
-        if self.epoch_counter in self.eval_epochs:
-            if self.default_eval_model is None:
-                # Store the initial evaluation mode
-                self.default_eval_model = trainer.evaluator.args.eval_model
+        if self.epoch_counter not in self.eval_epochs:
+            return
 
-            if self.epoch_counter == self.max_epochs:
-                if all(split in self.default_eval_model.split('_') for split in self.n_epochs_eval_model.split('_')):
-                    # Skip evaluation at the end
-                    return
+        # Store default evaluation mode once
+        if self.default_eval_model is None:
+            self.default_eval_model = trainer.evaluator.args.eval_model
 
-            # Set evaluation mode to the one specified in the callback
-            trainer.evaluator.args.eval_model = self.n_epochs_eval_model
-            if model.args["swa"]:
-                # If SWA is enabled, use the SWA model for evaluation
-                eval_model = trainer.swa_model
-            elif model.args["adaptive_swa"]:
-                # If ASWA is enabled, use the ASWA model for evaluation
-                aswa_ensemble_params = torch.load(f"{self.experiment_dir}/aswa.pt", torch.device("cpu"))
-                # Create a new model instance for evaluation
-                eval_model = type(model)(model.args)
-                eval_model.load_state_dict(aswa_ensemble_params)
-                eval_model = eval_model.to(model.device)
-            else:
-                eval_model = model
+        # Skip evaluation if default model already covers all eval splits and it's the final epoch
+        if self.epoch_counter == self.max_epochs:
+            default_splits = set(self.default_eval_model.split('_'))
+            required_splits = set(self.n_epochs_eval_model.split('_'))
+            if required_splits.issubset(default_splits):
+                return
+
+        # Set evaluation mode for this scheduled epoch
+        trainer.evaluator.args.eval_model = self.n_epochs_eval_model
+
+        # Prepare evaluation model
+        eval_model = None
+
+        if model.args.get("swa"):
+            eval_model = trainer.swa_model
+
+        elif model.args.get("adaptive_swa"):
+            # Load ASWA weights and apply to a deepcopy of the model
+            aswa_path = os.path.join(self.experiment_dir, "aswa.pt")
+            aswa_ensemble_params = torch.load(aswa_path, map_location="cpu")
             
-            # Ensure the model is in evaluation mode
-            device = eval_model.device  # Save current device
-            eval_model.to('cpu')        # Move model to CPU for evaluation
-            eval_model.eval()           # Set model to evaluation mode
+            # Clone model and apply ASWA weights
+            eval_model = type(model)(model.args)
+            eval_model.load_state_dict(aswa_ensemble_params)
 
-            # Run evaluation using trainer's evaluator
-            report = trainer.evaluator.eval(
-                dataset=trainer.dataset,
+        else:
+            eval_model = model
+
+        # save device and move to CPU for evaluation to save memory
+        device = model.device 
+        eval_model.to('cpu')
+        eval_model.eval()
+
+        report = trainer.evaluator.eval(dataset=trainer.dataset,
                 trained_model=eval_model,
                 form_of_labelling=trainer.form_of_labelling,
-                during_training=True
-            )
+                during_training=True)
 
-            eval_model.to(device)       # Restore model device
-            eval_model.train()         # Set model back to training mode
+        # Restore model to original device and mode
+        eval_model.to(device)
+        eval_model.train()
 
-            # Restore the initial evaluation mode
-            trainer.evaluator.args.eval_model = self.default_eval_model
+        # Restore evaluation mode
+        trainer.evaluator.args.eval_model = self.default_eval_model
 
-            # Store evaluation report
-            self.reports[f'epoch_{self.epoch_counter}_eval'] = report
+        # Store evaluation report
+        self.reports[f'epoch_{self.epoch_counter}_eval'] = report
 
-            # Optionally save model checkpoint
-            if self.save_model_every_n_epoch:
-                save_path = os.path.join(self.n_epochs_storage_path, f'model_at_epoch_{self.epoch_counter}.pt')
-                save_checkpoint_model(eval_model, path=save_path)
+        # Save model checkpoint if needed
+        if self.save_model_every_n_epoch:
+            save_path = os.path.join(self.n_epochs_storage_path, f'model_at_epoch_{self.epoch_counter}.pt')
+            save_checkpoint_model(eval_model, path=save_path)
+        
+        # Free memory only if eval_model is a separate instance (ASWA case)
+        if model.args.get("adaptive_swa") and eval_model is not model:
+            del eval_model
+                       
 class LRScheduler(AbstractCallback):
     """
     Callback for managing learning rate scheduling and model snapshots.
