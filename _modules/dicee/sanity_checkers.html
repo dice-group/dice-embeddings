@@ -90,6 +90,7 @@
   <h1>Source code for dicee.sanity_checkers</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
 
 
@@ -186,6 +187,29 @@
     <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">num_folds_for_cv</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span><span class="sa">f</span><span class="s2">&quot;num_folds_for_cv can not be negative. Currently:</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">num_folds_for_cv</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="n">validate_knowledge_graph</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="sanity_check_callback_args">
+<a class="viewcode-back" href="../../autoapi/dicee/sanity_checkers/index.html#dicee.sanity_checkers.sanity_check_callback_args">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sanity_check_callback_args</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform sanity checks on callback-related arguments.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">gpu_count</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="c1"># Check if any callbacks are requested</span>
+    <span class="n">has_callbacks</span> <span class="o">=</span> <span class="nb">any</span><span class="p">([</span><span class="n">args</span><span class="o">.</span><span class="n">swa</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">adaptive_swa</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">adaptive_lr</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">eval_every_n_epochs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span>
+                          <span class="n">args</span><span class="o">.</span><span class="n">eval_at_epochs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">has_callbacks</span><span class="p">:</span>
+        <span class="k">return</span>  <span class="c1"># No callbacks, no checks needed</span>
+    <span class="c1"># Block all callbacks for TP or torchDDP trainers</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;TP&#39;</span><span class="p">,</span> <span class="s1">&#39;torchDDP&#39;</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Callbacks are not supported with TP or torchDDP trainers.&quot;</span><span class="p">)</span>
+    <span class="c1"># Block callbacks for PL trainer with 2+ GPUs</span>
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s1">&#39;PL&#39;</span> <span class="ow">and</span> <span class="n">gpu_count</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Callbacks are not supported with PL trainer on multi-GPU setup.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">swa</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">swa_start_epoch</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">swa_start_epoch</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">swa_start_epoch</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;SWA Start Epoch must be greater than 0&quot;</span></div>
 
 </pre></div>
 

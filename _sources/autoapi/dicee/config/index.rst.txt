@@ -423,9 +423,9 @@ Module Contents
 
    .. py:attribute:: adaptive_lr
 
-      0.1}
+      "cca"}'
 
-      :type: Adaptive learning rate parameters, e.g., {"lr_decay"
+      :type: Adaptive learning rate parameters, e.g., '{"scheduler_name"
 
 
    .. py:attribute:: swa_start_epoch

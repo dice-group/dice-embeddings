@@ -12,6 +12,7 @@ Functions
    dicee.sanity_checkers.is_sparql_endpoint_alive
    dicee.sanity_checkers.validate_knowledge_graph
    dicee.sanity_checkers.sanity_checking_with_arguments
+   dicee.sanity_checkers.sanity_check_callback_args
 
 
 Module Contents
@@ -25,4 +26,9 @@ Module Contents
 
 
 .. py:function:: sanity_checking_with_arguments(args)
+
+.. py:function:: sanity_check_callback_args(args)
+
+   Perform sanity checks on callback-related arguments.
+
 
