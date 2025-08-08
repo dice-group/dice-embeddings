@@ -215,6 +215,18 @@ dicee  --dataset_dir "KGs/UMLS" --dataset_dir "KGs/UMLS" --model Keci --scoring_
 dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
       --eval_every_n_epoch 100 --eval_at_epochs 45 275 --save_every_n_epochs --n_epochs_eval_model val
 ```
+#### Periodic Evaluation during training with Weight Averaging (Ensemble) Methods
+The periodic evaluation function also allows evaluating the underlying ensemble model at particular epochs when using ensemble learning. The features can be paired simply by combining the arguments.
+```bash
+# Evaluate SWA ensemble model at epochs 128 and 256 on the validation set, saving the model each time
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_at_epochs 128 256 --save_every_n_epochs --n_epochs_eval_model val --swa
+
+# Evaluate ASWA checkpoints at every 100 epochs on the test set only; save model checkpoints
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_every_n_epochs 100 --n_epochs_eval_model test --save_every_n_epochs --adaptive_swa
+```
+Currently, Periodic Evaluations as well as Ensemble Models can only be used in combination with `torchCPUTrainer` or `PL` trainer with a single CUDA-capable device.
 </details>
 
 ## Search and Retrieval via Qdrant Vector Database

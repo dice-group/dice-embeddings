@@ -3,7 +3,7 @@ import numpy as np
 from typing import Tuple
 import time
 from collections import defaultdict
-from .sanity_checkers import sanity_checking_with_arguments
+from .sanity_checkers import sanity_checking_with_arguments, sanity_check_callback_args
 
 enable_log = False
 def timeit(func):
@@ -59,6 +59,7 @@ def preprocesses_input_args(args):
         assert 1.0 >= args.sample_triples_ratio >= 0.0
     assert args.backend in ["pandas", "polars", "rdflib"]
     sanity_checking_with_arguments(args)
+    sanity_check_callback_args(args)
     if args.model == 'Shallom':
         args.scoring_technique = 'KvsAll'
 

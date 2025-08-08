@@ -154,7 +154,7 @@ class Namespace(argparse.Namespace):
         """Evaluating link prediction performance on data splits while performing periodic evaluation."""
         
         self.adaptive_lr = dict()
-        """Adaptive learning rate parameters, e.g., {"lr_decay": 0.1}"""
+        """Adaptive learning rate parameters, e.g., '{"scheduler_name": "cca"}'"""
 
         self.swa_start_epoch: int = None
         """Epoch at which to start applying stochastic weight averaging."""

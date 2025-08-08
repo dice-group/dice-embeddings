@@ -94,35 +94,19 @@ def get_callbacks(args):
         AccumulateEpochLossCallback(path=args.full_storage_path)
     ]
     if args.swa:
-        if args.swa_start_epoch is None:
-            args.swa_start_epoch = 1
-        assert args.swa_start_epoch > 0, "SWA Start Epoch must be greater than 0"
         print(f"Starting Stochastic Weight Averaging at Epoch: {args.swa_start_epoch}")
-        # Use custom SWA callback for all trainers
         callbacks.append(SWA(swa_start_epoch=args.swa_start_epoch, lr_init=args.lr,
                             max_epochs=args.num_epochs))
     elif args.adaptive_swa:
         callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
     elif args.adaptive_lr:
-        gpu_device_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
-        if args.trainer =='PL' and gpu_device_count < 2:
-            callbacks.append(LRScheduler(adaptive_lr_config=args.adaptive_lr, total_epochs=args.num_epochs,
-            experiment_dir=args.full_storage_path, eta_max=args.lr))
-        else:
-            raise NotImplementedError("Adaptive LR is currently supported with PL Trainer on single GPU only.")
-       
-    else:
-        """No SWA or ASWA or Learning Rate Scheduler applied"""
-
+        callbacks.append(LRScheduler(adaptive_lr_config=args.adaptive_lr, total_epochs=args.num_epochs,
+                        experiment_dir=args.full_storage_path, eta_max=args.lr))
+    
     if args.eval_every_n_epochs > 0 or args.eval_at_epochs is not None:
-        multi_gpu_trainers = {'TP', 'torchDDP'}
-        gpu_device_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
-        if args.trainer in multi_gpu_trainers or gpu_device_count > 1:
-            raise NotImplementedError("PeriodicEvalCallback is not supported for multi-GPU trainers or setup.")
         callbacks.append(PeriodicEvalCallback(experiment_path=args.full_storage_path, max_epochs=args.num_epochs,
-            eval_every_n_epoch=args.eval_every_n_epochs, eval_at_epochs=args.eval_at_epochs,
-            save_model_every_n_epoch=args.save_every_n_epochs, n_epochs_eval_model=args.n_epochs_eval_model
-        ))
+                        eval_every_n_epoch=args.eval_every_n_epochs, eval_at_epochs=args.eval_at_epochs,
+                        save_model_every_n_epoch=args.save_every_n_epochs, n_epochs_eval_model=args.n_epochs_eval_model))
 
     if isinstance(args.callbacks, list):
         return callbacks
