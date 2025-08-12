@@ -8,14 +8,14 @@
    "backend": "pandas",
    "separator": "\\s+",
    "model": "DeCaL",
-   "optim": "Adopt",
+   "optim": "Adam",
    "embedding_dim": 32,
    "num_epochs": 100,
    "batch_size": 1024,
    "lr": 0.1,
    "callbacks": {},
    "trainer": "PL",
-   "scoring_technique": "NegSample",
+   "scoring_technique": "KvsAll",
    "neg_ratio": 2,
    "weight_decay": 0.0,
    "input_dropout_rate": 0.0,
@@ -54,6 +54,6 @@
    "deterministic": true,
    "check_val_every_n_epoch": 1000000,
    "logger": false,
-   "apply_reciprical_or_noise": false,
-   "full_storage_path": "/home/adel/Documents/dice-embeddings/dice-embeddings/bbox_poisoning/Experiments/2025-08-04 14-45-29.827695"
+   "apply_reciprical_or_noise": true,
+   "full_storage_path": "/home/adel/Documents/dice-embeddings/dice-embeddings/bbox_poisoning/Experiments/2025-08-07 11-04-27.531388"
 }

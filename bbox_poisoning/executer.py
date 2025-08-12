@@ -9,6 +9,8 @@ def run_dicee_eval(
     learning_rate,
     embedding_dim,
     loss_function,
+    scoring_technique="KvsAll",
+    optim="Adam",
     ):
 
     args = get_default_arguments(description=[
@@ -19,6 +21,8 @@ def run_dicee_eval(
         "--lr", learning_rate,
         "--embedding_dim", embedding_dim,
         "--loss_fn", loss_function,
+        "--scoring_technique", "KvsAll",
+        "--optim", "Adam",
         "--save_embeddings_as_csv",
     ])
     result = Execute(args=args).start()

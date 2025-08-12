@@ -221,7 +221,7 @@ def compute_embedding_change(model, h_idx, r_idx, t_idx):
         return torch.sqrt(torch.stack(norm_parts).sum()).item()
     return 0.0
 
-def get_low_score_high_gradient_triples(triples_list, top_k):
+def get_low_score_high_gradient_triples(triples_list):
     scores = [float(item[1]) for item in triples_list]
     avg_score = sum(scores) / len(scores)
 
@@ -233,7 +233,7 @@ def get_low_score_high_gradient_triples(triples_list, top_k):
 
     filtered.sort(key=lambda x: x[2], reverse=True)
 
-    return filtered[:top_k]
+    return filtered
 
 def plot_kde_dual_axis(file_path):
     scores = []
@@ -344,7 +344,7 @@ def select_score_range_high_gradient(triples_data, k, score_min=0.35, score_max=
 
     return sorted_candidates[:k]
 
-def select_low_score_high_gradient(triples_data, k, score_percentile):
+def select_low_score_high_gradient(triples_data, score_percentile):
     triples_data_sorted = sorted(triples_data, key=lambda x: x[1])
 
     cutoff_index = max(1, int(len(triples_data) * (score_percentile / 100)))
@@ -352,9 +352,9 @@ def select_low_score_high_gradient(triples_data, k, score_percentile):
 
     low_score_high_grad = sorted(low_score_candidates, key=lambda x: x[2], reverse=True)
 
-    return low_score_high_grad[:k]
+    return low_score_high_grad
 
-def select_high_score_high_gradient(triples_data, k, score_percentile):
+def select_high_score_high_gradient(triples_data, score_percentile):
     triples_by_score = sorted(triples_data, key=lambda x: x[1], reverse=True)
 
     cutoff = max(1, int(len(triples_by_score) * (score_percentile / 100)))
@@ -362,151 +362,167 @@ def select_high_score_high_gradient(triples_data, k, score_percentile):
 
     candidates_by_grad = sorted(high_score_candidates, key=lambda x: x[2], reverse=True)
 
-    return candidates_by_grad[:k]
+    return candidates_by_grad
 
-def select_low_score_low_gradient(triples_data, k, score_percentile):
+def select_low_score_low_gradient(triples_data, score_percentile):
     triples_by_score = sorted(triples_data, key=lambda x: x[1])
     cutoff = max(1, int(len(triples_by_score) * (score_percentile / 100)))
     low_score_candidates = triples_by_score[:cutoff]
 
     low_grad = sorted(low_score_candidates, key=lambda x: x[2])
-    return low_grad[:k]
+    return low_grad
 
-def select_high_score_low_gradient(triples_data, k, score_percentile):
+def select_high_score_low_gradient(triples_data, score_percentile):
     triples_by_score = sorted(triples_data, key=lambda x: x[1], reverse=True)
     cutoff = max(1, int(len(triples_by_score) * (score_percentile / 100)))
     high_score_candidates = triples_by_score[:cutoff]
 
     low_grad = sorted(high_score_candidates, key=lambda x: x[2])
-    return low_grad[:k]
+    return low_grad
+
+# ---------- helpers ----------
+def _as_tuple(t):
+    return tuple(t) if isinstance(t, (list, tuple)) else t
+
+def make_sg_dict(adversarial_triples):
+    out = {}
+    for t, s, g in adversarial_triples:
+        t = _as_tuple(t)
+        out[t] = {"score": float(s), "gradient": float(g)}
+    return out
+
+def _select_by(cent, adversarial_triples, *,
+               centrality="degree", centrality_high=True,
+               metric="score", metric_high=False,
+               top_k=None):
+
+    assert centrality in ("degree", "closeness")
+    assert metric in ("score", "gradient")
+
+    cent = { _as_tuple(t): v for t, v in cent.items() }
+    sg_dict = make_sg_dict(adversarial_triples)
+
+    triples = []
+    for t in cent.keys():
+        if (
+            t in sg_dict
+            and isinstance(cent[t].get(centrality), (int, float))
+            and isinstance(sg_dict[t].get(metric), (int, float))
+        ):
+            triples.append(t)
+
+    if not triples:
+        return []
 
 
-def get_most_impactful_triples(triples_data, k, weights=None):
-    if weights is None:
-        weights = {'centrality': 0.1, 'gradient': 0.45, 'score': 0.45}
+    signed_c_entries = []
+    c_sign = -1.0 if centrality_high else 1.0
+    for t in triples:
+        c_val = cent[t][centrality]
+        signed_c_entries.append((c_sign * c_val, t))
 
-    scores = np.array([item[1] for item in triples_data])
-    gradients = np.array([item[2] for item in triples_data])
-    centralities = np.array([np.mean(list(item[3].values())) for item in triples_data])
-
-    norm_scores = (scores - scores.min()) / (scores.max() - scores.min() + 1e-12)
-    norm_scores = 1 - norm_scores
-
-    norm_gradients = (gradients - gradients.min()) / (gradients.max() - gradients.min() + 1e-12)
-    norm_centralities = (centralities - centralities.min()) / (centralities.max() - centralities.min() + 1e-12)
-
-    combined = (
-        weights['centrality'] * norm_centralities +
-        weights['gradient'] * norm_gradients +
-        weights['score'] * norm_scores
-    )
-
-    sorted_indices = np.argsort(-combined)
-    top_triples = []
-    for idx in sorted_indices[:k]:
-        triple, score, grad, cent_dict = triples_data[idx]
-        top_triples.append((triple, combined[idx], score, grad, cent_dict))
-
-    return top_triples
+    signed_c_entries.sort()
+    triples = [t for _, t in signed_c_entries]
 
 
-# ------------------------------------------------------------------
-# helpers
-# ------------------------------------------------------------------
-def _score_grad_dict(score_grad_info):
-    """{triple: {"score": s, "gradient": g}}"""
-    return {t: {"score": s, "gradient": g} for t, s, g in score_grad_info}
-
-# ------------------------------------------------------------------
-# sorters
-# ------------------------------------------------------------------
-def sort_by_degree(cent_dict, high=True):
-    """Return triples ordered by degree."""
-    return sorted(cent_dict, key=lambda t: cent_dict[t]["degree"], reverse=high)
+    if top_k is not None and top_k > 0:
+        triples = triples[:top_k]
 
 
-def sort_by_closeness(cent_dict, high=True):
-    """Return triples ordered by closeness."""
-    return sorted(cent_dict, key=lambda t: cent_dict[t]["closeness"], reverse=high)
+    m_sign = -1.0 if metric_high else 1.0
+    mc_entries = []
+    for t in triples:
+        m_val = sg_dict[t][metric]
+        c_val = cent[t][centrality]
+        m_signed = m_sign * m_val
+        c_signed = c_sign * c_val
+        mc_entries.append(((m_signed, c_signed), t))
+
+    mc_entries.sort()
+    triples = [t for _, t in mc_entries]
+
+    return triples
 
 
-# ------------------------------------------------------------------
-# selectors
-# ------------------------------------------------------------------
-def pick_by_score(triples, sg_dict, k, high=True):
-    triples = [t for t in triples if t in sg_dict]
-    triples.sort(key=lambda t: sg_dict[t]["score"], reverse=high)
-    return triples[:k]
+def degree_high_score_high(cent, adv, top_k=None):
+    return _select_by(cent, adv, centrality="degree", centrality_high=True,
+                      metric="score", metric_high=True, top_k=top_k)
+
+def degree_high_score_low(cent, adv, top_k=None):
+    return _select_by(cent, adv, centrality="degree", centrality_high=True,
+                      metric="score", metric_high=False, top_k=top_k)
+
+def degree_low_score_high(cent, adv, top_k=None):
+    return _select_by(cent, adv, centrality="degree", centrality_high=False,
+                      metric="score", metric_high=True, top_k=top_k)
+
+def degree_low_score_low(cent, adv, top_k=None):
+    return _select_by(cent, adv, centrality="degree", centrality_high=False,
+                      metric="score", metric_high=False, top_k=top_k)
 
 
-def pick_by_gradient(triples, sg_dict, k, high=True):
-    triples = [t for t in triples if t in sg_dict]
-    triples.sort(key=lambda t: sg_dict[t]["gradient"], reverse=high)
-    return triples[:k]
+def degree_high_grad_high(cent, adv, top_k=None):
+    return _select_by(cent, adv, centrality="degree", centrality_high=True,
+                      metric="gradient", metric_high=True, top_k=top_k)
+
+def degree_high_grad_low(cent, adv, top_k=None):
+    return _select_by(cent, adv, centrality="degree", centrality_high=True,
+                      metric="gradient", metric_high=False, top_k=top_k)
+
+def degree_low_grad_high(cent, adv, top_k=None):
+    return _select_by(cent, adv, centrality="degree", centrality_high=False,
+                      metric="gradient", metric_high=True, top_k=top_k)
+
+def degree_low_grad_low(cent, adv, top_k=None):
+    return _select_by(cent, adv, centrality="degree", centrality_high=False,
+                      metric="gradient", metric_high=False, top_k=top_k)
 
 
-# ------------------------------------------------------------------
-# combined functions
-# ------------------------------------------------------------------
-def degree_high_score_high(cent, sg, k):
-    return pick_by_score(sort_by_degree(cent, high=True), _score_grad_dict(sg), k, high=True)
+def closeness_high_score_high(cent, adv, top_k=None):
+    return _select_by(cent, adv, centrality="closeness", centrality_high=True,
+                      metric="score", metric_high=True, top_k=top_k)
 
-def degree_high_score_low(cent, sg, k):
-    return pick_by_score(sort_by_degree(cent, high=True), _score_grad_dict(sg), k, high=False)
+def closeness_high_score_low(cent, adv, top_k=None):
+    return _select_by(cent, adv, centrality="closeness", centrality_high=True,
+                      metric="score", metric_high=False, top_k=top_k)
 
-def degree_low_score_high(cent, sg, k):
-    return pick_by_score(sort_by_degree(cent, high=False), _score_grad_dict(sg), k, high=True)
+def closeness_low_score_high(cent, adv, top_k=None):
+    return _select_by(cent, adv, centrality="closeness", centrality_high=False,
+                      metric="score", metric_high=True, top_k=top_k)
 
-def degree_low_score_low(cent, sg, k):
-    return pick_by_score(sort_by_degree(cent, high=False), _score_grad_dict(sg), k, high=False)
+def closeness_low_score_low(cent, adv, top_k=None):
+    return _select_by(cent, adv, centrality="closeness", centrality_high=False,
+                      metric="score", metric_high=False, top_k=top_k)
 
-def degree_high_grad_high(cent, sg, k):
-    return pick_by_gradient(sort_by_degree(cent, high=True), _score_grad_dict(sg), k, high=True)
 
-def degree_high_grad_low(cent, sg, k):
-    return pick_by_gradient(sort_by_degree(cent, high=True), _score_grad_dict(sg), k, high=False)
+def closeness_high_grad_high(cent, adv, top_k=None):
+    return _select_by(cent, adv, centrality="closeness", centrality_high=True,
+                      metric="gradient", metric_high=True, top_k=top_k)
 
-def degree_low_grad_high(cent, sg, k):
-    return pick_by_gradient(sort_by_degree(cent, high=False), _score_grad_dict(sg), k, high=True)
+def closeness_high_grad_low(cent, adv, top_k=None):
+    return _select_by(cent, adv, centrality="closeness", centrality_high=True,
+                      metric="gradient", metric_high=False, top_k=top_k)
 
-def degree_low_grad_low(cent, sg, k):
-    return pick_by_gradient(sort_by_degree(cent, high=False), _score_grad_dict(sg), k, high=False)
+def closeness_low_grad_high(cent, adv, top_k=None):
+    return _select_by(cent, adv, centrality="closeness", centrality_high=False,
+                      metric="gradient", metric_high=True, top_k=top_k)
 
-def closeness_high_score_high(cent, sg, k):
-    return pick_by_score(sort_by_closeness(cent, high=True), _score_grad_dict(sg), k, high=True)
+def closeness_low_grad_low(cent, adv, top_k=None):
+    return _select_by(cent, adv, centrality="closeness", centrality_high=False,
+                      metric="gradient", metric_high=False, top_k=top_k)
 
-def closeness_high_score_low(cent, sg, k):
-    return pick_by_score(sort_by_closeness(cent, high=True), _score_grad_dict(sg), k, high=False)
 
-def closeness_low_score_high(cent, sg, k):
-    return pick_by_score(sort_by_closeness(cent, high=False), _score_grad_dict(sg), k, high=True)
+def low_degree(cent):
+    return sorted((tuple(t) for t in cent.keys()), key=lambda t: cent[t]["degree"])
 
-def closeness_low_score_low(cent, sg, k):
-    return pick_by_score(sort_by_closeness(cent, high=False), _score_grad_dict(sg), k, high=False)
+def high_degree(cent):
+    return sorted((tuple(t) for t in cent.keys()), key=lambda t: cent[t]["degree"], reverse=True)
 
-def closeness_high_grad_high(cent, sg, k):
-    return pick_by_gradient(sort_by_closeness(cent, high=True), _score_grad_dict(sg), k, high=True)
+def low_closeness(cent):
+    return sorted((tuple(t) for t in cent.keys()), key=lambda t: cent[t]["closeness"])
 
-def closeness_high_grad_low(cent, sg, k):
-    return pick_by_gradient(sort_by_closeness(cent, high=True), _score_grad_dict(sg), k, high=False)
-
-def closeness_low_grad_high(cent, sg, k):
-    return pick_by_gradient(sort_by_closeness(cent, high=False), _score_grad_dict(sg), k, high=True)
-
-def closeness_low_grad_low(cent, sg, k):
-    return pick_by_gradient(sort_by_closeness(cent, high=False), _score_grad_dict(sg), k, high=False)
-
-def low_degree(cent, k):
-    return sort_by_degree(cent, high=False)[:k]
-
-def high_degree(cent, k):
-    return sort_by_degree(cent, high=True)[:k]
-
-def low_openness(cent, k):
-    return sort_by_closeness(cent, high=False)[:k]
-
-def high_openness(cent, k):
-    return sort_by_closeness(cent, high=True)[:k]
+def high_closeness(cent):
+    return sorted((tuple(t) for t in cent.keys()), key=lambda t: cent[t]["closeness"], reverse=True)
 
 
 def select_adverserial_triples_blackbox(
@@ -585,42 +601,48 @@ def select_adverserial_triples_blackbox(
         adverserial_triples.append((corrupted_triple, pred.item(), param_norm))
 
     adverserial_triples.sort(key=lambda x: x[1], reverse=True)
-    high_scores = adverserial_triples[:top_k]
+    high_scores = adverserial_triples
 
     adverserial_triples.sort(key=lambda x: x[1], reverse=False)
-    low_scores = adverserial_triples[:top_k]
+    low_scores = adverserial_triples
 
     mixed_scores = low_scores[:top_k // 2] + high_scores[:top_k // 2]
 
     #----------------------------------------------------------------
 
     adverserial_triples.sort(key=lambda x: x[2], reverse=True)
-    high_gradients = adverserial_triples[:top_k]
+    high_gradients = adverserial_triples
 
     adverserial_triples.sort(key=lambda x: x[2], reverse=False)
-    low_gradients = adverserial_triples[:top_k]
+    low_gradients = adverserial_triples
 
     mixed_gradients = low_scores[:top_k // 2] + high_scores[:top_k // 2]
 
-    triples_with_low_score_high_gradient = select_low_score_high_gradient(adverserial_triples, top_k, score_percentile=50)
+    triples_with_low_score_high_gradient = select_low_score_high_gradient(adverserial_triples, score_percentile=50)
 
 
     return high_scores, low_scores, mixed_scores, high_gradients, low_gradients, mixed_gradients, triples_with_low_score_high_gradient
 
 def select_adverserial_triples_whitebox(
         triples,
-        top_k,
         corruption_type,
         oracle,
+        seed,
 ):
+
+    random.seed(seed)
 
     entity_list = list(set([h for h, _, _ in triples] + [t for _, _, t in triples]))
     relation_list = list(set([r for _, r, _ in triples]))
 
     adverserial_triples = []
 
+    all_combinations = list(product(entity_list, relation_list, entity_list))
+
     for triple in triples:
         h, r, t = triple
+
+    #for h, r, t in all_combinations[:50000]:
 
         attempts = 0
         max_attempts = 10
@@ -645,6 +667,21 @@ def select_adverserial_triples_whitebox(
                 corrupt_h = random.choice([i for i in entity_list if i != h])
                 corrupt_t = random.choice([i for i in entity_list if i != t])
                 corrupted = (corrupt_h, r, corrupt_t)
+            elif corruption_type == 'head-rel':
+                corrupt_h = random.choice([i for i in entity_list if i != h])
+                corrupt_r = random.choice([i for i in relation_list if i != r])
+                corrupted = (corrupt_h, corrupt_r, t)
+            elif corruption_type == 'random-one':
+                choice = random.choice(['head', 'rel', 'tail'])
+                if choice == 'head':
+                    corrupt_h = random.choice([i for i in entity_list if i != h])
+                    corrupted = (corrupt_h, r, t)
+                elif choice == 'rel':
+                    corrupt_r = random.choice([i for i in relation_list if i != r])
+                    corrupted = (h, corrupt_r, t)
+                else:
+                    corrupt_t = random.choice([i for i in entity_list if i != t])
+                    corrupted = (h, r, corrupt_t)
             else:
                 raise ValueError("Invalid corruption_type")
 
@@ -685,39 +722,51 @@ def select_adverserial_triples_whitebox(
         adverserial_triples.append(
             (corrupted_triple, pred_prob.item(), oracle_grad_norm.item()))
 
-    mixed_low, mixed_high = top_k // 2, (top_k + 1) // 2
 
+    low_scores = sorted(adverserial_triples.copy(), key=lambda x: x[1])  # ascending
+    high_scores = sorted(adverserial_triples.copy(), key=lambda x: x[1], reverse=True)  # descending
 
-    adverserial_triples.sort(key=lambda x: x[1], reverse=True)
-    high_scores = adverserial_triples[:top_k]
+    pairs = min(len(low_scores), len(high_scores))
+    ordered_mix = []
+    for i in range(pairs):
+        ordered_mix.append(low_scores[i])
+        ordered_mix.append(high_scores[i])
 
-    adverserial_triples.sort(key=lambda x: x[1], reverse=False)
-    low_scores = adverserial_triples[:top_k]
+    if len(low_scores) > pairs:
+        ordered_mix.extend(low_scores[pairs:])
+    if len(high_scores) > pairs:
+        ordered_mix.extend(high_scores[pairs:])
 
-    mixed_scores = low_scores[:mixed_low] + high_scores[:mixed_high]
+    mixed_scores = ordered_mix
+    # ----------------------------------------------------------------
+    low_gradients = sorted(adverserial_triples.copy(), key=lambda x: x[2])  # ascending
+    high_gradients = sorted(adverserial_triples.copy(), key=lambda x: x[2], reverse=True)  # descending
 
+    pairs = min(len(low_gradients), len(high_gradients))
+    ordered_mix_grad = []
+    for i in range(pairs):
+        ordered_mix_grad.append(low_gradients[i])
+        ordered_mix_grad.append(high_gradients[i])
+
+    if len(low_gradients) > pairs:
+        ordered_mix_grad.extend(low_gradients[pairs:])
+    if len(high_gradients) > pairs:
+        ordered_mix_grad.extend(high_gradients[pairs:])
+
+    mixed_gradients = ordered_mix_grad
     # ----------------------------------------------------------------
 
-    adverserial_triples.sort(key=lambda x: x[2], reverse=True)
-    high_gradients = adverserial_triples[:top_k]
-
-    adverserial_triples.sort(key=lambda x: x[2], reverse=False)
-    low_gradients = adverserial_triples[:top_k]
-
-    mixed_gradients = low_scores[:mixed_low] + high_scores[:mixed_high]
-
-    triples_with_low_score_high_gradient = select_low_score_high_gradient(adverserial_triples, top_k,
+    triples_with_low_score_high_gradient = select_low_score_high_gradient(adverserial_triples,
                                                                           score_percentile=50)
 
-    triples_with_high_score_high_gradient = select_high_score_high_gradient(adverserial_triples, top_k, score_percentile=50)
+    triples_with_high_score_high_gradient = select_high_score_high_gradient(adverserial_triples, score_percentile=50)
 
-    triples_with_low_score_low_gradient = select_low_score_low_gradient(adverserial_triples, top_k, score_percentile=50)
+    triples_with_low_score_low_gradient = select_low_score_low_gradient(adverserial_triples, score_percentile=50)
 
-    triples_with_high_score_low_gradient = select_high_score_low_gradient(adverserial_triples, top_k, score_percentile=50)
+    triples_with_high_score_low_gradient = select_high_score_low_gradient(adverserial_triples, score_percentile=50)
 
     corrupted_triples = [item[0] for item in adverserial_triples]
 
-    corrupted_centerality = compute_triple_centrality(triples, corrupted_triples)
 
     adverserial_triples_high_scores = [item[0] for item in high_scores]
     adverserial_triples_low_scores = [item[0] for item in low_scores]
@@ -730,30 +779,33 @@ def select_adverserial_triples_whitebox(
     adverserial_triples_low_score_low_gradient = [item[0] for item in triples_with_low_score_low_gradient]
     adverserial_triples_high_score_low_gradient = [item[0] for item in triples_with_high_score_low_gradient]
 
-    degree_high_score_high_triples = degree_high_score_high(corrupted_centerality, adverserial_triples, top_k)
-    degree_high_score_low_triples = degree_high_score_low(corrupted_centerality, adverserial_triples, top_k)
-    degree_low_score_high_triples = degree_low_score_high(corrupted_centerality, adverserial_triples, top_k)
-    degree_low_score_low_triples = degree_low_score_low(corrupted_centerality, adverserial_triples, top_k)
+    corrupted_centerality = compute_triple_centrality(triples, corrupted_triples)
 
-    degree_high_grad_high_triples = degree_high_grad_high(corrupted_centerality, adverserial_triples, top_k)
-    degree_high_grad_low_triples = degree_high_grad_low(corrupted_centerality, adverserial_triples, top_k)
-    degree_low_grad_high_triples = degree_low_grad_high(corrupted_centerality, adverserial_triples, top_k)
-    degree_low_grad_low_triples = degree_low_grad_low(corrupted_centerality, adverserial_triples, top_k)
 
-    closeness_high_score_high_triples = closeness_high_score_high(corrupted_centerality, adverserial_triples, top_k)
-    closeness_high_score_low_triples = closeness_high_score_low(corrupted_centerality, adverserial_triples, top_k)
-    closeness_low_score_high_triples = closeness_low_score_high(corrupted_centerality, adverserial_triples, top_k)
-    closeness_low_score_low_triples = closeness_low_score_low(corrupted_centerality, adverserial_triples, top_k)
+    degree_high_score_high_triples = degree_high_score_high(corrupted_centerality, adverserial_triples)
+    degree_high_score_low_triples = degree_high_score_low(corrupted_centerality, adverserial_triples)
+    degree_low_score_high_triples = degree_low_score_high(corrupted_centerality, adverserial_triples)
+    degree_low_score_low_triples = degree_low_score_low(corrupted_centerality, adverserial_triples)
 
-    closeness_high_grad_high_triples = closeness_high_grad_high(corrupted_centerality, adverserial_triples, top_k)
-    closeness_high_grad_low_triples = closeness_high_grad_low(corrupted_centerality, adverserial_triples, top_k)
-    closeness_low_grad_high_triples = closeness_low_grad_high(corrupted_centerality, adverserial_triples, top_k)
-    closeness_low_grad_low_triples = closeness_low_grad_low(corrupted_centerality, adverserial_triples, top_k)
+    degree_high_grad_high_triples = degree_high_grad_high(corrupted_centerality, adverserial_triples)
+    degree_high_grad_low_triples = degree_high_grad_low(corrupted_centerality, adverserial_triples)
+    degree_low_grad_high_triples = degree_low_grad_high(corrupted_centerality, adverserial_triples)
+    degree_low_grad_low_triples = degree_low_grad_low(corrupted_centerality, adverserial_triples)
 
-    lowest_deg = low_degree(corrupted_centerality, top_k)
-    highest_deg = high_degree(corrupted_centerality, top_k)
-    lowest_opn = low_openness(corrupted_centerality, top_k)
-    highest_opn = high_openness(corrupted_centerality, top_k)
+    closeness_high_score_high_triples = closeness_high_score_high(corrupted_centerality, adverserial_triples)
+    closeness_high_score_low_triples = closeness_high_score_low(corrupted_centerality, adverserial_triples)
+    closeness_low_score_high_triples = closeness_low_score_high(corrupted_centerality, adverserial_triples)
+    closeness_low_score_low_triples = closeness_low_score_low(corrupted_centerality, adverserial_triples)
+
+    closeness_high_grad_high_triples = closeness_high_grad_high(corrupted_centerality, adverserial_triples)
+    closeness_high_grad_low_triples = closeness_high_grad_low(corrupted_centerality, adverserial_triples)
+    closeness_low_grad_high_triples = closeness_low_grad_high(corrupted_centerality, adverserial_triples)
+    closeness_low_grad_low_triples = closeness_low_grad_low(corrupted_centerality, adverserial_triples)
+
+    low_deg = low_degree(corrupted_centerality)
+    high_deg = high_degree(corrupted_centerality)
+    low_close = low_closeness(corrupted_centerality)
+    high_close = high_closeness(corrupted_centerality)
 
 
     return (
@@ -790,10 +842,10 @@ def select_adverserial_triples_whitebox(
             closeness_low_grad_high_triples,
             closeness_low_grad_low_triples,
 
-            lowest_deg,
-            highest_deg,
-            lowest_opn,
-            highest_opn,
+            low_deg,
+            high_deg,
+            low_close,
+            high_close,
             )
 
 

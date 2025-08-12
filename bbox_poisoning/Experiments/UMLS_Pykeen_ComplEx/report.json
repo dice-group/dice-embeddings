@@ -1,0 +1,11 @@
+{
+    "num_train_triples": 5216,
+    "num_entities": 135,
+    "num_relations": 46,
+    "max_length_subword_tokens": null,
+    "runtime_kg_loading": 0.16835403442382812,
+    "EstimatedSizeMB": 0.0110626220703125,
+    "NumParam": 11584,
+    "path_experiment_folder": "/home/adel/Documents/dice-embeddings/dice-embeddings/bbox_poisoning/Experiments/2025-08-07 11-01-45.252586",
+    "Runtime": 2.428715229034424
+}

@@ -2,7 +2,13 @@ import random
 from collections import defaultdict
 import random
 
-def poison_random(triples, k, corruption_type):
+
+
+
+def poison_random(triples, k, corruption_type, seed):
+
+    random.seed(seed)
+
     entity_list = list({h for h, _, _ in triples} | {t for _, _, t in triples})
     relation_list = list({r for _, r, _ in triples})
 
@@ -36,6 +42,21 @@ def poison_random(triples, k, corruption_type):
                 corrupt_h = random.choice([i for i in entity_list if i != h])
                 corrupt_t = random.choice([i for i in entity_list if i != t])
                 corrupted = (corrupt_h, r, corrupt_t)
+            elif corruption_type == 'head-rel':
+                corrupt_h = random.choice([i for i in entity_list if i != h])
+                corrupt_r = random.choice([i for i in relation_list if i != r])
+                corrupted = (corrupt_h, corrupt_r, t)
+            elif corruption_type == 'random-one':
+                choice = random.choice(['head', 'rel', 'tail'])
+                if choice == 'head':
+                    corrupt_h = random.choice([i for i in entity_list if i != h])
+                    corrupted = (corrupt_h, r, t)
+                elif choice == 'rel':
+                    corrupt_r = random.choice([i for i in relation_list if i != r])
+                    corrupted = (h, corrupt_r, t)
+                else:
+                    corrupt_t = random.choice([i for i in entity_list if i != t])
+                    corrupted = (h, r, corrupt_t)
             else:
                 raise ValueError("Invalid corruption_type")
 

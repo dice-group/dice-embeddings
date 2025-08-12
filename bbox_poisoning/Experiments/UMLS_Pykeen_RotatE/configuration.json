@@ -1,5 +1,5 @@
 {
-   "dataset_dir": "UMLS/clean/",
+   "dataset_dir": "./KGs/UMLS",
    "sparql_endpoint": null,
    "path_single_kg": null,
    "path_to_store_single_run": null,
@@ -8,10 +8,10 @@
    "backend": "pandas",
    "separator": "\\s+",
    "model": "Pykeen_RotatE",
-   "optim": "Adopt",
+   "optim": "Adam",
    "embedding_dim": 32,
    "num_epochs": 100,
-   "batch_size": 32,
+   "batch_size": 1024,
    "lr": 0.1,
    "callbacks": {},
    "trainer": "PL",
@@ -55,5 +55,5 @@
    "check_val_every_n_epoch": 1000000,
    "logger": false,
    "apply_reciprical_or_noise": true,
-   "full_storage_path": "/home/adel/Documents/dice-embeddings/bbox_poisoning/Experiments/2025-07-09 10-40-54.955008"
+   "full_storage_path": "/home/adel/Documents/dice-embeddings/dice-embeddings/bbox_poisoning/Experiments/2025-08-07 11-02-38.332522"
 }
