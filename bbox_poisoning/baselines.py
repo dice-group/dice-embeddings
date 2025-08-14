@@ -1,18 +1,19 @@
 import random
 from collections import defaultdict
 import random
-
+import torch
 
 
 
 def poison_random(triples, k, corruption_type, seed):
 
     random.seed(seed)
+    torch.manual_seed(seed)
 
     entity_list = list({h for h, _, _ in triples} | {t for _, _, t in triples})
     relation_list = list({r for _, r, _ in triples})
 
-    selected_triples = random.sample(triples, min(k, len(triples)))
+    selected_triples = random.sample(triples, k)
 
     corrupted_triples = []
     seen = set(triples)

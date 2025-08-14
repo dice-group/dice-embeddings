@@ -3,11 +3,8 @@ import os
 import torch, random, heapq, statistics
 import math
 import seaborn as sns
-import numpy as np
-import numpy as np
 from scipy.stats import pearsonr
 from scipy.stats import spearmanr
-import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -15,9 +12,35 @@ import numpy as np
 import statistics
 from itertools import product
 import matplotlib
-
+import torch.nn.functional as F
+import torch.nn as nn
+from operator import itemgetter
 
 matplotlib.use("Agg")
+
+def get_embedding_modules_by_name(model):
+    """Find embeddings by common attribute names. Edit names here to match your Keci class."""
+    m = model.module if hasattr(model, "module") else model
+    ent = None
+    rel = None
+    for name in ("entity_emb", "entities", "entity_embeddings", "ent_emb"):
+        if hasattr(m, name) and isinstance(getattr(m, name), nn.Embedding):
+            ent = getattr(m, name); break
+    for name in ("relation_emb", "relations", "relation_embeddings", "rel_emb"):
+        if hasattr(m, name) and isinstance(getattr(m, name), nn.Embedding):
+            rel = getattr(m, name); break
+    return ent, rel
+
+def grads_for_rows(ent_emb_mod, rel_emb_mod, idxs: torch.LongTensor):
+    GE = ent_emb_mod.weight.grad
+    GR = rel_emb_mod.weight.grad
+    if GE is None or GR is None:
+        raise RuntimeError("Embedding grads are None; check for .detach() / no_grad in forward.")
+    if GE.is_sparse: GE = GE.to_dense()
+    if GR.is_sparse: GR = GR.to_dense()
+    h_i, r_i, t_i = idxs[0,0].item(), idxs[0,1].item(), idxs[0,2].item()
+    return GE[h_i], GR[r_i], GE[t_i]
+
 
 
 def set_seeds(seed):
@@ -29,17 +52,19 @@ def set_seeds(seed):
     torch.backends.cudnn.benchmark = False
 
 
-def compute_triple_centrality(graph_triples, query_triples):
+def compute_triple_centrality(graph_triples, adverserial_triples):
+
+    corrupted_triples = [item[0] for item in adverserial_triples]
 
     G = nx.Graph()
 
-    for h, r, t in graph_triples + query_triples:
+    for h, r, t in graph_triples + corrupted_triples:
         G.add_edge(h, t, relation=r)
 
     deg, clo = nx.degree_centrality(G), nx.closeness_centrality(G)
 
     results = {}
-    for h, r, t in query_triples:
+    for h, r, t in corrupted_triples:
         results[(h, r, t)] = {
             "degree":   (deg[h] + deg[t]) / 2,
             "closeness": (clo[h] + clo[t]) / 2,
@@ -623,26 +648,394 @@ def select_adverserial_triples_blackbox(
 
     return high_scores, low_scores, mixed_scores, high_gradients, low_gradients, mixed_gradients, triples_with_low_score_high_gradient
 
+
+"""
+def fgsm_delta(grad: torch.Tensor, eps: float, norm: str = "linf") -> torch.Tensor:
+    if norm == "linf":
+        return eps * grad.sign()
+    if norm == "l2":
+        gnorm = grad.norm() + 1e-12
+        return eps * (grad / gnorm)
+    raise ValueError("norm must be 'linf' or 'l2'")
+
+
+def nearest_idx_excluding(vec: torch.Tensor, table: torch.Tensor, exclude_idx: int) -> int:
+    # vec: [d]; table: [N, d]
+    v = vec.unsqueeze(0)               # [1, d]
+    d = torch.cdist(v, table)[0]       # [N]
+    d[exclude_idx] = float("inf")      # force change
+    return int(torch.argmin(d).item())
+
+
+def logits_for_indices(model, h_i: int, r_i: int, t_i: int, device) -> torch.Tensor:
+    idxs = torch.tensor([[h_i, r_i, t_i]], dtype=torch.long, device=device)
+    return model.forward_triples(idxs)    # raw model score (logit or energy)
+
+
+# ---------- main FGSM selector with global polarity flip ----------
+
+def select_adversarial_triples_fgsm(
+    triples,
+    corruption_type,
+    oracle,
+    seed=None,
+    eps: float = 1e-2,
+    norm: str = "linf",
+    SIGN: int = -1,  # <<< GLOBAL FLIP: -1 if model returns energy (lower=true); +1 if real logits (higher=true)
+):
+    if seed is not None:
+        random.seed(seed)
+        torch.manual_seed(seed)
+
+    device = next(oracle.model.parameters()).device
+
+    # maps
+    E2I = oracle.entity_to_idx
+    R2I = oracle.relation_to_idx
+    I2E = {i: e for e, i in E2I.items()}
+    I2R = {i: r for r, i in R2I.items()}
+
+    # set of clean triples in index space (fast membership)
+    triples_set_idx = {(E2I[h], R2I[r], E2I[t]) for (h, r, t) in triples}
+
+    # embedding modules
+    ent_emb = oracle.model.entity_embeddings
+    rel_emb = oracle.model.relation_embeddings
+    if not isinstance(ent_emb, nn.Embedding) or not isinstance(rel_emb, nn.Embedding):
+        raise RuntimeError("Expected nn.Embedding at oracle.model.entity_embeddings / relation_embeddings")
+
+    # frozen copies for nearest snapping
+    E = ent_emb.weight.detach()    # [n_ent, d]
+    R = rel_emb.weight.detach()    # [n_rel, d]
+
+    adverserial_triples = []
+
+    for (h, r, t) in triples:
+        h_i = E2I[h]
+        r_i = R2I[r]
+        t_i = E2I[t]
+
+        # ---- 1) grads on CLEAN triple (target=1) with GLOBAL SIGN ----
+        for p in oracle.model.parameters():
+            p.requires_grad_(True)
+        oracle.model.zero_grad(set_to_none=True)
+        oracle.model.train(False)
+
+        raw_clean = logits_for_indices(oracle.model, h_i, r_i, t_i, device)  # raw score (logit OR energy)
+        logits = SIGN * raw_clean                                            # global polarity fix
+        target_pos = torch.ones_like(logits)
+        loss = F.binary_cross_entropy_with_logits(logits, target_pos)
+        loss.backward()
+
+        GE = ent_emb.weight.grad
+        GR = rel_emb.weight.grad
+        if GE is None or GR is None:
+            raise RuntimeError("Embedding grads are None; ensure forward_triples doesn't detach / no_grad.")
+        if GE.is_sparse: GE = GE.to_dense()
+        if GR.is_sparse: GR = GR.to_dense()
+
+        g_h = GE[h_i]   # [d]
+        g_r = GR[r_i]   # [d]
+        g_t = GE[t_i]   # [d]
+
+        triple_grad_norm = torch.linalg.vector_norm(torch.cat([g_h.flatten(), g_r.flatten(), g_t.flatten()]))
+
+        # ---- 2) FGSM steps in embedding space ----
+        dh = fgsm_delta(g_h, eps, norm)
+        dr = fgsm_delta(g_r, eps, norm)
+        dt = fgsm_delta(g_t, eps, norm)
+
+        Eh = E[h_i] + dh
+        Er = R[r_i] + dr
+        Et = E[t_i] + dt
+
+        # nearest valid symbols (exclude originals)
+        h_adv_i = nearest_idx_excluding(Eh, E, h_i)
+        r_adv_i = nearest_idx_excluding(Er, R, r_i)
+        t_adv_i = nearest_idx_excluding(Et, E, t_i)
+
+        # ---- 3) choose adversarial triple by corruption_type ----
+        if corruption_type == "all":
+            cand = (h_adv_i, r_adv_i, t_adv_i)
+        elif corruption_type == "head":
+            cand = (h_adv_i, r_i, t_i)
+        elif corruption_type == "rel":
+            cand = (h_i, r_adv_i, t_i)
+        elif corruption_type == "tail":
+            cand = (h_i, r_i, t_adv_i)
+        elif corruption_type == "head-tail":
+            cand = (h_adv_i, r_i, t_adv_i)
+        elif corruption_type == "head-rel":
+            cand = (h_adv_i, r_adv_i, t_i)
+        elif corruption_type == "random-one":
+            # evaluate three single-field changes; pick the one with MAX BCE on SIGN*raw
+            with torch.no_grad():
+                lh = F.binary_cross_entropy_with_logits(
+                    SIGN * logits_for_indices(oracle.model, h_adv_i, r_i, t_i, device),
+                    target_pos
+                ).item()
+                lr = F.binary_cross_entropy_with_logits(
+                    SIGN * logits_for_indices(oracle.model, h_i, r_adv_i, t_i, device),
+                    target_pos
+                ).item()
+                lt = F.binary_cross_entropy_with_logits(
+                    SIGN * logits_for_indices(oracle.model, h_i, r_i, t_adv_i, device),
+                    target_pos
+                ).item()
+            if lh >= lr and lh >= lt:
+                cand = (h_adv_i, r_i, t_i)
+            elif lr >= lt:
+                cand = (h_i, r_adv_i, t_i)
+            else:
+                cand = (h_i, r_i, t_adv_i)
+        else:
+            raise ValueError("Invalid corruption_type")
+
+        # ---- 4) ensure candidate is not the original and not a clean triple ----
+        attempts = 0
+        max_attempts = 5
+        while (cand == (h_i, r_i, t_i)) or (cand in triples_set_idx):
+            attempts += 1
+            if attempts > max_attempts:
+                break
+            # mask current choice and re-pick nearest for the changed field(s)
+            if cand[0] != h_i:
+                d = torch.cdist(Eh.unsqueeze(0), E)[0]
+                d[h_i] = float("inf")
+                d[cand[0]] = float("inf")
+                cand = (int(torch.argmin(d).item()), cand[1], cand[2])
+            elif cand[1] != r_i:
+                d = torch.cdist(Er.unsqueeze(0), R)[0]
+                d[r_i] = float("inf")
+                d[cand[1]] = float("inf")
+                cand = (cand[0], int(torch.argmin(d).item()), cand[2])
+            elif cand[2] != t_i:
+                d = torch.cdist(Et.unsqueeze(0), E)[0]
+                d[t_i] = float("inf")
+                d[cand[2]] = float("inf")
+                cand = (cand[0], cand[1], int(torch.argmin(d).item()))
+
+        # ---- 5) evaluate adversarial triple and store (ALWAYS using SIGN) ----
+        h_c, r_c, t_c = cand
+        raw_adv = logits_for_indices(oracle.model, h_c, r_c, t_c, device)
+        pred_prob = torch.sigmoid(SIGN * raw_adv).item()  # probability after polarity fix
+
+        corrupted_triple = (I2E[h_c], I2R[r_c], I2E[t_c])  # names
+        clean_triple = (h, r, t)
+        adverserial_triples.append(
+            (corrupted_triple, clean_triple, pred_prob, float(triple_grad_norm))
+        )
+
+    # ---- 6) rank selections ----
+    low_scores = sorted(adverserial_triples.copy(), key=itemgetter(2))                 # ascending prob
+    corrupted_centerality = compute_triple_centrality(triples, adverserial_triples)    # your function
+    high_close = high_closeness(corrupted_centerality)                                 # your function
+    high_gradients = sorted(adverserial_triples.copy(), key=itemgetter(3), reverse=True)
+
+    return low_scores, high_close, high_gradients
+"""
+
+
+# ------- helpers (top-level) -------
+
+def fgsm_delta(grad: torch.Tensor, eps: float, norm: str = "linf") -> torch.Tensor:
+    if norm == "linf":
+        return eps * grad.sign()
+    if norm == "l2":
+        gnorm = grad.norm() + 1e-12
+        return eps * (grad / gnorm)
+    raise ValueError("norm must be 'linf' or 'l2'")
+
+def nearest_idx_excluding(vec: torch.Tensor, table: torch.Tensor, exclude_idx: int) -> int:
+    # vec: [d], table: [N, d]
+    v = vec.unsqueeze(0)               # [1, d]
+    d = torch.cdist(v, table)[0]       # [N] (L2 distances)
+    d[exclude_idx] = float("inf")      # force a change
+    return int(torch.argmin(d).item())
+
+def logits_for_indices(model, h_i: int, r_i: int, t_i: int, device) -> torch.Tensor:
+    idxs = torch.tensor([[h_i, r_i, t_i]], dtype=torch.long, device=device)
+    return model.forward_triples(idxs)  # raw logits expected (do not sigmoid here)
+
+
+# ------- main FGSM selector on CLEAN triples -------
+
+def select_adversarial_triples_fgsm(
+    triples,
+    corruption_type,
+    oracle,
+    seed,
+    eps: float = 1e-2,   # try 1e-3 .. 5e-2 depending on embedding scale
+    norm: str = "linf"   # "linf" (sign step) or "l2"
+):
+    random.seed(seed)
+    torch.manual_seed(seed)
+
+    device = next(oracle.model.parameters()).device
+
+    # maps and reverse maps
+    E2I = oracle.entity_to_idx
+    R2I = oracle.relation_to_idx
+    I2E = {i: e for e, i in E2I.items()}
+    I2R = {i: r for r, i in R2I.items()}
+
+    # for fast membership checks (avoid generating an existing clean triple)
+    triples_set_idx = {(E2I[h], R2I[r], E2I[t]) for (h, r, t) in triples}
+
+    # embedding modules (assumed nn.Embedding)
+    ent_emb = oracle.model.entity_embeddings
+    rel_emb = oracle.model.relation_embeddings
+    if not isinstance(ent_emb, nn.Embedding) or not isinstance(rel_emb, nn.Embedding):
+        raise RuntimeError("Expected nn.Embedding at model.entity_embeddings / relation_embeddings")
+
+    # frozen tables for nearest snapping
+    E = ent_emb.weight.detach()  # [n_ent, d]
+    R = rel_emb.weight.detach()  # [n_rel, d]
+
+    adverserial_triples = []
+
+    for (h, r, t) in triples:
+        h_i = E2I[h]
+        r_i = R2I[r]
+        t_i = E2I[t]
+
+        # ---- 1) gradients on the CLEAN triple (label = 1) ----
+        for p in oracle.model.parameters():
+            p.requires_grad_(True)
+        oracle.model.zero_grad(set_to_none=True)
+        oracle.model.train(False)
+
+        logits_clean = logits_for_indices(oracle.model, h_i, r_i, t_i, device)  # RAW logits
+        target_pos = torch.ones_like(logits_clean)
+        loss = F.binary_cross_entropy_with_logits(logits_clean, target_pos)
+        loss.backward()
+
+        GE = ent_emb.weight.grad
+        GR = rel_emb.weight.grad
+        if GE is None or GR is None:
+            raise RuntimeError("Embedding grads are None; ensure forward_triples doesn't detach / no_grad.")
+        if GE.is_sparse: GE = GE.to_dense()
+        if GR.is_sparse: GR = GR.to_dense()
+
+        g_h = GE[h_i]      # [d]
+        g_r = GR[r_i]      # [d]
+        g_t = GE[t_i]      # [d]
+
+        triple_grad_norm = torch.linalg.vector_norm(torch.cat([g_h.flatten(), g_r.flatten(), g_t.flatten()]))
+
+        # ---- 2) FGSM step in embedding space ----
+        dh = fgsm_delta(g_h, eps, norm)
+        dr = fgsm_delta(g_r, eps, norm)
+        dt = fgsm_delta(g_t, eps, norm)
+
+        Eh = E[h_i] + dh
+        Er = R[r_i] + dr
+        Et = E[t_i] + dt
+
+        # nearest valid symbols (exclude originals)
+        h_adv_i = nearest_idx_excluding(Eh, E, h_i)
+        r_adv_i = nearest_idx_excluding(Er, R, r_i)
+        t_adv_i = nearest_idx_excluding(Et, E, t_i)
+
+        # ---- 3) pick candidate according to corruption_type ----
+        if corruption_type == "all":
+            cand = (h_adv_i, r_adv_i, t_adv_i)
+        elif corruption_type == "head":
+            cand = (h_adv_i, r_i, t_i)
+        elif corruption_type == "rel":
+            cand = (h_i, r_adv_i, t_i)
+        elif corruption_type == "tail":
+            cand = (h_i, r_i, t_adv_i)
+        elif corruption_type == "head-tail":
+            cand = (h_adv_i, r_i, t_adv_i)
+        elif corruption_type == "head-rel":
+            cand = (h_adv_i, r_adv_i, t_i)
+        elif corruption_type == "random-one":
+            # evaluate head/rel/tail changes; pick the one with highest loss on the clean label
+            with torch.no_grad():
+                lh = F.binary_cross_entropy_with_logits(
+                    logits_for_indices(oracle.model, h_adv_i, r_i, t_i, device), target_pos).item()
+                lr = F.binary_cross_entropy_with_logits(
+                    logits_for_indices(oracle.model, h_i, r_adv_i, t_i, device), target_pos).item()
+                lt = F.binary_cross_entropy_with_logits(
+                    logits_for_indices(oracle.model, h_i, r_i, t_adv_i, device), target_pos).item()
+            if lh >= lr and lh >= lt:
+                cand = (h_adv_i, r_i, t_i)
+            elif lr >= lt:
+                cand = (h_i, r_adv_i, t_i)
+            else:
+                cand = (h_i, r_i, t_adv_i)
+        else:
+            raise ValueError("Invalid corruption_type")
+
+        # ---- 4) avoid duplicates (original or existing clean triples) ----
+        attempts = 0
+        max_attempts = 5
+        while (cand == (h_i, r_i, t_i)) or (cand in triples_set_idx):
+            attempts += 1
+            if attempts > max_attempts:
+                break
+            # mask current choice and re-pick nearest for the changed field(s)
+            if cand[0] != h_i:
+                d = torch.cdist(Eh.unsqueeze(0), E)[0]
+                d[h_i] = float("inf")
+                d[cand[0]] = float("inf")
+                cand = (int(torch.argmin(d).item()), cand[1], cand[2])
+            elif cand[1] != r_i:
+                d = torch.cdist(Er.unsqueeze(0), R)[0]
+                d[r_i] = float("inf")
+                d[cand[1]] = float("inf")
+                cand = (cand[0], int(torch.argmin(d).item()), cand[2])
+            elif cand[2] != t_i:
+                d = torch.cdist(Et.unsqueeze(0), E)[0]
+                d[t_i] = float("inf")
+                d[cand[2]] = float("inf")
+                cand = (cand[0], cand[1], int(torch.argmin(d).item()))
+
+        # ---- 5) evaluate and store ----
+        h_c, r_c, t_c = cand
+        logits_adv = logits_for_indices(oracle.model, h_c, r_c, t_c, device)
+        pred_prob = torch.sigmoid(logits_adv).item()  # probability after corruption
+
+        corrupted_triple = (I2E[h_c], I2R[r_c], I2E[t_c])
+        clean_triple = (h, r, t)
+        adverserial_triples.append(
+            (corrupted_triple, clean_triple, pred_prob, float(triple_grad_norm))
+        )
+
+    # ---- 6) build outputs ----
+    low_scores = sorted(adverserial_triples.copy(), key=itemgetter(2))                 # ascending prob
+    corrupted_centerality = compute_triple_centrality(triples, adverserial_triples.copy())    # your function
+    high_close = high_closeness(corrupted_centerality)                                 # your function
+    high_gradients = sorted(adverserial_triples.copy(), key=itemgetter(3), reverse=True)
+
+    return low_scores, high_close, high_gradients
+
+
+
 def select_adverserial_triples_whitebox(
+        entity_emb,
+        relation_emb,
         triples,
         corruption_type,
         oracle,
         seed,
+        device="cpu"
 ):
 
     random.seed(seed)
+    torch.manual_seed(seed)
 
     entity_list = list(set([h for h, _, _ in triples] + [t for _, _, t in triples]))
     relation_list = list(set([r for _, r, _ in triples]))
 
     adverserial_triples = []
 
-    all_combinations = list(product(entity_list, relation_list, entity_list))
+    #all_combinations = list(product(entity_list, relation_list, entity_list))
+    #for h, r, t in all_combinations[:50000]:
 
     for triple in triples:
         h, r, t = triple
-
-    #for h, r, t in all_combinations[:50000]:
 
         attempts = 0
         max_attempts = 10
@@ -687,6 +1080,7 @@ def select_adverserial_triples_whitebox(
 
             if corrupted not in triples:
                 corrupted_triple = corrupted
+                clean_triple = triple
                 break
 
             if attempts >= max_attempts:
@@ -694,161 +1088,84 @@ def select_adverserial_triples_whitebox(
 
         hc, rc, tc = corrupted_triple
 
-        idxs = torch.LongTensor([
-            oracle.entity_to_idx[hc],
-            oracle.relation_to_idx[rc],
-            oracle.entity_to_idx[tc]
-        ]).unsqueeze(0)
+        for p in oracle.model.parameters():
+            p.requires_grad_(True)
 
-        for param in oracle.model.parameters():
-            param.requires_grad = True
+        device = next(oracle.model.parameters()).device
+        idxs = torch.tensor([[oracle.entity_to_idx[hc],
+                              oracle.relation_to_idx[rc],
+                              oracle.entity_to_idx[tc]]],
+                            dtype=torch.long, device=device)
 
-        oracle.model.train()
         oracle.model.zero_grad()
+        oracle.model.train(False)
 
-        pred = oracle.model.forward_triples(idxs)
-        pred_prob = torch.sigmoid(pred)
+        logits = oracle.model.forward_triples(idxs)
+        target = torch.ones_like(logits)
+        pred_prob = torch.sigmoid(logits)
 
-        label = torch.tensor([1.0], dtype=torch.float)
-        loss = oracle.model.loss(pred_prob, label, current_epoch=101)
-        #loss = loss_fn(pred_prob, label)
+        loss = F.binary_cross_entropy_with_logits(logits, target)
+
         loss.backward()
 
-        oracle_grad_norm = torch.norm(
-            torch.cat([p.grad.view(-1) for p in oracle.model.parameters() if p.grad is not None])
-        )
+        GE = oracle.model.entity_embeddings.weight.grad
+        GR = oracle.model.relation_embeddings.weight.grad
+        if GE is None or GR is None:
+            raise RuntimeError(
+                "Embedding grads are None. Check that forward_triples doesn't detach or run under no_grad.")
+        if GE.is_sparse: GE = GE.to_dense()
+        if GR.is_sparse: GR = GR.to_dense()
 
-        #if not torch.isnan(oracle_grad_norm) and oracle_grad_norm.item() > 0:
+        h_i = oracle.entity_to_idx[hc]
+        r_i = oracle.relation_to_idx[rc]
+        t_i = oracle.entity_to_idx[tc]
+
+        g_h = GE[h_i]
+        g_r = GR[r_i]
+        g_t = GE[t_i]
+
+        # local gradient
+        triple_grad_norm_local = torch.linalg.vector_norm(torch.cat([g_h.flatten(), g_r.flatten(), g_t.flatten()]))
+
+
+        # global gradient
+        """
+        total = torch.zeros((), device=device)
+        for p in oracle.model.parameters():
+            if p.grad is None:
+                continue
+            g = p.grad
+            if g.is_sparse:
+                g = g.coalesce().values()
+            total = total + (g * g).sum()
+        triple_grad_norm_global = total.sqrt()
+        """
+
         adverserial_triples.append(
-            (corrupted_triple, pred_prob.item(), oracle_grad_norm.item()))
+            (corrupted_triple,
+             clean_triple,
+             pred_prob.item(),
+             triple_grad_norm_local.item(),
+             #triple_grad_norm_global.item()
+             ))
 
+    low_scores = sorted(adverserial_triples.copy(), key=lambda x: x[2])  # ascending
 
-    low_scores = sorted(adverserial_triples.copy(), key=lambda x: x[1])  # ascending
-    high_scores = sorted(adverserial_triples.copy(), key=lambda x: x[1], reverse=True)  # descending
+    #clean_version_of_corrupted_triples = [item[1] for item in adverserial_triples]
+    #triples_without_edited_ones = [t for t in triples if t not in clean_version_of_corrupted_triples]
 
-    pairs = min(len(low_scores), len(high_scores))
-    ordered_mix = []
-    for i in range(pairs):
-        ordered_mix.append(low_scores[i])
-        ordered_mix.append(high_scores[i])
-
-    if len(low_scores) > pairs:
-        ordered_mix.extend(low_scores[pairs:])
-    if len(high_scores) > pairs:
-        ordered_mix.extend(high_scores[pairs:])
-
-    mixed_scores = ordered_mix
-    # ----------------------------------------------------------------
-    low_gradients = sorted(adverserial_triples.copy(), key=lambda x: x[2])  # ascending
-    high_gradients = sorted(adverserial_triples.copy(), key=lambda x: x[2], reverse=True)  # descending
-
-    pairs = min(len(low_gradients), len(high_gradients))
-    ordered_mix_grad = []
-    for i in range(pairs):
-        ordered_mix_grad.append(low_gradients[i])
-        ordered_mix_grad.append(high_gradients[i])
-
-    if len(low_gradients) > pairs:
-        ordered_mix_grad.extend(low_gradients[pairs:])
-    if len(high_gradients) > pairs:
-        ordered_mix_grad.extend(high_gradients[pairs:])
-
-    mixed_gradients = ordered_mix_grad
-    # ----------------------------------------------------------------
-
-    triples_with_low_score_high_gradient = select_low_score_high_gradient(adverserial_triples,
-                                                                          score_percentile=50)
-
-    triples_with_high_score_high_gradient = select_high_score_high_gradient(adverserial_triples, score_percentile=50)
-
-    triples_with_low_score_low_gradient = select_low_score_low_gradient(adverserial_triples, score_percentile=50)
-
-    triples_with_high_score_low_gradient = select_high_score_low_gradient(adverserial_triples, score_percentile=50)
-
-    corrupted_triples = [item[0] for item in adverserial_triples]
-
-
-    adverserial_triples_high_scores = [item[0] for item in high_scores]
-    adverserial_triples_low_scores = [item[0] for item in low_scores]
-    adverserial_triples_mixed_scores = [item[0] for item in mixed_scores]
-    adverserial_triples_high_gradients = [item[0] for item in high_gradients]
-    adverserial_triples_low_gradients = [item[0] for item in low_gradients]
-    adverserial_triples_mixed_gradients = [item[0] for item in mixed_gradients]
-    adverserial_triples_low_score_high_gradient = [item[0] for item in triples_with_low_score_high_gradient]
-    adverserial_triples_high_score_high_gradient = [item[0] for item in triples_with_high_score_high_gradient]
-    adverserial_triples_low_score_low_gradient = [item[0] for item in triples_with_low_score_low_gradient]
-    adverserial_triples_high_score_low_gradient = [item[0] for item in triples_with_high_score_low_gradient]
-
-    corrupted_centerality = compute_triple_centrality(triples, corrupted_triples)
-
-
-    degree_high_score_high_triples = degree_high_score_high(corrupted_centerality, adverserial_triples)
-    degree_high_score_low_triples = degree_high_score_low(corrupted_centerality, adverserial_triples)
-    degree_low_score_high_triples = degree_low_score_high(corrupted_centerality, adverserial_triples)
-    degree_low_score_low_triples = degree_low_score_low(corrupted_centerality, adverserial_triples)
-
-    degree_high_grad_high_triples = degree_high_grad_high(corrupted_centerality, adverserial_triples)
-    degree_high_grad_low_triples = degree_high_grad_low(corrupted_centerality, adverserial_triples)
-    degree_low_grad_high_triples = degree_low_grad_high(corrupted_centerality, adverserial_triples)
-    degree_low_grad_low_triples = degree_low_grad_low(corrupted_centerality, adverserial_triples)
-
-    closeness_high_score_high_triples = closeness_high_score_high(corrupted_centerality, adverserial_triples)
-    closeness_high_score_low_triples = closeness_high_score_low(corrupted_centerality, adverserial_triples)
-    closeness_low_score_high_triples = closeness_low_score_high(corrupted_centerality, adverserial_triples)
-    closeness_low_score_low_triples = closeness_low_score_low(corrupted_centerality, adverserial_triples)
-
-    closeness_high_grad_high_triples = closeness_high_grad_high(corrupted_centerality, adverserial_triples)
-    closeness_high_grad_low_triples = closeness_high_grad_low(corrupted_centerality, adverserial_triples)
-    closeness_low_grad_high_triples = closeness_low_grad_high(corrupted_centerality, adverserial_triples)
-    closeness_low_grad_low_triples = closeness_low_grad_low(corrupted_centerality, adverserial_triples)
-
-    low_deg = low_degree(corrupted_centerality)
-    high_deg = high_degree(corrupted_centerality)
-    low_close = low_closeness(corrupted_centerality)
+    corrupted_centerality = compute_triple_centrality(triples, adverserial_triples)
     high_close = high_closeness(corrupted_centerality)
 
+    high_gradients_local = sorted(adverserial_triples.copy(), key=lambda x: x[3], reverse=True)
+    #high_gradients_global = sorted(adverserial_triples.copy(), key=lambda x: x[4], reverse=True)
 
     return (
-            adverserial_triples_high_scores,
-            adverserial_triples_low_scores,
-            adverserial_triples_mixed_scores,
-
-            adverserial_triples_high_gradients,
-            adverserial_triples_low_gradients,
-            adverserial_triples_mixed_gradients,
-
-            adverserial_triples_low_score_high_gradient,
-            adverserial_triples_high_score_high_gradient,
-            adverserial_triples_low_score_low_gradient,
-            adverserial_triples_high_score_low_gradient,
-
-            degree_high_score_high_triples,
-            degree_high_score_low_triples,
-            degree_low_score_high_triples,
-            degree_low_score_low_triples,
-
-            degree_high_grad_high_triples,
-            degree_high_grad_low_triples,
-            degree_low_grad_high_triples,
-            degree_low_grad_low_triples,
-
-            closeness_high_score_high_triples,
-            closeness_high_score_low_triples,
-            closeness_low_score_high_triples,
-            closeness_low_score_low_triples,
-
-            closeness_high_grad_high_triples,
-            closeness_high_grad_low_triples,
-            closeness_low_grad_high_triples,
-            closeness_low_grad_low_triples,
-
-            low_deg,
-            high_deg,
-            low_close,
+            low_scores,
             high_close,
+            high_gradients_local,
+            #high_gradients_global
             )
-
-
 
 def save_triples(triple_list, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)

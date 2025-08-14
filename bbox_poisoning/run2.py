@@ -1,30 +1,36 @@
 from dicee import KGE
 from executer import run_dicee_eval
-from utils import set_seeds, load_embeddings, load_triples, select_adverserial_triples_blackbox, select_adverserial_triples_whitebox, save_triples, compute_triple_centrality, visualize_results
+from utils import (set_seeds, load_embeddings, load_triples, select_adverserial_triples_blackbox,
+                   select_adverserial_triples_whitebox, save_triples, compute_triple_centrality, visualize_results,
+                    select_adversarial_triples_fgsm
+                   )
 from baselines import remove_random_triples
+from utils_2 import select_adversarial_triples_fgsm_simple, select_k_top_loss, select_k_mmr, select_k_top_loss_fast, select_k_mmr_fast
 from baselines import poison_random, poison_centrality, remove_random_triples
 import shutil
 import csv
+import random
+from pathlib import Path
 
 device = "cpu"
 
 DB = "UMLS"
-MODEL = "Keci" #"DeCaL" #"Pykeen_ComplEx" #Keci
+MODEL = "Pykeen_ComplEx" #"Pykeen_MuRE" #"Pykeen_RotatE" #"Keci" #"Pykeen_ComplEx" #"Keci" #"Pykeen_BoxE" #"DeCaL" #"Pykeen_ComplEx" #Keci
 
 ORACLE_PATH = f"./Experiments/{DB}_{MODEL}"
 TRIPLES_PATH = f"./KGs/{DB}/train.txt"
-#VAL_TRIPLES_PATH = f"./KGs/{DB}/valid.txt"
 
-#ENTITY_CSV = f"./Experiments/{DB}_{MODEL}/{MODEL}_entity_embeddings.csv"
-#RELATION_CSV = f"./Experiments/{DB}_{MODEL}/{MODEL}_relation_embeddings.csv"
+ENTITY_CSV = f"./Experiments/{DB}_{MODEL}/{MODEL}_entity_embeddings.csv"
+RELATION_CSV = f"./Experiments/{DB}_{MODEL}/{MODEL}_relation_embeddings.csv"
 
-test_path = f"./KGs/{DB}/test.txt"
 valid_path = f"./KGs/{DB}/valid.txt"
+test_path = f"./KGs/{DB}/test.txt"
 
 triples = load_triples(TRIPLES_PATH)
-#val_triples = load_triples(VAL_TRIPLES_PATH)
+val_triples = load_triples(valid_path)
+test_triples = load_triples(test_path)
 
-#entity_emb, relation_emb = load_embeddings(ENTITY_CSV, RELATION_CSV)
+entity_emb, relation_emb = load_embeddings(ENTITY_CSV, RELATION_CSV)
 
 oracle = KGE(path=ORACLE_PATH)
 
@@ -37,7 +43,19 @@ triples_count = len(triples)
 percentages = [0.01, 0.02, 0.04, 0.08, 0.12, 0.16, 0.20, 0.24, 0.32, 0.38, 0.46, 0.57, 0.64]
 perturbation_ratios = [int(triples_count * p) for p in percentages]
 
-corruption_type = "rel"
+corruption_type = "random-one" #"rel" #"tail" #"rel"
+
+def interleave_many(*lists_):
+    out = []
+    if not lists_:
+        return out
+    n = max(len(lst) for lst in lists_)
+    for i in range(n):
+        for lst in lists_:
+            if i < len(lst):
+                out.append(lst[i])
+    return out
+
 
 def store_poisoned_andeval(triples, adverserial_triples, feature, DB, top_k, corruption_type, experiment, MODEL):
 
@@ -61,100 +79,67 @@ def store_poisoned_andeval(triples, adverserial_triples, feature, DB, top_k, cor
 
     return res['Test']['MRR']
 
-seeds = [42, 64, 84, 98, 115, 162]
+#seeds = [42, 64, 84, 98, 115, 162, 185, 215, 241, 286, 310, 324, 346, 368, ]
 
-for experiment in range(5):
+seed_src = random.Random()
 
-    set_seeds(seeds[experiment])
+num_experiments = 10
+experiment_seeds = [seed_src.randrange(2**32) for _ in range(num_experiments)]
 
-    res_wbox_high_scores = []
-    res_wbox_low_scores = []
-    res_wbox_mixed_scores = []
-    res_wbox_high_gradients = []
-    res_wbox_low_gradients = []
-    res_wbox_mixed_gradients = []
-    res_wbox_triples_with_low_score_high_gradien = []
-    res_wbox_triples_with_high_score_high_gradient = []
-    res_wbox_triples_with_low_score_low_gradient = []
-    res_wbox_triples_with_high_score_low_gradient = []
+forbidden = set(triples) | set(val_triples) | set(test_triples)
 
-    res_wbox_triples_with_degree_high_score_high_triples = []
-    res_wbox_triples_with_degree_high_score_low_triples = []
-    res_wbox_triples_with_degree_low_score_high_triples = []
-    res_wbox_triples_with_degree_low_score_low_triples = []
-    res_wbox_triples_with_degree_high_grad_high_triples = []
-    res_wbox_triples_with_degree_high_grad_low_triples = []
-    res_wbox_triples_with_degree_low_grad_high_triples = []
-    res_wbox_triples_with_degree_low_grad_low_triples = []
-    res_wbox_triples_with_closeness_high_score_high_triples = []
-    res_wbox_triples_with_closeness_high_score_low_triples = []
-    res_wbox_triples_with_closeness_low_score_high_triples = []
-    res_wbox_triples_with_closeness_low_score_low_triples = []
-    res_wbox_triples_with_closeness_high_grad_high_triples = []
-    res_wbox_triples_with_closeness_high_grad_low_triples = []
-    res_wbox_triples_with_closeness_low_grad_high_triples = []
-    res_wbox_triples_with_closeness_low_grad_low_triples = []
-
-    res_wbox_triples_with_lowest_deg_triples = []
-    res_wbox_triples_with_highest_deg_triples = []
-    res_wbox_triples_with_lowest_closeness_triples = []
-    res_wbox_triples_with_high_closeness_triples = []
+for experiment, experiment_seed in enumerate(experiment_seeds):
+    set_seeds(experiment_seed)
 
     res_random = []
 
+    res_wbox_low_scores_simple = []
+    res_wbox_high_closeness_simple = []
+    res_wbox_high_gradients_simple = []
+
+    res_fgsm_main = []
+
+    res_wbox_low_scores_fgsm = []
+    res_high_closeness_fgsm = []
+    res_high_gradients_fgsm = []
+
     (
-        high_scores,
-        low_scores,
-        mixed_scores,
-
-        high_gradients,
-        low_gradients,
-        mixed_gradients,
-
-        low_score_high_gradient,
-        high_score_high_gradient,
-        low_score_low_gradient,
-        high_score_low_gradient,
-
-        degree_high_score_high_triples,
-        degree_high_score_low_triples,
-        degree_low_score_high_triples,
-        degree_low_score_low_triples,
-
-        degree_high_grad_high_triples,
-        degree_high_grad_low_triples,
-        degree_low_grad_high_triples,
-        degree_low_grad_low_triples,
-
-        closeness_high_score_high_triples,
-        closeness_high_score_low_triples,
-        closeness_low_score_high_triples,
-        closeness_low_score_low_triples,
-
-        closeness_high_grad_high_triples,
-        closeness_high_grad_low_triples,
-        closeness_low_grad_high_triples,
-        closeness_low_grad_low_triples,
-
-        low_deg,
-        high_deg,
-        low_closeness,
-        high_closeness,
-
+        low_scores_simple,
+        high_close_simple,
+        high_gradients_simple,
     ) = select_adverserial_triples_whitebox(
+        entity_emb=entity_emb,
+        relation_emb=relation_emb,
         triples=triples,
         corruption_type=corruption_type,
         oracle=oracle,
-        seed=seeds[experiment]
+        seed=experiment_seed
+    )
+
+    low_scores_fgsm, high_close_fgsm, high_gradients_fgsm = select_adversarial_triples_fgsm(
+        triples=triples,
+        corruption_type="rel",
+        oracle=oracle,
+        seed=experiment_seed,
+        eps=1e-2,
+        norm="linf",
+    )
+
+    fgsm_main = select_adversarial_triples_fgsm_simple(
+        triples=triples,
+        oracle=oracle,
+        seed=experiment_seed,
+        eps=1e-2,
+        norm="linf",
     )
 
     for top_k in perturbation_ratios:
 
         print("############## Poisoning Random #################")
 
-        remaining, corrupted = poison_random(triples, top_k, corruption_type, seeds[experiment])
+        remaining, corrupted = poison_random(triples, top_k, corruption_type, experiment_seed)
 
-        triples_after_random_poisoning = triples  + corrupted
+        triples_after_random_poisoning = triples  + corrupted #remaining  + corrupted
 
         save_triples(triples_after_random_poisoning, f"{DB}/random/{top_k}/{corruption_type}/{experiment}/train.txt")
 
@@ -174,234 +159,81 @@ for experiment in range(5):
 
         print("############## Poisoning Whitebox Active learning #################")
 
-        res_active_wbox_low_scores = store_poisoned_andeval(triples, low_scores, "low_scores", DB, top_k,
+        low_scores_triples_simple = [item[0] for item in low_scores_simple]
+        low_scores_triples_simple_to_store = store_poisoned_andeval(triples, low_scores_triples_simple, "low_scores_triples_simple", DB, top_k,
                                                             corruption_type, experiment, MODEL)
-        res_wbox_low_scores.append(res_active_wbox_low_scores)
-
-        """
-        res_active_wbox_high_scores = store_poisoned_andeval(triples, high_scores, "high_scores", DB, top_k, corruption_type, experiment)
-        res_wbox_high_scores.append(res_active_wbox_high_scores)
-
-        res_active_wbox_mixed_scores = store_poisoned_andeval(triples, mixed_scores, "mixed_scores", DB, top_k, corruption_type, experiment)
-        res_wbox_mixed_scores.append(res_active_wbox_mixed_scores)
-
-        res_active_wbox_high_gradients = store_poisoned_andeval(triples, high_gradients, "high_gradients", DB, top_k, corruption_type, experiment)
-        res_wbox_high_gradients.append(res_active_wbox_high_gradients)
-
-        res_active_wbox_low_gradients = store_poisoned_andeval(triples, low_gradients, "low_gradients", DB, top_k, corruption_type, experiment)
-        res_wbox_low_gradients.append(res_active_wbox_low_gradients)
-
-        res_active_wbox_mixed_gradients = store_poisoned_andeval(triples, mixed_gradients, "mixed_gradients", DB, top_k, corruption_type, experiment)
-        res_wbox_mixed_gradients.append(res_active_wbox_mixed_gradients)
-
-        res_active_wbox_low_score_high_gradient = store_poisoned_andeval(triples, low_score_high_gradient, "low_score_high_gradient", DB, top_k, corruption_type, experiment)
-        res_wbox_triples_with_low_score_high_gradien.append(res_active_wbox_low_score_high_gradient)
-
-        res_active_wbox_high_score_high_gradient = store_poisoned_andeval(triples, high_score_high_gradient,
-                                                                         "high_score_high_gradient", DB, top_k,
-                                                                         corruption_type, experiment)
-        res_wbox_triples_with_high_score_high_gradient.append(res_active_wbox_high_score_high_gradient)
+        res_wbox_low_scores_simple.append(low_scores_triples_simple_to_store)
 
 
-        res_active_wbox_low_score_low_gradient = store_poisoned_andeval(triples, low_score_low_gradient,
-                                                                          "low_score_low_gradient", DB, top_k,
-                                                                          corruption_type, experiment)
-        res_wbox_triples_with_low_score_low_gradient.append(res_active_wbox_low_score_low_gradient)
-
-        res_active_wbox_high_score_low_gradient = store_poisoned_andeval(triples, high_score_low_gradient,
-                                                                        "high_score_low_gradient", DB, top_k,
-                                                                        corruption_type, experiment)
-        res_wbox_triples_with_high_score_low_gradient.append(res_active_wbox_high_score_low_gradient)
-
-
-
-
-        res_active_wbox_degree_high_score_high_triples = store_poisoned_andeval(triples, degree_high_score_high_triples,
-                                                                                "degree_high_score_high_triples", DB, top_k,
-                                                                                corruption_type, experiment)
-        res_wbox_triples_with_degree_high_score_high_triples.append(res_active_wbox_degree_high_score_high_triples)
-
-        res_active_wbox_degree_high_score_low_triples = store_poisoned_andeval(triples, degree_high_score_low_triples,
-                                                                               "degree_high_score_low_triples", DB, top_k,
-                                                                               corruption_type, experiment)
-        res_wbox_triples_with_degree_high_score_low_triples.append(res_active_wbox_degree_high_score_low_triples)
-        
-        
-
-        res_active_wbox_degree_low_score_high_triples = store_poisoned_andeval(triples, degree_low_score_high_triples,
-                                                                               "degree_low_score_high_triples", DB, top_k,
-                                                                               corruption_type, experiment)
-        res_wbox_triples_with_degree_low_score_high_triples.append(res_active_wbox_degree_low_score_high_triples)
-        
-      
-        
-        res_active_wbox_degree_low_score_low_triples = store_poisoned_andeval(triples, degree_low_score_low_triples,
-                                                                              "degree_low_score_low_triples", DB, top_k,
-                                                                              corruption_type, experiment)
-        res_wbox_triples_with_degree_low_score_low_triples.append(res_active_wbox_degree_low_score_low_triples)
-
-
-        res_active_wbox_degree_high_grad_high_triples = store_poisoned_andeval(triples, degree_high_grad_high_triples,
-                                                                               "degree_high_grad_high_triples", DB, top_k,
-                                                                               corruption_type, experiment)
-        res_wbox_triples_with_degree_high_grad_high_triples.append(res_active_wbox_degree_high_grad_high_triples)
-
-        res_active_wbox_degree_high_grad_low_triples = store_poisoned_andeval(triples, degree_high_grad_low_triples,
-                                                                              "degree_high_grad_low_triples", DB, top_k,
-                                                                              corruption_type, experiment)
-        res_wbox_triples_with_degree_high_grad_low_triples.append(res_active_wbox_degree_high_grad_low_triples)
-
-        res_active_wbox_degree_low_grad_high_triples = store_poisoned_andeval(triples, degree_low_grad_high_triples,
-                                                                              "degree_low_grad_high_triples", DB, top_k,
-                                                                              corruption_type, experiment)
-        res_wbox_triples_with_degree_low_grad_high_triples.append(res_active_wbox_degree_low_grad_high_triples)
-
-        res_active_wbox_degree_low_grad_low_triples = store_poisoned_andeval(triples, degree_low_grad_low_triples,
-                                                                             "degree_low_grad_low_triples", DB, top_k,
-                                                                             corruption_type, experiment)
-        res_wbox_triples_with_degree_low_grad_low_triples.append(res_active_wbox_degree_low_grad_low_triples)
-
-        res_active_wbox_closeness_high_score_high_triples = store_poisoned_andeval(triples,
-                                                                                   closeness_high_score_high_triples,
-                                                                                   "closeness_high_score_high_triples", DB,
-                                                                                   top_k, corruption_type, experiment)
-        res_wbox_triples_with_closeness_high_score_high_triples.append(res_active_wbox_closeness_high_score_high_triples)
-        
-        
-
-        res_active_wbox_closeness_high_score_low_triples = store_poisoned_andeval(triples, closeness_high_score_low_triples,
-                                                                                  "closeness_high_score_low_triples", DB,
-                                                                                  top_k, corruption_type, experiment)
-        res_wbox_triples_with_closeness_high_score_low_triples.append(res_active_wbox_closeness_high_score_low_triples)
-        
-        res_active_wbox_closeness_low_score_high_triples = store_poisoned_andeval(triples, closeness_low_score_high_triples,
-                                                                                  "closeness_low_score_high_triples", DB,
-                                                                                  top_k, corruption_type, experiment)
-        res_wbox_triples_with_closeness_low_score_high_triples.append(res_active_wbox_closeness_low_score_high_triples)
-
-        res_active_wbox_closeness_low_score_low_triples = store_poisoned_andeval(triples, closeness_low_score_low_triples,
-                                                                                 "closeness_low_score_low_triples", DB,
-                                                                                 top_k, corruption_type, experiment)
-        res_wbox_triples_with_closeness_low_score_low_triples.append(res_active_wbox_closeness_low_score_low_triples)
-
-        res_active_wbox_closeness_high_grad_high_triples = store_poisoned_andeval(triples, closeness_high_grad_high_triples,
-                                                                                  "closeness_high_grad_high_triples", DB,
-                                                                                  top_k, corruption_type, experiment)
-        res_wbox_triples_with_closeness_high_grad_high_triples.append(res_active_wbox_closeness_high_grad_high_triples)
-
-        res_active_wbox_closeness_high_grad_low_triples = store_poisoned_andeval(triples, closeness_high_grad_low_triples,
-                                                                                 "closeness_high_grad_low_triples", DB,
-                                                                                 top_k, corruption_type, experiment)
-        res_wbox_triples_with_closeness_high_grad_low_triples.append(res_active_wbox_closeness_high_grad_low_triples)
-
-        res_active_wbox_closeness_low_grad_high_triples = store_poisoned_andeval(triples, closeness_low_grad_high_triples,
-                                                                                 "closeness_low_grad_high_triples", DB,
-                                                                                 top_k, corruption_type, experiment)
-        res_wbox_triples_with_closeness_low_grad_high_triples.append(res_active_wbox_closeness_low_grad_high_triples)
-
-        res_active_wbox_closeness_low_grad_low_triples = store_poisoned_andeval(triples, closeness_low_grad_low_triples,
-                                                                                "closeness_low_grad_low_triples", DB, top_k,
-                                                                                corruption_type, experiment)
-        res_wbox_triples_with_closeness_low_grad_low_triples.append(res_active_wbox_closeness_low_grad_low_triples)
-        """
-        #
-        #res_active_wbox_lowest_deg_triples = store_poisoned_andeval(triples, low_deg, "lowest_deg", DB, top_k,
-        #                                                            corruption_type, experiment)
-        #res_wbox_triples_with_lowest_deg_triples.append(res_active_wbox_lowest_deg_triples)
-
-        #res_active_wbox_highest_deg_triples = store_poisoned_andeval(triples, high_deg, "highest_deg", DB, top_k,
-        #                                                             corruption_type, experiment)
-        #res_wbox_triples_with_highest_deg_triples.append(res_active_wbox_highest_deg_triples)
-
-        #res_active_wbox_low_closeness = store_poisoned_andeval(triples, low_closeness, "low_closeness", DB, top_k,
-        #                                                            corruption_type, experiment)
-        #res_wbox_triples_with_lowest_closeness_triples.append(res_active_wbox_low_closeness)
-
-        res_active_wbox_high_closeness = store_poisoned_andeval(triples, high_closeness, "high_closeness", DB, top_k,
+        high_close_triples_simple_to_store = store_poisoned_andeval(triples, high_close_simple, "high_close_simple", DB, top_k,
                                                                      corruption_type, experiment, MODEL)
-        res_wbox_triples_with_high_closeness_triples.append(res_active_wbox_high_closeness)
+        res_wbox_high_closeness_simple.append(high_close_triples_simple_to_store)
 
 
+        high_gradients_triples_simple = [item[0] for item in high_gradients_simple]
+        high_gradients_triples_simple_to_store = store_poisoned_andeval(triples, high_gradients_triples_simple, "high_gradients_simple", DB, top_k,
+                                                                corruption_type, experiment, MODEL)
+        res_wbox_high_gradients_simple.append(high_gradients_triples_simple_to_store)
+
+        #---------------
+
+        fgsm_main_triples = select_k_top_loss_fast(fgsm_main, k=top_k, forbidden=forbidden)
+        res_fgsm_main_to_store = store_poisoned_andeval(triples, fgsm_main_triples, "fgsm_main_triples", DB, top_k,
+                                                                corruption_type, experiment, MODEL)
+        res_fgsm_main.append(res_fgsm_main_to_store)
+
+        # ---------------
+
+        low_scores_fgsm_triples = [item[0] for item in low_scores_fgsm]
+        low_scores_fgsm_triples_to_store = store_poisoned_andeval(triples, low_scores_fgsm_triples, "low_scores_fgsm_triples", DB, top_k,
+                                                            corruption_type, experiment, MODEL)
+        res_wbox_low_scores_fgsm.append(low_scores_fgsm_triples_to_store)
+
+        #-----------
+        high_closeness_fgsm_triples_to_store = store_poisoned_andeval(triples, high_close_fgsm, "high_close_fgsm", DB, top_k,
+                                                                corruption_type, experiment, MODEL)
+        res_high_closeness_fgsm.append(high_closeness_fgsm_triples_to_store)
+        #-----------
+        high_gradients_fgsm_triples = [item[0] for item in high_gradients_fgsm]
+        high_gradients_fgsm_to_store = store_poisoned_andeval(triples, high_gradients_fgsm_triples,
+                                                                      "high_gradients_fgsm_triples", DB, top_k,
+                                                                      corruption_type, experiment, MODEL)
+        res_high_gradients_fgsm.append(high_gradients_fgsm_to_store)
         # -----------------------------------------------------------------------------
 
         rows = [
             ("triple injection ratios", percentages),
-            #("high_scores", res_wbox_high_scores),
-            ("low_scores", res_wbox_low_scores),
-            #("mixed_scores", res_wbox_mixed_scores),
-            #("high_gradients", res_wbox_high_gradients),
-            #("low_gradients", res_wbox_low_gradients),
-            #("mixed_gradients", res_wbox_mixed_gradients),
-            #("low_score_high_gradient", res_wbox_triples_with_low_score_high_gradien),
-            #("high_score_high_gradient", res_wbox_triples_with_high_score_high_gradient),
-            #("low_score_low_gradient", res_wbox_triples_with_low_score_low_gradient),
-            #("high_score_low_gradient", res_wbox_triples_with_high_score_low_gradient),
             ("random", res_random),
-            #("high_degree_high_score", res_wbox_triples_with_degree_high_score_high_triples),
-            #("high_degree_low_score",  res_wbox_triples_with_degree_high_score_low_triples),
-            #("low_degree_high_score",  res_wbox_triples_with_degree_low_score_high_triples),
-            #("low_degree_low_score",   res_wbox_triples_with_degree_low_score_low_triples),
-            #("high_degree_high_grad",  res_wbox_triples_with_degree_high_grad_high_triples),
-            #("high_degree_low_grad",   res_wbox_triples_with_degree_high_grad_low_triples),
-            #("low_degree_high_grad",   res_wbox_triples_with_degree_low_grad_high_triples),
-            #("low_degree_low_grad",    res_wbox_triples_with_degree_low_grad_low_triples),
-            #("high_closeness_high_score", res_wbox_triples_with_closeness_high_score_high_triples),
-            #("high_closeness_low_score",  res_wbox_triples_with_closeness_high_score_low_triples),
-            #("low_closeness_high_score",  res_wbox_triples_with_closeness_low_score_high_triples),
-            #("low_closeness_low_score",   res_wbox_triples_with_closeness_low_score_low_triples),
-            #("high_closeness_hig_gradh",  res_wbox_triples_with_closeness_high_grad_high_triples),
-            #("high_closeness_low_grad",   res_wbox_triples_with_closeness_high_grad_low_triples),
-            #("low_closeness_high_grad",   res_wbox_triples_with_closeness_low_grad_high_triples),
-            #("low_closeness_low_grad",    res_wbox_triples_with_closeness_low_grad_low_triples),
-            #("low_deg", res_wbox_triples_with_lowest_deg_triples),
-            #("high_deg", res_wbox_triples_with_highest_deg_triples),
-            #("low_closeness", res_wbox_triples_with_lowest_closeness_triples),
-            ("high_closeness", res_wbox_triples_with_high_closeness_triples)
+            ("res_wbox_low_scores_simple", res_wbox_low_scores_simple),
+            ("res_wbox_high_closeness_simple", res_wbox_high_closeness_simple),
+            ("res_wbox_high_gradients_simple", res_wbox_high_gradients_simple),
+            ("res_fgsm_main", res_fgsm_main),
+            ("res_wbox_low_scores_fgsm", res_wbox_low_scores_fgsm),
+            ("res_high_closeness_fgsm", res_high_closeness_fgsm),
+            ("res_high_gradients_fgsm", res_high_gradients_fgsm),
         ]
 
-        with open(f"final_results/results-{DB}-{MODEL}-{corruption_type}-{experiment}.csv", "w", newline="") as file:
-            writer = csv.writer(file)
-            for name, values in rows:
-                writer.writerow([name] + values)
+        out_path = Path(
+            f"final_results/{MODEL}/{corruption_type}/results-{DB}-{MODEL}-{corruption_type}-{experiment}.csv")
+        out_path.parent.mkdir(parents=True, exist_ok=True)
 
-        visualize_results(f"final_results/results-{DB}-{MODEL}-{corruption_type}-{experiment}.csv", f"final_results/results{DB}-{MODEL}-{corruption_type}-{experiment}.png", f"{DB}-{MODEL}")
+        with open(f"final_results/{MODEL}/{corruption_type}/results-{DB}-{MODEL}-{corruption_type}-{experiment}.csv", "w", newline="") as file:
+                writer = csv.writer(file)
+                for name, values in rows:
+                    writer.writerow([name] + values)
 
-        print(perturbation_ratios)
-
+        visualize_results(f"final_results/{MODEL}/{corruption_type}/results-{DB}-{MODEL}-{corruption_type}-{experiment}.csv", f"final_results/{MODEL}/{corruption_type}/results{DB}-{MODEL}-{corruption_type}-{experiment}.png", f"{DB}-{MODEL}")
 
         lists_to_check = {
-            #"triple injection ratios": percentages,
-            #"high_scores": res_wbox_high_scores,
-            "low_scores": res_wbox_low_scores,
-            #"mixed_scores": res_wbox_mixed_scores,
-            #"high_gradients": res_wbox_high_gradients,
-            #"low_gradients": res_wbox_low_gradients,
-            #"mixed_gradients": res_wbox_mixed_gradients,
-            #"low_score_high_gradient": res_wbox_triples_with_low_score_high_gradien,
-            #"high_score_high_gradient": res_wbox_triples_with_high_score_high_gradient,
-            #"low_score_low_gradient": res_wbox_triples_with_low_score_low_gradient,
-            #"high_score_low_gradient": res_wbox_triples_with_high_score_low_gradient,
-            "random": res_random,
-            #"high_degree_high_score": res_wbox_triples_with_degree_high_score_high_triples,
-            #"high_degree_low_score":  res_wbox_triples_with_degree_high_score_low_triples,
-            #"low_degree_high_score":  res_wbox_triples_with_degree_low_score_high_triples,
-            #"low_degree_low_score":   res_wbox_triples_with_degree_low_score_low_triples,
-            #"high_degree_high_grad":  res_wbox_triples_with_degree_high_grad_high_triples,
-            #"high_degree_low_grad":   res_wbox_triples_with_degree_high_grad_low_triples,
-            #"low_degree_high_grad":   res_wbox_triples_with_degree_low_grad_high_triples,
-            #"low_degree_low_grad":    res_wbox_triples_with_degree_low_grad_low_triples,
-            #"high_closeness_high_score": res_wbox_triples_with_closeness_high_score_high_triples,
-            #"high_closeness_low_score":  res_wbox_triples_with_closeness_high_score_low_triples,
-            #"low_closeness_high_score":  res_wbox_triples_with_closeness_low_score_high_triples,
-            #"low_closeness_low_score":   res_wbox_triples_with_closeness_low_score_low_triples,
-            #"high_closeness_hig_gradh":  res_wbox_triples_with_closeness_high_grad_high_triples,
-            #"high_closeness_low_grad":   res_wbox_triples_with_closeness_high_grad_low_triples,
-            #"low_closeness_high_grad":   res_wbox_triples_with_closeness_low_grad_high_triples,
-            #"low_closeness_low_grad":    res_wbox_triples_with_closeness_low_grad_low_triples,
-            #"low_deg": res_wbox_triples_with_lowest_deg_triples,
-            #"high_deg": res_wbox_triples_with_highest_deg_triples,
-            #"low_closeness": res_wbox_triples_with_lowest_closeness_triples,
-            #"high_closeness": res_wbox_triples_with_high_closeness_triples
+            "random":res_random,
+            "triple injection ratios": percentages,
+            "res_wbox_low_scores_simple": res_wbox_low_scores_simple,
+            "res_wbox_high_closeness_simple": res_wbox_high_closeness_simple,
+            "res_wbox_high_gradients_simple": res_wbox_high_gradients_simple,
+            "res_fgsm_main": res_fgsm_main,
+            "res_wbox_low_scores_fgsm": res_wbox_low_scores_fgsm,
+            "res_high_closeness_fgsm": res_high_closeness_fgsm,
+            "res_high_gradients_fgsm": res_high_gradients_fgsm,
         }
     
         lengths = [len(v) for v in lists_to_check.values()]
