@@ -85,7 +85,7 @@ def plot_mean_std_from_df(data_df: pd.DataFrame, title="Mean ± Std across runs"
     plt.show()
 
 
-folder_path = "./final_results/Keci/rel/"
+folder_path = "../junks/older_one/Keci/rel/"
 data_df, t_test_df = load_experiment_folder(folder_path, target="random")
 print(t_test_df)
 plot_mean_std_from_df(data_df, title="Experiment Results")

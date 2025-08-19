@@ -22,7 +22,7 @@ def poison_random(triples, k, corruption_type, seed):
         h, r, t = triple
 
         attempts = 0
-        max_attempts = 10
+        max_attempts = 20
         while True:
             attempts += 1
             if corruption_type == 'all':

@@ -8,6 +8,8 @@ import numpy as np
 from typing import Dict
 import numpy as np
 from typing import List, Tuple, Optional, Set
+from operator import itemgetter
+from typing import List, Tuple, Optional
 
 Triple = Tuple[str, str, str]
 Result = Tuple[Triple, Triple, float]  # (corrupted, clean, prob_after)
@@ -105,7 +107,7 @@ def nearest_idx_excluding(vec: torch.Tensor, table: torch.Tensor, exclude_idx: i
     return int(torch.argmin(d).item())
 
 # --- main function ---
-
+"""
 def select_adversarial_triples_fgsm_simple(
     triples,
     oracle,
@@ -113,18 +115,7 @@ def select_adversarial_triples_fgsm_simple(
     eps: float = 1e-2,
     norm: str = "linf",
 ):
-    """
-    Minimal FGSM attack for KGE models.
-    - Computes grad on the clean (h, r, t)
-    - Takes an FGSM step for h/r/t embeddings
-    - Snaps each to its nearest *different* entity/relation
-    - Returns list of (corrupted_triple, clean_triple, prob_after)
 
-    Expects:
-      - oracle.model.entity_embeddings / relation_embeddings are nn.Embedding
-      - oracle.entity_to_idx / relation_to_idx dicts
-      - a helper: logits_for_indices(model, h_i, r_i, t_i, device) -> raw logits (scalar tensor)
-    """
     device = next(oracle.model.parameters()).device
 
     random.seed(seed)
@@ -143,8 +134,8 @@ def select_adversarial_triples_fgsm_simple(
         raise RuntimeError("Expected nn.Embedding at model.entity_embeddings / relation_embeddings")
 
     # frozen tables to snap against
-    E = ent_emb.weight.detach()  # [n_ent, d]
-    R = rel_emb.weight.detach()  # [n_rel, d]
+    E = ent_emb.weight.detach()
+    R = rel_emb.weight.detach()
 
     oracle.model.train(False)  # deterministic forward (no dropout)
     results = []
@@ -152,7 +143,6 @@ def select_adversarial_triples_fgsm_simple(
     for (h, r, t) in triples:
         h_i, r_i, t_i = E2I[h], R2I[r], E2I[t]
 
-        # grads on clean triple
         for p in oracle.model.parameters():
             p.requires_grad_(True)
         oracle.model.zero_grad(set_to_none=True)
@@ -191,9 +181,207 @@ def select_adversarial_triples_fgsm_simple(
         results.append((corrupted_triple, (h, r, t), prob_after))
 
     return results
+"""
 
-#Triple = Tuple[str, str, str]
-#Result = Tuple[Triple, Triple, float]  # (corrupted, clean, prob_after)
+"""
+def select_adversarial_triples_fgsm_simple(
+    triples,
+    oracle,
+    seed,
+    eps: float = 1e-2,
+    norm: str = "linf",
+):
+    device = next(oracle.model.parameters()).device
+
+    random.seed(seed)
+    torch.manual_seed(seed)
+
+    # maps
+    E2I = oracle.entity_to_idx
+    R2I = oracle.relation_to_idx
+    I2E = {i: e for e, i in E2I.items()}
+    I2R = {i: r for r, i in R2I.items()}
+
+    # embeddings
+    ent_emb = oracle.model.entity_embeddings
+    rel_emb = oracle.model.relation_embeddings
+    if not isinstance(ent_emb, nn.Embedding) or not isinstance(rel_emb, nn.Embedding):
+        raise RuntimeError("Expected nn.Embedding at model.entity_embeddings / relation_embeddings")
+
+    # frozen tables
+    E = ent_emb.weight.detach()
+    R = rel_emb.weight.detach()
+
+    # NEW: set of existing triples (indices) to avoid duplicates
+    triples_set_idx = {(E2I[h], R2I[r], E2I[t]) for (h, r, t) in triples}
+
+    oracle.model.train(False)
+    results = []
+
+    for (h, r, t) in triples:
+        h_i, r_i, t_i = E2I[h], R2I[r], E2I[t]
+
+        for p in oracle.model.parameters():
+            p.requires_grad_(True)
+        oracle.model.zero_grad(set_to_none=True)
+
+        logits_clean = logits_for_indices(oracle.model, h_i, r_i, t_i, device)
+        target_pos = torch.ones_like(logits_clean)
+        loss = F.binary_cross_entropy_with_logits(logits_clean, target_pos)
+        loss.backward()
+
+        GE = ent_emb.weight.grad
+        GR = rel_emb.weight.grad
+        if GE is None or GR is None:
+            raise RuntimeError("Embedding grads are None; ensure forward doesn't detach grads.")
+        if GE.is_sparse: GE = GE.to_dense()
+        if GR.is_sparse: GR = GR.to_dense()
+
+        # FGSM step for each component
+        dh = fgsm_delta(GE[h_i], eps, norm)
+        dr = fgsm_delta(GR[r_i], eps, norm)
+        dt = fgsm_delta(GE[t_i], eps, norm)
+
+        Eh = E[h_i] + dh
+        Er = R[r_i] + dr
+        Et = E[t_i] + dt
+
+        # snap to nearest valid symbols (exclude originals)
+        h_adv_i = nearest_idx_excluding(Eh, E, h_i)
+        r_adv_i = nearest_idx_excluding(Er, R, r_i)
+        t_adv_i = nearest_idx_excluding(Et, E, t_i)
+
+        # NEW: de-dup loop against dataset (and avoid unchanged)
+        cand = (h_adv_i, r_adv_i, t_adv_i)
+        attempts = 0
+        max_attempts = 5
+        while (cand == (h_i, r_i, t_i)) or (cand in triples_set_idx):
+            attempts += 1
+            if attempts > max_attempts:
+                break
+            # pick next-nearest for the first changed slot
+            if cand[0] != h_i:
+                d = torch.cdist(Eh.unsqueeze(0), E)[0]
+                d[h_i] = float("inf")
+                d[cand[0]] = float("inf")
+                cand = (int(torch.argmin(d).item()), cand[1], cand[2])
+            elif cand[1] != r_i:
+                d = torch.cdist(Er.unsqueeze(0), R)[0]
+                d[r_i] = float("inf")
+                d[cand[1]] = float("inf")
+                cand = (cand[0], int(torch.argmin(d).item()), cand[2])
+            elif cand[2] != t_i:
+                d = torch.cdist(Et.unsqueeze(0), E)[0]
+                d[t_i] = float("inf")
+                d[cand[2]] = float("inf")
+                cand = (cand[0], cand[1], int(torch.argmin(d).item()))
+
+        h_c, r_c, t_c = cand
+        logits_adv = logits_for_indices(oracle.model, h_c, r_c, t_c, device)
+        prob_after = torch.sigmoid(logits_adv).item()
+
+        corrupted_triple = (I2E[h_c], I2R[r_c], I2E[t_c])
+        results.append((corrupted_triple, (h, r, t), prob_after))
+
+    return results
+"""
+
+def select_adversarial_triples_fgsm_simple(
+    triples,
+    oracle,
+    seed,
+    eps: float = 1e-2,
+    norm: str = "linf",
+):
+    """
+    FGSM-based adversarial triples with a minimal duplicate check:
+    - If the adversarial (h,r,t) already exists in the dataset or equals the original,
+      it is skipped (no retry).
+    - Accepted adversarials are added to the seen set to avoid duplicates across outputs.
+    Returns: list of (corrupted_triple, clean_triple, prob_after)
+    """
+    device = next(oracle.model.parameters()).device
+
+    random.seed(seed)
+    torch.manual_seed(seed)
+
+    # maps
+    E2I = oracle.entity_to_idx
+    R2I = oracle.relation_to_idx
+    I2E = {i: e for e, i in E2I.items()}
+    I2R = {i: r for r, i in R2I.items()}
+
+    # embeddings
+    ent_emb = oracle.model.entity_embeddings
+    rel_emb = oracle.model.relation_embeddings
+    if not isinstance(ent_emb, nn.Embedding) or not isinstance(rel_emb, nn.Embedding):
+        raise RuntimeError("Expected nn.Embedding at model.entity_embeddings / relation_embeddings")
+
+    # frozen tables
+    E = ent_emb.weight.detach()
+    R = rel_emb.weight.detach()
+
+    # dataset triples (indices) for O(1) membership checks
+    triples_set_idx = {(E2I[h], R2I[r], E2I[t]) for (h, r, t) in triples}
+
+    oracle.model.train(False)
+    results = []
+
+    for (h, r, t) in triples:
+        h_i, r_i, t_i = E2I[h], R2I[r], E2I[t]
+
+        # enable grads & zero
+        for p in oracle.model.parameters():
+            p.requires_grad_(True)
+        oracle.model.zero_grad(set_to_none=True)
+
+        # forward & loss on clean triple (label=1)
+        logits_clean = logits_for_indices(oracle.model, h_i, r_i, t_i, device)
+        target_pos = torch.ones_like(logits_clean)
+        loss = F.binary_cross_entropy_with_logits(logits_clean, target_pos)
+        loss.backward()
+
+        # grads
+        GE = ent_emb.weight.grad
+        GR = rel_emb.weight.grad
+        if GE is None or GR is None:
+            raise RuntimeError("Embedding grads are None; ensure forward doesn't detach grads.")
+        if GE.is_sparse: GE = GE.to_dense()
+        if GR.is_sparse: GR = GR.to_dense()
+
+        # FGSM deltas
+        dh = fgsm_delta(GE[h_i], eps, norm)
+        dr = fgsm_delta(GR[r_i], eps, norm)
+        dt = fgsm_delta(GE[t_i], eps, norm)
+
+        # perturbed vectors
+        Eh = E[h_i] + dh
+        Er = R[r_i] + dr
+        Et = E[t_i] + dt
+
+        # snap to nearest different symbols
+        h_adv_i = nearest_idx_excluding(Eh, E, h_i)
+        r_adv_i = nearest_idx_excluding(Er, R, r_i)
+        t_adv_i = nearest_idx_excluding(Et, E, t_i)
+
+        cand = (h_adv_i, r_adv_i, t_adv_i)
+
+        # duplicate check
+        if cand == (h_i, r_i, t_i) or cand in triples_set_idx:
+            continue  # skip this triple; no retry logic
+
+        # accept and keep seen set updated to avoid duplicates across outputs
+        triples_set_idx.add(cand)
+
+        # evaluate prob after corruption
+        logits_adv = logits_for_indices(oracle.model, *cand, device)
+        prob_after = torch.sigmoid(logits_adv).item()
+
+        corrupted_triple = (I2E[cand[0]], I2R[cand[1]], I2E[cand[2]])
+        results.append((corrupted_triple, (h, r, t), prob_after))
+
+    return results
+
 
 def select_k_top_loss_fast(results: List[Result],
                            k: int,
@@ -314,4 +502,93 @@ def select_k_mmr_fast(results: List[Result],
 
     chosen_global = idx_pool[np.array(chosen_local, dtype=int)]
     return [results[i] for i in chosen_global]
+
+
+def select_adversarial_removals_fgsm(
+    triples: List[Tuple[str, str, str]],
+    oracle,
+    seed: int,
+    eps: float = 1e-2,
+    norm: str = "linf",
+):
+    """
+    FGSM-based removal ranking:
+      For each true (h,r,t):
+        - compute grad of BCE(pos=1) wrt its embedding rows
+        - apply FGSM (+eps*sign(grad)) *to the same rows* (no snapping)
+        - measure drop in prob: p_before - p_after
+
+    Returns: List[ ((h,r,t), delta_prob, prob_before, prob_after) ] sorted desc by delta_prob
+    """
+    device = next(oracle.model.parameters()).device
+
+    random.seed(seed)
+    torch.manual_seed(seed)
+
+    E2I = oracle.entity_to_idx
+    R2I = oracle.relation_to_idx
+
+    ent_emb = oracle.model.entity_embeddings
+    rel_emb = oracle.model.relation_embeddings
+    if not isinstance(ent_emb, nn.Embedding) or not isinstance(rel_emb, nn.Embedding):
+        raise RuntimeError("Expected nn.Embedding at model.entity_embeddings / relation_embeddings")
+
+    oracle.model.train(False)  # deterministic forward
+    results = []
+
+    for (h, r, t) in triples:
+        h_i, r_i, t_i = E2I[h], R2I[r], E2I[t]
+
+        # --- clean prob ---
+        with torch.no_grad():
+            logits_clean = logits_for_indices(oracle.model, h_i, r_i, t_i, device)
+            prob_before = torch.sigmoid(logits_clean).item()
+
+        # --- grads on clean triple (pos label) ---
+        for p in oracle.model.parameters():
+            p.requires_grad_(True)
+        oracle.model.zero_grad(set_to_none=True)
+
+        logits = logits_for_indices(oracle.model, h_i, r_i, t_i, device)
+        target_pos = torch.ones_like(logits)
+        loss = F.binary_cross_entropy_with_logits(logits, target_pos)
+        loss.backward()
+
+        GE = ent_emb.weight.grad
+        GR = rel_emb.weight.grad
+        if GE is None or GR is None:
+            raise RuntimeError("Embedding grads are None; ensure forward doesn't detach grads.")
+        if GE.is_sparse: GE = GE.to_dense()
+        if GR.is_sparse: GR = GR.to_dense()
+
+        dh = fgsm_delta(GE[h_i], eps, norm)  # +eps*sign(∇_x L) increases loss → lowers prob
+        dr = fgsm_delta(GR[r_i], eps, norm)
+        dt = fgsm_delta(GE[t_i], eps, norm)
+
+        # --- virtual FGSM on SAME indices, measure prob drop, then restore ---
+        with torch.no_grad():
+            Eh0 = ent_emb.weight[h_i].clone()
+            Er0 = rel_emb.weight[r_i].clone()
+            Et0 = ent_emb.weight[t_i].clone()
+
+            ent_emb.weight[h_i] = Eh0 + dh
+            rel_emb.weight[r_i] = Er0 + dr
+            ent_emb.weight[t_i] = Et0 + dt
+
+        logits_adv = logits_for_indices(oracle.model, h_i, r_i, t_i, device)
+        prob_after = torch.sigmoid(logits_adv).item()
+
+        # restore
+        with torch.no_grad():
+            ent_emb.weight[h_i] = Eh0
+            rel_emb.weight[r_i] = Er0
+            ent_emb.weight[t_i] = Et0
+
+        delta = prob_before - prob_after  # bigger drop ⇒ more fragile/valuable triple
+        results.append(((h, r, t), delta, prob_before, prob_after))
+
+    results.sort(key=itemgetter(1), reverse=True)
+
+    return results
+
 

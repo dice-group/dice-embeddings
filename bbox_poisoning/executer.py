@@ -1,6 +1,7 @@
 from dicee.executer import Execute
 from dicee.scripts.run import get_default_arguments
 
+
 def run_dicee_eval(
     dataset_folder,
     model,
@@ -9,6 +10,7 @@ def run_dicee_eval(
     learning_rate,
     embedding_dim,
     loss_function,
+    path_to_store_single_run,
     scoring_technique="KvsAll",
     optim="Adam",
     ):
@@ -24,6 +26,7 @@ def run_dicee_eval(
         "--scoring_technique", "KvsAll",
         "--optim", "Adam",
         "--save_embeddings_as_csv",
+        "--path_to_store_single_run", path_to_store_single_run
     ])
     result = Execute(args=args).start()
 

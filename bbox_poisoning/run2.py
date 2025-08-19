@@ -5,8 +5,9 @@ from utils import (set_seeds, load_embeddings, load_triples, select_adverserial_
                     select_adversarial_triples_fgsm
                    )
 from baselines import remove_random_triples
-from utils_2 import select_adversarial_triples_fgsm_simple, select_k_top_loss, select_k_mmr, select_k_top_loss_fast, select_k_mmr_fast
+from utils_2 import select_adversarial_triples_fgsm_simple, select_k_top_loss, select_k_mmr, select_k_top_loss_fast, select_k_mmr_fast, select_adversarial_removals_fgsm
 from baselines import poison_random, poison_centrality, remove_random_triples
+from uttils_3 import select_adversarial_removals_fgsm_hardneg
 import shutil
 import csv
 import random
@@ -14,8 +15,8 @@ from pathlib import Path
 
 device = "cpu"
 
-DB = "UMLS"
-MODEL = "Pykeen_ComplEx" #"Pykeen_MuRE" #"Pykeen_RotatE" #"Keci" #"Pykeen_ComplEx" #"Keci" #"Pykeen_BoxE" #"DeCaL" #"Pykeen_ComplEx" #Keci
+DB = "Countries-S1" #"KINSHIP" #"UMLS"
+MODEL = "Keci" #"Pykeen_BoxE" #"Pykeen_RotatE" #"Pykeen_ComplEx" #"Keci" #"Pykeen_MuRE" #"Keci" #"Pykeen_MuRE" #"Pykeen_RotatE" #"Keci" #"Pykeen_ComplEx" #"Keci" #"Pykeen_BoxE" #"DeCaL" #"Pykeen_ComplEx" #Keci
 
 ORACLE_PATH = f"./Experiments/{DB}_{MODEL}"
 TRIPLES_PATH = f"./KGs/{DB}/train.txt"
@@ -40,10 +41,10 @@ active_learning_logs = "results/active_learning_logs.csv"
 
 triples_count = len(triples)
 
-percentages = [0.01, 0.02, 0.04, 0.08, 0.12, 0.16, 0.20, 0.24, 0.32, 0.38, 0.46, 0.57, 0.64]
+percentages = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.50] #[0.1, 0.2, 0.30, 0.40, 0.50, 0.60, 0.70, 0.8]
 perturbation_ratios = [int(triples_count * p) for p in percentages]
 
-corruption_type = "random-one" #"rel" #"tail" #"rel"
+corruption_type = "random-one" #"all" #"random-one" #"rel" #"random-one" #"tail" #"rel"
 
 def interleave_many(*lists_):
     out = []
@@ -60,6 +61,8 @@ def interleave_many(*lists_):
 def store_poisoned_andeval(triples, adverserial_triples, feature, DB, top_k, corruption_type, experiment, MODEL):
 
     triples_after_adverserials_edis_wbox = triples + adverserial_triples[:top_k]
+
+    random.shuffle(triples_after_adverserials_edis_wbox)
 
     save_triples(triples_after_adverserials_edis_wbox,
                  f"{DB}/active_poisoning_whitebox/{MODEL}/{feature}/{top_k}/{corruption_type}/{experiment}/train.txt")
@@ -97,11 +100,12 @@ for experiment, experiment_seed in enumerate(experiment_seeds):
     res_wbox_high_closeness_simple = []
     res_wbox_high_gradients_simple = []
 
-    res_fgsm_main = []
-
     res_wbox_low_scores_fgsm = []
     res_high_closeness_fgsm = []
     res_high_gradients_fgsm = []
+    res_wbox_adverserial_fgsm = []
+
+    #res_fgsm_main = []
 
     (
         low_scores_simple,
@@ -116,30 +120,32 @@ for experiment, experiment_seed in enumerate(experiment_seeds):
         seed=experiment_seed
     )
 
-    low_scores_fgsm, high_close_fgsm, high_gradients_fgsm = select_adversarial_triples_fgsm(
+    low_scores_fgsm, high_close_fgsm, high_gradients_fgsm, fgsm_adverserial_triples = select_adversarial_triples_fgsm(
         triples=triples,
-        corruption_type="rel",
+        corruption_type=corruption_type,
         oracle=oracle,
         seed=experiment_seed,
         eps=1e-2,
         norm="linf",
     )
 
-    fgsm_main = select_adversarial_triples_fgsm_simple(
-        triples=triples,
-        oracle=oracle,
-        seed=experiment_seed,
-        eps=1e-2,
-        norm="linf",
-    )
+    #fgsm_main = select_adversarial_triples_fgsm_simple(
+    #    triples=triples,
+    #    oracle=oracle,
+    #    seed=experiment_seed,
+    #    eps=1e-2,
+    #    norm="linf",
+    #)
 
-    for top_k in perturbation_ratios:
+    for idx, top_k in enumerate(perturbation_ratios):
 
         print("############## Poisoning Random #################")
 
         remaining, corrupted = poison_random(triples, top_k, corruption_type, experiment_seed)
 
-        triples_after_random_poisoning = triples  + corrupted #remaining  + corrupted
+        triples_after_random_poisoning = triples + corrupted
+
+        random.shuffle(triples_after_random_poisoning)
 
         save_triples(triples_after_random_poisoning, f"{DB}/random/{top_k}/{corruption_type}/{experiment}/train.txt")
 
@@ -159,11 +165,11 @@ for experiment, experiment_seed in enumerate(experiment_seeds):
 
         print("############## Poisoning Whitebox Active learning #################")
 
+
         low_scores_triples_simple = [item[0] for item in low_scores_simple]
         low_scores_triples_simple_to_store = store_poisoned_andeval(triples, low_scores_triples_simple, "low_scores_triples_simple", DB, top_k,
                                                             corruption_type, experiment, MODEL)
         res_wbox_low_scores_simple.append(low_scores_triples_simple_to_store)
-
 
         high_close_triples_simple_to_store = store_poisoned_andeval(triples, high_close_simple, "high_close_simple", DB, top_k,
                                                                      corruption_type, experiment, MODEL)
@@ -177,12 +183,18 @@ for experiment, experiment_seed in enumerate(experiment_seeds):
 
         #---------------
 
-        fgsm_main_triples = select_k_top_loss_fast(fgsm_main, k=top_k, forbidden=forbidden)
-        res_fgsm_main_to_store = store_poisoned_andeval(triples, fgsm_main_triples, "fgsm_main_triples", DB, top_k,
-                                                                corruption_type, experiment, MODEL)
-        res_fgsm_main.append(res_fgsm_main_to_store)
+        #fgsm_main_triples = select_k_top_loss_fast(fgsm_main, k=top_k, forbidden=forbidden)
+        #res_fgsm_main_to_store = store_poisoned_andeval(triples, fgsm_main_triples, "fgsm_main_triples", DB, top_k,
+        #                                                        corruption_type, experiment, MODEL)
+        #res_fgsm_main.append(res_fgsm_main_to_store)
 
         # ---------------
+
+        adverserial_fgsm_triples = [item[0] for item in fgsm_adverserial_triples]
+        adverserial_fgsm_triples_to_store = store_poisoned_andeval(triples, adverserial_fgsm_triples,
+                                                                  "adverserial_fgsm_triples", DB, top_k,
+                                                                  corruption_type, experiment, MODEL)
+        res_wbox_adverserial_fgsm.append(adverserial_fgsm_triples_to_store)
 
         low_scores_fgsm_triples = [item[0] for item in low_scores_fgsm]
         low_scores_fgsm_triples_to_store = store_poisoned_andeval(triples, low_scores_fgsm_triples, "low_scores_fgsm_triples", DB, top_k,
@@ -201,28 +213,30 @@ for experiment, experiment_seed in enumerate(experiment_seeds):
         res_high_gradients_fgsm.append(high_gradients_fgsm_to_store)
         # -----------------------------------------------------------------------------
 
+
         rows = [
-            ("triple injection ratios", percentages),
-            ("random", res_random),
-            ("res_wbox_low_scores_simple", res_wbox_low_scores_simple),
-            ("res_wbox_high_closeness_simple", res_wbox_high_closeness_simple),
-            ("res_wbox_high_gradients_simple", res_wbox_high_gradients_simple),
-            ("res_fgsm_main", res_fgsm_main),
-            ("res_wbox_low_scores_fgsm", res_wbox_low_scores_fgsm),
-            ("res_high_closeness_fgsm", res_high_closeness_fgsm),
-            ("res_high_gradients_fgsm", res_high_gradients_fgsm),
+            ("Triple Injection Ratios", percentages),
+            ("Random", res_random),
+            ("Low_Scores", res_wbox_low_scores_simple),
+            ("High_Closeness", res_wbox_high_closeness_simple),
+            ("High_Gradients", res_wbox_high_gradients_simple),
+            ("FGSM_Low_Scores", res_wbox_low_scores_fgsm),
+            ("FGSM_High_Closeness", res_high_closeness_fgsm),
+            ("FGSM_High_Gradients", res_high_gradients_fgsm),
+            ("FGSM_High_Loss", res_wbox_adverserial_fgsm),
+            #("res_fgsm_main", res_fgsm_main),
         ]
 
         out_path = Path(
-            f"final_results/{MODEL}/{corruption_type}/results-{DB}-{MODEL}-{corruption_type}-{experiment}.csv")
+            f"final_results/{DB}/{MODEL}/{corruption_type}/results-{DB}-{MODEL}-{corruption_type}-{experiment}.csv")
         out_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(f"final_results/{MODEL}/{corruption_type}/results-{DB}-{MODEL}-{corruption_type}-{experiment}.csv", "w", newline="") as file:
+        with open(f"final_results/{DB}/{MODEL}/{corruption_type}/results-{DB}-{MODEL}-{corruption_type}-{experiment}.csv", "w", newline="") as file:
                 writer = csv.writer(file)
                 for name, values in rows:
                     writer.writerow([name] + values)
 
-        visualize_results(f"final_results/{MODEL}/{corruption_type}/results-{DB}-{MODEL}-{corruption_type}-{experiment}.csv", f"final_results/{MODEL}/{corruption_type}/results{DB}-{MODEL}-{corruption_type}-{experiment}.png", f"{DB}-{MODEL}")
+        visualize_results(f"final_results/{DB}/{MODEL}/{corruption_type}/results-{DB}-{MODEL}-{corruption_type}-{experiment}.csv", f"final_results/{DB}/{MODEL}/{corruption_type}/results{DB}-{MODEL}-{corruption_type}-{experiment}.png", f"{DB}-{MODEL}")
 
         lists_to_check = {
             "random":res_random,
@@ -230,10 +244,11 @@ for experiment, experiment_seed in enumerate(experiment_seeds):
             "res_wbox_low_scores_simple": res_wbox_low_scores_simple,
             "res_wbox_high_closeness_simple": res_wbox_high_closeness_simple,
             "res_wbox_high_gradients_simple": res_wbox_high_gradients_simple,
-            "res_fgsm_main": res_fgsm_main,
             "res_wbox_low_scores_fgsm": res_wbox_low_scores_fgsm,
             "res_high_closeness_fgsm": res_high_closeness_fgsm,
             "res_high_gradients_fgsm": res_high_gradients_fgsm,
+            "res_wbox_adverserial_fgsm": res_wbox_adverserial_fgsm,
+            #"res_fgsm_main": res_fgsm_main,
         }
     
         lengths = [len(v) for v in lists_to_check.values()]
