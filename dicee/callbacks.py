@@ -13,6 +13,7 @@ from collections import defaultdict
 import math
 from torch.optim.lr_scheduler import LambdaLR
 from .eval_static_funcs import evaluate_ensemble_link_prediction_performance
+from pytorch_lightning.utilities import rank_zero_only
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
@@ -167,6 +168,7 @@ class ASWA(AbstractCallback):
         self.alphas = []
         self.val_aswa = -1
 
+    @rank_zero_only
     def on_fit_end(self, trainer, model):
         # super().on_fit_end(trainer, model)
         if self.initial_eval_setting:
@@ -247,6 +249,7 @@ class ASWA(AbstractCallback):
             self.alphas.append(0)
             return True
 
+    @rank_zero_only
     def on_train_epoch_end(self, trainer, model):
         
         if (trainer.global_rank == trainer.local_rank == 0) is False:
@@ -547,12 +550,14 @@ class PeriodicEvalCallback(AbstractCallback):
             self.n_epochs_storage_path = os.path.join(self.experiment_dir, 'models_n_epochs')
             os.makedirs(self.n_epochs_storage_path, exist_ok=True)
 
+    @rank_zero_only
     def on_fit_end(self, trainer, model):
         """ Called at the end of training. Saves final evaluation report."""
         report_path = os.path.join(self.experiment_dir, 'eval_report_n_epochs.json')
         with open(report_path, 'w') as f:
             json.dump(self.reports, f, indent=4)
 
+    @rank_zero_only
     def on_train_epoch_end(self, trainer, model):
         """
         Called at the end of each training epoch. Performs evaluation and checkpointing if scheduled.
@@ -969,7 +974,8 @@ class SWA(AbstractCallback):
         with torch.no_grad():
             for swa_param, param in zip(swa_model.parameters(), model.parameters()):
                 swa_param.data = (1.0 - alpha) * swa_param.data + alpha * param.data
-        
+
+    @rank_zero_only
     def on_fit_start(self, trainer, model):
         """Initialize SWA model with same architecture as main model."""
         self.swa_model = type(model)(model.args)
@@ -977,11 +983,12 @@ class SWA(AbstractCallback):
         self.swa_model = self.swa_model.to(model.device)
 
         # Check if trainer has optimizer attribute, if not, try to get from optimizers list
-        optimizer = getattr(trainer, 'optimizer', None)
-        if optimizer is None:
-            if not (hasattr(trainer, 'optimizers') and trainer.optimizers):
-                raise AttributeError("Trainer does not have a valid optimizer or optimizers list.")
-    
+        # optimizer = getattr(trainer, 'optimizer', None)
+        # if optimizer is None:
+        #     if not (hasattr(trainer, 'optimizers') and trainer.optimizers):
+        #         raise AttributeError("Trainer does not have a valid optimizer or optimizers list.")
+
+    @rank_zero_only
     def on_train_epoch_start(self, trainer, model):
         """Update learning rate according to SWA schedule."""
         # Get current epoch - simplified with fallback
@@ -1011,7 +1018,8 @@ class SWA(AbstractCallback):
         if optimizer is not None:
             for param_group in optimizer.param_groups:
                 param_group['lr'] = new_lr
-    
+
+    @rank_zero_only
     def on_train_epoch_end(self, trainer, model):
         """Apply SWA averaging if conditions are met."""
         #set swa_model in trainer if eval_every_n_epochs or eval_at_epochs is set
@@ -1025,6 +1033,7 @@ class SWA(AbstractCallback):
             self.moving_average(self.swa_model, model, 1.0 / (self.swa_n + 1))
             self.swa_n += 1
     
+    @rank_zero_only
     def on_fit_end(self, trainer, model):
         """Replace main model with SWA model at the end of training."""
         if self.swa_model is not None and self.swa_n > 0:

@@ -99,12 +99,12 @@ def sanity_check_callback_args(args):
                           args.eval_at_epochs is not None])
     if not has_callbacks:
         return  # No callbacks, no checks needed
-    # Block all callbacks for TP or torchDDP trainers
-    if args.trainer in {'TP', 'torchDDP'}:
-        raise NotImplementedError("Callbacks are not supported with TP or torchDDP trainers.")
-    # Block callbacks for PL trainer with 2+ GPUs
-    elif args.trainer == 'PL' and gpu_count >= 2:
-        raise NotImplementedError("Callbacks are not supported with PL trainer on multi-GPU setup.")
+    # # Block all callbacks for TP or torchDDP trainers
+    # if args.trainer in {'TP', 'torchDDP'}:
+    #     raise NotImplementedError("Callbacks are not supported with TP or torchDDP trainers.")
+    # # Block callbacks for PL trainer with 2+ GPUs
+    # elif args.trainer == 'PL' and gpu_count >= 2:
+    #     raise NotImplementedError("Callbacks are not supported with PL trainer on multi-GPU setup.")
     if args.swa:
         if args.swa_start_epoch is None:
             args.swa_start_epoch = 1
