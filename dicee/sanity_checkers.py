@@ -93,7 +93,7 @@ def sanity_check_callback_args(args):
     """
     Perform sanity checks on callback-related arguments.
     """
-    gpu_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
+    # gpu_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
     # Check if any callbacks are requested
     has_callbacks = any([args.swa, args.adaptive_swa, args.adaptive_lr, args.eval_every_n_epochs > 0,
                           args.eval_at_epochs is not None])

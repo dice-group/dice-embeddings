@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import os
 import json
+import copy
 
 import dicee.models.base_model
 from .static_funcs import save_checkpoint_model, save_pickle
@@ -586,7 +587,7 @@ class PeriodicEvalCallback(AbstractCallback):
         eval_model = None
 
         if model.args.get("swa"):
-            eval_model = trainer.swa_model
+            eval_model = copy.deepcopy(trainer.swa_model)
 
         elif model.args.get("adaptive_swa"):
             # Load ASWA weights and apply to a deepcopy of the model
@@ -598,11 +599,8 @@ class PeriodicEvalCallback(AbstractCallback):
             eval_model.load_state_dict(aswa_ensemble_params)
 
         else:
-            eval_model = model
+            eval_model = copy.deepcopy(model)
 
-        # Save device and training mode, move to CPU for evaluation to save memory
-        device = next(eval_model.parameters()).device
-        training_mode = eval_model.training
         eval_model.to('cpu')
         eval_model.eval()
 
@@ -611,9 +609,6 @@ class PeriodicEvalCallback(AbstractCallback):
                 form_of_labelling=trainer.form_of_labelling,
                 during_training=True)
 
-        # Restore model to original device and mode
-        eval_model.to(device)
-        eval_model.train(mode=training_mode)
 
         # Restore evaluation mode
         trainer.evaluator.args.eval_model = self.default_eval_model
@@ -624,12 +619,13 @@ class PeriodicEvalCallback(AbstractCallback):
         # Save model checkpoint if needed
         if self.save_model_every_n_epoch:
             save_path = os.path.join(self.n_epochs_storage_path, f'model_at_epoch_{self.epoch_counter}.pt')
-            save_checkpoint_model(eval_model, path=save_path)
-        
+            torch.save(eval_model.state_dict(), save_path)
+
         # Free memory only if eval_model is a separate instance (ASWA case)
-        if model.args.get("adaptive_swa") and eval_model is not model:
-            del eval_model
-                       
+        # if model.args.get("adaptive_swa") and eval_model is not model:
+        #     del eval_model
+        del eval_model
+        torch.cuda.empty_cache()
 class LRScheduler(AbstractCallback):
     """
     Callback for managing learning rate scheduling and model snapshots.
