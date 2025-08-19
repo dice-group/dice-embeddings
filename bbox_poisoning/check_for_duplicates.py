@@ -1,11 +1,6 @@
 from collections import Counter
 
 def find_duplicate_triples(path, sep="\t"):
-    """
-    Return a list of (triple_tuple, count) for rows that appear >1 time.
-    A 'triple' is 3 fields per line, separated by `sep` (default: tab).
-    Blank lines are ignored.
-    """
     triples = []
     with open(path, "r", encoding="utf-8") as f:
         for line in f:

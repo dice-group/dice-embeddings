@@ -1447,9 +1447,6 @@ def select_adverserial_triples_whitebox(
 
     low_scores = sorted(adverserial_triples.copy(), key=lambda x: x[2])  # ascending
 
-    #clean_version_of_corrupted_triples = [item[1] for item in adverserial_triples]
-    #triples_without_edited_ones = [t for t in triples if t not in clean_version_of_corrupted_triples]
-
     corrupted_centerality = compute_triple_centrality(triples, adverserial_triples)
     high_close = high_closeness(corrupted_centerality)
 

@@ -44,7 +44,7 @@ def store_poisoned_andeval(triples, adverserial_triples, feature, DB, top_k, cor
 device = "cpu"
 
 DBS = ["UMLS", "KINSHIP", "FB15k-237", "NELL-995-h100", "WN18RR", "YAGO3-10"]
-MODELS = ["Keci", "ComplEx", "DistMult", "QMult", "Pykeen_MuRE", "Pykeen_RotatE", "Pykeen_BoxE", "DeCaL"]
+MODELS = ["QMult", "Keci", "ComplEx", "DistMult", "Pykeen_MuRE", "Pykeen_RotatE", "Pykeen_BoxE", "DeCaL"]
 
 for DB in DBS:
     for MODEL in MODELS:
@@ -79,7 +79,7 @@ for DB in DBS:
         perturbation_ratios = [int(triples_count * p) for p in percentages]
 
         seed_src = random.Random()
-        num_experiments = 10
+        num_experiments = 5
         experiment_seeds = [seed_src.randrange(2 ** 32) for _ in range(num_experiments)]
 
 
@@ -127,12 +127,12 @@ for DB in DBS:
                 triples_after_random_poisoning = triples + corrupted
                 random.shuffle(triples_after_random_poisoning)
 
-                save_triples(triples_after_random_poisoning, f"{DB}/random/{top_k}/{corruption_type}/{experiment}/train.txt")
-                shutil.copy2(test_path, f"{DB}/random/{top_k}/{corruption_type}/{experiment}/test.txt")
-                shutil.copy2(valid_path, f"{DB}/random/{top_k}/{corruption_type}/{experiment}/valid.txt")
+                save_triples(triples_after_random_poisoning, f"./saved_models/{DB}/{MODEL}/random/{top_k}/{corruption_type}/{experiment}/train.txt")
+                shutil.copy2(test_path, f"./saved_models/{DB}/{MODEL}/random/{top_k}/{corruption_type}/{experiment}/test.txt")
+                shutil.copy2(valid_path, f"./saved_models/{DB}/{MODEL}/random/{top_k}/{corruption_type}/{experiment}/valid.txt")
 
                 result_random_poisoned = run_dicee_eval(
-                    dataset_folder=f"{DB}/random/{top_k}/{corruption_type}/{experiment}/",
+                    dataset_folder=f"./saved_models/{DB}/{MODEL}/random/{top_k}/{corruption_type}/{experiment}/",
                     model=MODEL,
                     num_epochs="100",
                     batch_size="1024",
@@ -157,7 +157,7 @@ for DB in DBS:
                 res_wbox_high_gradients_simple.append(high_gradients_triples_simple_to_store)
                 # -----------
 
-                if experiment == 0:
+                if experiment == 0: # because fgsm experiments are deterministic and multiple runs produces the same results, therefore, only one run is enough.
                     adverserial_fgsm_triples = [item[0] for item in fgsm_adverserial_triples]
                     adverserial_fgsm_triples_to_store = store_poisoned_andeval(triples, adverserial_fgsm_triples, "adverserial_fgsm_triples", DB, top_k, corruption_type, experiment, MODEL)
                     res_wbox_adverserial_fgsm.append(adverserial_fgsm_triples_to_store)
@@ -202,48 +202,49 @@ for DB in DBS:
                     f"final_results/{DB}/{MODEL}/{corruption_type}/results{DB}-{MODEL}-{corruption_type}-{experiment}.png",
                     f"{DB}-{MODEL}")
 
-                lists_to_check = {
-                    "random": res_random,
-                    "res_wbox_low_scores_simple": res_wbox_low_scores_simple,
-                    "res_wbox_high_closeness_simple": res_wbox_high_closeness_simple,
-                    "res_wbox_high_gradients_simple": res_wbox_high_gradients_simple,
-                    "res_wbox_low_scores_fgsm": res_wbox_low_scores_fgsm,
-                    "res_high_closeness_fgsm": res_high_closeness_fgsm,
-                    "res_high_gradients_fgsm": res_high_gradients_fgsm,
-                    "res_wbox_adverserial_fgsm": res_wbox_adverserial_fgsm,
-                }
+                if experiment == 0:
+                    lists_to_check = {
+                        "random": res_random,
+                        "res_wbox_low_scores_simple": res_wbox_low_scores_simple,
+                        "res_wbox_high_closeness_simple": res_wbox_high_closeness_simple,
+                        "res_wbox_high_gradients_simple": res_wbox_high_gradients_simple,
+                        "res_wbox_low_scores_fgsm": res_wbox_low_scores_fgsm,
+                        "res_high_closeness_fgsm": res_high_closeness_fgsm,
+                        "res_high_gradients_fgsm": res_high_gradients_fgsm,
+                        "res_wbox_adverserial_fgsm": res_wbox_adverserial_fgsm,
+                    }
 
 
-                lengths_map = {name: len(lst) for name, lst in lists_to_check.items()}
-                report_path = Path(f"{DB}_{MODEL}_length_check_report.json")
+                    lengths_map = {name: len(lst) for name, lst in lists_to_check.items()}
+                    report_path = Path(f"./reports/{DB}_{MODEL}_length_check_report.json")
 
-                if not lengths_map:
+                    if not lengths_map:
+                        report = {
+                            "status": "empty",
+                            "message": "lists_to_check is empty; nothing to compare.",
+                            "timestamp": datetime.now().isoformat(timespec="seconds")
+                        }
+                        report_path.write_text(json.dumps(report, indent=2))
+                        raise AssertionError(report["message"])
+
+                    target_len = next(iter(lengths_map.values()))
+                    mismatched = [name for name, L in lengths_map.items() if L != target_len]
+
                     report = {
-                        "status": "empty",
-                        "message": "lists_to_check is empty; nothing to compare.",
+                        "status": "ok" if not mismatched else "mismatch",
+                        "target_len": target_len,
+                        "lengths": lengths_map,
+                        "mismatched": {name: lengths_map[name] for name in mismatched},
                         "timestamp": datetime.now().isoformat(timespec="seconds")
                     }
+
                     report_path.write_text(json.dumps(report, indent=2))
-                    raise AssertionError(report["message"])
 
-                target_len = next(iter(lengths_map.values()))
-                mismatched = [name for name, L in lengths_map.items() if L != target_len]
-
-                report = {
-                    "status": "ok" if not mismatched else "mismatch",
-                    "target_len": target_len,
-                    "lengths": lengths_map,
-                    "mismatched": {name: lengths_map[name] for name in mismatched},
-                    "timestamp": datetime.now().isoformat(timespec="seconds")
-                }
-
-                report_path.write_text(json.dumps(report, indent=2))
-
-                assert not mismatched, (
-                        "Length mismatch: expected all lists to have length "
-                        f"{target_len}, but these differ: "
-                        + ", ".join(f"{name} (len={lengths_map[name]})" for name in mismatched)
-                )
+                    assert not mismatched, (
+                            "Length mismatch: expected all lists to have length "
+                            f"{target_len}, but these differ: "
+                            + ", ".join(f"{name} (len={lengths_map[name]})" for name in mismatched)
+                    )
 
 
 

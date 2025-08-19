@@ -5,10 +5,7 @@ from scipy.stats import ttest_rel
 import matplotlib.pyplot as plt
 
 def _parse_run_csv(path: str) -> pd.DataFrame:
-    """
-    Read one CSV where col0 is method and the remaining columns are numeric values.
-    Drops 'triple injection ratios'. Returns DataFrame (index=methods, cols=R1..RN).
-    """
+
     df = pd.read_csv(path, header=None)
     methods = df.iloc[:, 0].astype(str)
     vals = df.iloc[:, 1:]
@@ -23,29 +20,21 @@ def _parse_run_csv(path: str) -> pd.DataFrame:
     return out
 
 def load_experiment_folder(folder_path: str, target: str = "random"):
-    """
-    Compatible return signature: (data_df, t_test_df)
-      - data_df: rows=methods, cols=run_i (each cell is the per-run MEAN over all columns)
-      - t_test_df: paired t-test vs target using those per-run means
-    """
+
     run_files = sorted([f for f in os.listdir(folder_path) if f.endswith(".csv")])
     if not run_files:
         raise ValueError("No .csv files found in the folder.")
 
-    # Parse each run, align on the union of method names
     runs = [_parse_run_csv(os.path.join(folder_path, f)) for f in run_files]
     all_methods = sorted(set().union(*[set(df.index) for df in runs]))
 
-    # Build per-run MEAN per method (one value per method per run)
     per_run_means = {}
     for i, df in enumerate(runs, start=1):
-        # align method index; take mean across columns per method
         aligned = df.reindex(index=all_methods)
         per_run_means[f"run{i}"] = aligned.mean(axis=1, skipna=True)
 
     data_df = pd.DataFrame(per_run_means)  # rows=methods, cols=runs
 
-    # Paired t-tests vs target (use paired runs where both have values)
     if target not in data_df.index:
         raise ValueError(f"Target method '{target}' not found in the data.")
     results = []
@@ -68,9 +57,6 @@ def load_experiment_folder(folder_path: str, target: str = "random"):
     return data_df, t_test_df
 
 def plot_mean_std_from_df(data_df: pd.DataFrame, title="Mean ± Std across runs"):
-    """
-    Plot a clean mean±std error-bar for each method across runs (ignoring ratio rows by construction).
-    """
     means = data_df.mean(axis=1, skipna=True).sort_values(ascending=False)
     stds  = data_df.std(axis=1, ddof=1, skipna=True).reindex(means.index)
 

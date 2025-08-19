@@ -16,7 +16,6 @@ def _read_triples(path: str):
     return triples
 
 def count_triples_in_one_but_not_the_other(file_a: str, file_b: str) -> int:
-    """Number of triples that appear in exactly one of the two files."""
     a = _read_triples(file_a)
     b = _read_triples(file_b)
     return len(a.symmetric_difference(b))

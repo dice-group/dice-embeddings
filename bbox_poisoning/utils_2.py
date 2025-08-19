@@ -293,13 +293,7 @@ def select_adversarial_triples_fgsm_simple(
     eps: float = 1e-2,
     norm: str = "linf",
 ):
-    """
-    FGSM-based adversarial triples with a minimal duplicate check:
-    - If the adversarial (h,r,t) already exists in the dataset or equals the original,
-      it is skipped (no retry).
-    - Accepted adversarials are added to the seen set to avoid duplicates across outputs.
-    Returns: list of (corrupted_triple, clean_triple, prob_after)
-    """
+
     device = next(oracle.model.parameters()).device
 
     random.seed(seed)
