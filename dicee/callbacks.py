@@ -13,6 +13,7 @@ import pandas as pd
 from collections import defaultdict
 import math
 from torch.optim.lr_scheduler import LambdaLR
+from torch._dynamo.eval_frame import OptimizedModule
 from .eval_static_funcs import evaluate_ensemble_link_prediction_performance
 from pytorch_lightning.utilities import rank_zero_only
 
@@ -176,29 +177,26 @@ class ASWA(AbstractCallback):
             # ADD this info back
             trainer.evaluator.args.eval_model = self.initial_eval_setting
         
-        if trainer.global_rank==trainer.local_rank==0:
-            param_ensemble = torch.load(f"{self.path}/aswa.pt", torch.device("cpu"))
-            model.load_state_dict(param_ensemble)
+        param_ensemble = torch.load(f"{self.path}/aswa.pt", torch.device("cpu"))
+        model.load_state_dict(param_ensemble)
 
     @staticmethod
     def compute_mrr(trainer, model) -> float:
         # (2) Enable eval mode.
-        model.eval()
+        eval_model = copy.deepcopy(model)
+        eval_model.eval()
         # (3) MRR performance on the validation data of running model.
-        device_name = model.device
-        model.to("cpu")
+        eval_model.to("cpu")
         last_val_mrr_running_model = trainer.evaluator.eval(dataset=trainer.dataset,
-                                                            trained_model=model,
+                                                            trained_model=eval_model,
                                                             form_of_labelling=trainer.form_of_labelling,
                                                             during_training=True)["Val"]["MRR"]
-        model.to(device_name)
-        # (4) Enable train mode.
-        model.train()
+        del eval_model
         return last_val_mrr_running_model
 
     def get_aswa_state_dict(self, model):
         # (2) Question: Soft update or Rejection?!
-        ensemble_state_dict = torch.load(f"{self.path}/aswa.pt", torch.device(model.device))
+        ensemble_state_dict = torch.load(f"{self.path}/aswa.pt", torch.device(next(model.parameters()).device))
         # Perform provision parameter update.
         with torch.no_grad():
             for k, parameters in model.state_dict().items():
@@ -252,10 +250,10 @@ class ASWA(AbstractCallback):
 
     @rank_zero_only
     def on_train_epoch_end(self, trainer, model):
-        
-        if (trainer.global_rank == trainer.local_rank == 0) is False:
-            return None
-
+        # if (trainer.global_rank == trainer.local_rank == 0) is False:
+        #     return None
+        if isinstance(model, OptimizedModule):
+            model = model._orig_mod
         # (1) Increment epoch counter
         self.epoch_count += 1
         # (2) Save the given eval setting if it is not saved.
@@ -595,7 +593,10 @@ class PeriodicEvalCallback(AbstractCallback):
             aswa_ensemble_params = torch.load(aswa_path, map_location="cpu")
             
             # Clone model and apply ASWA weights
-            eval_model = type(model)(model.args)
+            if isinstance(model, OptimizedModule):
+                eval_model = type(model._orig_mod)(model.args)
+            else:
+                eval_model = type(model)(model.args)
             eval_model.load_state_dict(aswa_ensemble_params)
 
         else:
@@ -603,7 +604,7 @@ class PeriodicEvalCallback(AbstractCallback):
 
         eval_model.to('cpu')
         eval_model.eval()
-
+        
         report = trainer.evaluator.eval(dataset=trainer.dataset,
                 trained_model=eval_model,
                 form_of_labelling=trainer.form_of_labelling,
@@ -964,25 +965,36 @@ class SWA(AbstractCallback):
         self.swa_model = None
         self.swa_n = 0
         self.current_epoch = -1
-    
-    def moving_average(self, swa_model, model, alpha):
+        self._collected_models = []
+
+    def moving_average(self, running_model, alpha):
         """Update SWA model with moving average of current model."""
         with torch.no_grad():
-            for swa_param, param in zip(swa_model.parameters(), model.parameters()):
+            self.swa_model.to(next(running_model.parameters()).device)
+            for swa_param, param in zip(self.swa_model.parameters(), running_model.parameters()):
                 swa_param.data = (1.0 - alpha) * swa_param.data + alpha * param.data
 
     @rank_zero_only
     def on_fit_start(self, trainer, model):
         """Initialize SWA model with same architecture as main model."""
-        self.swa_model = type(model)(model.args)
-        self.swa_model.load_state_dict(model.state_dict())
-        self.swa_model = self.swa_model.to(model.device)
+        
+        kge_model = model._orig_mod if isinstance(model, OptimizedModule) else model
+        self.swa_model = type(kge_model)(kge_model.args)
+        self.swa_model.load_state_dict(kge_model.state_dict())
 
-        # Check if trainer has optimizer attribute, if not, try to get from optimizers list
-        # optimizer = getattr(trainer, 'optimizer', None)
-        # if optimizer is None:
-        #     if not (hasattr(trainer, 'optimizers') and trainer.optimizers):
-        #         raise AttributeError("Trainer does not have a valid optimizer or optimizers list.")
+        self.optimizers = []
+
+        # Single optimizer case
+        if getattr(trainer, "optimizer", None) is not None:
+            self.optimizers.append(trainer.optimizer)
+
+        # Multiple optimizer(s) case
+        optims_attr = getattr(trainer, "optimizers", None)
+        if optims_attr is not None:
+            if isinstance(optims_attr, list):
+                self.optimizers.extend(optims_attr)
+            else:
+                self.optimizers.append(optims_attr)
 
     @rank_zero_only
     def on_train_epoch_start(self, trainer, model):
@@ -992,7 +1004,8 @@ class SWA(AbstractCallback):
             self.current_epoch = trainer.current_epoch
         else:
             self.current_epoch += 1
-            
+        if self.current_epoch < self.swa_start_epoch:
+            return
         # Calculate learning rate using the schedule
         t = self.current_epoch / self.max_epochs
         lr_ratio = self.swa_lr / self.lr_init
@@ -1004,30 +1017,26 @@ class SWA(AbstractCallback):
         else:
             factor = lr_ratio
             
-        new_lr = self.lr_init * factor
-
-        # Get the optimizer from the trainer
-        optimizer = getattr(trainer, 'optimizer', None)
-        if optimizer is None and hasattr(trainer, 'optimizers') and trainer.optimizers:
-            optimizer = trainer.optimizers[0] if isinstance(trainer.optimizers, list) else trainer.optimizers
-            
-        if optimizer is not None:
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = new_lr
+        for opt in self.optimizers:
+            for pg in opt.param_groups:
+                pg["lr"] *= factor
 
     @rank_zero_only
     def on_train_epoch_end(self, trainer, model):
         """Apply SWA averaging if conditions are met."""
-        #set swa_model in trainer if eval_every_n_epochs or eval_at_epochs is set
-        if model.args["eval_every_n_epochs"] > 0 or model.args["eval_at_epochs"] is not None:
-            trainer.swa_model = self.swa_model
+        if self.current_epoch < self.swa_start_epoch:
+            return
         # Check if we should apply SWA
         if self.current_epoch >= self.swa_start_epoch and \
            (self.current_epoch - self.swa_start_epoch) % self.swa_c_epochs == 0:
             
+            current_model = model._orig_mod if isinstance(model, OptimizedModule) else model
             # Perform moving average update with the model directly
-            self.moving_average(self.swa_model, model, 1.0 / (self.swa_n + 1))
+            self.moving_average(current_model, 1.0 / (self.swa_n + 1))
             self.swa_n += 1
+        
+        if model.args["eval_every_n_epochs"] > 0 or model.args["eval_at_epochs"] is not None:
+            trainer.swa_model = self.swa_model
     
     @rank_zero_only
     def on_fit_end(self, trainer, model):
