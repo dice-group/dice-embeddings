@@ -613,6 +613,7 @@ class NegSampleDataset(torch.utils.data.Dataset):
         self.length = len(self.train_triples)
         self.num_entities = torch.tensor(num_entities)
         self.num_relations = torch.tensor(num_relations)
+        self.labels = torch.tensor([1.0, 0.0])
 
         # Precompute negatives and stack with positives
         self.train_set = []
@@ -634,9 +635,7 @@ class NegSampleDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         # get i-th training sample with positive and negative triple stacked
-        x = self.train_set[idx]
-        y = torch.tensor([1.0, 0.0])
-        return x, y
+        return self.train_set[idx], self.labels
 
 class TriplePredictionDataset(torch.utils.data.Dataset):
     """
