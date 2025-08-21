@@ -139,7 +139,9 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
                 args["random_seed"] = i
                 model, labelling_flag = intialize_model(args)
                 models.append(model)
-            return EnsembleKGE(models=models), labelling_flag
+            model = EnsembleKGE(models=models)
+        else:
+            model, labelling_flag = intialize_model(args)
 
     return model, labelling_flag
 
