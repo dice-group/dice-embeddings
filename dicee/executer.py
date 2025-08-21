@@ -13,7 +13,6 @@ from .trainer import DICE_Trainer
 from .static_funcs import timeit, read_or_load_kg, load_json, store, create_experiment_folder
 import numpy as np
 from pytorch_lightning.utilities.rank_zero import rank_zero_only
-import torch.distributed as dist
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
@@ -60,6 +59,7 @@ class Execute:
                 self.args.full_storage_path = self.args.path_to_store_single_run
             else:
                 self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
+                self.args.path_to_store_single_run = self.args.full_storage_path
 
             with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
                 temp = vars(self.args)
