@@ -7,6 +7,7 @@ import json
 import copy
 
 import dicee.models.base_model
+from dicee.models.ensemble import EnsembleKGE
 from .static_funcs import save_checkpoint_model, save_pickle
 from .abstracts import AbstractCallback
 import pandas as pd
@@ -966,35 +967,51 @@ class SWA(AbstractCallback):
         self.swa_n = 0
         self.current_epoch = -1
         self._collected_models = []
-
-    def moving_average(self, running_model, alpha):
+    
+    @staticmethod
+    def moving_average(swa_model, running_model, alpha):
         """Update SWA model with moving average of current model."""
         with torch.no_grad():
-            self.swa_model.to(next(running_model.parameters()).device)
-            for swa_param, param in zip(self.swa_model.parameters(), running_model.parameters()):
+            swa_model.to(next(running_model.parameters()).device)
+            for swa_param, param in zip(swa_model.parameters(), running_model.parameters()):
                 swa_param.data = (1.0 - alpha) * swa_param.data + alpha * param.data
 
     @rank_zero_only
     def on_fit_start(self, trainer, model):
-        """Initialize SWA model with same architecture as main model."""
+        """Initialize SWA model(s) with same architecture as main model(s)."""
         
+        # Handle OptimizedModule wrapper
         kge_model = model._orig_mod if isinstance(model, OptimizedModule) else model
-        self.swa_model = type(kge_model)(kge_model.args)
-        self.swa_model.load_state_dict(kge_model.state_dict())
 
-        self.optimizers = []
+        # Case 1: Ensemble of models
+        if isinstance(kge_model, EnsembleKGE):
+            self.swa_models = []
+            for submodel in kge_model.models:  # assuming .models holds the ensemble
+                swa_submodel = type(submodel)(submodel.args)
+                swa_submodel.load_state_dict(submodel.state_dict())
+                self.swa_models.append(swa_submodel)
 
-        # Single optimizer case
-        if getattr(trainer, "optimizer", None) is not None:
-            self.optimizers.append(trainer.optimizer)
+            # Collect optimizers from the ensemble
+            self.optimizers = list(getattr(kge_model, "optimizers", []))
 
-        # Multiple optimizer(s) case
-        optims_attr = getattr(trainer, "optimizers", None)
-        if optims_attr is not None:
-            if isinstance(optims_attr, list):
-                self.optimizers.extend(optims_attr)
-            else:
-                self.optimizers.append(optims_attr)
+        # Case 2: Single model
+        else:
+            self.swa_model = type(kge_model)(kge_model.args)
+            self.swa_model.load_state_dict(kge_model.state_dict())
+
+            self.optimizers = []
+
+            # Single optimizer case
+            if getattr(trainer, "optimizer", None) is not None:
+                self.optimizers.append(trainer.optimizer)
+
+            # Multiple optimizer(s) case
+            optims_attr = getattr(trainer, "optimizers", None)
+            if optims_attr is not None:
+                if isinstance(optims_attr, list):
+                    self.optimizers.extend(optims_attr)
+                else:
+                    self.optimizers.append(optims_attr)
 
     @rank_zero_only
     def on_train_epoch_start(self, trainer, model):
@@ -1026,17 +1043,22 @@ class SWA(AbstractCallback):
         """Apply SWA averaging if conditions are met."""
         if self.current_epoch < self.swa_start_epoch:
             return
+
         # Check if we should apply SWA
         if self.current_epoch >= self.swa_start_epoch and \
-           (self.current_epoch - self.swa_start_epoch) % self.swa_c_epochs == 0:
+        (self.current_epoch - self.swa_start_epoch) % self.swa_c_epochs == 0:
             
             current_model = model._orig_mod if isinstance(model, OptimizedModule) else model
-            # Perform moving average update with the model directly
-            self.moving_average(current_model, 1.0 / (self.swa_n + 1))
+
+            if isinstance(current_model, EnsembleKGE):
+                # Update each submodel and its SWA counterpart
+                for submodel, swa_submodel in zip(current_model.models, self.swa_models):
+                    self.moving_average(swa_submodel, submodel, 1.0 / (self.swa_n + 1))
+            else:
+                # Single model case
+                self.moving_average(self.swa_model, current_model, 1.0 / (self.swa_n + 1))
+
             self.swa_n += 1
-        
-        if model.args["eval_every_n_epochs"] > 0 or model.args["eval_at_epochs"] is not None:
-            trainer.swa_model = self.swa_model
     
     @rank_zero_only
     def on_fit_end(self, trainer, model):

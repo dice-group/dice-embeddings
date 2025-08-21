@@ -174,6 +174,7 @@ class TensorParallel(AbstractTrainer):
         for epoch in (tqdm_bar := make_iterable_verbose(range(self.attributes.num_epochs),
                                                         verbose=True, position=0, leave=True)):
             # () Accumulate the batch losses.
+            self.on_train_epoch_start(self, ensemble_model)
             epoch_loss = 0
             # () Iterate over batches.
             for i, z in enumerate(train_dataloader):
@@ -191,6 +192,7 @@ class TensorParallel(AbstractTrainer):
                         tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
             # Store the epoch loss
             ensemble_model.loss_history.append(epoch_loss)
+            self.on_train_epoch_end(self, ensemble_model)
         # Run on_fit_end callbacks after the training is done.
         self.on_fit_end(self, ensemble_model)
         # TODO: Later, maybe we should write a callback to save the models in disk
