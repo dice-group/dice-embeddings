@@ -12,6 +12,8 @@ from .static_preprocess_funcs import preprocesses_input_args
 from .trainer import DICE_Trainer
 from .static_funcs import timeit, read_or_load_kg, load_json, store, create_experiment_folder
 import numpy as np
+from pytorch_lightning.utilities.rank_zero import rank_zero_only
+import torch.distributed as dist
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
@@ -46,6 +48,7 @@ class Execute:
         # (9) Execution start time
         self.start_time = None
 
+    @rank_zero_only
     def setup_executor(self) -> None:
         if self.is_continual_training is False:
             # Create a single directory containing KGE and all related data
@@ -101,6 +104,7 @@ class Execute:
         self.report['num_entities'] = self.args.num_entities
         self.report['num_relations'] = self.args.num_relations
 
+    @rank_zero_only
     def end(self, form_of_labelling: str) -> dict:
         """
         End training
@@ -195,6 +199,9 @@ class Execute:
 
         # (2) Create an evaluator object.
         self.evaluator = Evaluator(args=self.args)
+        full_storage_path = getattr(self.args, "full_storage_path", None)
+        if not full_storage_path:
+            self.args.full_storage_path = self.args.path_to_store_single_run
         # (3) Create a trainer object.
         self.trainer = DICE_Trainer(args=self.args,
                                     is_continual_training=self.is_continual_training,
