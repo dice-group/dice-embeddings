@@ -2,14 +2,14 @@ import torch
 import copy
 from typing import List
 class EnsembleKGE:
-    def __init__(self, seed_model=None,pretrained_models:List=None):
+    def __init__(self, models : list=None, seed_model=None, pretrained_models:List=None):
 
-        if seed_model is not None:
+        if models is not None:
             self.models = []
             self.optimizers = []
             self.loss_history = []
-            for i in range(torch.cuda.device_count()):
-                i_model=copy.deepcopy(seed_model)
+            for i in range(len(models)):
+                i_model = models[i]
                 # TODO: Why we cant send the compile model to cpu ?
                 #i_model = torch.compile(i_model)
                 i_model.to(torch.device(f"cuda:{i}"))
