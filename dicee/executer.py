@@ -13,6 +13,8 @@ from .trainer import DICE_Trainer
 from .static_funcs import timeit, read_or_load_kg, load_json, store, create_experiment_folder
 import numpy as np
 from pytorch_lightning.utilities.rank_zero import rank_zero_only
+import torch
+import torch.distributed as dist
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
@@ -292,3 +294,212 @@ class ContinuousExecute(Execute):
             self.evaluator = Evaluator(args=self.args, is_continual_training=True)
             self.evaluator.dummy_eval(self.trained_model, form_of_labelling)
             return {**self.report, **self.evaluator.report}
+
+class DDPExecute:
+    """Distributed Data Parallel Executor for Training / Evaluation.
+
+    - Dataset creation & preprocessing only on rank 0
+    - Barrier sync so other ranks wait
+    - Trainer & evaluator setup
+    """
+
+    def __init__(self, args, continuous_training=False):
+        if dist.is_available() and not dist.is_initialized():
+            dist.init_process_group(backend="nccl", init_method="env://")
+
+        torch.cuda.set_device(int(os.environ["LOCAL_RANK"]))
+        # Global info
+        self.rank = dist.get_rank()
+        self.world_size = dist.get_world_size()
+
+        self.local_rank = int(os.environ["LOCAL_RANK"])
+
+        print(f"[Rank {self.rank}] mapped to GPU {self.local_rank}", flush=True)
+
+        # (1) Process arguments and sanity checking.
+        self.args = preprocesses_input_args(args)
+        # (2) Ensure reproducibility.
+        seed_everything(args.random_seed, workers=True)
+        # (3) Set the continual training flag
+        self.is_continual_training = continuous_training
+        # (4) Create an experiment folder or use the previous one
+        self.setup_executor()
+        # (5) A variable is initialized for pytorch lightning trainer or DICE_Trainer()
+        self.trainer = None
+        self.trained_model = None
+        # (6) A variable is initialized for storing input data.
+        self.knowledge_graph = None
+        # (7) Store few data in memory for numerical results, e.g. runtime, H@1 etc.
+        self.report = dict()
+        # (8) Create an object to carry out link prediction evaluations,  e.g. Evaluator(self)
+        self.evaluator = None
+        # (9) Execution start time
+        self.start_time = None
+
+        if self.rank == 0:
+            self.setup_executor()
+
+    def is_local_rank_zero(self) -> bool:
+        return self.rank == 0
+
+    def cleanup(self):
+        dist.destroy_process_group()
+
+    @rank_zero_only
+    def setup_executor(self) -> None:
+        """Create experiment folder and store config (rank 0 only)."""
+        if not self.is_continual_training:
+            if self.args.path_to_store_single_run is not None:
+                if os.path.exists(self.args.path_to_store_single_run):
+                    print(f"Deleting the existing directory of {self.args.path_to_store_single_run}")
+                    os.system(f'rm -rf {self.args.path_to_store_single_run}')
+                os.makedirs(self.args.path_to_store_single_run, exist_ok=False)
+                self.args.full_storage_path = self.args.path_to_store_single_run
+            else:
+                self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
+                self.args.path_to_store_single_run = self.args.full_storage_path
+
+            with open(self.args.full_storage_path + '/configuration.json', 'w') as fd:
+                json.dump(vars(self.args), fd, indent=3)
+
+    @rank_zero_only
+    def create_and_store_kg(self) -> None:
+        """Create and preprocess the KG, then store it as a memory-mapped file (rank 0 only)."""
+        if not self.is_local_rank_zero():
+            return
+
+        assert self.args.path_to_store_single_run is not None, "path_to_store_single_run must be set!"
+        os.makedirs(self.args.path_to_store_single_run, exist_ok=True)
+
+        memmap_path = os.path.join(self.args.path_to_store_single_run, "memory_map_train_set.npy")
+        memmap_details_path = os.path.join(self.args.path_to_store_single_run, "memory_map_details.json")
+
+        if os.path.exists(memmap_path) and os.path.exists(memmap_details_path):
+            print(f"Memory-mapped KG already exists at {memmap_path}, skipping creation.")
+            return
+
+        print("Creating and preprocessing the knowledge graph (rank 0)...")
+        # Load or create KG
+        self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
+
+        # Store metadata
+        self.args.num_entities = self.knowledge_graph.num_entities
+        self.args.num_relations = self.knowledge_graph.num_relations
+        self.args.num_tokens = self.knowledge_graph.num_tokens
+        self.args.max_length_subword_tokens = self.knowledge_graph.max_length_subword_tokens
+        self.args.ordered_bpe_entities = self.knowledge_graph.ordered_bpe_entities
+
+        self.report['num_train_triples'] = len(self.knowledge_graph.train_set)
+        self.report['num_entities'] = self.knowledge_graph.num_entities
+        self.report['num_relations'] = self.knowledge_graph.num_relations
+
+        print(f"Saving memory-mapped KG to {memmap_path}...")
+        memmap_kg = np.memmap(
+            memmap_path,
+            dtype=self.knowledge_graph.train_set.dtype,
+            mode='w+',
+            shape=self.knowledge_graph.train_set.shape
+        )
+
+        # Copy the data from dataset into memmap
+        memmap_kg[:] = self.knowledge_graph.train_set[:]
+        memmap_kg.flush()   # make sure it is written to disk
+        del memmap_kg       # free memory
+
+        # Save metadata for other ranks
+        memmap_data = {
+            "shape": tuple(self.knowledge_graph.train_set.shape),
+            "dtype": str(self.knowledge_graph.train_set.dtype),
+            "num_entities": self.knowledge_graph.num_entities,
+            "num_relations": self.knowledge_graph.num_relations,
+        }
+        with open(memmap_details_path, 'w') as fd:
+            json.dump(memmap_data, fd, indent=4)
+
+        print("Knowledge graph creation and memmap storage completed (rank 0).")
+
+    def load_from_memmap(self):
+        memmap_details_path = os.path.join(self.args.path_to_store_single_run, "memory_map_details.json")
+        memmap_path = os.path.join(self.args.path_to_store_single_run, "memory_map_train_set.npy")
+        
+        with open(memmap_details_path, 'r') as fd:
+            memory_map_details = json.load(fd)
+        
+        self.knowledge_graph = np.memmap(
+            memmap_path,
+            mode='r',
+            dtype=memory_map_details["dtype"],
+            shape=tuple(memory_map_details["shape"])
+        )
+        
+        self.args.num_entities = memory_map_details["num_entities"]
+        self.args.num_relations = memory_map_details["num_relations"]
+   
+
+    def start(self) -> dict:
+        """Distributed training start procedure."""
+        self.start_time = time.time()
+        print(f"Start time:{datetime.datetime.now()}")
+
+        # rank 0 creates dataset
+        if self.is_local_rank_zero():
+            self.create_and_store_kg()
+
+        # barrier: wait until dataset is ready
+        if dist.is_initialized():
+            dist.barrier()
+
+        # non-rank-0 load from memmap
+        if not self.is_local_rank_zero():
+            self.load_from_memmap()
+
+        # evaluator and trainer
+        self.evaluator = Evaluator(args=self.args)
+        if not getattr(self.args, "full_storage_path", None):
+            self.args.full_storage_path = self.args.path_to_store_single_run
+
+        self.trainer = DICE_Trainer(
+            args=self.args,
+            is_continual_training=self.is_continual_training,
+            storage_path=self.args.full_storage_path,
+            evaluator=self.evaluator,
+        )
+        self.trained_model, form_of_labelling = self.trainer.start(knowledge_graph=self.knowledge_graph)
+        return self.end(form_of_labelling)
+
+    @timeit
+    def save_trained_model(self) -> None:
+        print('*** Save Trained Model ***')
+        self.trained_model.eval()
+        self.trained_model.to('cpu')
+        self.report.update(self.trained_model.mem_of_model())
+        store(
+            trained_model=self.trained_model,
+            model_name='model',
+            full_storage_path=self.args.full_storage_path,
+            save_embeddings_as_csv=self.args.save_embeddings_as_csv,
+        )
+        self.report['path_experiment_folder'] = self.args.full_storage_path
+        self.report['num_entities'] = self.args.num_entities
+        self.report['num_relations'] = self.args.num_relations
+
+    @rank_zero_only
+    def end(self, form_of_labelling: str) -> dict:
+        self.save_trained_model()
+        self.write_report()
+        if self.args.eval_model is None:
+            return {**self.report}
+        else:
+            self.evaluator.eval(
+                dataset=self.knowledge_graph,
+                trained_model=self.trained_model,
+                form_of_labelling=form_of_labelling,
+            )
+            self.write_report()
+            return {**self.report, **self.evaluator.report}
+
+    def write_report(self) -> None:
+        self.report['Runtime'] = time.time() - self.start_time
+        print(f"Total Runtime: {self.report['Runtime']:.3f} seconds")
+        with open(self.args.full_storage_path + '/report.json', 'w') as fd:
+            json.dump(self.report, fd, indent=4)
