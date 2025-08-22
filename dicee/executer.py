@@ -323,7 +323,8 @@ class DDPExecute:
         # (3) Set the continual training flag
         self.is_continual_training = continuous_training
         # (4) Create an experiment folder or use the previous one
-        self.setup_executor()
+        if self.rank == 0:
+            self.setup_executor()
         # (5) A variable is initialized for pytorch lightning trainer or DICE_Trainer()
         self.trainer = None
         self.trained_model = None
@@ -336,8 +337,7 @@ class DDPExecute:
         # (9) Execution start time
         self.start_time = None
 
-        if self.rank == 0:
-            self.setup_executor()
+        
 
     def is_local_rank_zero(self) -> bool:
         return self.rank == 0
