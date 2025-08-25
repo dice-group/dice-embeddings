@@ -197,7 +197,10 @@ class ASWA(AbstractCallback):
 
     def get_aswa_state_dict(self, model):
         # (2) Question: Soft update or Rejection?!
-        ensemble_state_dict = torch.load(f"{self.path}/aswa.pt", torch.device(next(model.parameters()).device))
+        if isinstance(model,EnsembleKGE):
+            ensemble_state_dict = torch.load(f"{self.path}/aswa.pt")
+        else:
+            ensemble_state_dict = torch.load(f"{self.path}/aswa.pt",  torch.device(next(model.parameters()).device))
         # Perform provision parameter update.
         with torch.no_grad():
             for k, parameters in model.state_dict().items():
@@ -274,8 +277,11 @@ class ASWA(AbstractCallback):
             # (5) Load ASWA ensemble parameters.
             ensemble_state_dict = self.get_aswa_state_dict(model)
             # (6) Initialize ASWA ensemble with (5).
-            ensemble = type(model)(model.args)
+            ensemble = copy.deepcopy(model)
             ensemble.load_state_dict(ensemble_state_dict)
+            ensemble.to("cpu")
+
+                
             # (7) Evaluate (6) on the validation data, i.e., perform the lookahead operation.
             mrr_updated_ensemble_model = trainer.evaluator.eval(dataset=trainer.dataset,
                                                                 trained_model=ensemble,
@@ -283,6 +289,7 @@ class ASWA(AbstractCallback):
                                                                 during_training=True)["Val"]["MRR"]
             # print(f"| MRR Running {val_running_model:.4f} | MRR ASWA: {self.val_aswa:.4f} |ASWA|:{sum(self.alphas)}")
             # (8) Decide whether ASWA should be updated via the current running model.
+            del ensemble
             self.decide(model.state_dict(), ensemble_state_dict, val_running_model, mrr_updated_ensemble_model)
 
 class Eval(AbstractCallback):
@@ -586,7 +593,12 @@ class PeriodicEvalCallback(AbstractCallback):
         eval_model = None
 
         if model.args.get("swa"):
-            eval_model = copy.deepcopy(trainer.swa_model)
+            try:
+                eval_model = copy.deepcopy(trainer.swa_model)
+            except:
+                # If SWA epoch is not reached, trainer has no swa model 
+                # fallback to the original model
+                eval_model = copy.deepcopy(model)
 
         elif model.args.get("adaptive_swa"):
             # Load ASWA weights and apply to a deepcopy of the model
@@ -966,7 +978,6 @@ class SWA(AbstractCallback):
         self.swa_model = None
         self.swa_n = 0
         self.current_epoch = -1
-        self._collected_models = []
     
     @staticmethod
     def moving_average(swa_model, running_model, alpha):
@@ -976,44 +987,22 @@ class SWA(AbstractCallback):
             for swa_param, param in zip(swa_model.parameters(), running_model.parameters()):
                 swa_param.data = (1.0 - alpha) * swa_param.data + alpha * param.data
 
-    @rank_zero_only
-    def on_fit_start(self, trainer, model):
-        """Initialize SWA model(s) with same architecture as main model(s)."""
+    # @rank_zero_only
+    # def on_fit_start(self, trainer, model):
+    #     """Initialize SWA model(s) with same architecture as main model(s)."""
         
-        # Handle OptimizedModule wrapper
-        kge_model = model._orig_mod if isinstance(model, OptimizedModule) else model
+    #     # Handle OptimizedModule wrapper
+    #     kge_model = model._orig_mod if isinstance(model, OptimizedModule) else model
 
-        # Case 1: Ensemble of models
-        if isinstance(kge_model, EnsembleKGE):
-            self.swa_models = []
-            for submodel in kge_model.models:  # assuming .models holds the ensemble
-                swa_submodel = type(submodel)(submodel.args)
-                swa_submodel.load_state_dict(submodel.state_dict())
-                self.swa_models.append(swa_submodel)
+    #     # Case 1: Ensemble of models
+    #     if isinstance(kge_model, EnsembleKGE):
+    #         self.swa_model = type(kge_model)(kge_model.models)
+    #         self.swa_model.load_state_dict(kge_model.state_dict())
+        
+    #     else:
+    #         self.swa_model = type(kge_model)(kge_model.args)
+    #         self.swa_model.load_state_dict(kge_model.state_dict())
 
-            # Collect optimizers from the ensemble
-            self.optimizers = list(getattr(kge_model, "optimizers", []))
-
-        # Case 2: Single model
-        else:
-            self.swa_model = type(kge_model)(kge_model.args)
-            self.swa_model.load_state_dict(kge_model.state_dict())
-
-            self.optimizers = []
-
-            # Single optimizer case
-            if getattr(trainer, "optimizer", None) is not None:
-                self.optimizers.append(trainer.optimizer)
-
-            # Multiple optimizer(s) case
-            optims_attr = getattr(trainer, "optimizers", None)
-            if optims_attr is not None:
-                if isinstance(optims_attr, list):
-                    self.optimizers.extend(optims_attr)
-                else:
-                    self.optimizers.append(optims_attr)
-
-    @rank_zero_only
     def on_train_epoch_start(self, trainer, model):
         """Update learning rate according to SWA schedule."""
         # Get current epoch - simplified with fallback
@@ -1033,12 +1022,21 @@ class SWA(AbstractCallback):
             factor = 1.0 - (1.0 - lr_ratio) * (t - 0.5) / 0.4
         else:
             factor = lr_ratio
-            
-        for opt in self.optimizers:
-            for pg in opt.param_groups:
-                pg["lr"] *= factor
 
-    @rank_zero_only
+        if isinstance(model, EnsembleKGE):
+            optimizers = getattr(model, "optimizers", [])
+        elif hasattr(trainer, "optimizers") and trainer.optimizers:
+                optimizers = trainer.optimizers if isinstance(trainer.optimizers, list) else [trainer.optimizers]
+        elif hasattr(trainer, "optimizer") and trainer.optimizer is not None:
+                optimizers = [trainer.optimizer]
+        else:
+            optimizers = None
+
+        if optimizers is not None:
+            for optimizer in optimizers:
+                for param_group in optimizer.param_groups:
+                    param_group['lr'] *= factor
+
     def on_train_epoch_end(self, trainer, model):
         """Apply SWA averaging if conditions are met."""
         if self.current_epoch < self.swa_start_epoch:
@@ -1048,19 +1046,31 @@ class SWA(AbstractCallback):
         if self.current_epoch >= self.swa_start_epoch and \
         (self.current_epoch - self.swa_start_epoch) % self.swa_c_epochs == 0:
             
-            current_model = model._orig_mod if isinstance(model, OptimizedModule) else model
+            running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
+            
+            if self.swa_model is None:
+                # Case: EnsembleKGE
+                if isinstance(running_model, EnsembleKGE):
+                    self.swa_model = type(running_model)(running_model.models)
+                    self.swa_model.load_state_dict(running_model.state_dict())
+                
+                else:
+                    self.swa_model = type(running_model)(running_model.args)
+                    self.swa_model.load_state_dict(running_model.state_dict())
 
-            if isinstance(current_model, EnsembleKGE):
+            if isinstance(running_model, EnsembleKGE):
                 # Update each submodel and its SWA counterpart
-                for submodel, swa_submodel in zip(current_model.models, self.swa_models):
+                for submodel, swa_submodel in zip(running_model.models, self.swa_model.models):
                     self.moving_average(swa_submodel, submodel, 1.0 / (self.swa_n + 1))
             else:
                 # Single model case
-                self.moving_average(self.swa_model, current_model, 1.0 / (self.swa_n + 1))
+                self.moving_average(self.swa_model, running_model, 1.0 / (self.swa_n + 1))
 
             self.swa_n += 1
     
-    @rank_zero_only
+        if model.args["eval_every_n_epochs"] > 0 or model.args["eval_at_epochs"] is not None:
+            trainer.swa_model = self.swa_model
+    
     def on_fit_end(self, trainer, model):
         """Replace main model with SWA model at the end of training."""
         if self.swa_model is not None and self.swa_n > 0:

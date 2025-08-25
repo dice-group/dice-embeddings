@@ -195,6 +195,8 @@ class TensorParallel(AbstractTrainer):
             self.on_train_epoch_end(self, ensemble_model)
         # Run on_fit_end callbacks after the training is done.
         self.on_fit_end(self, ensemble_model)
+        # Create and evaluate a combined model from the ensemble model.
+        #create_and_evaluate_combined_model(self, ensemble_model) # Experimental
         # TODO: Later, maybe we should write a callback to save the models in disk
         return ensemble_model
     
@@ -298,4 +300,25 @@ class TensorParallel(AbstractTrainer):
         torch.distributed.destroy_process_group()
         # () .
         self.on_fit_end(self, model)
+
+    def create_and_evaluate_combined_model( trainer,ensemble_model):
+     # Create and evaluate a combined model from the ensemble model
+    combined_model_args = ensemble_model.models[0].args
+    combined_entity_embeddings, combined_relation_embeddings = ensemble_model.get_embeddings()
+    combined_model_args["embedding_dim"] = combined_entity_embeddings.shape[1]
+    combined_model, form_of_labelling = intialize_model(combined_model_args)
+    combined_model.entity_embeddings.weight.data = combined_entity_embeddings
+    combined_model.relation_embeddings.weight.data = combined_relation_embeddings
+
+    combined_model.eval()
+    combined_model.to("cpu")
+    print(f"Evaluating combined Ensemble of {combined_model_args['model']}")
+    eval_result = trainer.evaluator.eval(dataset=trainer.dataset,
+                                        trained_model=combined_model,
+                                        form_of_labelling=form_of_labelling,
+                                        during_training=False)
+    trainer.evaluator.report["combined_model"] = eval_result
+    torch.save(combined_model.state_dict(), f'{trainer.attributes.full_storage_path}/model.pt')
+    return
+
     """
