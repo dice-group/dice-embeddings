@@ -595,8 +595,8 @@ class PeriodicEvalCallback(AbstractCallback):
         if model.args.get("swa"):
             try:
                 eval_model = copy.deepcopy(trainer.swa_model)
-            except:
-                # If SWA epoch is not reached, trainer has no swa model 
+            except Exception:
+                # If SWA epoch is not reached, trainer has no swa model
                 # fallback to the original model
                 eval_model = copy.deepcopy(model)
 

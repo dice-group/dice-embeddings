@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import copy
 from typing import List
 class EnsembleKGE:
     def __init__(self, models : list=None, seed_model=None, pretrained_models:List=None):
