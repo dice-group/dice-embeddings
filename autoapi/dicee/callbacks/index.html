@@ -190,7 +190,6 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.SWA.swa_n"><code class="docutils literal notranslate"><span class="pre">SWA.swa_n</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.SWA.current_epoch"><code class="docutils literal notranslate"><span class="pre">SWA.current_epoch</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.SWA.moving_average"><code class="docutils literal notranslate"><span class="pre">SWA.moving_average()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.SWA.on_fit_start"><code class="docutils literal notranslate"><span class="pre">SWA.on_fit_start()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.SWA.on_train_epoch_start"><code class="docutils literal notranslate"><span class="pre">SWA.on_train_epoch_start()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.SWA.on_train_epoch_end"><code class="docutils literal notranslate"><span class="pre">SWA.on_train_epoch_end()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.SWA.on_fit_end"><code class="docutils literal notranslate"><span class="pre">SWA.on_fit_end()</span></code></a></li>
@@ -1056,14 +1055,8 @@ Stores evaluation reports and model checkpoints.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.SWA.moving_average">
-<span class="sig-name descname"><span class="pre">moving_average</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">swa_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#SWA.moving_average"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.SWA.moving_average" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">moving_average</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">swa_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">running_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#SWA.moving_average"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.SWA.moving_average" title="Link to this definition"></a></dt>
 <dd><p>Update SWA model with moving average of current model.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.SWA.on_fit_start">
-<span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#SWA.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.SWA.on_fit_start" title="Link to this definition"></a></dt>
-<dd><p>Initialize SWA model with same architecture as main model.</p>
 </dd></dl>
 
 <dl class="py method">

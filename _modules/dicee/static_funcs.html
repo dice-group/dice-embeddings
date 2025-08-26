@@ -247,9 +247,17 @@
                 <span class="k">raise</span> <span class="n">e</span>
             <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">labelling_flag</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">model</span><span class="p">,</span> <span class="n">labelling_flag</span><span class="o">=</span> <span class="n">intialize_model</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;trainer&quot;</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;TP&quot;</span><span class="p">:</span>
-            <span class="n">model</span><span class="o">=</span><span class="n">EnsembleKGE</span><span class="p">(</span><span class="n">seed_model</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>
+            <span class="c1"># If it is tensor parallelized KGE, then we need to create ensemble of models.</span>
+            <span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">labelling_flag</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()):</span>
+                <span class="n">args</span><span class="p">[</span><span class="s2">&quot;random_seed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="n">model</span><span class="p">,</span> <span class="n">labelling_flag</span> <span class="o">=</span> <span class="n">intialize_model</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+                <span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">EnsembleKGE</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="n">models</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">labelling_flag</span> <span class="o">=</span> <span class="n">intialize_model</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">labelling_flag</span></div>
 

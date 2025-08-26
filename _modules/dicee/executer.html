@@ -102,13 +102,16 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.trainer</span><span class="w"> </span><span class="kn">import</span> <span class="n">DICE_Trainer</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">timeit</span><span class="p">,</span> <span class="n">read_or_load_kg</span><span class="p">,</span> <span class="n">load_json</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">create_experiment_folder</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.distributed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dist</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pytorch_lightning.utilities.rank_zero</span><span class="w"> </span><span class="kn">import</span> <span class="n">rank_zero_only</span>
 
 <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;pytorch_lightning&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">DeprecationWarning</span><span class="p">)</span>
 <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;TORCH_DISTRIBUTED_DEBUG&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;INFO&quot;</span>
 
 <div class="viewcode-block" id="Execute">
-<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/executer/index.html#dicee.executer.Execute">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Execute</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; A class for Training, Retraining and Evaluation a model.</span>
 
@@ -118,6 +121,20 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">continuous_training</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="c1"># check if we need distributed training</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">distributed</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;torchDDP&quot;</span>
+        <span class="c1"># initialize distributed training if required</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">distributed</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">dist</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
+                <span class="n">dist</span><span class="o">.</span><span class="n">init_process_group</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="s2">&quot;nccl&quot;</span><span class="p">,</span> <span class="n">init_method</span><span class="o">=</span><span class="s2">&quot;env://&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">get_rank</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">world_size</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">get_world_size</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;LOCAL_RANK&quot;</span><span class="p">])</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Rank </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">rank</span><span class="si">}</span><span class="s2">] mapped to GPU </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rank</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">world_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span>
+
         <span class="c1"># (1) Process arguments and sanity checking.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">preprocesses_input_args</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="c1"># (2) Ensure reproducibility.</span>
@@ -125,7 +142,8 @@
         <span class="c1"># (3) Set the continual training flag</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_continual_training</span> <span class="o">=</span> <span class="n">continuous_training</span>
         <span class="c1"># (4) Create an experiment folder or use the previous one</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">setup_executor</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setup_executor</span><span class="p">()</span>
         <span class="c1"># (5) A variable is initialized for pytorch lightning trainer or DICE_Trainer()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trained_model</span> <span class="o">=</span> <span class="kc">None</span>
@@ -138,8 +156,22 @@
         <span class="c1"># (9) Execution start time</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="kc">None</span>
 
+<div class="viewcode-block" id="Execute.is_rank_zero">
+<a class="viewcode-back" href="../../autoapi/dicee/executer/index.html#dicee.executer.Execute.is_rank_zero">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_rank_zero</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="Execute.cleanup">
+<a class="viewcode-back" href="../../autoapi/dicee/executer/index.html#dicee.executer.Execute.cleanup">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">distributed</span> <span class="ow">and</span> <span class="n">dist</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
+            <span class="n">dist</span><span class="o">.</span><span class="n">destroy_process_group</span><span class="p">()</span></div>
+
+    
 <div class="viewcode-block" id="Execute.setup_executor">
-<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute.setup_executor">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/executer/index.html#dicee.executer.Execute.setup_executor">[docs]</a>
+    <span class="nd">@rank_zero_only</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_executor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_continual_training</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
             <span class="c1"># Create a single directory containing KGE and all related data</span>
@@ -151,14 +183,70 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">=</span> <span class="n">create_experiment_folder</span><span class="p">(</span><span class="n">folder_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">storage_path</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span>
 
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/configuration.json&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_descriptor</span><span class="p">:</span>
                 <span class="n">temp</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
                 <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="n">file_descriptor</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="Execute.create_and_store_kg">
+<a class="viewcode-back" href="../../autoapi/dicee/executer/index.html#dicee.executer.Execute.create_and_store_kg">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_and_store_kg</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_rank_zero</span><span class="p">():</span>
+            <span class="k">return</span>
+        <span class="n">memmap_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span><span class="p">,</span> <span class="s2">&quot;memory_map_train_set.npy&quot;</span><span class="p">)</span>
+        <span class="n">details_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span><span class="p">,</span> <span class="s2">&quot;memory_map_details.json&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">memmap_path</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">details_path</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;KG memmap already exists, skipping.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Creating knowledge graph...&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span> <span class="o">=</span> <span class="n">read_or_load_kg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">KG</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_entities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_relations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_tokens</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">max_length_subword_tokens</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">ordered_bpe_entities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">ordered_bpe_entities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;num_train_triples&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;num_entities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_entities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;num_relations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_relations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;max_length_subword_tokens&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;runtime_kg_loading&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span>
+        <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;shape&quot;</span><span class="p">:</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">train_set</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span>
+                <span class="s2">&quot;dtype&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">train_set</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">str</span><span class="p">,</span>
+                <span class="s2">&quot;num_entities&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span>
+                <span class="s2">&quot;num_relations&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_relations</span><span class="p">}</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/memory_map_details.json&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_descriptor</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">file_descriptor</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">memmap_kg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">(</span><span class="n">memmap_path</span><span class="p">,</span>
+                              <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">train_set</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+                              <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;w+&#39;</span><span class="p">,</span>
+                              <span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">train_set</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">memmap_kg</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">train_set</span><span class="p">[:]</span>
+        <span class="n">memmap_kg</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+        <span class="k">del</span> <span class="n">memmap_kg</span></div>
+
+    
+<div class="viewcode-block" id="Execute.load_from_memmap">
+<a class="viewcode-back" href="../../autoapi/dicee/executer/index.html#dicee.executer.Execute.load_from_memmap">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_from_memmap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span><span class="o">+</span><span class="s1">&#39;/memory_map_details.json&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_descriptor</span><span class="p">:</span>
+                <span class="n">memory_map_details</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_descriptor</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span> <span class="o">+</span> <span class="s1">&#39;/memory_map_train_set.npy&#39;</span><span class="p">,</span>
+                                            <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span>
+                                            <span class="n">dtype</span><span class="o">=</span><span class="n">memory_map_details</span><span class="p">[</span><span class="s2">&quot;dtype&quot;</span><span class="p">],</span>
+                                            <span class="n">shape</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">memory_map_details</span><span class="p">[</span><span class="s2">&quot;shape&quot;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="n">memory_map_details</span><span class="p">[</span><span class="s2">&quot;num_entities&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="n">memory_map_details</span><span class="p">[</span><span class="s2">&quot;num_relations&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_tokens</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">ordered_bpe_entities</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
 <div class="viewcode-block" id="Execute.save_trained_model">
-<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute.save_trained_model">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/executer/index.html#dicee.executer.Execute.save_trained_model">[docs]</a>
     <span class="nd">@timeit</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">save_trained_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Save a knowledge graph embedding model</span>
@@ -200,7 +288,8 @@
 
 
 <div class="viewcode-block" id="Execute.end">
-<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute.end">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/executer/index.html#dicee.executer.Execute.end">[docs]</a>
+    <span class="nd">@rank_zero_only</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        End training</span>
@@ -234,7 +323,7 @@
 
 
 <div class="viewcode-block" id="Execute.write_report">
-<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute.write_report">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/executer/index.html#dicee.executer.Execute.write_report">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">write_report</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Report training related information in a report.json file &quot;&quot;&quot;</span>
         <span class="c1"># @TODO: Move to static funcs</span>
@@ -246,7 +335,7 @@
 
 
 <div class="viewcode-block" id="Execute.start">
-<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.executer.Execute.start">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/executer/index.html#dicee.executer.Execute.start">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Start training</span>
@@ -266,47 +355,26 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Start time:</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="c1"># (1) Reload the memory-map of index knowledge graph stored as a numpy ndarray.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span><span class="o">+</span><span class="s2">&quot;/memory_map_train_set.npy&quot;</span><span class="p">):</span>
-            <span class="c1"># (1.1) Read information about memory-map of KG.</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span><span class="o">+</span><span class="s1">&#39;/memory_map_details.json&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_descriptor</span><span class="p">:</span>
-                <span class="n">memory_map_details</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file_descriptor</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span> <span class="o">+</span> <span class="s1">&#39;/memory_map_train_set.npy&#39;</span><span class="p">,</span>
-                                             <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span>
-                                             <span class="n">dtype</span><span class="o">=</span><span class="n">memory_map_details</span><span class="p">[</span><span class="s2">&quot;dtype&quot;</span><span class="p">],</span>
-                                             <span class="n">shape</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">memory_map_details</span><span class="p">[</span><span class="s2">&quot;shape&quot;</span><span class="p">]))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="n">memory_map_details</span><span class="p">[</span><span class="s2">&quot;num_entities&quot;</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="n">memory_map_details</span><span class="p">[</span><span class="s2">&quot;num_relations&quot;</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_tokens</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">ordered_bpe_entities</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span> <span class="o">=</span> <span class="n">read_or_load_kg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">KG</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_entities</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_relations</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_tokens</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">max_length_subword_tokens</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">ordered_bpe_entities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">ordered_bpe_entities</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;num_train_triples&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;num_entities&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_entities</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;num_relations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_relations</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;max_length_subword_tokens&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="k">else</span> <span class="kc">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;runtime_kg_loading&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span>
-            <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;shape&quot;</span><span class="p">:</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">train_set</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span>
-                  <span class="s2">&quot;dtype&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">train_set</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">str</span><span class="p">,</span>
-                  <span class="s2">&quot;num_entities&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span>
-                  <span class="s2">&quot;num_relations&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="o">.</span><span class="n">num_relations</span><span class="p">}</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/memory_map_details.json&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_descriptor</span><span class="p">:</span>
-                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">file_descriptor</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="c1"># (1) Create knowledge graph</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_and_store_kg</span><span class="p">()</span>
+        <span class="c1"># (2) Synchronize processes if distributed training is used</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">distributed</span> <span class="ow">and</span> <span class="n">dist</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
+            <span class="n">dist</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
 
-        <span class="c1"># (2) Create an evaluator object.</span>
+        <span class="c1"># (3) Reload the memory-map of index knowledge graph stored as a numpy ndarray</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_from_memmap</span><span class="p">()</span>
+
+        <span class="c1"># (4) Create an evaluator object.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">evaluator</span> <span class="o">=</span> <span class="n">Evaluator</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
-        <span class="c1"># (3) Create a trainer object.</span>
+        <span class="c1"># (5) Create a trainer object.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;full_storage_path&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="n">DICE_Trainer</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
                                     <span class="n">is_continual_training</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">is_continual_training</span><span class="p">,</span>
                                     <span class="n">storage_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span>
                                     <span class="n">evaluator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">evaluator</span><span class="p">)</span>
-        <span class="c1"># (4) Start the training</span>
+        <span class="c1"># (6) Start the training</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">knowledge_graph</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">(</span><span class="n">form_of_labelling</span><span class="p">)</span></div>
 </div>

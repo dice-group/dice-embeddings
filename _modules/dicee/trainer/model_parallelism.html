@@ -277,6 +277,7 @@
         <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="p">(</span><span class="n">tqdm_bar</span> <span class="o">:=</span> <span class="n">make_iterable_verbose</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">),</span>
                                                         <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
             <span class="c1"># () Accumulate the batch losses.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">on_train_epoch_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
             <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="c1"># () Iterate over batches.</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">):</span>
@@ -294,8 +295,11 @@
                         <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_postfix_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loss_step=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, loss_epoch=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="c1"># Store the epoch loss</span>
             <span class="n">ensemble_model</span><span class="o">.</span><span class="n">loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_loss</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
         <span class="c1"># Run on_fit_end callbacks after the training is done.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
+        <span class="c1"># Create and evaluate a combined model from the ensemble model.</span>
+        <span class="c1">#create_and_evaluate_combined_model(self, ensemble_model) # Experimental</span>
         <span class="c1"># TODO: Later, maybe we should write a callback to save the models in disk</span>
         <span class="k">return</span> <span class="n">ensemble_model</span></div>
 
@@ -400,6 +404,27 @@
 <span class="sd">        torch.distributed.destroy_process_group()</span>
 <span class="sd">        # () .</span>
 <span class="sd">        self.on_fit_end(self, model)</span>
+
+<span class="sd">    def create_and_evaluate_combined_model( trainer,ensemble_model):</span>
+<span class="sd">     # Create and evaluate a combined model from the ensemble model</span>
+<span class="sd">    combined_model_args = ensemble_model.models[0].args</span>
+<span class="sd">    combined_entity_embeddings, combined_relation_embeddings = ensemble_model.get_embeddings()</span>
+<span class="sd">    combined_model_args[&quot;embedding_dim&quot;] = combined_entity_embeddings.shape[1]</span>
+<span class="sd">    combined_model, form_of_labelling = intialize_model(combined_model_args)</span>
+<span class="sd">    combined_model.entity_embeddings.weight.data = combined_entity_embeddings</span>
+<span class="sd">    combined_model.relation_embeddings.weight.data = combined_relation_embeddings</span>
+
+<span class="sd">    combined_model.eval()</span>
+<span class="sd">    combined_model.to(&quot;cpu&quot;)</span>
+<span class="sd">    print(f&quot;Evaluating combined Ensemble of {combined_model_args[&#39;model&#39;]}&quot;)</span>
+<span class="sd">    eval_result = trainer.evaluator.eval(dataset=trainer.dataset,</span>
+<span class="sd">                                        trained_model=combined_model,</span>
+<span class="sd">                                        form_of_labelling=form_of_labelling,</span>
+<span class="sd">                                        during_training=False)</span>
+<span class="sd">    trainer.evaluator.report[&quot;combined_model&quot;] = eval_result</span>
+<span class="sd">    torch.save(combined_model.state_dict(), f&#39;{trainer.attributes.full_storage_path}/model.pt&#39;)</span>
+<span class="sd">    return</span>
+
 <span class="sd">    &quot;&quot;&quot;</span></div>
 
 </pre></div>

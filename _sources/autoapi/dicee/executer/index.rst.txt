@@ -25,6 +25,9 @@ Module Contents
    (3) Storing all necessary info
 
 
+   .. py:attribute:: distributed
+
+
    .. py:attribute:: args
 
 
@@ -61,7 +64,19 @@ Module Contents
 
 
 
+   .. py:method:: is_rank_zero() -> bool
+
+
+   .. py:method:: cleanup()
+
+
    .. py:method:: setup_executor() -> None
+
+
+   .. py:method:: create_and_store_kg()
+
+
+   .. py:method:: load_from_memmap()
 
 
    .. py:method:: save_trained_model() -> None

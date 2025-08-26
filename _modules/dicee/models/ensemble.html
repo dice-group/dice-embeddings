@@ -89,19 +89,19 @@
              
   <h1>Source code for dicee.models.ensemble</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
 <div class="viewcode-block" id="EnsembleKGE">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">EnsembleKGE</span><span class="p">:</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">pretrained_models</span><span class="p">:</span><span class="n">List</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">models</span> <span class="p">:</span> <span class="nb">list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pretrained_models</span><span class="p">:</span><span class="n">List</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
-        <span class="k">if</span> <span class="n">seed_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">models</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">loss_history</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()):</span>
-                <span class="n">i_model</span><span class="o">=</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">seed_model</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">models</span><span class="p">)):</span>
+                <span class="n">i_model</span> <span class="o">=</span> <span class="n">models</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
                 <span class="c1"># TODO: Why we cant send the compile model to cpu ?</span>
                 <span class="c1">#i_model = torch.compile(i_model)</span>
                 <span class="n">i_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
@@ -119,6 +119,7 @@
             <span class="c1"># Maybe use the original model&#39;s name ?</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train_mode</span><span class="o">=</span><span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">args</span>
 <div class="viewcode-block" id="EnsembleKGE.named_children">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.named_children">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">named_children</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -171,6 +172,20 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
+            
+<div class="viewcode-block" id="EnsembleKGE.state_dict">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.state_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the state dict of the ensemble.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="EnsembleKGE.load_state_dict">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.load_state_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the state dict into the ensemble.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">)</span>  </div>
+
 
 
 <div class="viewcode-block" id="EnsembleKGE.mem_of_model">
@@ -218,20 +233,21 @@
 <div class="viewcode-block" id="EnsembleKGE.get_embeddings">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.get_embeddings">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">entity_embeddings</span><span class="o">=</span><span class="p">[]</span>
-        <span class="n">relation_embeddings</span><span class="o">=</span><span class="p">[]</span>
-        <span class="c1"># () Iterate</span>
+        <span class="n">entity_embeddings</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">relation_embeddings</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Iterate</span>
         <span class="k">for</span> <span class="n">trained_model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">:</span>
-            <span class="n">entity_emb</span><span class="p">,</span> <span class="n">relation_ebm</span> <span class="o">=</span> <span class="n">trained_model</span><span class="o">.</span><span class="n">get_embeddings</span><span class="p">()</span>
-            <span class="n">entity_embeddings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entity_emb</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">relation_ebm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">relation_embeddings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">relation_ebm</span><span class="p">)</span>
-        <span class="c1"># () Concat the embedding vectors horizontally.</span>
-        <span class="n">entity_embeddings</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">entity_embeddings</span><span class="p">,</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">entity_emb</span><span class="p">,</span> <span class="n">relation_emb</span> <span class="o">=</span> <span class="n">trained_model</span><span class="o">.</span><span class="n">get_embeddings</span><span class="p">()</span>
+            <span class="n">entity_embeddings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entity_emb</span><span class="o">.</span><span class="n">cpu</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">relation_emb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">relation_embeddings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">relation_emb</span><span class="o">.</span><span class="n">cpu</span><span class="p">())</span>
+        <span class="c1"># Concat the embedding vectors horizontally.</span>
+        <span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">entity_embeddings</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">relation_embeddings</span><span class="p">:</span>
-            <span class="n">relation_embeddings</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">relation_embeddings</span><span class="p">,</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">relation_embeddings</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">relation_embeddings</span><span class="o">=</span><span class="kc">None</span>
+            <span class="n">relation_embeddings</span> <span class="o">=</span> <span class="kc">None</span>
+
 
         <span class="k">return</span> <span class="n">entity_embeddings</span><span class="p">,</span> <span class="n">relation_embeddings</span></div>
 

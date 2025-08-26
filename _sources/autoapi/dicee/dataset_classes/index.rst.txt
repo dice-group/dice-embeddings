@@ -549,7 +549,7 @@ Module Contents
    .. py:attribute:: neg_sample_ratio
 
 
-   .. py:attribute:: train_set
+   .. py:attribute:: train_triples
 
 
    .. py:attribute:: length
@@ -559,6 +559,14 @@ Module Contents
 
 
    .. py:attribute:: num_relations
+
+
+   .. py:attribute:: labels
+
+
+   .. py:attribute:: train_set
+      :value: []
+
 
 
    .. py:method:: __len__()

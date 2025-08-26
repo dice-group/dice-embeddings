@@ -146,7 +146,7 @@
         <span class="c1"># (1) Run the fit the start callback.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
         <span class="c1"># (2) Setup DDP.</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">init_process_group</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="s2">&quot;nccl&quot;</span><span class="p">)</span>
+        <span class="c1"># torch.distributed.init_process_group(backend=&quot;nccl&quot;)</span>
         <span class="n">train_dataset_loader</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;train_dataloaders&#39;</span><span class="p">]</span>
         <span class="c1"># (1) Create DATA LOADER.</span>
         <span class="n">train_dataset_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">train_dataset_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>

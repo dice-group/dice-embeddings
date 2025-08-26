@@ -15,7 +15,7 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: EnsembleKGE(seed_model=None, pretrained_models: List = None)
+.. py:class:: EnsembleKGE(models: list = None, seed_model=None, pretrained_models: List = None)
 
    .. py:attribute:: name
 
@@ -23,6 +23,9 @@ Module Contents
    .. py:attribute:: train_mode
       :value: True
 
+
+
+   .. py:attribute:: args
 
 
    .. py:method:: named_children()
@@ -47,6 +50,18 @@ Module Contents
 
 
    .. py:method:: to(device)
+
+
+   .. py:method:: state_dict()
+
+      Return the state dict of the ensemble.
+
+
+
+   .. py:method:: load_state_dict(state_dict, strict=True)
+
+      Load the state dict into the ensemble.
+
 
 
    .. py:method:: mem_of_model()

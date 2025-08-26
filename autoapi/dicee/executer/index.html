@@ -77,6 +77,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.executer.Execute"><code class="docutils literal notranslate"><span class="pre">Execute</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.distributed"><code class="docutils literal notranslate"><span class="pre">Execute.distributed</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.args"><code class="docutils literal notranslate"><span class="pre">Execute.args</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.is_continual_training"><code class="docutils literal notranslate"><span class="pre">Execute.is_continual_training</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.trainer"><code class="docutils literal notranslate"><span class="pre">Execute.trainer</span></code></a></li>
@@ -85,7 +86,11 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.report"><code class="docutils literal notranslate"><span class="pre">Execute.report</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.evaluator"><code class="docutils literal notranslate"><span class="pre">Execute.evaluator</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.start_time"><code class="docutils literal notranslate"><span class="pre">Execute.start_time</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.is_rank_zero"><code class="docutils literal notranslate"><span class="pre">Execute.is_rank_zero()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.cleanup"><code class="docutils literal notranslate"><span class="pre">Execute.cleanup()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.setup_executor"><code class="docutils literal notranslate"><span class="pre">Execute.setup_executor()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.create_and_store_kg"><code class="docutils literal notranslate"><span class="pre">Execute.create_and_store_kg()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.load_from_memmap"><code class="docutils literal notranslate"><span class="pre">Execute.load_from_memmap()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.save_trained_model"><code class="docutils literal notranslate"><span class="pre">Execute.save_trained_model()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.end"><code class="docutils literal notranslate"><span class="pre">Execute.end()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.write_report"><code class="docutils literal notranslate"><span class="pre">Execute.write_report()</span></code></a></li>
@@ -173,6 +178,11 @@
 <li><p>Storing all necessary info</p></li>
 </ol>
 <dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.distributed">
+<span class="sig-name descname"><span class="pre">distributed</span></span><a class="headerlink" href="#dicee.executer.Execute.distributed" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.executer.Execute.args">
 <span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#dicee.executer.Execute.args" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -213,8 +223,28 @@
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Execute.is_rank_zero">
+<span class="sig-name descname"><span class="pre">is_rank_zero</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.is_rank_zero"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.is_rank_zero" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Execute.cleanup">
+<span class="sig-name descname"><span class="pre">cleanup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.cleanup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.cleanup" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.Execute.setup_executor">
 <span class="sig-name descname"><span class="pre">setup_executor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.setup_executor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.setup_executor" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Execute.create_and_store_kg">
+<span class="sig-name descname"><span class="pre">create_and_store_kg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.create_and_store_kg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.create_and_store_kg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Execute.load_from_memmap">
+<span class="sig-name descname"><span class="pre">load_from_memmap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.load_from_memmap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.load_from_memmap" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">

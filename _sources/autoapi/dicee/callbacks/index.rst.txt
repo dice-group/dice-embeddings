@@ -724,15 +724,11 @@ Module Contents
 
 
 
-   .. py:method:: moving_average(swa_model, model, alpha)
+   .. py:method:: moving_average(swa_model, running_model, alpha)
+      :staticmethod:
+
 
       Update SWA model with moving average of current model.
-
-
-
-   .. py:method:: on_fit_start(trainer, model)
-
-      Initialize SWA model with same architecture as main model.
 
 
 

@@ -781,11 +781,27 @@
         <span class="c1"># TLDL; replace Python objects with non-refcounted representations such as Pandas, Numpy or PyArrow objects</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">neg_sample_ratio</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
             <span class="n">neg_sample_ratio</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;from numpy to torch&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">train_set</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">train_set</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span>
+        <span class="c1">#print(&quot;from numpy to torch&quot;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_triples</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">train_set</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_triples</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">num_entities</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">num_relations</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
+
+        <span class="c1"># Precompute negatives and stack with positives</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_set</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">triple</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_triples</span><span class="p">:</span>
+            <span class="c1"># (1) Sample an entity.</span>
+            <span class="n">corr_entities</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+            <span class="c1"># (2) Flip a coin</span>
+            <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">:</span>
+                <span class="c1"># (2.1) Corrupt (1) via tai.</span>
+                <span class="n">negative_triple</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">triple</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">triple</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">corr_entities</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># (2.2) Corrupt (1) via head.</span>
+                <span class="n">negative_triple</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">corr_entities</span><span class="p">,</span> <span class="n">triple</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">triple</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># (3) Concat positive and negative triples.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">triple</span><span class="p">,</span> <span class="n">negative_triple</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
 
 <div class="viewcode-block" id="NegSampleDataset.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.NegSampleDataset.__len__">[docs]</a>
@@ -796,24 +812,9 @@
 <div class="viewcode-block" id="NegSampleDataset.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.NegSampleDataset.__getitem__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
-        <span class="c1"># (1) Get a triple.</span>
-        <span class="n">triple</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
-        <span class="c1"># (2) Sample an entity.</span>
-        <span class="n">corr_entities</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
-        <span class="c1"># (3) Flip a coin</span>
-        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mf">0.5</span><span class="p">:</span>
-            <span class="c1"># (3.1) Corrupt (1) via tai.</span>
-            <span class="n">negative_triple</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">triple</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">triple</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">corr_entities</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># (3.1) Corrupt (1) via head.</span>
-            <span class="n">negative_triple</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">corr_entities</span><span class="p">,</span> <span class="n">triple</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">triple</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="c1"># (4) Concat positive and negative triples.</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">triple</span><span class="p">,</span> <span class="n">negative_triple</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="c1"># (5) Concat labels of (4).</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span></div>
+        <span class="c1"># get i-th training sample with positive and negative triple stacked</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span></div>
 </div>
-
 
 
 <div class="viewcode-block" id="TriplePredictionDataset">
