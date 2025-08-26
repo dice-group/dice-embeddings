@@ -30,8 +30,7 @@ class Execute:
 
     def __init__(self, args, continuous_training=False):
         # check if we need distributed training
-        if getattr(args, "trainer", None) == "torchDDP":
-            self.distributed = True
+        self.distributed = getattr(args, "trainer", None) == "torchDDP"
         # initialize distributed training if required
         if self.distributed:
             if not dist.is_initialized():
