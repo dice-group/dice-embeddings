@@ -1,6 +1,5 @@
 import os
 import glob
-import torch
 import requests
 
 
@@ -93,18 +92,18 @@ def sanity_check_callback_args(args):
     """
     Perform sanity checks on callback-related arguments.
     """
-    gpu_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
+    # gpu_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
     # Check if any callbacks are requested
     has_callbacks = any([args.swa, args.adaptive_swa, args.adaptive_lr, args.eval_every_n_epochs > 0,
                           args.eval_at_epochs is not None])
     if not has_callbacks:
         return  # No callbacks, no checks needed
-    # Block all callbacks for TP or torchDDP trainers
-    if args.trainer in {'TP', 'torchDDP'}:
-        raise NotImplementedError("Callbacks are not supported with TP or torchDDP trainers.")
-    # Block callbacks for PL trainer with 2+ GPUs
-    elif args.trainer == 'PL' and gpu_count >= 2:
-        raise NotImplementedError("Callbacks are not supported with PL trainer on multi-GPU setup.")
+    # # Block all callbacks for TP or torchDDP trainers
+    # if args.trainer in {'TP', 'torchDDP'}:
+    #     raise NotImplementedError("Callbacks are not supported with TP or torchDDP trainers.")
+    # # Block callbacks for PL trainer with 2+ GPUs
+    # elif args.trainer == 'PL' and gpu_count >= 2:
+    #     raise NotImplementedError("Callbacks are not supported with PL trainer on multi-GPU setup.")
     if args.swa:
         if args.swa_start_epoch is None:
             args.swa_start_epoch = 1

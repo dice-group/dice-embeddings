@@ -4,15 +4,19 @@ import numpy as np
 import torch
 import os
 import json
+import copy
 
 import dicee.models.base_model
+from dicee.models.ensemble import EnsembleKGE
 from .static_funcs import save_checkpoint_model, save_pickle
 from .abstracts import AbstractCallback
 import pandas as pd
 from collections import defaultdict
 import math
 from torch.optim.lr_scheduler import LambdaLR
+from torch._dynamo.eval_frame import OptimizedModule
 from .eval_static_funcs import evaluate_ensemble_link_prediction_performance
+from pytorch_lightning.utilities import rank_zero_only
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
@@ -167,35 +171,36 @@ class ASWA(AbstractCallback):
         self.alphas = []
         self.val_aswa = -1
 
+    @rank_zero_only
     def on_fit_end(self, trainer, model):
         # super().on_fit_end(trainer, model)
         if self.initial_eval_setting:
             # ADD this info back
             trainer.evaluator.args.eval_model = self.initial_eval_setting
         
-        if trainer.global_rank==trainer.local_rank==0:
-            param_ensemble = torch.load(f"{self.path}/aswa.pt", torch.device("cpu"))
-            model.load_state_dict(param_ensemble)
+        param_ensemble = torch.load(f"{self.path}/aswa.pt", torch.device("cpu"))
+        model.load_state_dict(param_ensemble)
 
     @staticmethod
     def compute_mrr(trainer, model) -> float:
         # (2) Enable eval mode.
-        model.eval()
+        eval_model = copy.deepcopy(model)
+        eval_model.eval()
         # (3) MRR performance on the validation data of running model.
-        device_name = model.device
-        model.to("cpu")
+        eval_model.to("cpu")
         last_val_mrr_running_model = trainer.evaluator.eval(dataset=trainer.dataset,
-                                                            trained_model=model,
+                                                            trained_model=eval_model,
                                                             form_of_labelling=trainer.form_of_labelling,
                                                             during_training=True)["Val"]["MRR"]
-        model.to(device_name)
-        # (4) Enable train mode.
-        model.train()
+        del eval_model
         return last_val_mrr_running_model
 
     def get_aswa_state_dict(self, model):
         # (2) Question: Soft update or Rejection?!
-        ensemble_state_dict = torch.load(f"{self.path}/aswa.pt", torch.device(model.device))
+        if isinstance(model,EnsembleKGE):
+            ensemble_state_dict = torch.load(f"{self.path}/aswa.pt")
+        else:
+            ensemble_state_dict = torch.load(f"{self.path}/aswa.pt",  torch.device(next(model.parameters()).device))
         # Perform provision parameter update.
         with torch.no_grad():
             for k, parameters in model.state_dict().items():
@@ -247,11 +252,12 @@ class ASWA(AbstractCallback):
             self.alphas.append(0)
             return True
 
+    @rank_zero_only
     def on_train_epoch_end(self, trainer, model):
-        
-        if (trainer.global_rank == trainer.local_rank == 0) is False:
-            return None
-
+        # if (trainer.global_rank == trainer.local_rank == 0) is False:
+        #     return None
+        if isinstance(model, OptimizedModule):
+            model = model._orig_mod
         # (1) Increment epoch counter
         self.epoch_count += 1
         # (2) Save the given eval setting if it is not saved.
@@ -271,8 +277,11 @@ class ASWA(AbstractCallback):
             # (5) Load ASWA ensemble parameters.
             ensemble_state_dict = self.get_aswa_state_dict(model)
             # (6) Initialize ASWA ensemble with (5).
-            ensemble = type(model)(model.args)
+            ensemble = copy.deepcopy(model)
             ensemble.load_state_dict(ensemble_state_dict)
+            ensemble.to("cpu")
+
+                
             # (7) Evaluate (6) on the validation data, i.e., perform the lookahead operation.
             mrr_updated_ensemble_model = trainer.evaluator.eval(dataset=trainer.dataset,
                                                                 trained_model=ensemble,
@@ -280,6 +289,7 @@ class ASWA(AbstractCallback):
                                                                 during_training=True)["Val"]["MRR"]
             # print(f"| MRR Running {val_running_model:.4f} | MRR ASWA: {self.val_aswa:.4f} |ASWA|:{sum(self.alphas)}")
             # (8) Decide whether ASWA should be updated via the current running model.
+            del ensemble
             self.decide(model.state_dict(), ensemble_state_dict, val_running_model, mrr_updated_ensemble_model)
 
 class Eval(AbstractCallback):
@@ -547,12 +557,14 @@ class PeriodicEvalCallback(AbstractCallback):
             self.n_epochs_storage_path = os.path.join(self.experiment_dir, 'models_n_epochs')
             os.makedirs(self.n_epochs_storage_path, exist_ok=True)
 
+    @rank_zero_only
     def on_fit_end(self, trainer, model):
         """ Called at the end of training. Saves final evaluation report."""
         report_path = os.path.join(self.experiment_dir, 'eval_report_n_epochs.json')
         with open(report_path, 'w') as f:
             json.dump(self.reports, f, indent=4)
 
+    @rank_zero_only
     def on_train_epoch_end(self, trainer, model):
         """
         Called at the end of each training epoch. Performs evaluation and checkpointing if scheduled.
@@ -581,7 +593,12 @@ class PeriodicEvalCallback(AbstractCallback):
         eval_model = None
 
         if model.args.get("swa"):
-            eval_model = trainer.swa_model
+            try:
+                eval_model = copy.deepcopy(trainer.swa_model)
+            except Exception:
+                # If SWA epoch is not reached, trainer has no swa model
+                # fallback to the original model
+                eval_model = copy.deepcopy(model)
 
         elif model.args.get("adaptive_swa"):
             # Load ASWA weights and apply to a deepcopy of the model
@@ -589,26 +606,23 @@ class PeriodicEvalCallback(AbstractCallback):
             aswa_ensemble_params = torch.load(aswa_path, map_location="cpu")
             
             # Clone model and apply ASWA weights
-            eval_model = type(model)(model.args)
+            if isinstance(model, OptimizedModule):
+                eval_model = type(model._orig_mod)(model.args)
+            else:
+                eval_model = type(model)(model.args)
             eval_model.load_state_dict(aswa_ensemble_params)
 
         else:
-            eval_model = model
+            eval_model = copy.deepcopy(model)
 
-        # Save device and training mode, move to CPU for evaluation to save memory
-        device = next(eval_model.parameters()).device
-        training_mode = eval_model.training
         eval_model.to('cpu')
         eval_model.eval()
-
+        
         report = trainer.evaluator.eval(dataset=trainer.dataset,
                 trained_model=eval_model,
                 form_of_labelling=trainer.form_of_labelling,
                 during_training=True)
 
-        # Restore model to original device and mode
-        eval_model.to(device)
-        eval_model.train(mode=training_mode)
 
         # Restore evaluation mode
         trainer.evaluator.args.eval_model = self.default_eval_model
@@ -619,12 +633,13 @@ class PeriodicEvalCallback(AbstractCallback):
         # Save model checkpoint if needed
         if self.save_model_every_n_epoch:
             save_path = os.path.join(self.n_epochs_storage_path, f'model_at_epoch_{self.epoch_counter}.pt')
-            save_checkpoint_model(eval_model, path=save_path)
-        
+            torch.save(eval_model.state_dict(), save_path)
+
         # Free memory only if eval_model is a separate instance (ASWA case)
-        if model.args.get("adaptive_swa") and eval_model is not model:
-            del eval_model
-                       
+        # if model.args.get("adaptive_swa") and eval_model is not model:
+        #     del eval_model
+        del eval_model
+        torch.cuda.empty_cache()
 class LRScheduler(AbstractCallback):
     """
     Callback for managing learning rate scheduling and model snapshots.
@@ -964,24 +979,30 @@ class SWA(AbstractCallback):
         self.swa_n = 0
         self.current_epoch = -1
     
-    def moving_average(self, swa_model, model, alpha):
+    @staticmethod
+    def moving_average(swa_model, running_model, alpha):
         """Update SWA model with moving average of current model."""
         with torch.no_grad():
-            for swa_param, param in zip(swa_model.parameters(), model.parameters()):
+            swa_model.to(next(running_model.parameters()).device)
+            for swa_param, param in zip(swa_model.parameters(), running_model.parameters()):
                 swa_param.data = (1.0 - alpha) * swa_param.data + alpha * param.data
-        
-    def on_fit_start(self, trainer, model):
-        """Initialize SWA model with same architecture as main model."""
-        self.swa_model = type(model)(model.args)
-        self.swa_model.load_state_dict(model.state_dict())
-        self.swa_model = self.swa_model.to(model.device)
 
-        # Check if trainer has optimizer attribute, if not, try to get from optimizers list
-        optimizer = getattr(trainer, 'optimizer', None)
-        if optimizer is None:
-            if not (hasattr(trainer, 'optimizers') and trainer.optimizers):
-                raise AttributeError("Trainer does not have a valid optimizer or optimizers list.")
-    
+    # @rank_zero_only
+    # def on_fit_start(self, trainer, model):
+    #     """Initialize SWA model(s) with same architecture as main model(s)."""
+        
+    #     # Handle OptimizedModule wrapper
+    #     kge_model = model._orig_mod if isinstance(model, OptimizedModule) else model
+
+    #     # Case 1: Ensemble of models
+    #     if isinstance(kge_model, EnsembleKGE):
+    #         self.swa_model = type(kge_model)(kge_model.models)
+    #         self.swa_model.load_state_dict(kge_model.state_dict())
+        
+    #     else:
+    #         self.swa_model = type(kge_model)(kge_model.args)
+    #         self.swa_model.load_state_dict(kge_model.state_dict())
+
     def on_train_epoch_start(self, trainer, model):
         """Update learning rate according to SWA schedule."""
         # Get current epoch - simplified with fallback
@@ -989,7 +1010,8 @@ class SWA(AbstractCallback):
             self.current_epoch = trainer.current_epoch
         else:
             self.current_epoch += 1
-            
+        if self.current_epoch < self.swa_start_epoch:
+            return
         # Calculate learning rate using the schedule
         t = self.current_epoch / self.max_epochs
         lr_ratio = self.swa_lr / self.lr_init
@@ -1000,30 +1022,54 @@ class SWA(AbstractCallback):
             factor = 1.0 - (1.0 - lr_ratio) * (t - 0.5) / 0.4
         else:
             factor = lr_ratio
-            
-        new_lr = self.lr_init * factor
 
-        # Get the optimizer from the trainer
-        optimizer = getattr(trainer, 'optimizer', None)
-        if optimizer is None and hasattr(trainer, 'optimizers') and trainer.optimizers:
-            optimizer = trainer.optimizers[0] if isinstance(trainer.optimizers, list) else trainer.optimizers
-            
-        if optimizer is not None:
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = new_lr
-    
+        if isinstance(model, EnsembleKGE):
+            optimizers = getattr(model, "optimizers", [])
+        elif hasattr(trainer, "optimizers") and trainer.optimizers:
+                optimizers = trainer.optimizers if isinstance(trainer.optimizers, list) else [trainer.optimizers]
+        elif hasattr(trainer, "optimizer") and trainer.optimizer is not None:
+                optimizers = [trainer.optimizer]
+        else:
+            optimizers = None
+
+        if optimizers is not None:
+            for optimizer in optimizers:
+                for param_group in optimizer.param_groups:
+                    param_group['lr'] *= factor
+
     def on_train_epoch_end(self, trainer, model):
         """Apply SWA averaging if conditions are met."""
-        #set swa_model in trainer if eval_every_n_epochs or eval_at_epochs is set
-        if model.args["eval_every_n_epochs"] > 0 or model.args["eval_at_epochs"] is not None:
-            trainer.swa_model = self.swa_model
+        if self.current_epoch < self.swa_start_epoch:
+            return
+
         # Check if we should apply SWA
         if self.current_epoch >= self.swa_start_epoch and \
-           (self.current_epoch - self.swa_start_epoch) % self.swa_c_epochs == 0:
+        (self.current_epoch - self.swa_start_epoch) % self.swa_c_epochs == 0:
             
-            # Perform moving average update with the model directly
-            self.moving_average(self.swa_model, model, 1.0 / (self.swa_n + 1))
+            running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
+            
+            if self.swa_model is None:
+                # Case: EnsembleKGE
+                if isinstance(running_model, EnsembleKGE):
+                    self.swa_model = type(running_model)(running_model.models)
+                    self.swa_model.load_state_dict(running_model.state_dict())
+                
+                else:
+                    self.swa_model = type(running_model)(running_model.args)
+                    self.swa_model.load_state_dict(running_model.state_dict())
+
+            if isinstance(running_model, EnsembleKGE):
+                # Update each submodel and its SWA counterpart
+                for submodel, swa_submodel in zip(running_model.models, self.swa_model.models):
+                    self.moving_average(swa_submodel, submodel, 1.0 / (self.swa_n + 1))
+            else:
+                # Single model case
+                self.moving_average(self.swa_model, running_model, 1.0 / (self.swa_n + 1))
+
             self.swa_n += 1
+    
+        if model.args["eval_every_n_epochs"] > 0 or model.args["eval_at_epochs"] is not None:
+            trainer.swa_model = self.swa_model
     
     def on_fit_end(self, trainer, model):
         """Replace main model with SWA model at the end of training."""

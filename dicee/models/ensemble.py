@@ -1,15 +1,15 @@
 import torch
-import copy
+import torch.nn as nn
 from typing import List
 class EnsembleKGE:
-    def __init__(self, seed_model=None,pretrained_models:List=None):
+    def __init__(self, models : list=None, seed_model=None, pretrained_models:List=None):
 
-        if seed_model is not None:
-            self.models = []
+        if models is not None:
+            self.models = nn.ModuleList()
             self.optimizers = []
             self.loss_history = []
-            for i in range(torch.cuda.device_count()):
-                i_model=copy.deepcopy(seed_model)
+            for i in range(len(models)):
+                i_model = models[i]
                 # TODO: Why we cant send the compile model to cpu ?
                 #i_model = torch.compile(i_model)
                 i_model.to(torch.device(f"cuda:{i}"))
@@ -27,6 +27,7 @@ class EnsembleKGE:
             # Maybe use the original model's name ?
         self.name=self.models[0].name
         self.train_mode=True
+        self.args = self.models[0].args
     def named_children(self):
         return self.models[0].named_children()
     @property
@@ -58,6 +59,14 @@ class EnsembleKGE:
                 self.models[i].cpu()
             else:
                 raise NotImplementedError
+            
+    def state_dict(self):
+        """Return the state dict of the ensemble."""
+        return self.models.state_dict()
+
+    def load_state_dict(self, state_dict, strict=True):
+        """Load the state dict into the ensemble."""
+        return self.models.load_state_dict(state_dict, strict=strict)  
 
 
     def mem_of_model(self):
@@ -94,20 +103,21 @@ class EnsembleKGE:
             opt.step()
 
     def get_embeddings(self):
-        entity_embeddings=[]
-        relation_embeddings=[]
-        # () Iterate
+        entity_embeddings = []
+        relation_embeddings = []
+        # Iterate
         for trained_model in self.models:
-            entity_emb, relation_ebm = trained_model.get_embeddings()
-            entity_embeddings.append(entity_emb)
-            if relation_ebm is not None:
-                relation_embeddings.append(relation_ebm)
-        # () Concat the embedding vectors horizontally.
-        entity_embeddings=torch.cat(entity_embeddings,dim=1)
+            entity_emb, relation_emb = trained_model.get_embeddings()
+            entity_embeddings.append(entity_emb.cpu())
+            if relation_emb is not None:
+                relation_embeddings.append(relation_emb.cpu())
+        # Concat the embedding vectors horizontally.
+        entity_embeddings = torch.cat(entity_embeddings, dim=1)
         if relation_embeddings:
-            relation_embeddings=torch.cat(relation_embeddings,dim=1)
+            relation_embeddings = torch.cat(relation_embeddings, dim=1)
         else:
-            relation_embeddings=None
+            relation_embeddings = None
+
 
         return entity_embeddings, relation_embeddings
 

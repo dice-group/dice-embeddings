@@ -131,9 +131,17 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
                 raise e
             return model, labelling_flag
     else:
-        model, labelling_flag= intialize_model(args)
         if args["trainer"]=="TP":
-            model=EnsembleKGE(seed_model=model)
+            # If it is tensor parallelized KGE, then we need to create ensemble of models.
+            models = []
+            labelling_flag = None
+            for i in range(torch.cuda.device_count()):
+                args["random_seed"] = i
+                model, labelling_flag = intialize_model(args)
+                models.append(model)
+            model = EnsembleKGE(models=models)
+        else:
+            model, labelling_flag = intialize_model(args)
 
     return model, labelling_flag
 
