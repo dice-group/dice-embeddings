@@ -1,5 +1,5 @@
 import json
-from dicee.executer import Execute, ContinuousExecute, DDPExecute
+from dicee.executer import Execute, ContinuousExecute
 import argparse
 
 def get_default_arguments(description=None):
@@ -156,8 +156,6 @@ def main():
     args = get_default_arguments()
     if args.continual_learning:
         ContinuousExecute(args).continual_start()
-    elif args.trainer == 'torchDDP':
-        DDPExecute(get_default_arguments()).start()
     else:
         Execute(get_default_arguments()).start()
 
