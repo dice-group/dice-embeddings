@@ -211,17 +211,19 @@ class DICE_Trainer:
         print('Initializing Dataset...', end='\t')
         if isinstance(self.trainer.dataset,KG):
             # Create a memory map of training dataset to reduce the memory usage
-            train_set_shape=self.trainer.dataset.train_set.shape
-            train_set_dtype=self.trainer.dataset.train_set.dtype
             path_memory_map=self.trainer.dataset.path_for_serialization + '/memory_map_train_set.npy'
-            memmap_kg = np.memmap(path_memory_map, dtype=train_set_dtype, mode='w+', shape=train_set_shape)
-            memmap_kg[:] = self.trainer.dataset.train_set[:]
-            memmap_kg[:].flush()
-            del memmap_kg
-            self.trainer.dataset.train_se = np.memmap(path_memory_map,
-                                             mode='r',
-                                             dtype=train_set_dtype,
-                                             shape=train_set_shape)
+            if not os.path.exists(path_memory_map):
+                train_set_shape=self.trainer.dataset.train_set.shape
+                train_set_dtype=self.trainer.dataset.train_set.dtype
+                path_memory_map=self.trainer.dataset.path_for_serialization + '/memory_map_train_set.npy'
+                memmap_kg = np.memmap(path_memory_map, dtype=train_set_dtype, mode='w+', shape=train_set_shape)
+                memmap_kg[:] = self.trainer.dataset.train_set[:]
+                memmap_kg[:].flush()
+                del memmap_kg
+                self.trainer.dataset.train_se = np.memmap(path_memory_map,
+                                                mode='r',
+                                                dtype=train_set_dtype,
+                                                shape=train_set_shape)
             train_dataset = construct_dataset(train_set=self.trainer.dataset.train_set,
                                               valid_set=self.trainer.dataset.valid_set,
                                               test_set=self.trainer.dataset.test_set,
