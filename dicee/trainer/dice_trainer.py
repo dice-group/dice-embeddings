@@ -3,7 +3,7 @@ import polars
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb, PeriodicEvalCallback, LRScheduler, SWA
+from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb, PeriodicEvalCallback, LRScheduler, SWA, SWAG, EMA
 from dicee.dataset_classes import construct_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
@@ -94,9 +94,16 @@ def get_callbacks(args):
         AccumulateEpochLossCallback(path=args.full_storage_path)
     ]
     if args.swa:
-        print(f"Starting Stochastic Weight Averaging at Epoch: {args.swa_start_epoch}")
+        print(f"Starting Stochastic Weight Averaging (SWA) at Epoch: {args.swa_start_epoch}")
         callbacks.append(SWA(swa_start_epoch=args.swa_start_epoch, lr_init=args.lr,
                             max_epochs=args.num_epochs))
+    elif args.swag:
+        print(f"Starting  Stochastic Weight Averaging-Gaussian (SWA-G) at Epoch: {args.swa_start_epoch}")
+        callbacks.append(SWAG(swa_start_epoch=args.swa_start_epoch, lr_init=args.lr,
+                            max_epochs=args.num_epochs))
+    elif args.ema:
+        print(f"Starting  Exponential Model Averaging (EMA) at Epoch: {args.swa_start_epoch}")
+        callbacks.append(EMA(ema_start_epoch=args.swa_start_epoch, max_epochs=args.num_epochs))
     elif args.adaptive_swa:
         callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
     elif args.adaptive_lr:
