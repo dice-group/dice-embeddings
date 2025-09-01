@@ -1152,24 +1152,40 @@ class SWAG(AbstractCallback):
         return self.mean, var
 
     def sample(self, base_model_fn, scale=0.5, device="cpu"):
-        """Sample new model from GSWA posterior distribution."""
+        """Sample new model from SWAG posterior distribution.
+        
+        Math:
+        # From SWAG, posterior is approximated as:
+        # θ ~ N(mean, Σ)
+        # where Σ ≈ diag(var) + (1/(K-1)) * D D^T
+        #   - mean = running average of weights
+        #   - var = elementwise variance (sq_mean - mean^2)
+        #   - D = [dev_1, dev_2, ..., dev_K], deviations from mean (low-rank approx)
+        #   - K = number of collected models
+
+        # Sampling step:
+        # 1. θ_diag = mean + scale * std ⊙ ε,  where ε ~ N(0, I)
+        # 2. θ_lowrank = θ_diag + (D z) / sqrt(K-1), where z ~ N(0, I_K)
+        # Final sample = θ_lowrank
+        """
         if self.mean is None:
-            raise RuntimeError("No GSWA stats collected yet.")
-        self.mean, var = self.get_mean_and_var()
-        self.std = torch.sqrt(var)
+            raise RuntimeError("No SWAG stats collected yet.")
 
-        # diagonal Gaussian perturbation
-        sample_vec = self.mean + scale * self.std * torch.randn_like(self.std)
-        # diagonal Gaussian perturbation
-        denom = max(1, len(self.deviations) - 1) ** 0.5
-        sample_vec += (D @ z) / denom
+        # Mean and variance
+        mean, var = self.get_mean_and_var()
+        std = torch.sqrt(var)
 
-        # low-rank covariance perturbation
+        # Diagonal Gaussian perturbation
+        sample_vec = mean + scale * std * torch.randn_like(std)
+
+        # Low-rank covariance perturbation
         if self.deviations:
-            D = torch.cat(self.deviations, dim=1)
-            z = torch.randn(D.shape[1])
-            sample_vec += (D @ z) / ((len(self.deviations) - 1)**0.5)
+            D = torch.cat(self.deviations, dim=1)  # shape: [num_params, K]
+            z = torch.randn(D.shape[1], device=D.device)  # random vector in K-dim space
+            denom = max(1, len(self.deviations) - 1) ** 0.5  # normalization
+            sample_vec += (D @ z) / denom
 
+        # Build new model and load sampled weights
         m = base_model_fn().to(device)
         nn.utils.vector_to_parameters(sample_vec.to(device), m.parameters())
         return m
@@ -1214,9 +1230,13 @@ class SWAG(AbstractCallback):
         self._collect_stats(model)
 
     def on_fit_end(self, trainer, model):
-        """At the end, set model to GSWA mean."""
+        """Set model weights to the collected SWAG mean at the end of training."""
         if self.mean is not None:
-            nn.utils.vector_to_parameters(self.mean.to(model.device), model.parameters())
+            nn.utils.vector_to_parameters(
+                self.mean.to(next(model.parameters()).device),
+                model.parameters()
+            )
+        return model
 
 
 class EMA(AbstractCallback):
