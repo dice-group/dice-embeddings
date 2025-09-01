@@ -101,7 +101,7 @@ def sanity_check_callback_args(args):
             raise NotImplementedError("Path to store experiments must be provided for Multi-GPU training.")
         if args.adaptive_lr:
             raise NotImplementedError("Adaptive learning rate is not supported with Multi-GPU training.")
-    has_callbacks = any([args.swa, args.adaptive_swa, args.adaptive_lr, args.eval_every_n_epochs > 0,
+    has_callbacks = any([args.swa, args.swag, args.ema, args.adaptive_swa, args.adaptive_lr, args.eval_every_n_epochs > 0,
                           args.eval_at_epochs is not None])
     if not has_callbacks:
         return  # No callbacks, no checks needed
@@ -111,7 +111,7 @@ def sanity_check_callback_args(args):
     # # Block callbacks for PL trainer with 2+ GPUs
     # elif args.trainer == 'PL' and gpu_count >= 2:
     #     raise NotImplementedError("Callbacks are not supported with PL trainer on multi-GPU setup.")
-    if args.swa:
+    if args.swa or args.swag or args.ema:
         if args.swa_start_epoch is None:
             args.swa_start_epoch = 1
         assert args.swa_start_epoch > 0, "SWA Start Epoch must be greater than 0"
