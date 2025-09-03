@@ -1,9 +1,13 @@
+import os
+import copy
+import json
 import torch
 import torch.nn as nn
 from torch._dynamo.eval_frame import OptimizedModule
 
-from dicee.models.ensemble import EnsembleKGE
 from .abstracts import AbstractCallback
+from dicee.models.ensemble import EnsembleKGE
+from .eval_static_funcs import evaluate_ensemble_link_prediction_performance
 
 class SWA(AbstractCallback):
     """Stochastic Weight Averaging callbacks."""
@@ -81,7 +85,7 @@ class SWA(AbstractCallback):
         if optimizers is not None:
             for optimizer in optimizers:
                 for param_group in optimizer.param_groups:
-                    param_group['lr'] *= factor
+                    param_group['lr'] = self.lr_init * factor
 
     def on_train_epoch_end(self, trainer, model):
         """Apply SWA averaging if conditions are met."""
@@ -206,7 +210,7 @@ class SWAG(AbstractCallback):
         var = torch.clamp(self.sq_mean - self.mean**2, min=self.var_clamp)
         return self.mean, var
 
-    def sample(self, base_model_fn, scale=0.5, device="cpu"):
+    def sample(self, base_model, scale=0.5):
         """Sample new model from SWAG posterior distribution.
         
         Math:
@@ -241,9 +245,8 @@ class SWAG(AbstractCallback):
             sample_vec += (D @ z) / denom
 
         # Build new model and load sampled weights
-        m = base_model_fn().to(device)
-        nn.utils.vector_to_parameters(sample_vec.to(device), m.parameters())
-        return m
+        nn.utils.vector_to_parameters(sample_vec, base_model.parameters())
+        return base_model
 
     def on_train_epoch_start(self, trainer, model):
         """Update LR schedule (same as SWA)."""
@@ -273,7 +276,7 @@ class SWAG(AbstractCallback):
             optimizers = []
         for optimizer in optimizers:
             for pg in optimizer.param_groups:
-                pg['lr'] *= factor
+                pg['lr'] = self.lr_init * factor
 
     def on_train_epoch_end(self, trainer, model):
         """Collect Gaussian stats at the end of epochs after swa_start."""
@@ -286,12 +289,25 @@ class SWAG(AbstractCallback):
 
     def on_fit_end(self, trainer, model):
         """Set model weights to the collected SWAG mean at the end of training."""
-        if self.mean is not None:
-            nn.utils.vector_to_parameters(
-                self.mean.to(next(model.parameters()).device),
-                model.parameters()
-            )
-        return model
+        
+        sample_models = []
+        for i in range(self.max_num_models):
+            model_copy = copy.deepcopy(model)
+            sample_models.append(self.sample(model_copy))
+
+        ensemble_eval_report = evaluate_ensemble_link_prediction_performance(
+            models=sample_models,
+            triples=trainer.dataset.test_set,
+            er_vocab=trainer.dataset.er_vocab.result(),
+            weights=None,
+            batch_size=trainer.num_training_batches,
+            weighted_averaging=False, normalize_scores= False)
+        
+        ensemble_eval_report_path = os.path.join(model.args["full_storage_path"], "swag_eval_report.json")
+        # Write the dictionary to the JSON file
+        with open(ensemble_eval_report_path, 'w', encoding='utf-8') as f:
+            json.dump(ensemble_eval_report, f, indent=4, ensure_ascii=False)
+        
 
 
 class EMA(AbstractCallback):
@@ -373,3 +389,127 @@ class EMA(AbstractCallback):
         """Replace main model with EMA model at the end of training."""
         if self.ema_model is not None:
             model.load_state_dict(self.ema_model.state_dict())
+
+class TWA(AbstractCallback):
+    """Train with Weight Averaging (TWA) using subspace projection + averaging."""
+
+    def __init__(self, twa_start_epoch: int, num_samples: int, bits: int = 8, 
+                 reg_lambda: float = 0.0, max_epochs: int = None):
+        """
+        Parameters
+        ----------
+        twa_start_epoch : int
+            Epoch to start TWA.
+        num_samples : int
+            Number of sampled weight snapshots to build projection subspace.
+        bits : int
+            Quantization bits for projection matrices.
+        reg_lambda : float
+            Regularization coefficient for β updates.
+        max_epochs : int
+            Total number of training epochs.
+        """
+        super().__init__()
+        self.twa_start_epoch = twa_start_epoch
+        self.num_samples = num_samples
+        self.bits = bits
+        self.reg_lambda = reg_lambda
+        self.max_epochs = max_epochs
+
+        # State variables
+        self.current_epoch = -1
+        self.twa_model = None
+        self.base_weights = None
+        self.P = None       # projection matrices
+        self.Pq = None      # quantized projection matrices
+        self.beta = None    # coefficients in subspace
+
+    def sample_weights(self, model):
+        """Collect sampled weights w_i from current model (flattened)."""
+        return torch.cat([p.data.view(-1).clone() for p in model.parameters()])
+
+    def build_projection(self, weight_samples):
+        """Build projection subspace from collected weight samples."""
+        # Stack (num_samples x dim)
+        W = torch.stack(weight_samples)   # shape: (N, D)
+        mean_w = W.mean(dim=0)            # base weight vector
+        centered = W - mean_w
+
+        # Do simple SVD to get orthonormal basis
+        U, S, Vt = torch.svd(centered)
+        P = Vt[:, :self.num_samples]      # projection matrix (D x N)
+        return mean_w, P
+
+    def quantize_projection(self, P):
+        """Quantize projection matrix P into B bits (toy version)."""
+        # Simple linear quantization to [-1, 1]
+        min_val, max_val = P.min(), P.max()
+        scale = (max_val - min_val) / (2**self.bits - 1)
+        Pq = torch.round((P - min_val) / scale) * scale + min_val
+        return Pq
+
+
+    def on_train_start(self, trainer, model):
+        """Before training: collect base samples."""
+        self.weight_samples = []
+        self.current_epoch = -1
+
+    def on_train_epoch_start(self, trainer, model):
+        """Track epoch."""
+        if hasattr(trainer, 'current_epoch'):
+            self.current_epoch = trainer.current_epoch
+        else:
+            self.current_epoch += 1
+
+    def on_train_epoch_end(self, trainer, model):
+        """Main TWA logic: build subspace and update in β space."""
+        # Step 1: collect weight samples before TWA starts
+        if self.current_epoch < self.twa_start_epoch:
+            self.weight_samples.append(self.sample_weights(model))
+            if len(self.weight_samples) > self.num_samples:
+                self.weight_samples.pop(0)
+            return
+
+        # Step 2: initialize TWA model and projection subspace on first use
+        if self.twa_model is None:
+            running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
+            
+            # Initialize copy
+            self.twa_model = type(running_model)(running_model.args)
+            self.twa_model.load_state_dict(running_model.state_dict())
+
+            # Build projection subspace
+            mean_w, P = self.build_projection(self.weight_samples)
+            self.base_weights = mean_w
+            self.P = P
+            self.Pq = self.quantize_projection(P)
+            self.beta = torch.zeros(P.size(1), device=mean_w.device)
+
+        # Step 3: gradient projection and β update
+        running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
+
+        grads = torch.cat([p.grad.view(-1) for p in running_model.parameters() if p.grad is not None])
+
+        # β update rule from Algorithm 1
+        with torch.no_grad():
+            self.beta = (1 - trainer.optimizer.param_groups[0]['lr'] * self.reg_lambda) * self.beta \
+                        - trainer.optimizer.param_groups[0]['lr'] * (self.Pq.t() @ grads)
+
+            # Reconstruct weights
+            new_w = self.base_weights + self.Pq @ self.beta
+
+            # Load back into model
+            idx = 0
+            for p in running_model.parameters():
+                numel = p.numel()
+                p.data.copy_(new_w[idx: idx+numel].view_as(p))
+                idx += numel
+
+        # Make TWA model available for evaluation
+        if model.args.get("eval_every_n_epochs", 0) > 0 or model.args.get("eval_at_epochs") is not None:
+            trainer.twa_model = self.twa_model
+
+    def on_fit_end(self, trainer, model):
+        """Replace with TWA model at the end."""
+        if self.twa_model is not None:
+            model.load_state_dict(self.twa_model.state_dict())
