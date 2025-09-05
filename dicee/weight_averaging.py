@@ -465,34 +465,51 @@ class TWA(AbstractCallback):
             self.current_epoch += 1
 
     def on_train_epoch_end(self, trainer, model):
-        """Main TWA logic: build subspace and update in β space."""
-        # Step 1: collect weight samples before TWA starts
-        if self.current_epoch < self.twa_start_epoch and self.current_epoch  % self.twa_c_epochs == 0 :
-            self.sample_weights(model)  # rolling buffer handled inside
+        """Main TWA logic: build subspace and update in β space.
+
+        # Math:
+        # TWA weight update:
+        # w_twa = mean_w + P * beta
+        # mean_w = (1/n) * sum_i w_i  (SWA baseline)
+        # beta <- (1 - eta * lambda) * beta - eta * P^T * g
+        # g = gradient of training loss w.r.t. full model weights
+        # eta = learning rate, lambda = ridge regularization
+        # P = orthonormal basis spanning sampled checkpoints {w_i} """
+
+        # Collect weight samples before TWA starts
+        # Only sample every twa_c_epochs for more diversity:
+        if self.current_epoch < self.twa_start_epoch and self.current_epoch % self.twa_c_epochs == 0:
+            self.sample_weights(model)
             return
 
-        # Step 2: initialize TWA model and projection subspace on first use
+        # Initialize TWA model and projection subspace on first use
         if self.twa_model is None:
             running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
-            # Initialize copy
+            # Copy model to twa_model
             self.twa_model = type(running_model)(running_model.args)
             self.twa_model.load_state_dict(running_model.state_dict())
-            # Build projection subspace
+
+            # Build projection subspace using checkpoints {w_1, ..., w_n}
             mean_w, P = self.build_projection(self.weight_samples)
             self.base_weights = mean_w
             self.P = P
+
+            # Initialize coefficients β in subspace
             self.beta = torch.zeros(P.size(1), device=mean_w.device)
 
-        # Step 3: gradient projection and β update
+        # Gradient projection and β update
         running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
+        # training gradients of running model
         grads = torch.cat([p.grad.view(-1) for p in running_model.parameters() if p.grad is not None])
         with torch.no_grad():
-            # β update rule
+            # Project gradient into subspace and apply ridge regularization
             self.beta = (1 - self.lr_init * self.reg_lambda) * self.beta \
                         - self.lr_init * (self.P.t() @ grads)
-            # Reconstruct weights
+
+            # Reconstruct full TWA weights
             new_w = self.base_weights + self.P @ self.beta
-            # Load back into model
+
+            # Load weights into TWA model
             idx = 0
             for p in self.twa_model.parameters():
                 numel = p.numel()
@@ -502,6 +519,7 @@ class TWA(AbstractCallback):
         # Make TWA model available for evaluation
         if model.args.get("eval_every_n_epochs", 0) > 0 or model.args.get("eval_at_epochs") is not None:
             trainer.twa_model = self.twa_model
+
 
     def on_fit_end(self, trainer, model):
         """Replace with TWA model at the end."""
