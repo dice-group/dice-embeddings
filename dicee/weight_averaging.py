@@ -393,17 +393,18 @@ class EMA(AbstractCallback):
 class TWA(AbstractCallback):
     """Train with Weight Averaging (TWA) using subspace projection + averaging."""
 
-    def __init__(self, twa_start_epoch: int, num_samples: int, bits: int = 8, 
-                 reg_lambda: float = 0.0, max_epochs: int = None):
+    def __init__(self, twa_start_epoch: int, lr_init: float,
+                 num_samples: int = 5, reg_lambda: float = 0.0,
+                 max_epochs: int = None):
         """
         Parameters
         ----------
         twa_start_epoch : int
             Epoch to start TWA.
+        lr_init : float
+            Learning rate used for β updates.
         num_samples : int
             Number of sampled weight snapshots to build projection subspace.
-        bits : int
-            Quantization bits for projection matrices.
         reg_lambda : float
             Regularization coefficient for β updates.
         max_epochs : int
@@ -412,47 +413,46 @@ class TWA(AbstractCallback):
         super().__init__()
         self.twa_start_epoch = twa_start_epoch
         self.num_samples = num_samples
-        self.bits = bits
         self.reg_lambda = reg_lambda
         self.max_epochs = max_epochs
+        self.lr_init = lr_init
 
         # State variables
         self.current_epoch = -1
+        self.weight_samples = []
         self.twa_model = None
         self.base_weights = None
-        self.P = None       # projection matrices
-        self.Pq = None      # quantized projection matrices
-        self.beta = None    # coefficients in subspace
+        self.P = None      # projection matrix
+        self.beta = None   # coefficients in subspace
 
     def sample_weights(self, model):
-        """Collect sampled weights w_i from current model (flattened)."""
-        return torch.cat([p.data.view(-1).clone() for p in model.parameters()])
+        """Collect sampled weights from the current model and maintain rolling buffer."""
+        w = torch.cat([p.data.view(-1).clone() for p in model.parameters()])
+        self.weight_samples.append(w)
+        if len(self.weight_samples) > self.num_samples:
+            self.weight_samples.pop(0)
+        return w  # return latest sample (sometimes useful)
 
-    def build_projection(self, weight_samples):
-        """Build projection subspace from collected weight samples."""
-        # Stack (num_samples x dim)
-        W = torch.stack(weight_samples)   # shape: (N, D)
-        mean_w = W.mean(dim=0)            # base weight vector
-        centered = W - mean_w
-
-        # Do simple SVD to get orthonormal basis
-        U, S, Vt = torch.svd(centered)
-        P = Vt[:, :self.num_samples]      # projection matrix (D x N)
+    def build_projection(self, weight_samples, k=None):
+        """
+        Build projection subspace from collected weight samples.
+        Args:
+            weight_samples: list of flat weight tensors [(D,), ...]
+            k: number of basis vectors to keep. Defaults to min(N, D).
+        Returns:
+            mean_w: (D,) base weight vector (average)
+            P: (D, k) projection matrix with top-k basis directions
+        """
+        W = torch.stack(weight_samples)     # (N, D)
+        mean_w = W.mean(dim=0)              # (D,)
+        centered = W - mean_w               # (N, D)
+        # SVD via torch.linalg.svd (safer)
+        U, S, Vh = torch.linalg.svd(centered, full_matrices=False)
+        V = Vh.T                            # (D, min(N,D))
+        if k is None:
+            k = min(W.size(0), V.size(1))   # by default use N basis vectors
+        P = V[:, :k]                        # (D, k)
         return mean_w, P
-
-    def quantize_projection(self, P):
-        """Quantize projection matrix P into B bits (toy version)."""
-        # Simple linear quantization to [-1, 1]
-        min_val, max_val = P.min(), P.max()
-        scale = (max_val - min_val) / (2**self.bits - 1)
-        Pq = torch.round((P - min_val) / scale) * scale + min_val
-        return Pq
-
-
-    def on_train_start(self, trainer, model):
-        """Before training: collect base samples."""
-        self.weight_samples = []
-        self.current_epoch = -1
 
     def on_train_epoch_start(self, trainer, model):
         """Track epoch."""
@@ -465,42 +465,33 @@ class TWA(AbstractCallback):
         """Main TWA logic: build subspace and update in β space."""
         # Step 1: collect weight samples before TWA starts
         if self.current_epoch < self.twa_start_epoch:
-            self.weight_samples.append(self.sample_weights(model))
-            if len(self.weight_samples) > self.num_samples:
-                self.weight_samples.pop(0)
+            self.sample_weights(model)  # rolling buffer handled inside
             return
 
         # Step 2: initialize TWA model and projection subspace on first use
         if self.twa_model is None:
             running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
-            
             # Initialize copy
             self.twa_model = type(running_model)(running_model.args)
             self.twa_model.load_state_dict(running_model.state_dict())
-
             # Build projection subspace
             mean_w, P = self.build_projection(self.weight_samples)
             self.base_weights = mean_w
             self.P = P
-            self.Pq = self.quantize_projection(P)
             self.beta = torch.zeros(P.size(1), device=mean_w.device)
 
         # Step 3: gradient projection and β update
         running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
-
         grads = torch.cat([p.grad.view(-1) for p in running_model.parameters() if p.grad is not None])
-
-        # β update rule from Algorithm 1
         with torch.no_grad():
-            self.beta = (1 - trainer.optimizer.param_groups[0]['lr'] * self.reg_lambda) * self.beta \
-                        - trainer.optimizer.param_groups[0]['lr'] * (self.Pq.t() @ grads)
-
+            # β update rule
+            self.beta = (1 - self.lr_init * self.reg_lambda) * self.beta \
+                        - self.lr_init * (self.P.t() @ grads)
             # Reconstruct weights
-            new_w = self.base_weights + self.Pq @ self.beta
-
+            new_w = self.base_weights + self.P @ self.beta
             # Load back into model
             idx = 0
-            for p in running_model.parameters():
+            for p in self.twa_model.parameters():
                 numel = p.numel()
                 p.data.copy_(new_w[idx: idx+numel].view_as(p))
                 idx += numel

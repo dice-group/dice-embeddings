@@ -131,7 +131,10 @@ def get_default_arguments(description=None):
                         help="Stochastic weight averaging - Gaussian")
     parser.add_argument("--ema",
                         action="store_true",
-                        help="Exponential Model Averaging (EMA)")
+                        help="Exponential Moving Average")
+    parser.add_argument("--twa",
+                        action="store_true",
+                        help="Trainable Weight Averaging")
     parser.add_argument("--auto_batch_finding",
                         action="store_true",
                         help="Find a batch size fitting in GPUs. Only available for TP trainer")
