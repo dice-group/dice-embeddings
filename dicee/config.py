@@ -136,7 +136,10 @@ class Namespace(argparse.Namespace):
         """Stochastic weight averaging - Gaussian"""
 
         self.ema: bool = False
-        """Exponential model averaging"""
+        """Exponential Moving Average"""
+
+        self.twa: bool = False
+        """Trainable weight averaging"""
 
         self.block_size: int = None
         "block size of LLM"
