@@ -307,6 +307,10 @@ class SWAG(AbstractCallback):
         # Write the dictionary to the JSON file
         with open(ensemble_eval_report_path, 'w', encoding='utf-8') as f:
             json.dump(ensemble_eval_report, f, indent=4, ensure_ascii=False)
+
+        if self.mean is not None:
+            nn.utils.vector_to_parameters(self.mean.to(next(model.parameters()).device),
+                                          model.parameters())
         
 
 
@@ -395,7 +399,7 @@ class TWA(AbstractCallback):
 
     def __init__(self, twa_start_epoch: int, lr_init: float,
                  num_samples: int = 5, reg_lambda: float = 0.0,
-                 max_epochs: int = None, twa_c_epochs :int = 5):
+                 max_epochs: int = None):
         """
         Parameters
         ----------
@@ -409,8 +413,6 @@ class TWA(AbstractCallback):
             Regularization coefficient for β updates.
         max_epochs : int
             Total number of training epochs.
-        twa_c_epochs : int
-            Spacing (in epochs) between consecutive weight samples for TWA.
         """
         super().__init__()
         self.twa_start_epoch = twa_start_epoch
@@ -418,7 +420,6 @@ class TWA(AbstractCallback):
         self.reg_lambda = reg_lambda
         self.max_epochs = max_epochs
         self.lr_init = lr_init
-        self.twa_c_epochs = twa_c_epochs
 
         # State variables
         self.current_epoch = -1
@@ -478,7 +479,7 @@ class TWA(AbstractCallback):
 
         # Collect weight samples before TWA starts
         # Only sample every twa_c_epochs for more diversity:
-        if self.current_epoch < self.twa_start_epoch and self.current_epoch % self.twa_c_epochs == 0:
+        if self.current_epoch < self.twa_start_epoch:
             self.sample_weights(model)
             return
 
