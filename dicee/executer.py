@@ -12,6 +12,8 @@ from .static_preprocess_funcs import preprocesses_input_args
 from .trainer import DICE_Trainer
 from .static_funcs import timeit, read_or_load_kg, load_json, store, create_experiment_folder
 import numpy as np
+import torch
+import lightning as pl
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
@@ -97,6 +99,21 @@ class Execute:
                   model_name='model', # + str(datetime.datetime.now()),
                   full_storage_path=self.args.full_storage_path,
                   save_embeddings_as_csv=self.args.save_embeddings_as_csv)
+
+
+
+        engine = self.trainer.trainer
+
+        if isinstance(engine, pl.Trainer):
+            if engine.optimizers:
+                opt = engine.optimizers[0]
+                print("optimizer:", opt)
+                engine.save_checkpoint(f"{self.args.full_storage_path}/last.ckpt")
+
+        else:
+            opt = getattr(engine, "optimizer", None)
+            print("optimizer:", opt)
+
 
         self.report['path_experiment_folder'] = self.args.full_storage_path
         self.report['num_entities'] = self.args.num_entities

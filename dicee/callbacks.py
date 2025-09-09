@@ -90,6 +90,7 @@ class KGESaveCallback(AbstractCallback):
             save_checkpoint_model(model,
                                   path=self.path + f'/model_at_{str(self.epoch_counter)}_'
                                                    f'epoch_{str(str(datetime.datetime.now()))}.pt')
+
         self.epoch_counter += 1
 
 

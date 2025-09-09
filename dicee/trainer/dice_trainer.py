@@ -3,7 +3,7 @@ import polars
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb, GradientNormLogger
+from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb #, GradientNormLogger
 from dicee.dataset_classes import construct_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
@@ -69,7 +69,7 @@ def initialize_trainer(args, callbacks)->TorchTrainer | TensorParallel | TorchDD
         """
         # @TODO: callbacks need to be ad
 
-        os.makedirs("param_logs/", exist_ok=True)
+        #os.makedirs("param_logs/", exist_ok=True)
 
         #Paramlogger = args.Paramlogger
         #if Paramlogger is "CSVLogger":
@@ -120,8 +120,8 @@ def get_callbacks(args):
             callbacks.append(KronE())
         elif k == 'Eval':
             callbacks.append(Eval(path=args.full_storage_path, epoch_ratio=v.get('epoch_ratio')))
-        elif k == 'GradientNormLogger':
-            callbacks.append(GradientNormLogger())
+        #elif k == 'GradientNormLogger':
+        #    callbacks.append(GradientNormLogger())
         else:
             raise RuntimeError(f'Incorrect callback:{k}')
     return callbacks
@@ -162,6 +162,7 @@ class DICE_Trainer:
               f' # of CPUs for dataloader:{self.args.num_core}')
         for i in range(torch.cuda.device_count()):
             print(torch.cuda.get_device_name(i))
+
 
     def continual_start(self,knowledge_graph):
         """
@@ -300,9 +301,9 @@ class DICE_Trainer:
 
                 model = self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
                 assert isinstance(model,EnsembleKGE)
+
             else:
                 self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
-
 
             return model, form_of_labelling
         else:

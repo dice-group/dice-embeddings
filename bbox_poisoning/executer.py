@@ -1,6 +1,8 @@
 from dicee.executer import Execute
 from dicee.scripts.run import get_default_arguments
+import os
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 def run_dicee_eval(
     dataset_folder,
@@ -10,6 +12,7 @@ def run_dicee_eval(
     learning_rate,
     embedding_dim,
     loss_function,
+    seed,
     path_to_store_single_run,
     scoring_technique="KvsAll",
     optim="Adam",
@@ -26,7 +29,8 @@ def run_dicee_eval(
         "--scoring_technique", "KvsAll",
         "--optim", "Adam",
         "--save_embeddings_as_csv",
-        "--path_to_store_single_run", path_to_store_single_run
+        "--path_to_store_single_run", path_to_store_single_run,
+        "--random_seed", str(seed),
     ])
     result = Execute(args=args).start()
 

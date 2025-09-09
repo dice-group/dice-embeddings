@@ -1,0 +1,11 @@
+{
+  "status": "ok",
+  "target_len": 2,
+  "lengths": {
+    "random": 2,
+    "PageRank": 2,
+    "Harmonic closeness": 2
+  },
+  "mismatched": {},
+  "timestamp": "2025-08-31T12:22:24"
+}

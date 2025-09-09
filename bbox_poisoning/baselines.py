@@ -3,8 +3,6 @@ from collections import defaultdict
 import random
 import torch
 
-
-
 def poison_random(triples, k, corruption_type, seed):
 
     random.seed(seed)
