@@ -8,6 +8,7 @@ from dicee.dataset_classes import construct_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
 from .model_parallelism import TensorParallel
+from .memory_optimization import MemoryOptimizedTrainer
 from ..models.ensemble import EnsembleKGE
 from ..static_funcs import timeit
 import os
@@ -33,6 +34,10 @@ def initialize_trainer(args, callbacks)->TorchTrainer | TensorParallel | TorchDD
         assert torch.cuda.is_available()
         print('Initializing TorchDDPTrainer GPU', end='\t')
         trainer = TorchDDPTrainer(args, callbacks=callbacks)
+    elif args.trainer == 'MO':
+        assert torch.cuda.is_available()
+        print('Initializing MemoryOptimizedTrainer...', end='\t')
+        trainer = MemoryOptimizedTrainer(args, callbacks=callbacks)
     elif args.trainer == 'PL':
         print('Initializing Pytorch-lightning Trainer', end='\t')
         kwargs = vars(args)
