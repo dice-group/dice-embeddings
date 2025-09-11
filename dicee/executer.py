@@ -76,10 +76,16 @@ class Execute:
         if self.is_continual_training is False:
             # Create a single directory containing KGE and all related data
             if self.args.path_to_store_single_run is not None:
+                reuse_existing = getattr(self.args, "reuse_existing_run_dir", False)
                 if os.path.exists(self.args.path_to_store_single_run):
-                    print(f"Deleting the existing directory of {self.args.path_to_store_single_run}")
-                    os.system(f'rm -rf {self.args.path_to_store_single_run}')
-                os.makedirs(self.args.path_to_store_single_run, exist_ok=False)
+                    if not reuse_existing:
+                        print(f"Deleting the existing directory of {self.args.path_to_store_single_run}")
+                        
+                        os.makedirs(self.args.path_to_store_single_run, exist_ok=False)
+                    else:
+                        print(f"Reusing the existing directory of {self.args.path_to_store_single_run}")
+                else:
+                    os.makedirs(self.args.path_to_store_single_run, exist_ok=False)
                 self.args.full_storage_path = self.args.path_to_store_single_run
             else:
                 self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
