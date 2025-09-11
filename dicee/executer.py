@@ -80,7 +80,8 @@ class Execute:
                 if os.path.exists(self.args.path_to_store_single_run):
                     if not reuse_existing:
                         print(f"Deleting the existing directory of {self.args.path_to_store_single_run}")
-                        
+                        import shutil
+                        shutil.rmtree(self.args.path_to_store_single_run)
                         os.makedirs(self.args.path_to_store_single_run, exist_ok=False)
                     else:
                         print(f"Reusing the existing directory of {self.args.path_to_store_single_run}")
