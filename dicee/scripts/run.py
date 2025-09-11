@@ -29,6 +29,9 @@ def get_default_arguments(description=None):
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
     parser.add_argument("--separator", type=str, default="\s+",
                         help='Pandas \s+, t for \t polars works with the last two.')
+    parser.add_argument("--reuse_existing_run_dir", action="store_true",
+                        help="If set, reuse the existing path_to_store_single_run directory if it exists. "
+                             "If not set, the directory will be deleted and recreated if it exists.")
     # Model related arguments
     parser.add_argument("--model", type=str,
                         default="Keci",
