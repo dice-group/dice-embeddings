@@ -100,6 +100,8 @@ torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_bac
 ```
 On large knowledge graphs, this configurations should be used.
 
+Note: When training with multi-GPU or Distributed Data Parallel (DDP) settings, you must provide the `--path_to_store_single_run` argument to specify where to store the results of a single training run. This ensures that all processes write to the correct directory and prevents conflicts.
+
 where the data is in the following form
 ```bash
 $ head -3 KGs/UMLS/train.txt 
