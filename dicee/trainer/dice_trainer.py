@@ -97,17 +97,17 @@ def get_callbacks(args):
     if args.swa:
         print(f"Starting Stochastic Weight Averaging (SWA) at Epoch: {args.swa_start_epoch}")
         callbacks.append(SWA(swa_start_epoch=args.swa_start_epoch, lr_init=args.lr,
-                            max_epochs=args.num_epochs))
+                            max_epochs=args.num_epochs, swa_c_epochs= args.swa_c_epochs))
     elif args.swag:
         print(f"Starting Stochastic Weight Averaging-Gaussian (SWA-G) at Epoch: {args.swa_start_epoch}")
         callbacks.append(SWAG(swa_start_epoch=args.swa_start_epoch, lr_init=args.lr,
-                            max_epochs=args.num_epochs))
+                            max_epochs=args.num_epochs, swa_c_epochs= args.swa_c_epochs))
     elif args.ema:
         print(f"Starting Exponential Moving Average (EMA) at Epoch: {args.swa_start_epoch}")
-        callbacks.append(EMA(ema_start_epoch=args.swa_start_epoch, max_epochs=args.num_epochs))
+        callbacks.append(EMA(ema_start_epoch=args.swa_start_epoch, max_epochs=args.num_epochs, ema_c_epochs= args.swa_c_epochs))
     elif args.twa:
         print(f"Starting Trainable Weight Averaging at Epoch: {args.swa_start_epoch}")
-        callbacks.append(TWA(twa_start_epoch=args.swa_start_epoch,lr_init=args.lr, max_epochs=args.num_epochs))
+        callbacks.append(TWA(twa_start_epoch=args.swa_start_epoch,lr_init=args.lr, max_epochs=args.num_epochs, twa_c_epochs= args.swa_c_epochs))
     elif args.adaptive_swa:
         callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
     elif args.adaptive_lr:

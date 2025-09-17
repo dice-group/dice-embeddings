@@ -149,6 +149,8 @@ def get_default_arguments(description=None):
                              'Available schedulers: cca, mmcclr, deferred_cca, deferred_mmcclr')
     parser.add_argument("--swa_start_epoch", type=int, default=None,
                         help='Epoch at which to start applying stochastic weight averaging.')
+    parser.add_argument("--swa_c_epochs", type=int, default=1,
+                        help='Number of epochs to average over for SWA, SWAG, EMA, TWA.')
     parser.add_argument('--eval_every_n_epochs', type=int, default=0,
                         help='Evaluate model every n epochs. If 0, no evaluation is applied.')
     parser.add_argument('--save_every_n_epochs', action='store_true',

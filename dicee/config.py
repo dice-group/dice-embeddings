@@ -168,6 +168,9 @@ class Namespace(argparse.Namespace):
         self.swa_start_epoch: int = None
         """Epoch at which to start applying stochastic weight averaging."""
 
+        self.swa_c_epochs: int = 1
+        """Number of epochs to average over for SWA, SWAG, EMA, TWA."""
+
 
     def __iter__(self):
         # Iterate

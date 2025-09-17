@@ -317,7 +317,8 @@ class SWAG(AbstractCallback):
 class EMA(AbstractCallback):
     """Exponential Moving Average (EMA) callback."""
 
-    def __init__(self, ema_start_epoch: int, decay: float = 0.999, max_epochs: int = None):
+    def __init__(self, ema_start_epoch: int, decay: float = 0.999,
+                 max_epochs: int = None, ema_c_epochs: int = 1):
         """
         Parameters
         ----------
@@ -334,6 +335,7 @@ class EMA(AbstractCallback):
         self.ema_start_epoch = ema_start_epoch
         self.decay = decay
         self.max_epochs = max_epochs
+        self.ema_c_epochs = ema_c_epochs
 
         self.ema_model = None
         self.current_epoch = -1
@@ -362,28 +364,28 @@ class EMA(AbstractCallback):
 
     def on_train_epoch_end(self, trainer, model):
         """Update EMA if past start epoch."""
-        if self.current_epoch < self.ema_start_epoch:
-            return
+        if self.current_epoch >= self.ema_start_epoch and \
+           (self.current_epoch - self.ema_start_epoch) % self.ema_c_epochs == 0:
 
-        running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
+            running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
 
-        if self.ema_model is None:
-            # Initialize EMA model as a copy of running model
+            if self.ema_model is None:
+                # Initialize EMA model as a copy of running model
+                if isinstance(running_model, EnsembleKGE):
+                    self.ema_model = type(running_model)(running_model.models)
+                    self.ema_model.load_state_dict(running_model.state_dict())
+                else:
+                    self.ema_model = type(running_model)(running_model.args)
+                    self.ema_model.load_state_dict(running_model.state_dict())
+
+            # Always use fixed decay since we start late
+            decay_t = self.decay
+
             if isinstance(running_model, EnsembleKGE):
-                self.ema_model = type(running_model)(running_model.models)
-                self.ema_model.load_state_dict(running_model.state_dict())
+                for submodel, ema_submodel in zip(running_model.models, self.ema_model.models):
+                    self.ema_update(ema_submodel, submodel, decay_t)
             else:
-                self.ema_model = type(running_model)(running_model.args)
-                self.ema_model.load_state_dict(running_model.state_dict())
-
-        # Always use fixed decay since we start late
-        decay_t = self.decay
-
-        if isinstance(running_model, EnsembleKGE):
-            for submodel, ema_submodel in zip(running_model.models, self.ema_model.models):
-                self.ema_update(ema_submodel, submodel, decay_t)
-        else:
-            self.ema_update(self.ema_model, running_model, decay_t)
+                self.ema_update(self.ema_model, running_model, decay_t)
 
         # Make EMA model available for evaluation
         if model.args.get("eval_every_n_epochs", 0) > 0 or model.args.get("eval_at_epochs") is not None:
@@ -399,7 +401,7 @@ class TWA(AbstractCallback):
 
     def __init__(self, twa_start_epoch: int, lr_init: float,
                  num_samples: int = 5, reg_lambda: float = 0.0,
-                 max_epochs: int = None):
+                 max_epochs: int = None, twa_c_epochs: int = 1):
         """
         Parameters
         ----------
@@ -420,6 +422,7 @@ class TWA(AbstractCallback):
         self.reg_lambda = reg_lambda
         self.max_epochs = max_epochs
         self.lr_init = lr_init
+        self.twa_c_epochs = twa_c_epochs  # always update every epoch after start
 
         # State variables
         self.current_epoch = -1
@@ -482,40 +485,43 @@ class TWA(AbstractCallback):
         if self.current_epoch < self.twa_start_epoch:
             self.sample_weights(model)
             return
+        
+        if self.current_epoch >= self.twa_start_epoch and \
+        (self.current_epoch - self.twa_start_epoch) % self.twa_c_epochs == 0:
 
-        # Initialize TWA model and projection subspace on first use
-        if self.twa_model is None:
+            # Initialize TWA model and projection subspace on first use
+            if self.twa_model is None:
+                running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
+                # Copy model to twa_model
+                self.twa_model = type(running_model)(running_model.args)
+                self.twa_model.load_state_dict(running_model.state_dict())
+
+                # Build projection subspace using checkpoints {w_1, ..., w_n}
+                mean_w, P = self.build_projection(self.weight_samples)
+                self.base_weights = mean_w
+                self.P = P
+
+                # Initialize coefficients β in subspace
+                self.beta = torch.zeros(P.size(1), device=mean_w.device)
+
+            # Gradient projection and β update
             running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
-            # Copy model to twa_model
-            self.twa_model = type(running_model)(running_model.args)
-            self.twa_model.load_state_dict(running_model.state_dict())
+            # training gradients of running model
+            grads = torch.cat([p.grad.view(-1) for p in running_model.parameters() if p.grad is not None])
+            with torch.no_grad():
+                # Project gradient into subspace and apply ridge regularization
+                self.beta = (1 - self.lr_init * self.reg_lambda) * self.beta \
+                            - self.lr_init * (self.P.t() @ grads)
 
-            # Build projection subspace using checkpoints {w_1, ..., w_n}
-            mean_w, P = self.build_projection(self.weight_samples)
-            self.base_weights = mean_w
-            self.P = P
+                # Reconstruct full TWA weights
+                new_w = self.base_weights + self.P @ self.beta
 
-            # Initialize coefficients β in subspace
-            self.beta = torch.zeros(P.size(1), device=mean_w.device)
-
-        # Gradient projection and β update
-        running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
-        # training gradients of running model
-        grads = torch.cat([p.grad.view(-1) for p in running_model.parameters() if p.grad is not None])
-        with torch.no_grad():
-            # Project gradient into subspace and apply ridge regularization
-            self.beta = (1 - self.lr_init * self.reg_lambda) * self.beta \
-                        - self.lr_init * (self.P.t() @ grads)
-
-            # Reconstruct full TWA weights
-            new_w = self.base_weights + self.P @ self.beta
-
-            # Load weights into TWA model
-            idx = 0
-            for p in self.twa_model.parameters():
-                numel = p.numel()
-                p.data.copy_(new_w[idx: idx+numel].view_as(p))
-                idx += numel
+                # Load weights into TWA model
+                idx = 0
+                for p in self.twa_model.parameters():
+                    numel = p.numel()
+                    p.data.copy_(new_w[idx: idx+numel].view_as(p))
+                    idx += numel
 
         # Make TWA model available for evaluation
         if model.args.get("eval_every_n_epochs", 0) > 0 or model.args.get("eval_at_epochs") is not None:
