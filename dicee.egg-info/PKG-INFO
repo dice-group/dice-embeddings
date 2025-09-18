@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: dicee
 Version: 0.1.5
 Summary: Dice embedding is an hardware-agnostic framework for large-scale knowledge graph embedding applications
@@ -50,6 +50,17 @@ Requires-Dist: pytest>=7.2.2; extra == "dev"
 Requires-Dist: polars==1.9.0; extra == "dev"
 Requires-Dist: pyarrow>=11.0.0; extra == "dev"
 Requires-Dist: scikit-learn>=1.2.2; extra == "dev"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: license-file
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
 
 [![Downloads](https://static.pepy.tech/badge/dicee)](https://pepy.tech/project/dicee)
 [![Downloads](https://img.shields.io/pypi/dm/dicee)](https://pypi.org/project/dicee/)

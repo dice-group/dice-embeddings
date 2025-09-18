@@ -1,0 +1,12 @@
+{
+  "status": "ok",
+  "lengths": {
+    "Random": 2,
+    "Cent+Loss": 2,
+    "GlobalArgmax": 2,
+    "GradInfluence": 2,
+    "Simple Closeness": 2,
+    "Simple Betweenness": 2
+  },
+  "timestamp": "2025-09-18T15:10:23"
+}

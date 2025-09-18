@@ -28,6 +28,8 @@ dicee.egg-info/entry_points.txt
 dicee.egg-info/requires.txt
 dicee.egg-info/top_level.txt
 dicee/figures/deploy_qmult_family.png
+dicee/losses/__init__.py
+dicee/losses/custom_losses.py
 dicee/models/__init__.py
 dicee/models/adopt.py
 dicee/models/base_model.py
@@ -48,6 +50,7 @@ dicee/read_preprocess_save_load_kg/read_from_disk.py
 dicee/read_preprocess_save_load_kg/save_load_disk.py
 dicee/read_preprocess_save_load_kg/util.py
 dicee/scripts/__init__.py
+dicee/scripts/bayesian_optimization.py
 dicee/scripts/index_serve.py
 dicee/scripts/run.py
 dicee/trainer/__init__.py

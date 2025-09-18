@@ -1,7 +1,0 @@
-{
-  "triples_after_random_poisoning": 5372,
-  "add_pr_store": 1,
-  "add_hc_store": 1,
-  "add_pr_topk_store": 1,
-  "add_hc_topk_store": 1
-}

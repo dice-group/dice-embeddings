@@ -1,44 +1,65 @@
-import os
-from pathlib import Path
 import matplotlib.pyplot as plt
-from PIL import Image
+import matplotlib.image as mpimg
+from pathlib import Path
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 
-input_folder = Path("../vis_new")
+fig_dir = Path("../vis_sep16/del")
+files = sorted(fig_dir.glob("*.png"))
 
-images_by_type = {"add": [], "del": []}
+data = []
+for f in files:
+    parts = f.stem.split("_")
+    if len(parts) >= 2:
+        dataset = parts[0]
+        model = parts[1]
+        data.append((dataset, model, f))
 
-for file in input_folder.glob("*.png"):
-    parts = file.stem.split("@")
-    if len(parts) != 3:
-        continue
-    db, model, edit_type = parts
-    if edit_type in images_by_type:
-        images_by_type[edit_type].append((db, model, file))
+datasets = ["UMLS", "KINSHIP", "NELL-995-h100"]
+models = ["DistMult", "ComplEx", "TransE", "TransH", "MuRE", "RotatE", "Keci", "DeCaL"]
 
-for etype in images_by_type:
-    images_by_type[etype].sort(key=lambda x: (x[0], x[1]))
+target_w, target_h = 600, 500
 
-def save_image_grid(image_infos, out_file, cols=8):
-    if not image_infos:
-        return
-    imgs = [Image.open(f) for _, _, f in image_infos]
-    n = len(imgs)
-    rows = (n + cols - 1) // cols
+label_space_left = 150
+label_space_top = 100
 
-    fig, axes = plt.subplots(rows, cols, figsize=(3*cols, 3*rows))
-    axes = axes.flatten()
+canvas_w = label_space_left + target_w * len(models)
+canvas_h = label_space_top + target_h * len(datasets)
 
-    for ax, (db, model, f), img in zip(axes, image_infos, imgs):
-        ax.imshow(img)
-        ax.set_title(f"{db}\n{model}", fontsize=9)
-        ax.axis("off")
+big_img = Image.new("RGB", (canvas_w, canvas_h), "white")
+draw = ImageDraw.Draw(big_img)
 
-    for ax in axes[len(imgs):]:
-        ax.axis("off")
+try:
+    font = ImageFont.truetype("DejaVuSans-Bold.ttf", 32)
+except:
+    font = ImageFont.load_default()
 
-    plt.tight_layout()
-    plt.savefig(out_file, dpi=300, bbox_inches="tight")
-    plt.close(fig)
+# Paste images
+for d, dataset in enumerate(datasets):
+    for m, model in enumerate(models):
+        match = [f for ds, mo, f in data if ds == dataset and mo == model]
+        if match:
+            img = Image.open(match[0]).convert("RGB")
+            img = img.resize((target_w, target_h), Image.LANCZOS)
+            x0 = label_space_left + m * target_w
+            y0 = label_space_top + d * target_h
+            big_img.paste(img, (x0, y0))
 
-save_image_grid(images_by_type["add"], "all_add_new.png")
-save_image_grid(images_by_type["del"], "all_del_new.png")
+# Model names (top, horizontal)
+for m, model in enumerate(models):
+    x = label_space_left + m * target_w + target_w // 2
+    y = label_space_top // 2
+    draw.text((x, y), model, font=font, fill="black", anchor="mm")
+
+# Dataset names (left, vertical)
+for d, dataset in enumerate(datasets):
+    y_center = label_space_top + d * target_h + target_h // 2
+    # Make a generous canvas for the text
+    txt_img = Image.new("RGBA", (target_h, 200), (255, 255, 255, 0))
+    txt_draw = ImageDraw.Draw(txt_img)
+    txt_draw.text((target_h // 2, 100), dataset, font=font, fill="black", anchor="mm")
+    rotated = txt_img.rotate(90, expand=1, fillcolor="white")
+    # Paste next to row
+    big_img.paste(rotated, (40, y_center - rotated.size[1] // 2), rotated)
+
+big_img.save("del_without_defense.png", dpi=(400, 400))

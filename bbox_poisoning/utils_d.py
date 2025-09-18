@@ -122,6 +122,7 @@ def remove_by_edge_betweenness(triples, budget, approx_k=None):
     top_idx = [i for (_, _, _, _, i) in scored[:min(budget, len(scored))]]
     return [triples[i] for i in top_idx]
 
+
 def remove_by_endpoint_closeness(triples, budget, undirected=False):
     Gd = build_digraph(triples)
     G = Gd.to_undirected() if undirected else Gd

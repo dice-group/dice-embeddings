@@ -465,19 +465,7 @@ def add_corrupted_by_closeness(triples, budget, mode="both", top_k_nodes=100, un
         triples, node_cent, budget, mode=mode, top_k_nodes=top_k_nodes, avoid_existing_edge=avoid_existing_edge
     )
 
-def add_corrupted_by_degree(triples, budget, mode="both", top_k_nodes=100, undirected=True, avoid_existing_edge=True):
-    Gd = build_digraph(triples)
-    G = Gd.to_undirected() if undirected else Gd
-    deg = dict(G.degree())                     # raw degree
-    n = max(len(G), 1)
-    node_cent = {u: d / max(n-1, 1) for u, d in deg.items()}
-    return _propose_corruptions(triples, node_cent, budget, mode, top_k_nodes, avoid_existing_edge)
 
-def add_corrupted_by_hits(triples, budget, mode="both", top_k_nodes=100, avoid_existing_edge=True, max_iter=100):
-    G = build_digraph(triples)
-    hubs, auth = nx.hits(G, max_iter=max_iter, normalized=True)
-    node_cent = {u: 0.5*(hubs.get(u,0.0) + auth.get(u,0.0)) for u in G.nodes()}
-    return _propose_corruptions(triples, node_cent, budget, mode, top_k_nodes, avoid_existing_edge)
 
 def save_triples(triple_list, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
