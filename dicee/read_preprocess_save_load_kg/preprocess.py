@@ -452,7 +452,7 @@ class PreprocessKG:
         # ordered_list = pd.unique(df_str_kg[['subject', 'object']].values.ravel('K')).tolist()
         # self.kg.entity_to_idx = {k: i for i, k in enumerate(ordered_list)}
         # Instead of dict, storing it in a pandas dataframe
-        self.kg.entity_to_idx=pd.concat((df_str_kg['subject'],df_str_kg['object'])).to_frame("entity").drop_duplicates(keep="first",ignore_index=True)
+        self.kg.entity_to_idx = pd.concat((df_str_kg['subject'],df_str_kg['object'])).to_frame("entity").drop_duplicates(keep="first",ignore_index=True)
         # 5. Create a bijection mapping  from relations to integer indexes.
         # ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K')).tolist()
         # self.kg.relation_to_idx = {k: i for i, k in enumerate(ordered_list)}
