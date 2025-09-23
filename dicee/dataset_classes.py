@@ -260,6 +260,7 @@ class OnevsAllDataset(torch.utils.data.Dataset):
         triple= torch.from_numpy(self.train_data[idx].copy()).long()
         y_vec[triple[2]] = 1
         return triple[:2], y_vec
+        
 class KvsAll(torch.utils.data.Dataset):
     """ Creates a dataset for KvsAll training by inheriting from torch.utils.data.Dataset.
     Let D denote a dataset for KvsAll training and be defined as D:= {(x,y)_i}_i ^N, where
@@ -680,7 +681,7 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
             neg_sample_ratio)  # 0 Implies that we do not add negative samples. This is needed during testing and validation
         #self.train_set = torch.from_numpy(train_set)
         self.train_set = train_set
-        assert num_entities >= max(self.train_set[:, 0]) and num_entities >= max(self.train_set[:, 2])
+        assert num_entities >= max(self.train_set[:, 0]) and num_entities >= max(self.train_set[:, 2]), f"num_entities: {num_entities}, max(self.train_set[:, 0]): {max(self.train_set[:, 0])}, max(self.train_set[:, 2]): {max(self.train_set[:, 2])}"
         self.length = len(self.train_set)
         self.num_entities = torch.tensor(num_entities)
         self.num_relations = torch.tensor(num_relations)

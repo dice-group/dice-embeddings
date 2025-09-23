@@ -30,6 +30,10 @@ def validate_knowledge_graph(args):
         # Set None.
         args.dataset_dir = None
         args.path_single_kg = None
+        # Set backend to polars
+        if args.backend != "polars":
+            args.backend = "polars"
+            print("\n***Set backend to polars for sparql endpoints\n")
 
     elif args.path_single_kg is not None:
         if args.sparql_endpoint is not None or args.path_single_kg is not None:
