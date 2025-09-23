@@ -18,7 +18,8 @@ Functions
    dicee.read_preprocess_save_load_kg.util.read_from_disk
    dicee.read_preprocess_save_load_kg.util.count_triples
    dicee.read_preprocess_save_load_kg.util.fetch_worker
-   dicee.read_preprocess_save_load_kg.util.read_from_triple_store
+   dicee.read_preprocess_save_load_kg.util.read_from_triple_store_with_polars
+   dicee.read_preprocess_save_load_kg.util.read_from_triple_store_with_pandas
    dicee.read_preprocess_save_load_kg.util.get_er_vocab
    dicee.read_preprocess_save_load_kg.util.get_re_vocab
    dicee.read_preprocess_save_load_kg.util.get_ee_vocab
@@ -138,9 +139,14 @@ Module Contents
    Worker process: fetch assigned chunks and save to disk with per-worker tqdm.
 
 
-.. py:function:: read_from_triple_store(endpoint: str, chunk_size: int = 500000, output_dir: str = 'triples_parquet')
+.. py:function:: read_from_triple_store_with_polars(endpoint: str, chunk_size: int = 500000, output_dir: str = 'triples_parquet')
 
    Main function to read all triples in parallel, save as Parquet, and load into Polars dataframe.
+
+
+.. py:function:: read_from_triple_store_with_pandas(endpoint: str = None)
+
+   Read triples from triple store into pandas dataframe
 
 
 .. py:function:: get_er_vocab(data, file_path: str = None)
