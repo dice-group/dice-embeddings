@@ -297,7 +297,7 @@ def fetch_worker(endpoint: str, offsets: list[int], chunk_size: int, output_dir:
         df.to_parquet(filename, index=False)
 
 
-def read_from_triple_store(endpoint: str, chunk_size: int = 500000, output_dir: str = "triples_parquet"):
+def read_from_triple_store_with_polars(endpoint: str, chunk_size: int = 500000, output_dir: str = "triples_parquet"):
     """Main function to read all triples in parallel, save as Parquet, and load into Polars dataframe."""
     if os.path.exists(output_dir):
         files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith(".parquet")]
@@ -338,6 +338,18 @@ def read_from_triple_store(endpoint: str, chunk_size: int = 500000, output_dir: 
     parquet_files = sorted([os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith(".parquet")])
     df_polars = pl.read_parquet(parquet_files)
     return df_polars
+
+def read_from_triple_store_with_pandas(endpoint: str = None):
+    """ Read triples from triple store into pandas dataframe """
+    assert endpoint is not None
+    assert isinstance(endpoint, str)
+    query = """SELECT ?subject ?predicate ?object WHERE {  ?subject ?predicate ?object}"""
+    response = requests.post(endpoint, data={'query': query})
+    assert response.ok
+    # Generator
+    triples = ([triple['subject']['value'], triple['predicate']['value'], triple['object']['value']] for triple in
+               response.json()['results']['bindings'])
+    return pd.DataFrame(data=triples, index=None, columns=["subject", "relation", "object"], dtype=str)
 
 
 def get_er_vocab(data, file_path: str = None):
