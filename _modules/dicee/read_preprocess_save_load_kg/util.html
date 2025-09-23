@@ -100,6 +100,9 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">psutil</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">polars</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">multiprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Process</span><span class="p">,</span> <span class="n">cpu_count</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
 
 <div class="viewcode-block" id="polars_dataframe_indexer">
 <a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.polars_dataframe_indexer">[docs]</a>
@@ -358,19 +361,102 @@
 
 
 
+<div class="viewcode-block" id="count_triples">
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.count_triples">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">count_triples</span><span class="p">(</span><span class="n">endpoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the total number of triples in the triple store.&quot;&quot;&quot;</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/x-www-form-urlencoded&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Accept&quot;</span><span class="p">:</span> <span class="s2">&quot;application/sparql-results+json&quot;</span>
+    <span class="p">}</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    SELECT (COUNT(*) AS ?count)</span>
+<span class="s2">    WHERE { ?s ?p ?o . }</span>
+<span class="s2">    &quot;&quot;&quot;</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">},</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+    <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;results&quot;</span><span class="p">][</span><span class="s2">&quot;bindings&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;count&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">count</span></div>
+
+
+
+<div class="viewcode-block" id="fetch_worker">
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.fetch_worker">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fetch_worker</span><span class="p">(</span><span class="n">endpoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">offsets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">worker_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Worker process: fetch assigned chunks and save to disk with per-worker tqdm.&quot;&quot;&quot;</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">offset</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">offsets</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Read Triple Store. Worker </span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">worker_id</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Content-Type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/x-www-form-urlencoded&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Accept&quot;</span><span class="p">:</span> <span class="s2">&quot;application/sparql-results+json&quot;</span>
+        <span class="p">}</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        SELECT ?subject ?predicate ?object</span>
+<span class="s2">        WHERE </span><span class="se">{{</span>
+<span class="s2">            ?subject ?predicate ?object .</span>
+<span class="s2">        </span><span class="se">}}</span>
+<span class="s2">        LIMIT </span><span class="si">{</span><span class="n">chunk_size</span><span class="si">}</span><span class="s2"> OFFSET </span><span class="si">{</span><span class="n">offset</span><span class="si">}</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;query&quot;</span><span class="p">:</span> <span class="n">query</span><span class="p">},</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Worker </span><span class="si">{</span><span class="n">worker_id</span><span class="si">}</span><span class="s2">] Query failed at offset </span><span class="si">{</span><span class="n">offset</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="n">bindings</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;results&quot;</span><span class="p">][</span><span class="s2">&quot;bindings&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">bindings</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">triples</span> <span class="o">=</span> <span class="p">[[</span><span class="n">b</span><span class="p">[</span><span class="s2">&quot;subject&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="s2">&quot;predicate&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">],</span> <span class="n">b</span><span class="p">[</span><span class="s2">&quot;object&quot;</span><span class="p">][</span><span class="s2">&quot;value&quot;</span><span class="p">]]</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">bindings</span><span class="p">]</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">triples</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject&quot;</span><span class="p">,</span> <span class="s2">&quot;relation&quot;</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;chunk_</span><span class="si">{</span><span class="n">offset</span><span class="si">}</span><span class="s2">.parquet&quot;</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="read_from_triple_store">
 <a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.read_from_triple_store">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">read_from_triple_store</span><span class="p">(</span><span class="n">endpoint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Read triples from triple store into pandas dataframe &quot;&quot;&quot;</span>
-    <span class="k">assert</span> <span class="n">endpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-    <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;SELECT ?subject ?predicate ?object WHERE {  ?subject ?predicate ?object}&quot;&quot;&quot;</span>
-    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;query&#39;</span><span class="p">:</span> <span class="n">query</span><span class="p">})</span>
-    <span class="k">assert</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span>
-    <span class="c1"># Generator</span>
-    <span class="n">triples</span> <span class="o">=</span> <span class="p">([</span><span class="n">triple</span><span class="p">[</span><span class="s1">&#39;subject&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">],</span> <span class="n">triple</span><span class="p">[</span><span class="s1">&#39;predicate&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">],</span> <span class="n">triple</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]]</span> <span class="k">for</span> <span class="n">triple</span> <span class="ow">in</span>
-               <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s1">&#39;results&#39;</span><span class="p">][</span><span class="s1">&#39;bindings&#39;</span><span class="p">])</span>
-    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">triples</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;subject&quot;</span><span class="p">,</span> <span class="s2">&quot;relation&quot;</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span></div>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_from_triple_store</span><span class="p">(</span><span class="n">endpoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500000</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;triples_parquet&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Main function to read all triples in parallel, save as Parquet, and load into Polars dataframe.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">output_dir</span><span class="p">):</span>
+        <span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.parquet&quot;</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">files</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">*** Found parquet files in folder `</span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s2">`, will read from those. Otherwise, delete the folder.***</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">parquet_files</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+            <span class="n">df_polars</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">parquet_files</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">df_polars</span>
+    
+    <span class="n">total_triples</span> <span class="o">=</span> <span class="n">count_triples</span><span class="p">(</span><span class="n">endpoint</span><span class="p">)</span>
+    <span class="n">total_chunks</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_triples</span> <span class="o">+</span> <span class="n">chunk_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">chunk_size</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total triples: </span><span class="si">{</span><span class="n">total_triples</span><span class="si">}</span><span class="s2">, total chunks: </span><span class="si">{</span><span class="n">total_chunks</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Determine number of workers</span>
+    <span class="n">num_workers</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">cpu_count</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using </span><span class="si">{</span><span class="n">num_workers</span><span class="si">}</span><span class="s2"> worker processes.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Generate all offsets</span>
+    <span class="n">all_offsets</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">chunk_size</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">total_chunks</span><span class="p">)]</span>
+
+    <span class="c1"># Assign chunks deterministically to each worker</span>
+    <span class="n">worker_offsets</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_workers</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">offset</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">all_offsets</span><span class="p">):</span>
+        <span class="n">worker_offsets</span><span class="p">[</span><span class="n">i</span> <span class="o">%</span> <span class="n">num_workers</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+
+    <span class="c1"># Launch worker processes</span>
+    <span class="n">processes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">worker_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_workers</span><span class="p">):</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">fetch_worker</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">endpoint</span><span class="p">,</span> <span class="n">worker_offsets</span><span class="p">[</span><span class="n">worker_id</span><span class="p">],</span> <span class="n">chunk_size</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">worker_id</span><span class="p">))</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="n">processes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
+    <span class="c1"># Wait for all workers to finish</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">processes</span><span class="p">:</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+    <span class="c1"># Read all Parquet chunks into a single Polars dataframe</span>
+    <span class="n">parquet_files</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.parquet&quot;</span><span class="p">)])</span>
+    <span class="n">df_polars</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">parquet_files</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">df_polars</span></div>
 
 
 
