@@ -40,7 +40,7 @@ class ReadFromDisk:
             elif self.kg.backend == "polars":
                 self.kg.raw_train_set = read_from_triple_store_with_polars(endpoint=self.kg.sparql_endpoint)
             else:
-                raise NotImplementedError(f"Backend {self.kg.backend} is not implemented for reading from a triple store")
+                raise NotImplementedError(f"Backend {self.kg.backend} is not implemented for reading from a triple store. Please provide 'polars' or 'pandas' to --backend.")
             self.kg.raw_valid_set = None
             self.kg.raw_test_set = None
         elif self.kg.dataset_dir:

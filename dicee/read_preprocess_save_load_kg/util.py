@@ -343,8 +343,17 @@ def read_from_triple_store_with_pandas(endpoint: str = None):
     """ Read triples from triple store into pandas dataframe """
     assert endpoint is not None
     assert isinstance(endpoint, str)
-    query = """SELECT ?subject ?predicate ?object WHERE {  ?subject ?predicate ?object}"""
-    response = requests.post(endpoint, data={'query': query})
+    headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/sparql-results+json"
+        }
+    query = """
+    SELECT ?subject ?predicate ?object
+    WHERE {{
+        ?subject ?predicate ?object .
+    }}
+    """
+    response = requests.post(endpoint, data={"query": query}, headers=headers)
     assert response.ok
     # Generator
     triples = ([triple['subject']['value'], triple['predicate']['value'], triple['object']['value']] for triple in
