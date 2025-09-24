@@ -220,7 +220,7 @@ class DICE_Trainer:
                 memmap_kg[:] = self.trainer.dataset.train_set[:]
                 memmap_kg[:].flush()
                 del memmap_kg
-                self.trainer.dataset.train_se = np.memmap(path_memory_map,
+                self.trainer.dataset.train_set = np.memmap(path_memory_map,
                                                 mode='r',
                                                 dtype=train_set_dtype,
                                                 shape=train_set_shape)
@@ -252,8 +252,8 @@ class DICE_Trainer:
                                               train_target_indices=None,
                                               target_dim=None,
                                               ordered_bpe_entities=None,
-                                              entity_to_idx={v["entity"]:k for k,v in pd.read_csv(f"{path}/entity_to_idx.csv",index_col=0).to_dict(orient='index').items()},
-                                              relation_to_idx={v["relation"]:k for k,v in pd.read_csv(f"{path}/relation_to_idx.csv",index_col=0).to_dict(orient='index').items()},
+                                              entity_to_idx=pd.read_csv(f"{path}/entity_to_idx.csv",index_col=0),
+                                              relation_to_idx=pd.read_csv(f"{path}/relation_to_idx.csv",index_col=0),
                                               form_of_labelling=self.trainer.form_of_labelling,
                                               scoring_technique=self.args.scoring_technique,
                                               neg_ratio=self.args.neg_ratio,
