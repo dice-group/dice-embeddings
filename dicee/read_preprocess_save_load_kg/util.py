@@ -10,6 +10,9 @@ import os
 import psutil
 import requests
 from typing import Tuple
+import polars as pl
+from multiprocessing import Process, cpu_count
+from tqdm import tqdm
 
 def polars_dataframe_indexer(df_polars:polars.DataFrame, idx_entity:polars.DataFrame, idx_relation:polars.DataFrame)->polars.DataFrame:
     """
@@ -247,7 +250,96 @@ def read_from_disk(data_path: str, read_only_few: int = None,
         return None
 
 
-def read_from_triple_store(endpoint: str = None):
+def count_triples(endpoint: str) -> int:
+    """Returns the total number of triples in the triple store."""
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/sparql-results+json"
+    }
+    query = """
+    SELECT (COUNT(*) AS ?count)
+    WHERE { ?s ?p ?o . }
+    """
+    response = requests.post(endpoint, data={"query": query}, headers=headers)
+    response.raise_for_status()
+    count = int(response.json()["results"]["bindings"][0]["count"]["value"])
+    return count
+
+
+def fetch_worker(endpoint: str, offsets: list[int], chunk_size: int, output_dir: str, worker_id: int):
+    """Worker process: fetch assigned chunks and save to disk with per-worker tqdm."""
+    os.makedirs(output_dir, exist_ok=True)
+    for offset in tqdm(offsets, desc=f"Read Triple Store. Worker {worker_id}", position=worker_id, leave=True):
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/sparql-results+json"
+        }
+        query = f"""
+        SELECT ?subject ?predicate ?object
+        WHERE {{
+            ?subject ?predicate ?object .
+        }}
+        LIMIT {chunk_size} OFFSET {offset}
+        """
+        response = requests.post(endpoint, data={"query": query}, headers=headers)
+        if not response.ok:
+            print(f"[Worker {worker_id}] Query failed at offset {offset}: {response.status_code}")
+            continue
+
+        bindings = response.json()["results"]["bindings"]
+        if not bindings:
+            continue
+
+        triples = [[b["subject"]["value"], b["predicate"]["value"], b["object"]["value"]] for b in bindings]
+        df = pd.DataFrame(triples, columns=["subject", "relation", "object"], dtype=str)
+
+        filename = os.path.join(output_dir, f"chunk_{offset}.parquet")
+        df.to_parquet(filename, index=False)
+
+
+def read_from_triple_store_with_polars(endpoint: str, chunk_size: int = 500000, output_dir: str = "triples_parquet"):
+    """Main function to read all triples in parallel, save as Parquet, and load into Polars dataframe."""
+    if os.path.exists(output_dir):
+        files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith(".parquet")]
+        if files:
+            print(f"\n*** Found parquet files in folder `{output_dir}`, will read from those. Otherwise, delete the folder.***\n")
+            parquet_files = sorted(files)
+            df_polars = pl.read_parquet(parquet_files)
+            return df_polars
+    
+    total_triples = count_triples(endpoint)
+    total_chunks = (total_triples + chunk_size - 1) // chunk_size
+    print(f"Total triples: {total_triples}, total chunks: {total_chunks}")
+
+    # Determine number of workers
+    num_workers = max(1, cpu_count())
+    print(f"Using {num_workers} worker processes.")
+
+    # Generate all offsets
+    all_offsets = [i * chunk_size for i in range(total_chunks)]
+
+    # Assign chunks deterministically to each worker
+    worker_offsets = [[] for _ in range(num_workers)]
+    for i, offset in enumerate(all_offsets):
+        worker_offsets[i % num_workers].append(offset)
+
+    # Launch worker processes
+    processes = []
+    for worker_id in range(num_workers):
+        p = Process(target=fetch_worker, args=(endpoint, worker_offsets[worker_id], chunk_size, output_dir, worker_id))
+        p.start()
+        processes.append(p)
+
+    # Wait for all workers to finish
+    for p in processes:
+        p.join()
+
+    # Read all Parquet chunks into a single Polars dataframe
+    parquet_files = sorted([os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith(".parquet")])
+    df_polars = pl.read_parquet(parquet_files)
+    return df_polars
+
+def read_from_triple_store_with_pandas(endpoint: str = None):
     """ Read triples from triple store into pandas dataframe """
     assert endpoint is not None
     assert isinstance(endpoint, str)
