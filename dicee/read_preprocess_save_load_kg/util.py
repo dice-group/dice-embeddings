@@ -347,13 +347,12 @@ def read_from_triple_store_with_pandas(endpoint: str = None):
             "Content-Type": "application/x-www-form-urlencoded",
             "Accept": "application/sparql-results+json"
         }
-    query = f"""
+    query = """
     SELECT ?subject ?predicate ?object
     WHERE {{
         ?subject ?predicate ?object .
     }}
     """
-    query = """SELECT ?subject ?predicate ?object WHERE {  ?subject ?predicate ?object}"""
     response = requests.post(endpoint, data={"query": query}, headers=headers)
     assert response.ok
     # Generator
