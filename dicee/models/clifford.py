@@ -664,7 +664,7 @@ class DeCaL(BaseKGE):
             sigma_qq = 0
 
         if self.r >= 2:
-            sigma_rr = torch.sum(self.compute_sigma_qq(hk, rk), dim=[1, 2]).squeeze(-1)
+            sigma_rr = torch.sum(self.compute_sigma_rr(hk, rk), dim=[1, 2]).squeeze(-1)
         else:
             sigma_rr = 0
 
@@ -674,11 +674,11 @@ class DeCaL(BaseKGE):
             sigma_pq = 0
 
         if self.p >= 2 and self.r >= 2:
-            sigma_pr = torch.sum(self.compute_sigma_pq(hp=hp, hk=hk, rp=rp, rk=rk), dim=[1, 2, 3]).squeeze(-1)
+            sigma_pr = torch.sum(self.compute_sigma_pr(hp=hp, hk=hk, rp=rp, rk=rk), dim=[1, 2, 3]).squeeze(-1)
         else:
             sigma_pr = 0
         if self.q >= 2 and self.r >= 2:
-            sigma_qr = torch.sum(self.compute_sigma_pq(hq=hq, hk=hk, rq=rq, rk=rk), dim=[1, 2, 3]).squeeze(-1)
+            sigma_qr = torch.sum(self.compute_sigma_qr(hq=hq, hk=hk, rq=rq, rk=rk), dim=[1, 2, 3]).squeeze(-1)
         else:
             sigma_qr = 0
 
