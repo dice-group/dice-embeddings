@@ -69,7 +69,6 @@ Classes
    dicee.EnsembleKGE
    dicee.DICE_Trainer
    dicee.KGE
-   dicee.Execute
    dicee.BPE_NegativeSamplingDataset
    dicee.MultiLabelDataset
    dicee.MultiClassClassificationDataset
@@ -2547,122 +2546,6 @@ Package Contents
 
       :returns: Predictions for the given entities and attributes.
       :rtype: numpy ndarray
-
-
-
-.. py:class:: Execute(args, continuous_training=False)
-
-   A class for Training, Retraining and Evaluation a model.
-
-   (1) Loading & Preprocessing & Serializing input data.
-   (2) Training & Validation & Testing
-   (3) Storing all necessary info
-
-
-   .. py:attribute:: distributed
-
-
-   .. py:attribute:: args
-
-
-   .. py:attribute:: is_continual_training
-      :value: False
-
-
-
-   .. py:attribute:: trainer
-      :value: None
-
-
-
-   .. py:attribute:: trained_model
-      :value: None
-
-
-
-   .. py:attribute:: knowledge_graph
-      :value: None
-
-
-
-   .. py:attribute:: report
-
-
-   .. py:attribute:: evaluator
-      :value: None
-
-
-
-   .. py:attribute:: start_time
-      :value: None
-
-
-
-   .. py:method:: is_rank_zero() -> bool
-
-
-   .. py:method:: cleanup()
-
-
-   .. py:method:: setup_executor() -> None
-
-
-   .. py:method:: create_and_store_kg()
-
-
-   .. py:method:: load_from_memmap()
-
-
-   .. py:method:: save_trained_model() -> None
-
-      Save a knowledge graph embedding model
-
-      (1) Send model to eval mode and cpu.
-      (2) Store the memory footprint of the model.
-      (3) Save the model into disk.
-      (4) Update the stats of KG again ?
-
-      Parameter
-      ----------
-
-      :rtype: None
-
-
-
-   .. py:method:: end(form_of_labelling: str) -> dict
-
-      End training
-
-      (1) Store trained model.
-      (2) Report runtimes.
-      (3) Eval model if required.
-
-      Parameter
-      ---------
-
-      :rtype: A dict containing information about the training and/or evaluation
-
-
-
-   .. py:method:: write_report() -> None
-
-      Report training related information in a report.json file
-
-
-
-   .. py:method:: start() -> dict
-
-      Start training
-
-      # (1) Loading the Data
-      # (2) Create an evaluator object.
-      # (3) Create a trainer object.
-      # (4) Start the training
-
-      Parameter
-      ---------
-
-      :rtype: A dict containing information about the training and/or evaluation
 
 
 
