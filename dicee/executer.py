@@ -73,18 +73,35 @@ class Execute:
     
     @rank_zero_only
     def setup_executor(self) -> None:
+        # Only set up storage if not in continual training mode
         if self.is_continual_training is False:
-            # Create a single directory containing KGE and all related data
+            # If a specific directory for this run is provided
             if self.args.path_to_store_single_run is not None:
+                # Check if we should reuse an existing directory or start fresh
+                reuse_existing = getattr(self.args, "reuse_existing_run_dir", False)
                 if os.path.exists(self.args.path_to_store_single_run):
-                    print(f"Deleting the existing directory of {self.args.path_to_store_single_run}")
-                    os.system(f'rm -rf {self.args.path_to_store_single_run}')
-                os.makedirs(self.args.path_to_store_single_run, exist_ok=False)
+                    if not reuse_existing:
+                        # Delete the existing directory to start with a clean slate
+                        print(f"Deleting the existing directory of {self.args.path_to_store_single_run}")
+                        import shutil
+                        shutil.rmtree(self.args.path_to_store_single_run)
+                        # Create a new directory for this run
+                        os.makedirs(self.args.path_to_store_single_run, exist_ok=False)
+                    else:
+                        # Reuse the existing directory if allowed
+                        print(f"Reusing the existing directory of {self.args.path_to_store_single_run}")
+                else:
+                    # Create the directory if it does not exist
+                    os.makedirs(self.args.path_to_store_single_run, exist_ok=False)
+                # Set the full storage path to the specified directory
                 self.args.full_storage_path = self.args.path_to_store_single_run
             else:
+                # If no directory is specified, create a new experiment folder
                 self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
+                # Update the path for this run to the newly created folder
                 self.args.path_to_store_single_run = self.args.full_storage_path
 
+            # Save the current configuration to a JSON file in the storage directory
             with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
                 temp = vars(self.args)
                 json.dump(temp, file_descriptor, indent=3)
