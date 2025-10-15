@@ -228,7 +228,7 @@ def read_from_disk(data_path: str, read_only_few: int = None,
     # If path exits
     if glob.glob(data_path):
         # (1) Detect data format
-        dformat = data_path[data_path.find(".") + 1:]
+        dformat = os.path.splitext(data_path)[1].lower().replace(".", "")
         if dformat in ["ttl", "owl", "turtle", "rdf/xml"] and backend != "rdflib":
             raise RuntimeError(
                 f"Data with **{dformat}** format cannot be read via --backend pandas or polars. Use --backend rdflib")
