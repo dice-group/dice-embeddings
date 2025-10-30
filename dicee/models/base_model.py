@@ -16,6 +16,7 @@ from dicee.losses.custom_losses import (
                                         CombinedAdaptiveLSandAdaptiveLR,
                                         AggregatedLSandLR,
                                         ACLS,
+                                        UNITEI,
                                        #GradientBasedLSLR,
                                        #GradientBasedAdaptiveLSLR
                                         )
@@ -121,6 +122,7 @@ class BaseKGELightning(pl.LightningModule):
                                                        weight_decay=self.weight_decay)
         elif self.optimizer_name == 'Adopt':
             self.selected_optimizer = ADOPT(parameters, lr=self.learning_rate)
+
         elif self.optimizer_name == 'AdamW':
             self.selected_optimizer = torch.optim.AdamW(parameters, lr=self.learning_rate,
                                                        weight_decay=self.weight_decay)
@@ -137,7 +139,9 @@ class BaseKGELightning(pl.LightningModule):
                                                        weight_decay=self.weight_decay)
         else:
             raise KeyError(f"{self.optimizer_name} is not found!")
+        
         print(self.selected_optimizer)
+
         return self.selected_optimizer
 
 
@@ -197,6 +201,9 @@ class BaseKGE(BaseKGELightning):
             self.loss = AggregatedLSandLR()
         if self.args["loss_fn"] == "ACLS":
             self.loss = ACLS()
+        if self.args["loss_fn"] == "UNITEI":
+            self.loss = UNITEI(gamma = self.args.get("unite_gamma", 5.0), 
+                               sigma = self.args.get("unite_sigma", 1000.0))
        #if self.args["loss_fn"] == "GradientBasedLSLR":
        #    self.loss = GradientBasedLSLR()
        #if self.args["loss_fn"] == "GradientBasedAdaptiveLSLR":
@@ -416,8 +423,7 @@ class BaseKGE(BaseKGELightning):
         # (1) Split input into indexes.
         idx_head_entity, idx_relation, idx_tail_entity = idx_hrt[:, 0], idx_hrt[:, 1], idx_hrt[:, 2]
         # (2) Retrieve embeddings & Apply Dropout & Normalization
-        head_ent_emb = self.normalize_head_entity_embeddings(
-            self.input_dp_ent_real(self.entity_embeddings(idx_head_entity)))
+        head_ent_emb = self.normalize_head_entity_embeddings(self.input_dp_ent_real(self.entity_embeddings(idx_head_entity)))
         rel_ent_emb = self.normalize_relation_embeddings(self.input_dp_rel_real(self.relation_embeddings(idx_relation)))
         tail_ent_emb = self.normalize_tail_entity_embeddings(self.entity_embeddings(idx_tail_entity))
         return head_ent_emb, rel_ent_emb, tail_ent_emb
@@ -426,8 +432,7 @@ class BaseKGE(BaseKGELightning):
         # (1) Split input into indexes.
         idx_head_entity, idx_relation = indexed_triple[:, 0], indexed_triple[:, 1]
         # (2) Retrieve embeddings & Apply Dropout & Normalization
-        head_ent_emb = self.normalize_head_entity_embeddings(
-            self.input_dp_ent_real(self.entity_embeddings(idx_head_entity)))
+        head_ent_emb = self.normalize_head_entity_embeddings(self.input_dp_ent_real(self.entity_embeddings(idx_head_entity)))
         rel_ent_emb = self.normalize_relation_embeddings(self.input_dp_rel_real(self.relation_embeddings(idx_relation)))
         return head_ent_emb, rel_ent_emb
 
@@ -471,7 +476,7 @@ class BaseKGE(BaseKGELightning):
         # A sequence of sub-list embeddings representing an embedding of a head entity should be normalized to 0.
         # Therefore, the norm of a row vector obtained from T by D matrix must be 1.
         # B, T, D
-        head_ent_emb = F.normalize(head_ent_emb, p=2, dim=(1, 2))
+        head_ent_emb = F.normalize(head_ent_emb, p=2, dim=(1, 2)) #L2
         # B, T, D
         rel_emb = F.normalize(rel_emb, p=2, dim=(1, 2))
         return head_ent_emb, rel_emb

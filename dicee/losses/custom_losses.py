@@ -4,7 +4,6 @@ from torch.nn import functional as F
 import math
 import numpy as np
 import os
-import numpy as np
 from torch import tensor
 
 class DefaultBCELoss(nn.Module):
@@ -375,3 +374,62 @@ class ACLS(nn.Module):
         loss = loss_ce + self.alpha * loss_reg
 
         return loss
+    
+class UNITEI(nn.Module):
+    """
+    Implementation of UNITE-I loss
+    """
+    def __init__(self,
+                 gamma: float = 10,
+                 sigma: float = 1000.0,
+                #  penalty_weight: float = 1.0,
+                #  tau_init: float = 1e-3
+                 ):
+        super(UNITEI, self).__init__() 
+
+        # self.num_triples = num_triples
+        self.gamma = gamma 
+        self.sigma = sigma 
+        # self.penalty_weight = penalty_weight 
+        # self.tau = tau_init 
+        # self.eps = 1e-12 
+        self.relu = nn.ReLU() 
+
+    def forward(self, pred, target, current_epoch = None):
+        """
+        This function calculates the UNITE loss.
+
+        Agrs: 
+        pred: The output logits from the KGE model.
+        target: The target labesl
+
+        """ 
+        target = target.float() 
+
+        #Separate positive and negative logits 
+        l_pos = pred[target == 1.0]
+        l_neg = pred[target == 0.0] 
+
+        loss_pos_total = torch.tensor(0.0, device=pred.device)
+        loss_neg_total = torch.tensor(0.0, device=pred.device) 
+
+        if l_pos.numel() > 0:
+            tau_pos_star = self.relu(self.gamma - l_pos) 
+            loss_pos = self.sigma * (tau_pos_star ** 2)
+            loss_pos_total = torch.sum(loss_pos)
+
+        if l_neg.numel() > 0:
+            tau_neg_star = self.relu(l_neg - self.gamma)
+            loss_neg = self.sigma * (tau_neg_star ** 2)
+            loss_neg_total = torch.sum(loss_neg) 
+
+        total_loss = loss_pos_total + loss_neg_total 
+
+        if pred.numel() == 0:
+            return torch.tensor(0.0, device=pred.device, requires_grad=True)
+
+        return total_loss / pred.numel() 
+
+
+
+
