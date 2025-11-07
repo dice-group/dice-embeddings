@@ -43,12 +43,39 @@ class BaseKGELightning(pl.LightningModule):
             # Default
             x_batch, y_batch = batch
             yhat_batch = self.forward(x_batch)
+
+        if batch_idx == 0:
+            with torch.no_grad():
+                preds_sample = yhat_batch.view(-1)[:30]
+                mean_pred = preds_sample.mean().item()
+                min_pred = preds_sample.min().item()
+                max_pred = preds_sample.max().item()
+                self.log_dict({
+                    "debug/pred_mean": mean_pred,
+                    "debug/pred_min": min_pred,
+                    "debug/pred_max": max_pred
+                }, prog_bar=True, on_step=True, logger=True)
+
+
         elif len(batch)==3:
             # KvsSample or 1vsSample
             x_batch, y_select, y_batch = batch
             yhat_batch = self.forward((x_batch,y_select))
-        else:
-            raise RuntimeError("Invalid batch received.")
+            if batch_idx == 0:
+                with torch.no_grad():
+                    preds_sample = yhat_batch.view(-1)[:30]
+                    mean_pred = preds_sample.mean().item()
+                    min_pred = preds_sample.min().item()
+                    max_pred = preds_sample.max().item()
+                    self.log_dict({
+                        "debug/pred_mean": mean_pred,
+                        "debug/pred_min": min_pred,
+                        "debug/pred_max": max_pred
+                    }, prog_bar=True, on_step=True, logger=True)
+
+            else:
+                raise RuntimeError("Invalid batch received.")
+
 
         #total_norm = 0
         #for param in self.parameters():
@@ -202,8 +229,8 @@ class BaseKGE(BaseKGELightning):
         if self.args["loss_fn"] == "ACLS":
             self.loss = ACLS()
         if self.args["loss_fn"] == "UNITEI":
-            self.loss = UNITEI(gamma = self.args.get("unite_gamma", 5.0), 
-                               sigma = self.args.get("unite_sigma", 1000.0))
+            self.loss = UNITEI()
+
        #if self.args["loss_fn"] == "GradientBasedLSLR":
        #    self.loss = GradientBasedLSLR()
        #if self.args["loss_fn"] == "GradientBasedAdaptiveLSLR":

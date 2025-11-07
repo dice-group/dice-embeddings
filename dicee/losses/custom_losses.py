@@ -375,61 +375,68 @@ class ACLS(nn.Module):
 
         return loss
     
+
+
 class UNITEI(nn.Module):
     """
-    Implementation of UNITE-I loss
+    UNITE-I loss (pattern-aware & noise-resilient) for mini-batch training.
     """
-    def __init__(self,
-                 gamma: float = 10,
-                 sigma: float = 1000.0,
-                #  penalty_weight: float = 1.0,
-                #  tau_init: float = 1e-3
-                 ):
-        super(UNITEI, self).__init__() 
 
-        # self.num_triples = num_triples
-        self.gamma = gamma 
-        self.sigma = sigma 
-        # self.penalty_weight = penalty_weight 
-        # self.tau = tau_init 
-        # self.eps = 1e-12 
-        self.relu = nn.ReLU() 
+    def __init__(
+        self,
+        gamma: float = 5,     
+        sigma: float = 1000,  
+        lambda_q: float = 0.3,  # Regulaization term
+        clamp_scores: bool = True,
+        use_tanh_scale: bool = True,
+    ):
+        super().__init__()
+        self.gamma = float(gamma)
+        self.sigma = float(sigma)
+        self.lambda_q = float(lambda_q)
+        self.clamp_scores = clamp_scores
+        self.use_tanh_scale = use_tanh_scale
+        self.eps = 1e-12
 
-    def forward(self, pred, target, current_epoch = None):
-        """
-        This function calculates the UNITE loss.
+    def _normalize_scores(self, pred: torch.Tensor) -> torch.Tensor:
+        # To keep gamma meaningful and gradients don’t die or explode.
+        x = pred
+        if self.use_tanh_scale:
+            # squashes to (-1,1), then scales to (-γ, γ)
+            x = torch.tanh(x) * self.gamma
+        if self.clamp_scores:
+            x = torch.clamp(x, min=-self.gamma, max=self.gamma)
+        return x
 
-        Agrs: 
-        pred: The output logits from the KGE model.
-        target: The target labesl
+    def forward(self, pred: torch.Tensor, target: torch.Tensor, current_epoch = None):
 
-        """ 
-        target = target.float() 
+        target = target.float()
+        pred = self._normalize_scores(pred)
 
-        #Separate positive and negative logits 
-        l_pos = pred[target == 1.0]
-        l_neg = pred[target == 0.0] 
+        tau_pos = F.relu(self.gamma - pred)  # only where target==1 used
+        tau_neg = F.relu(pred - self.gamma)  # only where target==0 used
 
-        loss_pos_total = torch.tensor(0.0, device=pred.device)
-        loss_neg_total = torch.tensor(0.0, device=pred.device) 
+        loss_pos = self.sigma * (tau_pos ** 2)
+        loss_neg = self.sigma * (tau_neg ** 2)
 
-        if l_pos.numel() > 0:
-            tau_pos_star = self.relu(self.gamma - l_pos) 
-            loss_pos = self.sigma * (tau_pos_star ** 2)
-            loss_pos_total = torch.sum(loss_pos)
+        # Constraint penalties with Q(x) = sigmoid(x)
+        # Pos: Q(gamma - f) >= Q(tau) → violation = ReLU(Q(tau) - Q(gamma - f)) where f=pred
+        # Neg: Q(f - gamma) >= Q(tau) → violation = ReLU(Q(tau) - Q(f - tau))
+        Q_tau_pos = torch.sigmoid(tau_pos)
+        Q_tau_neg = torch.sigmoid(tau_neg)
+        Q_pos = torch.sigmoid(self.gamma - pred)
+        Q_neg = torch.sigmoid(pred - self.gamma)
 
-        if l_neg.numel() > 0:
-            tau_neg_star = self.relu(l_neg - self.gamma)
-            loss_neg = self.sigma * (tau_neg_star ** 2)
-            loss_neg_total = torch.sum(loss_neg) 
+        pos_violation = F.relu(Q_tau_pos - Q_pos)
+        neg_violation = F.relu(Q_tau_neg - Q_neg)
 
-        total_loss = loss_pos_total + loss_neg_total 
+        # Mask by labels and combine
+        pos_mask = target
+        neg_mask = 1.0 - target
 
-        if pred.numel() == 0:
-            return torch.tensor(0.0, device=pred.device, requires_grad=True)
+        loss = (
+            pos_mask * (loss_pos + self.lambda_q * pos_violation)
+            + neg_mask * (loss_neg + self.lambda_q * neg_violation)
+        )
 
-        return total_loss / pred.numel() 
-
-
-
-
+        return loss.mean()
