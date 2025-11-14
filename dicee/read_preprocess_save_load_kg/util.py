@@ -123,17 +123,12 @@ def pandas_dataframe_indexer(df_pandas: pd.DataFrame, idx_entity: pd.DataFrame, 
     return df_pandas
 
 
-def apply_reciprical_or_noise(add_reciprical: bool, eval_model: str, df: object = None, info: str = None):
-    """ (1) Add reciprocal triples (2) Add noisy triples """
-    # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
-    if add_reciprical and eval_model:
-        if df is not None:
-            print(f'Adding reciprocal triples to {info}, e.g. KG:= (s, p, o) union (o, p_inverse, s)')
-            return create_recipriocal_triples(df)
-        else:
-            return None
-    else:
-        return df
+def apply_reciprocal_or_noise(add_reciprocal: bool, eval_model: str, df: object = None, info: str = None):
+    """Add reciprocal triples if conditions are met"""
+    if add_reciprocal and eval_model and df is not None:
+        print(f'Adding reciprocal triples to {info}, e.g. KG:= (s, p, o) union (o, p_inverse, s)')
+        return create_recipriocal_triples(df)
+    return df
 
 
 def timeit(func):
@@ -151,73 +146,69 @@ def timeit(func):
     return timeit_wrapper
 
 
-@timeit
-def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator:str=None) -> polars.DataFrame:
-    """ Load and Preprocess via Polars """
-    assert separator is not None, "separator cannot be None"
-    print(f'*** Reading {data_path} with Polars ***')
-    # (1) Load the data.
-    #try:
-    if ".zst" in data_path:
-        df= polars.read_csv(data_path,n_rows=None if read_only_few is None else read_only_few)
-    else:
-        df = polars.read_csv(data_path,
-                             has_header=False,
-                             low_memory=False,
-                             n_rows=None if read_only_few is None else read_only_few,
-                             columns=[0, 1, 2],
-                             dtypes=[polars.String],
-                             new_columns=['subject', 'relation', 'object'],
-                             separator=separator)
-    #except ValueError as err:
-    #    raise ValueError(f"{err}\nYou may want to use a different separator.")
-    # (2) Sample from (1).
-    if sample_triples_ratio:
-        print(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')
-        df = df.sample(frac=sample_triples_ratio)
-        print(df.shape)
-    # (3) Type heuristic prediction: If KG is an RDF KG, remove all triples where subject is not <?>.
-    h = df.head().to_pandas()
-    if sum(h["subject"].str.startswith('<')) + sum(h["relation"].str.startswith('<')) > 2:
+def _filter_literal_triples(df, backend: str):
+    """Remove triples with literal values if RDF format detected"""
+    sample = df.head().to_pandas() if backend == "polars" else df.head()
+    if sum(sample["subject"].str.startswith('<')) + sum(sample["relation"].str.startswith('<')) > 2:
         print('Removing triples with literal values...')
-        df = df.filter(polars.col("object").str.starts_with('<'))
+        if backend == "polars":
+            return df.filter(polars.col("object").str.starts_with('<'))
+        else:
+            return df[df["object"].str.startswith('<', na=False)]
     return df
 
 
 @timeit
-def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None,separator:str=None):
+def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator:str=None) -> polars.DataFrame:
+    """Load and Preprocess via Polars"""
+    assert separator is not None, "separator cannot be None"
+    print(f'*** Reading {data_path} with Polars ***')
+    
+    if ".zst" in data_path:
+        df = polars.read_csv(data_path, n_rows=read_only_few)
+    else:
+        df = polars.read_csv(data_path,
+                             has_header=False,
+                             low_memory=False,
+                             n_rows=read_only_few,
+                             columns=[0, 1, 2],
+                             dtypes=[polars.String],
+                             new_columns=['subject', 'relation', 'object'],
+                             separator=separator)
+    
+    if sample_triples_ratio:
+        print(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')
+        df = df.sample(frac=sample_triples_ratio)
+        print(df.shape)
+    
+    return _filter_literal_triples(df, "polars")
+
+
+@timeit
+def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator:str=None):
+    """Load and Preprocess via Pandas"""
     assert separator is not None, "separator cannot be None"
     print(f'*** Reading {data_path} with Pandas ***')
-    if data_path[-3:] in [".nt","ttl", 'txt', 'csv', 'zst']:
-        print('Reading with pandas.read_csv with sep ** s+ ** ...')
+    
+    if data_path[-3:] in [".nt", "ttl", 'txt', 'csv', 'zst']:
         df = pd.read_csv(data_path,
-                         sep=separator,#"\s+",
+                         sep=separator,
                          header=None,
-                         nrows=None if read_only_few is None else read_only_few,
+                         nrows=read_only_few,
                          usecols=[0, 1, 2],
                          names=['subject', 'relation', 'object'],
                          dtype=str)
     else:
         df = pd.read_parquet(data_path, engine='pyarrow')
-        # (2)a Read only few if it is asked.
-        if isinstance(read_only_few, int):
-            if read_only_few > 0:
-                print(f'Reading only few input data {read_only_few}...')
-                df = df.head(read_only_few)
-                print('Done !\n')
-    # (3) Read only sample
+        if read_only_few and read_only_few > 0:
+            print(f'Reading only few input data {read_only_few}...')
+            df = df.head(read_only_few)
+    
     if sample_triples_ratio:
         print(f'Subsampling {sample_triples_ratio} of input data...')
         df = df.sample(frac=sample_triples_ratio)
-        print('Done !\n')
-    if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) > 2:
-        # (4) Drop Rows/triples with double or boolean: Example preprocessing
-        # Drop of object does not start with **<**.
-        # Specifying na to be False instead of NaN.
-        print('Removing triples with literal values...')
-        df = df[df["object"].str.startswith('<', na=False)]
-        print('Done !\n')
-    return df
+    
+    return _filter_literal_triples(df, "pandas")
 
 
 def read_from_disk(data_path: str, read_only_few: int = None,
