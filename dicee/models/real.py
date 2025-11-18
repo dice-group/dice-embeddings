@@ -222,7 +222,8 @@ class CoKE(BaseKGE):
         h_mask = x_tok[:,2,:] 
         h_mask = self.coke_dropout(h_mask)
 
-        scores = torch.einsum('bd, bkd -> bk', h_mask, emb_tail)
+        scores = torch.einsum('bd, bkd -> bk', h_mask, emb_tail) # dot product between each batch (how simlar is mask to all k tails in batch x)
+                                                         #output: (b,k) -> k scores per batch
 
         return scores
 
