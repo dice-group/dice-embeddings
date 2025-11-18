@@ -3,6 +3,8 @@ from .base_model import BaseKGE
 from typing import Tuple
 import torch
 import numpy as np
+from dicee.models.transformers import Block
+from torch import nn
 
 
 class DistMult(BaseKGE):
@@ -133,15 +135,12 @@ class Pyke(BaseKGE):
 class CoKEConfig:
     block_size: int = 3           # triples -> TODO: LF: for multi-hop this needs to be bigger
     vocab_size: int = None        # Must be set to num_entities + num_relations before initializing CoKE
-    n_layer: int = 12             
-    n_head: int = 4               
+    n_layer: int = 6             
+    n_head: int = 8               
     n_embd: int = None             
-    dropout: float = 0.1          # according to paper in [0.1 - 0.5]
+    dropout: float = 0.3          # according to paper in [0.1 - 0.5]
     bias: bool = True             # idk if better with false?
     causal: bool = False          # non-causal so that we gather information in mask token 
-
-from dicee.models.transformers import Block
-from torch import nn
 
 class CoKE(BaseKGE):
     def __init__(self, args, config: CoKEConfig = CoKEConfig()):
@@ -187,3 +186,23 @@ class CoKE(BaseKGE):
         scores = h_mask.mm(E.t()) 
 
         return scores 
+
+    def score(self, emb_h, emb_r, emb_t):
+        b = emb_h.size(0)
+        device = emb_h.device
+        mask_emb = self.mask_emb.unsqueeze(0).expand(b, -1)
+        seq = torch.stack([emb_h, emb_r, mask_emb], dim=1)
+        pos_ids = torch.arange(0, 3, device=device).unsqueeze(0).expand(b,3)
+        pos_emb = self.pos_emb(pos_ids)
+        x_tok = seq + pos_emb
+
+        for block in self.blocks:
+            x_tok = block(x_tok)
+        x_tok = self.ln_f(x_tok) 
+        h_mask = x_tok[:,2,:] 
+        h_mask = self.coke_dropout(h_mask)
+
+        score = torch.einsum('bd,bd -> b', h_mask, emb_t) # dot product between each batch (how simlar is mask to tail in batch x)
+                                                         #output: (b,) -> one score per batch
+        return score
+        
