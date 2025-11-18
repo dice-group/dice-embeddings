@@ -205,4 +205,25 @@ class CoKE(BaseKGE):
         score = torch.einsum('bd,bd -> b', h_mask, emb_t) # dot product between each batch (how simlar is mask to tail in batch x)
                                                          #output: (b,) -> one score per batch
         return score
-        
+
+    def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor):
+        emb_head, emb_rel = self.get_head_relation_representation(x)
+        b = emb_head.size(0)
+        emb_tail = self.entity_embeddings(target_entity_idx)
+        device = emb_head.device
+        mask_emb = self.mask_emb.unsqueeze(0).expand(b, -1)
+        seq = torch.stack([emb_head, emb_rel, mask_emb], dim=1)
+        pos_ids = torch.arange(0, 3, device=device).unsqueeze(0).expand(b,3)
+        pos_emb = self.pos_emb(pos_ids)
+        x_tok = seq + pos_emb
+        for block in self.blocks:
+            x_tok = block(x_tok)
+        x_tok = self.ln_f(x_tok) 
+        h_mask = x_tok[:,2,:] 
+        h_mask = self.coke_dropout(h_mask)
+
+        scores = torch.einsum('bd, bkd -> bk', h_mask, emb_tail)
+
+        return scores
+
+
