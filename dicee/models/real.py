@@ -144,7 +144,7 @@ from dicee.models.transformers import Block
 from torch import nn
 
 class CoKE(BaseKGE):
-    def __init__(self, args, config: CoKEConfig):
+    def __init__(self, args, config: CoKEConfig = CoKEConfig()):
         super().__init__(args)
         self.name = 'CoKE'
 
@@ -152,7 +152,6 @@ class CoKE(BaseKGE):
         self.config.vocab_size = self.num_entities + self.num_relations
         self.config.n_embd = self.embedding_dim
     
-        self.entity_relation_embeddings = torch.nn.Embedding(config.vocab_size, self.embedding_dim)
         self.pos_emb = torch.nn.Embedding(config.block_size, self.embedding_dim)
         self.mask_emb = torch.nn.Parameter(torch.zeros(self.embedding_dim))
 
