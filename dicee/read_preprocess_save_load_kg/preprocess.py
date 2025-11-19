@@ -277,6 +277,7 @@ class PreprocessKG:
 
         # Index and convert datasets
         def index_and_convert(df, name):
+            print(f'Indexing {name} data with shape {df.shape}...')
             indexed = pandas_dataframe_indexer(df, self.kg.entity_to_idx, self.kg.relation_to_idx).values
             dataset_sanity_checking(indexed, self.kg.num_entities, self.kg.num_relations)
             return numpy_data_type_changer(indexed, num=max_idx)
