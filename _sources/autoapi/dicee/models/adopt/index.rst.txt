@@ -71,7 +71,7 @@ dicee.models.adopt
    Notes:
    -----
    This implementation is based on the original ADOPT implementation and adapted to work
-   with the PyTorch optimizer interface and the dicee framework.
+   with the PyTorch optimizer interface and the dice-embeddings framework.
 
 
 
