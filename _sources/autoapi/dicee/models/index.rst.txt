@@ -87,18 +87,100 @@ Package Contents
    Bases: :py:obj:`torch.optim.optimizer.Optimizer`
 
 
-   Base class for all optimizers.
+   ADOPT  Optimizer.
 
-   .. warning::
-       Parameters need to be specified as collections that have a deterministic
-       ordering that is consistent between runs. Examples of objects that don't
-       satisfy those properties are sets and iterators over values of dictionaries.
+   ADOPT is an adaptive learning rate optimization algorithm that combines momentum-based
+   updates with adaptive per-parameter learning rates. It uses exponential moving averages
+   of gradients and squared gradients, with gradient clipping for stability.
 
-   :param params: an iterable of :class:`torch.Tensor` s or
-                  :class:`dict` s. Specifies what Tensors should be optimized.
-   :type params: iterable
-   :param defaults: (dict): a dict containing default values of optimization
-                    options (used when a parameter group doesn't specify them).
+   The algorithm performs the following key operations:
+   1. Normalizes gradients by the square root of the second moment estimate
+   2. Applies optional gradient clipping based on the training step
+   3. Updates parameters using momentum-smoothed normalized gradients
+   4. Supports decoupled weight decay (AdamW-style) or L2 regularization
+
+   Mathematical formulation:
+       m_t = β₁ * m_{t-1} + (1 - β₁) * clip(g_t / √(v_t))
+       v_t = β₂ * v_{t-1} + (1 - β₂) * g_t²
+       θ_t = θ_{t-1} - α * m_t
+
+   where:
+       - θ_t: parameter at step t
+       - g_t: gradient at step t
+       - m_t: first moment estimate (momentum)
+       - v_t: second moment estimate (variance)
+       - α: learning rate
+       - β₁, β₂: exponential decay rates
+       - clip(): optional gradient clipping function
+
+   Reference:
+       Original implementation: https://github.com/iShohei220/adopt
+
+   :param params: Iterable of parameters to optimize or dicts defining parameter groups.
+   :type params: ParamsT
+   :param lr: Learning rate. Can be a float or 1-element Tensor.
+              Default: 1e-3
+   :type lr: float or Tensor, optional
+   :param betas: Coefficients (β₁, β₂) for computing running
+                 averages of gradient and its square. β₁ controls momentum, β₂ controls variance.
+                 Default: (0.9, 0.9999)
+   :type betas: Tuple[float, float], optional
+   :param eps: Term added to denominator to improve numerical stability.
+               Default: 1e-6
+   :type eps: float, optional
+   :param clip_lambda: Function that takes the step number
+                       and returns the gradient clipping threshold. Common choices:
+                       - lambda step: step**0.25 (default, gradually increases clipping threshold)
+                       - lambda step: 1.0 (constant clipping)
+                       - None (no clipping)
+                       Default: lambda step: step**0.25
+   :type clip_lambda: Callable[[int], float], optional
+   :param weight_decay: Weight decay coefficient (L2 penalty).
+                        Default: 0.0
+   :type weight_decay: float, optional
+   :param decouple: If True, uses decoupled weight decay (AdamW-style),
+                    applying weight decay directly to parameters. If False, adds weight decay
+                    to gradients (L2 regularization). Default: False
+   :type decouple: bool, optional
+   :param foreach: If True, uses the faster foreach implementation for
+                   multi-tensor operations. Default: None (auto-select)
+   :type foreach: bool, optional
+   :param maximize: If True, maximizes parameters instead of minimizing.
+                    Useful for reinforcement learning. Default: False
+   :type maximize: bool, optional
+   :param capturable: If True, the optimizer is safe to capture in a
+                      CUDA graph. Requires learning rate as Tensor. Default: False
+   :type capturable: bool, optional
+   :param differentiable: If True, the optimization step can be
+                          differentiated. Useful for meta-learning. Default: False
+   :type differentiable: bool, optional
+   :param fused: If True, uses fused kernel implementation (currently
+                 not supported). Default: None
+   :type fused: bool, optional
+
+   :raises ValueError: If learning rate, epsilon, betas, or weight_decay are invalid.
+   :raises RuntimeError: If fused is enabled (not currently supported).
+   :raises RuntimeError: If lr is a Tensor with foreach=True and capturable=False.
+
+   .. rubric:: Example
+
+   >>> # Basic usage
+   >>> optimizer = ADOPT(model.parameters(), lr=0.001)
+   >>> optimizer.zero_grad()
+   >>> loss.backward()
+   >>> optimizer.step()
+
+   >>> # With decoupled weight decay
+   >>> optimizer = ADOPT(model.parameters(), lr=0.001, weight_decay=0.01, decouple=True)
+
+   >>> # Custom gradient clipping
+   >>> optimizer = ADOPT(model.parameters(), clip_lambda=lambda step: max(1.0, step**0.5))
+
+   .. note::
+
+      - For most use cases, the default hyperparameters work well
+      - Consider using decouple=True for better generalization (similar to AdamW)
+      - The clip_lambda function helps stabilize training in early steps
 
 
    .. py:attribute:: clip_lambda
@@ -106,14 +188,91 @@ Package Contents
 
    .. py:method:: __setstate__(state)
 
+      Restore optimizer state from a checkpoint.
+
+      This method handles backward compatibility when loading optimizer state from
+      older versions. It ensures all required fields are present with default values
+      and properly converts step counters to tensors if needed.
+
+      Key responsibilities:
+      1. Set default values for newly added hyperparameters
+      2. Convert old-style scalar step counters to tensor format
+      3. Place step tensors on appropriate devices based on capturable/fused modes
+
+      :param state: Optimizer state dictionary (typically from torch.load()).
+      :type state: dict
+
+      .. note::
+
+         - This enables loading checkpoints saved with older ADOPT versions
+         - Step counters are converted to appropriate device/dtype for compatibility
+         - Capturable and fused modes require step tensors on parameter devices
+
+
 
    .. py:method:: step(closure=None)
 
       Perform a single optimization step.
 
-      :param closure: A closure that reevaluates the model
-                      and returns the loss.
+      This method executes one iteration of the ADOPT optimization algorithm across
+      all parameter groups. It orchestrates the following workflow:
+
+      1. Optionally evaluates a closure to recompute the loss (useful for algorithms
+         like LBFGS or when loss needs multiple evaluations)
+      2. For each parameter group:
+         - Collects parameters with gradients and their associated state
+         - Extracts hyperparameters (betas, learning rate, etc.)
+         - Calls the functional adopt() API to perform the actual update
+      3. Returns the loss value if a closure was provided
+
+      The functional API (adopt()) handles three execution modes:
+      - Single-tensor: Updates one parameter at a time (default, JIT-compatible)
+      - Multi-tensor (foreach): Batches operations for better performance
+      - Fused: Uses fused CUDA kernels (not yet implemented)
+
+      Gradient scaling support:
+      This method is compatible with automatic mixed precision (AMP) training.
+      It can access grad_scale and found_inf attributes for gradient unscaling
+      and inf/nan detection when used with GradScaler.
+
+      :param closure: A callable that reevaluates the model and
+                      returns the loss. The closure should:
+                      - Enable gradients (torch.enable_grad())
+                      - Compute forward pass
+                      - Compute loss
+                      - Compute backward pass
+                      - Return the loss value
+                      Example: lambda: (loss := model(x), loss.backward(), loss)[-1]
+                      Default: None
       :type closure: Callable, optional
+
+      :returns:
+
+                The loss value returned by the closure, or None if no
+                    closure was provided.
+      :rtype: Optional[Tensor]
+
+      .. rubric:: Example
+
+      >>> # Standard usage
+      >>> loss = criterion(model(input), target)
+      >>> loss.backward()
+      >>> optimizer.step()
+
+      >>> # With closure (e.g., for line search)
+      >>> def closure():
+      ...     optimizer.zero_grad()
+      ...     output = model(input)
+      ...     loss = criterion(output, target)
+      ...     loss.backward()
+      ...     return loss
+      >>> loss = optimizer.step(closure)
+
+      .. note::
+
+         - Call zero_grad() before computing gradients for the next step
+         - CUDA graph capture is checked for safety when capturable=True
+         - The method is thread-safe for different parameter groups
 
 
 

@@ -39,23 +39,20 @@ Module Contents
 
    .. py:method:: preprocess_with_byte_pair_encoding_with_padding() -> None
 
+      Preprocess with byte pair encoding and add padding
+
+
 
    .. py:method:: preprocess_with_pandas() -> None
 
-      Preprocess train, valid and test datasets stored in knowledge graph instance with pandas
-
-      (1) Add recipriocal or noisy triples
-      (2) Construct vocabulary
-      (3) Index datasets
-
-      Parameter
-      ---------
-
-      :rtype: None
+      Preprocess with pandas: add reciprocal triples, construct vocabulary, and index datasets
 
 
 
    .. py:method:: preprocess_with_polars() -> None
+
+      Preprocess with polars: add reciprocal triples and create indexed datasets
+
 
 
    .. py:method:: sequential_vocabulary_construction() -> None

@@ -96,7 +96,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">traceback</span>
 
 <div class="viewcode-block" id="PykeenKGE">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/pykeen_models/index.html#dicee.PykeenKGE">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/pykeen_models/index.html#dicee.models.PykeenKGE">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PykeenKGE</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; A class for using knowledge graph embedding models implemented in Pykeen</span>
 
@@ -190,7 +190,7 @@
                 <span class="k">pass</span>
 
 <div class="viewcode-block" id="PykeenKGE.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/pykeen_models/index.html#dicee.PykeenKGE.forward_k_vs_all">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/pykeen_models/index.html#dicee.models.PykeenKGE.forward_k_vs_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        # =&gt; Explicit version by this we can apply bn and dropout</span>
@@ -214,7 +214,7 @@
 
 
 <div class="viewcode-block" id="PykeenKGE.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/pykeen_models/index.html#dicee.PykeenKGE.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/pykeen_models/index.html#dicee.models.PykeenKGE.forward_triples">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        # =&gt; Explicit version by this we can apply bn and dropout</span>
@@ -233,7 +233,7 @@
 
 
 <div class="viewcode-block" id="PykeenKGE.forward_k_vs_sample">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/pykeen_models/index.html#dicee.PykeenKGE.forward_k_vs_sample">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/pykeen_models/index.html#dicee.models.PykeenKGE.forward_k_vs_sample">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;KvsSample has not yet implemented for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>

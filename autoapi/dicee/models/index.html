@@ -811,7 +811,7 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.ADOPT" title="dicee.models.ADOPT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ADOPT</span></code></a></p></td>
-<td><p>Base class for all optimizers.</p></td>
+<td><p>ADOPT  Optimizer.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.BaseKGELightning" title="dicee.models.BaseKGELightning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGELightning</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
@@ -943,23 +943,99 @@
 <dt class="sig sig-object py" id="dicee.models.ADOPT">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">ADOPT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.optim.optimizer.ParamsT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">torch.Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(0.9,</span> <span class="pre">0.9999)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip_lambda</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">lambda</span> <span class="pre">step:</span> <span class="pre">...</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_decay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decouple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">foreach</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maximize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">capturable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">differentiable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fused</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/adopt.html#ADOPT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ADOPT" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.optim.optimizer.Optimizer</span></code></p>
-<p>Base class for all optimizers.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Parameters need to be specified as collections that have a deterministic
-ordering that is consistent between runs. Examples of objects that don’t
-satisfy those properties are sets and iterators over values of dictionaries.</p>
-</div>
+<p>ADOPT  Optimizer.</p>
+<p>ADOPT is an adaptive learning rate optimization algorithm that combines momentum-based
+updates with adaptive per-parameter learning rates. It uses exponential moving averages
+of gradients and squared gradients, with gradient clipping for stability.</p>
+<p>The algorithm performs the following key operations:
+1. Normalizes gradients by the square root of the second moment estimate
+2. Applies optional gradient clipping based on the training step
+3. Updates parameters using momentum-smoothed normalized gradients
+4. Supports decoupled weight decay (AdamW-style) or L2 regularization</p>
+<dl class="simple">
+<dt>Mathematical formulation:</dt><dd><p>m_t = β₁ * m_{t-1} + (1 - β₁) * clip(g_t / √(v_t))
+v_t = β₂ * v_{t-1} + (1 - β₂) * g_t²
+θ_t = θ_{t-1} - α * m_t</p>
+</dd>
+<dt>where:</dt><dd><ul class="simple">
+<li><p>θ_t: parameter at step t</p></li>
+<li><p>g_t: gradient at step t</p></li>
+<li><p>m_t: first moment estimate (momentum)</p></li>
+<li><p>v_t: second moment estimate (variance)</p></li>
+<li><p>α: learning rate</p></li>
+<li><p>β₁, β₂: exponential decay rates</p></li>
+<li><p>clip(): optional gradient clipping function</p></li>
+</ul>
+</dd>
+<dt>Reference:</dt><dd><p>Original implementation: <a class="reference external" href="https://github.com/iShohei220/adopt">https://github.com/iShohei220/adopt</a></p>
+</dd>
+</dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>params</strong> (<em>iterable</em>) – an iterable of <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.Tensor</span></code> s or
-<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code> s. Specifies what Tensors should be optimized.</p></li>
-<li><p><strong>defaults</strong> – (dict): a dict containing default values of optimization
-options (used when a parameter group doesn’t specify them).</p></li>
+<li><p><strong>params</strong> (<em>ParamsT</em>) – Iterable of parameters to optimize or dicts defining parameter groups.</p></li>
+<li><p><strong>lr</strong> (<em>float</em><em> or </em><em>Tensor</em><em>, </em><em>optional</em>) – Learning rate. Can be a float or 1-element Tensor.
+Default: 1e-3</p></li>
+<li><p><strong>betas</strong> (<em>Tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>]</em><em>, </em><em>optional</em>) – Coefficients (β₁, β₂) for computing running
+averages of gradient and its square. β₁ controls momentum, β₂ controls variance.
+Default: (0.9, 0.9999)</p></li>
+<li><p><strong>eps</strong> (<em>float</em><em>, </em><em>optional</em>) – Term added to denominator to improve numerical stability.
+Default: 1e-6</p></li>
+<li><p><strong>clip_lambda</strong> (<em>Callable</em><em>[</em><em>[</em><em>int</em><em>]</em><em>, </em><em>float</em><em>]</em><em>, </em><em>optional</em>) – Function that takes the step number
+and returns the gradient clipping threshold. Common choices:
+- lambda step: step**0.25 (default, gradually increases clipping threshold)
+- lambda step: 1.0 (constant clipping)
+- None (no clipping)
+Default: lambda step: step**0.25</p></li>
+<li><p><strong>weight_decay</strong> (<em>float</em><em>, </em><em>optional</em>) – Weight decay coefficient (L2 penalty).
+Default: 0.0</p></li>
+<li><p><strong>decouple</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, uses decoupled weight decay (AdamW-style),
+applying weight decay directly to parameters. If False, adds weight decay
+to gradients (L2 regularization). Default: False</p></li>
+<li><p><strong>foreach</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, uses the faster foreach implementation for
+multi-tensor operations. Default: None (auto-select)</p></li>
+<li><p><strong>maximize</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, maximizes parameters instead of minimizing.
+Useful for reinforcement learning. Default: False</p></li>
+<li><p><strong>capturable</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, the optimizer is safe to capture in a
+CUDA graph. Requires learning rate as Tensor. Default: False</p></li>
+<li><p><strong>differentiable</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, the optimization step can be
+differentiated. Useful for meta-learning. Default: False</p></li>
+<li><p><strong>fused</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, uses fused kernel implementation (currently
+not supported). Default: None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If learning rate, epsilon, betas, or weight_decay are invalid.</p></li>
+<li><p><strong>RuntimeError</strong> – If fused is enabled (not currently supported).</p></li>
+<li><p><strong>RuntimeError</strong> – If lr is a Tensor with foreach=True and capturable=False.</p></li>
 </ul>
 </dd>
 </dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Basic usage</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">ADOPT</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># With decoupled weight decay</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">ADOPT</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">decouple</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Custom gradient clipping</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">ADOPT</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">clip_lambda</span><span class="o">=</span><span class="k">lambda</span> <span class="n">step</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">step</span><span class="o">**</span><span class="mf">0.5</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><p>For most use cases, the default hyperparameters work well</p></li>
+<li><p>Consider using decouple=True for better generalization (similar to AdamW)</p></li>
+<li><p>The clip_lambda function helps stabilize training in early steps</p></li>
+</ul>
+</div>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.ADOPT.clip_lambda">
 <span class="sig-name descname"><span class="pre">clip_lambda</span></span><a class="headerlink" href="#dicee.models.ADOPT.clip_lambda" title="Link to this definition"></a></dt>
@@ -968,18 +1044,100 @@ options (used when a parameter group doesn’t specify them).</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.ADOPT.__setstate__">
 <span class="sig-name descname"><span class="pre">__setstate__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/adopt.html#ADOPT.__setstate__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ADOPT.__setstate__" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Restore optimizer state from a checkpoint.</p>
+<p>This method handles backward compatibility when loading optimizer state from
+older versions. It ensures all required fields are present with default values
+and properly converts step counters to tensors if needed.</p>
+<p>Key responsibilities:
+1. Set default values for newly added hyperparameters
+2. Convert old-style scalar step counters to tensor format
+3. Place step tensors on appropriate devices based on capturable/fused modes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>state</strong> (<em>dict</em>) – Optimizer state dictionary (typically from torch.load()).</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><p>This enables loading checkpoints saved with older ADOPT versions</p></li>
+<li><p>Step counters are converted to appropriate device/dtype for compatibility</p></li>
+<li><p>Capturable and fused modes require step tensors on parameter devices</p></li>
+</ul>
+</div>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.ADOPT.step">
 <span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">closure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/adopt.html#ADOPT.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ADOPT.step" title="Link to this definition"></a></dt>
 <dd><p>Perform a single optimization step.</p>
+<p>This method executes one iteration of the ADOPT optimization algorithm across
+all parameter groups. It orchestrates the following workflow:</p>
+<ol class="arabic simple">
+<li><p>Optionally evaluates a closure to recompute the loss (useful for algorithms
+like LBFGS or when loss needs multiple evaluations)</p></li>
+<li><p>For each parameter group:
+- Collects parameters with gradients and their associated state
+- Extracts hyperparameters (betas, learning rate, etc.)
+- Calls the functional adopt() API to perform the actual update</p></li>
+<li><p>Returns the loss value if a closure was provided</p></li>
+</ol>
+<p>The functional API (adopt()) handles three execution modes:
+- Single-tensor: Updates one parameter at a time (default, JIT-compatible)
+- Multi-tensor (foreach): Batches operations for better performance
+- Fused: Uses fused CUDA kernels (not yet implemented)</p>
+<p>Gradient scaling support:
+This method is compatible with automatic mixed precision (AMP) training.
+It can access grad_scale and found_inf attributes for gradient unscaling
+and inf/nan detection when used with GradScaler.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>closure</strong> (<em>Callable</em><em>, </em><em>optional</em>) – A closure that reevaluates the model
-and returns the loss.</p>
+<dd class="field-odd"><p><strong>closure</strong> (<em>Callable</em><em>, </em><em>optional</em>) – A callable that reevaluates the model and
+returns the loss. The closure should:
+- Enable gradients (torch.enable_grad())
+- Compute forward pass
+- Compute loss
+- Compute backward pass
+- Return the loss value
+Example: lambda: (loss := model(x), loss.backward(), loss)[-1]
+Default: None</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The loss value returned by the closure, or None if no</dt><dd><p>closure was provided.</p>
 </dd>
 </dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[Tensor]</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Standard usage</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="nb">input</span><span class="p">),</span> <span class="n">target</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># With closure (e.g., for line search)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">closure</span><span class="p">():</span>
+<span class="gp">... </span>    <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+<span class="gp">... </span>    <span class="k">return</span> <span class="n">loss</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">loss</span> <span class="o">=</span> <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">closure</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><p>Call zero_grad() before computing gradients for the next step</p></li>
+<li><p>CUDA graph capture is checked for safety when capturable=True</p></li>
+<li><p>The method is thread-safe for different parameter groups</p></li>
+</ul>
+</div>
 </dd></dl>
 
 </dd></dl>

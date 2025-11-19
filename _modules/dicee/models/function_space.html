@@ -93,7 +93,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <div class="viewcode-block" id="FMult">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.FMult">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FMult</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Learning Knowledge Neural Graphs&quot;&quot;&quot;</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Learning Neural Networks for Knowledge Graphs&quot;&quot;&quot;</span>
@@ -116,7 +116,7 @@
 
 
 <div class="viewcode-block" id="FMult.compute_func">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult.compute_func">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.FMult.compute_func">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
         <span class="c1"># Weights for two linear layers.</span>
@@ -131,7 +131,7 @@
 
 
 <div class="viewcode-block" id="FMult.chain_func">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult.chain_func">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.FMult.chain_func">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">chain_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">):</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
         <span class="c1"># Weights for two linear layers.</span>
@@ -146,7 +146,7 @@
 
 
 <div class="viewcode-block" id="FMult.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.FMult.forward_triples">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx_triple</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="c1"># (1) Retrieve embeddings: batch, \mathbb R^d</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">idx_triple</span><span class="p">)</span>
@@ -171,7 +171,7 @@
 
 
 <div class="viewcode-block" id="GFMult">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.GFMult">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.GFMult">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">GFMult</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Learning Knowledge Neural Graphs&quot;&quot;&quot;</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Learning Neural Networks for Knowledge Graphs&quot;&quot;&quot;</span>
@@ -191,7 +191,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>  <span class="c1"># shape 1 by self.n</span>
 
 <div class="viewcode-block" id="GFMult.compute_func">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.GFMult.compute_func">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.GFMult.compute_func">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
         <span class="c1"># Weights for two linear layers.</span>
@@ -206,7 +206,7 @@
 
 
 <div class="viewcode-block" id="GFMult.chain_func">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.GFMult.chain_func">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.GFMult.chain_func">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">chain_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">):</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
         <span class="c1"># Weights for two linear layers.</span>
@@ -221,7 +221,7 @@
 
 
 <div class="viewcode-block" id="GFMult.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.GFMult.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.GFMult.forward_triples">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx_triple</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="c1"># (1) Retrieve embeddings: batch, \mathbb R^d</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">idx_triple</span><span class="p">)</span>
@@ -242,7 +242,7 @@
 
 
 <div class="viewcode-block" id="FMult2">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult2">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.FMult2">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FMult2</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Learning Knowledge Neural Graphs&quot;&quot;&quot;</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Learning Neural Networks for Knowledge Graphs&quot;&quot;&quot;</span>
@@ -273,7 +273,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 
 <div class="viewcode-block" id="FMult2.build_func">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult2.build_func">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.FMult2.build_func">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">build_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Vec</span><span class="p">):</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">Vec</span><span class="p">)</span>
         <span class="c1"># (1) Construct self.n_layers layered neural network</span>
@@ -285,7 +285,7 @@
 
 
 <div class="viewcode-block" id="FMult2.build_chain_funcs">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult2.build_chain_funcs">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.FMult2.build_chain_funcs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">build_chain_funcs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_Vec</span><span class="p">):</span>
         <span class="n">list_W</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">list_b</span> <span class="o">=</span> <span class="p">[]</span>
@@ -308,7 +308,7 @@
 
 
 <div class="viewcode-block" id="FMult2.compute_func">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult2.compute_func">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.FMult2.compute_func">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
         <span class="n">out</span> <span class="o">=</span> <span class="n">W</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">@</span> <span class="n">x</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">W</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
@@ -320,7 +320,7 @@
 
 
 <div class="viewcode-block" id="FMult2.function">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult2.function">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.FMult2.function">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_W</span><span class="p">,</span> <span class="n">list_b</span><span class="p">):</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_W</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -334,14 +334,14 @@
 
 
 <div class="viewcode-block" id="FMult2.trapezoid">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult2.trapezoid">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.FMult2.trapezoid">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">trapezoid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_W</span><span class="p">,</span> <span class="n">list_b</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">list_W</span><span class="p">,</span> <span class="n">list_b</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">discrete_points</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">discrete_points</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
             <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="FMult2.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult2.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.FMult2.forward_triples">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx_triple</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="c1"># (1) Retrieve embeddings: batch, \mathbb R^d</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">idx_triple</span><span class="p">)</span>
@@ -371,7 +371,7 @@
     
 
 <div class="viewcode-block" id="LFMult1">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.LFMult1">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult1">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LFMult1</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span> 
 
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:</span>
@@ -384,7 +384,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
 
 <div class="viewcode-block" id="LFMult1.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.LFMult1.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult1.forward_triples">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx_triple</span><span class="p">):</span> <span class="c1"># idx_triplet = (h_idx, r_idx, t_idx) #change this to the forward_triples</span>
 
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">idx_triple</span><span class="p">)</span>
@@ -395,7 +395,7 @@
 
 
 <div class="viewcode-block" id="LFMult1.tri_score">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.LFMult1.tri_score">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult1.tri_score">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">tri_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">h</span><span class="p">,</span><span class="n">r</span><span class="p">,</span><span class="n">t</span><span class="p">):</span>
 
         <span class="n">i_range</span><span class="p">,</span> <span class="n">j_range</span><span class="p">,</span> <span class="n">k_range</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">),</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">),</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">))</span>
@@ -411,7 +411,7 @@
 
     
 <div class="viewcode-block" id="LFMult1.vtp_score">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.LFMult1.vtp_score">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult1.vtp_score">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">vtp_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">h</span><span class="p">,</span><span class="n">r</span><span class="p">,</span><span class="n">t</span><span class="p">):</span>
 
         <span class="n">i_range</span><span class="p">,</span> <span class="n">j_range</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">),</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">))</span>
@@ -440,7 +440,7 @@
 
     
 <div class="viewcode-block" id="LFMult">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.LFMult">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LFMult</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span> 
 
 <span class="w">    </span><span class="sd">&#39;&#39;&#39;Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:</span>
@@ -457,7 +457,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">x_values</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
 
 <div class="viewcode-block" id="LFMult.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.LFMult.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.forward_triples">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx_triple</span><span class="p">):</span> <span class="c1"># idx_triplet = (h_idx, r_idx, t_idx) #change this to the forward_triples</span>
 
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">idx_triple</span><span class="p">)</span>
@@ -481,7 +481,7 @@
 
     
 <div class="viewcode-block" id="LFMult.construct_multi_coeff">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.LFMult.construct_multi_coeff">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.construct_multi_coeff">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">construct_multi_coeff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
 
         <span class="n">coeffs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
@@ -493,7 +493,7 @@
 
 
 <div class="viewcode-block" id="LFMult.poly_NN">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.LFMult.poly_NN">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.poly_NN">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">poly_NN</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">coefh</span><span class="p">,</span> <span class="n">coefr</span><span class="p">,</span> <span class="n">coeft</span><span class="p">):</span>
 
 <span class="w">        </span><span class="sd">&#39;&#39;&#39; Constructing a 2 layers NN to represent the embeddings. </span>
@@ -511,7 +511,7 @@
 
     
 <div class="viewcode-block" id="LFMult.linear">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.LFMult.linear">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.linear">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">linear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">w</span><span class="p">,</span><span class="n">b</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tanh</span><span class="p">((</span><span class="n">w</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">x</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)))</span></div>
 
@@ -520,7 +520,7 @@
 
     
 <div class="viewcode-block" id="LFMult.scalar_batch_NN">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.LFMult.scalar_batch_NN">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.scalar_batch_NN">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">scalar_batch_NN</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
 
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;element wise multiplication between a,b and c:</span>
@@ -540,7 +540,7 @@
 
 
 <div class="viewcode-block" id="LFMult.tri_score">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.LFMult.tri_score">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.tri_score">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">tri_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coeff_h</span><span class="p">,</span> <span class="n">coeff_r</span><span class="p">,</span> <span class="n">coeff_t</span><span class="p">):</span>
 
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;this part implement the trilinear scoring techniques: </span>
@@ -574,7 +574,7 @@
 
     
 <div class="viewcode-block" id="LFMult.vtp_score">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.LFMult.vtp_score">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.vtp_score">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">vtp_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
 <span class="w">            </span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;this part implement the vector triple product scoring techniques: </span>
@@ -609,7 +609,7 @@
 
 
 <div class="viewcode-block" id="LFMult.comp_func">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.LFMult.comp_func">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.comp_func">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">comp_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">h</span><span class="p">,</span><span class="n">r</span><span class="p">,</span><span class="n">t</span><span class="p">):</span> 
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;this part implement the function composition scoring techniques: i.e. score = &lt;hor, t&gt;&#39;&#39;&#39;</span>
 
@@ -627,7 +627,7 @@
 
 
 <div class="viewcode-block" id="LFMult.polynomial">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.LFMult.polynomial">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.polynomial">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">polynomial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">coeff</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">degree</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;This function takes a matrix tensor of coefficients (coeff), a tensor vector of points x  and range of integer [0,1,...d]</span>
 <span class="sd">            and return a vector tensor (coeff[0][0] + coeff[0][1]x +...+ coeff[0][d]x^d,</span>
@@ -643,7 +643,7 @@
 
         
 <div class="viewcode-block" id="LFMult.pop">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.LFMult.pop">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.pop">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">coeff</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">degree</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;This function allow us to evaluate the composition of two polynomes without for loops :) </span>
 <span class="sd">        it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  and range of integer [0,1,...d]</span>

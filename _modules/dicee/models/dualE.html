@@ -93,7 +93,7 @@
 
 
 <div class="viewcode-block" id="DualE">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DualE">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.dualE.DualE">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DualE</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Dual Quaternion Knowledge Graph Embeddings (https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657)&quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
@@ -194,7 +194,7 @@
         <span class="k">return</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">score_r</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
     
 <div class="viewcode-block" id="DualE.kvsall_score">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DualE.kvsall_score">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.dualE.DualE.kvsall_score">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">kvsall_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e_1_h</span><span class="p">,</span> <span class="n">e_2_h</span><span class="p">,</span> <span class="n">e_3_h</span><span class="p">,</span> <span class="n">e_4_h</span><span class="p">,</span> <span class="n">e_5_h</span><span class="p">,</span> <span class="n">e_6_h</span><span class="p">,</span> <span class="n">e_7_h</span><span class="p">,</span> <span class="n">e_8_h</span><span class="p">,</span>
               <span class="n">e_1_t</span><span class="p">,</span> <span class="n">e_2_t</span><span class="p">,</span> <span class="n">e_3_t</span><span class="p">,</span> <span class="n">e_4_t</span><span class="p">,</span> <span class="n">e_5_t</span><span class="p">,</span> <span class="n">e_6_t</span><span class="p">,</span> <span class="n">e_7_t</span><span class="p">,</span> <span class="n">e_8_t</span><span class="p">,</span>
               <span class="n">r_1</span><span class="p">,</span> <span class="n">r_2</span><span class="p">,</span> <span class="n">r_3</span><span class="p">,</span> <span class="n">r_4</span><span class="p">,</span> <span class="n">r_5</span><span class="p">,</span> <span class="n">r_6</span><span class="p">,</span> <span class="n">r_7</span><span class="p">,</span> <span class="n">r_8</span> <span class="p">)</span><span class="o">-&gt;</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">:</span>
@@ -223,7 +223,7 @@
 
     
 <div class="viewcode-block" id="DualE.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DualE.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.dualE.DualE.forward_triples">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx_triple</span><span class="p">:</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">)</span><span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Negative Sampling forward pass:</span>
 
@@ -256,7 +256,7 @@
 
 
 <div class="viewcode-block" id="DualE.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DualE.forward_k_vs_all">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.dualE.DualE.forward_k_vs_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">x</span><span class="p">):</span>
 
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;KvsAll forward pass</span>
@@ -292,7 +292,7 @@
 
     
 <div class="viewcode-block" id="DualE.T">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DualE.T">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.dualE.DualE.T">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">T</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Transpose function</span>
 

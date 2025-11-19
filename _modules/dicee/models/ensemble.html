@@ -92,7 +92,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
 <div class="viewcode-block" id="EnsembleKGE">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">EnsembleKGE</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">models</span> <span class="p">:</span> <span class="nb">list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pretrained_models</span><span class="p">:</span><span class="n">List</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
@@ -121,7 +121,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">train_mode</span><span class="o">=</span><span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">args</span>
 <div class="viewcode-block" id="EnsembleKGE.named_children">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.named_children">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.named_children">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">named_children</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">named_children</span><span class="p">()</span></div>
 
@@ -133,38 +133,38 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">_trainer</span>
 
 <div class="viewcode-block" id="EnsembleKGE.parameters">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.parameters">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.parameters">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span> <span class="n">x</span>  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">i</span><span class="o">.</span><span class="n">parameters</span><span class="p">()]</span></div>
 
         <span class="c1"># return self.models[0].parameters()</span>
 <div class="viewcode-block" id="EnsembleKGE.modules">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.modules">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.modules">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">modules</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">i</span><span class="o">.</span><span class="n">modules</span><span class="p">()]</span></div>
 
 
 <div class="viewcode-block" id="EnsembleKGE.__iter__">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.__iter__">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.__iter__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="EnsembleKGE.__len__">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.__len__">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.__len__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="EnsembleKGE.eval">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.eval">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.eval">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">:</span>
             <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train_mode</span><span class="o">=</span><span class="kc">False</span></div>
 
 <div class="viewcode-block" id="EnsembleKGE.to">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.to">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.to">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">device</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">)):</span>
             <span class="k">if</span> <span class="n">device</span> <span class="o">==</span> <span class="s2">&quot;cpu&quot;</span><span class="p">:</span>
@@ -174,14 +174,14 @@
 
             
 <div class="viewcode-block" id="EnsembleKGE.state_dict">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.state_dict">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.state_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the state dict of the ensemble.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="EnsembleKGE.load_state_dict">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.load_state_dict">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.load_state_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the state dict into the ensemble.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">)</span>  </div>
@@ -189,7 +189,7 @@
 
 
 <div class="viewcode-block" id="EnsembleKGE.mem_of_model">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.mem_of_model">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.mem_of_model">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">mem_of_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">mem_of_ensemble</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;EstimatedSizeMB&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;NumParam&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">:</span>
@@ -198,7 +198,7 @@
         <span class="k">return</span> <span class="n">mem_of_ensemble</span></div>
 
 <div class="viewcode-block" id="EnsembleKGE.__call__">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.__call__">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.__call__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">x_batch</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_mode</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
@@ -224,14 +224,14 @@
 
     
 <div class="viewcode-block" id="EnsembleKGE.step">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.step">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.step">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">opt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="p">:</span>
             <span class="n">opt</span><span class="o">.</span><span class="n">step</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="EnsembleKGE.get_embeddings">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.get_embeddings">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.get_embeddings">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">entity_embeddings</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">relation_embeddings</span> <span class="o">=</span> <span class="p">[]</span>
@@ -269,7 +269,7 @@
 <span class="sd">        return method</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="EnsembleKGE.__str__">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.EnsembleKGE.__str__">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;EnsembleKGE of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span></div>
 </div>
