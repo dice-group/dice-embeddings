@@ -307,9 +307,9 @@ class PreprocessKG:
                 return df
 
             print('Adding Reciprocal Triples...')
-            add_reciprocal(self.kg.raw_train_set)
-            add_reciprocal(self.kg.raw_valid_set)
-            add_reciprocal(self.kg.raw_test_set)
+            self.kg.raw_train_set = add_reciprocal(self.kg.raw_train_set)
+            self.kg.raw_valid_set = add_reciprocal(self.kg.raw_valid_set)
+            self.kg.raw_test_set = add_reciprocal(self.kg.raw_test_set)
 
         # Type checking
         assert isinstance(self.kg.raw_train_set, pl.DataFrame)
