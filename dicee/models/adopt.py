@@ -64,7 +64,7 @@ Original implementation: https://github.com/iShohei220/adopt
 Notes:
 -----
 This implementation is based on the original ADOPT implementation and adapted to work
-with the PyTorch optimizer interface and the dice-embeddings framework.
+with the PyTorch optimizer interface and the dicee framework.
 """
 # CD: copy pasted from https://raw.githubusercontent.com/iShohei220/adopt/refs/heads/main/adopt.py
 # mypy: allow-untyped-decorators
