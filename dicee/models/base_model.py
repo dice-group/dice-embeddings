@@ -152,6 +152,7 @@ class BaseKGE(BaseKGELightning):
         # average minibatch loss per epoch
         self.loss_history = []
         self.byte_pair_encoding = self.args.get("byte_pair_encoding", False)
+        self.byte_level_encoding = self.args.get("byte_level_encoding", False) 
         self.max_length_subword_tokens = self.args.get("max_length_subword_tokens", None)
         self.block_size=self.args.get("block_size", None)
         if self.byte_pair_encoding and self.args['model'] != "BytE":
@@ -169,6 +170,8 @@ class BaseKGE(BaseKGELightning):
                 self.ordered_bpe_entities = torch.tensor(list(self.bpe_entity_to_idx.keys()), dtype=torch.long)
         elif self.byte_pair_encoding and self.args['model'] == "BytE":
             """ Transformer implements token embeddings"""
+        elif self.byte_level_encoding:
+            """Byte level models implement byte encoder, no need for embeddings """
         else:
 
             self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)

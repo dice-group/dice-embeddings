@@ -8,6 +8,7 @@ class KG:
 
     def __init__(self, dataset_dir: str = None,
                  byte_pair_encoding: bool = False,
+                 byte_level_encoding: bool = False,
                  padding: bool = False,
                  add_noise_rate: float = None,
                  sparql_endpoint: str = None,
@@ -20,6 +21,7 @@ class KG:
         """
         :param dataset_dir: A path of a folder containing train.txt, valid.txt, test.text
         :param byte_pair_encoding: Apply Byte pair encoding.
+        :param byte_level_encoding: Apply Byte level encoding.
         :param padding: Add empty string into byte-pair encoded subword units representing triples
         :param add_noise_rate: Noisy triples added into the training adataset by x % of its size.
         :param sparql_endpoint: An endpoint of a triple store
@@ -38,6 +40,7 @@ class KG:
         self.path_single_kg = path_single_kg
 
         self.byte_pair_encoding = byte_pair_encoding
+        self.byte_level_encoding = byte_level_encoding
         self.ordered_shaped_bpe_tokens = None
         self.add_noise_rate = add_noise_rate
         self.num_entities = None
@@ -73,6 +76,11 @@ class KG:
         self.ordered_bpe_entities = None
         self.separator=separator
 
+        self.max_byte_sequence_length = None
+        self.byte_padding_token = 256  # Use 256 as padding (0-255 are valid UTF-8 bytes)
+        self.ordered_byte_entities = None
+        self.ordered_byte_relations = None
+
         if self.path_for_deserialization is None:
             # Read a knowledge graph into memory
             ReadFromDisk(kg=self).start()
@@ -98,7 +106,16 @@ class KG:
 
     def describe(self) -> None:
         self.description_of_input = f'\n------------------- Description of Dataset {self.dataset_dir if isinstance(self.dataset_dir, str) else self.sparql_endpoint if isinstance(self.sparql_endpoint, str) else self.path_single_kg} -------------------'
-        if self.byte_pair_encoding:
+        if self.byte_level_encoding:  
+            self.description_of_input += f'\nByte-level encoding enabled' \
+                                        f'\nMax byte sequence length: {self.max_byte_sequence_length}' \
+                                        f'\nNumber of triples on train set:' \
+                                        f'{len(self.train_set)}' \
+                                        f'\nNumber of triples on valid set:' \
+                                        f'{len(self.valid_set) if self.valid_set is not None else 0}' \
+                                        f'\nNumber of triples on test set:' \
+                                        f'{len(self.test_set) if self.test_set is not None else 0}\n'
+        elif self.byte_pair_encoding:
             self.description_of_input += f'\nNumber of tokens:{self.num_tokens}' \
                                          f'\nNumber of max sequence of sub-words: {self.max_length_subword_tokens}' \
                                          f'\nNumber of triples on train set:' \

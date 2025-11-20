@@ -29,6 +29,7 @@ def construct_dataset(*,
                       valid_set=None,
                       test_set=None,
                       ordered_bpe_entities=None,
+                      ordered_byte_entities=None,  
                       train_target_indices=None,
                       target_dim: int = None,
                       entity_to_idx: dict,
@@ -38,9 +39,24 @@ def construct_dataset(*,
                       neg_ratio: int,
                       label_smoothing_rate: float,
                       byte_pair_encoding=None,
+                      byte_level_encoding=None,  
                       block_size: int = None
                       ) -> torch.utils.data.Dataset:
-    if ordered_bpe_entities and byte_pair_encoding and scoring_technique == 'NegSample':
+    if ordered_byte_entities and byte_level_encoding and scoring_technique == 'NegSample':
+        train_set = ByteLevelNegativeSamplingDataset(
+            train_set=train_set,
+            ordered_shaped_byte_entities=ordered_byte_entities,
+            neg_ratio=neg_ratio,
+            label_smoothing_rate=label_smoothing_rate)
+    # TODO: Implement this Dataset
+    # elif ordered_byte_entities and byte_level_encoding and scoring_technique in ['KvsAll', "AllvsAll"]:
+    #     train_set = ByteLevelMultiLabelDataset(
+    #         train_set=train_set,
+    #         train_indices_target=train_target_indices,
+    #         target_dim=target_dim,
+    #         torch_ordered_shaped_byte_entities=torch.tensor(
+    #             [shaped_byte_ent for (str_ent, byte_ent, shaped_byte_ent) in ordered_byte_entities]))
+    elif ordered_bpe_entities and byte_pair_encoding and scoring_technique == 'NegSample':
         train_set = BPE_NegativeSamplingDataset(
             train_set=torch.tensor(train_set, dtype=torch.long),
             ordered_shaped_bpe_entities=torch.tensor(
@@ -150,6 +166,82 @@ class BPE_NegativeSamplingDataset(torch.utils.data.Dataset):
         label = torch.cat((label, torch.zeros(num_of_corruption)), 0)
         return bpe_triple, label
 
+class ByteLevelNegativeSamplingDataset(torch.utils.data.Dataset):
+    def __init__(self, train_set: List[Tuple], 
+                 ordered_shaped_byte_entities: List[Tuple[int]], 
+                 neg_ratio: int,
+                 label_smoothing_rate: float = 0.0):
+        super().__init__()
+        self.train_set = train_set
+        self.neg_ratio = neg_ratio
+        self.label_smoothing_rate = label_smoothing_rate
+        
+        # Pre-convert all entities to a single static tensor 
+        # Assumes padded entities
+        self.all_entities_tensor = torch.tensor(ordered_shaped_byte_entities, dtype=torch.long)
+        self.num_byte_entities = self.all_entities_tensor.size(0)
+        self.num_datapoints = len(self.train_set)
+        
+    def __len__(self):
+        return self.num_datapoints
+    
+    def __getitem__(self, idx):
+        # We just return raw lists here, conversion happens in collate
+        return self.train_set[idx]
+    
+    def collate_fn(self, batch):
+        size_of_batch = len(batch)
+        
+        # Process Positives
+        h_bytes = torch.tensor([t[0] for t in batch], dtype=torch.long)
+        r_bytes = torch.tensor([t[1] for t in batch], dtype=torch.long)
+        t_bytes = torch.tensor([t[2] for t in batch], dtype=torch.long)
+        
+        # Positive Labels
+        pos_labels = torch.ones(size_of_batch) - self.label_smoothing_rate
+
+        #  Process Negatives
+        num_neg = size_of_batch * self.neg_ratio
+        
+        # Randomly select indices for corruption
+        corr_indices = torch.randint(0, self.num_byte_entities, (num_neg,))
+        
+        # indexing instead of list comprehension
+        corr_bytes = self.all_entities_tensor[corr_indices] 
+
+        # Split corruption 50/50 Head/Tail explicitly
+        split_idx = num_neg // 2
+
+        # logic to construct full negative lists:
+        # Repeat the positives to match negative size
+        h_repeated = h_bytes.repeat_interleave(self.neg_ratio, dim=0)
+        r_repeated = r_bytes.repeat_interleave(self.neg_ratio, dim=0)
+        t_repeated = t_bytes.repeat_interleave(self.neg_ratio, dim=0)
+
+        # Create masks for where to insert corruptions
+        # First half of negatives get corrupted heads, second half get corrupted tails
+        mask_h = torch.zeros(num_neg, dtype=torch.bool)
+        mask_h[:split_idx] = True # First half corrupts H
+        
+        # Apply corruptions
+        h_neg = h_repeated.clone()
+        t_neg = t_repeated.clone()
+        
+        h_neg[mask_h] = corr_bytes[:split_idx]  # Overwrite Heads
+        t_neg[~mask_h] = corr_bytes[split_idx:] # Overwrite Tails
+        
+        neg_labels = torch.zeros(num_neg) + self.label_smoothing_rate
+
+        # Combine
+        final_h = torch.cat([h_bytes, h_neg], dim=0)
+        final_r = torch.cat([r_bytes, r_repeated], dim=0)
+        final_t = torch.cat([t_bytes, t_neg], dim=0)
+        final_labels = torch.cat([pos_labels, neg_labels], dim=0)
+        
+        # Stack: (Batch_Size, 3, Seq_Len)
+        byte_triples = torch.stack([final_h, final_r, final_t], dim=1)
+
+        return byte_triples, final_labels
 
 class MultiLabelDataset(torch.utils.data.Dataset):
     def __init__(self, train_set: torch.LongTensor, train_indices_target: torch.LongTensor, target_dim: int,

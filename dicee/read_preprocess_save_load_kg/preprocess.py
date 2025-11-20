@@ -28,7 +28,9 @@ class PreprocessKG:
         None
         """
         # Process
-        if self.kg.byte_pair_encoding and self.kg.padding:
+        if self.kg.byte_level_encoding:
+            self.preprocess_with_byte_encoding()
+        elif self.kg.byte_pair_encoding and self.kg.padding:
             self.preprocess_with_byte_pair_encoding_with_padding()
         elif self.kg.byte_pair_encoding:
             self.preprocess_with_byte_pair_encoding()
@@ -139,6 +141,60 @@ class PreprocessKG:
             self.kg.raw_valid_set = None
             self.kg.raw_test_set = None
 
+    @staticmethod
+    def string_to_bytes(text: str, max_len: int, padding_token: int = 256) -> Tuple[int, ...]:
+        """
+        Convert a string to a tuple of byte values with padding.
+        
+        Parameters
+        ----------
+        text : str
+            The string to convert
+        max_len : int
+            Maximum length of byte sequence
+        padding_token : int
+            Token to use for padding (default 256)
+        
+        Returns
+        -------
+        Tuple of integers representing bytes (0-255) + padding tokens (256)
+        """
+        bytes_list = list(text.encode('utf-8'))[:max_len]
+        # Pad with padding_token
+        bytes_list += [padding_token] * (max_len - len(bytes_list))
+        return tuple(bytes_list)
+
+    @staticmethod
+    def __replace_values_df_bytes(df: pd.DataFrame = None, max_len: int = None, 
+                                padding_token: int = 256) -> List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]:
+        """
+        Map a DataFrame of triples into byte sequences.
+        
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            DataFrame with columns ['subject', 'relation', 'object']
+        max_len: int
+            Maximum byte sequence length
+        padding_token: int
+            Token for padding
+        
+        Returns
+        -------
+        List of tuples where each tuple contains three tuples of byte sequences
+        """
+        if df is None:
+            return []
+        
+        byte_triples = []
+        for _, row in df.iterrows():
+            h_bytes = PreprocessKG.string_to_bytes(row['subject'], max_len, padding_token)
+            r_bytes = PreprocessKG.string_to_bytes(row['relation'], max_len, padding_token)
+            t_bytes = PreprocessKG.string_to_bytes(row['object'], max_len, padding_token)
+            byte_triples.append((h_bytes, r_bytes, t_bytes))
+        
+        return byte_triples
+
 
     @staticmethod
     def __replace_values_df(df: pd.DataFrame = None, f=None) -> Union[
@@ -220,6 +276,115 @@ class PreprocessKG:
         self.kg.train_set = self.__replace_values_df(df=self.kg.raw_train_set, f=self.kg.enc.encode)
         self.kg.valid_set = self.__replace_values_df(df=self.kg.raw_valid_set, f=self.kg.enc.encode)
         self.kg.test_set = self.__replace_values_df(df=self.kg.raw_test_set, f=self.kg.enc.encode)
+
+    @timeit
+    def preprocess_with_byte_encoding(self) -> None:
+        """Preprocess with byte-level encoding - Optimized"""
+        
+        print("Preprocessing with byte-level encoding...")
+
+        # Apply Reciprocals / Noise 
+        self.kg.raw_train_set = apply_reciprocal_or_noise(
+            add_reciprocal=self.kg.add_reciprocal, eval_model=self.kg.eval_model,
+            df=self.kg.raw_train_set, info="Train")
+        
+        if self.kg.raw_valid_set is not None:
+            self.kg.raw_valid_set = apply_reciprocal_or_noise(
+                add_reciprocal=self.kg.add_reciprocal, eval_model=self.kg.eval_model,
+                df=self.kg.raw_valid_set, info="Validation")
+                
+        if self.kg.raw_test_set is not None:
+            self.kg.raw_test_set = apply_reciprocal_or_noise(
+                add_reciprocal=self.kg.add_reciprocal, eval_model=self.kg.eval_model,
+                df=self.kg.raw_test_set, info="Test")
+
+        print("Collecting unique entities and relations...")
+        entities_set = set(self.kg.raw_train_set['subject']).union(set(self.kg.raw_train_set['object']))
+        relations_set = set(self.kg.raw_train_set['relation'])
+
+        if self.kg.raw_valid_set is not None:
+            entities_set.update(self.kg.raw_valid_set['subject'])
+            entities_set.update(self.kg.raw_valid_set['object'])
+            relations_set.update(self.kg.raw_valid_set['relation'])
+
+        if self.kg.raw_test_set is not None:
+            entities_set.update(self.kg.raw_test_set['subject'])
+            entities_set.update(self.kg.raw_test_set['object'])
+            relations_set.update(self.kg.raw_test_set['relation'])
+
+        # Find Max Length from Unique Strings
+        max_len_ent = max(len(e.encode('utf-8')) for e in entities_set)
+        max_len_rel = max(len(r.encode('utf-8')) for r in relations_set)
+        
+        self.kg.max_byte_sequence_length = max(max_len_ent, max_len_rel)
+        print(f"Maximum byte sequence length: {self.kg.max_byte_sequence_length}")
+
+        # Create Look-up Dictionaries (String -> Padded Byte Tuple)
+        print("Building byte vocabularies...")
+        
+        # Helper lambda for fast encoding
+        to_bytes = lambda x: self.string_to_bytes(x, self.kg.max_byte_sequence_length, self.kg.byte_padding_token)
+
+        # Create map: 'Paris' -> (80, 97, 114, 105, 115, 256...)
+        self.entity2bytes = {ent: to_bytes(ent) for ent in entities_set}
+        self.relation2bytes = {rel: to_bytes(rel) for rel in relations_set}
+
+        # We sort them to ensure determinism across runs
+        sorted_entities = sorted(list(entities_set))
+        
+        self.kg.ordered_byte_entities = [self.entity2bytes[e] for e in sorted_entities]
+        
+        self.kg.num_entities = len(self.kg.ordered_byte_entities)
+        print(f"Found {self.kg.num_entities} unique entities")
+
+        # 6. Map DataFrames to Byte Tuples using the Dictionary (Fastest Method)
+        print("Mapping datasets to bytes...")
+
+        def map_df_to_bytes(df, ent_map, rel_map):
+            # Using list comprehension is faster than iterrows
+            return [
+                (ent_map[row.subject], rel_map[row.relation], ent_map[row.object])
+                for row in df.itertuples(index=False)
+            ]
+
+        self.kg.train_set = map_df_to_bytes(self.kg.raw_train_set, self.entity2bytes, self.relation2bytes)
+        
+        if self.kg.raw_valid_set is not None:
+            self.kg.valid_set = map_df_to_bytes(self.kg.raw_valid_set, self.entity2bytes, self.relation2bytes)
+            
+        if self.kg.raw_test_set is not None:
+            self.kg.test_set = map_df_to_bytes(self.kg.raw_test_set, self.entity2bytes, self.relation2bytes)
+
+        # Handle Training Techniques
+        if self.kg.training_technique == "NegSample":
+            # train_set is already [(h_bytes, r_bytes, t_bytes), ...]
+            # The Dataset class will handle the negative sampling
+            pass
+
+        elif self.kg.training_technique == "KvsAll":
+            print("Preparing KvsAll format...")
+            # We need to map Byte Tuples back to Integer Indices for the target
+            # Create a reverse map for the targets: ByteTuple -> IntIndex
+            byte2idx = {b: i for i, b in enumerate(self.kg.ordered_byte_entities)}
+            
+            er_tails = {}
+            for (h, r, t) in self.kg.train_set:
+                if (h, r) not in er_tails:
+                    er_tails[(h, r)] = []
+                er_tails[(h, r)].append(byte2idx[t]) # Map the tail bytes to its index ID
+            
+            # Convert to lists
+            train_pairs = []
+            train_target_indices = []
+            
+            for (h, r), tails in er_tails.items():
+                train_pairs.append((h, r))
+                train_target_indices.append(torch.tensor(tails, dtype=torch.long))
+                
+            self.kg.train_set = train_pairs # List of ((bytes), (bytes))
+            self.kg.train_target_indices = train_target_indices # List of [t_idx1, t_idx2...]
+            
+
 
     @timeit
     def preprocess_with_byte_pair_encoding_with_padding(self) -> None:

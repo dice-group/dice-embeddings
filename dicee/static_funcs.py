@@ -3,7 +3,7 @@ import torch
 import datetime
 from typing import Tuple, List
 from .models import Pyke, DistMult, CKeci, Keci, TransE, DeCaL, DualE,\
-    ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom, LFMult, CoKE
+    ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom, LFMult, CoKE, BET
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
 import time
@@ -373,6 +373,7 @@ def read_or_load_kg(args, cls):
     start_time = time.time()
     kg = cls(dataset_dir=args.dataset_dir,
              byte_pair_encoding=args.byte_pair_encoding,
+             byte_level_encoding=args.byte_level_encoding,
              padding=True if args.byte_pair_encoding and args.model != "BytE" else False,
              add_noise_rate=args.add_noise_rate,
              sparql_endpoint=args.sparql_endpoint,
@@ -458,6 +459,9 @@ def intialize_model(args: dict,verbose=0) -> Tuple[object, str]:
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'CoKE':
         model = CoKE(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'BET':
+        model = BET(args=args)
         form_of_labelling = 'EntityPrediction'
     else:
         raise ValueError(f"--model_name: {model_name} is not found.")

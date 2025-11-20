@@ -5,7 +5,7 @@ import json
 
 from . import load_json
 from .static_funcs import pickle
-from .static_funcs_training import evaluate_lp, evaluate_bpe_lp
+from .static_funcs_training import evaluate_lp, evaluate_bpe_lp, evaluate_byte_lp
 from typing import Tuple, List
 from .knowledge_graph import KG
 
@@ -88,6 +88,12 @@ class Evaluator:
                                                                      test_set=dataset.test_set,
                                                                      ordered_bpe_entities=dataset.ordered_bpe_entities,
                                                                      trained_model=trained_model)
+        elif self.args.scoring_technique == 'NegSample' and self.args.byte_level_encoding:
+            self.eval_rank_of_head_and_tail_byte_level_entity(train_set=dataset.train_set,
+                                                              valid_set=dataset.valid_set,
+                                                              test_set=dataset.test_set,
+                                                              ordered_byte_entities=dataset.ordered_byte_entities,
+                                                              trained_model=trained_model)
         elif self.args.scoring_technique in ["AllvsAll",
                                              "KvsAll",
                                              '1vsSample',
@@ -184,6 +190,28 @@ class Evaluator:
             self.report['Test'] = evaluate_bpe_lp(trained_model, test_set, ordered_bpe_entities,
                                                   er_vocab=self.er_vocab, re_vocab=self.re_vocab,
                                                   info=f'Evaluate {trained_model.name} on NegSample BPE Test set')
+
+    def eval_rank_of_head_and_tail_byte_level_entity(self, *,
+                                                     train_set=None,
+                                                     valid_set=None,
+                                                     test_set=None,
+                                                     ordered_byte_entities,
+                                                     trained_model):
+        """Evaluate byte-level encoded entities (BET model)."""
+        if 'train' in self.args.eval_model:
+            self.report['Train'] = evaluate_byte_lp(trained_model, train_set, ordered_byte_entities,
+                                                    er_vocab=self.er_vocab, re_vocab=self.re_vocab,
+                                                    info=f'Evaluate {trained_model.name} on Train set')
+
+        if 'val' in self.args.eval_model and valid_set is not None:
+            self.report['Val'] = evaluate_byte_lp(trained_model, valid_set, ordered_byte_entities,
+                                                  er_vocab=self.er_vocab, re_vocab=self.re_vocab,
+                                                  info=f'Evaluate {trained_model.name} on Valid set')
+
+        if test_set is not None and 'test' in self.args.eval_model:
+            self.report['Test'] = evaluate_byte_lp(trained_model, test_set, ordered_byte_entities,
+                                                   er_vocab=self.er_vocab, re_vocab=self.re_vocab,
+                                                   info=f'Evaluate {trained_model.name} on Test set')
 
     def eval_with_byte(self, *, raw_train_set, raw_valid_set=None, raw_test_set=None, trained_model,
                        form_of_labelling) -> None:

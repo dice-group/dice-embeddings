@@ -1,3 +1,4 @@
+import types
 import lightning as pl
 import polars
 from typing import Union
@@ -209,7 +210,26 @@ class DICE_Trainer:
     @timeit
     def init_dataset(self) -> torch.utils.data.Dataset:
         print('Initializing Dataset...', end='\t')
-        if isinstance(self.trainer.dataset,KG):
+        byte_level_encoding = getattr(self.args, 'byte_level_encoding', False)
+
+        # byte_levle data
+        if byte_level_encoding:
+            train_dataset = construct_dataset(
+                train_set=self.trainer.dataset.train_set,
+                valid_set=self.trainer.dataset.valid_set,
+                test_set=self.trainer.dataset.test_set,
+                ordered_byte_entities=self.trainer.dataset.ordered_byte_entities,
+                byte_level_encoding=True,
+                form_of_labelling=self.trainer.form_of_labelling,
+                scoring_technique=self.args.scoring_technique,
+                neg_ratio=self.args.neg_ratio,
+                label_smoothing_rate=self.args.label_smoothing_rate,
+                byte_pair_encoding=False,
+                block_size=self.args.block_size,
+                entity_to_idx=None,
+                relation_to_idx=None
+            )
+        elif isinstance(self.trainer.dataset,KG):
             # Create a memory map of training dataset to reduce the memory usage
             path_memory_map=self.trainer.dataset.path_for_serialization + '/memory_map_train_set.npy'
             if not os.path.exists(path_memory_map):
@@ -275,8 +295,8 @@ class DICE_Trainer:
         """
         """ Train selected model via the selected training strategy """
         print('------------------- Train -------------------')
-        assert isinstance(knowledge_graph, np.memmap) or isinstance(knowledge_graph, KG), \
-            f"knowledge_graph must be an instance of KG or np.memmap. Currently {type(knowledge_graph)}"
+        assert isinstance(knowledge_graph, (np.memmap, KG, types.SimpleNamespace)), \
+            f"knowledge_graph must be KG, np.memmap, or SimpleNamespace. Currently {type(knowledge_graph)}"
         if self.args.num_folds_for_cv == 0:
             self.trainer: Union[TensorParallel, TorchTrainer, TorchDDPTrainer, pl.Trainer]
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))

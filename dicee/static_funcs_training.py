@@ -319,6 +319,144 @@ def evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities,
     return results
 
 
+def evaluate_byte_lp(model, triple_idx: List[Tuple], all_byte_shaped_entities,
+                    er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List],
+                    info='Eval Starts', batch_size=1, chunk_size=500):
+    """
+    Evaluate link prediction for byte-level encoded entities (BET model).
+    
+    Args:
+        model: Trained model
+        triple_idx: List of triples with byte-encoded entities
+        all_byte_shaped_entities: List of all padded byte entities (num_entities, seq_len)
+        er_vocab: Entity-relation vocabulary for filtering
+        re_vocab: Relation-entity vocabulary for filtering
+        info: Information string to print
+        batch_size: Batch size for evaluation
+        chunk_size: Number of entities to process at once
+    """
+    assert isinstance(triple_idx, list)
+    assert isinstance(triple_idx[0], tuple)
+    assert len(triple_idx[0]) == 3
+    model.eval()
+    print(info)
+    print(f'Num of triples {len(triple_idx)}')
+    hits = dict()
+    reciprocal_ranks = []
+    
+    # Prepare byte entities
+    num_entities = len(all_byte_shaped_entities)
+    byte_entity_to_idx = dict()
+    all_byte_entities = []
+    
+    for idx, byte_entity in enumerate(all_byte_shaped_entities):
+        byte_entity_to_idx[byte_entity] = idx
+        all_byte_entities.append(byte_entity)
+    
+    # Convert to tensor: (num_entities, seq_len)
+    all_byte_entities = torch.LongTensor(all_byte_entities)
+    
+    # Iterate over test triples
+    for (byte_h, byte_r, byte_t) in tqdm(triple_idx, desc="Evaluating Byte-Level Triples"):
+        # (1) Indices of head and tail entities in all entities
+        idx_byte_h = byte_entity_to_idx[byte_h]
+        idx_byte_t = byte_entity_to_idx[byte_t]
+        
+        # (2) Tensor representation of byte sequences
+        torch_byte_h = torch.LongTensor(byte_h).unsqueeze(0)  # (1, seq_len)
+        torch_byte_r = torch.LongTensor(byte_r).unsqueeze(0)  # (1, seq_len)
+        torch_byte_t = torch.LongTensor(byte_t).unsqueeze(0)  # (1, seq_len)
+        
+        # Initialize predictions
+        predictions_tails = torch.zeros(num_entities)
+        predictions_heads = torch.zeros(num_entities)
+        
+        # (3) Predict missing tails in chunks to manage memory
+        for chunk_start in range(0, num_entities, chunk_size):
+            chunk_end = min(chunk_start + chunk_size, num_entities)
+            chunk_size_current = chunk_end - chunk_start
+            entities_chunk = all_byte_entities[chunk_start:chunk_end]  # (chunk_size, seq_len)
+            
+            # Create batch: repeat head and relation for each entity in chunk
+            x = torch.stack((
+                torch.repeat_interleave(input=torch_byte_h, repeats=chunk_size_current, dim=0),
+                torch.repeat_interleave(input=torch_byte_r, repeats=chunk_size_current, dim=0),
+                entities_chunk
+            ), dim=1)  # (chunk_size, 3, seq_len)
+            
+            preds_chunk = model(x)
+            predictions_tails[chunk_start:chunk_end] = preds_chunk
+        
+        # (4) Predict missing heads in chunks
+        for chunk_start in range(0, num_entities, chunk_size):
+            chunk_end = min(chunk_start + chunk_size, num_entities)
+            chunk_size_current = chunk_end - chunk_start
+            entities_chunk = all_byte_entities[chunk_start:chunk_end]  # (chunk_size, seq_len)
+            
+            x = torch.stack((
+                entities_chunk,
+                torch.repeat_interleave(input=torch_byte_r, repeats=chunk_size_current, dim=0),
+                torch.repeat_interleave(input=torch_byte_t, repeats=chunk_size_current, dim=0)
+            ), dim=1)  # (chunk_size, 3, seq_len)
+            
+            preds_chunk = model(x)
+            predictions_heads[chunk_start:chunk_end] = preds_chunk
+        
+        # (5) Compute filtered ranks for missing tail entities
+        filt_tails = [byte_entity_to_idx[i] for i in er_vocab[(byte_h, byte_r)]]
+        target_value = predictions_tails[idx_byte_t].item()
+        predictions_tails[filt_tails] = -np.Inf
+        predictions_tails[idx_byte_t] = target_value
+        _, sort_idxs = torch.sort(predictions_tails, descending=True)
+        sort_idxs = sort_idxs.detach()
+        filt_tail_entity_rank = np.where(sort_idxs == idx_byte_t)[0][0]
+        
+        # (6) Compute filtered ranks for missing head entities
+        filt_heads = [byte_entity_to_idx[i] for i in re_vocab[(byte_r, byte_t)]]
+        target_value = predictions_heads[idx_byte_h].item()
+        predictions_heads[filt_heads] = -np.Inf
+        predictions_heads[idx_byte_h] = target_value
+        _, sort_idxs = torch.sort(predictions_heads, descending=True)
+        sort_idxs = sort_idxs.detach()
+        filt_head_entity_rank = np.where(sort_idxs == idx_byte_h)[0][0]
+        
+        # Add 1 to ranks (0-indexed to 1-indexed)
+        filt_head_entity_rank += 1
+        filt_tail_entity_rank += 1
+        
+        rr = 1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
+        reciprocal_ranks.append(rr)
+        
+        # Compute Hit@N
+        for hits_level in range(1, 11):
+            res = 1 if filt_head_entity_rank <= hits_level else 0
+            res += 1 if filt_tail_entity_rank <= hits_level else 0
+            if res > 0:
+                hits.setdefault(hits_level, []).append(res)
+    
+    mean_reciprocal_rank = sum(reciprocal_ranks) / (float(len(triple_idx) * 2))
+    
+    if 1 in hits:
+        hit_1 = sum(hits[1]) / (float(len(triple_idx) * 2))
+    else:
+        hit_1 = 0
+    
+    if 3 in hits:
+        hit_3 = sum(hits[3]) / (float(len(triple_idx) * 2))
+    else:
+        hit_3 = 0
+    
+    if 10 in hits:
+        hit_10 = sum(hits[10]) / (float(len(triple_idx) * 2))
+    else:
+        hit_10 = 0
+    
+    results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10,
+               'MRR': mean_reciprocal_rank}
+    print(results)
+    return results
+
+
 def efficient_zero_grad(model):
     # Use this instead of
     # self.optimizer.zero_grad()

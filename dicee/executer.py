@@ -44,7 +44,8 @@ class Execute:
             self.rank, self.world_size, self.local_rank = 0, 1, 0
 
         # (1) Process arguments and sanity checking.
-        self.args = preprocesses_input_args(args)
+        self.args = preprocesses_input_args(args) 
+
         # (2) Ensure reproducibility.
         seed_everything(args.random_seed, workers=True)
         # (3) Set the continual training flag
@@ -109,6 +110,40 @@ class Execute:
     def create_and_store_kg(self):
         if not self.is_rank_zero():
             return
+
+        if self.args.byte_level_encoding:
+            print("Creating Byte-Level Knowledge Graph...")
+            
+            self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
+            
+            # Update Arguments for the Trainer/Model
+            self.args.num_entities = self.knowledge_graph.num_entities
+            self.args.num_relations = self.knowledge_graph.num_relations
+            self.args.max_byte_sequence_length = self.knowledge_graph.max_byte_sequence_length
+            
+            # Prepare data payload to save
+            # We save the processed lists/tensors so other Ranks don't have to re-process
+            data_payload = {
+                "train_set": self.knowledge_graph.train_set,
+                "valid_set": self.knowledge_graph.valid_set,
+                "test_set": self.knowledge_graph.test_set,
+                "ordered_byte_entities": self.knowledge_graph.ordered_byte_entities,
+                "ordered_byte_relations": self.knowledge_graph.ordered_byte_relations,
+                "max_byte_sequence_length": self.knowledge_graph.max_byte_sequence_length,
+                "num_entities": self.knowledge_graph.num_entities,
+                "num_relations": self.knowledge_graph.num_relations
+            }
+            
+            # Save to disk using Torch (handles lists/tensors better than numpy)
+            save_path = os.path.join(self.args.path_to_store_single_run, "byte_level_data.pt")
+            torch.save(data_payload, save_path)
+            
+            # Save configuration details
+            self.report['num_train_triples'] = len(self.knowledge_graph.train_set)
+            self.report['max_byte_sequence_length'] = self.knowledge_graph.max_byte_sequence_length
+            self.report['runtime_kg_loading'] = time.time() - self.start_time
+            return
+
         memmap_path = os.path.join(self.args.path_to_store_single_run, "memory_map_train_set.npy")
         details_path = os.path.join(self.args.path_to_store_single_run, "memory_map_details.json")
 
@@ -117,6 +152,7 @@ class Execute:
             return
 
         print("Creating knowledge graph...")
+        print(self.args.byte_level_encoding)
         self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
         self.args.num_entities = self.knowledge_graph.num_entities
         self.args.num_relations = self.knowledge_graph.num_relations
@@ -143,6 +179,32 @@ class Execute:
         del memmap_kg
     
     def load_from_memmap(self):
+        if self.args.byte_level_encoding:
+            print(f"[Rank {self.rank}] Loading Byte-Level Data...")
+            load_path = os.path.join(self.args.path_to_store_single_run, "byte_level_data.pt")
+            
+            # Load the payload
+            data_payload = torch.load(load_path, map_location="cpu")
+            
+            # Reconstruct a lightweight KG object (SimpleNamespace acts like a class)
+            self.knowledge_graph = SimpleNamespace()
+            self.knowledge_graph.train_set = data_payload["train_set"]
+            self.knowledge_graph.valid_set = data_payload["valid_set"]
+            self.knowledge_graph.test_set = data_payload["test_set"]
+            self.knowledge_graph.ordered_byte_entities = data_payload["ordered_byte_entities"]
+            self.knowledge_graph.ordered_byte_relations = data_payload["ordered_byte_relations"]
+            self.knowledge_graph.max_byte_sequence_length = data_payload["max_byte_sequence_length"]
+            self.knowledge_graph.num_entities = data_payload["num_entities"]
+            self.knowledge_graph.num_relations = data_payload["num_relations"]
+            
+            # Update Args
+            self.args.num_entities = data_payload["num_entities"]
+            self.args.num_relations = data_payload["num_relations"]
+            self.args.max_byte_sequence_length = data_payload["max_byte_sequence_length"]
+            
+            # Assign ordered entities to args so the Dataset class can see them
+            self.args.ordered_byte_entities = data_payload["ordered_byte_entities"]
+            return
         with open(self.args.path_to_store_single_run+'/memory_map_details.json', 'r') as file_descriptor:
                 memory_map_details = json.load(file_descriptor)
         self.knowledge_graph = np.memmap(self.args.path_to_store_single_run + '/memory_map_train_set.npy',

@@ -22,6 +22,13 @@ class LoadSaveToDisk:
             print("NO SAVING for BPE at save_load_disk.py")
             save_pickle(data=self.kg.ordered_bpe_entities, file_path=self.kg.path_for_serialization + '/ordered_bpe_entities.p')
             save_pickle(data=self.kg.ordered_bpe_relations, file_path=self.kg.path_for_serialization + '/ordered_bpe_relations.p')
+        elif self.kg.byte_level_encoding:
+            save_pickle(data=self.kg.train_set, file_path=self.kg.path_for_serialization + '/train_set.p')
+            if self.kg.valid_set is not None:
+                save_pickle(data=self.kg.valid_set, file_path=self.kg.path_for_serialization + '/valid_set.p')
+            if self.kg.test_set is not None:
+                save_pickle(data=self.kg.test_set, file_path=self.kg.path_for_serialization + '/test_set.p')
+            save_pickle(data=self.kg.ordered_byte_entities, file_path=self.kg.path_for_serialization + '/ordered_byte_entities.p')
         else:
             assert isinstance(self.kg.train_set, np.ndarray)
             # (1) Save dictionary mappings into disk
@@ -46,6 +53,23 @@ class LoadSaveToDisk:
     def load(self):
         assert self.kg.path_for_deserialization is not None
         assert self.kg.path_for_serialization == self.kg.path_for_deserialization
+
+        if self.kg.byte_level_encoding:
+            self.kg.train_set = load_pickle(file_path=self.kg.path_for_deserialization + '/train_set.p')
+            if os.path.isfile(self.kg.path_for_deserialization + '/valid_set.p'):
+                self.kg.valid_set = load_pickle(file_path=self.kg.path_for_deserialization + '/valid_set.p')
+            if os.path.isfile(self.kg.path_for_deserialization + '/test_set.p'):
+                self.kg.test_set = load_pickle(file_path=self.kg.path_for_deserialization + '/test_set.p')
+            self.kg.ordered_byte_entities = load_pickle(file_path=self.kg.path_for_deserialization + '/ordered_byte_entities.p')
+            self.kg.num_entities = len(self.kg.ordered_byte_entities)
+            # Load vocabs if evaluating
+            if self.kg.eval_model:
+                self.kg.er_vocab = load_pickle(file_path=self.kg.path_for_deserialization + '/er_vocab.p')
+                self.kg.re_vocab = load_pickle(file_path=self.kg.path_for_deserialization + '/re_vocab.p')
+                self.kg.ee_vocab = load_pickle(file_path=self.kg.path_for_deserialization + '/ee_vocab.p')
+            # Re-create entity2bytes map if needed, or just rely on ordered_byte_entities
+            # self.kg.entity2bytes = ... # Not easily recoverable without entities list unless we saved it.
+            return
 
         self.kg.entity_to_idx = load_pickle(file_path=self.kg.path_for_deserialization + '/entity_to_idx.p')
         self.kg.relation_to_idx = load_pickle(file_path=self.kg.path_for_deserialization + '/relation_to_idx.p')

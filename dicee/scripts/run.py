@@ -37,7 +37,7 @@ def get_default_arguments(description=None):
                         default="Keci",
                         choices=["ComplEx", "Keci", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "DualE",
-                                 "BytE", "CoKE",
+                                 "BytE", "CoKE", "BET",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
                                  "Pykeen_TransE", "Pykeen_TransF", "Pykeen_TransH",
@@ -120,6 +120,9 @@ def get_default_arguments(description=None):
     parser.add_argument("--byte_pair_encoding",
                         action="store_true",
                         help="Currently only avail. for KGE implemented within dice-embeddings.")
+    parser.add_argument("--byte_level_encoding",
+                        action="store_true",
+                        help="Use byte-level encoding for entities and relations (required for BET model).")
     parser.add_argument("--adaptive_swa",
                         action="store_true",
                         help="Adaptive stochastic weight averaging")

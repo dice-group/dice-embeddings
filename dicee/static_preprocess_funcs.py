@@ -69,6 +69,8 @@ def preprocesses_input_args(args):
 
     if args.model=="BytE":
         args.byte_pair_encoding=True
+    if args.model=="BET":
+        args.byte_level_encoding=True
     return args
 
 
