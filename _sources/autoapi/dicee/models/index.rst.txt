@@ -36,10 +36,13 @@ Classes
    dicee.models.BaseKGE
    dicee.models.IdentityClass
    dicee.models.BaseKGE
+   dicee.models.Block
    dicee.models.DistMult
    dicee.models.TransE
    dicee.models.Shallom
    dicee.models.Pyke
+   dicee.models.CoKEConfig
+   dicee.models.CoKE
    dicee.models.BaseKGE
    dicee.models.ConEx
    dicee.models.AConEx
@@ -1124,6 +1127,59 @@ Package Contents
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
 
 
+.. py:class:: Block(config)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: ln_1
+
+
+   .. py:attribute:: attn
+
+
+   .. py:attribute:: ln_2
+
+
+   .. py:attribute:: mlp
+
+
+   .. py:method:: forward(x)
+
+
 .. py:class:: DistMult(args)
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
@@ -1235,6 +1291,126 @@ Package Contents
 
       :param x:
 
+
+
+.. py:class:: CoKEConfig
+
+   .. py:attribute:: block_size
+      :type:  int
+      :value: 3
+
+
+
+   .. py:attribute:: vocab_size
+      :type:  int
+      :value: None
+
+
+
+   .. py:attribute:: n_layer
+      :type:  int
+      :value: 6
+
+
+
+   .. py:attribute:: n_head
+      :type:  int
+      :value: 8
+
+
+
+   .. py:attribute:: n_embd
+      :type:  int
+      :value: None
+
+
+
+   .. py:attribute:: dropout
+      :type:  float
+      :value: 0.3
+
+
+
+   .. py:attribute:: bias
+      :type:  bool
+      :value: True
+
+
+
+   .. py:attribute:: causal
+      :type:  bool
+      :value: False
+
+
+
+.. py:class:: CoKE(args, config: CoKEConfig = CoKEConfig())
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: name
+      :value: 'CoKE'
+
+
+
+   .. py:attribute:: config
+
+
+   .. py:attribute:: pos_emb
+
+
+   .. py:attribute:: mask_emb
+
+
+   .. py:attribute:: blocks
+
+
+   .. py:attribute:: ln_f
+
+
+   .. py:attribute:: coke_dropout
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor)
+
+
+   .. py:method:: score(emb_h, emb_r, emb_t)
+
+
+   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor)
 
 
 .. py:class:: BaseKGE(args: dict)

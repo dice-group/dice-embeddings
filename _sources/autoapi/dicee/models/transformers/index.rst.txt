@@ -21,7 +21,7 @@ Classes
 
    dicee.models.transformers.BytE
    dicee.models.transformers.LayerNorm
-   dicee.models.transformers.CausalSelfAttention
+   dicee.models.transformers.SelfAttention
    dicee.models.transformers.MLP
    dicee.models.transformers.Block
    dicee.models.transformers.GPTConfig
@@ -189,7 +189,7 @@ Module Contents
    .. py:method:: forward(input)
 
 
-.. py:class:: CausalSelfAttention(config)
+.. py:class:: SelfAttention(config)
 
    Bases: :py:obj:`torch.nn.Module`
 
@@ -246,6 +246,9 @@ Module Contents
 
 
    .. py:attribute:: dropout
+
+
+   .. py:attribute:: causal
 
 
    .. py:attribute:: flash
@@ -403,6 +406,12 @@ Module Contents
    .. py:attribute:: bias
       :type:  bool
       :value: False
+
+
+
+   .. py:attribute:: causal
+      :type:  bool
+      :value: True
 
 
 

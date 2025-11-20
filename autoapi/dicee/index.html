@@ -314,6 +314,19 @@
 <li class="toctree-l4"><a class="reference internal" href="#dicee.LFMult.pop"><code class="docutils literal notranslate"><span class="pre">LFMult.pop()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#dicee.CoKE"><code class="docutils literal notranslate"><span class="pre">CoKE</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CoKE.name"><code class="docutils literal notranslate"><span class="pre">CoKE.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CoKE.config"><code class="docutils literal notranslate"><span class="pre">CoKE.config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CoKE.pos_emb"><code class="docutils literal notranslate"><span class="pre">CoKE.pos_emb</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CoKE.mask_emb"><code class="docutils literal notranslate"><span class="pre">CoKE.mask_emb</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CoKE.blocks"><code class="docutils literal notranslate"><span class="pre">CoKE.blocks</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CoKE.ln_f"><code class="docutils literal notranslate"><span class="pre">CoKE.ln_f</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CoKE.coke_dropout"><code class="docutils literal notranslate"><span class="pre">CoKE.coke_dropout</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CoKE.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">CoKE.forward_k_vs_all()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CoKE.score"><code class="docutils literal notranslate"><span class="pre">CoKE.score()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CoKE.forward_k_vs_sample"><code class="docutils literal notranslate"><span class="pre">CoKE.forward_k_vs_sample()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.PykeenKGE"><code class="docutils literal notranslate"><span class="pre">PykeenKGE</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.PykeenKGE.model_kwargs"><code class="docutils literal notranslate"><span class="pre">PykeenKGE.model_kwargs</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.PykeenKGE.name"><code class="docutils literal notranslate"><span class="pre">PykeenKGE.name</span></code></a></li>
@@ -791,61 +804,64 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.LFMult" title="dicee.LFMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFMult</span></code></a></p></td>
 <td><p>Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.PykeenKGE" title="dicee.PykeenKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PykeenKGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.CoKE" title="dicee.CoKE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CoKE</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.PykeenKGE" title="dicee.PykeenKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PykeenKGE</span></code></a></p></td>
 <td><p>A class for using knowledge graph embedding models implemented in Pykeen</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.BytE" title="dicee.BytE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BytE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.BytE" title="dicee.BytE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BytE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.BaseKGE" title="dicee.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.BaseKGE" title="dicee.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.EnsembleKGE" title="dicee.EnsembleKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EnsembleKGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.EnsembleKGE" title="dicee.EnsembleKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EnsembleKGE</span></code></a></p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.DICE_Trainer" title="dicee.DICE_Trainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DICE_Trainer</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.DICE_Trainer" title="dicee.DICE_Trainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DICE_Trainer</span></code></a></p></td>
 <td><p>DICE_Trainer implement</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.KGE" title="dicee.KGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.KGE" title="dicee.KGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KGE</span></code></a></p></td>
 <td><p>Knowledge Graph Embedding Class for interactive usage of pre-trained models</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.BPE_NegativeSamplingDataset" title="dicee.BPE_NegativeSamplingDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPE_NegativeSamplingDataset</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.BPE_NegativeSamplingDataset" title="dicee.BPE_NegativeSamplingDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BPE_NegativeSamplingDataset</span></code></a></p></td>
 <td><p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.MultiLabelDataset" title="dicee.MultiLabelDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultiLabelDataset</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.MultiLabelDataset" title="dicee.MultiLabelDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultiLabelDataset</span></code></a></p></td>
 <td><p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.MultiClassClassificationDataset" title="dicee.MultiClassClassificationDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultiClassClassificationDataset</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.MultiClassClassificationDataset" title="dicee.MultiClassClassificationDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultiClassClassificationDataset</span></code></a></p></td>
 <td><p>Dataset for the 1vsALL training strategy</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.OnevsAllDataset" title="dicee.OnevsAllDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OnevsAllDataset</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.OnevsAllDataset" title="dicee.OnevsAllDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OnevsAllDataset</span></code></a></p></td>
 <td><p>Dataset for the 1vsALL training strategy</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.KvsAll" title="dicee.KvsAll"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KvsAll</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.KvsAll" title="dicee.KvsAll"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KvsAll</span></code></a></p></td>
 <td><p>Creates a dataset for KvsAll training by inheriting from torch.utils.data.Dataset.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.AllvsAll" title="dicee.AllvsAll"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AllvsAll</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.AllvsAll" title="dicee.AllvsAll"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AllvsAll</span></code></a></p></td>
 <td><p>Creates a dataset for AllvsAll training by inheriting from torch.utils.data.Dataset.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.OnevsSample" title="dicee.OnevsSample"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OnevsSample</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.OnevsSample" title="dicee.OnevsSample"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OnevsSample</span></code></a></p></td>
 <td><p>A custom PyTorch Dataset class for knowledge graph embeddings, which includes</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.KvsSampleDataset" title="dicee.KvsSampleDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KvsSampleDataset</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.KvsSampleDataset" title="dicee.KvsSampleDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KvsSampleDataset</span></code></a></p></td>
 <td><p>KvsSample a Dataset:</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.NegSampleDataset" title="dicee.NegSampleDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NegSampleDataset</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.NegSampleDataset" title="dicee.NegSampleDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NegSampleDataset</span></code></a></p></td>
 <td><p>An abstract class representing a <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.TriplePredictionDataset" title="dicee.TriplePredictionDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TriplePredictionDataset</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.TriplePredictionDataset" title="dicee.TriplePredictionDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TriplePredictionDataset</span></code></a></p></td>
 <td><p>Triple Dataset</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.CVDataModule" title="dicee.CVDataModule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CVDataModule</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.CVDataModule" title="dicee.CVDataModule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CVDataModule</span></code></a></p></td>
 <td><p>Create a Dataset for cross validation</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.LiteralDataset" title="dicee.LiteralDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LiteralDataset</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.LiteralDataset" title="dicee.LiteralDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LiteralDataset</span></code></a></p></td>
 <td><p>Dataset for loading and processing literal data for training Literal Embedding model.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.QueryGenerator" title="dicee.QueryGenerator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QueryGenerator</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.QueryGenerator" title="dicee.QueryGenerator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QueryGenerator</span></code></a></p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -2645,6 +2661,94 @@ it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  a
 </dl>
 </div></blockquote>
 </dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.CoKE">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">CoKE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="models/index.html#dicee.models.CoKEConfig" title="dicee.models.CoKEConfig"><span class="pre">CoKEConfig</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">CoKEConfig()</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.CoKE" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
+<p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
+evaluation mode.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CoKE.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CoKE'</span></em><a class="headerlink" href="#dicee.CoKE.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CoKE.config">
+<span class="sig-name descname"><span class="pre">config</span></span><a class="headerlink" href="#dicee.CoKE.config" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CoKE.pos_emb">
+<span class="sig-name descname"><span class="pre">pos_emb</span></span><a class="headerlink" href="#dicee.CoKE.pos_emb" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CoKE.mask_emb">
+<span class="sig-name descname"><span class="pre">mask_emb</span></span><a class="headerlink" href="#dicee.CoKE.mask_emb" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CoKE.blocks">
+<span class="sig-name descname"><span class="pre">blocks</span></span><a class="headerlink" href="#dicee.CoKE.blocks" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CoKE.ln_f">
+<span class="sig-name descname"><span class="pre">ln_f</span></span><a class="headerlink" href="#dicee.CoKE.ln_f" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CoKE.coke_dropout">
+<span class="sig-name descname"><span class="pre">coke_dropout</span></span><a class="headerlink" href="#dicee.CoKE.coke_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.CoKE.forward_k_vs_all">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.CoKE.forward_k_vs_all" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.CoKE.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">emb_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_t</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.CoKE.score" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.CoKE.forward_k_vs_sample">
+<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.CoKE.forward_k_vs_sample" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 

@@ -165,7 +165,7 @@ References:
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.transformers.LayerNorm" title="dicee.models.transformers.LayerNorm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LayerNorm</span></code></a></p></td>
 <td><p>LayerNorm but with an optional bias. PyTorch doesn't support simply bias=False</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.transformers.CausalSelfAttention" title="dicee.models.transformers.CausalSelfAttention"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CausalSelfAttention</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.transformers.SelfAttention" title="dicee.models.transformers.SelfAttention"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelfAttention</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.transformers.MLP" title="dicee.models.transformers.MLP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MLP</span></code></a></p></td>
@@ -368,8 +368,8 @@ normalized by <code class="docutils literal notranslate"><span class="pre">accum
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.transformers.</span></span><span class="sig-name descname"><span class="pre">CausalSelfAttention</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/transformers.html#CausalSelfAttention"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.models.transformers.SelfAttention">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.transformers.</span></span><span class="sig-name descname"><span class="pre">SelfAttention</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/transformers.html#SelfAttention"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.transformers.SelfAttention" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
 <p>Base class for all neural network modules.</p>
 <p>Your models should also subclass this class.</p>
@@ -404,48 +404,53 @@ evaluation mode.</p>
 </dd>
 </dl>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.c_attn">
-<span class="sig-name descname"><span class="pre">c_attn</span></span><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.c_attn" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.models.transformers.SelfAttention.c_attn">
+<span class="sig-name descname"><span class="pre">c_attn</span></span><a class="headerlink" href="#dicee.models.transformers.SelfAttention.c_attn" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.c_proj">
-<span class="sig-name descname"><span class="pre">c_proj</span></span><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.c_proj" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.models.transformers.SelfAttention.c_proj">
+<span class="sig-name descname"><span class="pre">c_proj</span></span><a class="headerlink" href="#dicee.models.transformers.SelfAttention.c_proj" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.attn_dropout">
-<span class="sig-name descname"><span class="pre">attn_dropout</span></span><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.attn_dropout" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.models.transformers.SelfAttention.attn_dropout">
+<span class="sig-name descname"><span class="pre">attn_dropout</span></span><a class="headerlink" href="#dicee.models.transformers.SelfAttention.attn_dropout" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.resid_dropout">
-<span class="sig-name descname"><span class="pre">resid_dropout</span></span><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.resid_dropout" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.models.transformers.SelfAttention.resid_dropout">
+<span class="sig-name descname"><span class="pre">resid_dropout</span></span><a class="headerlink" href="#dicee.models.transformers.SelfAttention.resid_dropout" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.n_head">
-<span class="sig-name descname"><span class="pre">n_head</span></span><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.n_head" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.models.transformers.SelfAttention.n_head">
+<span class="sig-name descname"><span class="pre">n_head</span></span><a class="headerlink" href="#dicee.models.transformers.SelfAttention.n_head" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.n_embd">
-<span class="sig-name descname"><span class="pre">n_embd</span></span><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.n_embd" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.models.transformers.SelfAttention.n_embd">
+<span class="sig-name descname"><span class="pre">n_embd</span></span><a class="headerlink" href="#dicee.models.transformers.SelfAttention.n_embd" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.dropout">
-<span class="sig-name descname"><span class="pre">dropout</span></span><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.dropout" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.models.transformers.SelfAttention.dropout">
+<span class="sig-name descname"><span class="pre">dropout</span></span><a class="headerlink" href="#dicee.models.transformers.SelfAttention.dropout" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.flash">
-<span class="sig-name descname"><span class="pre">flash</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.flash" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.models.transformers.SelfAttention.causal">
+<span class="sig-name descname"><span class="pre">causal</span></span><a class="headerlink" href="#dicee.models.transformers.SelfAttention.causal" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.SelfAttention.flash">
+<span class="sig-name descname"><span class="pre">flash</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#dicee.models.transformers.SelfAttention.flash" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/transformers.html#CausalSelfAttention.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.forward" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.models.transformers.SelfAttention.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/transformers.html#SelfAttention.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.transformers.SelfAttention.forward" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -612,6 +617,11 @@ evaluation mode.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.transformers.GPTConfig.bias">
 <span class="sig-name descname"><span class="pre">bias</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.models.transformers.GPTConfig.bias" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.GPTConfig.causal">
+<span class="sig-name descname"><span class="pre">causal</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#dicee.models.transformers.GPTConfig.causal" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

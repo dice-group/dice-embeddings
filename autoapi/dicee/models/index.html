@@ -212,6 +212,14 @@
 <li class="toctree-l6"><a class="reference internal" href="#id45"><code class="docutils literal notranslate"><span class="pre">BaseKGE.get_embeddings()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.models.Block"><code class="docutils literal notranslate"><span class="pre">Block</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Block.ln_1"><code class="docutils literal notranslate"><span class="pre">Block.ln_1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Block.attn"><code class="docutils literal notranslate"><span class="pre">Block.attn</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Block.ln_2"><code class="docutils literal notranslate"><span class="pre">Block.ln_2</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Block.mlp"><code class="docutils literal notranslate"><span class="pre">Block.mlp</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Block.forward"><code class="docutils literal notranslate"><span class="pre">Block.forward()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.models.DistMult"><code class="docutils literal notranslate"><span class="pre">DistMult</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.DistMult.name"><code class="docutils literal notranslate"><span class="pre">DistMult.name</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.DistMult.k_vs_all_score"><code class="docutils literal notranslate"><span class="pre">DistMult.k_vs_all_score()</span></code></a></li>
@@ -240,6 +248,30 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.Pyke.dist_func"><code class="docutils literal notranslate"><span class="pre">Pyke.dist_func</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.Pyke.margin"><code class="docutils literal notranslate"><span class="pre">Pyke.margin</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.Pyke.forward_triples"><code class="docutils literal notranslate"><span class="pre">Pyke.forward_triples()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.models.CoKEConfig"><code class="docutils literal notranslate"><span class="pre">CoKEConfig</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKEConfig.block_size"><code class="docutils literal notranslate"><span class="pre">CoKEConfig.block_size</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKEConfig.vocab_size"><code class="docutils literal notranslate"><span class="pre">CoKEConfig.vocab_size</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKEConfig.n_layer"><code class="docutils literal notranslate"><span class="pre">CoKEConfig.n_layer</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKEConfig.n_head"><code class="docutils literal notranslate"><span class="pre">CoKEConfig.n_head</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKEConfig.n_embd"><code class="docutils literal notranslate"><span class="pre">CoKEConfig.n_embd</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKEConfig.dropout"><code class="docutils literal notranslate"><span class="pre">CoKEConfig.dropout</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKEConfig.bias"><code class="docutils literal notranslate"><span class="pre">CoKEConfig.bias</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKEConfig.causal"><code class="docutils literal notranslate"><span class="pre">CoKEConfig.causal</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.models.CoKE"><code class="docutils literal notranslate"><span class="pre">CoKE</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKE.name"><code class="docutils literal notranslate"><span class="pre">CoKE.name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKE.config"><code class="docutils literal notranslate"><span class="pre">CoKE.config</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKE.pos_emb"><code class="docutils literal notranslate"><span class="pre">CoKE.pos_emb</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKE.mask_emb"><code class="docutils literal notranslate"><span class="pre">CoKE.mask_emb</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKE.blocks"><code class="docutils literal notranslate"><span class="pre">CoKE.blocks</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKE.ln_f"><code class="docutils literal notranslate"><span class="pre">CoKE.ln_f</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKE.coke_dropout"><code class="docutils literal notranslate"><span class="pre">CoKE.coke_dropout</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKE.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">CoKE.forward_k_vs_all()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKE.score"><code class="docutils literal notranslate"><span class="pre">CoKE.score()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.CoKE.forward_k_vs_sample"><code class="docutils literal notranslate"><span class="pre">CoKE.forward_k_vs_sample()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l5"><a class="reference internal" href="#id46"><code class="docutils literal notranslate"><span class="pre">BaseKGE</span></code></a><ul>
@@ -825,44 +857,38 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.DistMult" title="dicee.models.DistMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DistMult</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.Block" title="dicee.models.Block"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Block</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.DistMult" title="dicee.models.DistMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DistMult</span></code></a></p></td>
 <td><p>Embedding Entities and Relations for Learning and Inference in Knowledge Bases</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.TransE" title="dicee.models.TransE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.TransE" title="dicee.models.TransE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransE</span></code></a></p></td>
 <td><p>Translating Embeddings for Modeling</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.Shallom" title="dicee.models.Shallom"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shallom</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.Shallom" title="dicee.models.Shallom"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shallom</span></code></a></p></td>
 <td><p>A shallow neural model for relation prediction (<a class="reference external" href="https://arxiv.org/abs/2101.09090">https://arxiv.org/abs/2101.09090</a>)</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.Pyke" title="dicee.models.Pyke"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pyke</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.Pyke" title="dicee.models.Pyke"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pyke</span></code></a></p></td>
 <td><p>A Physical Embedding Model for Knowledge Graphs</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.CoKEConfig" title="dicee.models.CoKEConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CoKEConfig</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.CoKE" title="dicee.models.CoKE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CoKE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.ConEx" title="dicee.models.ConEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConEx</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.ConEx" title="dicee.models.ConEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConEx</span></code></a></p></td>
 <td><p>Convolutional ComplEx Knowledge Graph Embeddings</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.AConEx" title="dicee.models.AConEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConEx</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.AConEx" title="dicee.models.AConEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConEx</span></code></a></p></td>
 <td><p>Additive Convolutional ComplEx Knowledge Graph Embeddings</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.ComplEx" title="dicee.models.ComplEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ComplEx</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.ComplEx" title="dicee.models.ComplEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ComplEx</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id176" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.QMult" title="dicee.models.QMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QMult</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.ConvQ" title="dicee.models.ConvQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvQ</span></code></a></p></td>
-<td><p>Convolutional Quaternion Knowledge Graph Embeddings</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.AConvQ" title="dicee.models.AConvQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConvQ</span></code></a></p></td>
-<td><p>Additive Convolutional Quaternion Knowledge Graph Embeddings</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
@@ -870,49 +896,64 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#id176" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.OMult" title="dicee.models.OMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OMult</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.QMult" title="dicee.models.QMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QMult</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.ConvO" title="dicee.models.ConvO"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvO</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.ConvQ" title="dicee.models.ConvQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvQ</span></code></a></p></td>
+<td><p>Convolutional Quaternion Knowledge Graph Embeddings</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.AConvQ" title="dicee.models.AConvQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConvQ</span></code></a></p></td>
+<td><p>Additive Convolutional Quaternion Knowledge Graph Embeddings</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.AConvO" title="dicee.models.AConvO"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConvO</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id176" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.OMult" title="dicee.models.OMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OMult</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.ConvO" title="dicee.models.ConvO"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvO</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.AConvO" title="dicee.models.AConvO"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConvO</span></code></a></p></td>
 <td><p>Additive Convolutional Octonion Knowledge Graph Embeddings</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.Keci" title="dicee.models.Keci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keci</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.Keci" title="dicee.models.Keci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keci</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.CKeci" title="dicee.models.CKeci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CKeci</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.CKeci" title="dicee.models.CKeci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CKeci</span></code></a></p></td>
 <td><p>Without learning dimension scaling</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.DeCaL" title="dicee.models.DeCaL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeCaL</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.DeCaL" title="dicee.models.DeCaL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeCaL</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.PykeenKGE" title="dicee.models.PykeenKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PykeenKGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.PykeenKGE" title="dicee.models.PykeenKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PykeenKGE</span></code></a></p></td>
 <td><p>A class for using knowledge graph embedding models implemented in Pykeen</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#id227" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.FMult" title="dicee.models.FMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FMult</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.FMult" title="dicee.models.FMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FMult</span></code></a></p></td>
 <td><p>Learning Knowledge Neural Graphs</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.GFMult" title="dicee.models.GFMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GFMult</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.GFMult" title="dicee.models.GFMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GFMult</span></code></a></p></td>
 <td><p>Learning Knowledge Neural Graphs</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.FMult2" title="dicee.models.FMult2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FMult2</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.FMult2" title="dicee.models.FMult2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FMult2</span></code></a></p></td>
 <td><p>Learning Knowledge Neural Graphs</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.LFMult1" title="dicee.models.LFMult1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFMult1</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.LFMult1" title="dicee.models.LFMult1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFMult1</span></code></a></p></td>
 <td><p>Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.LFMult" title="dicee.models.LFMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFMult</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.LFMult" title="dicee.models.LFMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFMult</span></code></a></p></td>
 <td><p>Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.DualE" title="dicee.models.DualE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DualE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.DualE" title="dicee.models.DualE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DualE</span></code></a></p></td>
 <td><p>Dual Quaternion Knowledge Graph Embeddings (<a class="reference external" href="https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657">https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657</a>)</p></td>
 </tr>
 </tbody>
@@ -2100,6 +2141,69 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.Block">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">Block</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/transformers.html#Block"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.Block" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
+evaluation mode.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.Block.ln_1">
+<span class="sig-name descname"><span class="pre">ln_1</span></span><a class="headerlink" href="#dicee.models.Block.ln_1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.Block.attn">
+<span class="sig-name descname"><span class="pre">attn</span></span><a class="headerlink" href="#dicee.models.Block.attn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.Block.ln_2">
+<span class="sig-name descname"><span class="pre">ln_2</span></span><a class="headerlink" href="#dicee.models.Block.ln_2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.Block.mlp">
+<span class="sig-name descname"><span class="pre">mlp</span></span><a class="headerlink" href="#dicee.models.Block.mlp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.Block.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/transformers.html#Block.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.Block.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.DistMult">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">DistMult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/real.html#DistMult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DistMult" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
@@ -2239,6 +2343,139 @@ Multi-relational Data
 </dd>
 </dl>
 </dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.CoKEConfig">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">CoKEConfig</span></span><a class="reference internal" href="../../../_modules/dicee/models/real.html#CoKEConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.CoKEConfig" title="Link to this definition"></a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.CoKEConfig.block_size">
+<span class="sig-name descname"><span class="pre">block_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#dicee.models.CoKEConfig.block_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.CoKEConfig.vocab_size">
+<span class="sig-name descname"><span class="pre">vocab_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.CoKEConfig.vocab_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.CoKEConfig.n_layer">
+<span class="sig-name descname"><span class="pre">n_layer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">6</span></em><a class="headerlink" href="#dicee.models.CoKEConfig.n_layer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.CoKEConfig.n_head">
+<span class="sig-name descname"><span class="pre">n_head</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8</span></em><a class="headerlink" href="#dicee.models.CoKEConfig.n_head" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.CoKEConfig.n_embd">
+<span class="sig-name descname"><span class="pre">n_embd</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.CoKEConfig.n_embd" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.CoKEConfig.dropout">
+<span class="sig-name descname"><span class="pre">dropout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.3</span></em><a class="headerlink" href="#dicee.models.CoKEConfig.dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.CoKEConfig.bias">
+<span class="sig-name descname"><span class="pre">bias</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#dicee.models.CoKEConfig.bias" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.CoKEConfig.causal">
+<span class="sig-name descname"><span class="pre">causal</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.models.CoKEConfig.causal" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.CoKE">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">CoKE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dicee.models.CoKEConfig" title="dicee.models.CoKEConfig"><span class="pre">CoKEConfig</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">CoKEConfig()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/real.html#CoKE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.CoKE" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
+<p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
+evaluation mode.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.CoKE.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CoKE'</span></em><a class="headerlink" href="#dicee.models.CoKE.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.CoKE.config">
+<span class="sig-name descname"><span class="pre">config</span></span><a class="headerlink" href="#dicee.models.CoKE.config" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.CoKE.pos_emb">
+<span class="sig-name descname"><span class="pre">pos_emb</span></span><a class="headerlink" href="#dicee.models.CoKE.pos_emb" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.CoKE.mask_emb">
+<span class="sig-name descname"><span class="pre">mask_emb</span></span><a class="headerlink" href="#dicee.models.CoKE.mask_emb" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.CoKE.blocks">
+<span class="sig-name descname"><span class="pre">blocks</span></span><a class="headerlink" href="#dicee.models.CoKE.blocks" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.CoKE.ln_f">
+<span class="sig-name descname"><span class="pre">ln_f</span></span><a class="headerlink" href="#dicee.models.CoKE.ln_f" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.CoKE.coke_dropout">
+<span class="sig-name descname"><span class="pre">coke_dropout</span></span><a class="headerlink" href="#dicee.models.CoKE.coke_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.CoKE.forward_k_vs_all">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/real.html#CoKE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.CoKE.forward_k_vs_all" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.CoKE.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">emb_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/real.html#CoKE.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.CoKE.score" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.CoKE.forward_k_vs_sample">
+<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/real.html#CoKE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.CoKE.forward_k_vs_sample" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
