@@ -133,6 +133,19 @@ class Pyke(BaseKGE):
 
 @dataclass
 class CoKEConfig:
+    """
+    Configuration for the CoKE (Contextualized Knowledge Graph Embedding) model.
+    
+    Attributes:
+        block_size: Sequence length for transformer (3 for triples: head, relation, tail)
+        vocab_size: Total vocabulary size (num_entities + num_relations)
+        n_layer: Number of transformer layers
+        n_head: Number of attention heads per layer
+        n_embd: Embedding dimension (set to match model embedding_dim)
+        dropout: Dropout rate applied throughout the model
+        bias: Whether to use bias in linear layers
+        causal: Whether to use causal masking (False for bidirectional attention)
+    """
     block_size: int = 3           # triples -> TODO: LF: for multi-hop this needs to be bigger
     vocab_size: int = None        # Must be set to num_entities + num_relations before initializing CoKE
     n_layer: int = 6             
@@ -143,83 +156,117 @@ class CoKEConfig:
     causal: bool = False          # non-causal so that we gather information in mask token 
 
 class CoKE(BaseKGE):
+    """
+    Contextualized Knowledge Graph Embedding (CoKE) model.
+    Based on: https://arxiv.org/pdf/1911.02168.
+    
+    CoKE uses a transformer encoder to learn contextualized representations of entities and relations.
+    For link prediction, it predicts masked elements in (head, relation, tail) triples using
+    bidirectional attention, similar to BERT's masked language modeling approach.
+    
+    The model creates a sequence [head_emb, relation_emb, mask_emb], adds positional embeddings,
+    and processes it through transformer layers to predict the tail entity.
+    """
     def __init__(self, args, config: CoKEConfig = CoKEConfig()):
         super().__init__(args)
         self.name = 'CoKE'
 
+        # Configure model dimensions
         self.config = config
         self.config.vocab_size = self.num_entities + self.num_relations
         self.config.n_embd = self.embedding_dim
     
+        # Positional and mask embeddings
         self.pos_emb = torch.nn.Embedding(config.block_size, self.embedding_dim)
         self.mask_emb = torch.nn.Parameter(torch.zeros(self.embedding_dim))
 
-        # use transformer Block from transformers.py
+        # Transformer layers
         self.blocks = torch.nn.ModuleList([Block(config) for _ in range(config.n_layer)])
         self.ln_f = nn.LayerNorm(self.embedding_dim)
 
         self.coke_dropout = nn.Dropout(config.dropout)
 
-    #currently only tail prediction
     def forward_k_vs_all(self, x: torch.Tensor):
         device = x.device
         b = x.size(dim=0)
 
-        head_emb, rel_emb = self.get_head_relation_representation(x) # (b, dim), (b, dim)
-        mask_emb = self.mask_emb.unsqueeze(0).expand(b, -1) # (b, dim)
-        seq = torch.stack([head_emb, rel_emb, mask_emb], dim=1) # (b, 3, dim)
-        pos_ids = torch.arange(0, 3, device=device) # (3,) -> TODO: LF: here 3 has to change according to voacb size (in case we want multi-hop)
-        pos_ids = pos_ids.unsqueeze(0).expand(b, 3) #  TODO: LF: same as above
+        # Get embeddings for head and relation
+        head_emb, rel_emb = self.get_head_relation_representation(x)  # (b, dim), (b, dim)
+        mask_emb = self.mask_emb.unsqueeze(0).expand(b, -1)  # (b, dim)
+        
+        # Create sequence: [head, relation, mask]
+        seq = torch.stack([head_emb, rel_emb, mask_emb], dim=1)  # (b, 3, dim)
+        
+        # Add positional embeddings
+        pos_ids = torch.arange(0, 3, device=device)  # (3,) -> TODO: LF: here 3 has to change according to voacb size (in case we want multi-hop)
+        pos_ids = pos_ids.unsqueeze(0).expand(b, 3)  # (b, 3) TODO: LF: same as above
         pos_emb = self.pos_emb(pos_ids)  # (b, 3, dim)
-        x_tok = seq + pos_emb # (b, 3, dim)
+        x_tok = seq + pos_emb  # (b, 3, dim)
 
+        # Pass through transformer layers
         for block in self.blocks:
-            x_tok = block(x_tok) # transformer foward pass  
-        x_tok = self.ln_f(x_tok) #final layernorm
+            x_tok = block(x_tok)
+        x_tok = self.ln_f(x_tok)
 
-        h_mask = x_tok[:, 2, :] #hidden state of mask 
-        h_mask = self.coke_dropout(h_mask) 
+        # Extract the mask token's hidden state (position 2)
+        h_mask = x_tok[:, 2, :]
+        h_mask = self.coke_dropout(h_mask)
 
+        # Score against all entity embeddings
         E = self.entity_embeddings.weight
-        E = self.normalize_tail_entity_embeddings(E) 
-
-        scores = h_mask.mm(E.t()) 
+        E = self.normalize_tail_entity_embeddings(E)
+        scores = h_mask.mm(E.t())
 
         return scores 
 
     def score(self, emb_h, emb_r, emb_t):
         b = emb_h.size(0)
         device = emb_h.device
+        
+        # Create sequence with mask token
         mask_emb = self.mask_emb.unsqueeze(0).expand(b, -1)
         seq = torch.stack([emb_h, emb_r, mask_emb], dim=1)
-        pos_ids = torch.arange(0, 3, device=device).unsqueeze(0).expand(b,3)
+        
+        # Add positional embeddings
+        pos_ids = torch.arange(0, 3, device=device).unsqueeze(0).expand(b, 3)
         pos_emb = self.pos_emb(pos_ids)
         x_tok = seq + pos_emb
 
+        # Pass through transformer
         for block in self.blocks:
             x_tok = block(x_tok)
-        x_tok = self.ln_f(x_tok) 
-        h_mask = x_tok[:,2,:] 
+        x_tok = self.ln_f(x_tok)
+        
+        # Extract mask token hidden state
+        h_mask = x_tok[:, 2, :]
         h_mask = self.coke_dropout(h_mask)
 
-        score = torch.einsum('bd,bd -> b', h_mask, emb_t) # dot product between each batch (how simlar is mask to tail in batch x)
-                                                         #output: (b,) -> one score per batch
+        # Compute similarity between mask representation and tail embedding
+        score = torch.einsum('bd,bd -> b', h_mask, emb_t)
         return score
 
     def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor):
         emb_head, emb_rel = self.get_head_relation_representation(x)
         b = emb_head.size(0)
-        emb_tail = self.entity_embeddings(target_entity_idx)
+        emb_tail = self.entity_embeddings(target_entity_idx)  # (b, k, dim)
         device = emb_head.device
+        
+        # Create sequence with mask token
         mask_emb = self.mask_emb.unsqueeze(0).expand(b, -1)
         seq = torch.stack([emb_head, emb_rel, mask_emb], dim=1)
-        pos_ids = torch.arange(0, 3, device=device).unsqueeze(0).expand(b,3)
+        
+        # Add positional embeddings
+        pos_ids = torch.arange(0, 3, device=device).unsqueeze(0).expand(b, 3)
         pos_emb = self.pos_emb(pos_ids)
         x_tok = seq + pos_emb
+        
+        # Pass through transformer
         for block in self.blocks:
             x_tok = block(x_tok)
-        x_tok = self.ln_f(x_tok) 
-        h_mask = x_tok[:,2,:] 
+        x_tok = self.ln_f(x_tok)
+        
+        # Extract mask token hidden state
+        h_mask = x_tok[:, 2, :]
         h_mask = self.coke_dropout(h_mask)
 
         scores = torch.einsum('bd, bkd -> bk', h_mask, emb_tail) # dot product between each batch (how simlar is mask to all k tails in batch x)
