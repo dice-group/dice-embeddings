@@ -275,3 +275,59 @@ class CoKE(BaseKGE):
         return scores
 
 
+class ByteEncoder(nn.Module):
+    def __init__(self, d_model, n_head=4, n_layer=2, max_len=128):
+        super().__init__()
+
+        #we need 257 tokens, ie each byte one and than the padding token at index 256 -> 260 could help performance
+        self.byte_emb = nn.Embedding(260, d_model, padding_idx=256)
+
+        self.pos_emb = nn.Embedding(max_len, d_model)
+
+        encoder_layer = nn.TransformerEncoderLayer(
+                                    d_model=d_model, 
+                                    nhead=n_head,
+                                    dim_feedforward=4*d_model, # expansion ratio
+                                    dropout=0.1,
+                                    activation='gelu',         
+                                    batch_first=True,          # Expects (Batch, Seq, Dim)
+                                    norm_first=True            # makes it "Pre-LN" 
+                                )
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=n_layer)
+        self.ln_f = nn.LayerNorm(d_model) 
+
+    def forward(self, x, mask=None):
+        device = x.device
+        b, t = x.size()
+
+        # get position_ids upto seq_len t 
+        pos_idx = torch.arange(0, t, device=device).unsqueeze(0)
+
+        # get embeddings and add position embeddings for all tokens
+        x_emb = self.byte_emb(x) + self.pos_emb(pos_idx)
+
+        # forward pass trough transformer (masking paddings for attention computation)
+        out = self.transformer(x_emb, src_key_padding_mask=(x == 256))
+
+        # mask where non padding tokens get true
+        mask_expanded = (x != 256).unsqueeze(-1)
+        # sum embedded tokens (only if non-padding token)
+        sum_embeddings = torch.sum(out * mask_expanded, dim=1)
+        # count how many tokens are non padding tokens 
+        sum_mask = torch.clamp(mask_expanded.sum(1), min=1e-9)
+        # take average and apply layer nomralization
+        return self.ln_f(sum_embeddings / sum_mask) 
+
+
+
+class ByToE(BaseKGE):
+    """
+    BytE: A Byte-level Transformer for Knowledge Graph Embedding
+    """
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'BytE'
+
+        # Configure model dimensions
+        self.config = config
+        self.config.vocab_size = self.num_entities + self.num_relations
