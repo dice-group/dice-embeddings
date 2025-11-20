@@ -805,7 +805,7 @@
 <td><p>Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.CoKE" title="dicee.CoKE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CoKE</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
+<td><p>Contextualized Knowledge Graph Embedding (CoKE) model.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.PykeenKGE" title="dicee.PykeenKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PykeenKGE</span></code></a></p></td>
 <td><p>A class for using knowledge graph embedding models implemented in Pykeen</p></td>
@@ -2668,38 +2668,13 @@ it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  a
 <dt class="sig sig-object py" id="dicee.CoKE">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">CoKE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="models/index.html#dicee.models.CoKEConfig" title="dicee.models.CoKEConfig"><span class="pre">CoKEConfig</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">CoKEConfig()</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.CoKE" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing them to be nested in
-a tree structure. You can assign the submodules as regular attributes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>Submodules assigned in this way will be registered, and will also have their
-parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
-evaluation mode.</p>
-</dd>
-</dl>
+<p>Contextualized Knowledge Graph Embedding (CoKE) model.
+Based on: <a class="reference external" href="https://arxiv.org/pdf/1911.02168">https://arxiv.org/pdf/1911.02168</a>.</p>
+<p>CoKE uses a transformer encoder to learn contextualized representations of entities and relations.
+For link prediction, it predicts masked elements in (head, relation, tail) triples using
+bidirectional attention, similar to BERT’s masked language modeling approach.</p>
+<p>The model creates a sequence [head_emb, relation_emb, mask_emb], adds positional embeddings,
+and processes it through transformer layers to predict the tail entity.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.CoKE.name">
 <span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CoKE'</span></em><a class="headerlink" href="#dicee.CoKE.name" title="Link to this definition"></a></dt>

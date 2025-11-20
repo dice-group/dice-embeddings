@@ -166,10 +166,10 @@
 <td><p>A Physical Embedding Model for Knowledge Graphs</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.real.CoKEConfig" title="dicee.models.real.CoKEConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CoKEConfig</span></code></a></p></td>
-<td><p></p></td>
+<td><p>Configuration for the CoKE (Contextualized Knowledge Graph Embedding) model.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.real.CoKE" title="dicee.models.real.CoKE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CoKE</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
+<td><p>Contextualized Knowledge Graph Embedding (CoKE) model.</p></td>
 </tr>
 </tbody>
 </table>
@@ -322,44 +322,93 @@ Multi-relational Data
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.real.CoKEConfig">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.real.</span></span><span class="sig-name descname"><span class="pre">CoKEConfig</span></span><a class="reference internal" href="../../../../_modules/dicee/models/real.html#CoKEConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.real.CoKEConfig" title="Link to this definition"></a></dt>
-<dd><dl class="py attribute">
+<dd><p>Configuration for the CoKE (Contextualized Knowledge Graph Embedding) model.</p>
+<dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.real.CoKEConfig.block_size">
-<span class="sig-name descname"><span class="pre">block_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#dicee.models.real.CoKEConfig.block_size" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">block_size</span></span><a class="headerlink" href="#dicee.models.real.CoKEConfig.block_size" title="Link to this definition"></a></dt>
+<dd><p>Sequence length for transformer (3 for triples: head, relation, tail)</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.real.CoKEConfig.vocab_size">
-<span class="sig-name descname"><span class="pre">vocab_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.real.CoKEConfig.vocab_size" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">vocab_size</span></span><a class="headerlink" href="#dicee.models.real.CoKEConfig.vocab_size" title="Link to this definition"></a></dt>
+<dd><p>Total vocabulary size (num_entities + num_relations)</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.real.CoKEConfig.n_layer">
-<span class="sig-name descname"><span class="pre">n_layer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">6</span></em><a class="headerlink" href="#dicee.models.real.CoKEConfig.n_layer" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">n_layer</span></span><a class="headerlink" href="#dicee.models.real.CoKEConfig.n_layer" title="Link to this definition"></a></dt>
+<dd><p>Number of transformer layers</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.real.CoKEConfig.n_head">
-<span class="sig-name descname"><span class="pre">n_head</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8</span></em><a class="headerlink" href="#dicee.models.real.CoKEConfig.n_head" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">n_head</span></span><a class="headerlink" href="#dicee.models.real.CoKEConfig.n_head" title="Link to this definition"></a></dt>
+<dd><p>Number of attention heads per layer</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.real.CoKEConfig.n_embd">
-<span class="sig-name descname"><span class="pre">n_embd</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.real.CoKEConfig.n_embd" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">n_embd</span></span><a class="headerlink" href="#dicee.models.real.CoKEConfig.n_embd" title="Link to this definition"></a></dt>
+<dd><p>Embedding dimension (set to match model embedding_dim)</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.real.CoKEConfig.dropout">
-<span class="sig-name descname"><span class="pre">dropout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.3</span></em><a class="headerlink" href="#dicee.models.real.CoKEConfig.dropout" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">dropout</span></span><a class="headerlink" href="#dicee.models.real.CoKEConfig.dropout" title="Link to this definition"></a></dt>
+<dd><p>Dropout rate applied throughout the model</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.real.CoKEConfig.bias">
-<span class="sig-name descname"><span class="pre">bias</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#dicee.models.real.CoKEConfig.bias" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">bias</span></span><a class="headerlink" href="#dicee.models.real.CoKEConfig.bias" title="Link to this definition"></a></dt>
+<dd><p>Whether to use bias in linear layers</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.real.CoKEConfig.causal">
-<span class="sig-name descname"><span class="pre">causal</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.models.real.CoKEConfig.causal" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">causal</span></span><a class="headerlink" href="#dicee.models.real.CoKEConfig.causal" title="Link to this definition"></a></dt>
+<dd><p>Whether to use causal masking (False for bidirectional attention)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">block_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">vocab_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">n_layer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">6</span></em><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">n_head</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8</span></em><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">n_embd</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">dropout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.3</span></em><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">bias</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">causal</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -368,38 +417,13 @@ Multi-relational Data
 <dt class="sig sig-object py" id="dicee.models.real.CoKE">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.real.</span></span><span class="sig-name descname"><span class="pre">CoKE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#dicee.models.real.CoKEConfig" title="dicee.models.real.CoKEConfig"><span class="pre">CoKEConfig</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">CoKEConfig()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/real.html#CoKE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.real.CoKE" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing them to be nested in
-a tree structure. You can assign the submodules as regular attributes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>Submodules assigned in this way will be registered, and will also have their
-parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
-evaluation mode.</p>
-</dd>
-</dl>
+<p>Contextualized Knowledge Graph Embedding (CoKE) model.
+Based on: <a class="reference external" href="https://arxiv.org/pdf/1911.02168">https://arxiv.org/pdf/1911.02168</a>.</p>
+<p>CoKE uses a transformer encoder to learn contextualized representations of entities and relations.
+For link prediction, it predicts masked elements in (head, relation, tail) triples using
+bidirectional attention, similar to BERT’s masked language modeling approach.</p>
+<p>The model creates a sequence [head_emb, relation_emb, mask_emb], adds positional embeddings,
+and processes it through transformer layers to predict the tail entity.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.real.CoKE.name">
 <span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CoKE'</span></em><a class="headerlink" href="#dicee.models.real.CoKE.name" title="Link to this definition"></a></dt>

@@ -267,6 +267,19 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.CoKEConfig">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CoKEConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configuration for the CoKE (Contextualized Knowledge Graph Embedding) model.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        block_size: Sequence length for transformer (3 for triples: head, relation, tail)</span>
+<span class="sd">        vocab_size: Total vocabulary size (num_entities + num_relations)</span>
+<span class="sd">        n_layer: Number of transformer layers</span>
+<span class="sd">        n_head: Number of attention heads per layer</span>
+<span class="sd">        n_embd: Embedding dimension (set to match model embedding_dim)</span>
+<span class="sd">        dropout: Dropout rate applied throughout the model</span>
+<span class="sd">        bias: Whether to use bias in linear layers</span>
+<span class="sd">        causal: Whether to use causal masking (False for bidirectional attention)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">block_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>           <span class="c1"># triples -&gt; TODO: LF: for multi-hop this needs to be bigger</span>
     <span class="n">vocab_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span>        <span class="c1"># Must be set to num_entities + num_relations before initializing CoKE</span>
     <span class="n">n_layer</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span>             
@@ -280,49 +293,68 @@
 <div class="viewcode-block" id="CoKE">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.CoKE">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CoKE</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Contextualized Knowledge Graph Embedding (CoKE) model.</span>
+<span class="sd">    Based on: https://arxiv.org/pdf/1911.02168.</span>
+<span class="sd">    </span>
+<span class="sd">    CoKE uses a transformer encoder to learn contextualized representations of entities and relations.</span>
+<span class="sd">    For link prediction, it predicts masked elements in (head, relation, tail) triples using</span>
+<span class="sd">    bidirectional attention, similar to BERT&#39;s masked language modeling approach.</span>
+<span class="sd">    </span>
+<span class="sd">    The model creates a sequence [head_emb, relation_emb, mask_emb], adds positional embeddings,</span>
+<span class="sd">    and processes it through transformer layers to predict the tail entity.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">CoKEConfig</span> <span class="o">=</span> <span class="n">CoKEConfig</span><span class="p">()):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;CoKE&#39;</span>
 
+        <span class="c1"># Configure model dimensions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">vocab_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">n_embd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
     
+        <span class="c1"># Positional and mask embeddings</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pos_emb</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">block_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mask_emb</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">))</span>
 
-        <span class="c1"># use transformer Block from transformers.py</span>
+        <span class="c1"># Transformer layers</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span><span class="n">Block</span><span class="p">(</span><span class="n">config</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">n_layer</span><span class="p">)])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ln_f</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">coke_dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">dropout</span><span class="p">)</span>
 
-    <span class="c1">#currently only tail prediction</span>
 <div class="viewcode-block" id="CoKE.forward_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.CoKE.forward_k_vs_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="n">device</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">device</span>
         <span class="n">b</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="n">head_emb</span><span class="p">,</span> <span class="n">rel_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="c1"># (b, dim), (b, dim)</span>
-        <span class="n">mask_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_emb</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># (b, dim)</span>
-        <span class="n">seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">head_emb</span><span class="p">,</span> <span class="n">rel_emb</span><span class="p">,</span> <span class="n">mask_emb</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># (b, 3, dim)</span>
-        <span class="n">pos_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span> <span class="c1"># (3,) -&gt; TODO: LF: here 3 has to change according to voacb size (in case we want multi-hop)</span>
-        <span class="n">pos_ids</span> <span class="o">=</span> <span class="n">pos_ids</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="c1">#  TODO: LF: same as above</span>
+        <span class="c1"># Get embeddings for head and relation</span>
+        <span class="n">head_emb</span><span class="p">,</span> <span class="n">rel_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># (b, dim), (b, dim)</span>
+        <span class="n">mask_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_emb</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (b, dim)</span>
+        
+        <span class="c1"># Create sequence: [head, relation, mask]</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">head_emb</span><span class="p">,</span> <span class="n">rel_emb</span><span class="p">,</span> <span class="n">mask_emb</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (b, 3, dim)</span>
+        
+        <span class="c1"># Add positional embeddings</span>
+        <span class="n">pos_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>  <span class="c1"># (3,) -&gt; TODO: LF: here 3 has to change according to voacb size (in case we want multi-hop)</span>
+        <span class="n">pos_ids</span> <span class="o">=</span> <span class="n">pos_ids</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>  <span class="c1"># (b, 3) TODO: LF: same as above</span>
         <span class="n">pos_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_emb</span><span class="p">(</span><span class="n">pos_ids</span><span class="p">)</span>  <span class="c1"># (b, 3, dim)</span>
-        <span class="n">x_tok</span> <span class="o">=</span> <span class="n">seq</span> <span class="o">+</span> <span class="n">pos_emb</span> <span class="c1"># (b, 3, dim)</span>
+        <span class="n">x_tok</span> <span class="o">=</span> <span class="n">seq</span> <span class="o">+</span> <span class="n">pos_emb</span>  <span class="c1"># (b, 3, dim)</span>
 
+        <span class="c1"># Pass through transformer layers</span>
         <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">:</span>
-            <span class="n">x_tok</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span> <span class="c1"># transformer foward pass  </span>
-        <span class="n">x_tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ln_f</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span> <span class="c1">#final layernorm</span>
+            <span class="n">x_tok</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span>
+        <span class="n">x_tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ln_f</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span>
 
-        <span class="n">h_mask</span> <span class="o">=</span> <span class="n">x_tok</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:]</span> <span class="c1">#hidden state of mask </span>
-        <span class="n">h_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coke_dropout</span><span class="p">(</span><span class="n">h_mask</span><span class="p">)</span> 
+        <span class="c1"># Extract the mask token&#39;s hidden state (position 2)</span>
+        <span class="n">h_mask</span> <span class="o">=</span> <span class="n">x_tok</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">h_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coke_dropout</span><span class="p">(</span><span class="n">h_mask</span><span class="p">)</span>
 
+        <span class="c1"># Score against all entity embeddings</span>
         <span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span>
-        <span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_tail_entity_embeddings</span><span class="p">(</span><span class="n">E</span><span class="p">)</span> 
-
-        <span class="n">scores</span> <span class="o">=</span> <span class="n">h_mask</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">E</span><span class="o">.</span><span class="n">t</span><span class="p">())</span> 
+        <span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_tail_entity_embeddings</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="n">h_mask</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">E</span><span class="o">.</span><span class="n">t</span><span class="p">())</span>
 
         <span class="k">return</span> <span class="n">scores</span> </div>
 
@@ -332,20 +364,27 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emb_h</span><span class="p">,</span> <span class="n">emb_r</span><span class="p">,</span> <span class="n">emb_t</span><span class="p">):</span>
         <span class="n">b</span> <span class="o">=</span> <span class="n">emb_h</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">device</span> <span class="o">=</span> <span class="n">emb_h</span><span class="o">.</span><span class="n">device</span>
+        
+        <span class="c1"># Create sequence with mask token</span>
         <span class="n">mask_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_emb</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">emb_h</span><span class="p">,</span> <span class="n">emb_r</span><span class="p">,</span> <span class="n">mask_emb</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">pos_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+        
+        <span class="c1"># Add positional embeddings</span>
+        <span class="n">pos_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
         <span class="n">pos_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_emb</span><span class="p">(</span><span class="n">pos_ids</span><span class="p">)</span>
         <span class="n">x_tok</span> <span class="o">=</span> <span class="n">seq</span> <span class="o">+</span> <span class="n">pos_emb</span>
 
+        <span class="c1"># Pass through transformer</span>
         <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">:</span>
             <span class="n">x_tok</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span>
-        <span class="n">x_tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ln_f</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span> 
-        <span class="n">h_mask</span> <span class="o">=</span> <span class="n">x_tok</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,:]</span> 
+        <span class="n">x_tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ln_f</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span>
+        
+        <span class="c1"># Extract mask token hidden state</span>
+        <span class="n">h_mask</span> <span class="o">=</span> <span class="n">x_tok</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:]</span>
         <span class="n">h_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coke_dropout</span><span class="p">(</span><span class="n">h_mask</span><span class="p">)</span>
 
-        <span class="n">score</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd -&gt; b&#39;</span><span class="p">,</span> <span class="n">h_mask</span><span class="p">,</span> <span class="n">emb_t</span><span class="p">)</span> <span class="c1"># dot product between each batch (how simlar is mask to tail in batch x)</span>
-                                                         <span class="c1">#output: (b,) -&gt; one score per batch</span>
+        <span class="c1"># Compute similarity between mask representation and tail embedding</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd -&gt; b&#39;</span><span class="p">,</span> <span class="n">h_mask</span><span class="p">,</span> <span class="n">emb_t</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">score</span></div>
 
 
@@ -354,17 +393,25 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
         <span class="n">emb_head</span><span class="p">,</span> <span class="n">emb_rel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">b</span> <span class="o">=</span> <span class="n">emb_head</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">emb_tail</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span><span class="n">target_entity_idx</span><span class="p">)</span>
+        <span class="n">emb_tail</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span><span class="n">target_entity_idx</span><span class="p">)</span>  <span class="c1"># (b, k, dim)</span>
         <span class="n">device</span> <span class="o">=</span> <span class="n">emb_head</span><span class="o">.</span><span class="n">device</span>
+        
+        <span class="c1"># Create sequence with mask token</span>
         <span class="n">mask_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_emb</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">emb_head</span><span class="p">,</span> <span class="n">emb_rel</span><span class="p">,</span> <span class="n">mask_emb</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">pos_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+        
+        <span class="c1"># Add positional embeddings</span>
+        <span class="n">pos_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
         <span class="n">pos_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_emb</span><span class="p">(</span><span class="n">pos_ids</span><span class="p">)</span>
         <span class="n">x_tok</span> <span class="o">=</span> <span class="n">seq</span> <span class="o">+</span> <span class="n">pos_emb</span>
+        
+        <span class="c1"># Pass through transformer</span>
         <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">:</span>
             <span class="n">x_tok</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span>
-        <span class="n">x_tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ln_f</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span> 
-        <span class="n">h_mask</span> <span class="o">=</span> <span class="n">x_tok</span><span class="p">[:,</span><span class="mi">2</span><span class="p">,:]</span> 
+        <span class="n">x_tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ln_f</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span>
+        
+        <span class="c1"># Extract mask token hidden state</span>
+        <span class="n">h_mask</span> <span class="o">=</span> <span class="n">x_tok</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:]</span>
         <span class="n">h_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coke_dropout</span><span class="p">(</span><span class="n">h_mask</span><span class="p">)</span>
 
         <span class="n">scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd, bkd -&gt; bk&#39;</span><span class="p">,</span> <span class="n">h_mask</span><span class="p">,</span> <span class="n">emb_tail</span><span class="p">)</span> <span class="c1"># dot product between each batch (how simlar is mask to all k tails in batch x)</span>
