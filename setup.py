@@ -1,54 +1,79 @@
 import re
 from setuptools import setup, find_packages
 
-# Min version :pip3 install -e .
-# Dev version :pip3 install -e .["dev"]
+# Installation options:
+# - Minimal install: pip install dicee
+# - Development: pip install dicee[dev]
+# - Documentation: pip install dicee[docs]
+# - All extras: pip install dicee[all]
 
-_deps = [
-    "torch>=2.5.1",
-    "lightning>=2.1.3",
-    "pandas>=2.1.0",
+# Core dependencies
+_core_deps = [
     "numpy==1.26.4",
-    "polars==1.9.0",
-    "scikit-learn>=1.2.2",
-    "pyarrow>=11.0.0",
-    "pykeen>=1.10.2",
-    "zstandard>=0.21.0",
-    "pytest>=7.2.2",
-    "psutil>=5.9.4",
-    "ruff>=0.0.284",
-    "gradio>=3.23.0",
-    "rdflib>=7.0.0",
-    "tiktoken>=0.5.1",
-    "matplotlib>=3.8.2"
+    "torch>=2.5.1",
+    "lightning>=2.5.0.post0",
+    "pandas>=2.1.0",
 ]
 
-# some of the values are versioned whereas others aren't.
-deps = {b: a for a, b in (re.findall(r"^(([^!=<>~ ]+)(?:[!=<>~ ].*)?$)", x)[0] for x in _deps)}
+# Optional dependencies for various features
+_optional_deps = [
+    "polars>=0.16.14",
+    "pyarrow>=11.0.0",
+    "rdflib>=7.0.0",
+    "tiktoken>=0.5.1",
+    "pykeen>=1.10.2",
+    "psutil>=5.9.4",
+    "matplotlib>=3.8.2",
+    "zstandard>=0.21.0",
+    "gradio>=3.23.0",
+]
+
+# Development dependencies
+_dev_deps = [
+    "pytest>=7.2.2",
+    "ruff>=0.0.284",
+    "scikit-learn>=1.2.2",
+]
+
+# Documentation dependencies
+_docs_deps = [
+    "sphinx>=7.2.6",
+    "sphinx-autoapi>=3.0.0",
+    "myst-parser>=2.0.0",
+    "sphinx_rtd_theme>=2.0.0",
+    "sphinx-theme>=1.0",
+    "sphinxcontrib-plantuml>=0.27",
+    "plantuml-local-client>=1.2022.6",
+]
+
+# Combine all dependencies for regex parsing
+_all_deps = _core_deps + _optional_deps + _dev_deps + _docs_deps
+
+# Parse dependencies into a dictionary
+deps = {b: a for a, b in (re.findall(r"^(([^!=<>~ ]+)(?:[!=<>~ ].*)?$)", x)[0] for x in _all_deps)}
 
 
 def deps_list(*pkgs):
     return [deps[pkg] for pkg in pkgs]
 
 
+# Define extras
 extras = dict()
-extras["min"] = deps_list(
-    "pandas",
-    "polars", "pyarrow", "rdflib",  # Loading KG
-    "torch", "lightning",  # Training KGE
-    "tiktoken",  # used for BPE
-    "psutil",  # Memory tracking: maybe remove later ?
-    "matplotlib",  # Unclear why it is needed
-    "pykeen",  # additional kge models
-    "numpy"
-)
 
-# TODO: Remove polars, rdflib, tiktoken, psutil, matplotlib from min
+# Minimal installation - only core dependencies
+extras["min"] = _core_deps
 
-extras["dev"] = (extras["min"] + deps_list("ruff", "pytest",
-                                           "polars", "pyarrow",
-                                           "scikit-learn"))
-install_requires = [extras["min"]]
+# Development extras
+extras["dev"] = _core_deps + _optional_deps + _dev_deps
+
+# Documentation extras
+extras["docs"] = _docs_deps
+
+# All extras
+extras["all"] = _core_deps + _optional_deps + _dev_deps + _docs_deps
+
+# Base installation includes core dependencies
+install_requires = _core_deps
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
