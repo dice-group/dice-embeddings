@@ -9,10 +9,10 @@ class TestRegressionCoKE:
         args.model = 'CoKE'
         args.optim = 'Adam'
         args.dataset_dir = 'KGs/UMLS'
-        args.num_epochs = 10
+        args.num_epochs = 50
         args.batch_size = 512
-        args.lr = 0.001
-        args.embedding_dim = 64
+        args.lr = 0.01
+        args.embedding_dim = 16
         args.input_dropout_rate = 0.1
         args.hidden_dropout_rate = 0.1
         args.feature_map_dropout_rate = 0.0
@@ -24,7 +24,7 @@ class TestRegressionCoKE:
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
-        assert 0.80 >= result['Val']['H@1'] >= 0.01
+        assert 0.30 >= result['Val']['H@1'] >= 0.20
         assert result['Val']['H@10'] >= result['Val']['H@3'] >= result['Val']['H@1']
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -33,10 +33,10 @@ class TestRegressionCoKE:
         args.model = 'CoKE'
         args.optim = 'Adam'
         args.dataset_dir = 'KGs/UMLS'
-        args.num_epochs = 10
+        args.num_epochs = 50
         args.batch_size = 512
-        args.lr = 0.001
-        args.embedding_dim = 64
+        args.lr = 0.01
+        args.embedding_dim = 16
         args.input_dropout_rate = 0.1
         args.hidden_dropout_rate = 0.1
         args.feature_map_dropout_rate = 0.0
@@ -48,7 +48,7 @@ class TestRegressionCoKE:
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
-        assert 0.85 >= result['Val']['H@1'] >= 0.01
+        assert 0.50 >= result['Val']['H@1'] >= 0.30
         assert result['Val']['H@10'] >= result['Val']['H@3'] >= result['Val']['H@1']
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -57,10 +57,10 @@ class TestRegressionCoKE:
         args.model = 'CoKE'
         args.optim = 'Adam'
         args.dataset_dir = 'KGs/UMLS'
-        args.num_epochs = 10
+        args.num_epochs = 50
         args.batch_size = 512
-        args.lr = 0.001
-        args.embedding_dim = 64
+        args.lr = 0.01
+        args.embedding_dim = 16
         args.input_dropout_rate = 0.1
         args.hidden_dropout_rate = 0.1
         args.feature_map_dropout_rate = 0.0
@@ -72,7 +72,7 @@ class TestRegressionCoKE:
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
-        assert 0.85 >= result['Val']['H@1'] >= 0.01
+        assert 0.30 >= result['Val']['H@1'] >= 0.20
         assert result['Val']['H@10'] >= result['Val']['H@3'] >= result['Val']['H@1']
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -81,10 +81,10 @@ class TestRegressionCoKE:
         args.model = 'CoKE'
         args.optim = 'Adam'
         args.dataset_dir = 'KGs/UMLS'
-        args.num_epochs = 10
+        args.num_epochs = 50
         args.batch_size = 512
-        args.lr = 0.001
-        args.embedding_dim = 64
+        args.lr = 0.01
+        args.embedding_dim = 16
         args.input_dropout_rate = 0.1
         args.hidden_dropout_rate = 0.1
         args.feature_map_dropout_rate = 0.0
@@ -97,7 +97,7 @@ class TestRegressionCoKE:
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
-        assert 0.80 >= result['Train']['H@1'] >= 0.01
-        assert 0.80 >= result['Test']['H@1'] >= 0.01
-        assert 0.80 >= result['Val']['H@1'] >= 0.01
+        assert 0.45 >= result['Train']['H@1'] >= 0.25
+        assert 0.45 >= result['Test']['H@1'] >= 0.25
+        assert 0.45 >= result['Val']['H@1'] >= 0.25
 
