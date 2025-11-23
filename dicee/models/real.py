@@ -274,4 +274,101 @@ class CoKE(BaseKGE):
 
         return scores
 
+class ByteGenKGE(BaseKGE):
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'ByteGenKGE'
+        
+        self.vocab_size = 260  # 256 bytes + 4 special tokens
+        self.pad_idx = 256
+        self.bos_idx = 257
+        self.eos_idx = 258
+        self.sep_idx = 259
+        
+        # Initialize config
+        self.config = CoKEConfig()
 
+        # Overwrite CoKEConfig defaults with ByteGen specific requirements
+        self.config.vocab_size = self.vocab_size
+        
+        # causal=True for autoregressive model
+        self.config.causal = True 
+        
+        # Overwrite values from 'args' dictionary
+        self.config.n_embd = args.get('embedding_dim', 256)
+        self.config.n_layer = args.get('n_layer', 4)
+        self.config.n_head = args.get('n_head', 4)
+        self.config.block_size = args.get('max_byte_sequence_length', 128)
+        self.config.dropout = args.get('dropout', 0.1)
+
+        # Token and Position Embeddings
+        self.token_embedding = nn.Embedding(self.config.vocab_size, self.config.n_embd)
+        self.position_embedding = nn.Embedding(self.config.block_size, self.config.n_embd)
+        self.drop = nn.Dropout(self.config.dropout)
+
+        # Transformer Blocks 
+        self.blocks = nn.ModuleList([Block(self.config) for _ in range(self.config.n_layer)])
+
+        # final layer norm
+        self.ln_f = nn.LayerNorm(self.config.n_embd, bias=self.config.bias)
+
+        # LM Head
+        self.lm_head = nn.Linear(self.config.n_embd, self.config.vocab_size, bias=False)
+
+        # Weight Tying
+        self.token_embedding.weight = self.lm_head.weight
+
+        # Loss Function
+        self.loss = nn.CrossEntropyLoss(ignore_index=self.pad_idx)
+
+    def forward(self, x):
+        """
+        x: (Batch, Seq_Len) containing indices
+        """
+        device = x.device
+        b, t = x.size()
+
+        # Safety check for sequence length
+        if t > self.config.block_size:
+             raise ValueError(f"Sequence length {t} exceeds block size {self.config.block_size}")
+
+        pos = torch.arange(0, t, dtype=torch.long, device=device) # (t)
+        
+        tok_emb = self.token_embedding(x) # (B, t, n_embd)
+        pos_emb = self.position_embedding(pos) # (t, n_embd)
+        
+        x = tok_emb + pos_emb
+        x = self.drop(x)
+
+        # Transformer Blocks
+        for block in self.blocks:
+            x = block(x)
+
+        # final norm
+        x = self.ln_f(x)
+
+        # project to vocab
+        logits = self.lm_head(x) # (B, t, vocab_size)
+
+        return logits
+
+    def training_step(self, batch, batch_idx=None):
+        input_ids = batch
+        
+        # Create inputs (x) and targets (y) for next-token prediction
+        x = input_ids[:, :-1]
+        y = input_ids[:, 1:]
+        
+        # Forward pass
+        logits = self.forward(x)
+        
+        # Calculate Loss
+        # Flatten logits to (Batch*Seq, Vocab) and targets to (Batch*Seq)
+        loss_batch = self.loss(logits.reshape(-1, self.vocab_size), y.reshape(-1))
+        
+        self.training_step_outputs.append(loss_batch.item())
+        self.log("train_loss", loss_batch, prog_bar=True)
+        return loss_batch
+
+    def score(self, h, r, t):
+        raise NotImplementedError("ByteGen score is not implemented yet!")

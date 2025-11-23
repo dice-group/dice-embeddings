@@ -3,7 +3,7 @@ import torch
 import datetime
 from typing import Tuple, List
 from .models import Pyke, DistMult, CKeci, Keci, TransE, DeCaL, DualE,\
-    ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom, LFMult, CoKE
+    ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom, LFMult, CoKE, ByteGenKGE
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
 import time
@@ -458,6 +458,22 @@ def intialize_model(args: dict,verbose=0) -> Tuple[object, str]:
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'CoKE':
         model = CoKE(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'ByteGenKGE':
+        #TODO: LF: this code here is a bit messy maybe :V
+        # ByteGenKGE requires ByteGen scoring technique and PL trainer
+        args['scoring_technique'] = 'ByteGen'
+        # Set default block_size if not provided or if it's the default BytE value (8)
+        # ByteGenKGE needs larger block_size to accommodate byte sequences
+        if args.get('block_size') in [None, 8]:
+            default_block_size = args.get('max_byte_sequence_length', 128)
+            print(f'ByteGenKGE: Setting block_size to {default_block_size} (was {args.get("block_size")})')
+            args['block_size'] = default_block_size
+        # ByteGenKGE requires PyTorch Lightning trainer due to custom training_step
+        if args.get('trainer') != 'PL':
+            print('ByteGenKGE requires --trainer PL. Setting trainer to PL.')
+            args['trainer'] = 'PL'
+        model = ByteGenKGE(args=args)
         form_of_labelling = 'EntityPrediction'
     else:
         raise ValueError(f"--model_name: {model_name} is not found.")

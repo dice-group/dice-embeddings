@@ -115,6 +115,11 @@ class Evaluator:
                                   test_set=dataset.test_set,
                                   trained_model=trained_model,
                                   form_of_labelling=form_of_labelling)
+        elif self.args.scoring_technique == 'ByteGen':
+            # ByteGen is a generative model - use dummy evaluation for now
+            print(f'ByteGen model evaluation is not yet implemented. Using dummy evaluation.')
+            report = self.dummy_eval(trained_model, form_of_labelling)
+            self.report = report if report is not None else self.report
         else:
             raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
 
@@ -458,11 +463,23 @@ class Evaluator:
                                   valid_set=valid_set,
                                   test_set=test_set,
                                   trained_model=trained_model, form_of_labelling=form_of_labelling)
+        elif self.args.scoring_technique == 'ByteGen':
+            # ByteGen is a generative model - create dummy report
+            print('ByteGen: Creating placeholder evaluation report (generative evaluation not yet implemented)')
+            self.report = {
+                'model': trained_model.name,
+                'num_entities': self.num_entities if hasattr(self, 'num_entities') else 0,
+                'num_relations': self.num_relations if hasattr(self, 'num_relations') else 0,
+                'evaluation_method': 'dummy',
+                'note': 'ByteGen is a generative model. Standard link prediction metrics not applicable.'
+            }
         else:
             raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
 
         with open(self.args.full_storage_path + '/eval_report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor, indent=4)
+        
+        return self.report
 
     def eval_with_data(self, dataset, trained_model, triple_idx: np.ndarray, form_of_labelling: str):
         self.vocab_preparation(dataset)
@@ -481,5 +498,15 @@ class Evaluator:
             return self.evaluate_lp_k_vs_all(trained_model, triple_idx,
                                              info=f'Evaluate {trained_model.name} on a given dataset',
                                              form_of_labelling=form_of_labelling)
+        elif self.args.scoring_technique == 'ByteGen':
+            # ByteGen is a generative model - create placeholder report
+            print('ByteGen: Creating placeholder evaluation report (generative evaluation not yet implemented)')
+            return {
+                'model': trained_model.name,
+                'num_entities': len(dataset.entity_to_idx) if hasattr(dataset, 'entity_to_idx') else 0,
+                'num_relations': len(dataset.relation_to_idx) if hasattr(dataset, 'relation_to_idx') else 0,
+                'evaluation_method': 'dummy',
+                'note': 'ByteGen is a generative model. Standard link prediction metrics not applicable.'
+            }
         else:
             raise ValueError(f'Invalid argument: {self.args.scoring_technique}')

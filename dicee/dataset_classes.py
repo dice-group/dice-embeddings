@@ -40,7 +40,30 @@ def construct_dataset(*,
                       byte_pair_encoding=None,
                       block_size: int = None
                       ) -> torch.utils.data.Dataset:
-    if ordered_bpe_entities and byte_pair_encoding and scoring_technique == 'NegSample':
+    if scoring_technique == 'ByteGen':
+        # Handle both dict and DataFrame cases for entity_to_idx and relation_to_idx
+        def to_idx_to_str(mapping):
+            # If it's a dict, invert.
+            if isinstance(mapping, dict):
+                return {v: k for k, v in mapping.items()}
+            # If DataFrame has 'to_pandas' (polars), convert.
+            elif hasattr(mapping, 'to_pandas'):
+                df = mapping.to_pandas()
+            else:
+                df = mapping  # pandas DataFrame
+            # df: index = id, values = string (entity/relation)
+            return {idx: row.iloc[0] for idx, row in df.iterrows()}
+
+        idx_to_entity = to_idx_to_str(entity_to_idx)
+        idx_to_relation = to_idx_to_str(relation_to_idx)
+        
+        train_set = ByteGenDataset(
+            train_set=train_set,
+            idx_to_entity=idx_to_entity,
+            idx_to_relation=idx_to_relation,
+            max_len=block_size
+        )
+    elif ordered_bpe_entities and byte_pair_encoding and scoring_technique == 'NegSample':
         train_set = BPE_NegativeSamplingDataset(
             train_set=torch.tensor(train_set, dtype=torch.long),
             ordered_shaped_bpe_entities=torch.tensor(
@@ -105,6 +128,84 @@ def construct_dataset(*,
     print(f"Number of datapoints: {len(train_set)}")
     return train_set
 
+from typing import List, Tuple, Dict
+import torch
+from torch.nn.utils.rnn import pad_sequence
+
+class ByteGenDataset(torch.utils.data.Dataset):
+    """
+    Dataset for Generative Byte-Level KGE (LLM Style).
+    It stores triples as IDs but collates them into Byte Sequences.
+    """
+    def __init__(self, 
+                 train_set: Union[np.ndarray, torch.LongTensor], 
+                 idx_to_entity: Dict[int, str], 
+                 idx_to_relation: Dict[int, str], 
+                 max_len: int = 128):
+        super().__init__()
+        
+        self.train_set = torch.from_numpy(train_set).long()
+            
+        self.idx_to_entity = idx_to_entity
+        self.idx_to_relation = idx_to_relation
+        self.max_len = max_len
+        self.num_datapoints = len(self.train_set)
+        
+        # Define Special Tokens
+        self.PAD_IDX = 256
+        self.BOS_IDX = 257
+        self.EOS_IDX = 258
+        self.SEP_IDX = 259
+
+        # Attach the collate function to the instance
+        self.collate_fn = self._collate_fn
+
+    def __len__(self):
+        return self.num_datapoints
+
+    def __getitem__(self, idx):
+        # Return raw IDs (H_id, R_id, T_id)
+        return self.train_set[idx]
+
+    def _collate_fn(self, batch):
+        """
+        Converts a batch of (H_id, R_id, T_id) into a padded tensor of Bytes.
+        Format: [BOS] HeadBytes [SEP] RelBytes [SEP] TailBytes [EOS]
+        """
+        processed_sequences = []
+        
+        # Iterate over batch items (each item is a tensor or tuple of 3 ints)
+        for triple in batch:
+            h_id, r_id, t_id = triple[0].item(), triple[1].item(), triple[2].item()
+            
+            # Retrieve Strings
+            h_str = self.idx_to_entity[h_id]
+            r_str = self.idx_to_relation[r_id]
+            t_str = self.idx_to_entity[t_id]
+            
+            # Encode to UTF-8 Bytes (List of Ints)
+            h_bytes = list(h_str.encode('utf-8'))
+            r_bytes = list(r_str.encode('utf-8'))
+            t_bytes = list(t_str.encode('utf-8'))
+            
+            # Construct Sequence with Special Tokens
+            # [BOS] h_bytes [SEP] r_bytes [SEP] t_bytes [EOS]
+            seq = [self.BOS_IDX] + h_bytes + \
+                  [self.SEP_IDX] + r_bytes + \
+                  [self.SEP_IDX] + t_bytes + \
+                  [self.EOS_IDX]
+            
+            assert len(seq) <= self.max_len, f"Sequence length {len(seq)} exceeds max_len {self.max_len}"
+
+            processed_sequences.append(torch.tensor(seq, dtype=torch.long))
+
+        padded_batch = pad_sequence(
+            processed_sequences, 
+            batch_first=True, 
+            padding_value=self.PAD_IDX
+        )
+        
+        return padded_batch
 
 class BPE_NegativeSamplingDataset(torch.utils.data.Dataset):
     def __init__(self, train_set: torch.LongTensor, ordered_shaped_bpe_entities: torch.LongTensor, neg_ratio: int):
