@@ -88,6 +88,7 @@ class SWA(AbstractCallback):
                 for param_group in optimizer.param_groups:
                     param_group['lr'] = self.lr_init * factor
 
+    @rank_zero_only
     def on_train_epoch_end(self, trainer, model):
         """Apply SWA averaging if conditions are met."""
         if self.current_epoch < self.swa_start_epoch:
@@ -280,6 +281,7 @@ class SWAG(AbstractCallback):
             for pg in optimizer.param_groups:
                 pg['lr'] = self.lr_init * factor
 
+    @rank_zero_only
     def on_train_epoch_end(self, trainer, model):
         """Collect Gaussian stats at the end of epochs after swa_start."""
         if self.current_epoch >= self.swa_start_epoch and \
@@ -356,6 +358,7 @@ class EMA(AbstractCallback):
             for ema_param, param in zip(ema_model.parameters(), running_model.parameters()):
                 ema_param.data.mul_(decay).add_(param.data, alpha=1.0 - decay)
 
+    @rank_zero_only
     def on_train_epoch_start(self, trainer, model):
         """Track current epoch."""
         if hasattr(trainer, 'current_epoch'):
@@ -363,6 +366,7 @@ class EMA(AbstractCallback):
         else:
             self.current_epoch += 1
 
+    @rank_zero_only
     def on_train_epoch_end(self, trainer, model):
         """Update EMA if past start epoch."""
         if self.current_epoch >= self.ema_start_epoch and \
@@ -463,13 +467,15 @@ class TWA(AbstractCallback):
         P = V[:, :k]                        # (D, k)
         return mean_w, P
 
+    @rank_zero_only
     def on_train_epoch_start(self, trainer, model):
         """Track epoch."""
         if hasattr(trainer, 'current_epoch'):
             self.current_epoch = trainer.current_epoch
         else:
             self.current_epoch += 1
-
+    
+    @rank_zero_only
     def on_train_epoch_end(self, trainer, model):
         """Main TWA logic: build subspace and update in β space.
 
