@@ -4,6 +4,7 @@ import json
 import torch
 import torch.nn as nn
 from torch._dynamo.eval_frame import OptimizedModule
+from pytorch_lightning.utilities import rank_zero_only
 
 from .abstracts import AbstractCallback
 from dicee.models.ensemble import EnsembleKGE
@@ -119,8 +120,9 @@ class SWA(AbstractCallback):
             self.swa_n += 1
     
         if model.args["eval_every_n_epochs"] > 0 or model.args["eval_at_epochs"] is not None:
-            trainer.swa_model = self.swa_model
+            trainer.wa_model = self.swa_model
     
+    @rank_zero_only
     def on_fit_end(self, trainer, model):
         """Replace main model with SWA model at the end of training."""
         if self.swa_model is not None and self.swa_n > 0:
@@ -280,13 +282,12 @@ class SWAG(AbstractCallback):
 
     def on_train_epoch_end(self, trainer, model):
         """Collect Gaussian stats at the end of epochs after swa_start."""
-        if self.current_epoch < self.swa_start_epoch:
-            return
-        if (self.current_epoch - self.swa_start_epoch) % self.swa_c_epochs != 0:
-            return
+        if self.current_epoch >= self.swa_start_epoch and \
+           (self.current_epoch - self.swa_start_epoch) % self.swa_c_epochs == 0:
+            running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
+            self._collect_stats(running_model)
 
-        self._collect_stats(model)
-
+    @rank_zero_only
     def on_fit_end(self, trainer, model):
         """Set model weights to the collected SWAG mean at the end of training."""
         
@@ -389,8 +390,9 @@ class EMA(AbstractCallback):
 
         # Make EMA model available for evaluation
         if model.args.get("eval_every_n_epochs", 0) > 0 or model.args.get("eval_at_epochs") is not None:
-            trainer.ema_model = self.ema_model
+            trainer.swa_model = self.ema_model
 
+    @rank_zero_only
     def on_fit_end(self, trainer, model):
         """Replace main model with EMA model at the end of training."""
         if self.ema_model is not None:
@@ -488,13 +490,16 @@ class TWA(AbstractCallback):
         
         if self.current_epoch >= self.twa_start_epoch and \
         (self.current_epoch - self.twa_start_epoch) % self.twa_c_epochs == 0:
-
-            # Initialize TWA model and projection subspace on first use
+                        
+            running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
             if self.twa_model is None:
-                running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
-                # Copy model to twa_model
-                self.twa_model = type(running_model)(running_model.args)
-                self.twa_model.load_state_dict(running_model.state_dict())
+                # Case: EnsembleKGE
+                if isinstance(running_model, EnsembleKGE):
+                    self.twa_model = type(running_model)(running_model.models)
+                    self.twa_model.load_state_dict(running_model.state_dict())
+                else:       
+                    self.twa_model = type(running_model)(running_model.args)
+                    self.twa_model.load_state_dict(running_model.state_dict())
 
                 # Build projection subspace using checkpoints {w_1, ..., w_n}
                 mean_w, P = self.build_projection(self.weight_samples)
@@ -525,9 +530,9 @@ class TWA(AbstractCallback):
 
         # Make TWA model available for evaluation
         if model.args.get("eval_every_n_epochs", 0) > 0 or model.args.get("eval_at_epochs") is not None:
-            trainer.twa_model = self.twa_model
+            trainer.wa_model = self.twa_model
 
-
+    @rank_zero_only
     def on_fit_end(self, trainer, model):
         """Replace with TWA model at the end."""
         if self.twa_model is not None:
