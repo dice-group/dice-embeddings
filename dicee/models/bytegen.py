@@ -53,9 +53,6 @@ class ByteGenDataset(Dataset):
         return len(self.triples)
 
     def __getitem__(self, idx):
-        if not self.triples:
-            return torch.full((self.block_size,), self.PAD, dtype=torch.long)
-            
         # Start with the specific triple at idx
         h, r, t = self.triples[idx]
         
