@@ -47,6 +47,8 @@ class ByteGenDataset(Dataset):
         with open(file_path, 'r', encoding='utf-8') as f:
             for line in f:
                 parts = line.strip().split('\t')
+                if len(parts) < 3:
+                    parts = line.strip().split()
                 if len(parts) < 3: continue
                 h, r, t = parts[0], parts[1], parts[2]
                 self._add_triple(h, r, t)
@@ -302,15 +304,54 @@ class Evaluator:
 
 
 
+
+# Training System
+
+class Trainer:
+    def __init__(self, model: ByteGenModel, train_loader: DataLoader, config: ByteGenConfig, optimizer: torch.optim.Optimizer = None):
+        self.model = model
+        self.train_loader = train_loader
+        self.config = config
+        self.optimizer = optimizer or torch.optim.AdamW(model.parameters(), lr=config.lr)
+        self.device = config.device
+
+    def train(self, epochs: int = 500):
+        print(f"Starting training for {epochs} epochs...")
+        self.model.train()
+        
+        for epoch in range(epochs):
+            total_loss = 0
+            pbar = tqdm(self.train_loader, desc=f"Ep {epoch+1}")
+            for batch in pbar:
+                batch = batch.to(self.device)
+                
+                # Input: x[:-1], Target: x[1:]
+                logits = self.model(batch[:, :-1])
+                targets = batch[:, 1:]
+                
+                loss = F.cross_entropy(
+                    logits.reshape(-1, self.config.vocab_size), 
+                    targets.reshape(-1), 
+                    ignore_index=SpecialTokens.PAD
+                )
+                
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+                
+                total_loss += loss.item()
+                pbar.set_postfix({'loss': total_loss / (pbar.n + 1)})
+
 if __name__ == "__main__":
     # Setup
-    dataset_path = os.path.join(os.getcwd(), "KGs/UMLS")
+    dataset_path = os.path.join(os.getcwd(), "KGs/FB15k-237")
     conf = ByteGenConfig(
         block_size=256, 
         n_layer=6, 
         n_head=4, 
-        n_embd=256, 
-        dropout=0.3, # Maintained original dropout
+        n_embd=512, 
+        dropout=0.3, 
+        batch_size=256,
         lr=1e-4
     )
     
@@ -324,35 +365,68 @@ if __name__ == "__main__":
     model = ByteGenModel(conf).to(conf.device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=conf.lr)
     
-    # Training Loop
-    EPOCHS = 50
-    print(f"Starting training for {EPOCHS} epochs...")
-    model.train()
-    
-    for epoch in range(EPOCHS):
-        total_loss = 0
-        pbar = tqdm(train_loader, desc=f"Ep {epoch+1}")
-        for batch in pbar:
-            batch = batch.to(conf.device)
-            
-            # Input: x[:-1], Target: x[1:]
-            logits = model(batch[:, :-1])
-            targets = batch[:, 1:]
-            
-            loss = F.cross_entropy(
-                logits.reshape(-1, conf.vocab_size), 
-                targets.reshape(-1), 
-                ignore_index=SpecialTokens.PAD
-            )
-            
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            
-            total_loss += loss.item()
-            pbar.set_postfix({'loss': total_loss / (pbar.n + 1)})
+    # Trainer
+    EPOCHS = 500
+    trainer = Trainer(model, train_loader, conf, optimizer)
+    trainer.train(EPOCHS)
             
     # Evaluate
     print("Training complete. Evaluating...")
     evaluator = Evaluator(model, train_ds, test_ds)
     evaluator.evaluate()
+
+    def generate(model, idx, max_new_tokens, temperature=1.0, top_k=None):
+        model.eval()
+        for _ in range(max_new_tokens):
+            idx_cond = idx if idx.size(1) <= model.config.block_size else idx[:, -model.config.block_size:]
+            with torch.no_grad():
+                logits = model(idx_cond)
+            logits = logits[:, -1, :] / temperature
+            if top_k is not None:
+                v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
+                logits[logits < v[:, [-1]]] = -float('Inf')
+            probs = F.softmax(logits, dim=-1)
+            idx_next = torch.multinomial(probs, num_samples=1)
+            if idx_next.item() == SpecialTokens.PAD:
+                break
+            idx = torch.cat((idx, idx_next), dim=1)
+        return idx
+
+    while True:
+        print("\n--- Interactive Generation ---")
+        head = input("Enter head entity (or 'q' to quit): ").strip()
+        if head.lower() in ['q', 'quit']:
+            break
+            
+        try:
+            context = list(head.encode('utf-8'))
+            x = torch.tensor([context], dtype=torch.long, device=conf.device)
+            y = generate(model, x, max_new_tokens=64, temperature=0.8, top_k=10)
+            
+            out = y[0].tolist()
+            decoded = ""
+            buffer = bytearray()
+            
+            for token in out:
+                if token < 256:
+                    buffer.append(token)
+                else:
+                    if buffer:
+                        try: decoded += buffer.decode('utf-8')
+                        except: decoded += str(buffer)
+                        buffer = bytearray()
+                    
+                    if token == SpecialTokens.SEP_HR:
+                        decoded += " <SEP_HR> "
+                    elif token == SpecialTokens.SEP_RT:
+                        decoded += " <SEP_RT> "
+            
+            if buffer:
+                try: decoded += buffer.decode('utf-8')
+                except: decoded += str(buffer)
+                
+            print(f"Generated: {decoded}")
+            
+        except Exception as e:
+            print(f"Error: {e}")
+    
