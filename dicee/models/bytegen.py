@@ -27,7 +27,7 @@ class ByteGenDataset(Dataset):
         
         file_path = os.path.join(folder_path, f"{split}.txt")
         self.adj: Dict[bytes, List[Tuple[bytes, bytes]]] = {}
-        self.heads: List[bytes] = []
+        self.triples: List[Tuple[bytes, bytes, bytes]] = []
         
         if os.path.exists(file_path):
             # Reading the file once to build the graph structure
@@ -41,41 +41,48 @@ class ByteGenDataset(Dataset):
                     rb = r.encode('utf-8')
                     tb = t.encode('utf-8')
                     
+                    self.triples.append((hb, rb, tb))
+
                     if hb not in self.adj:
                         self.adj[hb] = []
-                        self.heads.append(hb)
                     self.adj[hb].append((rb, tb))
         else:
             print(f"Warning: {file_path} not found. Dataset will be empty.")
 
     def __len__(self):
-        # One epoch corresponds roughly to visiting every relation occurrence
-        return sum(len(v) for v in self.adj.values()) if self.adj else 0
+        return len(self.triples)
 
     def __getitem__(self, idx):
-        if not self.heads:
+        if not self.triples:
             return torch.full((self.block_size,), self.PAD, dtype=torch.long)
             
-        # Start a random walk
-        head = random.choice(self.heads)
-        seq = list(head)
-        curr = head
+        # Start with the specific triple at idx
+        h, r, t = self.triples[idx]
+        
+        # Construct initial sequence: Head <SEP_HR> Relation <SEP_RT> Tail
+        seq = list(h)
+        seq.append(self.SEP_HR)
+        seq.extend(list(r))
+        seq.append(self.SEP_RT)
+        seq.extend(list(t))
+        
+        # Continue random walk from Tail (which becomes the new Head)
+        curr = t
         
         while len(seq) < self.block_size:
             if curr not in self.adj:
                 break
             
             # Randomly choose next step
-            r, t = random.choice(self.adj[curr])
+            r_next, t_next = random.choice(self.adj[curr])
             
             # Append sequence: <SEP_HR> Relation <SEP_RT> Tail
-            # Note: 'Tail' becomes the next 'Head'
             seq.append(self.SEP_HR)
-            seq.extend(list(r))
+            seq.extend(list(r_next))
             seq.append(self.SEP_RT)
-            seq.extend(list(t))
+            seq.extend(list(t_next))
             
-            curr = t
+            curr = t_next
             
         # Truncate if too long
         if len(seq) > self.block_size:
@@ -258,4 +265,4 @@ if __name__ == "__main__":
     args = MockArgs()
     model = ByteGenKGE(args)
     # Test training loop for 1 epoch with small batch
-    train_bytegen(model, dataset_path, epochs=1, batch_size=4, device='cpu')
+    train_bytegen(model, dataset_path, epochs=100, batch_size=128, device='cuda')
