@@ -445,6 +445,8 @@
         <li><a href="autoapi/dicee/knowledge_graph/index.html#dicee.knowledge_graph.KG.backend">(dicee.knowledge_graph.KG attribute)</a>
 </li>
       </ul></li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.base_weights">base_weights (dicee.weight_averaging.TWA attribute)</a>
+</li>
       <li><a href="autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE">BaseInteractiveKGE (class in dicee.abstracts)</a>
 </li>
       <li><a href="autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveTrainKGE">BaseInteractiveTrainKGE (class in dicee.abstracts)</a>
@@ -478,6 +480,8 @@
 </li>
       </ul></li>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.LRScheduler.batches_per_epoch">batches_per_epoch (dicee.callbacks.LRScheduler attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.beta">beta (dicee.weight_averaging.TWA attribute)</a>
 </li>
       <li><a href="autoapi/dicee/models/index.html#dicee.models.CoKEConfig.bias">bias (dicee.models.CoKEConfig attribute)</a>, <a href="autoapi/dicee/models/index.html#id52">[1]</a>
 
@@ -597,6 +601,8 @@
         <li><a href="autoapi/dicee/models/function_space/index.html#dicee.models.function_space.FMult2.build_func">(dicee.models.function_space.FMult2 method)</a>
 </li>
       </ul></li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.build_projection">build_projection() (dicee.weight_averaging.TWA method)</a>
+</li>
       <li><a href="autoapi/dicee/index.html#dicee.BytE">BytE (class in dicee)</a>
 
       <ul>
@@ -1065,8 +1071,16 @@
 </li>
       <li><a href="autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.NodeTrainer.ctx">ctx (dicee.trainer.torch_trainer_ddp.NodeTrainer attribute)</a>
 </li>
-      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.current_epoch">current_epoch (dicee.callbacks.SWA attribute)</a>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.EMA.current_epoch">current_epoch (dicee.weight_averaging.EMA attribute)</a>
+
+      <ul>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWA.current_epoch">(dicee.weight_averaging.SWA attribute)</a>
 </li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.current_epoch">(dicee.weight_averaging.SWAG attribute)</a>
+</li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.current_epoch">(dicee.weight_averaging.TWA attribute)</a>
+</li>
+      </ul></li>
       <li><a href="autoapi/dicee/index.html#dicee.CVDataModule">CVDataModule (class in dicee)</a>
 
       <ul>
@@ -1107,6 +1121,8 @@
         <li><a href="autoapi/dicee/models/clifford/index.html#dicee.models.clifford.DeCaL">(class in dicee.models.clifford)</a>
 </li>
       </ul></li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.EMA.decay">decay (dicee.weight_averaging.EMA attribute)</a>
+</li>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA.decide">decide() (dicee.callbacks.ASWA method)</a>
 </li>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback.default_eval_model">default_eval_model (dicee.callbacks.PeriodicEvalCallback attribute)</a>
@@ -1158,6 +1174,8 @@
       <li><a href="autoapi/dicee/knowledge_graph/index.html#dicee.knowledge_graph.KG.describe">describe() (dicee.knowledge_graph.KG method)</a>
 </li>
       <li><a href="autoapi/dicee/knowledge_graph/index.html#dicee.knowledge_graph.KG.description_of_input">description_of_input (dicee.knowledge_graph.KG attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.deviations">deviations (dicee.weight_averaging.SWAG attribute)</a>
 </li>
       <li><a href="autoapi/dicee/models/literal/index.html#dicee.models.literal.LiteralEmbeddings.device">device (dicee.models.literal.LiteralEmbeddings property)</a>
 </li>
@@ -1486,6 +1504,13 @@
         <li><a href="autoapi/dicee/trainer/torch_trainer_ddp/index.html#module-dicee.trainer.torch_trainer_ddp">module</a>
 </li>
       </ul></li>
+      <li>
+    dicee.weight_averaging
+
+      <ul>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#module-dicee.weight_averaging">module</a>
+</li>
+      </ul></li>
       <li><a href="autoapi/dicee/models/index.html#dicee.models.FMult2.discrete_points">discrete_points (dicee.models.FMult2 attribute)</a>
 
       <ul>
@@ -1565,6 +1590,18 @@
       <li><a href="autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.ee_vocab">ee_vocab (dicee.evaluator.Evaluator attribute)</a>
 </li>
       <li><a href="autoapi/dicee/static_funcs_training/index.html#dicee.static_funcs_training.efficient_zero_grad">efficient_zero_grad() (in module dicee.static_funcs_training)</a>
+</li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.EMA">EMA (class in dicee.weight_averaging)</a>
+</li>
+      <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.ema">ema (dicee.config.Namespace attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.EMA.ema_c_epochs">ema_c_epochs (dicee.weight_averaging.EMA attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.EMA.ema_model">ema_model (dicee.weight_averaging.EMA attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.EMA.ema_start_epoch">ema_start_epoch (dicee.weight_averaging.EMA attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.EMA.ema_update">ema_update() (dicee.weight_averaging.EMA static method)</a>
 </li>
       <li><a href="autoapi/dicee/analyse_experiments/index.html#dicee.analyse_experiments.Experiment.embedding_dim">embedding_dim (dicee.analyse_experiments.Experiment attribute)</a>
 
@@ -1686,6 +1723,8 @@
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA.epoch_count">(dicee.callbacks.ASWA attribute)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.Eval.epoch_counter">epoch_counter (dicee.callbacks.Eval attribute)</a>
 
       <ul>
@@ -1694,8 +1733,6 @@
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback.epoch_counter">(dicee.callbacks.PeriodicEvalCallback attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.Eval.epoch_ratio">epoch_ratio (dicee.callbacks.Eval attribute)</a>
 </li>
       <li><a href="autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.er_vocab">er_vocab (dicee.evaluator.Evaluator attribute)</a>
@@ -2466,10 +2503,10 @@
       </ul></li>
       <li><a href="autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_entity_embeddings">get_entity_embeddings() (dicee.abstracts.BaseInteractiveKGE method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_entity_index">get_entity_index() (dicee.abstracts.BaseInteractiveKGE method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/index.html#dicee.get_er_vocab">get_er_vocab() (in module dicee)</a>
 
       <ul>
@@ -2491,6 +2528,8 @@
 </li>
       </ul></li>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.KronE.get_kronecker_triple_representation">get_kronecker_triple_representation() (dicee.callbacks.KronE method)</a>
+</li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.get_mean_and_var">get_mean_and_var() (dicee.weight_averaging.SWAG method)</a>
 </li>
       <li><a href="autoapi/dicee/models/transformers/index.html#dicee.models.transformers.GPT.get_num_params">get_num_params() (dicee.models.transformers.GPT method)</a>
 </li>
@@ -2564,6 +2603,8 @@
         <li><a href="autoapi/dicee/index.html#dicee.QueryGenerator.ground_queries">(dicee.QueryGenerator method)</a>
 </li>
       </ul></li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.gswa_n">gswa_n (dicee.weight_averaging.SWAG attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -2986,10 +3027,10 @@
         <li><a href="autoapi/dicee/index.html#dicee.LiteralDataset.load_and_validate_literal_data">(dicee.LiteralDataset static method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/executer/index.html#dicee.executer.Execute.load_from_memmap">load_from_memmap() (dicee.executer.Execute method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/index.html#dicee.load_json">load_json() (in module dicee)</a>
 
       <ul>
@@ -3114,8 +3155,14 @@
         <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.lr">(dicee.config.Namespace attribute)</a>
 </li>
       </ul></li>
-      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.lr_init">lr_init (dicee.callbacks.SWA attribute)</a>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWA.lr_init">lr_init (dicee.weight_averaging.SWA attribute)</a>
+
+      <ul>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.lr_init">(dicee.weight_averaging.SWAG attribute)</a>
 </li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.lr_init">(dicee.weight_averaging.TWA attribute)</a>
+</li>
+      </ul></li>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.LRScheduler.lr_lambda">lr_lambda (dicee.callbacks.LRScheduler attribute)</a>
 </li>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.LRScheduler">LRScheduler (class in dicee.callbacks)</a>
@@ -3185,7 +3232,13 @@
       <ul>
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PeriodicEvalCallback.max_epochs">(dicee.callbacks.PeriodicEvalCallback attribute)</a>
 </li>
-        <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.max_epochs">(dicee.callbacks.SWA attribute)</a>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.EMA.max_epochs">(dicee.weight_averaging.EMA attribute)</a>
+</li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWA.max_epochs">(dicee.weight_averaging.SWA attribute)</a>
+</li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.max_epochs">(dicee.weight_averaging.SWAG attribute)</a>
+</li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.max_epochs">(dicee.weight_averaging.TWA attribute)</a>
 </li>
       </ul></li>
       <li><a href="autoapi/dicee/index.html#dicee.BaseKGE.max_length_subword_tokens">max_length_subword_tokens (dicee.BaseKGE attribute)</a>
@@ -3198,12 +3251,16 @@
         <li><a href="autoapi/dicee/models/index.html#dicee.models.BaseKGE.max_length_subword_tokens">(dicee.models.BaseKGE attribute)</a>, <a href="autoapi/dicee/models/index.html#id124">[1]</a>, <a href="autoapi/dicee/models/index.html#id170">[2]</a>, <a href="autoapi/dicee/models/index.html#id221">[3]</a>, <a href="autoapi/dicee/models/index.html#id263">[4]</a>, <a href="autoapi/dicee/models/index.html#id32">[5]</a>, <a href="autoapi/dicee/models/index.html#id82">[6]</a>
 </li>
       </ul></li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.max_num_models">max_num_models (dicee.weight_averaging.SWAG attribute)</a>
+</li>
       <li><a href="autoapi/dicee/dataset_classes/index.html#dicee.dataset_classes.KvsSampleDataset.max_num_of_classes">max_num_of_classes (dicee.dataset_classes.KvsSampleDataset attribute)</a>
 
       <ul>
         <li><a href="autoapi/dicee/index.html#dicee.KvsSampleDataset.max_num_of_classes">(dicee.KvsSampleDataset attribute)</a>
 </li>
       </ul></li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.mean">mean (dicee.weight_averaging.SWAG attribute)</a>
+</li>
       <li><a href="autoapi/dicee/index.html#dicee.EnsembleKGE.mem_of_model">mem_of_model() (dicee.EnsembleKGE method)</a>
 
       <ul>
@@ -3254,6 +3311,8 @@
       </ul></li>
       <li><a href="autoapi/dicee/analyse_experiments/index.html#dicee.analyse_experiments.Experiment.model_name">model_name (dicee.analyse_experiments.Experiment attribute)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     module
 
@@ -3348,16 +3407,16 @@
 </li>
         <li><a href="autoapi/dicee/trainer/torch_trainer_ddp/index.html#module-dicee.trainer.torch_trainer_ddp">dicee.trainer.torch_trainer_ddp</a>
 </li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#module-dicee.weight_averaging">dicee.weight_averaging</a>
+</li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/index.html#dicee.EnsembleKGE.modules">modules() (dicee.EnsembleKGE method)</a>
 
       <ul>
         <li><a href="autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.modules">(dicee.models.ensemble.EnsembleKGE method)</a>
 </li>
       </ul></li>
-      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.moving_average">moving_average() (dicee.callbacks.SWA static method)</a>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWA.moving_average">moving_average() (dicee.weight_averaging.SWA static method)</a>
 </li>
       <li><a href="autoapi/dicee/index.html#dicee.MultiClassClassificationDataset">MultiClassClassificationDataset (class in dicee)</a>
 
@@ -3849,6 +3908,8 @@
         <li><a href="autoapi/dicee/models/index.html#dicee.models.GFMult.num_sample">(dicee.models.GFMult attribute)</a>
 </li>
       </ul></li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.num_samples">num_samples (dicee.weight_averaging.TWA attribute)</a>
+</li>
       <li><a href="autoapi/dicee/index.html#dicee.BaseKGE.num_tokens">num_tokens (dicee.BaseKGE attribute)</a>
 
       <ul>
@@ -3944,7 +4005,13 @@
 </li>
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback.on_fit_end">(dicee.callbacks.PrintCallback method)</a>
 </li>
-        <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.on_fit_end">(dicee.callbacks.SWA method)</a>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.EMA.on_fit_end">(dicee.weight_averaging.EMA method)</a>
+</li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWA.on_fit_end">(dicee.weight_averaging.SWA method)</a>
+</li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.on_fit_end">(dicee.weight_averaging.SWAG method)</a>
+</li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.on_fit_end">(dicee.weight_averaging.TWA method)</a>
 </li>
       </ul></li>
       <li><a href="autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback.on_fit_start">on_fit_start() (dicee.abstracts.AbstractCallback method)</a>
@@ -3963,10 +4030,10 @@
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback.on_fit_start">(dicee.callbacks.PrintCallback method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback.on_init_end">on_init_end() (dicee.abstracts.AbstractCallback method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback.on_init_start">on_init_start() (dicee.abstracts.AbstractCallback method)</a>
 </li>
       <li><a href="autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback.on_train_batch_end">on_train_batch_end() (dicee.abstracts.AbstractCallback method)</a>
@@ -4000,17 +4067,29 @@
 </li>
         <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback.on_train_epoch_end">(dicee.callbacks.PrintCallback method)</a>
 </li>
-        <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.on_train_epoch_end">(dicee.callbacks.SWA method)</a>
-</li>
         <li><a href="autoapi/dicee/models/base_model/index.html#dicee.models.base_model.BaseKGELightning.on_train_epoch_end">(dicee.models.base_model.BaseKGELightning method)</a>
 </li>
         <li><a href="autoapi/dicee/models/index.html#dicee.models.BaseKGELightning.on_train_epoch_end">(dicee.models.BaseKGELightning method)</a>
+</li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.EMA.on_train_epoch_end">(dicee.weight_averaging.EMA method)</a>
+</li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWA.on_train_epoch_end">(dicee.weight_averaging.SWA method)</a>
+</li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.on_train_epoch_end">(dicee.weight_averaging.SWAG method)</a>
+</li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.on_train_epoch_end">(dicee.weight_averaging.TWA method)</a>
 </li>
       </ul></li>
       <li><a href="autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractTrainer.on_train_epoch_start">on_train_epoch_start() (dicee.abstracts.AbstractTrainer method)</a>
 
       <ul>
-        <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.on_train_epoch_start">(dicee.callbacks.SWA method)</a>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.EMA.on_train_epoch_start">(dicee.weight_averaging.EMA method)</a>
+</li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWA.on_train_epoch_start">(dicee.weight_averaging.SWA method)</a>
+</li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.on_train_epoch_start">(dicee.weight_averaging.SWAG method)</a>
+</li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.on_train_epoch_start">(dicee.weight_averaging.TWA method)</a>
 </li>
       </ul></li>
       <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.LRScheduler.on_train_start">on_train_start() (dicee.callbacks.LRScheduler method)</a>
@@ -4075,6 +4154,8 @@
         <li><a href="autoapi/dicee/models/index.html#dicee.models.Keci.p">(dicee.models.Keci attribute)</a>
 </li>
       </ul></li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.P">P (dicee.weight_averaging.TWA attribute)</a>
+</li>
       <li><a href="autoapi/dicee/knowledge_graph/index.html#dicee.knowledge_graph.KG.padding">padding (dicee.knowledge_graph.KG attribute)</a>
 </li>
       <li><a href="autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.pandas_dataframe_indexer">pandas_dataframe_indexer() (in module dicee.read_preprocess_save_load_kg.util)</a>
@@ -4413,6 +4494,8 @@
       </ul></li>
       <li><a href="autoapi/dicee/scripts/index_serve/index.html#dicee.scripts.index_serve.StringListRequest.reducer">reducer (dicee.scripts.index_serve.StringListRequest attribute)</a>
 </li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.reg_lambda">reg_lambda (dicee.weight_averaging.TWA attribute)</a>
+</li>
       <li><a href="autoapi/dicee/query_generator/index.html#dicee.query_generator.QueryGenerator.rel2id">rel2id (dicee.query_generator.QueryGenerator attribute)</a>
 
       <ul>
@@ -4587,6 +4670,8 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.sample">sample() (dicee.weight_averaging.SWAG method)</a>
+</li>
       <li><a href="autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractPPECallback.sample_counter">sample_counter (dicee.abstracts.AbstractPPECallback attribute)</a>
 </li>
       <li><a href="autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.sample_entity">sample_entity() (dicee.abstracts.BaseInteractiveKGE method)</a>
@@ -4599,6 +4684,8 @@
         <li><a href="autoapi/dicee/knowledge_graph/index.html#dicee.knowledge_graph.KG.sample_triples_ratio">(dicee.knowledge_graph.KG attribute)</a>
 </li>
       </ul></li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.sample_weights">sample_weights() (dicee.weight_averaging.TWA method)</a>
+</li>
       <li><a href="autoapi/dicee/dataset_classes/index.html#dicee.dataset_classes.LiteralDataset.sampling_ratio">sampling_ratio (dicee.dataset_classes.LiteralDataset attribute)</a>, <a href="autoapi/dicee/dataset_classes/index.html#id11">[1]</a>
 
       <ul>
@@ -4747,8 +4834,6 @@
 </li>
       <li><a href="autoapi/dicee/scripts/index_serve/index.html#dicee.scripts.index_serve.search_embeddings">search_embeddings() (in module dicee.scripts.index_serve)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/scripts/index_serve/index.html#dicee.scripts.index_serve.search_embeddings_batch">search_embeddings_batch() (in module dicee.scripts.index_serve)</a>
 </li>
       <li><a href="autoapi/dicee/query_generator/index.html#dicee.query_generator.QueryGenerator.seed">seed (dicee.query_generator.QueryGenerator attribute)</a>
@@ -4757,6 +4842,8 @@
         <li><a href="autoapi/dicee/index.html#dicee.QueryGenerator.seed">(dicee.QueryGenerator attribute)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/index.html#dicee.select_model">select_model() (in module dicee)</a>
 
       <ul>
@@ -4837,6 +4924,8 @@
         <li><a href="autoapi/dicee/knowledge_graph/index.html#dicee.knowledge_graph.KG.sparql_endpoint">(dicee.knowledge_graph.KG attribute)</a>
 </li>
       </ul></li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.sq_mean">sq_mean (dicee.weight_averaging.SWAG attribute)</a>
+</li>
       <li><a href="autoapi/dicee/index.html#dicee.DICE_Trainer.start">start() (dicee.DICE_Trainer method)</a>
 
       <ul>
@@ -4901,24 +4990,40 @@
 </li>
       <li><a href="autoapi/dicee/scripts/index_serve/index.html#dicee.scripts.index_serve.StringListRequest">StringListRequest (class in dicee.scripts.index_serve)</a>
 </li>
-      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA">SWA (class in dicee.callbacks)</a>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWA">SWA (class in dicee.weight_averaging)</a>
 </li>
       <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.swa">swa (dicee.config.Namespace attribute)</a>
 </li>
-      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.swa_c_epochs">swa_c_epochs (dicee.callbacks.SWA attribute)</a>
-</li>
-      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.swa_lr">swa_lr (dicee.callbacks.SWA attribute)</a>
-</li>
-      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.swa_model">swa_model (dicee.callbacks.SWA attribute)</a>
-</li>
-      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.swa_n">swa_n (dicee.callbacks.SWA attribute)</a>
-</li>
-      <li><a href="autoapi/dicee/callbacks/index.html#dicee.callbacks.SWA.swa_start_epoch">swa_start_epoch (dicee.callbacks.SWA attribute)</a>
+      <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.swa_c_epochs">swa_c_epochs (dicee.config.Namespace attribute)</a>
 
       <ul>
-        <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.swa_start_epoch">(dicee.config.Namespace attribute)</a>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWA.swa_c_epochs">(dicee.weight_averaging.SWA attribute)</a>
+</li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.swa_c_epochs">(dicee.weight_averaging.SWAG attribute)</a>
 </li>
       </ul></li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWA.swa_lr">swa_lr (dicee.weight_averaging.SWA attribute)</a>
+
+      <ul>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.swa_lr">(dicee.weight_averaging.SWAG attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWA.swa_model">swa_model (dicee.weight_averaging.SWA attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWA.swa_n">swa_n (dicee.weight_averaging.SWA attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.swa_start_epoch">swa_start_epoch (dicee.config.Namespace attribute)</a>
+
+      <ul>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWA.swa_start_epoch">(dicee.weight_averaging.SWA attribute)</a>
+</li>
+        <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.swa_start_epoch">(dicee.weight_averaging.SWAG attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG">SWAG (class in dicee.weight_averaging)</a>
+</li>
+      <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.swag">swag (dicee.config.Namespace attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -5087,8 +5192,6 @@
       </ul></li>
       <li><a href="autoapi/dicee/analyse_experiments/index.html#dicee.analyse_experiments.Experiment.train_h1">train_h1 (dicee.analyse_experiments.Experiment attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/analyse_experiments/index.html#dicee.analyse_experiments.Experiment.train_h10">train_h10 (dicee.analyse_experiments.Experiment attribute)</a>
 </li>
       <li><a href="autoapi/dicee/analyse_experiments/index.html#dicee.analyse_experiments.Experiment.train_h3">train_h3 (dicee.analyse_experiments.Experiment attribute)</a>
@@ -5099,6 +5202,8 @@
         <li><a href="autoapi/dicee/index.html#dicee.MultiLabelDataset.train_indices_target">(dicee.MultiLabelDataset attribute)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveTrainKGE.train_k_vs_all">train_k_vs_all() (dicee.abstracts.BaseInteractiveTrainKGE method)</a>
 </li>
       <li><a href="autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveTrainKGE.train_literals">train_literals() (dicee.abstracts.BaseInteractiveTrainKGE method)</a>
@@ -5261,6 +5366,16 @@
         <li><a href="autoapi/dicee/index.html#dicee.QueryGenerator.tuple2list">(dicee.QueryGenerator method)</a>
 </li>
       </ul></li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA">TWA (class in dicee.weight_averaging)</a>
+</li>
+      <li><a href="autoapi/dicee/config/index.html#dicee.config.Namespace.twa">twa (dicee.config.Namespace attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.twa_c_epochs">twa_c_epochs (dicee.weight_averaging.TWA attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.twa_model">twa_model (dicee.weight_averaging.TWA attribute)</a>
+</li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.twa_start_epoch">twa_start_epoch (dicee.weight_averaging.TWA attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -5313,6 +5428,8 @@
       </ul></li>
       <li><a href="autoapi/dicee/sanity_checkers/index.html#dicee.sanity_checkers.validate_knowledge_graph">validate_knowledge_graph() (in module dicee.sanity_checkers)</a>
 </li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.var_clamp">var_clamp (dicee.weight_averaging.SWAG attribute)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.vocab_preparation">vocab_preparation() (dicee.evaluator.Evaluator method)</a>
@@ -5363,6 +5480,8 @@
         <li><a href="autoapi/dicee/models/index.html#dicee.models.BaseKGE.weight_decay">(dicee.models.BaseKGE attribute)</a>, <a href="autoapi/dicee/models/index.html#id110">[1]</a>, <a href="autoapi/dicee/models/index.html#id156">[2]</a>, <a href="autoapi/dicee/models/index.html#id18">[3]</a>, <a href="autoapi/dicee/models/index.html#id207">[4]</a>, <a href="autoapi/dicee/models/index.html#id249">[5]</a>, <a href="autoapi/dicee/models/index.html#id68">[6]</a>
 </li>
       </ul></li>
+      <li><a href="autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.weight_samples">weight_samples (dicee.weight_averaging.TWA attribute)</a>
+</li>
       <li><a href="autoapi/dicee/models/index.html#dicee.models.FMult.weights">weights (dicee.models.FMult attribute)</a>
 
       <ul>

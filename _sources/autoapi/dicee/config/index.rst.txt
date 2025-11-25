@@ -367,6 +367,30 @@ Module Contents
       Stochastic weight averaging
 
 
+   .. py:attribute:: swag
+      :type:  bool
+      :value: False
+
+
+      Stochastic weight averaging - Gaussian
+
+
+   .. py:attribute:: ema
+      :type:  bool
+      :value: False
+
+
+      Exponential Moving Average
+
+
+   .. py:attribute:: twa
+      :type:  bool
+      :value: False
+
+
+      Trainable weight averaging
+
+
    .. py:attribute:: block_size
       :type:  int
       :value: None
@@ -434,6 +458,14 @@ Module Contents
 
 
       Epoch at which to start applying stochastic weight averaging.
+
+
+   .. py:attribute:: swa_c_epochs
+      :type:  int
+      :value: 1
+
+
+      Number of epochs to average over for SWA, SWAG, EMA, TWA.
 
 
    .. py:method:: __iter__()

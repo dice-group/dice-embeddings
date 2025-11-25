@@ -30,6 +30,7 @@ Submodules
    /autoapi/dicee/static_funcs_training/index
    /autoapi/dicee/static_preprocess_funcs/index
    /autoapi/dicee/trainer/index
+   /autoapi/dicee/weight_averaging/index
 
 
 Attributes

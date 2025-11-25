@@ -64,7 +64,7 @@ Module Contents
    :raises AssertionError: If the kGE model is not an instance of KGE or if the test set has no valid entities or attributes.
 
 
-.. py:function:: evaluate_ensemble_link_prediction_performance(models, triples, er_vocab: Dict[Tuple, List], weights: List[float] = None, batch_size: int = 512, weighted_averaging: bool = True) -> Dict
+.. py:function:: evaluate_ensemble_link_prediction_performance(models, triples, er_vocab: Dict[Tuple, List], weights: List[float] = None, batch_size: int = 512, weighted_averaging: bool = True, normalize_scores: bool = True) -> Dict
 
    Evaluates link prediction performance of an ensemble of KGE models.
    :param models: List of KGE models (snapshots)
