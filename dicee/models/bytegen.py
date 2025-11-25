@@ -9,6 +9,7 @@ import math
 from typing import Dict, List, Tuple, Set, Optional
 from tqdm import tqdm
 import numpy as np
+import json
 
 # Configuration
 @dataclass
@@ -72,8 +73,11 @@ class ByteGenDataset(Dataset):
         
         # Build sequence: [H] [SEP_HR] [R] [SEP_RT] [T]
         seq = list(h) + [SpecialTokens.SEP_HR] + list(r) + [SpecialTokens.SEP_RT] + list(t)
-        
-        # Random Walk
+        if len(seq) >= self.block_size:
+            print(f"Sequence for triple {h} {r} {t} is longer than block size.")
+            print(f"Increase block size to at least {len(seq)}")
+            exit(1)
+        # random Walk
         curr = t
         while len(seq) < self.block_size:
             if curr not in self.adj: break
@@ -87,7 +91,9 @@ class ByteGenDataset(Dataset):
         # Truncate/Pad
         if len(seq) > self.block_size:
             seq = seq[:self.block_size]
-        else:
+        elif len(seq) < self.block_size:
+            print("dead end tail + using padding")
+            # TODO: LF we have to think how to deal with this :) invese relations prevent this, e.g. A -> B inv_-> A -> ...
             seq.extend([SpecialTokens.PAD] * (self.block_size - len(seq)))
             
         return torch.tensor(seq, dtype=torch.long)
@@ -344,19 +350,19 @@ class Trainer:
 
 if __name__ == "__main__":
     # Setup
-    dataset_path = os.path.join(os.getcwd(), "KGs/FB15k-237")
+    dataset_path = os.path.join(os.getcwd(), "KGs/UMLS")
     conf = ByteGenConfig(
-        block_size=256, 
-        n_layer=6, 
+        block_size=128, 
+        n_layer=4, 
         n_head=4, 
-        n_embd=512, 
-        dropout=0.3, 
-        batch_size=256,
-        lr=1e-4
+        n_embd=256, 
+        dropout=0.1, 
+        batch_size=512,
+        lr=0.001
     )
     
     # Dataset
-    train_ds = ByteGenDataset(dataset_path, split='train', block_size=conf.block_size)
+    train_ds = ByteGenDataset(dataset_path, split='train', block_size=conf.block_size, inverse=True)
     test_ds = ByteGenDataset(dataset_path, split='test', block_size=conf.block_size)
     
     train_loader = DataLoader(train_ds, batch_size=conf.batch_size, shuffle=True, num_workers=4)
@@ -366,7 +372,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.AdamW(model.parameters(), lr=conf.lr)
     
     # Trainer
-    EPOCHS = 500
+    EPOCHS = 300
     trainer = Trainer(model, train_loader, conf, optimizer)
     trainer.train(EPOCHS)
             
