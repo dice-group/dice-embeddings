@@ -23,7 +23,22 @@ Module Contents
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
 
-   Stochastic Weight Averaging callbacks.
+   Stochastic Weight Averaging callback.
+
+   Initialize SWA callback.
+       Parameters
+       ----------
+       swa_start_epoch: int
+           The epoch at which to start SWA.
+       swa_c_epochs: int
+           The number of epochs to use for SWA.
+       lr_init: float
+           The initial learning rate.
+       swa_lr: float
+           The learning rate to use during SWA.
+       max_epochs: int
+           The maximum number of epochs. args.num_epochs
+
 
 
    .. py:attribute:: swa_start_epoch
@@ -100,7 +115,23 @@ Module Contents
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
 
-   Stochastic Weight Averaging - Gaussian  (SWAG).
+   Stochastic Weight Averaging - Gaussian (SWAG).
+   Parameters
+       ----------
+       swa_start_epoch : int
+           Epoch at which to start collecting weights.
+       swa_c_epochs : int
+           Interval of epochs between updates.
+       lr_init : float
+           Initial LR.
+       swa_lr : float
+           LR in SWA / GSWA phase.
+       max_epochs : int
+           Total number of epochs.
+       max_num_models : int
+           Number of models to keep for low-rank covariance approx.
+       var_clamp : float
+           Clamp low variance for stability.
 
 
    .. py:attribute:: swa_start_epoch
@@ -212,6 +243,14 @@ Module Contents
 
    Exponential Moving Average (EMA) callback.
 
+   :param ema_start_epoch: Epoch to start EMA.
+   :type ema_start_epoch: int
+   :param decay: EMA decay rate (typical: 0.99 - 0.9999)
+                 Math: θ_ema <- decay * θ_ema + (1 - decay) * θ
+   :type decay: float
+   :param max_epochs: Maximum number of epochs.
+   :type max_epochs: int
+
 
    .. py:attribute:: ema_start_epoch
 
@@ -251,7 +290,7 @@ Module Contents
       # θ_ema ← (1 - alpha) * θ_ema + alpha * θ
       # alpha = 1 - decay, where decay is the EMA smoothing factor (typical 0.99 - 0.999)
       # alpha controls how much of the current model θ contributes to the EMA
-      # decay  is fixed  in code --> can be extended to sheduled
+      # decay  is fixed  in code --> can be extended to scheduled
 
 
 
@@ -279,6 +318,22 @@ Module Contents
 
 
    Train with Weight Averaging (TWA) using subspace projection + averaging.
+
+   Parameters
+       ----------
+       twa_start_epoch : int
+           Epoch to start TWA.
+       lr_init : float
+           Learning rate used for β updates.
+       num_samples : int
+           Number of sampled weight snapshots to build projection subspace.
+       reg_lambda : float
+           Regularization coefficient for β updates.
+       max_epochs : int
+           Total number of training epochs.
+       twa_c_epochs : int
+           Interval of epochs between TWA updates.
+
 
 
    .. py:attribute:: twa_start_epoch

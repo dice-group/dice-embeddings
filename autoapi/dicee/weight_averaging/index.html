@@ -201,10 +201,10 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.weight_averaging.SWA" title="dicee.weight_averaging.SWA"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SWA</span></code></a></p></td>
-<td><p>Stochastic Weight Averaging callbacks.</p></td>
+<td><p>Stochastic Weight Averaging callback.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.weight_averaging.SWAG" title="dicee.weight_averaging.SWAG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SWAG</span></code></a></p></td>
-<td><p>Stochastic Weight Averaging - Gaussian  (SWAG).</p></td>
+<td><p>Stochastic Weight Averaging - Gaussian (SWAG).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.weight_averaging.EMA" title="dicee.weight_averaging.EMA"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EMA</span></code></a></p></td>
 <td><p>Exponential Moving Average (EMA) callback.</p></td>
@@ -221,7 +221,22 @@
 <dt class="sig sig-object py" id="dicee.weight_averaging.SWA">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.weight_averaging.</span></span><span class="sig-name descname"><span class="pre">SWA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">swa_start_epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">swa_c_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_init</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">swa_lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.weight_averaging.SWA" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
-<p>Stochastic Weight Averaging callbacks.</p>
+<p>Stochastic Weight Averaging callback.</p>
+<dl class="simple">
+<dt>Initialize SWA callback.</dt><dd><dl class="simple">
+<dt>swa_start_epoch: int</dt><dd><p>The epoch at which to start SWA.</p>
+</dd>
+<dt>swa_c_epochs: int</dt><dd><p>The number of epochs to use for SWA.</p>
+</dd>
+<dt>lr_init: float</dt><dd><p>The initial learning rate.</p>
+</dd>
+<dt>swa_lr: float</dt><dd><p>The learning rate to use during SWA.</p>
+</dd>
+<dt>max_epochs: int</dt><dd><p>The maximum number of epochs. args.num_epochs</p>
+</dd>
+</dl>
+</dd>
+</dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.weight_averaging.SWA.swa_start_epoch">
 <span class="sig-name descname"><span class="pre">swa_start_epoch</span></span><a class="headerlink" href="#dicee.weight_averaging.SWA.swa_start_epoch" title="Link to this definition"></a></dt>
@@ -297,7 +312,26 @@ Math:
 <dt class="sig sig-object py" id="dicee.weight_averaging.SWAG">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.weight_averaging.</span></span><span class="sig-name descname"><span class="pre">SWAG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">swa_start_epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">swa_c_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_init</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">swa_lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_models</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_clamp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-30</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.weight_averaging.SWAG" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
-<p>Stochastic Weight Averaging - Gaussian  (SWAG).</p>
+<p>Stochastic Weight Averaging - Gaussian (SWAG).
+Parameters</p>
+<blockquote>
+<div><dl class="simple">
+<dt>swa_start_epoch<span class="classifier">int</span></dt><dd><p>Epoch at which to start collecting weights.</p>
+</dd>
+<dt>swa_c_epochs<span class="classifier">int</span></dt><dd><p>Interval of epochs between updates.</p>
+</dd>
+<dt>lr_init<span class="classifier">float</span></dt><dd><p>Initial LR.</p>
+</dd>
+<dt>swa_lr<span class="classifier">float</span></dt><dd><p>LR in SWA / GSWA phase.</p>
+</dd>
+<dt>max_epochs<span class="classifier">int</span></dt><dd><p>Total number of epochs.</p>
+</dd>
+<dt>max_num_models<span class="classifier">int</span></dt><dd><p>Number of models to keep for low-rank covariance approx.</p>
+</dd>
+<dt>var_clamp<span class="classifier">float</span></dt><dd><p>Clamp low variance for stability.</p>
+</dd>
+</dl>
+</div></blockquote>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.weight_averaging.SWAG.swa_start_epoch">
 <span class="sig-name descname"><span class="pre">swa_start_epoch</span></span><a class="headerlink" href="#dicee.weight_averaging.SWAG.swa_start_epoch" title="Link to this definition"></a></dt>
@@ -407,6 +441,16 @@ Math:
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.weight_averaging.</span></span><span class="sig-name descname"><span class="pre">EMA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ema_start_epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ema_c_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.weight_averaging.EMA" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>Exponential Moving Average (EMA) callback.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ema_start_epoch</strong> (<em>int</em>) – Epoch to start EMA.</p></li>
+<li><p><strong>decay</strong> (<em>float</em>) – EMA decay rate (typical: 0.99 - 0.9999)
+Math: θ_ema &lt;- decay * θ_ema + (1 - decay) * θ</p></li>
+<li><p><strong>max_epochs</strong> (<em>int</em>) – Maximum number of epochs.</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.weight_averaging.EMA.ema_start_epoch">
 <span class="sig-name descname"><span class="pre">ema_start_epoch</span></span><a class="headerlink" href="#dicee.weight_averaging.EMA.ema_start_epoch" title="Link to this definition"></a></dt>
@@ -446,7 +490,7 @@ Math:
 # θ_ema ← (1 - alpha) * θ_ema + alpha * θ
 # alpha = 1 - decay, where decay is the EMA smoothing factor (typical 0.99 - 0.999)
 # alpha controls how much of the current model θ contributes to the EMA
-# decay  is fixed  in code –&gt; can be extended to sheduled</p>
+# decay  is fixed  in code –&gt; can be extended to scheduled</p>
 </dd></dl>
 
 <dl class="py method">
@@ -474,6 +518,23 @@ Math:
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.weight_averaging.</span></span><span class="sig-name descname"><span class="pre">TWA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">twa_start_epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_init</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reg_lambda</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">twa_c_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.weight_averaging.TWA" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>Train with Weight Averaging (TWA) using subspace projection + averaging.</p>
+<dl class="simple">
+<dt>Parameters</dt><dd><dl class="simple">
+<dt>twa_start_epoch<span class="classifier">int</span></dt><dd><p>Epoch to start TWA.</p>
+</dd>
+<dt>lr_init<span class="classifier">float</span></dt><dd><p>Learning rate used for β updates.</p>
+</dd>
+<dt>num_samples<span class="classifier">int</span></dt><dd><p>Number of sampled weight snapshots to build projection subspace.</p>
+</dd>
+<dt>reg_lambda<span class="classifier">float</span></dt><dd><p>Regularization coefficient for β updates.</p>
+</dd>
+<dt>max_epochs<span class="classifier">int</span></dt><dd><p>Total number of training epochs.</p>
+</dd>
+<dt>twa_c_epochs<span class="classifier">int</span></dt><dd><p>Interval of epochs between TWA updates.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.weight_averaging.TWA.twa_start_epoch">
 <span class="sig-name descname"><span class="pre">twa_start_epoch</span></span><a class="headerlink" href="#dicee.weight_averaging.TWA.twa_start_epoch" title="Link to this definition"></a></dt>
