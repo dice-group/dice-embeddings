@@ -1,0 +1,106 @@
+from typing import List
+import torch
+import torch.nn.functional as F
+import numpy as np
+from tqdm import tqdm
+from dicee.bytegen.bytegen import ByteGenModel
+from dicee.bytegen.dataset import ByteGenDataset
+from dicee.bytegen.tokenizer import ByteTokenizer
+
+class Evaluator:
+    def __init__(self, model: ByteGenModel, train_dataset: ByteGenDataset, test_dataset: ByteGenDataset, tokenizer: ByteTokenizer):
+        self.model = model
+        self.device = model.config.device
+        self.train_ds = train_dataset
+        self.test_ds = test_dataset
+        self.tokenizer = tokenizer
+        
+        # Build Entity Catalog
+        self.entities = sorted(list(set([t[0] for t in train_dataset.triples] + [t[2] for t in train_dataset.triples] +
+                                        [t[0] for t in test_dataset.triples] + [t[2] for t in test_dataset.triples])))
+        self.entity_to_idx = {e: i for i, e in enumerate(self.entities)}
+        
+        # Build Known Facts for Filtering
+        self.known_facts = set()
+        for h, r, t in (train_dataset.triples + test_dataset.triples):
+            self.known_facts.add((h, r, t))
+            
+    def evaluate(self, limit: int = None, batch_size: int = 64):
+        self.model.eval()
+        ranks = []
+        hits1, hits3, hits10 = 0, 0, 0
+        
+        # Pre-calculate candidate bytes 
+        candidates = self.entities
+        
+        triples = self.test_ds.triples[:limit] if limit else self.test_ds.triples
+        print(f"Evaluating {len(triples)} triples...")
+
+        for h, r, t in tqdm(triples):
+            # We want to score: h + r + ?
+            scores = self._score_candidates(h, r, candidates, batch_size)
+            
+            # Identify target rank
+            if t not in self.entity_to_idx: continue
+            target_idx = self.entity_to_idx[t]
+            target_score = scores[target_idx]
+            
+            # Filter Loop: Penalize known facts that are NOT the target
+            for i, cand in enumerate(candidates):
+                if cand == t: continue # Don't filter the ground truth
+                if (h, r, cand) in self.known_facts:
+                    scores[i] = -float('inf')
+
+            # Calculate Rank
+            # Rank = (count of scores > target_score) + 1
+            rank = np.sum(scores > target_score) + 1
+            
+            ranks.append(rank)
+            if rank <= 1: hits1 += 1
+            if rank <= 3: hits3 += 1
+            if rank <= 10: hits10 += 1
+            
+        mrr = np.mean(1.0 / np.array(ranks))
+        print(f"MRR: {mrr:.4f} | H@1: {hits1/len(ranks):.4f} | H@3: {hits3/len(ranks):.4f} | H@10: {hits10/len(ranks):.4f}")
+
+    def _score_candidates(self, h: tuple, r: tuple, candidates: List[tuple], batch_size: int):
+        prefix = list(h) + [self.tokenizer.sep_hr_token_id] + list(r) + [self.tokenizer.sep_rt_token_id]
+        all_scores = []
+        
+        with torch.no_grad():
+            for i in range(0, len(candidates), batch_size):
+                batch = candidates[i:i+batch_size]
+                
+                # Dynamic Batching
+                max_cand_len = max([len(c) for c in batch])
+                input_ids = []
+                slices = [] # (start_idx, end_idx) used for gathering probabilities
+                
+                for cand in batch:
+                    seq = prefix + list(cand)
+                    # We predict the candidate bytes.
+                    # The prediction for seq[k] comes from seq[k-1]
+                    # Start of candidate in seq is len(prefix). 
+                    # So we look at logits at indices: len(prefix)-1 ... to ... end-1
+                    start_logit_idx = len(prefix) - 1
+                    end_logit_idx = len(seq) - 1
+                    
+                    input_ids.append(seq + [self.tokenizer.pad_token_id] * (len(prefix) + max_cand_len - len(seq)))
+                    slices.append((start_logit_idx, end_logit_idx, len(cand)))
+                
+                x = torch.tensor(input_ids, dtype=torch.long, device=self.device)
+                logits = self.model(x)
+                log_probs = F.log_softmax(logits, dim=-1)
+                
+                for b, (s, e, l) in enumerate(slices):
+                    # Gather scores for the specific bytes of the candidate
+                    # Target indices are x[b, s+1 : e+1]
+                    relevant_logits = log_probs[b, s:e, :]
+                    targets = x[b, s+1 : e+1]
+                    
+                    # Sum log_probs for the candidate string
+                    token_scores = relevant_logits.gather(1, targets.unsqueeze(1)).squeeze(1)
+                    score = token_scores.sum().item() / l # Normalize by length
+                    all_scores.append(score)
+                    
+        return np.array(all_scores)
