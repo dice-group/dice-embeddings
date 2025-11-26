@@ -3,8 +3,8 @@ import polars
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.weight_averaging import SWA, SWAG, EMA, TWA
-from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb, PeriodicEvalCallback, LRScheduler
+from dicee.weight_averaging import ASWA, SWA, SWAG, EMA, TWA
+from dicee.callbacks import Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb, PeriodicEvalCallback, LRScheduler
 from dicee.dataset_classes import construct_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
