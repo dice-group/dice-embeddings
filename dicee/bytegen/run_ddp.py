@@ -13,8 +13,13 @@ from torch.nn.parallel import DistributedDataParallel
 if __name__ == "__main__":
     # Setup
     dataset_path = os.path.join(os.getcwd(), "KGs/UMLS")
+    
+    from torch.distributed import init_process_group
+    init_process_group(backend="nccl")
+    
     global_rank = int(os.environ.get("RANK", 0))
     local_rank = int(os.environ.get("LOCAL_RANK", 0))
+    torch.cuda.set_device(local_rank)
     
     # Initialize Tokenizer
     tokenizer = ByteTokenizer()
@@ -44,7 +49,7 @@ if __name__ == "__main__":
     
     # Trainer
     EPOCHS = 300
-    trainer = DDPTrainer(model, train_loader, conf, tokenizer, optimizer)
+    trainer = DDPTrainer(model, train_loader, conf, tokenizer, optimizer, gradient_acc_steps=100)
     trainer.train(EPOCHS)
             
     # Evaluate

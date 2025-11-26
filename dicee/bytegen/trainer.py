@@ -66,8 +66,6 @@ class DDPTrainer(Trainer):
         self.global_rank = int(os.environ.get("RANK", 0))
         self.local_rank = int(os.environ.get("LOCAL_RANK", 0))
         self.gradient_acc_steps = gradient_acc_steps
-        init_process_group(backend="nccl") 
-        torch.cuda.set_device(self.local_rank)
 
     def train(self, epochs: int = 500):
         assert torch.cuda.is_available(), "Training using DDPTrainer only works on gpu(s)"
