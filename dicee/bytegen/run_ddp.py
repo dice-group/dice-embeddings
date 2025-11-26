@@ -4,17 +4,17 @@ import torch
 from dicee.bytegen.bytegen import ByteGenModel, ByteGenConfig
 from dicee.bytegen.tokenizer import ByteTokenizer
 from dicee.bytegen.dataset import ByteGenDataset
-from dicee.bytegen.trainer import DDPTrainer, Trainer
+from dicee.bytegen.trainer import DDPTrainer
 from dicee.bytegen.evaluator import Evaluator
 #DDP
 from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel
+from torch.distributed import init_process_group
 
 if __name__ == "__main__":
     # Setup
     dataset_path = os.path.join(os.getcwd(), "KGs/UMLS")
     
-    from torch.distributed import init_process_group
     init_process_group(backend="nccl")
     
     global_rank = int(os.environ.get("RANK", 0))
