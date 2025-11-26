@@ -101,17 +101,16 @@ def sanity_check_callback_args(args):
             raise NotImplementedError("Path to store experiments must be provided for Multi-GPU training.")
         if args.adaptive_lr:
             raise NotImplementedError("Adaptive learning rate is not supported with Multi-GPU training.")
-    has_callbacks = any([args.swa, args.adaptive_swa, args.adaptive_lr, args.eval_every_n_epochs > 0,
+    has_callbacks = any([args.swa, args.swag, args.ema, args.adaptive_swa, args.twa, args.adaptive_lr, args.eval_every_n_epochs > 0,
                           args.eval_at_epochs is not None])
     if not has_callbacks:
         return  # No callbacks, no checks needed
-    # # Block all callbacks for TP or torchDDP trainers
-    # if args.trainer in {'TP', 'torchDDP'}:
-    #     raise NotImplementedError("Callbacks are not supported with TP or torchDDP trainers.")
-    # # Block callbacks for PL trainer with 2+ GPUs
-    # elif args.trainer == 'PL' and gpu_count >= 2:
-    #     raise NotImplementedError("Callbacks are not supported with PL trainer on multi-GPU setup.")
-    if args.swa:
-        if args.swa_start_epoch is None:
-            args.swa_start_epoch = 1
+
+    # SWA-related checks
+    if any([args.swa, args.swag, args.ema, args.twa]):
+        args.swa_start_epoch = args.swa_start_epoch or 1
         assert args.swa_start_epoch > 0, "SWA Start Epoch must be greater than 0"
+
+    # TWA/SWAG trainer compatibility
+    if any([args.twa, args.swag]) and args.trainer in {"TP", "torchDDP"}:
+        raise NotImplementedError("TWA and SWAG are not supported with TP or torchDDP trainers.")

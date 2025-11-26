@@ -180,6 +180,54 @@ _:1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07
 ```bash
 dicee --continual_learning "KeciFamilyRun" --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --backend rdflib --eval_model None
 ```
+#### Ensemble Learning with Knowledge Graph Embeddings
+
+The KGE models in our **dice-embedding** framework now support a range of state-of-the-art weight averaging techniques, including:
+
+- **Stochastic Weight Averaging (SWA)**
+- **Adaptive Stochastic Weight Averaging (ASWA)**
+- **Stochastic Weight Averaging–Gaussian (SWAG)**
+- **Exponential Moving Average (EMA)**
+- **Trainable Weight Averaging (TWA)**
+
+To enable any of these methods, use the corresponding command-line options as shown below.
+
+**SWA**
+```bash
+dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test" --num_epochs 100 --swa
+``` 
+**ASWA**
+```bash
+dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test" --num_epochs 100 --aswa
+``` 
+**Weight Averaging Start Epoch**
+
+Weight averaging begins at **epoch 0** by default. To start averaging from a later epoch, set `--swa_start_epoch`. This applies to all methods **except ASWA**.
+
+**EMA**
+```bash
+dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test" \
+ --num_epochs 100 --ema --swa_start_epoch 50
+```  
+**Interval Averaging and Multi-device training**
+
+Weight Averaging can also be performed by aggregating weights of running model at certain interval. Use the command *--swa_c_epochs* to do so. For example,  to average the weights at every 2 epochs along with SWA starting at 50 epochs, use the command: 
+
+```bash
+dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test" \
+ --num_epochs 100 --swa --swa_start_epoch 50 --swa_c_epochs 2
+``` 
+The weight averaging methods can also be used in multi-device settings using the `PL` trainer. However, some of the approaches are not currently supported for TP and torchDDP trainers.
+
+The weight averaging methods can also be evaluated at certain epochs during training or at certain intervals.
+```bash
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_every_n_epochs 50 --save_every_n_epochs --n_epochs_eval_model val_test --swa
+```
+For more details on periodic evaluations, please refer to the periodic evaluation section below in this file.
+
+---
+
 #### Single device training on Multi-Device setup
 
 When using a multi-GPU setup, `PL` Trainer  automatically utilizes all available CUDA devices. To perform training on a single device, set the environment variable `CUDA_VISIBLE_DEVICES=0` before running your command. For example:
@@ -194,12 +242,12 @@ Multiple GPUs can be selected by providing a comma-separated list, for example: 
 
 The Periodic evaluation method automates periodic model evaluation and checkpointing during training. It allows evaluations at fixed intervals or specific epochs. Results and model states are stored systematically for efficient hyperparameter search.
 
-Configure automatic evaluation by setting `eval_every_n_epoch` to run evaluations every N epochs, or `eval_at_epochs` for specific epochs—these options can be combined. Use `save_model_every_n_epoch` to save a checkpoint at each evaluation, and specify evaluation splits (`val`, `test`, or `val_test`) with `n_epochs_eval_model`. If the last training epoch matches a scheduled evaluation and the default trainer evaluates all specified splits, evaluation with `n_epochs` is skipped to prevent duplicate results.
+Configure automatic evaluation by setting `eval_every_n_epochs` to run evaluations every N epochs, or `eval_at_epochs` for specific epochs—these options can be combined. Use `save_model_every_n_epoch` to save a checkpoint at each evaluation, and specify evaluation splits (`val`, `test`, or `val_test`) with `n_epochs_eval_model`. If the last training epoch matches a scheduled evaluation and the default trainer evaluates all specified splits, evaluation with `n_epochs` is skipped to prevent duplicate results.
 
 ``` bash
 # Evaluate every 50 epochs on validation and test sets, saving a model checkpoint at each evaluation
 dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
-      --eval_every_n_epoch 50 --save_every_n_epochs --n_epochs_eval_model val_test
+      --eval_every_n_epochs 50 --save_every_n_epochs --n_epochs_eval_model val_test
 
 # Evaluate only at epochs 128 and 256 on the validation set, saving the model each time
 dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
@@ -207,7 +255,7 @@ dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_ep
 
 # Evaluate every 100 epochs on the test set only; model checkpoints are not saved
 dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
-      --eval_every_n_epoch 100 --n_epochs_eval_model test
+      --eval_every_n_epochs 100 --n_epochs_eval_model test
 
 # Evaluate only at epochs 50 and 150 on both validation and test sets; no checkpoint is saved
 dicee  --dataset_dir "KGs/UMLS" --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
@@ -215,7 +263,7 @@ dicee  --dataset_dir "KGs/UMLS" --dataset_dir "KGs/UMLS" --model Keci --scoring_
 
 # Evaluate every 100 epochs and additionally at epochs 45 and 275 on validation; models are saved at each evaluation point
 dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
-      --eval_every_n_epoch 100 --eval_at_epochs 45 275 --save_every_n_epochs --n_epochs_eval_model val
+      --eval_every_n_epochs 100 --eval_at_epochs 45 275 --save_every_n_epochs --n_epochs_eval_model val
 ```
 #### Periodic Evaluation during training with Weight Averaging (Ensemble) Methods
 The periodic evaluation function also allows evaluating the underlying ensemble model at particular epochs when using ensemble learning. The features can be paired simply by combining the arguments.
@@ -1064,6 +1112,21 @@ docker run --rm -v ~/.local/share/dicee/KGs:/dicee/KGs dice-embeddings ./main.py
 Currently, we are working on our manuscript describing our framework. 
 If you really like our work and want to cite it now, feel free to choose one :) 
 ```
+#ASWA
+@inproceedings{sapkota2025parameter,
+  author    = {Sapkota, Rupesh and Demir, Caglar and Sharma, Arnab and Ngonga Ngomo, Axel-Cyrille},
+  title     = {Parameter Averaging in Link Prediction},
+  booktitle = {Proceedings of the Knowledge Capture Conference 2025 (K-CAP '25)},
+  year      = {2025},
+  address   = {Dayton, OH, USA},
+  publisher = {ACM},
+  organization = {K-CAP},
+  pages     = {1--8},
+  doi       = {10.1145/3731443.3771365},
+  url       = {https://papers.dice-research.org/2025/KCAP_ASWA/public.pdf},
+  keywords  = {dice sailproject kiowl enexa sapkota demir ngonga sharma}
+}
+
 # DeCaL
 @incollection{kamdem2024embedding,
   title={Embedding Knowledge Graphs in Degenerate Clifford Algebras},

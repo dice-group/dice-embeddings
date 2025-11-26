@@ -126,6 +126,15 @@ def get_default_arguments(description=None):
     parser.add_argument("--swa",
                         action="store_true",
                         help="Stochastic weight averaging")
+    parser.add_argument("--swag",
+                        action="store_true",
+                        help="Stochastic weight averaging - Gaussian")
+    parser.add_argument("--ema",
+                        action="store_true",
+                        help="Exponential Moving Average")
+    parser.add_argument("--twa",
+                        action="store_true",
+                        help="Trainable Weight Averaging")
     parser.add_argument("--auto_batch_finding",
                         action="store_true",
                         help="Find a batch size fitting in GPUs. Only available for TP trainer")
@@ -140,6 +149,8 @@ def get_default_arguments(description=None):
                              'Available schedulers: cca, mmcclr, deferred_cca, deferred_mmcclr')
     parser.add_argument("--swa_start_epoch", type=int, default=None,
                         help='Epoch at which to start applying stochastic weight averaging.')
+    parser.add_argument("--swa_c_epochs", type=int, default=1,
+                        help='Number of epochs to average over for SWA, SWAG, EMA, TWA.')
     parser.add_argument('--eval_every_n_epochs', type=int, default=0,
                         help='Evaluate model every n epochs. If 0, no evaluation is applied.')
     parser.add_argument('--save_every_n_epochs', action='store_true',
