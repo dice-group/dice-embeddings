@@ -1,15 +1,15 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 from dataclasses import dataclass
 import os
-import random
-import math
-from typing import Dict, List, Tuple, Set, Optional
+from typing import List
 from tqdm import tqdm
 import numpy as np
-import json
+from dicee.bytegen.tokenizer import ByteTokenizer
+from dicee.bytegen.dataset import ByteGenDataset
+from dicee.bytegen.transformer import Block
 
 # Configuration
 @dataclass
@@ -23,143 +23,6 @@ class ByteGenConfig:
     lr: float = 1e-4
     batch_size: int = 32
     device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-class SpecialTokens:
-    PAD = 256
-    SEP_HR = 257
-    SEP_RT = 258
-
-# Data Loading
-class ByteGenDataset(Dataset):
-    """
-    Standard Random Walk Dataset.
-    """
-    def __init__(self, folder_path: str, split: str = 'train', block_size: int = 128, inverse: bool = True):
-        self.block_size = block_size
-        self.triples: List[Tuple[bytes, bytes, bytes]] = []
-        self.adj: Dict[bytes, List[Tuple[bytes, bytes]]] = {}
-        
-        file_path = os.path.join(folder_path, f"{split}.txt")
-        if not os.path.exists(file_path):
-            print(f"Warning: {file_path} not found.")
-            return
-
-        print(f"Loading {split} from {file_path}...")
-        with open(file_path, 'r', encoding='utf-8') as f:
-            for line in f:
-                parts = line.strip().split('\t')
-                if len(parts) < 3:
-                    parts = line.strip().split()
-                if len(parts) < 3: continue
-                h, r, t = parts[0], parts[1], parts[2]
-                self._add_triple(h, r, t)
-                
-                # Add inverse relations for training to double graph density
-                if inverse and split == 'train':
-                    self._add_triple(t, "INV_" + r, h)
-
-    def _add_triple(self, h_str, r_str, t_str):
-        h, r, t = h_str.encode('utf-8'), r_str.encode('utf-8'), t_str.encode('utf-8')
-        self.triples.append((h, r, t))
-        if h not in self.adj: self.adj[h] = []
-        self.adj[h].append((r, t))
-
-    def __len__(self):
-        return len(self.triples)
-
-    def __getitem__(self, idx):
-        # Start specific triple
-        h, r, t = self.triples[idx]
-        
-        # Build sequence: [H] [SEP_HR] [R] [SEP_RT] [T]
-        seq = list(h) + [SpecialTokens.SEP_HR] + list(r) + [SpecialTokens.SEP_RT] + list(t)
-        if len(seq) >= self.block_size:
-            print(f"Sequence for triple {h} {r} {t} is longer than block size.")
-            print(f"Increase block size to at least {len(seq)}")
-            exit(1)
-        # random Walk
-        curr = t
-        while len(seq) < self.block_size:
-            if curr not in self.adj: break
-            r_next, t_next = random.choice(self.adj[curr])
-            
-            # Append: <SEP_HR> R <SEP_RT> T <SEP_HR> R <SEP_RT> T ...
-            extension = [SpecialTokens.SEP_HR] + list(r_next) + [SpecialTokens.SEP_RT] + list(t_next)
-            seq.extend(extension)
-            curr = t_next
-
-        # Truncate/Pad
-        if len(seq) > self.block_size:
-            seq = seq[:self.block_size]
-        elif len(seq) < self.block_size:
-            print("dead end tail + using padding")
-            # TODO: LF we have to think how to deal with this :) invese relations prevent this, e.g. A -> B inv_-> A -> ...
-            seq.extend([SpecialTokens.PAD] * (self.block_size - len(seq)))
-            
-        return torch.tensor(seq, dtype=torch.long)
-
-# Model Components
-
-class CausalSelfAttention(nn.Module):
-    def __init__(self, config: ByteGenConfig):
-        super().__init__()
-        assert config.n_embd % config.n_head == 0
-        self.c_attn = nn.Linear(config.n_embd, 3 * config.n_embd)
-        self.c_proj = nn.Linear(config.n_embd, config.n_embd)
-        self.resid_dropout = nn.Dropout(config.dropout)
-        self.n_head = config.n_head
-        self.n_embd = config.n_embd
-        self.dropout_p = config.dropout
-
-    def forward(self, x):
-        B, T, C = x.size()
-        
-        # Calculate q, k, v
-        q, k, v  = self.c_attn(x).split(self.n_embd, dim=2)
-        q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
-        k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
-        v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
-
-        # Flash Attention
-        y = F.scaled_dot_product_attention(
-            q, k, v,
-            attn_mask=None,
-            dropout_p=self.dropout_p if self.training else 0.0,
-            is_causal=True
-        )
-        
-        y = y.transpose(1, 2).contiguous().view(B, T, C)
-        
-        return self.resid_dropout(self.c_proj(y))
-
-class MLP(nn.Module):
-    def __init__(self, config: ByteGenConfig):
-        super().__init__()
-        self.c_fc    = nn.Linear(config.n_embd, 4 * config.n_embd)
-        self.c_proj  = nn.Linear(4 * config.n_embd, config.n_embd)
-        self.dropout = nn.Dropout(config.dropout)
-        self.gelu = nn.GELU()
-
-    def forward(self, x):
-        x = self.c_fc(x)
-        x = self.gelu(x)
-        x = self.c_proj(x)
-        x = self.dropout(x)
-        return x
-
-class Block(nn.Module):
-    """ GPT-Style Block """
-    def __init__(self, config: ByteGenConfig):
-        super().__init__()
-        self.ln_1 = nn.LayerNorm(config.n_embd)
-        self.attn = CausalSelfAttention(config)
-        self.ln_2 = nn.LayerNorm(config.n_embd)
-        self.mlp = MLP(config)
-
-    def forward(self, x):
-        x = x + self.attn(self.ln_1(x))
-        x = x + self.mlp(self.ln_2(x))
-        return x
 
 class ByteGenModel(nn.Module):
     def __init__(self, config: ByteGenConfig):
@@ -209,14 +72,32 @@ class ByteGenModel(nn.Module):
         logits = self.lm_head(x)
         return logits
 
+    def generate(self, idx, tokenizer, max_new_tokens, temperature=1.0, top_k=None):
+        self.eval()
+        for _ in range(max_new_tokens):
+            idx_cond = idx if idx.size(1) <= self.config.block_size else idx[:, -self.config.block_size:]
+            with torch.no_grad():
+                logits = self(idx_cond)
+            logits = logits[:, -1, :] / temperature
+            if top_k is not None:
+                v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
+                logits[logits < v[:, [-1]]] = -float('Inf')
+            probs = F.softmax(logits, dim=-1)
+            idx_next = torch.multinomial(probs, num_samples=1)
+            if idx_next.item() == tokenizer.pad_token_id:
+                break
+            idx = torch.cat((idx, idx_next), dim=1)
+        return idx
+
 # Evaluation System 
 
 class Evaluator:
-    def __init__(self, model: ByteGenModel, train_dataset: ByteGenDataset, test_dataset: ByteGenDataset):
+    def __init__(self, model: ByteGenModel, train_dataset: ByteGenDataset, test_dataset: ByteGenDataset, tokenizer: ByteTokenizer):
         self.model = model
         self.device = model.config.device
         self.train_ds = train_dataset
         self.test_ds = test_dataset
+        self.tokenizer = tokenizer
         
         # Build Entity Catalog
         self.entities = sorted(list(set([t[0] for t in train_dataset.triples] + [t[2] for t in train_dataset.triples] +
@@ -266,8 +147,8 @@ class Evaluator:
         mrr = np.mean(1.0 / np.array(ranks))
         print(f"MRR: {mrr:.4f} | H@1: {hits1/len(ranks):.4f} | H@3: {hits3/len(ranks):.4f} | H@10: {hits10/len(ranks):.4f}")
 
-    def _score_candidates(self, h: bytes, r: bytes, candidates: List[bytes], batch_size: int):
-        prefix = list(h) + [SpecialTokens.SEP_HR] + list(r) + [SpecialTokens.SEP_RT]
+    def _score_candidates(self, h: tuple, r: tuple, candidates: List[tuple], batch_size: int):
+        prefix = list(h) + [self.tokenizer.sep_hr_token_id] + list(r) + [self.tokenizer.sep_rt_token_id]
         all_scores = []
         
         with torch.no_grad():
@@ -288,7 +169,7 @@ class Evaluator:
                     start_logit_idx = len(prefix) - 1
                     end_logit_idx = len(seq) - 1
                     
-                    input_ids.append(seq + [SpecialTokens.PAD] * (len(prefix) + max_cand_len - len(seq)))
+                    input_ids.append(seq + [self.tokenizer.pad_token_id] * (len(prefix) + max_cand_len - len(seq)))
                     slices.append((start_logit_idx, end_logit_idx, len(cand)))
                 
                 x = torch.tensor(input_ids, dtype=torch.long, device=self.device)
@@ -308,18 +189,16 @@ class Evaluator:
                     
         return np.array(all_scores)
 
-
-
-
 # Training System
 
 class Trainer:
-    def __init__(self, model: ByteGenModel, train_loader: DataLoader, config: ByteGenConfig, optimizer: torch.optim.Optimizer = None):
+    def __init__(self, model: ByteGenModel, train_loader: DataLoader, config: ByteGenConfig, tokenizer: ByteTokenizer, optimizer: torch.optim.Optimizer = None):
         self.model = model
         self.train_loader = train_loader
         self.config = config
         self.optimizer = optimizer or torch.optim.AdamW(model.parameters(), lr=config.lr)
         self.device = config.device
+        self.tokenizer = tokenizer
 
     def train(self, epochs: int = 500):
         print(f"Starting training for {epochs} epochs...")
@@ -338,7 +217,7 @@ class Trainer:
                 loss = F.cross_entropy(
                     logits.reshape(-1, self.config.vocab_size), 
                     targets.reshape(-1), 
-                    ignore_index=SpecialTokens.PAD
+                    ignore_index=self.tokenizer.pad_token_id
                 )
                 
                 self.optimizer.zero_grad()
@@ -351,6 +230,10 @@ class Trainer:
 if __name__ == "__main__":
     # Setup
     dataset_path = os.path.join(os.getcwd(), "KGs/UMLS")
+    
+    # Initialize Tokenizer
+    tokenizer = ByteTokenizer()
+    
     conf = ByteGenConfig(
         block_size=128, 
         n_layer=4, 
@@ -358,12 +241,13 @@ if __name__ == "__main__":
         n_embd=256, 
         dropout=0.1, 
         batch_size=512,
-        lr=0.001
+        lr=0.001,
+        vocab_size=tokenizer.vocab_size
     )
     
     # Dataset
-    train_ds = ByteGenDataset(dataset_path, split='train', block_size=conf.block_size, inverse=True)
-    test_ds = ByteGenDataset(dataset_path, split='test', block_size=conf.block_size)
+    train_ds = ByteGenDataset(dataset_path, tokenizer, split='train', block_size=conf.block_size, inverse=True)
+    test_ds = ByteGenDataset(dataset_path, tokenizer, split='test', block_size=conf.block_size)
     
     train_loader = DataLoader(train_ds, batch_size=conf.batch_size, shuffle=True, num_workers=4)
     
@@ -373,30 +257,13 @@ if __name__ == "__main__":
     
     # Trainer
     EPOCHS = 300
-    trainer = Trainer(model, train_loader, conf, optimizer)
+    trainer = Trainer(model, train_loader, conf, tokenizer, optimizer)
     trainer.train(EPOCHS)
             
     # Evaluate
     print("Training complete. Evaluating...")
-    evaluator = Evaluator(model, train_ds, test_ds)
+    evaluator = Evaluator(model, train_ds, test_ds, tokenizer)
     evaluator.evaluate()
-
-    def generate(model, idx, max_new_tokens, temperature=1.0, top_k=None):
-        model.eval()
-        for _ in range(max_new_tokens):
-            idx_cond = idx if idx.size(1) <= model.config.block_size else idx[:, -model.config.block_size:]
-            with torch.no_grad():
-                logits = model(idx_cond)
-            logits = logits[:, -1, :] / temperature
-            if top_k is not None:
-                v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
-                logits[logits < v[:, [-1]]] = -float('Inf')
-            probs = F.softmax(logits, dim=-1)
-            idx_next = torch.multinomial(probs, num_samples=1)
-            if idx_next.item() == SpecialTokens.PAD:
-                break
-            idx = torch.cat((idx, idx_next), dim=1)
-        return idx
 
     while True:
         print("\n--- Interactive Generation ---")
@@ -405,31 +272,12 @@ if __name__ == "__main__":
             break
             
         try:
-            context = list(head.encode('utf-8'))
+            context = tokenizer.encode(head)
             x = torch.tensor([context], dtype=torch.long, device=conf.device)
-            y = generate(model, x, max_new_tokens=64, temperature=0.8, top_k=10)
+            y = model.generate(x, tokenizer, max_new_tokens=64, temperature=0.8, top_k=10)
             
             out = y[0].tolist()
-            decoded = ""
-            buffer = bytearray()
-            
-            for token in out:
-                if token < 256:
-                    buffer.append(token)
-                else:
-                    if buffer:
-                        try: decoded += buffer.decode('utf-8')
-                        except: decoded += str(buffer)
-                        buffer = bytearray()
-                    
-                    if token == SpecialTokens.SEP_HR:
-                        decoded += " <SEP_HR> "
-                    elif token == SpecialTokens.SEP_RT:
-                        decoded += " <SEP_RT> "
-            
-            if buffer:
-                try: decoded += buffer.decode('utf-8')
-                except: decoded += str(buffer)
+            decoded = tokenizer.decode(out)
                 
             print(f"Generated: {decoded}")
             
