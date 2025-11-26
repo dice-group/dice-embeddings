@@ -11,13 +11,9 @@ from dicee.models.ensemble import EnsembleKGE
 from .eval_static_funcs import evaluate_ensemble_link_prediction_performance
 
 class SWA(AbstractCallback):
-    """Stochastic Weight Averaging callbacks."""
-
-    def __init__(self, swa_start_epoch, swa_c_epochs:int=1, lr_init:float=0.1,
-                  swa_lr:float=0.05, max_epochs :int=None):
-        super().__init__()
-        """
-        Initialize SWA callback.
+    """Stochastic Weight Averaging callback.
+    
+    Initialize SWA callback.
         Parameters
         ----------
         swa_start_epoch: int
@@ -31,6 +27,10 @@ class SWA(AbstractCallback):
         max_epochs: int
             The maximum number of epochs. args.num_epochs
         """
+
+    def __init__(self, swa_start_epoch, swa_c_epochs:int=1, lr_init:float=0.1,
+                  swa_lr:float=0.05, max_epochs :int=None):
+        super().__init__()
         self.swa_start_epoch = swa_start_epoch
         self.swa_c_epochs = swa_c_epochs
         self.swa_lr = swa_lr
@@ -131,14 +131,8 @@ class SWA(AbstractCallback):
             model.load_state_dict(self.swa_model.state_dict())
 
 class SWAG(AbstractCallback):
-    """Stochastic Weight Averaging - Gaussian  (SWAG)."""
-
-    def __init__(self, swa_start_epoch, swa_c_epochs:int=1,
-                 lr_init:float=0.1, swa_lr:float=0.05,
-                 max_epochs:int=None, max_num_models:int=20, var_clamp:float=1e-30):
-        super().__init__()
-        """
-        Parameters
+    """Stochastic Weight Averaging - Gaussian (SWAG).
+    Parameters
         ----------
         swa_start_epoch : int
             Epoch at which to start collecting weights.
@@ -154,7 +148,12 @@ class SWAG(AbstractCallback):
             Number of models to keep for low-rank covariance approx.
         var_clamp : float
             Clamp low variance for stability.
-        """
+    """
+
+    def __init__(self, swa_start_epoch, swa_c_epochs:int=1,
+                 lr_init:float=0.1, swa_lr:float=0.05,
+                 max_epochs:int=None, max_num_models:int=20, var_clamp:float=1e-30):
+        super().__init__()
         self.swa_start_epoch = swa_start_epoch
         self.swa_c_epochs = swa_c_epochs
         self.swa_lr = swa_lr
@@ -189,6 +188,8 @@ class SWAG(AbstractCallback):
         # dev_{n+1} = θ_{n+1} - μ_{n+1}
         # We store the last max_num_models deviations to approximate covariance
         """
+
+        # collect current model weights as a flat vector in cpu
         vec = nn.utils.parameters_to_vector(model.parameters()).detach().cpu()
 
         if self.mean is None:
@@ -318,11 +319,8 @@ class SWAG(AbstractCallback):
 
 
 class EMA(AbstractCallback):
-    """Exponential Moving Average (EMA) callback."""
+    """Exponential Moving Average (EMA) callback.
 
-    def __init__(self, ema_start_epoch: int, decay: float = 0.999,
-                 max_epochs: int = None, ema_c_epochs: int = 1):
-        """
         Parameters
         ----------
         ema_start_epoch : int
@@ -332,8 +330,10 @@ class EMA(AbstractCallback):
             Math: θ_ema <- decay * θ_ema + (1 - decay) * θ
         max_epochs : int
             Maximum number of epochs.
-        ( should be compatible with all trainers and multi-gpu setup )
         """
+
+    def __init__(self, ema_start_epoch: int, decay: float = 0.999,
+                 max_epochs: int = None, ema_c_epochs: int = 1):
         super().__init__()
         self.ema_start_epoch = ema_start_epoch
         self.decay = decay
@@ -351,7 +351,7 @@ class EMA(AbstractCallback):
         # θ_ema ← (1 - alpha) * θ_ema + alpha * θ
         # alpha = 1 - decay, where decay is the EMA smoothing factor (typical 0.99 - 0.999)
         # alpha controls how much of the current model θ contributes to the EMA
-        # decay  is fixed  in code --> can be extended to sheduled
+        # decay  is fixed  in code --> can be extended to scheduled
         """
         with torch.no_grad():
             ema_model.to(next(running_model.parameters()).device)
@@ -403,13 +403,9 @@ class EMA(AbstractCallback):
             model.load_state_dict(self.ema_model.state_dict())
 
 class TWA(AbstractCallback):
-    """Train with Weight Averaging (TWA) using subspace projection + averaging."""
+    """Train with Weight Averaging (TWA) using subspace projection + averaging.
 
-    def __init__(self, twa_start_epoch: int, lr_init: float,
-                 num_samples: int = 5, reg_lambda: float = 0.0,
-                 max_epochs: int = None, twa_c_epochs: int = 1):
-        """
-        Parameters
+    Parameters
         ----------
         twa_start_epoch : int
             Epoch to start TWA.
@@ -421,7 +417,13 @@ class TWA(AbstractCallback):
             Regularization coefficient for β updates.
         max_epochs : int
             Total number of training epochs.
+        twa_c_epochs : int
+            Interval of epochs between TWA updates.
         """
+
+    def __init__(self, twa_start_epoch: int, lr_init: float,
+                 num_samples: int = 5, reg_lambda: float = 0.0,
+                 max_epochs: int = None, twa_c_epochs: int = 1):
         super().__init__()
         self.twa_start_epoch = twa_start_epoch
         self.num_samples = num_samples
@@ -518,7 +520,10 @@ class TWA(AbstractCallback):
             # Gradient projection and β update
             running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
             # training gradients of running model
-            grads = torch.cat([p.grad.view(-1) for p in running_model.parameters() if p.grad is not None])
+            grads = torch.cat([
+                    (p.grad if p.grad is not None else torch.zeros_like(p)).view(-1)
+                    for p in running_model.parameters()
+                ])
             with torch.no_grad():
                 # Project gradient into subspace and apply ridge regularization
                 self.beta = (1 - self.lr_init * self.reg_lambda) * self.beta \

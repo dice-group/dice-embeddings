@@ -80,7 +80,7 @@ class TestSWA:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all_swag(self):
-        """Test  SWAG  with Keci and PL trainer."""
+        """Test SWAG with Keci and PL trainer."""
         args = Namespace()
         args.model = 'Keci'
         args.p = 0
@@ -104,7 +104,7 @@ class TestSWA:
         args.num_epochs = 200
         args.lr = 0.1
         args.embedding_dim = 32
-        args.batch_size = 2024
+        args.batch_size = 1024
         args.swag = True
         swag_report = Execute(args).start()
 
@@ -187,5 +187,3 @@ class TestSWA:
         assert deferred_twa_report["Val"]["H@1"] > twa_report["Val"]["H@1"]
         assert deferred_twa_report["Test"]["MRR"] > twa_report["Test"]["MRR"]
         assert deferred_twa_report["Test"]["H@1"] > twa_report["Test"]["H@1"]
-
-    
