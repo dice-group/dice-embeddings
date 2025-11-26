@@ -117,7 +117,7 @@ class Evaluator:
                                   form_of_labelling=form_of_labelling)
         elif self.args.scoring_technique == 'ByteGen':
             # ByteGen is a generative model - use dummy evaluation for now
-            print(f'ByteGen model evaluation is not yet implemented. Using dummy evaluation.')
+            print('ByteGen model evaluation is not yet implemented. Using dummy evaluation.')
             report = self.dummy_eval(trained_model, form_of_labelling)
             self.report = report if report is not None else self.report
         else:
