@@ -109,20 +109,6 @@
 </li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.callbacks.estimate_q"><code class="docutils literal notranslate"><span class="pre">estimate_q()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.callbacks.compute_convergence"><code class="docutils literal notranslate"><span class="pre">compute_convergence()</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.callbacks.ASWA"><code class="docutils literal notranslate"><span class="pre">ASWA</span></code></a><ul>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.ASWA.path"><code class="docutils literal notranslate"><span class="pre">ASWA.path</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.ASWA.num_epochs"><code class="docutils literal notranslate"><span class="pre">ASWA.num_epochs</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.ASWA.initial_eval_setting"><code class="docutils literal notranslate"><span class="pre">ASWA.initial_eval_setting</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.ASWA.epoch_count"><code class="docutils literal notranslate"><span class="pre">ASWA.epoch_count</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.ASWA.alphas"><code class="docutils literal notranslate"><span class="pre">ASWA.alphas</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.ASWA.val_aswa"><code class="docutils literal notranslate"><span class="pre">ASWA.val_aswa</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.ASWA.on_fit_end"><code class="docutils literal notranslate"><span class="pre">ASWA.on_fit_end()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.ASWA.compute_mrr"><code class="docutils literal notranslate"><span class="pre">ASWA.compute_mrr()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.ASWA.get_aswa_state_dict"><code class="docutils literal notranslate"><span class="pre">ASWA.get_aswa_state_dict()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.ASWA.decide"><code class="docutils literal notranslate"><span class="pre">ASWA.decide()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.ASWA.on_train_epoch_end"><code class="docutils literal notranslate"><span class="pre">ASWA.on_train_epoch_end()</span></code></a></li>
-</ul>
-</li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.callbacks.Eval"><code class="docutils literal notranslate"><span class="pre">Eval</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.Eval.path"><code class="docutils literal notranslate"><span class="pre">Eval.path</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.Eval.reports"><code class="docutils literal notranslate"><span class="pre">Eval.reports</span></code></a></li>
@@ -254,22 +240,19 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.PseudoLabellingCallback" title="dicee.callbacks.PseudoLabellingCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PseudoLabellingCallback</span></code></a></p></td>
 <td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.ASWA" title="dicee.callbacks.ASWA"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ASWA</span></code></a></p></td>
-<td><p>Adaptive stochastic weight averaging</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.Eval" title="dicee.callbacks.Eval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Eval</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.Eval" title="dicee.callbacks.Eval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Eval</span></code></a></p></td>
 <td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.KronE" title="dicee.callbacks.KronE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KronE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.KronE" title="dicee.callbacks.KronE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KronE</span></code></a></p></td>
 <td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.Perturb" title="dicee.callbacks.Perturb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Perturb</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.Perturb" title="dicee.callbacks.Perturb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Perturb</span></code></a></p></td>
 <td><p>A callback for a three-Level Perturbation</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.PeriodicEvalCallback" title="dicee.callbacks.PeriodicEvalCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PeriodicEvalCallback</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.PeriodicEvalCallback" title="dicee.callbacks.PeriodicEvalCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PeriodicEvalCallback</span></code></a></p></td>
 <td><p>Callback to periodically evaluate the model and optionally save checkpoints during training.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.LRScheduler" title="dicee.callbacks.LRScheduler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LRScheduler</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.LRScheduler" title="dicee.callbacks.LRScheduler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LRScheduler</span></code></a></p></td>
 <td><p>Callback for managing learning rate scheduling and model snapshots.</p></td>
 </tr>
 </tbody>
@@ -556,108 +539,12 @@
 <dd></dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="dicee.callbacks.ASWA">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">ASWA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.ASWA" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
-<p>Adaptive stochastic weight averaging
-ASWE keeps track of the validation performance and update s the ensemble model accordingly.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.callbacks.ASWA.path">
-<span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#dicee.callbacks.ASWA.path" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.callbacks.ASWA.num_epochs">
-<span class="sig-name descname"><span class="pre">num_epochs</span></span><a class="headerlink" href="#dicee.callbacks.ASWA.num_epochs" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.callbacks.ASWA.initial_eval_setting">
-<span class="sig-name descname"><span class="pre">initial_eval_setting</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.callbacks.ASWA.initial_eval_setting" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.callbacks.ASWA.epoch_count">
-<span class="sig-name descname"><span class="pre">epoch_count</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#dicee.callbacks.ASWA.epoch_count" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.callbacks.ASWA.alphas">
-<span class="sig-name descname"><span class="pre">alphas</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.callbacks.ASWA.alphas" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.callbacks.ASWA.val_aswa">
-<span class="sig-name descname"><span class="pre">val_aswa</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">-1</span></em><a class="headerlink" href="#dicee.callbacks.ASWA.val_aswa" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.ASWA.on_fit_end">
-<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.ASWA.on_fit_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of the training.</p>
-<section id="id13">
-<h3>Parameter<a class="headerlink" href="#id13" title="Link to this heading"></a></h3>
-<p>trainer:</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.ASWA.compute_mrr">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">compute_mrr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#dicee.callbacks.ASWA.compute_mrr" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.ASWA.get_aswa_state_dict">
-<span class="sig-name descname"><span class="pre">get_aswa_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.ASWA.get_aswa_state_dict" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.ASWA.decide">
-<span class="sig-name descname"><span class="pre">decide</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">running_model_state_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_state_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_running_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mrr_updated_ensemble_model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.ASWA.decide" title="Link to this definition"></a></dt>
-<dd><p>Perform Hard Update, software or rejection</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>running_model_state_dict</strong></p></li>
-<li><p><strong>ensemble_state_dict</strong></p></li>
-<li><p><strong>val_running_model</strong></p></li>
-<li><p><strong>mrr_updated_ensemble_model</strong></p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.ASWA.on_train_epoch_end">
-<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.ASWA.on_train_epoch_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of each epoch during training.</p>
-<section id="id14">
-<h3>Parameter<a class="headerlink" href="#id14" title="Link to this heading"></a></h3>
-<p>trainer:</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
 <dt class="sig sig-object py" id="dicee.callbacks.Eval">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">Eval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.Eval" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>Abstract class for Callback class for knowledge graph embedding models</p>
-<section id="id15">
-<h3>Parameter<a class="headerlink" href="#id15" title="Link to this heading"></a></h3>
+<section id="id13">
+<h3>Parameter<a class="headerlink" href="#id13" title="Link to this heading"></a></h3>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.path">
 <span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#dicee.callbacks.Eval.path" title="Link to this definition"></a></dt>
@@ -682,8 +569,8 @@ ASWE keeps track of the validation performance and update s the ensemble model a
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.on_fit_start">
 <span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.Eval.on_fit_start" title="Link to this definition"></a></dt>
 <dd><p>Call at the beginning of the training.</p>
-<section id="id16">
-<h4>Parameter<a class="headerlink" href="#id16" title="Link to this heading"></a></h4>
+<section id="id14">
+<h4>Parameter<a class="headerlink" href="#id14" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -698,8 +585,8 @@ ASWE keeps track of the validation performance and update s the ensemble model a
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.on_fit_end">
 <span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.Eval.on_fit_end" title="Link to this definition"></a></dt>
 <dd><p>Call at the end of the training.</p>
-<section id="id17">
-<h4>Parameter<a class="headerlink" href="#id17" title="Link to this heading"></a></h4>
+<section id="id15">
+<h4>Parameter<a class="headerlink" href="#id15" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -714,8 +601,8 @@ ASWE keeps track of the validation performance and update s the ensemble model a
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.on_train_epoch_end">
 <span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.Eval.on_train_epoch_end" title="Link to this definition"></a></dt>
 <dd><p>Call at the end of each epoch during training.</p>
-<section id="id18">
-<h4>Parameter<a class="headerlink" href="#id18" title="Link to this heading"></a></h4>
+<section id="id16">
+<h4>Parameter<a class="headerlink" href="#id16" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -730,8 +617,8 @@ ASWE keeps track of the validation performance and update s the ensemble model a
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.on_train_batch_end">
 <span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.Eval.on_train_batch_end" title="Link to this definition"></a></dt>
 <dd><p>Call at the end of each mini-batch during the training.</p>
-<section id="id19">
-<h4>Parameter<a class="headerlink" href="#id19" title="Link to this heading"></a></h4>
+<section id="id17">
+<h4>Parameter<a class="headerlink" href="#id17" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -750,8 +637,8 @@ ASWE keeps track of the validation performance and update s the ensemble model a
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">KronE</span></span><a class="headerlink" href="#dicee.callbacks.KronE" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>Abstract class for Callback class for knowledge graph embedding models</p>
-<section id="id20">
-<h3>Parameter<a class="headerlink" href="#id20" title="Link to this heading"></a></h3>
+<section id="id18">
+<h3>Parameter<a class="headerlink" href="#id18" title="Link to this heading"></a></h3>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.callbacks.KronE.f">
 <span class="sig-name descname"><span class="pre">f</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.callbacks.KronE.f" title="Link to this definition"></a></dt>
@@ -777,8 +664,8 @@ Batch dimensions are broadcast. The number of them mush
 <dt class="sig sig-object py" id="dicee.callbacks.KronE.on_fit_start">
 <span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.KronE.on_fit_start" title="Link to this definition"></a></dt>
 <dd><p>Call at the beginning of the training.</p>
-<section id="id21">
-<h4>Parameter<a class="headerlink" href="#id21" title="Link to this heading"></a></h4>
+<section id="id19">
+<h4>Parameter<a class="headerlink" href="#id19" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -977,8 +864,8 @@ Stores evaluation reports and model checkpoints.</p>
 <dt class="sig sig-object py" id="dicee.callbacks.LRScheduler.on_fit_end">
 <span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.LRScheduler.on_fit_end" title="Link to this definition"></a></dt>
 <dd><p>Call at the end of the training.</p>
-<section id="id22">
-<h3>Parameter<a class="headerlink" href="#id22" title="Link to this heading"></a></h3>
+<section id="id20">
+<h3>Parameter<a class="headerlink" href="#id20" title="Link to this heading"></a></h3>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">

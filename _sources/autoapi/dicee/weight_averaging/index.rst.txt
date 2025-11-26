@@ -9,6 +9,7 @@ Classes
 
 .. autoapisummary::
 
+   dicee.weight_averaging.ASWA
    dicee.weight_averaging.SWA
    dicee.weight_averaging.SWAG
    dicee.weight_averaging.EMA
@@ -17,6 +18,88 @@ Classes
 
 Module Contents
 ---------------
+
+.. py:class:: ASWA(num_epochs, path)
+
+   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
+
+
+   Adaptive stochastic weight averaging
+   ASWE keeps track of the validation performance and update s the ensemble model accordingly.
+
+
+   .. py:attribute:: path
+
+
+   .. py:attribute:: num_epochs
+
+
+   .. py:attribute:: initial_eval_setting
+      :value: None
+
+
+
+   .. py:attribute:: epoch_count
+      :value: 0
+
+
+
+   .. py:attribute:: alphas
+      :value: []
+
+
+
+   .. py:attribute:: val_aswa
+      :value: -1
+
+
+
+   .. py:method:: on_fit_end(trainer, model)
+
+      Call at the end of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
+
+
+
+   .. py:method:: compute_mrr(trainer, model) -> float
+      :staticmethod:
+
+
+
+   .. py:method:: get_aswa_state_dict(model)
+
+
+   .. py:method:: decide(running_model_state_dict, ensemble_state_dict, val_running_model, mrr_updated_ensemble_model)
+
+      Perform Hard Update, software or rejection
+
+      :param running_model_state_dict:
+      :param ensemble_state_dict:
+      :param val_running_model:
+      :param mrr_updated_ensemble_model:
+
+
+
+   .. py:method:: on_train_epoch_end(trainer, model)
+
+      Call at the end of each epoch during training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
+
+
 
 .. py:class:: SWA(swa_start_epoch, swa_c_epochs: int = 1, lr_init: float = 0.1, swa_lr: float = 0.05, max_epochs: int = None)
 
