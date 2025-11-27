@@ -61,10 +61,19 @@ class Evaluator:
             if rank <= 10: hits10 += 1
             
         mrr = np.mean(1.0 / np.array(ranks))
-        print(f"MRR: {mrr:.4f} | H@1: {hits1/len(ranks):.4f} | H@3: {hits3/len(ranks):.4f} | H@10: {hits10/len(ranks):.4f}")
+        results = {
+            "mrr": mrr,
+            "h1": hits1/len(ranks),
+            "h3": hits3/len(ranks),
+            "h10": hits10/len(ranks)
+        }
+        print(f"MRR: {results['mrr']:.4f} | H@1: {results['h1']:.4f} | H@3: {results['h3']:.4f} | H@10: {results['h10']:.4f}")
+        return results
 
     def _score_candidates(self, h: tuple, r: tuple, candidates: List[tuple], batch_size: int):
-        prefix = list(h) + [self.tokenizer.sep_hr_token_id] + list(r) + [self.tokenizer.sep_rt_token_id]
+        prefix = [self.tokenizer.eos_token_id] + list(h) + \
+             [self.tokenizer.sep_hr_token_id] + list(r) + \
+             [self.tokenizer.sep_rt_token_id] 
         all_scores = []
         
         with torch.no_grad():

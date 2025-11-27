@@ -1,15 +1,19 @@
 from typing import List, Union, Tuple
 import torch
+import os
+
+from tokenizers import Tokenizer, models, pre_tokenizers, decoders, trainers, processors
 
 class ByteTokenizer:
     """
     Tokenizer for converting Knowledge Graph components (entities, relations) 
     into byte sequences with special structural tokens.
     """
-    def __init__(self, pad_token_id: int = 256, sep_hr_token_id: int = 257, sep_rt_token_id: int = 258, vocab_size: int = 259):
+    def __init__(self, pad_token_id: int = 256, sep_hr_token_id: int = 257, sep_rt_token_id: int = 258, eos_token_id: int = 259, vocab_size: int = 260):
         self.pad_token_id = pad_token_id
         self.sep_hr_token_id = sep_hr_token_id
         self.sep_rt_token_id = sep_rt_token_id
+        self.eos_token_id = eos_token_id
         self.vocab_size = vocab_size
 
     def encode(self, text: str) -> List[int]:
@@ -44,6 +48,8 @@ class ByteTokenizer:
                         decoded += " <SEP_HR> "
                     elif token == self.sep_rt_token_id:
                         decoded += " <SEP_RT> "
+                    elif token == self.eos_token_id:
+                        decoded += " <EOS> "
                     
                     elif token == self.pad_token_id:
                         decoded += " <PAD> "
@@ -76,3 +82,91 @@ class ByteTokenizer:
             batch_tokens = batch_tokens.tolist()
         return [self.decode(seq) for seq in batch_tokens]
 
+
+class BPETokenizer:
+    """
+    BPE Tokenizer using HuggingFace tokenizers library.
+    """
+    def __init__(self, vocab_size: int = 30000, path: str = None):
+        self.vocab_size = vocab_size
+        if path and os.path.exists(path):
+            self.load(path)
+        else:
+            self.tokenizer = Tokenizer(models.BPE())
+            self.tokenizer.pre_tokenizer = pre_tokenizers.ByteLevel(add_prefix_space=False)
+            self.tokenizer.decoder = decoders.ByteLevel()
+            
+            # Placeholder IDs until trained/loaded
+            self.pad_token_id = 0
+            self.sep_hr_token_id = 1
+            self.sep_rt_token_id = 2
+            self.eos_token_id = 3
+
+    def train(self, files: List[str]):
+        trainer = trainers.BpeTrainer(
+            vocab_size=self.vocab_size, 
+            special_tokens=["<PAD>", "<SEP_HR>", "<SEP_RT>", "<EOS>", "<UNK>"]
+        )
+        self.tokenizer.train(files, trainer)
+        self._update_ids()
+
+    def _update_ids(self):
+        self.pad_token_id = self.tokenizer.token_to_id("<PAD>")
+        self.sep_hr_token_id = self.tokenizer.token_to_id("<SEP_HR>")
+        self.sep_rt_token_id = self.tokenizer.token_to_id("<SEP_RT>")
+        self.eos_token_id = self.tokenizer.token_to_id("<EOS>")
+        self.vocab_size = self.tokenizer.get_vocab_size()
+
+    def save(self, path: str):
+        self.tokenizer.save(path)
+
+    def load(self, path: str):
+        self.tokenizer = Tokenizer.from_file(path)
+        self._update_ids()
+
+    def encode(self, text: str) -> List[int]:
+        return self.tokenizer.encode(text).ids
+
+    def decode(self, tokens: Union[List[int], torch.Tensor], remove_special_tokens: bool = False) -> str:
+        if isinstance(tokens, torch.Tensor):
+            tokens = tokens.tolist()
+        return self.tokenizer.decode(tokens, skip_special_tokens=remove_special_tokens)
+
+    def triple_to_ids(self, h: str, r: str, t: str) -> List[int]:
+        return (
+            self.encode(h) + 
+            [self.sep_hr_token_id] + 
+            self.encode(r) + 
+            [self.sep_rt_token_id] + 
+            self.encode(t)
+        )
+    
+    def batch_decode(self, batch_tokens: Union[List[List[int]], torch.Tensor]) -> List[str]:
+        if isinstance(batch_tokens, torch.Tensor):
+            batch_tokens = batch_tokens.tolist()
+        return self.tokenizer.decode_batch(batch_tokens)
+
+def train_bpe_tokenizer(folder_path: str, save_path: str, vocab_size: int = 30000):
+    """
+    Helper function to train a BPE tokenizer on the dataset files.
+    """
+    files = []
+    # Check common split names
+    for split in ['train', 'valid', 'test']:
+        p = os.path.join(folder_path, f"{split}.txt")
+        if os.path.exists(p):
+            files.append(p)
+            
+    if not files:
+        # Try searching for any .txt files if standard splits not found
+        files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith('.txt')]
+        
+    if not files:
+        raise ValueError(f"No .txt files found in {folder_path}")
+
+    print(f"Training BPE tokenizer on {files}...")
+    tokenizer = BPETokenizer(vocab_size=vocab_size)
+    tokenizer.train(files)
+    tokenizer.save(save_path)
+    print(f"Tokenizer saved to {save_path}")
+    return tokenizer

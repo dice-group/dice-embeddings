@@ -2,7 +2,7 @@ import os
 from torch.utils.data import DataLoader
 import torch
 from dicee.bytegen.bytegen import ByteGenModel, ByteGenConfig
-from dicee.bytegen.tokenizer import ByteTokenizer
+from dicee.bytegen.tokenizer import ByteTokenizer, train_bpe_tokenizer
 from dicee.bytegen.dataset import ByteGenDataset
 from dicee.bytegen.trainer import DDPTrainer
 from dicee.bytegen.evaluator import Evaluator
@@ -12,6 +12,7 @@ from torch.nn.parallel import DistributedDataParallel
 from torch.distributed import init_process_group
 
 if __name__ == "__main__":
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
     # Setup
     dataset_path = os.path.join(os.getcwd(), "KGs/UMLS")
     
@@ -22,7 +23,9 @@ if __name__ == "__main__":
     torch.cuda.set_device(local_rank)
     
     # Initialize Tokenizer
-    tokenizer = ByteTokenizer()
+    #tokenizer = ByteTokenizer()
+    tokenizer_path = "tokenizer.json"
+    tokenizer = train_bpe_tokenizer(dataset_path, tokenizer_path, vocab_size=512)
     
     conf = ByteGenConfig(
         block_size=128, 

@@ -2,42 +2,48 @@ import os
 from torch.utils.data import DataLoader
 import torch
 from dicee.bytegen.bytegen import ByteGenModel, ByteGenConfig
-from dicee.bytegen.tokenizer import ByteTokenizer
-from dicee.bytegen.dataset import ByteGenDataset
+from dicee.bytegen.tokenizer import ByteTokenizer, train_bpe_tokenizer
+from dicee.bytegen.dataset import ByteGenDataset, ByteGenBFSDataset
 from dicee.bytegen.trainer import Trainer
 from dicee.bytegen.evaluator import Evaluator
 
 
 if __name__ == "__main__":
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
     # Setup
     dataset_path = os.path.join(os.getcwd(), "KGs/UMLS")
     
     # Initialize Tokenizer
     tokenizer = ByteTokenizer()
+    # tokenizer_path = "tokenizer.json"
+    # tokenizer = train_bpe_tokenizer(dataset_path, tokenizer_path, vocab_size=512)
     
     conf = ByteGenConfig(
-        block_size=128, 
-        n_layer=4, 
-        n_head=4, 
-        n_embd=256, 
+        block_size=512, 
+        n_layer=8, 
+        n_head=8, 
+        n_embd=512, 
         dropout=0.1, 
-        batch_size=512,
-        lr=0.001,
+        batch_size=64,
+        lr=6e-4,
         vocab_size=tokenizer.vocab_size
     )
     
     # Dataset
-    train_ds = ByteGenDataset(dataset_path, tokenizer, split='train', block_size=conf.block_size, inverse=True)
-    test_ds = ByteGenDataset(dataset_path, tokenizer, split='test', block_size=conf.block_size)
+    train_ds = ByteGenBFSDataset(dataset_path, tokenizer, split='train', block_size=conf.block_size)
+    test_ds = ByteGenBFSDataset(dataset_path, tokenizer, split='test', block_size=conf.block_size)
     
     train_loader = DataLoader(train_ds, batch_size=conf.batch_size, shuffle=True, num_workers=4)
-    
+    # for batch in train_loader:
+    #     decoded_batch = [tokenizer.decode(x.tolist()) for x in batch]
+    #     print(decoded_batch)
+    #     exit()
     # Model
     model = ByteGenModel(conf).to(conf.device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=conf.lr)
     
     # Trainer
-    EPOCHS = 300
+    EPOCHS = 30
     trainer = Trainer(model, train_loader, conf, tokenizer, optimizer)
     trainer.train(EPOCHS)
             
