@@ -8,7 +8,7 @@ from dicee.bytegen.transformer import Block
 @dataclass
 class ByteGenConfig:
     block_size: int = 256
-    vocab_size: int = 259  # 256 bytes + PAD(256) + SEP_HR(257) + SEP_RT(258)
+    vocab_size: int = 260  # 256 bytes + PAD(256) + SEP_HR(257) + SEP_RT(258) + EOS(259)
     n_layer: int = 6
     n_head: int = 4
     n_embd: int = 256

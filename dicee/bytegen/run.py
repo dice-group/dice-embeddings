@@ -20,12 +20,12 @@ if __name__ == "__main__":
     
     conf = ByteGenConfig(
         block_size=512, 
-        n_layer=8, 
-        n_head=8, 
-        n_embd=512, 
+        n_layer=4, 
+        n_head=4, 
+        n_embd=1024, 
         dropout=0.1, 
-        batch_size=64,
-        lr=6e-4,
+        batch_size=16,
+        lr=0.0001,
         vocab_size=tokenizer.vocab_size
     )
     
@@ -50,7 +50,8 @@ if __name__ == "__main__":
     # Evaluate
     print("Training complete. Evaluating...")
     evaluator = Evaluator(model, train_ds, test_ds, tokenizer)
-    evaluator.evaluate()
+    evaluator.evaluate(split='train')
+    evaluator.evaluate(split='test')
 
     while True:
         print("\n--- Interactive Generation ---")

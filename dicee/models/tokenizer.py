@@ -84,3 +84,4 @@ class GraphTokenizer:
             batch_tokens = batch_tokens.tolist()
         return [self.decode(seq) for seq in batch_tokens]
 
+

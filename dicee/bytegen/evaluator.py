@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 from tqdm import tqdm
 from dicee.bytegen.bytegen import ByteGenModel
-from dicee.bytegen.dataset import ByteGenDataset
+from dicee.bytegen.dataset import ByteGenDataset, ByteGenBFSDataset
 from dicee.bytegen.tokenizer import ByteTokenizer
 
 class Evaluator:
@@ -14,6 +14,15 @@ class Evaluator:
         self.train_ds = train_dataset
         self.test_ds = test_dataset
         self.tokenizer = tokenizer
+        
+        # Determine suffix token for evaluation based on dataset type
+        if isinstance(train_dataset, ByteGenBFSDataset):
+            # BFS Dataset ends entities with EOS
+            self.suffix_token_id = tokenizer.eos_token_id
+        else:
+            # Random Walk Dataset ends entities with SEP_HR (start of next relation)
+            # This prevents the model from predicting a prefix of the entity, Cat vs Category
+            self.suffix_token_id = tokenizer.sep_hr_token_id
         
         # Build Entity Catalog
         self.entities = sorted(list(set([t[0] for t in train_dataset.triples] + [t[2] for t in train_dataset.triples] +
@@ -25,7 +34,7 @@ class Evaluator:
         for h, r, t in (train_dataset.triples + test_dataset.triples):
             self.known_facts.add((h, r, t))
             
-    def evaluate(self, limit: int = None, batch_size: int = 64):
+    def evaluate(self, split: str = 'test', limit: int = None, batch_size: int = 64):
         self.model.eval()
         ranks = []
         hits1, hits3, hits10 = 0, 0, 0
@@ -33,8 +42,15 @@ class Evaluator:
         # Pre-calculate candidate bytes 
         candidates = self.entities
         
-        triples = self.test_ds.triples[:limit] if limit else self.test_ds.triples
-        print(f"Evaluating {len(triples)} triples...")
+        if split == 'train':
+            triples = self.train_ds.triples
+        elif split == 'test':
+            triples = self.test_ds.triples
+        else:
+            raise ValueError(f"Invalid split: {split}")
+            
+        triples = triples[:limit] if limit else triples
+        print(f"Evaluating on {split} split with {len(triples)} triples...")
 
         for h, r, t in tqdm(triples):
             # We want to score: h + r + ?
@@ -81,12 +97,12 @@ class Evaluator:
                 batch = candidates[i:i+batch_size]
                 
                 # Dynamic Batching
-                max_cand_len = max([len(c) for c in batch])
+                max_cand_len = max([len(c) for c in batch]) + 1
                 input_ids = []
                 slices = [] # (start_idx, end_idx) used for gathering probabilities
                 
                 for cand in batch:
-                    seq = prefix + list(cand)
+                    seq = prefix + list(cand) + [self.suffix_token_id]
                     # We predict the candidate bytes.
                     # The prediction for seq[k] comes from seq[k-1]
                     # Start of candidate in seq is len(prefix). 
@@ -95,7 +111,7 @@ class Evaluator:
                     end_logit_idx = len(seq) - 1
                     
                     input_ids.append(seq + [self.tokenizer.pad_token_id] * (len(prefix) + max_cand_len - len(seq)))
-                    slices.append((start_logit_idx, end_logit_idx, len(cand)))
+                    slices.append((start_logit_idx, end_logit_idx, len(cand) + 1))
                 
                 x = torch.tensor(input_ids, dtype=torch.long, device=self.device)
                 logits = self.model(x)
