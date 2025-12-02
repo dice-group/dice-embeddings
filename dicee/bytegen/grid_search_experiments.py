@@ -56,7 +56,7 @@ def run_experiment(args):
         train_ds = DatasetClass(dataset_path, tokenizer, split='train', block_size=conf.block_size, inverse=inverse)
         test_ds = DatasetClass(dataset_path, tokenizer, split='test', block_size=conf.block_size)
         
-        train_loader = DataLoader(train_ds, batch_size=conf.batch_size, shuffle=True, num_workers=2)
+        train_loader = DataLoader(train_ds, batch_size=conf.batch_size, shuffle=True, num_workers=0)
         
         # Model
         model = ByteGenModel(conf).to(device)
