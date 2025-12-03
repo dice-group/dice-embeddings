@@ -1,9 +1,10 @@
 import os
+from sympy import Inverse
 from torch.utils.data import DataLoader
 import torch
 from dicee.bytegen.bytegen import ByteGenModel, ByteGenConfig
 from dicee.bytegen.tokenizer import ByteTokenizer, train_bpe_tokenizer
-from dicee.bytegen.dataset import ByteGenDataset, ByteGenBFSDataset
+from dicee.bytegen.dataset import ByteGenDataset, ByteGenBFSDataset, IsolatedTripleDataset
 from dicee.bytegen.trainer import Trainer
 from dicee.bytegen.evaluator import Evaluator
 
@@ -13,38 +14,40 @@ if __name__ == "__main__":
     # Setup
     dataset_path = os.path.join(os.getcwd(), "KGs/UMLS")
     
-    # Initialize Tokenizer
-    tokenizer = ByteTokenizer()
-    # tokenizer_path = "tokenizer.json"
-    # tokenizer = train_bpe_tokenizer(dataset_path, tokenizer_path, vocab_size=512)
+    # Initialize Tokenizer (with inverse=True to match dataset)
+    USE_INVERSE = True
+    tokenizer_path = "tokenizer.json"
+    tokenizer = train_bpe_tokenizer(dataset_path, tokenizer_path, vocab_size=1024, inverse=USE_INVERSE)
+    
+    BFS_BLOCK_SIZE = 256
+    
+    train_ds = ByteGenBFSDataset(dataset_path, tokenizer, split='train', block_size=BFS_BLOCK_SIZE, inverse=USE_INVERSE)
+    test_ds = ByteGenBFSDataset(dataset_path, tokenizer, split='test', block_size=BFS_BLOCK_SIZE)
     
     conf = ByteGenConfig(
-        block_size=512, 
-        n_layer=4, 
-        n_head=4, 
-        n_embd=1024, 
-        dropout=0.1, 
-        batch_size=16,
-        lr=0.0001,
+        block_size=BFS_BLOCK_SIZE,  # Larger for BFS sequences
+        n_layer=8, 
+        n_head=8, 
+        n_embd=512, 
+        dropout=0.1,  # Add dropout for generalization
+        batch_size=32,
+        lr=3e-4,
         vocab_size=tokenizer.vocab_size
     )
-    
-    # Dataset
-    train_ds = ByteGenBFSDataset(dataset_path, tokenizer, split='train', block_size=conf.block_size)
-    test_ds = ByteGenBFSDataset(dataset_path, tokenizer, split='test', block_size=conf.block_size)
+
+
     
     train_loader = DataLoader(train_ds, batch_size=conf.batch_size, shuffle=True, num_workers=4)
-    # for batch in train_loader:
-    #     decoded_batch = [tokenizer.decode(x.tolist()) for x in batch]
-    #     print(decoded_batch)
-    #     exit()
+    
     # Model
     model = ByteGenModel(conf).to(conf.device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=conf.lr)
     
-    # Trainer
-    EPOCHS = 30
-    trainer = Trainer(model, train_loader, conf, tokenizer, optimizer)
+    # Trainer - with H@1 diagnostic every 10 epochs
+    EPOCHS = 300
+    trainer = Trainer(model, train_loader, conf, tokenizer, optimizer, 
+                      label_smoothing=0.1, warmup_epochs=5,
+                      train_dataset=train_ds, eval_every=10)
     trainer.train(EPOCHS)
             
     # Evaluate

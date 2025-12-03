@@ -146,27 +146,64 @@ class BPETokenizer:
             batch_tokens = batch_tokens.tolist()
         return self.tokenizer.decode_batch(batch_tokens)
 
-def train_bpe_tokenizer(folder_path: str, save_path: str, vocab_size: int = 30000):
+def train_bpe_tokenizer(folder_path: str, save_path: str, vocab_size: int = 30000, inverse: bool = False):
     """
     Helper function to train a BPE tokenizer on the dataset files.
+    
+    Args:
+        folder_path: Path to the dataset folder
+        save_path: Path to save the trained tokenizer
+        vocab_size: Vocabulary size for BPE
+        inverse: If True, also include inverse relations (INV_<relation>) in training data
     """
-    files = []
-    # Check common split names
-    for split in ['train', 'valid', 'test']:
-        p = os.path.join(folder_path, f"{split}.txt")
-        if os.path.exists(p):
-            files.append(p)
+    import tempfile
+    
+    if not inverse:
+        # Original behavior: train on raw files
+        files = []
+        for split in ['train', 'valid', 'test']:
+            p = os.path.join(folder_path, f"{split}.txt")
+            if os.path.exists(p):
+                files.append(p)
+                
+        if not files:
+            files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith('.txt')]
             
-    if not files:
-        # Try searching for any .txt files if standard splits not found
-        files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith('.txt')]
-        
-    if not files:
-        raise ValueError(f"No .txt files found in {folder_path}")
+        if not files:
+            raise ValueError(f"No .txt files found in {folder_path}")
 
-    print(f"Training BPE tokenizer on {files}...")
-    tokenizer = BPETokenizer(vocab_size=vocab_size)
-    tokenizer.train(files)
+        print(f"Training BPE tokenizer on {files}...")
+        tokenizer = BPETokenizer(vocab_size=vocab_size)
+        tokenizer.train(files)
+    else:
+        # Include inverse relations in training data
+        all_text = []
+        for split in ['train', 'valid', 'test']:
+            p = os.path.join(folder_path, f"{split}.txt")
+            if os.path.exists(p):
+                with open(p, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        parts = line.strip().split('\t')
+                        if len(parts) < 3:
+                            parts = line.strip().split()
+                        if len(parts) >= 3:
+                            h, r, t = parts[0], parts[1], parts[2]
+                            all_text.append(f"{h}\t{r}\t{t}")
+                            all_text.append(f"{t}\tINV_{r}\t{h}")  # Add inverse
+        
+        if not all_text:
+            raise ValueError(f"No triples found in {folder_path}")
+        
+        # Write to temp file and train
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+            f.write('\n'.join(all_text))
+            temp_path = f.name
+        
+        print(f"Training BPE tokenizer with inverse relations ({len(all_text)} lines)...")
+        tokenizer = BPETokenizer(vocab_size=vocab_size)
+        tokenizer.train([temp_path])
+        os.unlink(temp_path)  # Clean up temp file
+    
     tokenizer.save(save_path)
     print(f"Tokenizer saved to {save_path}")
     return tokenizer
