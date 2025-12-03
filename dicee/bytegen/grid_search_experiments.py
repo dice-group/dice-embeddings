@@ -6,7 +6,7 @@ from multiprocessing import Pool, set_start_method
 from torch.utils.data import DataLoader
 from dicee.bytegen.bytegen import ByteGenModel, ByteGenConfig
 from dicee.bytegen.tokenizer import ByteTokenizer, train_bpe_tokenizer, BPETokenizer
-from dicee.bytegen.dataset import ByteGenDataset, ByteGenBFSDataset
+from dicee.bytegen.dataset import ByteGenDataset, ByteGenBFSDataset, IsolatedTripleDataset
 from dicee.bytegen.trainer import Trainer
 from dicee.bytegen.evaluator import Evaluator
 
@@ -38,21 +38,29 @@ def run_experiment(args):
 
         print(f"[GPU {gpu_id}] Running: {tokenizer_name} (vocab={actual_vocab_size}) on {dataset_type} (Inverse={inverse})")
 
-        # Config
+        # Use smaller block size for Isolated (single triples don't need long sequences)
+        block_size = 128 if dataset_type == 'Isolated' else 512
+        
+        # Config with lower learning rate (3e-4 instead of 1e-3)
         conf = ByteGenConfig(
-            block_size=512, 
+            block_size=block_size, 
             n_layer=4, 
             n_head=4, 
             n_embd=256, 
             dropout=0.1, 
             batch_size=64,
-            lr=0.001,
+            lr=3e-4,  # Lowered from 0.001 to 3e-4 for better transformer training
             vocab_size=actual_vocab_size,
             device=device  # Use assigned GPU
         )
         
-        # Dataset
-        DatasetClass = ByteGenBFSDataset if dataset_type == 'BFS' else ByteGenDataset
+        # Dataset selection
+        if dataset_type == 'BFS':
+            DatasetClass = ByteGenBFSDataset
+        elif dataset_type == 'Isolated':
+            DatasetClass = IsolatedTripleDataset
+        else:  # RandomWalk
+            DatasetClass = ByteGenDataset
         train_ds = DatasetClass(dataset_path, tokenizer, split='train', block_size=conf.block_size, inverse=inverse)
         test_ds = DatasetClass(dataset_path, tokenizer, split='test', block_size=conf.block_size)
         
@@ -82,6 +90,7 @@ def run_experiment(args):
             "Inverse": inverse,
             "Tokenizer": tokenizer_name,
             "Vocab Size": actual_vocab_size,
+            "Block Size": block_size,
             "Params": num_params,
             "Epochs": epochs,
             "Time (s)": round(duration, 2),
@@ -97,6 +106,7 @@ def run_experiment(args):
             "Inverse": inverse,
             "Tokenizer": f"{tokenizer_type}-{vocab_size_arg}" if vocab_size_arg else tokenizer_type,
             "Vocab Size": vocab_size_arg or 0,
+            "Block Size": 128 if dataset_type == 'Isolated' else 512,
             "Params": 0,
             "Epochs": epochs,
             "Time (s)": 0.0,
@@ -115,7 +125,7 @@ def main():
         raise RuntimeError("No GPUs available!")
     print(f"Found {num_gpus} GPUs")
     
-    dataset_types = ['RandomWalk', 'BFS']
+    dataset_types = ['RandomWalk', 'BFS', 'Isolated']
     inverse_settings = [True, False]
     experiments = [
         ('Byte', None),

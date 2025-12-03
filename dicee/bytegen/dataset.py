@@ -82,6 +82,83 @@ class ByteGenDataset(Dataset):
         return torch.tensor(seq, dtype=torch.long)
 
 
+class IsolatedTripleDataset(Dataset):
+    """
+    Isolated Triple Dataset - trains on single triples only.
+    This aligns training distribution with evaluation (single triple scoring).
+    """
+    def __init__(self, folder_path: str, tokenizer: Union[ByteTokenizer, BPETokenizer], split: str = 'train', block_size: int = 128, inverse: bool = False):
+        self.tokenizer = tokenizer
+        self.block_size = block_size
+        self.triples: List[Tuple[tuple, tuple, tuple]] = []
+        self.adj: Dict[tuple, List[Tuple[tuple, tuple]]] = {}
+        self.max_seq_len = 0  # Track maximum sequence length
+        
+        file_path = os.path.join(folder_path, f"{split}.txt")
+        if not os.path.exists(file_path):
+            print(f"Warning: {file_path} not found.")
+            return
+
+        print(f"Loading {split} from {file_path}...")
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                parts = line.strip().split('\t')
+                if len(parts) < 3:
+                    parts = line.strip().split()
+                if len(parts) < 3: continue
+                h, r, t = parts[0], parts[1], parts[2]
+                self._add_triple(h, r, t)
+                
+                if inverse and split == 'train':
+                    self._add_triple(t, "INV_" + r, h)
+        
+        # Validate block size and log minimum required
+        self._validate_block_size()
+
+    def _add_triple(self, h_str, r_str, t_str):
+        h = tuple(self.tokenizer.encode(h_str))
+        r = tuple(self.tokenizer.encode(r_str))
+        t = tuple(self.tokenizer.encode(t_str))
+        self.triples.append((h, r, t))
+        if h not in self.adj: self.adj[h] = []
+        self.adj[h].append((r, t))
+        
+        # Calculate sequence length: [EOS] + H + [SEP_HR] + R + [SEP_RT] + T + [EOS]
+        seq_len = 1 + len(h) + 1 + len(r) + 1 + len(t) + 1
+        self.max_seq_len = max(self.max_seq_len, seq_len)
+
+    def _validate_block_size(self):
+        """Ensure block_size is sufficient for all triples and log stats."""
+        if self.max_seq_len > self.block_size:
+            raise ValueError(
+                f"Block size {self.block_size} is too small! "
+                f"Minimum required: {self.max_seq_len}. "
+                f"Some triples would be truncated. Please increase block_size."
+            )
+        
+        print(f"  [IsolatedTripleDataset] Loaded {len(self.triples)} triples")
+        print(f"  [IsolatedTripleDataset] Max sequence length: {self.max_seq_len}")
+        print(f"  [IsolatedTripleDataset] Block size: {self.block_size} (min needed: {self.max_seq_len})")
+
+    def __len__(self):
+        return len(self.triples)
+
+    def __getitem__(self, idx):
+        h, r, t = self.triples[idx]
+        
+        # Build isolated triple sequence: [EOS] [H] [SEP_HR] [R] [SEP_RT] [T] [EOS]
+        seq = [self.tokenizer.eos_token_id] + list(h) + \
+              [self.tokenizer.sep_hr_token_id] + list(r) + \
+              [self.tokenizer.sep_rt_token_id] + list(t) + \
+              [self.tokenizer.eos_token_id]
+        
+        # Pad to block_size (no truncation needed - validated in __init__)
+        if len(seq) < self.block_size:
+            seq.extend([self.tokenizer.pad_token_id] * (self.block_size - len(seq)))
+            
+        return torch.tensor(seq, dtype=torch.long)
+
+
 class ByteGenBFSDataset(Dataset):
     """
     BFS Dataset.

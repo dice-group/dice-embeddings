@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 from tqdm import tqdm
 from dicee.bytegen.bytegen import ByteGenModel
-from dicee.bytegen.dataset import ByteGenDataset, ByteGenBFSDataset
+from dicee.bytegen.dataset import ByteGenDataset, ByteGenBFSDataset, IsolatedTripleDataset
 from dicee.bytegen.tokenizer import ByteTokenizer
 
 class Evaluator:
@@ -16,8 +16,8 @@ class Evaluator:
         self.tokenizer = tokenizer
         
         # Determine suffix token for evaluation based on dataset type
-        if isinstance(train_dataset, ByteGenBFSDataset):
-            # BFS Dataset ends entities with EOS
+        if isinstance(train_dataset, (ByteGenBFSDataset, IsolatedTripleDataset)):
+            # BFS and Isolated datasets end entities with EOS
             self.suffix_token_id = tokenizer.eos_token_id
         else:
             # Random Walk Dataset ends entities with SEP_HR (start of next relation)
