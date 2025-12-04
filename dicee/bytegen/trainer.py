@@ -17,7 +17,7 @@ class Trainer:
     def __init__(self, model: ByteGenModel, train_loader: DataLoader, config: ByteGenConfig, tokenizer: ByteTokenizer, 
                  optimizer: torch.optim.Optimizer = None, save_path: str = "checkpoints",
                  warmup_epochs: int = 5, label_smoothing: float = 0.1, grad_clip: float = 1.0,
-                 train_dataset=None, eval_every: int = 10):
+                 train_dataset=None):
         self.model = model
         self.train_loader = train_loader
         self.config = config
@@ -29,7 +29,6 @@ class Trainer:
         self.label_smoothing = label_smoothing
         self.grad_clip = grad_clip
         self.train_dataset = train_dataset
-        self.eval_every = eval_every  # Compute H@1 every N epochs
         os.makedirs(self.save_path, exist_ok=True)
         
         # Build entity list for H@1 computation
@@ -199,8 +198,6 @@ class Trainer:
         
         for epoch in range(epochs):
             total_loss = 0
-            total_tail_loss = 0
-            tail_loss_count = 0
             num_batches = 0
             pbar = tqdm(self.train_loader, desc=f"Ep {epoch+1}")
             for batch in pbar:
@@ -230,34 +227,27 @@ class Trainer:
                 num_batches += 1
                 
                 # Compute tail-only loss for diagnostics (every 10 batches)
-                if num_batches % 10 == 0:
-                    with torch.no_grad():
-                        tail_loss = self._compute_tail_loss(logits, targets)
-                        total_tail_loss += tail_loss
-                        tail_loss_count += 1
+                # if num_batches % 10 == 0:
+                #     with torch.no_grad():
+                #         tail_loss = self._compute_tail_loss(logits, targets)
+                #         total_tail_loss += tail_loss
+                #         tail_loss_count += 1
                 
                 avg_loss = total_loss / num_batches
-                avg_tail_loss = total_tail_loss / max(tail_loss_count, 1)
                 if scheduler is not None:
                     pbar.set_postfix({
                         'loss': f"{avg_loss:.4f}", 
-                        'tail': f"{avg_tail_loss:.4f}",
                         'lr': f"{scheduler.get_last_lr()[0]:.2e}"
                     })
                 else:
                     pbar.set_postfix({
                         'loss': f"{avg_loss:.4f}",
-                        'tail': f"{avg_tail_loss:.4f}"
                     })
             
             # Step scheduler after each epoch (only if it exists)
             if scheduler is not None:
                 scheduler.step()
             
-            # Compute H@1 every eval_every epochs
-            if self.train_dataset is not None and (epoch + 1) % self.eval_every == 0:
-                h1 = self._compute_hits_at_1(sample_size=200)
-                print(f"  → Epoch {epoch+1} Train H@1 (sample): {h1:.4f}")
             
         self.save_model(epochs, os.path.join(self.save_path, f"model_epoch_{epochs}.pt"))
 

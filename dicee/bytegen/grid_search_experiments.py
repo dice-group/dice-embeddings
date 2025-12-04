@@ -22,7 +22,8 @@ load_dotenv()
 
 def run_experiment(args):
     """Worker function for parallel execution."""
-    tokenizer_type, vocab_size_arg, dataset_type, inverse, epochs, gpu_id, dataset_path, output_dir = args
+    (tokenizer_type, vocab_size_arg, dataset_type, inverse, epochs, gpu_id, dataset_path, output_dir,
+     n_layer, n_head, n_embd, dropout, batch_size, lr) = args
     if torch.cuda.is_available():
         torch.cuda.set_device(gpu_id)
         torch.cuda.empty_cache()
@@ -77,12 +78,12 @@ def run_experiment(args):
         # Config with optimized parameters from run.py
         conf = ByteGenConfig(
             block_size=block_size, 
-            n_layer=8, 
-            n_head=8, 
-            n_embd=512, 
-            dropout=0.1,  # Add dropout for generalization
-            batch_size=32,
-            lr=3e-4,
+            n_layer=n_layer, 
+            n_head=n_head, 
+            n_embd=n_embd, 
+            dropout=dropout,
+            batch_size=batch_size,
+            lr=lr,
             vocab_size=actual_vocab_size,
             device=device
         )
@@ -103,7 +104,6 @@ def run_experiment(args):
             label_smoothing=0.1,
             warmup_epochs=5,
             train_dataset=train_ds,
-            eval_every=301
         )
         trainer.train(epochs)
                 
@@ -222,52 +222,61 @@ def create_plots(df: pd.DataFrame, output_dir: str = "comparison_results", log_t
     train_metrics = ['Train_MRR', 'Train_H@1', 'Train_H@3', 'Train_H@10']
     test_metrics_list = ['Test_MRR', 'Test_H@1', 'Test_H@3', 'Test_H@10']
     
-    # Define colors: lighter for normal, darker for inverse
+    # Define colors for 4 bar types
     train_color_normal = colors[0]
     test_color_normal = colors[1]
+    train_color_inverse = colors[2]
+    test_color_inverse = colors[3]
+    
+    # Get unique (Dataset, Tokenizer) combinations - consistent order for all subplots
+    unique_configs = df[['Dataset', 'Tokenizer']].drop_duplicates()
+    config_names = [f"{row['Dataset'][:3]}-{row['Tokenizer'][:5]}" for _, row in unique_configs.iterrows()]
+    n_configs = len(unique_configs)
+    x = np.arange(n_configs)
+    width = 0.2  # 4 bars per group
     
     for ax, (train_m, test_m, name) in zip(axes.flatten(), zip(train_metrics, test_metrics_list, metric_names)):
-        # Get non-inverse train performance for sorting
-        df_non_inv = df[df['Inverse'] == False][['Dataset', 'Tokenizer', train_m]].copy()
-        df_non_inv = df_non_inv.rename(columns={train_m: 'sort_key'})
+        train_normal_vals = []
+        test_normal_vals = []
+        train_inverse_vals = []
+        test_inverse_vals = []
         
-        # Merge sort key back to main df (each config gets its non-inverse train score)
-        df_with_sort = df.merge(df_non_inv, on=['Dataset', 'Tokenizer'], how='left')
+        for _, config_row in unique_configs.iterrows():
+            dataset, tokenizer = config_row['Dataset'], config_row['Tokenizer']
+            
+            # Get normal (Inverse=False) row
+            normal_row = df[(df['Dataset'] == dataset) & (df['Tokenizer'] == tokenizer) & (df['Inverse'] == False)]
+            if not normal_row.empty:
+                train_normal_vals.append(normal_row[train_m].values[0])
+                test_normal_vals.append(normal_row[test_m].values[0])
+            else:
+                train_normal_vals.append(0)
+                test_normal_vals.append(0)
+            
+            # Get inverse (Inverse=True) row
+            inverse_row = df[(df['Dataset'] == dataset) & (df['Tokenizer'] == tokenizer) & (df['Inverse'] == True)]
+            if not inverse_row.empty:
+                train_inverse_vals.append(inverse_row[train_m].values[0])
+                test_inverse_vals.append(inverse_row[test_m].values[0])
+            else:
+                train_inverse_vals.append(0)
+                test_inverse_vals.append(0)
         
-        # Sort by strongest train non-inverse performance (descending), then by Inverse
-        df_sorted = df_with_sort.sort_values(['sort_key', 'Inverse'], ascending=[False, True])
-        
-        x = np.arange(len(df_sorted))
-        width = 0.35
-        
-        # Create config names with inverse indicator
-        config_names = [f"{row['Dataset'][:3]}-{row['Tokenizer'][:5]}{'(I)' if row['Inverse'] else ''}" 
-                        for _, row in df_sorted.iterrows()]
-        
-        # Get inverse mask for coloring
-        inverse_mask = df_sorted['Inverse'].values
-        
-        # Plot bars with different hatching for inverse
-        for i, (is_inv, train_val, test_val) in enumerate(zip(inverse_mask, df_sorted[train_m], df_sorted[test_m])):
-            hatch = '///' if is_inv else None
-            ax.bar(i - width/2, train_val, width, color=train_color_normal, edgecolor='black', 
-                   hatch=hatch, linewidth=0.5)
-            ax.bar(i + width/2, test_val, width, color=test_color_normal, edgecolor='black',
-                   hatch=hatch, linewidth=0.5)
-        
-        # Create legend with hatching info
-        from matplotlib.patches import Patch
-        legend_elements = [
-            Patch(facecolor=train_color_normal, edgecolor='black', label='Train'),
-            Patch(facecolor=test_color_normal, edgecolor='black', label='Test'),
-            Patch(facecolor='white', edgecolor='black', hatch='///', label='Inverse'),
-        ]
+        # Plot 4 bars per config: Train-Normal, Test-Normal, Train-Inverse, Test-Inverse
+        ax.bar(x - 1.5*width, train_normal_vals, width, color=train_color_normal, edgecolor='black', 
+               linewidth=0.5, label='Train')
+        ax.bar(x - 0.5*width, test_normal_vals, width, color=test_color_normal, edgecolor='black', 
+               linewidth=0.5, label='Test')
+        ax.bar(x + 0.5*width, train_inverse_vals, width, color=train_color_inverse, edgecolor='black', 
+               linewidth=0.5, hatch='///', label='Train (Inv)')
+        ax.bar(x + 1.5*width, test_inverse_vals, width, color=test_color_inverse, edgecolor='black', 
+               linewidth=0.5, hatch='///', label='Test (Inv)')
         
         ax.set_title(name, fontweight='bold')
         ax.set_ylabel(name)
         ax.set_xticks(x)
         ax.set_xticklabels(config_names, rotation=60, ha='right', fontsize=7)
-        ax.legend(handles=legend_elements, loc='upper right', fontsize=8)
+        ax.legend(loc='upper right', fontsize=8)
         ax.set_ylim(0, 1)
     
     plt.tight_layout()
@@ -374,22 +383,68 @@ def create_plots(df: pd.DataFrame, output_dir: str = "comparison_results", log_t
     plt.close()
     
     # --- Plot 5: Training Time vs Performance ---
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(12, 7))
     
-    scatter = ax.scatter(df['Time (s)'], df['Test_MRR'], 
-                         c=df['Dataset'].astype('category').cat.codes, 
-                         s=df['Params'] / 10000,  # Size by parameters
-                         alpha=0.7, cmap='Set1', edgecolor='black')
+    # Create consistent color mapping for datasets
+    datasets = df['Dataset'].unique()
+    dataset_colors = {ds: colors[i] for i, ds in enumerate(datasets)}
+    
+    # Marker shapes for tokenizers
+    tokenizers = df['Tokenizer'].unique()
+    tokenizer_markers = {tok: m for tok, m in zip(tokenizers, ['o', 's', '^', 'D', 'v', 'p', 'h', '*'])}
+    
+    # Plot each combination of dataset, tokenizer, and inverse
+    for _, row in df.iterrows():
+        dataset = row['Dataset']
+        tokenizer = row['Tokenizer']
+        inverse = row['Inverse']
+        
+        # Filled for normal, hollow for inverse
+        edgecolor = dataset_colors[dataset]
+        linewidth = 1.5 if inverse else 0.5
+        
+        if inverse:
+            ax.scatter(row['Time (s)'], row['Test_MRR'], 
+                       marker=tokenizer_markers[tokenizer],
+                       facecolors='none',
+                       edgecolors=[edgecolor],
+                       s=120, alpha=0.8, linewidth=linewidth)
+        else:
+            ax.scatter(row['Time (s)'], row['Test_MRR'], 
+                       marker=tokenizer_markers[tokenizer],
+                       c=[dataset_colors[dataset]],
+                       edgecolors=[edgecolor],
+                       s=120, alpha=0.8, linewidth=linewidth)
     
     ax.set_xlabel('Training Time (seconds)', fontweight='bold')
     ax.set_ylabel('Test MRR', fontweight='bold')
-    ax.set_title('Training Time vs Test MRR\n(size = model parameters)', fontsize=14, fontweight='bold')
+    ax.set_title('Training Time vs Test MRR', fontsize=14, fontweight='bold')
     
-    # Add legend for dataset types
-    handles = []
-    for i, dataset in enumerate(df['Dataset'].unique()):
-        handles.append(plt.scatter([], [], color=plt.cm.Set1(i/3), label=dataset, s=100))
-    ax.legend(handles=handles, title='Dataset')
+    # Legend for datasets (colors)
+    from matplotlib.lines import Line2D
+    dataset_handles = [Line2D([0], [0], marker='o', color='w', markerfacecolor=dataset_colors[ds], 
+                              markersize=10, label=ds, markeredgecolor='black', markeredgewidth=0.5) 
+                       for ds in datasets]
+    legend1 = ax.legend(handles=dataset_handles, title='Dataset', loc='upper left')
+    ax.add_artist(legend1)
+    
+    # Legend for tokenizers (shapes)
+    tokenizer_handles = [Line2D([0], [0], marker=tokenizer_markers[tok], color='w', 
+                                markerfacecolor='gray', markersize=10, label=tok,
+                                markeredgecolor='black', markeredgewidth=0.5) 
+                         for tok in tokenizers]
+    legend2 = ax.legend(handles=tokenizer_handles, title='Tokenizer', loc='lower left')
+    ax.add_artist(legend2)
+    
+    # Legend for inverse (filled vs hollow)
+    inverse_handles = [
+        Line2D([0], [0], marker='o', color='w', markerfacecolor='gray', 
+               markersize=10, label='Normal', markeredgecolor='black', markeredgewidth=0.5),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor='none', 
+               markersize=10, label='Inverse', markeredgecolor='black', markeredgewidth=1.5),
+    ]
+    legend3 = ax.legend(handles=inverse_handles, title='Inverse', loc='lower right')
+    ax.add_artist(legend3)
     
     plt.tight_layout()
     plot_path = os.path.join(output_dir, 'time_vs_performance.png')
@@ -494,6 +549,19 @@ def main():
                         help='Wandb entity/team name (default: None, uses default entity)')
     parser.add_argument('--no_wandb', action='store_true',
                         help='Disable wandb logging')
+    # Model architecture arguments
+    parser.add_argument('--n_layer', type=int, default=8,
+                        help='Number of transformer layers (default: 8)')
+    parser.add_argument('--n_head', type=int, default=8,
+                        help='Number of attention heads (default: 8)')
+    parser.add_argument('--n_embd', type=int, default=512,
+                        help='Embedding dimension (default: 512)')
+    parser.add_argument('--dropout', type=float, default=0.1,
+                        help='Dropout rate (default: 0.1)')
+    parser.add_argument('--batch_size', type=int, default=32,
+                        help='Batch size (default: 32)')
+    parser.add_argument('--lr', type=float, default=3e-4,
+                        help='Learning rate (default: 3e-4)')
     args = parser.parse_args()
     
     # Create output directory
@@ -523,6 +591,13 @@ def main():
                 "dataset_types": ['RandomWalk', 'BFS', 'Isolated'],
                 "inverse_settings": [True, False],
                 "tokenizers": ['Byte', 'BPE-260', 'BPE-512', 'BPE-733'],
+                # Model architecture
+                "n_layer": args.n_layer,
+                "n_head": args.n_head,
+                "n_embd": args.n_embd,
+                "dropout": args.dropout,
+                "batch_size": args.batch_size,
+                "lr": args.lr,
             }
         )
         print(f"Wandb initialized: project={args.wandb_project}, entity={args.wandb_entity or 'default'}")
@@ -553,7 +628,9 @@ def main():
     ):
         gpu_id = i % num_gpus
         all_configs.append((tokenizer_type, vocab_size, dataset_type, inverse, epochs, gpu_id, 
-                           args.data_path, args.output_dir))
+                           args.data_path, args.output_dir,
+                           args.n_layer, args.n_head, args.n_embd, args.dropout, 
+                           args.batch_size, args.lr))
     
     print(f"Running {len(all_configs)} experiments across {num_gpus} GPUs...")
     

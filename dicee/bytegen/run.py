@@ -47,7 +47,7 @@ if __name__ == "__main__":
     EPOCHS = 300
     trainer = Trainer(model, train_loader, conf, tokenizer, optimizer, 
                       label_smoothing=0.1, warmup_epochs=5,
-                      train_dataset=train_ds, eval_every=10)
+                      train_dataset=train_ds)
     trainer.train(EPOCHS)
             
     # Evaluate
