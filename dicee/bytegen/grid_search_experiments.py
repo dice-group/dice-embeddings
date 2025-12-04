@@ -173,28 +173,50 @@ def create_plots(df: pd.DataFrame, output_dir: str = "comparison_results"):
     plt.close()
     
     # --- Plot 2: Train vs Test Performance ---
-    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig, axes = plt.subplots(2, 2, figsize=(16, 10))
     fig.suptitle('Train vs Test Performance Comparison', fontsize=14, fontweight='bold')
     
     train_metrics = ['Train_MRR', 'Train_H@1', 'Train_H@3', 'Train_H@10']
     test_metrics = ['Test_MRR', 'Test_H@1', 'Test_H@3', 'Test_H@10']
     
+    # Define colors: lighter for normal, darker for inverse
+    train_color_normal = colors[0]
+    test_color_normal = colors[1]
+    
     for ax, (train_m, test_m, name) in zip(axes.flatten(), zip(train_metrics, test_metrics, metric_names)):
-        x = np.arange(len(df))
+        # Sort by Dataset, Tokenizer, then Inverse (False before True for grouping)
+        df_sorted = df.sort_values(['Dataset', 'Tokenizer', 'Inverse'])
+        x = np.arange(len(df_sorted))
         width = 0.35
         
-        # Group by config name
-        df_sorted = df.sort_values(['Dataset', 'Tokenizer'])
-        config_names = [f"{row['Dataset'][:3]}-{row['Tokenizer'][:5]}" for _, row in df_sorted.iterrows()]
+        # Create config names with inverse indicator
+        config_names = [f"{row['Dataset'][:3]}-{row['Tokenizer'][:5]}{'(I)' if row['Inverse'] else ''}" 
+                        for _, row in df_sorted.iterrows()]
         
-        bars1 = ax.bar(x - width/2, df_sorted[train_m], width, label='Train', color=colors[0], edgecolor='black')
-        bars2 = ax.bar(x + width/2, df_sorted[test_m], width, label='Test', color=colors[1], edgecolor='black')
+        # Get inverse mask for coloring
+        inverse_mask = df_sorted['Inverse'].values
+        
+        # Plot bars with different hatching for inverse
+        for i, (is_inv, train_val, test_val) in enumerate(zip(inverse_mask, df_sorted[train_m], df_sorted[test_m])):
+            hatch = '///' if is_inv else None
+            ax.bar(i - width/2, train_val, width, color=train_color_normal, edgecolor='black', 
+                   hatch=hatch, linewidth=0.5)
+            ax.bar(i + width/2, test_val, width, color=test_color_normal, edgecolor='black',
+                   hatch=hatch, linewidth=0.5)
+        
+        # Create legend with hatching info
+        from matplotlib.patches import Patch
+        legend_elements = [
+            Patch(facecolor=train_color_normal, edgecolor='black', label='Train'),
+            Patch(facecolor=test_color_normal, edgecolor='black', label='Test'),
+            Patch(facecolor='white', edgecolor='black', hatch='///', label='Inverse'),
+        ]
         
         ax.set_title(name, fontweight='bold')
         ax.set_ylabel(name)
-        ax.set_xticks(x[::2])  # Show every other label to avoid clutter
-        ax.set_xticklabels([config_names[i] for i in range(0, len(config_names), 2)], rotation=45, ha='right')
-        ax.legend()
+        ax.set_xticks(x)
+        ax.set_xticklabels(config_names, rotation=60, ha='right', fontsize=7)
+        ax.legend(handles=legend_elements, loc='upper right', fontsize=8)
         ax.set_ylim(0, 1)
     
     plt.tight_layout()
