@@ -21,12 +21,37 @@ def objective(trial, model, dataset, loss):
     batch_size = 1024 #trial.suggest_categorical("batch_size", [512, 1024])
     learning_rate = 0.1 #trial.suggest_float("learning_rate", 0.01, 0.1)
 
-    label_relaxation_alpha = trial.suggest_float("LR", 0.01, 0.1,) if loss == "LRLoss" else 0.0
-    label_smoothing_rate = trial.suggest_float("LS", 0.01, 0.1)  if loss == "LS" else 0.0
+
+    if loss == 'AGCE':
+        agce_a = trial.suggest_float('agce_a', 1e-3, 1.0, log = True)
+        agce_q = trial.suggest_float('agce_q', 1e-3, 1.0, log = True)
+        parser.add_argument('--agce_a', type=float, default=agce_a)
+        parser.add_argument('--agce_q', type=float, default=agce_q)
+    
+    elif loss == 'AUL':
+        aul_a = trial.suggest_float("aul_a", 1.01, 2.0)
+        aul_p = trial.suggest_float("aul_p",1e-4, 1.0)
+        parser.add_argument("--aul_a", type=float, default=aul_a)
+        parser.add_argument("--aul_p", type=float, default=aul_p)
+    
+    elif loss == "AEL":
+        a_ael = trial.suggest_float("a_ael", 0.01, 1.0)
+        parser.add_argument("--a_ael", type=float, default=a_ael)
+
+    elif loss == "RoBoSS":
+        a_roboss = trial.suggest_float("a_roboss", 0.1, 1.0)
+        lambda_roboss = trial.suggest_float("lambda_roboss", 1.0, 10.0)
+        parser.add_argument("--a_roboss", type=float, default=a_roboss)
+        parser.add_argument("--lambda_roboss", type=float, default=lambda_roboss)
+
+    elif loss == "WaveLoss":
+        wave_a = trial.suggest_float("wave_a", 0.01, 3.0)
+        lambda_param = trial.suggest_float("lambda_param", 0.05, 2.0)
+        parser.add_argument("--wave_a", type=float, default=wave_a)
+        parser.add_argument("--lambda_param", type=float, default=lambda_param)
+
 
     parser.add_argument('--loss_fn', type=str, default=loss)
-    parser.add_argument("--label_smoothing_rate", type=float, default=label_smoothing_rate)
-    parser.add_argument('--label_relaxation_alpha', type=float, default=label_relaxation_alpha)
     parser.add_argument("--lr", type=float, default=learning_rate)
     parser.add_argument('--batch_size', type=int, default=batch_size)
     parser.add_argument("--dataset_dir", type=str, default=dataset)
@@ -42,7 +67,7 @@ def objective(trial, model, dataset, loss):
     parser.add_argument('--weight_decay', type=float, default=0.0)
     parser.add_argument('--scoring_technique', default="KvsAll")
     parser.add_argument("--random_seed", type=int, default=1)
-    parser.add_argument("--eval_model", type=str, default="train_val_test")
+    parser.add_argument("--eval_model", type=str, default="test")
     parser.add_argument("--add_noise_rate", type=float, default=0.0)
     parser.add_argument("--sparql_endpoint", type=str, default=None)
     parser.add_argument("--path_single_kg", type=str, default=None)
@@ -70,60 +95,67 @@ def objective(trial, model, dataset, loss):
 
     return result["Val"]["MRR"]
 
-# set according to your environment TODO: make it as a parameter
-main_math = "../../../KGs/Datasets_Perturbed/"
-report_folder_name = "./bo_outputs/512_05_100Epochs/"
-report_file_name = "bayesian_optimization_report.txt"
+def main():
+    # set according to your environment TODO: make it as a parameter
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    root = os.path.join(script_dir, "../..")
+    main_path = os.path.join(root, "Datasets_Perturbed")
 
-datasets = ["UMLS", "KINSHIP", "NELL-995-h100", "WN18RR", "FB15k-237"]
-models = ["Keci", "Pykeen_MuRE", "QMult", "Pykeen_DistMult", "Pykeen_ComplEx", "Pykeen_BoxE", "Pykeen_RotatE"] #
-losses = ["LRLoss", "LS"]
+    report_folder_name = "./bo_outputs/512_05_100Epochs/"
+    report_file_name = "bayesian_optimization_report.txt"
 
-number_of_runs = 50
+    datasets = ["UMLS"]  #, "KINSHIP" , "NELL-995-h100", "WN18RR", "FB15k-237"]
+    models = ["Keci"]  # , "Pykeen_MuRE", "QMult", "Pykeen_DistMult", "Pykeen_ComplEx", "Pykeen_BoxE", "Pykeen_RotatE"]
+    losses = ['AGCE']  # , 'AUL', 'AEL', 'WaveLoss', 'RoBoSS']
 
-os.makedirs(os.path.dirname(report_folder_name), exist_ok=True)
+    number_of_runs = 40
 
-for dataset in datasets:
-    for model in models:
-        for loss in losses:
-            dataset_path = main_math + dataset + "/0.0"
+    os.makedirs(os.path.dirname(report_folder_name), exist_ok=True)
 
-            study = optuna.create_study(direction="maximize")
+    for dataset in datasets:
+            for model in models:
+                for loss in losses:
 
-            objective_with_params = partial(objective, dataset=dataset_path, model=model, loss=loss)
-            study.optimize(objective_with_params, n_trials=number_of_runs)
+                    dataset_path = main_path + dataset + "/0.0"
+                    study = optuna.create_study(direction="maximize")
 
-            best_trial = study.best_trial
+                    objective_with_params = partial(objective, dataset=dataset_path, model=model, loss=loss)
+                    study.optimize(objective_with_params, n_trials=number_of_runs)
 
-            loss_type = "LR" if loss == "LRLoss" else "LS"
-            fig = plot_parallel_coordinate(study)
-            fig.update_layout(title={"text": f"Dataset: {dataset}, Model: {model}, Softening Method: {loss_type}",
-                                     "x": 0.5,
-                                     "xanchor": "center",
-                                     "y": 0.97,
-                                     "yanchor": "top"},
-                               title_font=dict(size=24),
-                               font=dict(size=22),
-                               legend=dict(font=dict(size=4)),
-                               )
+                    best_trial = study.best_trial
 
-            for dim in fig.data[0].dimensions:
-                if dim['label'] == "Objective Value":
-                    dim['label'] = "MRR"
-                dim["label"] = f"<br>{dim['label']}"
+                    loss_type = loss
+                    fig = plot_parallel_coordinate(study)
+                    fig.update_layout(title={"text": f"Dataset: {dataset}, Model: {model}, Softening Method: {loss_type}",
+                                             "x": 0.5,
+                                             "xanchor": "center",
+                                             "y": 0.97,
+                                             "yanchor": "top"},
+                                       title_font=dict(size=24),
+                                       font=dict(size=22),
+                                       legend=dict(font=dict(size=4)),
+                                       )
 
-            fig.data[0]['labelangle'] = 0
-            fig.data[0]['labelside'] = 'bottom'
-            fig.data[0]['line']['colorbar']['title']['text'] = ''
+                    for dim in fig.data[0].dimensions:
+                        if dim['label'] == "Objective Value":
+                            dim['label'] = "MRR"
+                        dim["label"] = f"<br>{dim['label']}"
 
-            fig.write_image(report_folder_name + f"parallel_coordinate-{dataset}-{model}-{loss}"+ ".png")
+                    fig.data[0]['labelangle'] = 0
+                    fig.data[0]['labelside'] = 'bottom'
+                    fig.data[0]['line']['colorbar']['title']['text'] = ''
 
-            with open(report_folder_name + report_file_name, "a") as file:
-                file.write(f"Value: {best_trial.value}, "
-                           f"Params: {best_trial.params}, "
-                           f"Dataset: {dataset}, "
-                           f"Model: {model}, "
-                           f"Loss: {loss} "
-                           f"\n")
+                    fig.write_image(report_folder_name + f"parallel_coordinate-{dataset}-{model}-{loss}" + ".png")
 
+                    with open(report_folder_name + report_file_name, "a") as file:
+                        file.write(f"Value: {best_trial.value}, "
+                                   f"Params: {best_trial.params}, "
+                                   f"Dataset: {dataset}, "
+                                   f"Model: {model}, "
+                                   f"Loss: {loss} "
+                                   f"\n")
+
+
+if __name__ == "__main__":
+    main()
 
