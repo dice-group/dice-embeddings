@@ -619,7 +619,7 @@ def main():
         ('Byte', None),
         ('BPE', 260),
         ('BPE', 512),
-        ('BPE', 733),
+        ('BPE', 1024),
     ]
     
     epochs = args.epochs
