@@ -100,7 +100,7 @@ def run_experiment(args):
             train_dataset=train_ds,
             eval_every=301
         )
-        loss_history = trainer.train(epochs, return_history=True)
+        trainer.train(epochs)
                 
         # Evaluate on BOTH train and test sets
         evaluator = Evaluator(model, train_ds, test_ds, tokenizer)
@@ -128,10 +128,7 @@ def run_experiment(args):
             "Test_MRR": test_metrics["mrr"],
             "Test_H@1": test_metrics["h1"],
             "Test_H@3": test_metrics["h3"],
-            "Test_H@10": test_metrics["h10"],
-            # Loss history for plotting
-            "loss_history": loss_history['loss'] if loss_history else [],
-            "tail_loss_history": loss_history['tail_loss'] if loss_history else [],
+            "Test_H@10": test_metrics["h10"]
         }
     except Exception as e:
         import traceback
@@ -147,9 +144,7 @@ def run_experiment(args):
             "Epochs": epochs,
             "Time (s)": 0.0,
             "Train_MRR": 0.0, "Train_H@1": 0.0, "Train_H@3": 0.0, "Train_H@10": 0.0,
-            "Test_MRR": 0.0, "Test_H@1": 0.0, "Test_H@3": 0.0, "Test_H@10": 0.0,
-            "loss_history": [],
-            "tail_loss_history": [],
+            "Test_MRR": 0.0, "Test_H@1": 0.0, "Test_H@3": 0.0, "Test_H@10": 0.0
         }
 
 
@@ -401,185 +396,6 @@ def create_plots(df: pd.DataFrame, output_dir: str = "comparison_results", log_t
         print("Plots logged to wandb")
 
 
-def create_loss_curves_plot(results: list, output_dir: str = "comparison_results", log_to_wandb: bool = False):
-    """Generate combined loss curves plot for all models."""
-    os.makedirs(output_dir, exist_ok=True)
-    
-    plt.style.use('seaborn-v0_8-whitegrid')
-    
-    # Filter out failed experiments (empty loss history)
-    valid_results = [r for r in results if r.get('loss_history') and len(r['loss_history']) > 0]
-    
-    if not valid_results:
-        print("No valid loss histories to plot")
-        return
-    
-    # Create color palette - unique color for each configuration
-    num_configs = len(valid_results)
-    colors = plt.cm.tab20(np.linspace(0, 1, min(num_configs, 20)))
-    if num_configs > 20:
-        colors = plt.cm.viridis(np.linspace(0, 1, num_configs))
-    
-    # --- Plot 1: All Loss Curves Combined ---
-    fig, ax = plt.subplots(figsize=(14, 8))
-    
-    for i, result in enumerate(valid_results):
-        config_name = f"{result['Dataset'][:3]}-{result['Tokenizer']}"
-        if result['Inverse']:
-            config_name += " (Inv)"
-        
-        epochs = range(1, len(result['loss_history']) + 1)
-        ax.plot(epochs, result['loss_history'], 
-                label=config_name, 
-                color=colors[i % len(colors)],
-                alpha=0.8,
-                linewidth=1.5)
-    
-    ax.set_xlabel('Epoch', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Loss', fontsize=12, fontweight='bold')
-    ax.set_title('Training Loss Curves - All Models', fontsize=14, fontweight='bold')
-    ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=8, ncol=1)
-    ax.set_xlim(1, None)
-    ax.grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    plot_path = os.path.join(output_dir, 'all_loss_curves.png')
-    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
-    
-    wandb_images = {}
-    if log_to_wandb:
-        wandb_images['all_loss_curves'] = wandb.Image(plot_path, caption="Training Loss Curves - All Models")
-    plt.close()
-    
-    # --- Plot 2: Loss Curves by Dataset Type ---
-    dataset_types = list(set(r['Dataset'] for r in valid_results))
-    fig, axes = plt.subplots(1, len(dataset_types), figsize=(6 * len(dataset_types), 6))
-    if len(dataset_types) == 1:
-        axes = [axes]
-    
-    for ax, dataset in zip(axes, dataset_types):
-        dataset_results = [r for r in valid_results if r['Dataset'] == dataset]
-        colors_subset = plt.cm.Set2(np.linspace(0, 1, len(dataset_results)))
-        
-        for i, result in enumerate(dataset_results):
-            config_name = f"{result['Tokenizer']}"
-            if result['Inverse']:
-                config_name += " (Inv)"
-            
-            epochs = range(1, len(result['loss_history']) + 1)
-            ax.plot(epochs, result['loss_history'], 
-                    label=config_name, 
-                    color=colors_subset[i],
-                    alpha=0.8,
-                    linewidth=2)
-        
-        ax.set_xlabel('Epoch', fontsize=11)
-        ax.set_ylabel('Loss', fontsize=11)
-        ax.set_title(f'{dataset} Dataset', fontsize=12, fontweight='bold')
-        ax.legend(fontsize=8)
-        ax.grid(True, alpha=0.3)
-    
-    plt.suptitle('Training Loss Curves by Dataset Type', fontsize=14, fontweight='bold', y=1.02)
-    plt.tight_layout()
-    plot_path = os.path.join(output_dir, 'loss_curves_by_dataset.png')
-    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
-    
-    if log_to_wandb:
-        wandb_images['loss_curves_by_dataset'] = wandb.Image(plot_path, caption="Loss Curves by Dataset Type")
-    plt.close()
-    
-    # --- Plot 3: Loss Curves by Tokenizer ---
-    tokenizers = list(set(r['Tokenizer'] for r in valid_results))
-    fig, axes = plt.subplots(1, len(tokenizers), figsize=(5 * len(tokenizers), 5))
-    if len(tokenizers) == 1:
-        axes = [axes]
-    
-    for ax, tokenizer in zip(axes, tokenizers):
-        tok_results = [r for r in valid_results if r['Tokenizer'] == tokenizer]
-        colors_subset = plt.cm.Set1(np.linspace(0, 1, len(tok_results)))
-        
-        for i, result in enumerate(tok_results):
-            config_name = f"{result['Dataset']}"
-            if result['Inverse']:
-                config_name += " (Inv)"
-            
-            epochs = range(1, len(result['loss_history']) + 1)
-            ax.plot(epochs, result['loss_history'], 
-                    label=config_name, 
-                    color=colors_subset[i],
-                    alpha=0.8,
-                    linewidth=2)
-        
-        ax.set_xlabel('Epoch', fontsize=11)
-        ax.set_ylabel('Loss', fontsize=11)
-        ax.set_title(f'{tokenizer}', fontsize=12, fontweight='bold')
-        ax.legend(fontsize=8)
-        ax.grid(True, alpha=0.3)
-    
-    plt.suptitle('Training Loss Curves by Tokenizer', fontsize=14, fontweight='bold', y=1.02)
-    plt.tight_layout()
-    plot_path = os.path.join(output_dir, 'loss_curves_by_tokenizer.png')
-    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
-    
-    if log_to_wandb:
-        wandb_images['loss_curves_by_tokenizer'] = wandb.Image(plot_path, caption="Loss Curves by Tokenizer")
-    plt.close()
-    
-    # --- Plot 4: Tail Loss Curves (if available) ---
-    has_tail_loss = any(r.get('tail_loss_history') and len(r['tail_loss_history']) > 0 for r in valid_results)
-    if has_tail_loss:
-        fig, ax = plt.subplots(figsize=(14, 8))
-        
-        for i, result in enumerate(valid_results):
-            if not result.get('tail_loss_history') or len(result['tail_loss_history']) == 0:
-                continue
-                
-            config_name = f"{result['Dataset'][:3]}-{result['Tokenizer']}"
-            if result['Inverse']:
-                config_name += " (Inv)"
-            
-            epochs = range(1, len(result['tail_loss_history']) + 1)
-            ax.plot(epochs, result['tail_loss_history'], 
-                    label=config_name, 
-                    color=colors[i % len(colors)],
-                    alpha=0.8,
-                    linewidth=1.5)
-        
-        ax.set_xlabel('Epoch', fontsize=12, fontweight='bold')
-        ax.set_ylabel('Tail Loss', fontsize=12, fontweight='bold')
-        ax.set_title('Tail Loss Curves - All Models\n(Loss on entity prediction only)', fontsize=14, fontweight='bold')
-        ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=8, ncol=1)
-        ax.set_xlim(1, None)
-        ax.grid(True, alpha=0.3)
-        
-        plt.tight_layout()
-        plot_path = os.path.join(output_dir, 'all_tail_loss_curves.png')
-        plt.savefig(plot_path, dpi=150, bbox_inches='tight')
-        
-        if log_to_wandb:
-            wandb_images['all_tail_loss_curves'] = wandb.Image(plot_path, caption="Tail Loss Curves - All Models")
-        plt.close()
-    
-    print(f"Loss curve plots saved to {output_dir}/")
-    
-    # Log all loss curve images to wandb
-    if log_to_wandb and wandb_images:
-        wandb.log({"loss_curves": wandb_images})
-        
-        # Also log individual loss curves as line plots in wandb for interactivity
-        for result in valid_results:
-            if not result.get('loss_history'):
-                continue
-            config_name = f"{result['Dataset']}/{result['Tokenizer']}/inv={result['Inverse']}"
-            for epoch, loss in enumerate(result['loss_history'], 1):
-                wandb.log({
-                    f"loss_curves/{config_name}": loss,
-                    "epoch": epoch
-                })
-        
-        print("Loss curves logged to wandb")
-
-
 def log_best_approaches(df: pd.DataFrame):
     """Log the overall best performing approaches for train and test sets."""
     print("\n" + "="*80)
@@ -734,10 +550,8 @@ def main():
     # Run in parallel with one process per GPU
     with Pool(processes=num_gpus) as pool:
         results = pool.map(run_experiment, all_configs)
-    
-    # Create DataFrame without loss histories (they're lists and cause issues in CSV/tables)
-    df_columns = [k for k in results[0].keys() if k not in ['loss_history', 'tail_loss_history']]
-    df = pd.DataFrame([{k: r[k] for k in df_columns} for r in results])
+            
+    df = pd.DataFrame(results)
     
     # Log individual experiment results to wandb
     if use_wandb:
@@ -801,9 +615,6 @@ def main():
     
     # Create visualization plots (with optional wandb logging)
     create_plots(df, output_dir=args.output_dir, log_to_wandb=use_wandb)
-    
-    # Create combined loss curves plot
-    create_loss_curves_plot(results, output_dir=args.output_dir, log_to_wandb=use_wandb)
     
     # Save to CSV in output directory
     csv_path = os.path.join(args.output_dir, "grid_search_results.csv")

@@ -187,20 +187,7 @@ class Trainer:
         self.model.train()
         return hits1 / len(sample_indices)
 
-    def train(self, epochs: int = 500, return_history: bool = False):
-        """
-        Train the model for the specified number of epochs.
-        
-        Args:
-            epochs: Number of training epochs
-            return_history: If True, return dict with loss history per epoch
-            
-        Returns:
-            If return_history is True, returns dict with keys:
-                - 'loss': list of avg loss per epoch
-                - 'tail_loss': list of avg tail loss per epoch
-                - 'lr': list of learning rate per epoch
-        """
+    def train(self, epochs: int = 500):
         print(f"Starting training for {epochs} epochs...")
         print(f"  - Warmup epochs: {self.warmup_epochs}")
         print(f"  - Label smoothing: {self.label_smoothing}")
@@ -209,9 +196,6 @@ class Trainer:
         
         self.model.train()
         scheduler = self._create_scheduler(epochs)
-        
-        # Track history
-        history = {'loss': [], 'tail_loss': [], 'lr': []}
         
         for epoch in range(epochs):
             total_loss = 0
@@ -266,15 +250,6 @@ class Trainer:
                         'tail': f"{avg_tail_loss:.4f}"
                     })
             
-            # Record epoch history
-            epoch_avg_loss = total_loss / num_batches
-            epoch_avg_tail_loss = total_tail_loss / max(tail_loss_count, 1)
-            current_lr = scheduler.get_last_lr()[0] if scheduler is not None else self.config.lr
-            
-            history['loss'].append(epoch_avg_loss)
-            history['tail_loss'].append(epoch_avg_tail_loss)
-            history['lr'].append(current_lr)
-            
             # Step scheduler after each epoch (only if it exists)
             if scheduler is not None:
                 scheduler.step()
@@ -285,9 +260,6 @@ class Trainer:
                 print(f"  → Epoch {epoch+1} Train H@1 (sample): {h1:.4f}")
             
         self.save_model(epochs, os.path.join(self.save_path, f"model_epoch_{epochs}.pt"))
-        
-        if return_history:
-            return history
 
     def save_model(self, epoch, path):
         model_to_save = self.model.module if hasattr(self.model, "module") else self.model
