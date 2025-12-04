@@ -548,8 +548,10 @@ def main():
     print(f"Running {len(all_configs)} experiments across {num_gpus} GPUs...")
     
     # Run in parallel with one process per GPU
+    # Use chunksize=1 to ensure round-robin GPU assignment works correctly
+    # (default chunking would group consecutive configs, defeating GPU distribution)
     with Pool(processes=num_gpus) as pool:
-        results = pool.map(run_experiment, all_configs)
+        results = pool.map(run_experiment, all_configs, chunksize=1)
             
     df = pd.DataFrame(results)
     
