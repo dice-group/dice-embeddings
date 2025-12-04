@@ -70,18 +70,20 @@ extras = dict()
 extras["min"] = _core_deps
 
 # Torch extras (for users who want dicee to manage torch dependencies)
+# Use with --extra-index-url https://download.pytorch.org/whl/cpu for CPU-only installation
 extras["torch"] = _core_deps + _torch_deps
 
-# Development extras
+# Development extras (includes torch - use CPU index to avoid NVIDIA dependencies)
 extras["dev"] = _core_deps + _torch_deps + _optional_deps + _dev_deps
 
 # Documentation extras
 extras["docs"] = _docs_deps
 
-# All extras
+# All extras (includes torch - use CPU index to avoid NVIDIA dependencies)
 extras["all"] = _core_deps + _torch_deps + _optional_deps + _dev_deps + _docs_deps
 
 # Base installation includes only core dependencies (without torch/lightning)
+# This ensures NVIDIA CUDA dependencies are NOT installed by default
 # Users must install torch separately: pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
 install_requires = _core_deps
 
