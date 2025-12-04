@@ -14,6 +14,7 @@ from dicee.bytegen.tokenizer import ByteTokenizer, train_bpe_tokenizer, BPEToken
 from dicee.bytegen.dataset import ByteGenDataset, ByteGenBFSDataset, IsolatedTripleDataset
 from dicee.bytegen.trainer import Trainer
 from dicee.bytegen.evaluator import Evaluator
+import gc
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,7 +23,11 @@ load_dotenv()
 def run_experiment(args):
     """Worker function for parallel execution."""
     tokenizer_type, vocab_size_arg, dataset_type, inverse, epochs, gpu_id, dataset_path, output_dir = args
-    
+    if torch.cuda.is_available():
+        torch.cuda.set_device(gpu_id)
+        torch.cuda.empty_cache()
+    gc.collect() 
+
     try:
         # Set GPU for this process
         torch.cuda.set_device(gpu_id)
@@ -110,6 +115,11 @@ def run_experiment(args):
         end_time = time.time()
         duration = end_time - start_time
 
+        del model, optimizer, trainer, train_loader, train_ds, test_ds
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        gc.collect()
+        
         return {
             "Dataset": dataset_type,
             "Inverse": inverse,
@@ -548,8 +558,6 @@ def main():
     print(f"Running {len(all_configs)} experiments across {num_gpus} GPUs...")
     
     # Run in parallel with one process per GPU
-    # Use chunksize=1 to ensure round-robin GPU assignment works correctly
-    # (default chunking would group consecutive configs, defeating GPU distribution)
     with Pool(processes=num_gpus) as pool:
         results = pool.map(run_experiment, all_configs, chunksize=1)
             
