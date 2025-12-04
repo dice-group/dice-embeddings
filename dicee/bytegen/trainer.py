@@ -16,7 +16,7 @@ import os
 class Trainer:
     def __init__(self, model: ByteGenModel, train_loader: DataLoader, config: ByteGenConfig, tokenizer: ByteTokenizer, 
                  optimizer: torch.optim.Optimizer = None, save_path: str = "checkpoints",
-                 warmup_epochs: int = 5, label_smoothing: float = 0.1, grad_clip: float = 1.0,
+                 warmup_epochs: int = 5, label_smoothing: float = 0.0, grad_clip: float = 1.0,
                  train_dataset=None):
         self.model = model
         self.train_loader = train_loader

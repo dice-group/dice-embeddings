@@ -23,7 +23,7 @@ load_dotenv()
 def run_experiment(args):
     """Worker function for parallel execution."""
     (tokenizer_type, vocab_size_arg, dataset_type, inverse, epochs, gpu_id, dataset_path, output_dir,
-     n_layer, n_head, n_embd, dropout, batch_size, lr) = args
+     n_layer, n_head, n_embd, dropout, batch_size, lr, label_smoothing) = args
     if torch.cuda.is_available():
         torch.cuda.set_device(gpu_id)
         torch.cuda.empty_cache()
@@ -101,7 +101,7 @@ def run_experiment(args):
         # Trainer with updated parameters (matching run.py)
         trainer = Trainer(
             model, train_loader, conf, tokenizer, optimizer,
-            label_smoothing=0.1,
+            label_smoothing=label_smoothing,
             warmup_epochs=5,
             train_dataset=train_ds,
         )
@@ -556,12 +556,14 @@ def main():
                         help='Number of attention heads (default: 8)')
     parser.add_argument('--n_embd', type=int, default=512,
                         help='Embedding dimension (default: 512)')
-    parser.add_argument('--dropout', type=float, default=0.1,
-                        help='Dropout rate (default: 0.1)')
+    parser.add_argument('--dropout', type=float, default=0.0,
+                        help='Dropout rate (default: 0.0)')
     parser.add_argument('--batch_size', type=int, default=32,
                         help='Batch size (default: 32)')
     parser.add_argument('--lr', type=float, default=3e-4,
                         help='Learning rate (default: 3e-4)')
+    parser.add_argument('--label_smoothing', type=float, default=0.0,
+                        help='Label smoothing (default: 0.0)')
     args = parser.parse_args()
     
     # Create output directory
@@ -598,6 +600,7 @@ def main():
                 "dropout": args.dropout,
                 "batch_size": args.batch_size,
                 "lr": args.lr,
+                "label_smoothing": args.label_smoothing,
             }
         )
         print(f"Wandb initialized: project={args.wandb_project}, entity={args.wandb_entity or 'default'}")
@@ -630,7 +633,7 @@ def main():
         all_configs.append((tokenizer_type, vocab_size, dataset_type, inverse, epochs, gpu_id, 
                            args.data_path, args.output_dir,
                            args.n_layer, args.n_head, args.n_embd, args.dropout, 
-                           args.batch_size, args.lr))
+                           args.batch_size, args.lr, args.label_smoothing))
     
     print(f"Running {len(all_configs)} experiments across {num_gpus} GPUs...")
     
@@ -660,6 +663,8 @@ def main():
                 f"experiments/{config_name}/train_h10": row['Train_H@10'],
                 f"experiments/{config_name}/time_s": row['Time (s)'],
                 f"experiments/{config_name}/params": row['Params'],
+                f"experiments/{config_name}/vocab_size": row['Vocab Size'],
+                f"experiments/{config_name}/block_size": row['Block Size'],
             })
     
     print("\n=== Final Results ===")
