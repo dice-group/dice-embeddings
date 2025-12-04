@@ -41,17 +41,46 @@ Deploy a pre-trained embedding model without writing a single line of code.
 ## Installation
 <details><summary> Click me! </summary>
 
+### Installation from PyPI
+
+**Important:** `dicee` requires PyTorch and Lightning, but these are not installed by default to avoid heavy NVIDIA CUDA dependencies. Please install PyTorch first according to your hardware:
+
+**CPU-only installation (recommended for most users):**
+```bash
+# Step 1: Install PyTorch (CPU-only, lightweight)
+pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
+# Step 2: Install dicee
+pip install dicee
+```
+
+**GPU/CUDA installation (for NVIDIA GPU users):**
+```bash
+# Step 1: Install PyTorch with CUDA support
+pip install torch
+# Step 2: Install dicee
+pip install dicee
+```
+
+**All-in-one installation (includes torch, use CPU index for lightweight install):**
+```bash
+# CPU-only (lightweight, no NVIDIA dependencies)
+pip install dicee[torch] --extra-index-url https://download.pytorch.org/whl/cpu
+# or with GPU/CUDA support (includes ~2GB NVIDIA dependencies)
+pip install dicee[torch]
+```
+
 ### Installation from Source
 ``` bash
 git clone https://github.com/dice-group/dice-embeddings.git
-cd dice-embeddings && conda create -n dice python=3.10.13 --no-default-packages && conda activate dice && pip install -e .
-# or
-pip install -e '.[dev]'       # installs core + dev dependencies
+cd dice-embeddings && conda create -n dice python=3.10.13 --no-default-packages && conda activate dice
+# Install PyTorch first (CPU-only)
+pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
+# Then install dicee
+pip install -e .
+# or for development with all dependencies
+pip install -e '.[dev]' --extra-index-url https://download.pytorch.org/whl/cpu
 ```
-or
-```bash
-pip install dicee
-```
+
 ## Download Knowledge Graphs
 ```bash
 wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate && unzip KGs.zip

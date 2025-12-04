@@ -2,17 +2,23 @@ import re
 from setuptools import setup, find_packages
 
 # Installation options:
-# - Minimal install: pip install dicee
+# - Minimal install (requires torch to be installed separately): pip install dicee
+# - With torch CPU: pip install dicee[torch] --extra-index-url https://download.pytorch.org/whl/cpu
+# - With torch GPU/CUDA: pip install dicee[torch]
 # - Development: pip install dicee[dev]
 # - Documentation: pip install dicee[docs]
 # - All extras: pip install dicee[all]
 
-# Core dependencies
+# Core dependencies (torch and lightning must be installed separately to avoid NVIDIA CUDA bloat)
 _core_deps = [
     "numpy==1.26.4",
+    "pandas>=2.1.0",
+]
+
+# Torch dependencies (users should install separately to choose CPU or GPU version)
+_torch_deps = [
     "torch>=2.5.1",
     "lightning>=2.5.0.post0",
-    "pandas>=2.1.0",
 ]
 
 # Optional dependencies for various features
@@ -47,7 +53,7 @@ _docs_deps = [
 ]
 
 # Combine all dependencies for regex parsing
-_all_deps = _core_deps + _optional_deps + _dev_deps + _docs_deps
+_all_deps = _core_deps + _torch_deps + _optional_deps + _dev_deps + _docs_deps
 
 # Parse dependencies into a dictionary
 deps = {b: a for a, b in (re.findall(r"^(([^!=<>~ ]+)(?:[!=<>~ ].*)?$)", x)[0] for x in _all_deps)}
@@ -60,19 +66,23 @@ def deps_list(*pkgs):
 # Define extras
 extras = dict()
 
-# Minimal installation - only core dependencies
+# Minimal installation - only core dependencies (requires torch installed separately)
 extras["min"] = _core_deps
 
+# Torch extras (for users who want dicee to manage torch dependencies)
+extras["torch"] = _core_deps + _torch_deps
+
 # Development extras
-extras["dev"] = _core_deps + _optional_deps + _dev_deps
+extras["dev"] = _core_deps + _torch_deps + _optional_deps + _dev_deps
 
 # Documentation extras
 extras["docs"] = _docs_deps
 
 # All extras
-extras["all"] = _core_deps + _optional_deps + _dev_deps + _docs_deps
+extras["all"] = _core_deps + _torch_deps + _optional_deps + _dev_deps + _docs_deps
 
-# Base installation includes core dependencies
+# Base installation includes only core dependencies (without torch/lightning)
+# Users must install torch separately: pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
 install_requires = _core_deps
 
 with open('README.md', 'r') as fh:

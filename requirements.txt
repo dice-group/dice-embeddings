@@ -1,8 +1,12 @@
 # Core dependencies
 numpy==1.26.4
+pandas>=2.1.0
+
+# Torch dependencies (install separately to choose CPU or GPU version)
+# For CPU-only: pip install torch lightning --extra-index-url https://download.pytorch.org/whl/cpu
+# For GPU/CUDA: pip install torch lightning
 torch>=2.5.1
 lightning>=2.5.0.post0
-pandas>=2.1.0
 
 # Optional dependencies
 polars>=0.16.14
