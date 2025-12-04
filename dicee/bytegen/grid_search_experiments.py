@@ -1,21 +1,27 @@
 import os
 import time
+import argparse
 import torch
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from multiprocessing import Pool, set_start_method
 from torch.utils.data import DataLoader
+from dotenv import load_dotenv
+import wandb
 from dicee.bytegen.bytegen import ByteGenModel, ByteGenConfig
 from dicee.bytegen.tokenizer import ByteTokenizer, train_bpe_tokenizer, BPETokenizer
 from dicee.bytegen.dataset import ByteGenDataset, ByteGenBFSDataset, IsolatedTripleDataset
 from dicee.bytegen.trainer import Trainer
 from dicee.bytegen.evaluator import Evaluator
 
+# Load environment variables from .env file
+load_dotenv()
+
 
 def run_experiment(args):
     """Worker function for parallel execution."""
-    tokenizer_type, vocab_size_arg, dataset_type, inverse, epochs, gpu_id = args
+    tokenizer_type, vocab_size_arg, dataset_type, inverse, epochs, gpu_id, dataset_path, output_dir = args
     
     try:
         # Set GPU for this process
@@ -23,7 +29,6 @@ def run_experiment(args):
         device = f"cuda:{gpu_id}"
         start_time = time.time()
 
-        dataset_path = os.path.join(os.getcwd(), "KGs/UMLS")
         if not os.path.exists(dataset_path):
             raise FileNotFoundError(f"Could not find dataset at {dataset_path}")
 
@@ -33,8 +38,8 @@ def run_experiment(args):
             actual_vocab_size = tokenizer.vocab_size
             tokenizer_name = "ByteTokenizer"
         else:  # BPE
-            # Unique path per process to avoid conflicts
-            tokenizer_path = f"tokenizer_bpe_{vocab_size_arg}_gpu{gpu_id}.json"
+            # Unique path per process to avoid conflicts (save in output_dir)
+            tokenizer_path = os.path.join(output_dir, f"tokenizer_bpe_{vocab_size_arg}_gpu{gpu_id}.json")
             tokenizer = train_bpe_tokenizer(dataset_path, tokenizer_path, vocab_size=vocab_size_arg, inverse=inverse)
             actual_vocab_size = tokenizer.vocab_size
             tokenizer_name = f"BPE-{vocab_size_arg}"
@@ -143,7 +148,7 @@ def run_experiment(args):
         }
 
 
-def create_plots(df: pd.DataFrame, output_dir: str = "comparison_results"):
+def create_plots(df: pd.DataFrame, output_dir: str = "comparison_results", log_to_wandb: bool = False):
     """Generate visualization plots for the grid search results."""
     os.makedirs(output_dir, exist_ok=True)
     
@@ -151,14 +156,16 @@ def create_plots(df: pd.DataFrame, output_dir: str = "comparison_results"):
     plt.style.use('seaborn-v0_8-whitegrid')
     colors = plt.cm.Set2(np.linspace(0, 1, 8))
     
-    # --- Plot 1: Comparison by Dataset Type (Test Set) ---
+    wandb_images = {}  # Collect images for wandb logging
+    
+    # --- Plot 1a: Comparison by Dataset Type (Test Set) ---
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     fig.suptitle('Test Set Performance by Dataset Type', fontsize=14, fontweight='bold')
     
-    metrics = ['Test_MRR', 'Test_H@1', 'Test_H@3', 'Test_H@10']
+    test_metrics = ['Test_MRR', 'Test_H@1', 'Test_H@3', 'Test_H@10']
     metric_names = ['MRR', 'Hits@1', 'Hits@3', 'Hits@10']
     
-    for ax, metric, name in zip(axes.flatten(), metrics, metric_names):
+    for ax, metric, name in zip(axes.flatten(), test_metrics, metric_names):
         pivot = df.pivot_table(values=metric, index='Dataset', columns='Tokenizer', aggfunc='mean')
         pivot.plot(kind='bar', ax=ax, color=colors[:len(pivot.columns)], edgecolor='black', linewidth=0.5)
         ax.set_title(name, fontweight='bold')
@@ -169,7 +176,33 @@ def create_plots(df: pd.DataFrame, output_dir: str = "comparison_results"):
         ax.set_ylim(0, 1)
     
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'test_by_dataset.png'), dpi=150, bbox_inches='tight')
+    plot_path = os.path.join(output_dir, 'test_by_dataset.png')
+    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+    if log_to_wandb:
+        wandb_images['test_by_dataset'] = wandb.Image(plot_path, caption="Test Set Performance by Dataset Type")
+    plt.close()
+    
+    # --- Plot 1b: Comparison by Dataset Type (Train Set) ---
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+    fig.suptitle('Train Set Performance by Dataset Type', fontsize=14, fontweight='bold')
+    
+    train_metrics_plot = ['Train_MRR', 'Train_H@1', 'Train_H@3', 'Train_H@10']
+    
+    for ax, metric, name in zip(axes.flatten(), train_metrics_plot, metric_names):
+        pivot = df.pivot_table(values=metric, index='Dataset', columns='Tokenizer', aggfunc='mean')
+        pivot.plot(kind='bar', ax=ax, color=colors[:len(pivot.columns)], edgecolor='black', linewidth=0.5)
+        ax.set_title(name, fontweight='bold')
+        ax.set_xlabel('')
+        ax.set_ylabel(name)
+        ax.legend(title='Tokenizer', bbox_to_anchor=(1.02, 1), loc='upper left')
+        ax.tick_params(axis='x', rotation=45)
+        ax.set_ylim(0, 1)
+    
+    plt.tight_layout()
+    plot_path = os.path.join(output_dir, 'train_by_dataset.png')
+    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+    if log_to_wandb:
+        wandb_images['train_by_dataset'] = wandb.Image(plot_path, caption="Train Set Performance by Dataset Type")
     plt.close()
     
     # --- Plot 2: Train vs Test Performance ---
@@ -177,15 +210,23 @@ def create_plots(df: pd.DataFrame, output_dir: str = "comparison_results"):
     fig.suptitle('Train vs Test Performance Comparison', fontsize=14, fontweight='bold')
     
     train_metrics = ['Train_MRR', 'Train_H@1', 'Train_H@3', 'Train_H@10']
-    test_metrics = ['Test_MRR', 'Test_H@1', 'Test_H@3', 'Test_H@10']
+    test_metrics_list = ['Test_MRR', 'Test_H@1', 'Test_H@3', 'Test_H@10']
     
     # Define colors: lighter for normal, darker for inverse
     train_color_normal = colors[0]
     test_color_normal = colors[1]
     
-    for ax, (train_m, test_m, name) in zip(axes.flatten(), zip(train_metrics, test_metrics, metric_names)):
-        # Sort by Dataset, Tokenizer, then Inverse (False before True for grouping)
-        df_sorted = df.sort_values(['Dataset', 'Tokenizer', 'Inverse'])
+    for ax, (train_m, test_m, name) in zip(axes.flatten(), zip(train_metrics, test_metrics_list, metric_names)):
+        # Get non-inverse train performance for sorting
+        df_non_inv = df[df['Inverse'] == False][['Dataset', 'Tokenizer', train_m]].copy()
+        df_non_inv = df_non_inv.rename(columns={train_m: 'sort_key'})
+        
+        # Merge sort key back to main df (each config gets its non-inverse train score)
+        df_with_sort = df.merge(df_non_inv, on=['Dataset', 'Tokenizer'], how='left')
+        
+        # Sort by strongest train non-inverse performance (descending), then by Inverse
+        df_sorted = df_with_sort.sort_values(['sort_key', 'Inverse'], ascending=[False, True])
+        
         x = np.arange(len(df_sorted))
         width = 0.35
         
@@ -220,10 +261,13 @@ def create_plots(df: pd.DataFrame, output_dir: str = "comparison_results"):
         ax.set_ylim(0, 1)
     
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'train_vs_test.png'), dpi=150, bbox_inches='tight')
+    plot_path = os.path.join(output_dir, 'train_vs_test.png')
+    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+    if log_to_wandb:
+        wandb_images['train_vs_test'] = wandb.Image(plot_path, caption="Train vs Test Performance Comparison")
     plt.close()
     
-    # --- Plot 3: Effect of Inverse Relations ---
+    # --- Plot 3a: Effect of Inverse Relations (Test) ---
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
     fig.suptitle('Effect of Inverse Relations on Test Performance', fontsize=14, fontweight='bold')
     
@@ -238,10 +282,34 @@ def create_plots(df: pd.DataFrame, output_dir: str = "comparison_results"):
         ax.set_ylim(0, 1)
     
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'inverse_effect.png'), dpi=150, bbox_inches='tight')
+    plot_path = os.path.join(output_dir, 'test_inverse_effect.png')
+    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+    if log_to_wandb:
+        wandb_images['test_inverse_effect'] = wandb.Image(plot_path, caption="Effect of Inverse Relations on Test Performance")
     plt.close()
     
-    # --- Plot 4: Heatmap of Test MRR ---
+    # --- Plot 3b: Effect of Inverse Relations (Train) ---
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    fig.suptitle('Effect of Inverse Relations on Train Performance', fontsize=14, fontweight='bold')
+    
+    for ax, metric, name in zip(axes, ['Train_MRR', 'Train_H@1'], ['MRR', 'Hits@1']):
+        pivot = df.pivot_table(values=metric, index='Dataset', columns='Inverse', aggfunc='mean')
+        pivot.plot(kind='bar', ax=ax, color=[colors[2], colors[3]], edgecolor='black', linewidth=0.5)
+        ax.set_title(f'{name} by Inverse Setting', fontweight='bold')
+        ax.set_xlabel('Dataset Type')
+        ax.set_ylabel(name)
+        ax.legend(title='Inverse', labels=['False', 'True'])
+        ax.tick_params(axis='x', rotation=45)
+        ax.set_ylim(0, 1)
+    
+    plt.tight_layout()
+    plot_path = os.path.join(output_dir, 'train_inverse_effect.png')
+    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+    if log_to_wandb:
+        wandb_images['train_inverse_effect'] = wandb.Image(plot_path, caption="Effect of Inverse Relations on Train Performance")
+    plt.close()
+    
+    # --- Plot 4a: Heatmap of Test MRR ---
     fig, ax = plt.subplots(figsize=(10, 6))
     
     pivot = df.pivot_table(values='Test_MRR', index=['Dataset', 'Inverse'], columns='Tokenizer', aggfunc='mean')
@@ -262,7 +330,37 @@ def create_plots(df: pd.DataFrame, output_dir: str = "comparison_results"):
     ax.set_title('Test MRR Heatmap', fontsize=14, fontweight='bold')
     plt.colorbar(im, ax=ax, label='MRR')
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'test_mrr_heatmap.png'), dpi=150, bbox_inches='tight')
+    plot_path = os.path.join(output_dir, 'test_mrr_heatmap.png')
+    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+    if log_to_wandb:
+        wandb_images['test_mrr_heatmap'] = wandb.Image(plot_path, caption="Test MRR Heatmap")
+    plt.close()
+    
+    # --- Plot 4b: Heatmap of Train MRR ---
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    pivot = df.pivot_table(values='Train_MRR', index=['Dataset', 'Inverse'], columns='Tokenizer', aggfunc='mean')
+    im = ax.imshow(pivot.values, cmap='YlOrRd', aspect='auto', vmin=0, vmax=1)
+    
+    ax.set_xticks(np.arange(len(pivot.columns)))
+    ax.set_yticks(np.arange(len(pivot.index)))
+    ax.set_xticklabels(pivot.columns)
+    ax.set_yticklabels([f"{d} (Inv={i})" for d, i in pivot.index])
+    
+    # Add text annotations
+    for i in range(len(pivot.index)):
+        for j in range(len(pivot.columns)):
+            val = pivot.values[i, j]
+            color = 'white' if val > 0.5 else 'black'
+            ax.text(j, i, f'{val:.3f}', ha='center', va='center', color=color, fontweight='bold')
+    
+    ax.set_title('Train MRR Heatmap', fontsize=14, fontweight='bold')
+    plt.colorbar(im, ax=ax, label='MRR')
+    plt.tight_layout()
+    plot_path = os.path.join(output_dir, 'train_mrr_heatmap.png')
+    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+    if log_to_wandb:
+        wandb_images['train_mrr_heatmap'] = wandb.Image(plot_path, caption="Train MRR Heatmap")
     plt.close()
     
     # --- Plot 5: Training Time vs Performance ---
@@ -280,14 +378,22 @@ def create_plots(df: pd.DataFrame, output_dir: str = "comparison_results"):
     # Add legend for dataset types
     handles = []
     for i, dataset in enumerate(df['Dataset'].unique()):
-        handles.append(plt.scatter([], [], c=plt.cm.Set1(i/3), label=dataset, s=100))
+        handles.append(plt.scatter([], [], color=plt.cm.Set1(i/3), label=dataset, s=100))
     ax.legend(handles=handles, title='Dataset')
     
     plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'time_vs_performance.png'), dpi=150, bbox_inches='tight')
+    plot_path = os.path.join(output_dir, 'time_vs_performance.png')
+    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+    if log_to_wandb:
+        wandb_images['time_vs_performance'] = wandb.Image(plot_path, caption="Training Time vs Test MRR")
     plt.close()
     
     print(f"\nPlots saved to {output_dir}/")
+    
+    # Log all images to wandb at once
+    if log_to_wandb and wandb_images:
+        wandb.log({"plots": wandb_images})
+        print("Plots logged to wandb")
 
 
 def log_best_approaches(df: pd.DataFrame):
@@ -366,13 +472,58 @@ def log_best_approaches(df: pd.DataFrame):
 
 
 def main():
+    parser = argparse.ArgumentParser(description='Grid search experiments for ByteGen')
+    parser.add_argument('--data_path', type=str, default='KGs/UMLS',
+                        help='Path to the knowledge graph dataset (default: KGs/UMLS)')
+    parser.add_argument('--output_dir', type=str, default='comparison_results',
+                        help='Output directory for results, plots, and CSV (default: comparison_results)')
+    parser.add_argument('--epochs', type=int, default=300, help='Number of training epochs (default: 300)')
+    parser.add_argument('--wandb_project', type=str, default='bytegen-grid-search',
+                        help='Wandb project name (default: bytegen-grid-search)')
+    parser.add_argument('--wandb_entity', type=str, default=None,
+                        help='Wandb entity/team name (default: None, uses default entity)')
+    parser.add_argument('--no_wandb', action='store_true',
+                        help='Disable wandb logging')
+    args = parser.parse_args()
+    
+    # Create output directory
+    os.makedirs(args.output_dir, exist_ok=True)
+    
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
+    
+    # Initialize wandb
+    use_wandb = not args.no_wandb
+    if use_wandb:
+        # Check if API key is available (from env or .env file)
+        wandb_api_key = os.getenv("WANDB_API_KEY")
+        if wandb_api_key:
+            wandb.login(key=wandb_api_key)
+        
+        # Extract dataset name from path for run naming
+        dataset_name = os.path.basename(args.data_path.rstrip('/'))
+        
+        wandb.init(
+            project=args.wandb_project,
+            entity=args.wandb_entity,
+            name=f"grid-search-{dataset_name}-{args.epochs}ep",
+            config={
+                "data_path": args.data_path,
+                "epochs": args.epochs,
+                "output_dir": args.output_dir,
+                "dataset_types": ['RandomWalk', 'BFS', 'Isolated'],
+                "inverse_settings": [True, False],
+                "tokenizers": ['Byte', 'BPE-260', 'BPE-512', 'BPE-733'],
+            }
+        )
+        print(f"Wandb initialized: project={args.wandb_project}, entity={args.wandb_entity or 'default'}")
     
     # Detect available GPUs
     num_gpus = torch.cuda.device_count()
     if num_gpus == 0:
         raise RuntimeError("No GPUs available!")
     print(f"Found {num_gpus} GPUs")
+    print(f"Data path: {args.data_path}")
+    print(f"Output directory: {args.output_dir}")
     
     dataset_types = ['RandomWalk', 'BFS', 'Isolated']
     inverse_settings = [True, False]
@@ -383,7 +534,7 @@ def main():
         ('BPE', 733),
     ]
     
-    epochs = 300
+    epochs = args.epochs
     
     # Build all experiment configs with round-robin GPU assignment
     all_configs = []
@@ -391,7 +542,8 @@ def main():
         [(d, inv, exp) for d in dataset_types for inv in inverse_settings for exp in experiments]
     ):
         gpu_id = i % num_gpus
-        all_configs.append((tokenizer_type, vocab_size, dataset_type, inverse, epochs, gpu_id))
+        all_configs.append((tokenizer_type, vocab_size, dataset_type, inverse, epochs, gpu_id, 
+                           args.data_path, args.output_dir))
     
     print(f"Running {len(all_configs)} experiments across {num_gpus} GPUs...")
     
@@ -400,6 +552,28 @@ def main():
         results = pool.map(run_experiment, all_configs)
             
     df = pd.DataFrame(results)
+    
+    # Log individual experiment results to wandb
+    if use_wandb:
+        # Log each experiment as a row in a wandb table
+        experiment_table = wandb.Table(dataframe=df)
+        wandb.log({"experiment_results": experiment_table})
+        
+        # Log summary metrics
+        for idx, row in df.iterrows():
+            config_name = f"{row['Dataset']}/{row['Tokenizer']}/inv={row['Inverse']}"
+            wandb.log({
+                f"experiments/{config_name}/test_mrr": row['Test_MRR'],
+                f"experiments/{config_name}/test_h1": row['Test_H@1'],
+                f"experiments/{config_name}/test_h3": row['Test_H@3'],
+                f"experiments/{config_name}/test_h10": row['Test_H@10'],
+                f"experiments/{config_name}/train_mrr": row['Train_MRR'],
+                f"experiments/{config_name}/train_h1": row['Train_H@1'],
+                f"experiments/{config_name}/train_h3": row['Train_H@3'],
+                f"experiments/{config_name}/train_h10": row['Train_H@10'],
+                f"experiments/{config_name}/time_s": row['Time (s)'],
+                f"experiments/{config_name}/params": row['Params'],
+            })
     
     print("\n=== Final Results ===")
     
@@ -439,12 +613,43 @@ def main():
     # Log overall best approaches
     log_best_approaches(df)
     
-    # Create visualization plots
-    create_plots(df)
+    # Create visualization plots (with optional wandb logging)
+    create_plots(df, output_dir=args.output_dir, log_to_wandb=use_wandb)
     
-    # Save to CSV
-    df.to_csv("grid_search_results.csv", index=False)
-    print("\nFull results saved to grid_search_results.csv")
+    # Save to CSV in output directory
+    csv_path = os.path.join(args.output_dir, "grid_search_results.csv")
+    df.to_csv(csv_path, index=False)
+    print(f"\nFull results saved to {csv_path}")
+    
+    # Log summary statistics to wandb
+    if use_wandb:
+        # Best test metrics
+        wandb.run.summary["best_test_mrr"] = df['Test_MRR'].max()
+        wandb.run.summary["best_test_h1"] = df['Test_H@1'].max()
+        wandb.run.summary["best_test_h3"] = df['Test_H@3'].max()
+        wandb.run.summary["best_test_h10"] = df['Test_H@10'].max()
+        
+        # Best train metrics
+        wandb.run.summary["best_train_mrr"] = df['Train_MRR'].max()
+        wandb.run.summary["best_train_h1"] = df['Train_H@1'].max()
+        wandb.run.summary["best_train_h3"] = df['Train_H@3'].max()
+        wandb.run.summary["best_train_h10"] = df['Train_H@10'].max()
+        
+        # Best configuration info
+        best_test_idx = df['Test_MRR'].idxmax()
+        best_test_row = df.loc[best_test_idx]
+        wandb.run.summary["best_config_dataset"] = best_test_row['Dataset']
+        wandb.run.summary["best_config_tokenizer"] = best_test_row['Tokenizer']
+        wandb.run.summary["best_config_inverse"] = best_test_row['Inverse']
+        
+        # Upload CSV as artifact
+        artifact = wandb.Artifact('grid_search_results', type='results')
+        artifact.add_file(csv_path)
+        wandb.log_artifact(artifact)
+        
+        # Finish wandb run
+        wandb.finish()
+        print("Wandb run finished and results logged.")
 
 
 if __name__ == "__main__":
