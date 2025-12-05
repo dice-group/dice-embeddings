@@ -44,8 +44,7 @@ class Evaluator:
         df = df[df['t'].isin(valid_entities)]
         
         # Map targets to indices efficiently
-        # Use dict directly (avoids pandas Series index uniqueness issues with tuple keys)
-        df['t_idx'] = df['t'].map(self.entity_to_idx)
+        df['t_idx'] = df['t'].apply(lambda x: self.entity_to_idx[x])
         
         # Group by (h, r) -> list of t_idx
         # This creates the Dict[Tuple[str, str], List[int]]
