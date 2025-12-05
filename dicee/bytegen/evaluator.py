@@ -31,7 +31,7 @@ class Evaluator:
         self.entities = sorted(list(raw_entities), key=lambda x: (len(x), x))
         self.entity_to_idx = {e: i for i, e in enumerate(self.entities)}
         
-        # 3. Build Known Facts Dictionary (OPTIMIZATION: PANDAS)
+        # 3. Build Known Facts Dictionary 
         # Using Pandas is ~20x faster than Python loops for large graphs
         print("Indexing known facts...")
         all_triples = train_dataset.triples + test_dataset.triples
@@ -39,14 +39,13 @@ class Evaluator:
         # Create DataFrame
         df = pd.DataFrame(all_triples, columns=['h', 'r', 't'])
         
-        # Filter only entities present in our catalog (Edge case safety)
+        # Filter only entities present in our catalog 
         valid_entities = set(self.entity_to_idx.keys())
         df = df[df['t'].isin(valid_entities)]
         
         # Map targets to indices efficiently
-        # We create a map once and apply it
-        t_mapper = pd.Series(self.entity_to_idx)
-        df['t_idx'] = df['t'].map(t_mapper)
+        # Use dict directly (avoids pandas Series index uniqueness issues with tuple keys)
+        df['t_idx'] = df['t'].map(self.entity_to_idx)
         
         # Group by (h, r) -> list of t_idx
         # This creates the Dict[Tuple[str, str], List[int]]
