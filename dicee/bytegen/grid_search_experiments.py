@@ -564,8 +564,8 @@ def main():
                         help='Learning rate (default: 3e-4)')
     parser.add_argument('--label_smoothing', type=float, default=0.0,
                         help='Label smoothing (default: 0.0)')
-    parser.add_argument('--eval_batch_size', type=int, default=12000,
-                        help='Batch size for evaluation (default: 12000)')
+    parser.add_argument('--eval_batch_size', type=int, default=8192,
+                        help='Batch size for evaluation (default: 8192)')
     args = parser.parse_args()
     
     # Create output directory
