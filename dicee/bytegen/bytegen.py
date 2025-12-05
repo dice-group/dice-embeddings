@@ -48,36 +48,61 @@ class ByteGenModel(nn.Module):
             torch.nn.init.zeros_(module.bias)
             torch.nn.init.ones_(module.weight)
 
-    def forward(self, idx):
+    def forward(self, idx, past_kvs=None):
         device = idx.device
         b, t = idx.size()
         
-        pos = torch.arange(0, t, dtype=torch.long, device=device)
+        if past_kvs is not None:
+            past_length = past_kvs[0][0].size(2)
+            pos = torch.arange(past_length, past_length + t, dtype=torch.long, device=device)
+        else:
+            pos = torch.arange(0, t, dtype=torch.long, device=device)
         tok_emb = self.transformer.wte(idx) 
         pos_emb = self.transformer.wpe(pos) 
         
         x = self.transformer.drop(tok_emb + pos_emb)
+
+        new_past_key_values = []
         
-        for block in self.transformer.h:
-            x = block(x)
+        for i, block in enumerate(self.transformer.h):
+            layer_past = past_kvs[i] if past_kvs is not None else None
+            x, layer_present = block(x, past_kv=layer_past)
+            new_past_key_values.append(layer_present)
             
         x = self.transformer.ln_f(x)
         logits = self.lm_head(x)
-        return logits
+        return logits ,new_past_key_values
 
     def generate(self, idx, tokenizer, max_new_tokens, temperature=1.0, top_k=None):
         self.eval()
-        for _ in range(max_new_tokens):
-            idx_cond = idx if idx.size(1) <= self.config.block_size else idx[:, -self.config.block_size:]
-            with torch.no_grad():
-                logits = self(idx_cond)
-            logits = logits[:, -1, :] / temperature
-            if top_k is not None:
-                v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
-                logits[logits < v[:, [-1]]] = -float('Inf')
-            probs = F.softmax(logits, dim=-1)
-            idx_next = torch.multinomial(probs, num_samples=1)
-            if idx_next.item() == tokenizer.pad_token_id:
-                break
-            idx = torch.cat((idx, idx_next), dim=1)
+        past_kvs = None
+        
+        with torch.no_grad():
+            # Initial forward pass with full context
+            logits, past_kvs = self(idx)
+            
+            for _ in range(max_new_tokens):
+                # Get logits for the last token
+                next_logits = logits[:, -1, :] / temperature
+                
+                if top_k is not None:
+                    v, _ = torch.topk(next_logits, min(top_k, next_logits.size(-1)))
+                    next_logits[next_logits < v[:, [-1]]] = -float('Inf')
+                
+                probs = F.softmax(next_logits, dim=-1)
+                idx_next = torch.multinomial(probs, num_samples=1)
+                
+                if idx_next.item() == tokenizer.pad_token_id:
+                    break
+                    
+                idx = torch.cat((idx, idx_next), dim=1)
+                
+                # Check if we've exceeded block size - if so, reset cache
+                if idx.size(1) > self.config.block_size:
+                    idx = idx[:, -self.config.block_size:]
+                    logits, past_kvs = self(idx)
+                else:
+                    # Use KV cache - only process the new token
+                    logits, past_kvs = self(idx_next, past_kvs=past_kvs)
+        
         return idx

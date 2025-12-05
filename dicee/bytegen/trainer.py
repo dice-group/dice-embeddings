@@ -108,7 +108,7 @@ class Trainer:
         return 0.0
 
     def _compute_hits_at_1(self, sample_size: int = 200, batch_size: int = 64) -> float:
-        """Compute H@1 on a sample of training triples."""
+        """Compute H@1 on a sample of training triples using KV caching."""
         if self.train_dataset is None or self.entities is None:
             return 0.0
         
@@ -133,34 +133,60 @@ class Trainer:
                          [self.tokenizer.sep_hr_token_id] + list(r) + \
                          [self.tokenizer.sep_rt_token_id]
                 
+                # Cache prefix once
+                prefix_tensor = torch.tensor([prefix], dtype=torch.long, device=self.device)
+                prefix_logits, prefix_kv = self.model(prefix_tensor)
+                prefix_last_logprobs = F.log_softmax(prefix_logits[:, -1, :], dim=-1)
+                
                 # Score all candidate entities
                 scores = []
                 for i in range(0, len(self.entities), batch_size):
                     batch_entities = self.entities[i:i+batch_size]
+                    curr_batch_size = len(batch_entities)
                     
-                    # Build sequences for batch
+                    # Expand cached KV for batch
+                    batch_kv = []
+                    for layer_kv in prefix_kv:
+                        k, v = layer_kv
+                        batch_kv.append((
+                            k.expand(curr_batch_size, -1, -1, -1),
+                            v.expand(curr_batch_size, -1, -1, -1)
+                        ))
+                    
+                    # Build candidate sequences (without prefix)
                     max_cand_len = max(len(e) for e in batch_entities) + 1
-                    input_ids = []
-                    slices = []
+                    cand_seqs = []
+                    cand_lengths = []
                     
                     for cand in batch_entities:
-                        seq = prefix + list(cand) + [suffix_token_id]
-                        start_idx = len(prefix) - 1
-                        end_idx = len(seq) - 1
-                        padded = seq + [self.tokenizer.pad_token_id] * (len(prefix) + max_cand_len - len(seq))
-                        input_ids.append(padded)
-                        slices.append((start_idx, end_idx, len(cand) + 1))
+                        seq = list(cand) + [suffix_token_id]
+                        cand_lengths.append(len(seq))
+                        padded = seq + [self.tokenizer.pad_token_id] * (max_cand_len - len(seq))
+                        cand_seqs.append(padded)
                     
-                    x = torch.tensor(input_ids, dtype=torch.long, device=self.device)
-                    logits = self.model(x)
-                    log_probs = F.log_softmax(logits, dim=-1)
+                    cand_tensor = torch.tensor(cand_seqs, dtype=torch.long, device=self.device)
                     
-                    for b, (s, e, l) in enumerate(slices):
-                        relevant_logits = log_probs[b, s:e, :]
-                        targets = x[b, s+1:e+1]
-                        token_scores = relevant_logits.gather(1, targets.unsqueeze(1)).squeeze(1)
-                        score = token_scores.sum().item() / l
-                        scores.append(score)
+                    # Forward with cached KV
+                    cand_logits, _ = self.model(cand_tensor, past_kvs=batch_kv)
+                    cand_logprobs = F.log_softmax(cand_logits, dim=-1)
+                    
+                    # Score candidates
+                    for b in range(curr_batch_size):
+                        length = cand_lengths[b]
+                        
+                        # First token from cached prefix
+                        first_token_score = prefix_last_logprobs[0, cand_tensor[b, 0]].item()
+                        
+                        # Remaining tokens from candidate logits
+                        if length > 1:
+                            remaining_logprobs = cand_logprobs[b, :length-1, :]
+                            remaining_targets = cand_tensor[b, 1:length]
+                            remaining_scores = remaining_logprobs.gather(1, remaining_targets.unsqueeze(1)).squeeze(1)
+                            total_score = first_token_score + remaining_scores.sum().item()
+                        else:
+                            total_score = first_token_score
+                        
+                        scores.append(total_score / length)
                 
                 scores = np.array(scores)
                 
@@ -204,7 +230,7 @@ class Trainer:
                 batch = batch.to(self.device)
                 
                 # Input: x[:-1], Target: x[1:]
-                logits = self.model(batch[:, :-1])
+                logits, _ = self.model(batch[:, :-1])
                 targets = batch[:, 1:]
                 
                 # Cross-entropy with label smoothing
@@ -292,7 +318,7 @@ class DDPTrainer(Trainer):
 
                 if (step_number + 1) % self.gradient_acc_steps != 0 and not last_step:
                     with self.model.no_sync():
-                        logits = self.model.module(batch[:, :-1]) 
+                        logits, _ = self.model.module(batch[:, :-1]) 
                         loss = F.cross_entropy(
                             logits.reshape(-1, self.config.vocab_size), 
                             targets.reshape(-1), 
@@ -302,7 +328,7 @@ class DDPTrainer(Trainer):
                         loss.backward()
                 else:
                     # Input: x[:-1], Target: x[1:]
-                    logits = self.model.module(batch[:, :-1])
+                    logits, _ = self.model.module(batch[:, :-1])
                     
                     loss = F.cross_entropy(
                         logits.reshape(-1, self.config.vocab_size), 

@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 import torch.nn.functional as F
 
@@ -12,26 +13,57 @@ class CausalSelfAttention(nn.Module):
         self.n_embd = config.n_embd
         self.dropout_p = config.dropout
 
-    def forward(self, x):
+    def forward(self, x, past_kv=None):
         B, T, C = x.size()
         
         # Calculate q, k, v
-        q, k, v  = self.c_attn(x).split(self.n_embd, dim=2)
+        # shape: (B, T, n_head, head_dim)
+        q, k, v = self.c_attn(x).split(self.n_embd, dim=2)
+        
+        # Transpose for attention: (B, n_head, T, head_dim)
         q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
         k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
         v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
 
-        # Flash Attention
-        y = F.scaled_dot_product_attention(
-            q, k, v,
-            attn_mask=None,
-            dropout_p=self.dropout_p if self.training else 0.0,
-            is_causal=True
-        )
+        if past_kv is not None:
+            past_k, past_v = past_kv
+            k = torch.cat([past_k, k], dim=2)  # Concat along time dimension
+            v = torch.cat([past_v, v], dim=2)
+            
+        present_kv = (k, v)
+        
+        # Handle attention masking
+        if past_kv is None:
+            # No cache: use standard causal mask
+            y = F.scaled_dot_product_attention(
+                q, k, v,
+                attn_mask=None,
+                dropout_p=self.dropout_p if self.training else 0.0,
+                is_causal=True
+            )
+        else:
+            # With cache: need custom mask that allows full attention to prefix
+            # but causal attention among new tokens
+            T_new = T  # Number of new query positions
+            T_total = k.size(2)  # Total KV length (prefix + new)
+            T_prefix = T_total - T_new
+            
+            # Build attention mask: (T_new, T_total)
+            # - All positions can attend to all prefix positions
+            # - Causal mask among new tokens
+            prefix_mask = torch.ones(T_new, T_prefix, dtype=torch.bool, device=x.device)
+            causal_mask = torch.tril(torch.ones(T_new, T_new, dtype=torch.bool, device=x.device))
+            attn_mask = torch.cat([prefix_mask, causal_mask], dim=1)  # (T_new, T_total)
+            
+            y = F.scaled_dot_product_attention(
+                q, k, v,
+                attn_mask=attn_mask,
+                dropout_p=self.dropout_p if self.training else 0.0,
+                is_causal=False  # We provide our own mask
+            )
         
         y = y.transpose(1, 2).contiguous().view(B, T, C)
-        
-        return self.resid_dropout(self.c_proj(y))
+        return self.resid_dropout(self.c_proj(y)), present_kv
 
 class MLP(nn.Module):
     def __init__(self, config):
@@ -57,7 +89,8 @@ class Block(nn.Module):
         self.ln_2 = nn.LayerNorm(config.n_embd)
         self.mlp = MLP(config)
 
-    def forward(self, x):
-        x = x + self.attn(self.ln_1(x))
+    def forward(self, x, past_kv=None):
+        attn_out, present_kv = self.attn(self.ln_1(x), past_kv=past_kv)
+        x = x + attn_out
         x = x + self.mlp(self.ln_2(x))
-        return x
+        return x, present_kv

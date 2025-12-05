@@ -87,45 +87,74 @@ class Evaluator:
         return results
 
     def _score_candidates(self, h: tuple, r: tuple, candidates: List[tuple], batch_size: int):
+        """
+        Score candidates using KV caching for efficiency.
+        
+        The prefix (h + r) is processed once and cached, then each candidate batch
+        only processes the candidate tokens while attending to the cached prefix.
+        """
         prefix = [self.tokenizer.eos_token_id] + list(h) + \
              [self.tokenizer.sep_hr_token_id] + list(r) + \
              [self.tokenizer.sep_rt_token_id] 
         all_scores = []
         
         with torch.no_grad():
+            # Step 1: Process prefix once and cache KV
+            prefix_tensor = torch.tensor([prefix], dtype=torch.long, device=self.device)
+            prefix_logits, prefix_kv = self.model(prefix_tensor)
+            
+            # The last position's logits predict the first candidate token
+            prefix_last_logprobs = F.log_softmax(prefix_logits[:, -1, :], dim=-1)  # (1, vocab_size)
+            
             for i in range(0, len(candidates), batch_size):
                 batch = candidates[i:i+batch_size]
+                curr_batch_size = len(batch)
                 
-                # Dynamic Batching
-                max_cand_len = max([len(c) for c in batch]) + 1
-                input_ids = []
-                slices = [] # (start_idx, end_idx) used for gathering probabilities
+                # Step 2: Expand cached KV for the batch
+                # Each layer's KV is (k, v) with shape (1, n_head, seq_len, head_dim)
+                # Expand to (batch_size, n_head, seq_len, head_dim)
+                batch_kv = []
+                for layer_kv in prefix_kv:
+                    k, v = layer_kv
+                    batch_kv.append((
+                        k.expand(curr_batch_size, -1, -1, -1),
+                        v.expand(curr_batch_size, -1, -1, -1)
+                    ))
+                
+                # Step 3: Build candidate sequences (without prefix)
+                max_cand_len = max(len(c) for c in batch) + 1  # +1 for suffix
+                cand_seqs = []
+                cand_lengths = []
                 
                 for cand in batch:
-                    seq = prefix + list(cand) + [self.suffix_token_id]
-                    # We predict the candidate bytes.
-                    # The prediction for seq[k] comes from seq[k-1]
-                    # Start of candidate in seq is len(prefix). 
-                    # So we look at logits at indices: len(prefix)-1 ... to ... end-1
-                    start_logit_idx = len(prefix) - 1
-                    end_logit_idx = len(seq) - 1
-                    
-                    input_ids.append(seq + [self.tokenizer.pad_token_id] * (len(prefix) + max_cand_len - len(seq)))
-                    slices.append((start_logit_idx, end_logit_idx, len(cand) + 1))
+                    seq = list(cand) + [self.suffix_token_id]
+                    cand_lengths.append(len(seq))
+                    padded = seq + [self.tokenizer.pad_token_id] * (max_cand_len - len(seq))
+                    cand_seqs.append(padded)
                 
-                x = torch.tensor(input_ids, dtype=torch.long, device=self.device)
-                logits = self.model(x)
-                log_probs = F.log_softmax(logits, dim=-1)
+                cand_tensor = torch.tensor(cand_seqs, dtype=torch.long, device=self.device)
                 
-                for b, (s, e, l) in enumerate(slices):
-                    # Gather scores for the specific bytes of the candidate
-                    # Target indices are x[b, s+1 : e+1]
-                    relevant_logits = log_probs[b, s:e, :]
-                    targets = x[b, s+1 : e+1]
+                # Step 4: Forward pass with cached KV - only processes candidate tokens
+                # but attention sees the full prefix via the cache
+                cand_logits, _ = self.model(cand_tensor, past_kvs=batch_kv)
+                cand_logprobs = F.log_softmax(cand_logits, dim=-1)
+                
+                # Step 5: Score each candidate
+                for b in range(curr_batch_size):
+                    length = cand_lengths[b]
                     
-                    # Sum log_probs for the candidate string
-                    token_scores = relevant_logits.gather(1, targets.unsqueeze(1)).squeeze(1)
-                    score = token_scores.sum().item() / l # Normalize by length
-                    all_scores.append(score)
+                    # First candidate token is predicted by the prefix's last position
+                    first_token_score = prefix_last_logprobs[0, cand_tensor[b, 0]].item()
+                    
+                    # Remaining tokens: cand_logprobs[b, j] predicts cand_tensor[b, j+1]
+                    if length > 1:
+                        remaining_logprobs = cand_logprobs[b, :length-1, :]
+                        remaining_targets = cand_tensor[b, 1:length]
+                        remaining_scores = remaining_logprobs.gather(1, remaining_targets.unsqueeze(1)).squeeze(1)
+                        total_score = first_token_score + remaining_scores.sum().item()
+                    else:
+                        total_score = first_token_score
+                    
+                    all_scores.append(total_score / length)
                     
         return np.array(all_scores)
