@@ -1,4 +1,5 @@
-from typing import List
+from typing import List, Dict, Tuple
+from collections import defaultdict
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -50,31 +51,50 @@ class Evaluator:
             raise ValueError(f"Invalid split: {split}")
             
         triples = triples[:limit] if limit else triples
-        print(f"Evaluating on {split} split with {len(triples)} triples...")
+        
+        # Group triples by (h, r) for algorithmic speedup
+        # This avoids redundant scoring for one-to-many relations
+        # e.g., (Spielberg, director_of, Jaws) and (Spielberg, director_of, E.T.)
+        # share the same prefix and only need one scoring pass
+        hr_to_targets: Dict[Tuple[tuple, tuple], List[tuple]] = defaultdict(list)
+        for h, r, t in triples:
+            hr_to_targets[(h, r)].append(t)
+        
+        num_unique_hr = len(hr_to_targets)
+        print(f"Evaluating on {split} split: {len(triples)} triples grouped into {num_unique_hr} unique (h, r) pairs...")
 
-        for h, r, t in tqdm(triples):
-            # We want to score: h + r + ?
+        for (h, r), targets in tqdm(hr_to_targets.items(), total=num_unique_hr):
+            # Score all candidates once for this (h, r) pair
             scores = self._score_candidates(h, r, candidates, batch_size)
             
-            # Identify target rank
-            if t not in self.entity_to_idx: continue
-            target_idx = self.entity_to_idx[t]
-            target_score = scores[target_idx]
-            
-            # Filter Loop: Penalize known facts that are NOT the target
+            # Pre-compute filtered scores for this (h, r) pair
+            # We filter out all known facts except we'll restore target scores individually
+            filtered_scores = scores.copy()
             for i, cand in enumerate(candidates):
-                if cand == t: continue # Don't filter the ground truth
                 if (h, r, cand) in self.known_facts:
-                    scores[i] = -float('inf')
-
-            # Calculate Rank
-            # Rank = (count of scores > target_score) + 1
-            rank = np.sum(scores > target_score) + 1
+                    filtered_scores[i] = -float('inf')
             
-            ranks.append(rank)
-            if rank <= 1: hits1 += 1
-            if rank <= 3: hits3 += 1
-            if rank <= 10: hits10 += 1
+            # Process each target in the group
+            for t in targets:
+                if t not in self.entity_to_idx: 
+                    continue
+                    
+                target_idx = self.entity_to_idx[t]
+                target_score = scores[target_idx]  # Use original unfiltered score
+                
+                # For ranking, we use filtered_scores but restore the target's score
+                # This implements: filter known facts EXCEPT the ground truth
+                ranking_scores = filtered_scores.copy()
+                ranking_scores[target_idx] = target_score
+                
+                # Calculate Rank
+                # Rank = (count of scores > target_score) + 1
+                rank = np.sum(ranking_scores > target_score) + 1
+                
+                ranks.append(rank)
+                if rank <= 1: hits1 += 1
+                if rank <= 3: hits3 += 1
+                if rank <= 10: hits10 += 1
             
         mrr = np.mean(1.0 / np.array(ranks))
         results = {
