@@ -152,7 +152,7 @@ class Trainer:
                         slices.append((start_idx, end_idx, len(cand) + 1))
                     
                     x = torch.tensor(input_ids, dtype=torch.long, device=self.device)
-                    logits, _ = self.model(x)
+                    logits = self.model(x)
                     log_probs = F.log_softmax(logits, dim=-1)
                     
                     for b, (s, e, l) in enumerate(slices):
@@ -204,7 +204,7 @@ class Trainer:
                 batch = batch.to(self.device)
                 
                 # Input: x[:-1], Target: x[1:]
-                logits, _ = self.model(batch[:, :-1])
+                logits = self.model(batch[:, :-1])
                 targets = batch[:, 1:]
                 
                 # Cross-entropy with label smoothing

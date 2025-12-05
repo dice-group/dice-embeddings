@@ -93,56 +93,39 @@ class Evaluator:
         all_scores = []
         
         with torch.no_grad():
-            # Compute KV cache for prefix (excluding last token) ONCE
-            # We exclude the last token (SEP_RT) so we can include it with candidates
-            # This way, the first logit position will predict the first candidate token
-            prefix_for_cache = prefix[:-1]
-            prefix_tensor = torch.tensor([prefix_for_cache], dtype=torch.long, device=self.device)
-            _, past_kv = self.model(prefix_tensor, use_cache=True)
-            
-            # The last prefix token will be prepended to each candidate
-            last_prefix_token = prefix[-1]
-            
             for i in range(0, len(candidates), batch_size):
                 batch = candidates[i:i+batch_size]
-                current_batch_size = len(batch)
                 
-                # Expand cache for batch (memory-efficient, no copy)
-                batch_past_kv = [
-                    (k.expand(current_batch_size, -1, -1, -1),
-                     v.expand(current_batch_size, -1, -1, -1))
-                    for k, v in past_kv
-                ]
-                
-                # Prepend last_prefix_token to candidates so logits align correctly
-                # logits[i] predicts token[i+1], so:
-                # - logits[0] (from last_prefix_token) predicts candidate[0]
-                # - logits[1] (from candidate[0]) predicts candidate[1]
-                # - etc.
-                max_cand_len = max(len(c) for c in batch) + 1  # +1 for suffix
+                # Dynamic Batching
+                max_cand_len = max([len(c) for c in batch]) + 1
                 input_ids = []
-                lengths = []
+                slices = [] # (start_idx, end_idx) used for gathering probabilities
                 
                 for cand in batch:
-                    # [last_prefix_token, cand_bytes..., suffix_token]
-                    seq = [last_prefix_token] + list(cand) + [self.suffix_token_id]
-                    padded = seq + [self.tokenizer.pad_token_id] * (1 + max_cand_len - len(seq))
-                    input_ids.append(padded)
-                    lengths.append(len(cand) + 1)  # candidate length + suffix
+                    seq = prefix + list(cand) + [self.suffix_token_id]
+                    # We predict the candidate bytes.
+                    # The prediction for seq[k] comes from seq[k-1]
+                    # Start of candidate in seq is len(prefix). 
+                    # So we look at logits at indices: len(prefix)-1 ... to ... end-1
+                    start_logit_idx = len(prefix) - 1
+                    end_logit_idx = len(seq) - 1
+                    
+                    input_ids.append(seq + [self.tokenizer.pad_token_id] * (len(prefix) + max_cand_len - len(seq)))
+                    slices.append((start_logit_idx, end_logit_idx, len(cand) + 1))
                 
                 x = torch.tensor(input_ids, dtype=torch.long, device=self.device)
-                logits, _ = self.model(x, past_kv=batch_past_kv, use_cache=False)
+                logits = self.model(x)
                 log_probs = F.log_softmax(logits, dim=-1)
                 
-                for b, length in enumerate(lengths):
-                    # logits[b, 0:length, :] predict tokens x[b, 1:length+1]
-                    # which are the candidate bytes + suffix token
-                    relevant_logits = log_probs[b, :length, :]
-                    targets = x[b, 1:length+1]
+                for b, (s, e, l) in enumerate(slices):
+                    # Gather scores for the specific bytes of the candidate
+                    # Target indices are x[b, s+1 : e+1]
+                    relevant_logits = log_probs[b, s:e, :]
+                    targets = x[b, s+1 : e+1]
                     
                     # Sum log_probs for the candidate string
                     token_scores = relevant_logits.gather(1, targets.unsqueeze(1)).squeeze(1)
-                    score = token_scores.sum().item() / length  # Normalize by length
+                    score = token_scores.sum().item() / l # Normalize by length
                     all_scores.append(score)
                     
         return np.array(all_scores)
