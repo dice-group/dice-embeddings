@@ -36,6 +36,25 @@ class Evaluator:
         self.known_facts = set()
         for h, r, t in (train_dataset.triples + test_dataset.triples):
             self.known_facts.add((h, r, t))
+
+        max_entity_len = max(len(e) for e in self.entities) + 1 # +1 for suffix
+        
+        # Create padded tensor: Shape (Num_Entities, Max_Len)
+        print("Pre-loading entities to GPU...")
+        entity_tensor = torch.full((len(self.entities), max_entity_len), 
+                                   self.tokenizer.pad_token_id, 
+                                   dtype=torch.long)
+        entity_lengths = torch.zeros(len(self.entities), dtype=torch.long)
+
+        for i, entity in enumerate(self.entities):
+            e_seq = list(entity) + [self.suffix_token_id]
+            l = len(e_seq)
+            entity_tensor[i, :l] = torch.tensor(e_seq, dtype=torch.long)
+            entity_lengths[i] = l
+
+        # Move to GPU once and store
+        self.entity_tensor = entity_tensor.to(self.device)
+        self.entity_lengths = entity_lengths.to(self.device)    
     
     def _ensure_compiled(self):
         """Compile model with torch.compile for faster inference"""
@@ -126,84 +145,83 @@ class Evaluator:
         return results
 
     def _score_candidates(self, h: tuple, r: tuple, candidates: List[tuple], batch_size: int):
-            prefix = [self.tokenizer.eos_token_id] + list(h) + \
-                [self.tokenizer.sep_hr_token_id] + list(r) + \
-                [self.tokenizer.sep_rt_token_id] 
-            all_scores = []
-            
-            # Determine device type and AMP dtype
-            device_type = self.device if isinstance(self.device, str) else self.device.type
-            use_amp = device_type == 'cuda'
-            amp_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-            
-            # Pre-calculate constant indices
-            prefix_len = len(prefix)
-            # We start evaluating logits at the end of the prefix
-            start_logit_idx = prefix_len - 1
-            
-            with torch.inference_mode():
-                with torch.amp.autocast(device_type=device_type, dtype=amp_dtype, enabled=use_amp):
-                    for i in range(0, len(candidates), batch_size):
-                        batch = candidates[i:i+batch_size]
-                        
-                        # 1. Prepare Inputs
-                        max_cand_len = max([len(c) for c in batch]) + 1
-                        input_ids = []
-                        
-                        # Track lengths for masking and normalization later
-                        cand_lens = []
-                        
-                        for cand in batch:
-                            seq = prefix + list(cand) + [self.suffix_token_id]
-                            # Pad to max length in this batch
-                            pad_len = (len(prefix) + max_cand_len - len(seq))
-                            input_ids.append(seq + [self.tokenizer.pad_token_id] * pad_len)
-                            cand_lens.append(len(cand) + 1) # +1 for suffix token
-                        
-                        x = torch.tensor(input_ids, dtype=torch.long, device=self.device)
-                        
-                        # 2. Forward Pass
-                        logits, _ = self.model(x)
-                        log_probs = F.log_softmax(logits, dim=-1)
-                        
-                        # 3. Vectorized Scoring (No loop over slices)
-                        
-                        # Align logits with targets:
-                        # logits at index [t] predict the token at index [t+1]
-                        # We remove the last logit and the first input token
-                        shifted_logits = log_probs[:, :-1, :] # Shape: (B, T-1, Vocab)
-                        shifted_targets = x[:, 1:]            # Shape: (B, T-1)
-                        
-                        # Gather the log probabilities of the actual target tokens
-                        # Shape: (B, T-1)
-                        token_scores = shifted_logits.gather(2, shifted_targets.unsqueeze(2)).squeeze(2)
-                        
-                        # Create a mask to zero out prefix and padding
-                        # valid range for logits is: [start_logit_idx, start_logit_idx + cand_len)
-                        # Create a range tensor [0, 1, 2, ... T-2]
-                        seq_len = token_scores.shape[1]
-                        pos_indices = torch.arange(seq_len, device=self.device).unsqueeze(0)
-                        
-                        # Convert lengths to tensor for broadcasting
-                        # End index is where the candidate string ends in the logits
-                        batch_cand_lens = torch.tensor(cand_lens, device=self.device).unsqueeze(1)
-                        end_indices = start_logit_idx + batch_cand_lens
-                        
-                        # Mask: True only for the candidate bytes
-                        mask = (pos_indices >= start_logit_idx) & (pos_indices < end_indices)
-                        
-                        # Apply mask (zero out irrelevant scores)
-                        token_scores = token_scores * mask
-                        
-                        # Sum and Normalize
-                        # Sum dim 1 gives total log_prob for the candidate
-                        summed_scores = token_scores.sum(dim=1)
-                        
-                        # Normalize by candidate length (cand + suffix)
-                        # Squeeze(1) is needed because batch_cand_lens is (B, 1)
-                        normalized_scores = summed_scores / batch_cand_lens.squeeze(1)
-                        
-                        # Move to CPU once per batch
-                        all_scores.extend(normalized_scores.tolist())
-                        
-            return np.array(all_scores)
+        # 1. Prepare Prefix on GPU (Done once per query)
+        prefix_seq = [self.tokenizer.eos_token_id] + list(h) + \
+                     [self.tokenizer.sep_hr_token_id] + list(r) + \
+                     [self.tokenizer.sep_rt_token_id]
+        
+        # Create prefix tensor: Shape (1, Prefix_Len)
+        prefix_tensor = torch.tensor(prefix_seq, device=self.device, dtype=torch.long).unsqueeze(0)
+        prefix_len = prefix_tensor.size(1)
+        
+        # We start evaluating logits at the end of the prefix
+        # (In the shifted target space, this is index prefix_len - 1)
+        start_logit_idx = prefix_len - 1
+        
+        num_candidates = self.entity_tensor.size(0)
+        all_scores = []
+        
+        # AMP Setup
+        device_type = self.device if isinstance(self.device, str) else self.device.type
+        use_amp = device_type == 'cuda'
+        amp_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+
+        with torch.inference_mode():
+            with torch.amp.autocast(device_type=device_type, dtype=amp_dtype, enabled=use_amp):
+                
+                # Iterate through the pre-computed GPU tensor directly
+                for i in range(0, num_candidates, batch_size):
+                    # Slice the pre-computed tensors 
+                    # This is instant (GPU-to-GPU view)
+                    cand_batch = self.entity_tensor[i : i + batch_size]
+                    cand_lens = self.entity_lengths[i : i + batch_size]
+                    
+                    # Optimization: Trim batch to the longest entity in *this* batch
+                    # (Avoids processing excessive padding from the global max length)
+                    max_len_in_batch = cand_lens.max().item()
+                    cand_batch = cand_batch[:, :max_len_in_batch]
+                    
+                    current_batch_size = cand_batch.size(0)
+                    
+                    # Expand prefix to match batch size
+                    batch_prefix = prefix_tensor.expand(current_batch_size, -1)
+                    
+                    # Concatenate Prefix + Candidates on GPU
+                    # This replaces the slow Python list concatenation
+                    x = torch.cat([batch_prefix, cand_batch], dim=1)
+                    
+                    # --- Forward Pass ---
+                    logits, _ = self.model(x)
+                    log_probs = F.log_softmax(logits, dim=-1)
+                    
+                    # --- Vectorized Scoring ---
+                    
+                    # Shift to align logits with next-token targets
+                    shifted_logits = log_probs[:, :-1, :] # Shape: (B, T-1, Vocab)
+                    shifted_targets = x[:, 1:]            # Shape: (B, T-1)
+                    
+                    # Gather scores
+                    token_scores = shifted_logits.gather(2, shifted_targets.unsqueeze(2)).squeeze(2)
+                    
+                    # Create Mask
+                    # Valid indices are [start_logit_idx, start_logit_idx + cand_len)
+                    seq_len = token_scores.shape[1]
+                    pos_indices = torch.arange(seq_len, device=self.device).unsqueeze(0)
+                    
+                    # Calculate end indices for every item in batch
+                    end_indices = start_logit_idx + cand_lens.unsqueeze(1)
+                    
+                    # Boolean Mask
+                    mask = (pos_indices >= start_logit_idx) & (pos_indices < end_indices)
+                    
+                    # Apply Mask, Sum and Normalize
+                    token_scores = token_scores * mask
+                    summed_scores = token_scores.sum(dim=1)
+                    
+                    # Normalize by length
+                    normalized_scores = summed_scores / cand_lens
+                    
+                    # Move to CPU list once per batch
+                    all_scores.extend(normalized_scores.tolist())
+
+        return np.array(all_scores)
