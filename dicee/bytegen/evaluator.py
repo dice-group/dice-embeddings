@@ -32,7 +32,6 @@ class Evaluator:
         self.entity_to_idx = {e: i for i, e in enumerate(self.entities)}
         
         # 3. Build Known Facts Dictionary 
-        # Using Pandas is ~20x faster than Python loops for large graphs
         print("Indexing known facts...")
         all_triples = train_dataset.triples + test_dataset.triples
         
