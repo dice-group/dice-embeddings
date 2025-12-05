@@ -42,6 +42,10 @@ class Evaluator:
         # Pre-calculate candidate bytes 
         candidates = self.entities
         
+        # Pre-compute batches to avoid repeated tensor creation/cpu-gpu transfer
+        print("Pre-computing candidate batches...")
+        candidate_batches = self._precompute_candidate_batches(candidates, batch_size)
+        
         if split == 'train':
             triples = self.train_ds.triples
         elif split == 'test':
@@ -54,7 +58,7 @@ class Evaluator:
 
         for h, r, t in tqdm(triples):
             # We want to score: h + r + ?
-            scores = self._score_candidates(h, r, candidates, batch_size)
+            scores = self._score_candidates(h, r, candidate_batches)
             
             # Identify target rank
             if t not in self.entity_to_idx: continue
@@ -86,7 +90,31 @@ class Evaluator:
         print(f"MRR: {results['mrr']:.4f} | H@1: {results['h1']:.4f} | H@3: {results['h3']:.4f} | H@10: {results['h10']:.4f}")
         return results
 
-    def _score_candidates(self, h: tuple, r: tuple, candidates: List[tuple], batch_size: int):
+    def _precompute_candidate_batches(self, candidates, batch_size):
+        batches = []
+        sep_rt = self.tokenizer.sep_rt_token_id
+        pad = self.tokenizer.pad_token_id
+        
+        for i in range(0, len(candidates), batch_size):
+            batch = candidates[i:i+batch_size]
+            max_cand_len = max(len(c) for c in batch) + 1  # +1 for suffix
+            
+            input_ids = []
+            lengths = []
+            
+            for cand in batch:
+                # [SEP_RT, cand..., SUFFIX]
+                seq = [sep_rt] + list(cand) + [self.suffix_token_id]
+                padded = seq + [pad] * (1 + max_cand_len - len(seq))
+                input_ids.append(padded)
+                lengths.append(len(cand) + 1) # candidate length + suffix
+            
+            x = torch.tensor(input_ids, dtype=torch.long, device=self.device)
+            batches.append((x, lengths))
+            
+        return batches
+
+    def _score_candidates(self, h: tuple, r: tuple, candidate_batches: List[tuple]):
         prefix = [self.tokenizer.eos_token_id] + list(h) + \
              [self.tokenizer.sep_hr_token_id] + list(r) + \
              [self.tokenizer.sep_rt_token_id] 
@@ -100,12 +128,10 @@ class Evaluator:
             prefix_tensor = torch.tensor([prefix_for_cache], dtype=torch.long, device=self.device)
             _, past_kv = self.model(prefix_tensor, use_cache=True)
             
-            # The last prefix token will be prepended to each candidate
-            last_prefix_token = prefix[-1]
+            # The last prefix token (SEP_RT) is already included in the precomputed candidate batches
             
-            for i in range(0, len(candidates), batch_size):
-                batch = candidates[i:i+batch_size]
-                current_batch_size = len(batch)
+            for x, lengths in candidate_batches:
+                current_batch_size = x.size(0)
                 
                 # Expand cache for batch (memory-efficient, no copy)
                 batch_past_kv = [
@@ -114,23 +140,7 @@ class Evaluator:
                     for k, v in past_kv
                 ]
                 
-                # Prepend last_prefix_token to candidates so logits align correctly
-                # logits[i] predicts token[i+1], so:
-                # - logits[0] (from last_prefix_token) predicts candidate[0]
-                # - logits[1] (from candidate[0]) predicts candidate[1]
-                # - etc.
-                max_cand_len = max(len(c) for c in batch) + 1  # +1 for suffix
-                input_ids = []
-                lengths = []
-                
-                for cand in batch:
-                    # [last_prefix_token, cand_bytes..., suffix_token]
-                    seq = [last_prefix_token] + list(cand) + [self.suffix_token_id]
-                    padded = seq + [self.tokenizer.pad_token_id] * (1 + max_cand_len - len(seq))
-                    input_ids.append(padded)
-                    lengths.append(len(cand) + 1)  # candidate length + suffix
-                
-                x = torch.tensor(input_ids, dtype=torch.long, device=self.device)
+                # x is [SEP_RT, cand..., SUFFIX, PAD...]
                 logits, _ = self.model(x, past_kv=batch_past_kv, use_cache=False)
                 log_probs = F.log_softmax(logits, dim=-1)
                 
