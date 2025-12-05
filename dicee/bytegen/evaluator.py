@@ -62,7 +62,7 @@ class Evaluator:
             return
             
         device_type = self.device if isinstance(self.device, str) else self.device.type
-        if device_type != 'cuda':
+        if not device_type.startswith('cuda'):
             return
             
         try:
@@ -164,8 +164,9 @@ class Evaluator:
         gpu_scores = torch.zeros(num_candidates, device=self.device, dtype=torch.float32)
 
         # AMP Setup
-        device_type = self.device if isinstance(self.device, str) else self.device.type
-        use_amp = device_type == 'cuda'
+        device_str = self.device if isinstance(self.device, str) else self.device.type
+        use_amp = device_str.startswith('cuda')
+        device_type = 'cuda' if use_amp else 'cpu'  # autocast expects 'cuda' not 'cuda:0'
         amp_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
 
         with torch.inference_mode():
