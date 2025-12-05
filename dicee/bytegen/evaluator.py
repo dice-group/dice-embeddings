@@ -174,6 +174,7 @@ class Evaluator:
     def _score_candidates(self, h: tuple, r: tuple, batch_size: int) -> torch.Tensor:
         """
         Computes scores for all entities given (h, r).
+        Uses KV-caching to avoid redundant computation of the prefix.
         Returns a GPU Tensor of shape [Num_Entities].
         """
         # 1. Prepare Prefix
@@ -196,6 +197,12 @@ class Evaluator:
         dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
 
         with torch.inference_mode():
+            # 2. Compute KV cache for prefix (ONCE per (h, r) pair)
+            with torch.amp.autocast(device_type='cuda', dtype=dtype, enabled=use_amp):
+                prefix_logits, prefix_kvs = self.model(prefix_tensor)
+                # prefix_logits shape: [1, prefix_len, vocab_size]
+                # prefix_kvs: list of (k, v) tuples for each layer
+            
             for i in range(0, num_candidates, batch_size):
                 cand_batch = self.entity_tensor[i : i + batch_size]
                 cand_lens = self.entity_lengths[i : i + batch_size]
@@ -206,15 +213,37 @@ class Evaluator:
                 
                 current_batch_size = cand_batch.size(0)
                 
-                batch_prefix = prefix_tensor.expand(current_batch_size, -1)
-                x = torch.cat([batch_prefix, cand_batch], dim=1)
+                # 3. Expand KV cache for batch
+                # Each layer's KV has shape (1, n_head, prefix_len, head_dim)
+                # Expand to (batch_size, n_head, prefix_len, head_dim)
+                batch_kvs = [
+                    (k.expand(current_batch_size, -1, -1, -1), 
+                     v.expand(current_batch_size, -1, -1, -1))
+                    for k, v in prefix_kvs
+                ]
                 
                 with torch.amp.autocast(device_type='cuda', dtype=dtype, enabled=use_amp):
-                    logits, _ = self.model(x)
+                    # 4. Forward pass with KV cache - only process candidate tokens
+                    logits, _ = self.model(cand_batch, past_kvs=batch_kvs)
+                    # logits shape: [batch_size, cand_len, vocab_size]
                     
-                    # Shift for prediction
-                    shift_logits = logits[..., :-1, :].contiguous()
-                    shift_labels = x[..., 1:].contiguous()
+                    # 5. Score computation
+                    # We need to score each token in the candidate sequence
+                    # The first token is predicted by the last prefix logit
+                    # Subsequent tokens are predicted by the candidate logits
+                    
+                    # Get the last prefix logit (predicts first candidate token)
+                    # Shape: [1, vocab_size] -> expand to [batch_size, 1, vocab_size]
+                    last_prefix_logit = prefix_logits[:, -1:, :].expand(current_batch_size, -1, -1)
+                    
+                    # Concat: [batch_size, 1 + cand_len, vocab_size]
+                    # This gives us logits for predicting all candidate tokens
+                    full_logits = torch.cat([last_prefix_logit, logits], dim=1)
+                    
+                    # Shift: predict cand_batch from full_logits[:-1]
+                    # full_logits[:, :-1, :] predicts cand_batch
+                    shift_logits = full_logits[:, :-1, :].contiguous()
+                    shift_labels = cand_batch.contiguous()
                     
                     # Fused Loss Calculation
                     token_losses = loss_fct(
@@ -226,14 +255,12 @@ class Evaluator:
                     # Log Probs
                     token_scores = -token_losses
 
-                    # Masking (Zero out prefix and padding)
-                    start_idx = prefix_len - 1
+                    # Masking (Zero out padding - no prefix in this tensor)
                     seq_len = token_scores.shape[1]
-                    
                     pos_indices = torch.arange(seq_len, device=self.device).unsqueeze(0)
-                    end_indices = start_idx + cand_lens.unsqueeze(1)
                     
-                    mask = (pos_indices >= start_idx) & (pos_indices < end_indices)
+                    # Mask: only score up to the actual entity length
+                    mask = pos_indices < cand_lens.unsqueeze(1)
                     
                     summed_scores = (token_scores * mask).sum(dim=1)
                     
