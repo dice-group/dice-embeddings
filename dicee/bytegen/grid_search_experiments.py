@@ -23,7 +23,7 @@ load_dotenv()
 def run_experiment(args):
     """Worker function for parallel execution."""
     (tokenizer_type, vocab_size_arg, dataset_type, inverse, epochs, gpu_id, dataset_path, output_dir,
-     n_layer, n_head, n_embd, dropout, batch_size, lr, label_smoothing) = args
+     n_layer, n_head, n_embd, dropout, batch_size, lr, label_smoothing, eval_batch_size) = args
     if torch.cuda.is_available():
         torch.cuda.set_device(gpu_id)
         torch.cuda.empty_cache()
@@ -109,8 +109,8 @@ def run_experiment(args):
                 
         # Evaluate on BOTH train and test sets
         evaluator = Evaluator(model, train_ds, test_ds, tokenizer)
-        train_metrics = evaluator.evaluate(split='train')
-        test_metrics = evaluator.evaluate(split='test')
+        train_metrics = evaluator.evaluate(split='train', batch_size=eval_batch_size)
+        test_metrics = evaluator.evaluate(split='test', batch_size=eval_batch_size)
         
         end_time = time.time()
         duration = end_time - start_time
@@ -564,6 +564,8 @@ def main():
                         help='Learning rate (default: 3e-4)')
     parser.add_argument('--label_smoothing', type=float, default=0.0,
                         help='Label smoothing (default: 0.0)')
+    parser.add_argument('--eval_batch_size', type=int, default=4096,
+                        help='Batch size for evaluation (default: 4096)')
     args = parser.parse_args()
     
     # Create output directory
@@ -601,6 +603,7 @@ def main():
                 "batch_size": args.batch_size,
                 "lr": args.lr,
                 "label_smoothing": args.label_smoothing,
+                "eval_batch_size": args.eval_batch_size,
             }
         )
         print(f"Wandb initialized: project={args.wandb_project}, entity={args.wandb_entity or 'default'}")
@@ -633,7 +636,7 @@ def main():
         all_configs.append((tokenizer_type, vocab_size, dataset_type, inverse, epochs, gpu_id, 
                            args.data_path, args.output_dir,
                            args.n_layer, args.n_head, args.n_embd, args.dropout, 
-                           args.batch_size, args.lr, args.label_smoothing))
+                           args.batch_size, args.lr, args.label_smoothing, args.eval_batch_size))
     
     print(f"Running {len(all_configs)} experiments across {num_gpus} GPUs...")
     

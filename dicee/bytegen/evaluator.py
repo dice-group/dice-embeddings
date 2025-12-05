@@ -53,7 +53,7 @@ class Evaluator:
         except Exception as e:
             print(f"torch.compile not available or failed: {e}")
             
-    def evaluate(self, split: str = 'test', limit: int = None, batch_size: int = 64):
+    def evaluate(self, split: str = 'test', limit: int = None, batch_size: int = 2048):
         self._ensure_compiled()
         self.model.eval()
         ranks = []
