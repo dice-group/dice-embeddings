@@ -195,7 +195,8 @@ class Evaluator:
             # Clone KV cache
             prefix_kvs = [(k.clone(), v.clone()) for k, v in prefix_kvs]
             # We only need the very last logit of the prefix to predict the first char of candidates
-            last_prefix_logit = prefix_logits[:, -1:, :] # [1, 1, vocab]
+            # Clone to prevent CUDA graph overwrite in subsequent forward passes
+            last_prefix_logit = prefix_logits[:, -1:, :].clone() # [1, 1, vocab]
 
         for i in range(0, num_candidates, batch_size):
             cand_batch = self.entity_tensor[i : i + batch_size]
