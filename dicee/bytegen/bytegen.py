@@ -48,29 +48,44 @@ class ByteGenModel(nn.Module):
             torch.nn.init.zeros_(module.bias)
             torch.nn.init.ones_(module.weight)
 
-    def forward(self, idx):
+    def forward(self, idx, past_kv=None, use_cache=False):
         device = idx.device
         b, t = idx.size()
         
-        pos = torch.arange(0, t, dtype=torch.long, device=device)
+        # Position offset when using cache
+        past_length = past_kv[0][0].size(2) if past_kv is not None else 0
+        pos = torch.arange(past_length, past_length + t, dtype=torch.long, device=device)
+        
         tok_emb = self.transformer.wte(idx) 
         pos_emb = self.transformer.wpe(pos) 
         
         x = self.transformer.drop(tok_emb + pos_emb)
         
-        for block in self.transformer.h:
-            x = block(x)
+        presents = [] if use_cache else None
+        for i, block in enumerate(self.transformer.h):
+            layer_past = past_kv[i] if past_kv is not None else None
+            x, present = block(x, past_kv=layer_past, use_cache=use_cache)
+            if use_cache:
+                presents.append(present)
             
         x = self.transformer.ln_f(x)
         logits = self.lm_head(x)
-        return logits
+        return logits, presents
 
     def generate(self, idx, tokenizer, max_new_tokens, temperature=1.0, top_k=None):
         self.eval()
+        past_kv = None
         for _ in range(max_new_tokens):
-            idx_cond = idx if idx.size(1) <= self.config.block_size else idx[:, -self.config.block_size:]
+            # Use cache for efficient generation
+            if past_kv is None:
+                # First pass: process the entire prompt
+                idx_cond = idx if idx.size(1) <= self.config.block_size else idx[:, -self.config.block_size:]
+            else:
+                # Subsequent passes: only process the new token
+                idx_cond = idx[:, -1:]
+            
             with torch.no_grad():
-                logits = self(idx_cond)
+                logits, past_kv = self(idx_cond, past_kv=past_kv, use_cache=True)
             logits = logits[:, -1, :] / temperature
             if top_k is not None:
                 v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
