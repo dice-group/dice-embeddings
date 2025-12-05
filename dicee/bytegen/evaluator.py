@@ -202,10 +202,9 @@ class Evaluator:
                 prefix_logits, prefix_kvs = self.model(prefix_tensor)
                 # prefix_logits shape: [1, prefix_len, vocab_size]
                 # prefix_kvs: list of (k, v) tuples for each layer
-                
-                # Clone KV cache to avoid CUDA graph memory reuse issues with torch.compile
-                prefix_kvs = [(k.clone(), v.clone()) for k, v in prefix_kvs]
-                prefix_logits = prefix_logits.clone()
+            
+            # Mark CUDA graph step boundary to avoid memory reuse conflicts with torch.compile
+            torch.compiler.cudagraph_mark_step_begin()
             
             for i in range(0, num_candidates, batch_size):
                 cand_batch = self.entity_tensor[i : i + batch_size]
