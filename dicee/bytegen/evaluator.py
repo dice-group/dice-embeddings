@@ -126,52 +126,84 @@ class Evaluator:
         return results
 
     def _score_candidates(self, h: tuple, r: tuple, candidates: List[tuple], batch_size: int):
-        prefix = [self.tokenizer.eos_token_id] + list(h) + \
-             [self.tokenizer.sep_hr_token_id] + list(r) + \
-             [self.tokenizer.sep_rt_token_id] 
-        all_scores = []
-        
-        # Determine device type and AMP dtype
-        device_type = self.device if isinstance(self.device, str) else self.device.type
-        use_amp = device_type == 'cuda'
-        amp_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-        
-        with torch.inference_mode():
-            # Use AMP for faster inference on CUDA
-            with torch.amp.autocast(device_type=device_type, dtype=amp_dtype, enabled=use_amp):
-                for i in range(0, len(candidates), batch_size):
-                    batch = candidates[i:i+batch_size]
-                    
-                    # Dynamic Batching
-                    max_cand_len = max([len(c) for c in batch]) + 1
-                    input_ids = []
-                    slices = [] # (start_idx, end_idx) used for gathering probabilities
-                    
-                    for cand in batch:
-                        seq = prefix + list(cand) + [self.suffix_token_id]
-                        # We predict the candidate bytes.
-                        # The prediction for seq[k] comes from seq[k-1]
-                        # Start of candidate in seq is len(prefix). 
-                        # So we look at logits at indices: len(prefix)-1 ... to ... end-1
-                        start_logit_idx = len(prefix) - 1
-                        end_logit_idx = len(seq) - 1
+            prefix = [self.tokenizer.eos_token_id] + list(h) + \
+                [self.tokenizer.sep_hr_token_id] + list(r) + \
+                [self.tokenizer.sep_rt_token_id] 
+            all_scores = []
+            
+            # Determine device type and AMP dtype
+            device_type = self.device if isinstance(self.device, str) else self.device.type
+            use_amp = device_type == 'cuda'
+            amp_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+            
+            # Pre-calculate constant indices
+            prefix_len = len(prefix)
+            # We start evaluating logits at the end of the prefix
+            start_logit_idx = prefix_len - 1
+            
+            with torch.inference_mode():
+                with torch.amp.autocast(device_type=device_type, dtype=amp_dtype, enabled=use_amp):
+                    for i in range(0, len(candidates), batch_size):
+                        batch = candidates[i:i+batch_size]
                         
-                        input_ids.append(seq + [self.tokenizer.pad_token_id] * (len(prefix) + max_cand_len - len(seq)))
-                        slices.append((start_logit_idx, end_logit_idx, len(cand) + 1))
-                    
-                    x = torch.tensor(input_ids, dtype=torch.long, device=self.device)
-                    logits, _ = self.model(x)
-                    log_probs = F.log_softmax(logits, dim=-1)
-                    
-                    for b, (s, e, l) in enumerate(slices):
-                        # Gather scores for the specific bytes of the candidate
-                        # Target indices are x[b, s+1 : e+1]
-                        relevant_logits = log_probs[b, s:e, :]
-                        targets = x[b, s+1 : e+1]
+                        # 1. Prepare Inputs
+                        max_cand_len = max([len(c) for c in batch]) + 1
+                        input_ids = []
                         
-                        # Sum log_probs for the candidate string
-                        token_scores = relevant_logits.gather(1, targets.unsqueeze(1)).squeeze(1)
-                        score = token_scores.sum().item() / l # Normalize by length
-                        all_scores.append(score)
-                    
-        return np.array(all_scores)
+                        # Track lengths for masking and normalization later
+                        cand_lens = []
+                        
+                        for cand in batch:
+                            seq = prefix + list(cand) + [self.suffix_token_id]
+                            # Pad to max length in this batch
+                            pad_len = (len(prefix) + max_cand_len - len(seq))
+                            input_ids.append(seq + [self.tokenizer.pad_token_id] * pad_len)
+                            cand_lens.append(len(cand) + 1) # +1 for suffix token
+                        
+                        x = torch.tensor(input_ids, dtype=torch.long, device=self.device)
+                        
+                        # 2. Forward Pass
+                        logits, _ = self.model(x)
+                        log_probs = F.log_softmax(logits, dim=-1)
+                        
+                        # 3. Vectorized Scoring (No loop over slices)
+                        
+                        # Align logits with targets:
+                        # logits at index [t] predict the token at index [t+1]
+                        # We remove the last logit and the first input token
+                        shifted_logits = log_probs[:, :-1, :] # Shape: (B, T-1, Vocab)
+                        shifted_targets = x[:, 1:]            # Shape: (B, T-1)
+                        
+                        # Gather the log probabilities of the actual target tokens
+                        # Shape: (B, T-1)
+                        token_scores = shifted_logits.gather(2, shifted_targets.unsqueeze(2)).squeeze(2)
+                        
+                        # Create a mask to zero out prefix and padding
+                        # valid range for logits is: [start_logit_idx, start_logit_idx + cand_len)
+                        # Create a range tensor [0, 1, 2, ... T-2]
+                        seq_len = token_scores.shape[1]
+                        pos_indices = torch.arange(seq_len, device=self.device).unsqueeze(0)
+                        
+                        # Convert lengths to tensor for broadcasting
+                        # End index is where the candidate string ends in the logits
+                        batch_cand_lens = torch.tensor(cand_lens, device=self.device).unsqueeze(1)
+                        end_indices = start_logit_idx + batch_cand_lens
+                        
+                        # Mask: True only for the candidate bytes
+                        mask = (pos_indices >= start_logit_idx) & (pos_indices < end_indices)
+                        
+                        # Apply mask (zero out irrelevant scores)
+                        token_scores = token_scores * mask
+                        
+                        # Sum and Normalize
+                        # Sum dim 1 gives total log_prob for the candidate
+                        summed_scores = token_scores.sum(dim=1)
+                        
+                        # Normalize by candidate length (cand + suffix)
+                        # Squeeze(1) is needed because batch_cand_lens is (B, 1)
+                        normalized_scores = summed_scores / batch_cand_lens.squeeze(1)
+                        
+                        # Move to CPU once per batch
+                        all_scores.extend(normalized_scores.tolist())
+                        
+            return np.array(all_scores)
