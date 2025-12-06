@@ -5,7 +5,7 @@ import torch
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from multiprocessing import Pool, set_start_method
+from multiprocessing import Pool, set_start_method, Manager
 from torch.utils.data import DataLoader
 from dotenv import load_dotenv
 import wandb
@@ -19,17 +19,27 @@ import gc
 # Load environment variables from .env file
 load_dotenv()
 
+# Global queue for workers
+gpu_queue = None
+
+def init_worker(q):
+    global gpu_queue
+    gpu_queue = q
 
 def run_experiment(args):
     """Worker function for parallel execution."""
-    (tokenizer_type, vocab_size_arg, dataset_type, inverse, epochs, gpu_id, dataset_path, output_dir,
+    (tokenizer_type, vocab_size_arg, dataset_type, inverse, epochs, dataset_path, output_dir,
      n_layer, n_head, n_embd, dropout, batch_size, lr, label_smoothing, eval_batch_size) = args
-    if torch.cuda.is_available():
-        torch.cuda.set_device(gpu_id)
-        torch.cuda.empty_cache()
-    gc.collect() 
-
+    
+    # Get a free GPU ID from the queue
+    gpu_id = gpu_queue.get()
+    
     try:
+        if torch.cuda.is_available():
+            torch.cuda.set_device(gpu_id)
+            torch.cuda.empty_cache()
+        gc.collect() 
+
         # Set GPU for this process
         torch.cuda.set_device(gpu_id)
         device = f"cuda:{gpu_id}"
@@ -156,6 +166,9 @@ def run_experiment(args):
             "Train_MRR": 0.0, "Train_H@1": 0.0, "Train_H@3": 0.0, "Train_H@10": 0.0,
             "Test_MRR": 0.0, "Test_H@1": 0.0, "Test_H@3": 0.0, "Test_H@10": 0.0
         }
+    finally:
+        # Always return the GPU to the queue
+        gpu_queue.put(gpu_id)
 
 
 def create_plots(df: pd.DataFrame, output_dir: str = "comparison_results", log_to_wandb: bool = False):
@@ -627,21 +640,27 @@ def main():
     
     epochs = args.epochs
     
-    # Build all experiment configs with round-robin GPU assignment
+    # Build all experiment configs - GPU ID is now managed by queue
     all_configs = []
     for i, (dataset_type, inverse, (tokenizer_type, vocab_size)) in enumerate(
         [(d, inv, exp) for d in dataset_types for inv in inverse_settings for exp in experiments]
     ):
-        gpu_id = i % num_gpus
-        all_configs.append((tokenizer_type, vocab_size, dataset_type, inverse, epochs, gpu_id, 
+        all_configs.append((tokenizer_type, vocab_size, dataset_type, inverse, epochs, 
                            args.data_path, args.output_dir,
                            args.n_layer, args.n_head, args.n_embd, args.dropout, 
                            args.batch_size, args.lr, args.label_smoothing, args.eval_batch_size))
     
     print(f"Running {len(all_configs)} experiments across {num_gpus} GPUs...")
+
+    # Create manager for queue to handle GPU assignment
+    manager = Manager()
+    queue = manager.Queue()
+    for i in range(num_gpus):
+        queue.put(i)
     
     # Run in parallel with one process per GPU
-    with Pool(processes=num_gpus) as pool:
+    # maxtasksperchild=1 ensures fresh process for each task to release memory completely
+    with Pool(processes=num_gpus, initializer=init_worker, initargs=(queue,), maxtasksperchild=1) as pool:
         results = pool.map(run_experiment, all_configs, chunksize=1)
             
     df = pd.DataFrame(results)
