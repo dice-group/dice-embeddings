@@ -75,7 +75,6 @@ class ByteGenDataset(Dataset):
         if len(seq) > self.block_size:
             seq = seq[:self.block_size]
         elif len(seq) < self.block_size:
-            print("dead end tail + using padding")
             # TODO: LF we have to think how to deal with this :) invese relations prevent this, e.g. A -> B inv_-> A -> ...
             seq.extend([self.tokenizer.pad_token_id] * (self.block_size - len(seq)))
             

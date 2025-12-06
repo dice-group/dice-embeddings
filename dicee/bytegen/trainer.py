@@ -11,6 +11,9 @@ from dicee.bytegen.bytegen import ByteGenModel
 from dicee.bytegen.bytegen import ByteGenConfig
 from dicee.bytegen.tokenizer import ByteTokenizer
 import os
+import wandb
+import numpy as np
+from typing import Dict
 
 
 class Trainer:
@@ -107,13 +110,12 @@ class Trainer:
             return tail_loss.item()
         return 0.0
 
-    def _compute_hits_at_1(self, sample_size: int = 200, batch_size: int = 64) -> float:
-        """Compute H@1 on a sample of training triples using KV caching."""
+    def _compute_sampled_metrics(self, sample_size: int = 200, batch_size: int = 64) -> Dict[str, float]:
+        """Compute MRR and H@1 on a sample of training triples using KV caching."""
         if self.train_dataset is None or self.entities is None:
-            return 0.0
+            return {"mrr": 0.0, "h1": 0.0}
         
         import random
-        import numpy as np
         
         self.model.eval()
         
@@ -121,6 +123,7 @@ class Trainer:
         triples = self.train_dataset.triples
         sample_indices = random.sample(range(len(triples)), min(sample_size, len(triples)))
         
+        mrr_sum = 0.0
         hits1 = 0
         suffix_token_id = self.tokenizer.eos_token_id
         
@@ -206,11 +209,15 @@ class Trainer:
                 
                 # Check if target is rank 1
                 rank = np.sum(scores > target_score) + 1
+                mrr_sum += 1.0 / rank
                 if rank == 1:
                     hits1 += 1
         
         self.model.train()
-        return hits1 / len(sample_indices)
+        return {
+            "mrr": mrr_sum / len(sample_indices),
+            "h1": hits1 / len(sample_indices)
+        }
 
     def train(self, epochs: int = 500):
         print(f"Starting training for {epochs} epochs...")
@@ -252,12 +259,29 @@ class Trainer:
                 total_loss += loss.item()
                 num_batches += 1
                 
-                # Compute tail-only loss for diagnostics (every 10 batches)
-                # if num_batches % 10 == 0:
-                #     with torch.no_grad():
-                #         tail_loss = self._compute_tail_loss(logits, targets)
-                #         total_tail_loss += tail_loss
-                #         tail_loss_count += 1
+                # Compute tail-only loss for diagnostics
+                with torch.no_grad():
+                    tail_loss = self._compute_tail_loss(logits, targets)
+
+                # Log to wandb if available
+                if wandb.run is not None:
+                    global_step = epoch * len(self.train_loader) + num_batches
+                    log_dict = {
+                        "train/loss": loss.item(),
+                        "train/tail_loss": tail_loss,
+                        "train/lr": scheduler.get_last_lr()[0] if scheduler else self.config.lr,
+                        "epoch": epoch,
+                    }
+                    
+                    # Periodically compute sampled MRR
+                    if global_step % 500 == 0:
+                        metrics = self._compute_sampled_metrics(sample_size=100)
+                        log_dict.update({
+                            "train/sampled_mrr": metrics["mrr"],
+                            "train/sampled_h1": metrics["h1"]
+                        })
+                    
+                    wandb.log(log_dict, step=global_step)
                 
                 avg_loss = total_loss / num_batches
                 if scheduler is not None:

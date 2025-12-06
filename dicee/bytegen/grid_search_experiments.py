@@ -9,6 +9,7 @@ from multiprocessing import Pool, set_start_method, Manager
 from torch.utils.data import DataLoader
 from dotenv import load_dotenv
 import wandb
+import sys
 from dicee.bytegen.bytegen import ByteGenModel, ByteGenConfig
 from dicee.bytegen.tokenizer import ByteTokenizer, train_bpe_tokenizer, BPETokenizer
 from dicee.bytegen.dataset import ByteGenDataset, ByteGenBFSDataset, IsolatedTripleDataset
@@ -29,16 +30,44 @@ def init_worker(q):
 def run_experiment(args):
     """Worker function for parallel execution."""
     (tokenizer_type, vocab_size_arg, dataset_type, inverse, epochs, dataset_path, output_dir,
-     n_layer, n_head, n_embd, dropout, batch_size, lr, label_smoothing, eval_batch_size) = args
+     n_layer, n_head, n_embd, dropout, batch_size, lr, label_smoothing, eval_batch_size, wandb_config) = args
     
     # Get a free GPU ID from the queue
     gpu_id = gpu_queue.get()
     
+    # Setup logging
+    log_dir = os.path.join(output_dir, "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    
+    tok_label = "Byte" if tokenizer_type == 'Byte' else f"BPE-{vocab_size_arg}"
+    log_filename = f"gpu{gpu_id}_{dataset_type}_{tok_label}_Inv{inverse}.log"
+    log_path = os.path.join(log_dir, log_filename)
+    
+    print(f"[GPU {gpu_id}] 🚀 Starting {dataset_type} {tok_label} Inv={inverse}. Logs: {log_path}")
+    
+    # Redirect stdout/stderr to file
+    original_stdout = sys.stdout
+    original_stderr = sys.stderr
+    log_file = open(log_path, 'w', buffering=1) # Line buffered
+    sys.stdout = log_file
+    sys.stderr = log_file
+    
+    # Initialize wandb run for this worker
+    if wandb_config:
+        try:
+            # Set start method for wandb to work in multiprocess
+            # wandb.require("service") # Uncomment if issues arise
+            if wandb_config.get('api_key'):
+                wandb.login(key=wandb_config['api_key'])
+        except:
+            pass
+            
     try:
         if torch.cuda.is_available():
             torch.cuda.set_device(gpu_id)
             torch.cuda.empty_cache()
         gc.collect() 
+ 
 
         # Set GPU for this process
         torch.cuda.set_device(gpu_id)
@@ -61,6 +90,28 @@ def run_experiment(args):
             tokenizer_name = f"BPE-{vocab_size_arg}"
 
         print(f"[GPU {gpu_id}] Running: {tokenizer_name} (vocab={actual_vocab_size}) on {dataset_type} (Inverse={inverse})")
+
+        # Initialize wandb run
+        if wandb_config:
+            run_name = f"{dataset_type}-{tokenizer_name}-Inv{inverse}"
+            wandb.init(
+                project=wandb_config['project'],
+                entity=wandb_config['entity'],
+                group=wandb_config['group'],
+                name=run_name,
+                config={
+                    "dataset": dataset_type,
+                    "tokenizer": tokenizer_name,
+                    "inverse": inverse,
+                    "vocab_size": actual_vocab_size,
+                    "n_layer": n_layer,
+                    "n_head": n_head,
+                    "n_embd": n_embd,
+                    "lr": lr,
+                    "batch_size": batch_size
+                },
+                reinit=True
+            )
 
         # Dataset selection with block_size handling
         if dataset_type == 'Isolated':
@@ -167,6 +218,15 @@ def run_experiment(args):
             "Test_MRR": 0.0, "Test_H@1": 0.0, "Test_H@3": 0.0, "Test_H@10": 0.0
         }
     finally:
+        # Finish wandb run if it was started
+        if wandb_config and wandb.run is not None:
+            wandb.finish()
+            
+        # Restore stdout/stderr
+        sys.stdout = original_stdout
+        sys.stderr = original_stderr
+        log_file.close()
+            
         # Always return the GPU to the queue
         gpu_queue.put(gpu_id)
 
@@ -586,6 +646,15 @@ def main():
     
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     
+    dataset_types = ['RandomWalk', 'BFS', 'Isolated']
+    inverse_settings = [True, False]
+    experiments = [
+        ('Byte', None),
+        ('BPE', 260),
+        ('BPE', 512),
+        ('BPE', 1024),
+    ]
+
     # Initialize wandb
     use_wandb = not args.no_wandb
     if use_wandb:
@@ -605,9 +674,9 @@ def main():
                 "data_path": args.data_path,
                 "epochs": args.epochs,
                 "output_dir": args.output_dir,
-                "dataset_types": ['RandomWalk', 'BFS', 'Isolated'],
-                "inverse_settings": [True, False],
-                "tokenizers": ['Byte', 'BPE-260', 'BPE-512', 'BPE-733'],
+                "dataset_types": dataset_types,
+                "inverse_settings": inverse_settings,
+                "tokenizers": [f"{t}-{v}" if v else t for t, v in experiments],
                 # Model architecture
                 "n_layer": args.n_layer,
                 "n_head": args.n_head,
@@ -628,15 +697,6 @@ def main():
     print(f"Found {num_gpus} GPUs")
     print(f"Data path: {args.data_path}")
     print(f"Output directory: {args.output_dir}")
-    
-    dataset_types = ['RandomWalk', 'BFS', 'Isolated']
-    inverse_settings = [True, False]
-    experiments = [
-        ('Byte', None),
-        ('BPE', 260),
-        ('BPE', 512),
-        ('BPE', 1024),
-    ]
     
     epochs = args.epochs
     
