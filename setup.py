@@ -28,8 +28,7 @@ _optional_deps = [
     "pykeen>=1.10.2",
     "psutil>=5.9.4",
     "matplotlib>=3.8.2",
-    "zstandard>=0.21.0",
-    "gradio>=3.23.0",
+    "zstandard>=0.21.0"
 ]
 
 # Development dependencies
