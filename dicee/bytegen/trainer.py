@@ -10,10 +10,12 @@ from torch.distributed import init_process_group, destroy_process_group
 from dicee.bytegen.bytegen import ByteGenModel
 from dicee.bytegen.bytegen import ByteGenConfig
 from dicee.bytegen.tokenizer import ByteTokenizer
+from dicee.bytegen.dataset import ByteGenBFSDataset, IsolatedTripleDataset
 import os
 import wandb
 import numpy as np
 from typing import Dict
+from collections import defaultdict
 
 
 class Trainer:
@@ -40,11 +42,16 @@ class Trainer:
                 [t[0] for t in train_dataset.triples] + 
                 [t[2] for t in train_dataset.triples]
             )))
+            self.entity_to_idx = {e: i for i, e in enumerate(self.entities)}
             # Build known facts for filtering
             self.known_facts = set((h, r, t) for h, r, t in train_dataset.triples)
+            self.hr_to_t = defaultdict(set)
+            for h, r, t in train_dataset.triples:
+                self.hr_to_t[(h, r)].add(t)
         else:
             self.entities = None
             self.known_facts = None
+            self.hr_to_t = None
 
     def _create_scheduler(self, epochs: int):
         """Create LR scheduler with linear warmup followed by cosine annealing."""
@@ -134,7 +141,12 @@ class Trainer:
         
         mrr_sum = 0.0
         hits1 = 0
-        suffix_token_id = self.tokenizer.eos_token_id
+        
+        # Determine suffix based on dataset type (same as Evaluator)
+        if isinstance(self.train_dataset, (ByteGenBFSDataset, IsolatedTripleDataset)):
+            suffix_token_id = self.tokenizer.eos_token_id
+        else:
+            suffix_token_id = self.tokenizer.sep_hr_token_id
         
         with torch.no_grad():
             for idx in sample_indices:
@@ -151,7 +163,7 @@ class Trainer:
                 prefix_last_logprobs = F.log_softmax(prefix_logits[:, -1, :], dim=-1)
                 
                 # Score all candidate entities
-                scores = []
+                all_scores = []
                 for i in range(0, len(self.entities), batch_size):
                     batch_entities = self.entities[i:i+batch_size]
                     curr_batch_size = len(batch_entities)
@@ -177,44 +189,55 @@ class Trainer:
                         cand_seqs.append(padded)
                     
                     cand_tensor = torch.tensor(cand_seqs, dtype=torch.long, device=self.device)
+                    cand_lens_tensor = torch.tensor(cand_lengths, device=self.device)
                     
                     # Forward with cached KV
                     cand_logits, _ = self.model(cand_tensor, past_kvs=batch_kv)
                     cand_logprobs = F.log_softmax(cand_logits, dim=-1)
                     
-                    # Score candidates
-                    for b in range(curr_batch_size):
-                        length = cand_lengths[b]
+                    # Vectorized Scoring
+                    # 1. First token from cached prefix
+                    first_token_scores = prefix_last_logprobs[0, cand_tensor[:, 0]]
+                    
+                    # 2. Remaining tokens
+                    if max_cand_len > 1:
+                        # cand_logprobs[:, t] predicts cand_tensor[:, t+1]
+                        targets = cand_tensor[:, 1:]
+                        # We need logprobs from 0 to L-2 (predicting 1 to L-1)
+                        # cand_logprobs has shape (B, L, V) usually, but targets is (B, L-1)
+                        # Slice cand_logprobs to match targets length
+                        target_logprobs = cand_logprobs[:, :targets.size(1), :].gather(2, targets.unsqueeze(2)).squeeze(2)
                         
-                        # First token from cached prefix
-                        first_token_score = prefix_last_logprobs[0, cand_tensor[b, 0]].item()
+                        # Mask padding
+                        seq_range = torch.arange(target_logprobs.size(1), device=self.device).unsqueeze(0)
+                        mask = seq_range < (cand_lens_tensor - 1).unsqueeze(1)
                         
-                        # Remaining tokens from candidate logits
-                        if length > 1:
-                            remaining_logprobs = cand_logprobs[b, :length-1, :]
-                            remaining_targets = cand_tensor[b, 1:length]
-                            remaining_scores = remaining_logprobs.gather(1, remaining_targets.unsqueeze(1)).squeeze(1)
-                            total_score = first_token_score + remaining_scores.sum().item()
-                        else:
-                            total_score = first_token_score
+                        remaining_scores = (target_logprobs * mask).sum(dim=1)
+                        total_scores = first_token_scores + remaining_scores
+                    else:
+                        total_scores = first_token_scores
                         
-                        scores.append(total_score / length)
+                    # Normalize
+                    final_scores = total_scores / cand_lens_tensor
+                    all_scores.append(final_scores.cpu().numpy())
                 
-                scores = np.array(scores)
+                scores = np.concatenate(all_scores)
                 
-                # Find target index and apply filtering
-                target_idx = self.entities.index(t) if t in self.entities else -1
-                if target_idx < 0:
+                # Find target index
+                if t in self.entity_to_idx:
+                    target_idx = self.entity_to_idx[t]
+                else:
                     continue
                     
                 target_score = scores[target_idx]
                 
-                # Filter known facts (other valid tails for same h,r)
-                for i, cand in enumerate(self.entities):
-                    if cand == t:
+                # Filter known facts
+                valid_tails = self.hr_to_t.get((h, r), set())
+                for val_t in valid_tails:
+                    if val_t == t:
                         continue
-                    if (h, r, cand) in self.known_facts:
-                        scores[i] = -float('inf')
+                    if val_t in self.entity_to_idx:
+                        scores[self.entity_to_idx[val_t]] = -float('inf')
                 
                 # Check if target is rank 1
                 rank = np.sum(scores > target_score) + 1
@@ -284,7 +307,7 @@ class Trainer:
                     
                     # Periodically compute sampled MRR
                     if global_step % 500 == 0:
-                        metrics = self._compute_sampled_metrics(sample_size=100)
+                        metrics = self._compute_sampled_metrics(sample_size=128, batch_size=128)
                         log_dict.update({
                             "train/sampled_mrr": metrics["mrr"],
                             "train/sampled_h1": metrics["h1"]
