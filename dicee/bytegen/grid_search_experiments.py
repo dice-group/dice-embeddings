@@ -613,8 +613,8 @@ def main():
     parser = argparse.ArgumentParser(description='Grid search experiments for ByteGen')
     parser.add_argument('--data_path', type=str, default='KGs/UMLS',
                         help='Path to the knowledge graph dataset (default: KGs/UMLS)')
-    parser.add_argument('--output_dir', type=str, default='comparison_results',
-                        help='Output directory for results, plots, and CSV (default: comparison_results)')
+    parser.add_argument('--output_dir', type=str, default=None,
+                        help='Output directory for results (default: auto-generated from dataset and epochs)')
     parser.add_argument('--epochs', type=int, default=300, help='Number of training epochs (default: 300)')
     parser.add_argument('--wandb_project', type=str, default='bytegen-grid-search',
                         help='Wandb project name (default: bytegen-grid-search)')
@@ -640,6 +640,11 @@ def main():
     parser.add_argument('--eval_batch_size', type=int, default=8192*2,
                         help='Batch size for evaluation (default: 8192)')
     args = parser.parse_args()
+    
+    # Auto-generate output directory if not provided
+    if args.output_dir is None:
+        dataset_name = os.path.basename(args.data_path.rstrip('/'))
+        args.output_dir = f"results_{dataset_name}_{args.epochs}ep"
     
     # Create output directory
     os.makedirs(args.output_dir, exist_ok=True)
