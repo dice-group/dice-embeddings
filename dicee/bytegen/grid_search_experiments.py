@@ -662,6 +662,7 @@ def main():
 
     # Initialize wandb
     use_wandb = not args.no_wandb
+    wandb_config = None
     if use_wandb:
         # Check if API key is available (from env or .env file)
         wandb_api_key = os.getenv("WANDB_API_KEY")
@@ -693,6 +694,12 @@ def main():
                 "eval_batch_size": args.eval_batch_size,
             }
         )
+        wandb_config = {
+            "project": args.wandb_project,
+            "entity": args.wandb_entity,
+            "group": f"grid-search-{dataset_name}-{args.epochs}ep",
+            "api_key": wandb_api_key
+        }
         print(f"Wandb initialized: project={args.wandb_project}, entity={args.wandb_entity or 'default'}")
     
     # Detect available GPUs
@@ -713,7 +720,7 @@ def main():
         all_configs.append((tokenizer_type, vocab_size, dataset_type, inverse, epochs, 
                            args.data_path, args.output_dir,
                            args.n_layer, args.n_head, args.n_embd, args.dropout, 
-                           args.batch_size, args.lr, args.label_smoothing, args.eval_batch_size))
+                           args.batch_size, args.lr, args.label_smoothing, args.eval_batch_size, wandb_config))
     
     print(f"Running {len(all_configs)} experiments across {num_gpus} GPUs...")
 
