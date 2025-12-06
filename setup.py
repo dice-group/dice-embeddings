@@ -2,12 +2,16 @@ import re
 from setuptools import setup, find_packages
 
 # Installation options:
-# - Minimal install: pip install dicee
-# - Development: pip install dicee[dev]
+# - Default install (CPU-only recommended): pip install dicee --extra-index-url https://download.pytorch.org/whl/cpu
+# - GPU/CUDA install: pip install dicee
+# - Development: pip install dicee[dev] --extra-index-url https://download.pytorch.org/whl/cpu
 # - Documentation: pip install dicee[docs]
-# - All extras: pip install dicee[all]
+# - All extras: pip install dicee[all] --extra-index-url https://download.pytorch.org/whl/cpu
+#
+# NOTE: To avoid ~2GB NVIDIA CUDA dependencies, always use --extra-index-url https://download.pytorch.org/whl/cpu
 
-# Core dependencies
+# Core dependencies (includes torch and lightning)
+# Use --extra-index-url https://download.pytorch.org/whl/cpu for CPU-only installation
 _core_deps = [
     "numpy==1.26.4",
     "torch>=2.5.1",
@@ -24,8 +28,7 @@ _optional_deps = [
     "pykeen>=1.10.2",
     "psutil>=5.9.4",
     "matplotlib>=3.8.2",
-    "zstandard>=0.21.0",
-    "gradio>=3.23.0",
+    "zstandard>=0.21.0"
 ]
 
 # Development dependencies
@@ -72,7 +75,8 @@ extras["docs"] = _docs_deps
 # All extras
 extras["all"] = _core_deps + _optional_deps + _dev_deps + _docs_deps
 
-# Base installation includes core dependencies
+# Base installation includes core dependencies (torch and lightning included)
+# Use --extra-index-url https://download.pytorch.org/whl/cpu to avoid NVIDIA CUDA dependencies
 install_requires = _core_deps
 
 with open('README.md', 'r') as fh:

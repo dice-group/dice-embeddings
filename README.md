@@ -41,17 +41,28 @@ Deploy a pre-trained embedding model without writing a single line of code.
 ## Installation
 <details><summary> Click me! </summary>
 
-### Installation from Source
-``` bash
-git clone https://github.com/dice-group/dice-embeddings.git
-cd dice-embeddings && conda create -n dice python=3.10.13 --no-default-packages && conda activate dice && pip install -e .
-# or
-pip install -e '.[dev]'       # installs core + dev dependencies
+### Installation from PyPI
+
+**CPU-only installation (recommended for most users):**
+```bash
+pip install dicee --extra-index-url https://download.pytorch.org/whl/cpu
 ```
-or
+
+**GPU/CUDA installation (for NVIDIA GPU users):**
 ```bash
 pip install dicee
 ```
+
+> **Note:** Installing without `--extra-index-url https://download.pytorch.org/whl/cpu` will include ~2GB of NVIDIA CUDA dependencies. For CPU-only usage, always include this flag.
+
+### Installation from Source
+``` bash
+git clone https://github.com/dice-group/dice-embeddings.git
+cd dice-embeddings && conda create -n dice python=3.10.13 --no-default-packages && conda activate dice && pip install -e . --extra-index-url https://download.pytorch.org/whl/cpu
+# or for development with all dependencies
+pip install -e '.[dev]' --extra-index-url https://download.pytorch.org/whl/cpu
+```
+
 ## Download Knowledge Graphs
 ```bash
 wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate && unzip KGs.zip
