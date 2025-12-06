@@ -75,39 +75,48 @@ class Trainer:
         return scheduler
 
     def _compute_tail_loss(self, logits, targets):
-        """Compute loss only on tail tokens (after SEP_RT, until EOS/PAD)."""
+        """Compute loss only on tail tokens (after SEP_RT, until EOS/PAD) """
         sep_rt_id = self.tokenizer.sep_rt_token_id
         eos_id = self.tokenizer.eos_token_id
         pad_id = self.tokenizer.pad_token_id
         
-        # Compute per-token loss
+        # 1. Create a coordinate grid [0, 1, ..., seq_len-1]
+        seq_len = targets.size(1)
+        range_tensor = torch.arange(seq_len, device=targets.device).unsqueeze(0) # [1, L]
+        
+        # 2. Find start positions (first occurrence of SEP_RT)
+        # (targets == sep_rt_id) gives a boolean mask. 
+        is_sep = (targets == sep_rt_id).float()
+        sep_indices = is_sep.argmax(dim=1) # [B]
+        
+        # 3. Find end positions (first EOS or PAD)
+        is_end = ((targets == eos_id) | (targets == pad_id)).float()
+        end_indices = is_end.argmax(dim=1)
+        
+        # Handle case where no end token is found (set to end of sequence)
+        # If argmax returns 0 and it wasn't actually at 0 (checked via is_end[:, 0]), it means not found
+        # But typically argmax on all-zeros returns 0. 
+        # Let's be robust: if sum(is_end) == 0 for a row, set end to seq_len
+        no_end_found = (is_end.sum(dim=1) == 0)
+        end_indices[no_end_found] = seq_len
+        
+        # 4. Create Mask
+        # active if index > sep_index AND index <= end_index
+        mask = (range_tensor > sep_indices.unsqueeze(1)) & \
+               (range_tensor <= end_indices.unsqueeze(1))
+               
+        # Compute Loss
         loss_per_token = F.cross_entropy(
             logits.reshape(-1, self.config.vocab_size),
             targets.reshape(-1),
             reduction='none'
         ).reshape(targets.shape)
         
-        # Create mask for tail tokens only
-        mask = torch.zeros_like(targets, dtype=torch.float)
-        for b in range(targets.shape[0]):
-            # Find SEP_RT position in targets
-            sep_rt_positions = (targets[b] == sep_rt_id).nonzero(as_tuple=True)[0]
-            if len(sep_rt_positions) == 0:
-                continue
-            start = sep_rt_positions[0].item() + 1  # Start after SEP_RT
-            
-            # Find end (EOS or PAD)
-            end = targets.shape[1]
-            for pos in range(start, targets.shape[1]):
-                if targets[b, pos] == eos_id or targets[b, pos] == pad_id:
-                    end = pos + 1 if targets[b, pos] == eos_id else pos  # Include EOS
-                    break
-            mask[b, start:end] = 1.0
+        masked_loss = (loss_per_token * mask.float()).sum()
+        num_active = mask.sum()
         
-        # Compute masked loss
-        if mask.sum() > 0:
-            tail_loss = (loss_per_token * mask).sum() / mask.sum()
-            return tail_loss.item()
+        if num_active > 0:
+            return (masked_loss / num_active).item()
         return 0.0
 
     def _compute_sampled_metrics(self, sample_size: int = 200, batch_size: int = 64) -> Dict[str, float]:
