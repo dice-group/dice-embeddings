@@ -18,6 +18,287 @@ from sklearn.metrics import accuracy_score, precision_recall_fscore_support, roc
 from tabpfn import TabPFNClassifier
 
 
+class EntityCentricConverter:
+    """
+    Converts Knowledge Graph to entity-centric tabular representation.
+    
+    Each row represents an entity with columns for each relation type.
+    Example:
+        Entity | LivesIn | IsA | Label
+        CaglarDemir | Germany | Person | 1.0
+        CaglarDemir | Germany | ComputerScientist | 1.0
+        Germany | NotApplicable | Country | 1.0
+    """
+    
+    def __init__(self, separator='\t', not_applicable='NotApplicable'):
+        """
+        Initialize the entity-centric converter.
+        
+        Parameters
+        ----------
+        separator : str
+            Delimiter used in the triple files (default: tab)
+        not_applicable : str
+            Value to use when a relation doesn't apply to an entity
+        """
+        self.separator = separator
+        self.not_applicable = not_applicable
+        self.all_relations = set()
+        self.entity_relations = defaultdict(lambda: defaultdict(list))  # entity -> relation -> list of values
+        
+    def read_triples(self, file_path: str) -> List[Tuple[str, str, str]]:
+        """
+        Read triples from a file.
+        
+        Parameters
+        ----------
+        file_path : str
+            Path to the triple file
+            
+        Returns
+        -------
+        List[Tuple[str, str, str]]
+            List of (head, relation, tail) tuples
+        """
+        triples = []
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                parts = line.split(self.separator)
+                if len(parts) == 3:
+                    h, r, t = parts
+                    triples.append((h.strip(), r.strip(), t.strip()))
+        return triples
+    
+    def build_entity_centric_structure(self, triples: List[Tuple[str, str, str]]) -> None:
+        """
+        Build entity-centric structure from triples.
+        
+        Parameters
+        ----------
+        triples : List[Tuple[str, str, str]]
+            List of (head, relation, tail) tuples
+        """
+        for h, r, t in triples:
+            self.all_relations.add(r)
+            self.entity_relations[h][r].append(t)
+        
+        print(f"Built entity-centric structure:")
+        print(f"  Entities: {len(self.entity_relations)}")
+        print(f"  Relations: {len(self.all_relations)}")
+    
+    def triples_to_entity_centric_tabular(self, triples: List[Tuple[str, str, str]], 
+                                          labels: List[int] = None) -> pd.DataFrame:
+        """
+        Convert triples to entity-centric tabular format.
+        
+        Each row represents one (entity, relation, value) combination.
+        Entities can appear in multiple rows if they participate in multiple relations.
+        
+        Parameters
+        ----------
+        triples : List[Tuple[str, str, str]]
+            List of (head, relation, tail) tuples
+        labels : List[int], optional
+            Binary labels for each triple (1 for positive, 0 for negative)
+            
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with columns: Entity, <relation1>, <relation2>, ..., Label
+        """
+        # Build structure from triples
+        self.build_entity_centric_structure(triples)
+        
+        rows = []
+        sorted_relations = sorted(self.all_relations)
+        
+        # Create a mapping from triple to label
+        triple_to_label = {}
+        if labels is not None:
+            for i, triple in enumerate(triples):
+                triple_to_label[triple] = labels[i]
+        
+        # Generate rows for each entity and its relation-value combinations
+        for entity in self.entity_relations:
+            entity_rels = self.entity_relations[entity]
+            
+            # Find all relation-value combinations for this entity
+            # We need to create a row for each unique combination
+            relation_values = {}
+            for rel in sorted_relations:
+                if rel in entity_rels:
+                    relation_values[rel] = entity_rels[rel]
+                else:
+                    relation_values[rel] = [self.not_applicable]
+            
+            # Generate all combinations (Cartesian product)
+            # For simplicity, we'll create one row per value per relation
+            # This means an entity can have multiple rows
+            max_values = max(len(vals) for vals in relation_values.values())
+            
+            for i in range(max_values):
+                row = {'Entity': entity}
+                
+                # Add each relation as a column
+                for rel in sorted_relations:
+                    values = relation_values[rel]
+                    if i < len(values):
+                        row[rel] = values[i]
+                    else:
+                        # Repeat the last value or use NotApplicable
+                        row[rel] = values[-1] if values else self.not_applicable
+                
+                # Determine label: find if this combination exists in the original triples
+                # For now, if any relation-value in this row matches a triple, mark as 1
+                label = 1.0  # Default to positive
+                if labels is not None:
+                    # Check if this specific row corresponds to any original triple
+                    found = False
+                    for rel in sorted_relations:
+                        if row[rel] != self.not_applicable:
+                            triple = (entity, rel, row[rel])
+                            if triple in triple_to_label:
+                                label = triple_to_label[triple]
+                                found = True
+                                break
+                    if not found:
+                        label = 1.0  # Default for combinations
+                
+                row['Label'] = label
+                rows.append(row)
+        
+        df = pd.DataFrame(rows)
+        return df
+    
+    def generate_entity_centric_dataset(self, train_file: str, valid_file: str = None, 
+                                       test_file: str = None, negative_ratio: float = 1.0) -> Dict:
+        """
+        Generate entity-centric tabular datasets from KG files.
+        
+        Parameters
+        ----------
+        train_file : str
+            Path to training triples
+        valid_file : str, optional
+            Path to validation triples
+        test_file : str, optional
+            Path to test triples
+        negative_ratio : float
+            Ratio of negative to positive samples
+            
+        Returns
+        -------
+        Dict
+            Dictionary with 'train', 'valid', 'test' DataFrames
+        """
+        print("="*80)
+        print("Entity-Centric Tabular Conversion")
+        print("="*80)
+        
+        result = {}
+        
+        # Load and convert training data
+        print("\nLoading training triples...")
+        train_triples = self.read_triples(train_file)
+        print(f"Loaded {len(train_triples)} training triples")
+        
+        # Generate negative samples
+        print("Generating negative samples...")
+        train_negative = self._generate_negative_samples(train_triples, 
+                                                         int(len(train_triples) * negative_ratio))
+        
+        all_train_triples = train_triples + train_negative
+        train_labels = [1] * len(train_triples) + [0] * len(train_negative)
+        
+        print("Converting to entity-centric format...")
+        train_df = self.triples_to_entity_centric_tabular(all_train_triples, train_labels)
+        result['train'] = train_df
+        print(f"Training data: {len(train_df)} rows, {len(train_df.columns)} columns")
+        
+        # Convert validation data if provided
+        if valid_file:
+            print("\nLoading validation triples...")
+            valid_triples = self.read_triples(valid_file)
+            print(f"Loaded {len(valid_triples)} validation triples")
+            
+            valid_negative = self._generate_negative_samples(valid_triples,
+                                                            int(len(valid_triples) * negative_ratio))
+            all_valid_triples = valid_triples + valid_negative
+            valid_labels = [1] * len(valid_triples) + [0] * len(valid_negative)
+            
+            valid_df = self.triples_to_entity_centric_tabular(all_valid_triples, valid_labels)
+            result['valid'] = valid_df
+            print(f"Validation data: {len(valid_df)} rows, {len(valid_df.columns)} columns")
+        
+        # Convert test data if provided
+        if test_file:
+            print("\nLoading test triples...")
+            test_triples = self.read_triples(test_file)
+            print(f"Loaded {len(test_triples)} test triples")
+            
+            test_negative = self._generate_negative_samples(test_triples,
+                                                           int(len(test_triples) * negative_ratio))
+            all_test_triples = test_triples + test_negative
+            test_labels = [1] * len(test_triples) + [0] * len(test_negative)
+            
+            test_df = self.triples_to_entity_centric_tabular(all_test_triples, test_labels)
+            result['test'] = test_df
+            print(f"Test data: {len(test_df)} rows, {len(test_df.columns)} columns")
+        
+        return result
+    
+    def _generate_negative_samples(self, positive_triples: List[Tuple[str, str, str]], 
+                                   num_negative: int) -> List[Tuple[str, str, str]]:
+        """
+        Generate negative triples by corrupting positive ones.
+        
+        Parameters
+        ----------
+        positive_triples : List[Tuple[str, str, str]]
+            List of positive triples
+        num_negative : int
+            Number of negative samples to generate
+            
+        Returns
+        -------
+        List[Tuple[str, str, str]]
+            List of negative triples
+        """
+        existing_triples = set(positive_triples)
+        negative_triples = []
+        
+        # Extract all entities
+        all_entities = set()
+        for h, r, t in positive_triples:
+            all_entities.add(h)
+            all_entities.add(t)
+        
+        entities_list = list(all_entities)
+        
+        attempts = 0
+        max_attempts = num_negative * 10
+        
+        while len(negative_triples) < num_negative and attempts < max_attempts:
+            h, r, t = positive_triples[np.random.randint(len(positive_triples))]
+            
+            # Randomly corrupt head or tail
+            if np.random.random() < 0.5:
+                corrupted = (np.random.choice(entities_list), r, t)
+            else:
+                corrupted = (h, r, np.random.choice(entities_list))
+            
+            if corrupted not in existing_triples:
+                negative_triples.append(corrupted)
+                existing_triples.add(corrupted)
+            
+            attempts += 1
+        
+        return negative_triples
+
+
 class KGToTabularConverter:
     """
     Converts Knowledge Graph triples into tabular features for TabPFN.
@@ -413,7 +694,8 @@ class KGToTabularConverter:
         return result
 
 
-def load_kg_for_tabpfn(dataset_dir: str, negative_ratio: float = 1.0) -> Dict:
+def load_kg_for_tabpfn(dataset_dir: str, negative_ratio: float = 1.0, 
+                       entity_centric: bool = False) -> Dict:
     """
     Convenience function to load a knowledge graph dataset for TabPFN.
     
@@ -423,21 +705,30 @@ def load_kg_for_tabpfn(dataset_dir: str, negative_ratio: float = 1.0) -> Dict:
         Path to directory containing train.txt, valid.txt, test.txt
     negative_ratio : float
         Ratio of negative to positive samples
+    entity_centric : bool
+        If True, use entity-centric representation (each row = entity with all relations)
+        If False, use triple-centric representation (each row = triple with features)
         
     Returns
     -------
     Dict
-        Dictionary with train/valid/test splits containing X and y
+        Dictionary with train/valid/test splits.
+        If entity_centric=True: contains DataFrames
+        If entity_centric=False: contains X and y arrays
         
     Example
     -------
-    >>> data = load_kg_for_tabpfn('KGs/UMLS')
+    >>> # Triple-centric (original approach)
+    >>> data = load_kg_for_tabpfn('KGs/UMLS', entity_centric=False)
     >>> X_train, y_train = data['train']['X'], data['train']['y']
     >>> X_test, y_test = data['test']['X'], data['test']['y']
+    >>> 
+    >>> # Entity-centric (new approach)
+    >>> data = load_kg_for_tabpfn('KGs/UMLS', entity_centric=True)
+    >>> train_df = data['train']  # DataFrame with columns: Entity, Relation1, Relation2, ..., Label
+    >>> test_df = data['test']
     """
     import os
-    
-    converter = KGToTabularConverter()
     
     train_file = os.path.join(dataset_dir, 'train.txt')
     valid_file = os.path.join(dataset_dir, 'valid.txt')
@@ -453,16 +744,26 @@ def load_kg_for_tabpfn(dataset_dir: str, negative_ratio: float = 1.0) -> Dict:
     if files_to_use['train'] is None:
         raise FileNotFoundError(f"Training file not found: {train_file}")
     
-    return converter.load_and_convert(
-        train_file=files_to_use['train'],
-        valid_file=files_to_use['valid'],
-        test_file=files_to_use['test'],
-        negative_ratio=negative_ratio
-    )
+    if entity_centric:
+        converter = EntityCentricConverter()
+        return converter.generate_entity_centric_dataset(
+            train_file=files_to_use['train'],
+            valid_file=files_to_use['valid'],
+            test_file=files_to_use['test'],
+            negative_ratio=negative_ratio
+        )
+    else:
+        converter = KGToTabularConverter()
+        return converter.load_and_convert(
+            train_file=files_to_use['train'],
+            valid_file=files_to_use['valid'],
+            test_file=files_to_use['test'],
+            negative_ratio=negative_ratio
+        )
 
 
 def train_and_evaluate(dataset_dir='KGs/UMLS', negative_ratio=1.0, device='cpu', 
-                      max_train_samples=1000, n_estimators=8):
+                      max_train_samples=1000, n_estimators=8, entity_centric=False):
     """
     Complete pipeline for training TabPFN on KG data.
     
@@ -478,6 +779,9 @@ def train_and_evaluate(dataset_dir='KGs/UMLS', negative_ratio=1.0, device='cpu',
         Maximum training samples (TabPFN limitation)
     n_estimators : int
         Number of ensemble estimators for TabPFN
+    entity_centric : bool
+        If True, use entity-centric representation
+        If False, use triple-centric representation (default)
         
     Returns
     -------
@@ -486,21 +790,63 @@ def train_and_evaluate(dataset_dir='KGs/UMLS', negative_ratio=1.0, device='cpu',
     """
     
     print("="*80)
-    print("TabPFN Link Prediction on Knowledge Graph")
+    mode_str = "Entity-Centric" if entity_centric else "Triple-Centric"
+    print(f"TabPFN Link Prediction on Knowledge Graph ({mode_str})")
     print("="*80)
     
     # Step 1: Load and convert data
     print("\n[1/4] Loading and converting knowledge graph data...")
-    data = load_kg_for_tabpfn(dataset_dir, negative_ratio=negative_ratio)
+    data = load_kg_for_tabpfn(dataset_dir, negative_ratio=negative_ratio, 
+                               entity_centric=entity_centric)
     
-    X_train, y_train = data['train']['X'], data['train']['y']
-    
-    if 'valid' not in data or 'test' not in data:
-        print("Warning: Missing validation or test data")
-        return None
+    if entity_centric:
+        # DataFrames for entity-centric
+        train_df = data['train']
         
-    X_valid, y_valid = data['valid']['X'], data['valid']['y']
-    X_test, y_test = data['test']['X'], data['test']['y']
+        if 'valid' not in data or 'test' not in data:
+            print("Warning: Missing validation or test data")
+            return None
+            
+        valid_df = data['valid']
+        test_df = data['test']
+        
+        # Convert to numpy arrays for TabPFN
+        # Use label encoding for categorical features
+        from sklearn.preprocessing import LabelEncoder
+        
+        # Encode all string columns
+        le_dict = {}
+        for col in train_df.columns:
+            if col != 'Label' and train_df[col].dtype == 'object':
+                le = LabelEncoder()
+                # Fit on all possible values from train, valid, test
+                all_values = pd.concat([train_df[col], valid_df[col], test_df[col]]).unique()
+                le.fit(all_values)
+                le_dict[col] = le
+                
+                train_df[col] = le.transform(train_df[col])
+                valid_df[col] = le.transform(valid_df[col])
+                test_df[col] = le.transform(test_df[col])
+        
+        # Extract features and labels
+        X_train = train_df.drop('Label', axis=1).values.astype(np.float32)
+        y_train = train_df['Label'].values.astype(np.int32)
+        
+        X_valid = valid_df.drop('Label', axis=1).values.astype(np.float32)
+        y_valid = valid_df['Label'].values.astype(np.int32)
+        
+        X_test = test_df.drop('Label', axis=1).values.astype(np.float32)
+        y_test = test_df['Label'].values.astype(np.int32)
+    else:
+        # Arrays for triple-centric
+        X_train, y_train = data['train']['X'], data['train']['y']
+        
+        if 'valid' not in data or 'test' not in data:
+            print("Warning: Missing validation or test data")
+            return None
+            
+        X_valid, y_valid = data['valid']['X'], data['valid']['y']
+        X_test, y_test = data['test']['X'], data['test']['y']
     
     print(f"\nDataset statistics:")
     print(f"  Training: {X_train.shape[0]} samples")
@@ -628,7 +974,7 @@ def experiment_with_different_ratios(dataset_dir='KGs/UMLS', ratios=None):
     return results
 
 
-def convert_only(dataset_dir='KGs/UMLS', negative_ratio=1.0):
+def convert_only(dataset_dir='KGs/UMLS', negative_ratio=1.0, entity_centric=False):
     """
     Only convert KG data to tabular format without training.
     
@@ -638,31 +984,99 @@ def convert_only(dataset_dir='KGs/UMLS', negative_ratio=1.0):
         Path to KG dataset directory
     negative_ratio : float
         Ratio of negative to positive samples
+    entity_centric : bool
+        If True, use entity-centric representation
+        If False, use triple-centric representation (default)
     """
     print("="*80)
-    print("Knowledge Graph to Tabular Data Conversion for TabPFN")
+    mode_str = "Entity-Centric" if entity_centric else "Triple-Centric"
+    print(f"Knowledge Graph to Tabular Data Conversion ({mode_str})")
     print("="*80)
     
     # Load dataset
-    data = load_kg_for_tabpfn(dataset_dir, negative_ratio=negative_ratio)
+    data = load_kg_for_tabpfn(dataset_dir, negative_ratio=negative_ratio, 
+                               entity_centric=entity_centric)
     
     print("\n" + "="*80)
     print("Summary:")
     print("="*80)
-    for split in ['train', 'valid', 'test']:
-        if split in data:
-            X, y = data[split]['X'], data[split]['y']
-            print(f"\n{split.capitalize()}:")
-            print(f"  Shape: {X.shape}")
-            print(f"  Positive samples: {np.sum(y == 1)}")
-            print(f"  Negative samples: {np.sum(y == 0)}")
-            print(f"  Feature names: h_idx, r_idx, t_idx, h_out_deg, h_in_deg, ...")
+    
+    if entity_centric:
+        for split in ['train', 'valid', 'test']:
+            if split in data:
+                df = data[split]
+                print(f"\n{split.capitalize()}:")
+                print(f"  Shape: {df.shape}")
+                print(f"  Columns: {list(df.columns)}")
+                print(f"  Positive samples: {np.sum(df['Label'] == 1)}")
+                print(f"  Negative samples: {np.sum(df['Label'] == 0)}")
+                print(f"\n  Sample rows:")
+                print(df.head(5).to_string())
+    else:
+        for split in ['train', 'valid', 'test']:
+            if split in data:
+                X, y = data[split]['X'], data[split]['y']
+                print(f"\n{split.capitalize()}:")
+                print(f"  Shape: {X.shape}")
+                print(f"  Positive samples: {np.sum(y == 1)}")
+                print(f"  Negative samples: {np.sum(y == 0)}")
+                print(f"  Feature names: h_idx, r_idx, t_idx, h_out_deg, h_in_deg, ...")
     
     print("\n" + "="*80)
     print("Data is ready for TabPFN!")
     print("="*80)
     
     return data
+
+
+def demo_entity_centric():
+    """
+    Demonstrate the entity-centric approach with a simple example.
+    
+    Example Knowledge Graph:
+        CaglarDemir LivesIn Germany
+        CaglarDemir isA ComputerScientist
+        CaglarDemir isA Person
+        Germany isA Country
+    
+    Entity-Centric Table:
+        | Entity       | LivesIn        | isA                  | Label |
+        |:-------------|:---------------|:---------------------|:------|
+        | CaglarDemir  | Germany        | Person               | 1.0   |
+        | CaglarDemir  | Germany        | ComputerScientist    | 1.0   |
+        | Germany      | NotApplicable  | Country              | 1.0   |
+    """
+    print("="*80)
+    print("Entity-Centric Conversion Demo")
+    print("="*80)
+    
+    # Create a simple example
+    triples = [
+        ('CaglarDemir', 'LivesIn', 'Germany'),
+        ('CaglarDemir', 'isA', 'ComputerScientist'),
+        ('CaglarDemir', 'isA', 'Person'),
+        ('Germany', 'isA', 'Country')
+    ]
+    
+    print("\nInput Knowledge Graph Triples:")
+    for h, r, t in triples:
+        print(f"  {h} {r} {t}")
+    
+    # Convert to entity-centric format
+    converter = EntityCentricConverter()
+    labels = [1] * len(triples)  # All positive
+    df = converter.triples_to_entity_centric_tabular(triples, labels)
+    
+    print("\nEntity-Centric Tabular Representation:")
+    print(df.to_string(index=False))
+    
+    print("\n" + "="*80)
+    print("Each row represents an entity with its relation-value pairs.")
+    print("Entities can appear in multiple rows if they have multiple values")
+    print("for the same relation (e.g., CaglarDemir isA Person and ComputerScientist)")
+    print("="*80)
+    
+    return df
 
 
 if __name__ == "__main__":
@@ -673,14 +1087,27 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Convert only (no training)
-  python kg_to_tabular.py --convert-only --dataset KGs/UMLS
+  # Demo the entity-centric approach with example data
+  python tabpfn_over_graph.py --demo
   
-  # Train TabPFN
-  python kg_to_tabular.py --train --dataset KGs/UMLS --negative_ratio 1.0
+  # Convert only (triple-centric, default)
+  python tabpfn_over_graph.py --convert-only --dataset KGs/UMLS
+  
+  # Convert only (entity-centric)
+  python tabpfn_over_graph.py --convert-only --dataset KGs/UMLS --entity-centric
+  
+  # Train TabPFN (triple-centric)
+  python tabpfn_over_graph.py --train --dataset KGs/UMLS --negative_ratio 1.0
+  
+  # Train TabPFN (entity-centric)
+  python tabpfn_over_graph.py --train --dataset KGs/UMLS --entity-centric
   
   # Run experiments with different ratios
-  python kg_to_tabular.py --experiment --dataset KGs/UMLS
+  python tabpfn_over_graph.py --experiment --dataset KGs/UMLS
+  
+Approaches:
+  Triple-Centric (default): Each row represents a triple (h,r,t) with graph features
+  Entity-Centric (--entity-centric): Each row represents an entity with all its relations as columns
         """
     )
     
@@ -695,6 +1122,8 @@ Examples:
                        help='Maximum training samples for TabPFN (default: 1000)')
     parser.add_argument('--n_estimators', type=int, default=8,
                        help='Number of TabPFN ensemble estimators (default: 8)')
+    parser.add_argument('--entity-centric', action='store_true',
+                       help='Use entity-centric representation (each row = entity with all relations)')
     
     # Mode selection
     mode_group = parser.add_mutually_exclusive_group()
@@ -704,22 +1133,37 @@ Examples:
                            help='Train TabPFN model')
     mode_group.add_argument('--experiment', action='store_true',
                            help='Run experiments with different negative ratios')
+    mode_group.add_argument('--demo', action='store_true',
+                           help='Run entity-centric demo with example data')
     
     args = parser.parse_args()
     
+    # Handle demo mode
+    if args.demo:
+        demo_entity_centric()
     # Default to convert-only if no mode specified
-    if not (args.convert_only or args.train or args.experiment):
+    elif not (args.convert_only or args.train or args.experiment):
         args.convert_only = True
-    
-    if args.convert_only:
-        convert_only(args.dataset, args.negative_ratio)
-    elif args.experiment:
-        experiment_with_different_ratios(args.dataset)
+        convert_only(
+            dataset_dir=args.dataset,
+            negative_ratio=args.negative_ratio,
+            entity_centric=args.entity_centric
+        )
+    elif args.convert_only:
+        convert_only(
+            dataset_dir=args.dataset,
+            negative_ratio=args.negative_ratio,
+            entity_centric=args.entity_centric
+        )
     elif args.train:
         train_and_evaluate(
             dataset_dir=args.dataset,
             negative_ratio=args.negative_ratio,
             device=args.device,
             max_train_samples=args.max_train_samples,
-            n_estimators=args.n_estimators
+            n_estimators=args.n_estimators,
+            entity_centric=args.entity_centric
         )
+    elif args.experiment:
+        print("Note: Experiment mode uses triple-centric approach")
+        experiment_with_different_ratios(dataset_dir=args.dataset)
