@@ -22,7 +22,7 @@ class Trainer:
     def __init__(self, model: ByteGenModel, train_loader: DataLoader, config: ByteGenConfig, tokenizer: ByteTokenizer, 
                  optimizer: torch.optim.Optimizer = None, save_path: str = "checkpoints",
                  warmup_epochs: int = 5, label_smoothing: float = 0.0, grad_clip: float = 1.0,
-                 train_dataset=None):
+                 train_dataset=None, eval_batch_size: int = 128):
         self.model = model
         self.train_loader = train_loader
         self.config = config
@@ -34,6 +34,7 @@ class Trainer:
         self.label_smoothing = label_smoothing
         self.grad_clip = grad_clip
         self.train_dataset = train_dataset
+        self.eval_batch_size = eval_batch_size
         os.makedirs(self.save_path, exist_ok=True)
         
         # Build entity list for H@1 computation
@@ -307,7 +308,7 @@ class Trainer:
                     
                     # Periodically compute sampled MRR
                     if global_step % 500 == 0:
-                        metrics = self._compute_sampled_metrics(sample_size=128, batch_size=128)
+                        metrics = self._compute_sampled_metrics(sample_size=128, batch_size=self.eval_batch_size)
                         log_dict.update({
                             "train/sampled_mrr": metrics["mrr"],
                             "train/sampled_h1": metrics["h1"]

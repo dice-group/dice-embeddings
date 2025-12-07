@@ -166,6 +166,7 @@ def run_experiment(args):
             label_smoothing=label_smoothing,
             warmup_epochs=5,
             train_dataset=train_ds,
+            eval_batch_size=eval_batch_size
         )
         trainer.train(epochs)
                 
