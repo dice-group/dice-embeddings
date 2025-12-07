@@ -356,14 +356,6 @@ class Trainer:
                         "epoch": epoch,
                     }
                     
-                    # Periodically compute sampled MRR
-                    if global_step % 500 == 0:
-                        metrics = self._compute_sampled_metrics(sample_size=128, batch_size=self.eval_batch_size)
-                        log_dict.update({
-                            "train/sampled_mrr": metrics["mrr"],
-                            "train/sampled_h1": metrics["h1"]
-                        })
-                    
                     wandb.log(log_dict, step=global_step)
                 
                 avg_loss = total_loss / num_batches
@@ -377,6 +369,17 @@ class Trainer:
                         'loss': f"{avg_loss:.4f}",
                     })
             
+            # Compute sampled metrics at the end of each epoch
+            if wandb.run is not None:
+                metrics = self._compute_sampled_metrics(sample_size=200, batch_size=self.eval_batch_size)
+                # Use the step count at the end of the epoch
+                current_step = (epoch + 1) * len(self.train_loader)
+                wandb.log({
+                    "train/sampled_mrr": metrics["mrr"],
+                    "train/sampled_h1": metrics["h1"],
+                    "epoch": epoch + 1
+                }, step=current_step)
+
             # Step scheduler after each epoch (only if it exists)
             if scheduler is not None:
                 scheduler.step()
