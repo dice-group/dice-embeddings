@@ -128,7 +128,7 @@ class Trainer:
         return 0.0
 
     def _compute_sampled_metrics(self, sample_size: int = 200, batch_size: int = 64) -> Dict[str, float]:
-        """Compute MRR and H@1 on a sample of training triples using KV caching."""
+        """Compute MRR and H@1 on a sample of training triples using KV caching and optimized scoring."""
         if self.train_dataset is None or self.entities is None:
             return {"mrr": 0.0, "h1": 0.0}
         
@@ -143,11 +143,15 @@ class Trainer:
         mrr_sum = 0.0
         hits1 = 0
         
-        # Determine suffix based on dataset type (same as Evaluator)
+        # Determine suffix based on dataset type
         if isinstance(self.train_dataset, (ByteGenBFSDataset, IsolatedTripleDataset)):
             suffix_token_id = self.tokenizer.eos_token_id
         else:
             suffix_token_id = self.tokenizer.sep_hr_token_id
+            
+        # AMP setup
+        use_amp = str(self.device).startswith('cuda')
+        dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
         
         with torch.no_grad():
             for idx in sample_indices:
@@ -160,23 +164,17 @@ class Trainer:
                 
                 # Cache prefix once
                 prefix_tensor = torch.tensor([prefix], dtype=torch.long, device=self.device)
-                prefix_logits, prefix_kv = self.model(prefix_tensor)
-                prefix_last_logprobs = F.log_softmax(prefix_logits[:, -1, :], dim=-1)
                 
-                # Score all candidate entities
-                all_scores = []
+                with torch.amp.autocast(device_type='cuda', dtype=dtype, enabled=use_amp):
+                    prefix_logits, prefix_kv = self.model(prefix_tensor)
+                    # Use raw logits for cross_entropy
+                    last_prefix_logit = prefix_logits[:, -1:, :] # [1, 1, V]
+                
+                all_scores_list = []
+                
                 for i in range(0, len(self.entities), batch_size):
                     batch_entities = self.entities[i:i+batch_size]
                     curr_batch_size = len(batch_entities)
-                    
-                    # Expand cached KV for batch
-                    batch_kv = []
-                    for layer_kv in prefix_kv:
-                        k, v = layer_kv
-                        batch_kv.append((
-                            k.expand(curr_batch_size, -1, -1, -1),
-                            v.expand(curr_batch_size, -1, -1, -1)
-                        ))
                     
                     # Build candidate sequences (without prefix)
                     max_cand_len = max(len(e) for e in batch_entities) + 1
@@ -192,37 +190,51 @@ class Trainer:
                     cand_tensor = torch.tensor(cand_seqs, dtype=torch.long, device=self.device)
                     cand_lens_tensor = torch.tensor(cand_lengths, device=self.device)
                     
-                    # Forward with cached KV
-                    cand_logits, _ = self.model(cand_tensor, past_kvs=batch_kv)
-                    cand_logprobs = F.log_softmax(cand_logits, dim=-1)
+                    # Expand KV cache
+                    batch_kv = []
+                    for layer_kv in prefix_kv:
+                        k, v = layer_kv
+                        batch_kv.append((
+                            k.expand(curr_batch_size, -1, -1, -1),
+                            v.expand(curr_batch_size, -1, -1, -1)
+                        ))
                     
-                    # Vectorized Scoring
-                    # 1. First token from cached prefix
-                    first_token_scores = prefix_last_logprobs[0, cand_tensor[:, 0]]
-                    
-                    # 2. Remaining tokens
-                    if max_cand_len > 1:
-                        # cand_logprobs[:, t] predicts cand_tensor[:, t+1]
-                        targets = cand_tensor[:, 1:]
-                        # We need logprobs from 0 to L-2 (predicting 1 to L-1)
-                        # cand_logprobs has shape (B, L, V) usually, but targets is (B, L-1)
-                        # Slice cand_logprobs to match targets length
-                        target_logprobs = cand_logprobs[:, :targets.size(1), :].gather(2, targets.unsqueeze(2)).squeeze(2)
+                    with torch.amp.autocast(device_type='cuda', dtype=dtype, enabled=use_amp):
+                        # Forward with cached KV
+                        cand_logits, _ = self.model(cand_tensor, past_kvs=batch_kv)
                         
-                        # Mask padding
-                        seq_range = torch.arange(target_logprobs.size(1), device=self.device).unsqueeze(0)
-                        mask = seq_range < (cand_lens_tensor - 1).unsqueeze(1)
+                        # Expand prefix logit: [B, 1, V]
+                        batch_prefix_logit = last_prefix_logit.expand(curr_batch_size, -1, -1)
                         
-                        remaining_scores = (target_logprobs * mask).sum(dim=1)
-                        total_scores = first_token_scores + remaining_scores
-                    else:
-                        total_scores = first_token_scores
+                        # Concatenate to get predictions for all tokens including first
+                        # full_logits[:, 0] comes from prefix and predicts cand_tensor[:, 0]
+                        full_logits = torch.cat([batch_prefix_logit, cand_logits], dim=1)
                         
-                    # Normalize
-                    final_scores = total_scores / cand_lens_tensor
-                    all_scores.append(final_scores.cpu().numpy())
+                        # Shift for Cross Entropy
+                        # We predict cand_tensor. Input logits are full_logits[:, :-1]
+                        shift_logits = full_logits[:, :-1, :] # [B, L, V]
+                        shift_labels = cand_tensor            # [B, L]
+                        
+                        # Permute for F.cross_entropy: [B, V, L]
+                        shift_logits = shift_logits.permute(0, 2, 1)
+                        
+                        # Calculate NLL
+                        token_nll = F.cross_entropy(
+                            shift_logits,
+                            shift_labels,
+                            reduction='none',
+                            ignore_index=self.tokenizer.pad_token_id
+                        )
+                        
+                        # Sum and Negate to get LogProb
+                        summed_scores = -token_nll.sum(dim=1)
+                        
+                        # Normalize
+                        final_scores = summed_scores / cand_lens_tensor
+                        all_scores_list.append(final_scores)
                 
-                scores = np.concatenate(all_scores)
+                # Concatenate all scores on GPU
+                scores = torch.cat(all_scores_list)
                 
                 # Find target index
                 if t in self.entity_to_idx:
@@ -232,16 +244,16 @@ class Trainer:
                     
                 target_score = scores[target_idx]
                 
-                # Filter known facts
+                # Filter known facts (Vectorized on GPU)
                 valid_tails = self.hr_to_t.get((h, r), set())
-                for val_t in valid_tails:
-                    if val_t == t:
-                        continue
-                    if val_t in self.entity_to_idx:
-                        scores[self.entity_to_idx[val_t]] = -float('inf')
+                if len(valid_tails) > 1:
+                    valid_indices = [self.entity_to_idx[vt] for vt in valid_tails if vt in self.entity_to_idx and vt != t]
+                    if valid_indices:
+                        mask_indices = torch.tensor(valid_indices, device=self.device, dtype=torch.long)
+                        scores.index_fill_(0, mask_indices, -float('inf'))
                 
-                # Check if target is rank 1
-                rank = np.sum(scores > target_score) + 1
+                # Rank on GPU
+                rank = (scores > target_score).sum().item() + 1
                 mrr_sum += 1.0 / rank
                 if rank == 1:
                     hits1 += 1
