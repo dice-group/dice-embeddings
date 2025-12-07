@@ -221,7 +221,6 @@ class Evaluator:
                 summed_scores = -token_nll.sum(dim=1)
                 
                 # Normalize by length
-                # Note: cand_lens includes the suffix. Ensure this matches your training logic.
                 gpu_scores[i : i + current_batch_size] = summed_scores / cand_lens
                 
 
