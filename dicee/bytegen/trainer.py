@@ -153,8 +153,10 @@ class Trainer:
             return (masked_loss / num_active).item()
         return 0.0
 
-    def _compute_sampled_metrics(self, sample_size: int = 200, batch_size: int = 64) -> Dict[str, float]:
-        """Compute MRR and H@1 on a sample of training triples using KV caching and optimized scoring."""
+    def _compute_sampled_metrics(self, sample_size: int = 200, batch_size: int = 512) -> Dict[str, float]:
+        """
+        Compute MRR and H@1 
+        """
         if self.train_dataset is None or self.entities is None:
             return {"mrr": 0.0, "h1": 0.0}
         
@@ -174,9 +176,14 @@ class Trainer:
         dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
         
         num_candidates = self.entity_tensor.size(0)
-        # Pre-allocate scores tensor on GPU
+        
+        # Pre-allocate scores tensor on GPU to avoid allocation overhead
         gpu_scores = torch.zeros(num_candidates, device=self.device, dtype=torch.float32)
         
+        # Pre-calculate candidate lengths on CPU to avoid .item() syncs if entity_lengths is on GPU
+        # If entity_lengths is already CPU, this is just a reference.
+        cpu_cand_lens = self.entity_lengths.cpu() if hasattr(self.entity_lengths, "cpu") else self.entity_lengths
+
         with torch.inference_mode():
             for idx in sample_indices:
                 h, r, t = triples[idx]
@@ -186,28 +193,35 @@ class Trainer:
                          [self.tokenizer.sep_hr_token_id] + list(r) + \
                          [self.tokenizer.sep_rt_token_id]
                 
-                # Cache prefix once
                 prefix_tensor = torch.tensor([prefix], dtype=torch.long, device=self.device)
                 
+                # --- Step 1: Cache Prefix KV ---
                 with torch.amp.autocast(device_type='cuda', dtype=dtype, enabled=use_amp):
                     prefix_logits, prefix_kv = self.model(prefix_tensor)
-                    # Prepare Prefix KV
+                    # Clone to decouple from graph (though inference_mode handles this, it's safer for memory)
                     prefix_kv = [(k.clone(), v.clone()) for k, v in prefix_kv]
-                    # Use raw logits for cross_entropy
                     last_prefix_logit = prefix_logits[:, -1:, :] # [1, 1, V]
                 
-                # Score all candidates using pre-computed tensor
+                # --- Step 2: Batched Candidate Evaluation ---
                 for i in range(0, num_candidates, batch_size):
-                    cand_batch = self.entity_tensor[i : i + batch_size]
-                    cand_lens = self.entity_lengths[i : i + batch_size]
+                    # Slicing
+                    end_i = min(i + batch_size, num_candidates)
+                    curr_batch_size = end_i - i
                     
-                    # Dynamic trimming to max length in this batch
-                    max_len_in_batch = cand_lens.max().item()
+                    cand_batch = self.entity_tensor[i : end_i]
+                    
+                    # Optimization: Get max len from CPU tensor to avoid GPU sync
+                    # (Assuming cpu_cand_lens corresponds to entity_tensor indices)
+                    max_len_in_batch = cpu_cand_lens[i : end_i].max().item()
+                    
                     cand_batch = cand_batch[:, :max_len_in_batch]
                     
-                    curr_batch_size = cand_batch.size(0)
+                    # Move batch to GPU if it isn't already
+                    if cand_batch.device != self.device:
+                        cand_batch = cand_batch.to(self.device, non_blocking=True)
                     
                     # Expand KV cache
+                    # We use .expand() which is a view (zero memory copy), very fast
                     batch_kv = [
                         (k.expand(curr_batch_size, -1, -1, -1),
                          v.expand(curr_batch_size, -1, -1, -1))
@@ -215,54 +229,69 @@ class Trainer:
                     ]
                     
                     with torch.amp.autocast(device_type='cuda', dtype=dtype, enabled=use_amp):
-                        # Forward with cached KV
+                        # Forward pass
                         cand_logits, _ = self.model(cand_batch, past_kvs=batch_kv)
                         
-                        # Expand prefix logit: [B, 1, V]
+                        # Expand prefix logit
                         batch_prefix_logit = last_prefix_logit.expand(curr_batch_size, -1, -1)
                         
-                        # Concatenate to get predictions for all tokens including first
+                        # Concat
                         full_logits = torch.cat([batch_prefix_logit, cand_logits], dim=1)
                         
                         # Shift for Cross Entropy
-                        shift_logits = full_logits[:, :-1, :] # [B, L, V]
-                        shift_labels = cand_batch             # [B, L]
+                        # Logits: [B, L, V], Labels: [B, L]
+                        shift_logits = full_logits[:, :-1, :].contiguous() # Contiguous often needed for view/reshape
+                        shift_labels = cand_batch
                         
-                        # Permute for F.cross_entropy: [B, V, L]
-                        shift_logits = shift_logits.permute(0, 2, 1)
+                        # Optimization: Use ignore_index in CrossEntropy directly
+                        # We calculate loss per token, then sum
                         
-                        # Calculate NLL
-                        token_nll = F.cross_entropy(
-                            shift_logits,
-                            shift_labels,
+                        # Flattening is usually faster than permuting for CE in PyTorch
+                        loss_per_token = F.cross_entropy(
+                            shift_logits.view(-1, shift_logits.size(-1)),
+                            shift_labels.view(-1),
                             reduction='none',
                             ignore_index=self.tokenizer.pad_token_id
                         )
                         
-                        # Sum and Negate to get LogProb
-                        summed_scores = -token_nll.sum(dim=1)
+                        # Reshape back to [B, L] to sum per entity
+                        loss_per_token = loss_per_token.view(curr_batch_size, -1)
                         
-                        # Normalize
-                        gpu_scores[i : i + curr_batch_size] = summed_scores / cand_lens
+                        # Sum and Negate
+                        summed_scores = -loss_per_token.sum(dim=1)
+                        
+                        # Normalize by length (Length must be on GPU for division)
+                        batch_lens = cpu_cand_lens[i:end_i].to(self.device, non_blocking=True)
+                        gpu_scores[i : end_i] = summed_scores / batch_lens
                 
-                # Find target index
-                if t in self.entity_to_idx:
-                    target_idx = self.entity_to_idx[t]
-                else:
+                # --- Step 3: Filtering & Ranking ---
+                if t not in self.entity_to_idx:
                     continue
                     
+                target_idx = self.entity_to_idx[t]
                 target_score = gpu_scores[target_idx]
                 
-                # Filter known facts (Vectorized on GPU)
+                # Filter known facts
+                # Optimization: Check if filtering is actually needed (len > 1) to avoid overhead
                 valid_tails = self.hr_to_t.get((h, r), set())
+                
                 if len(valid_tails) > 1:
-                    valid_indices = [self.entity_to_idx[vt] for vt in valid_tails if vt in self.entity_to_idx and vt != t]
+                    # Pre-filter in CPU to minimize data transfer size
+                    valid_indices = [
+                        self.entity_to_idx[vt] 
+                        for vt in valid_tails 
+                        if vt in self.entity_to_idx and vt != t
+                    ]
+                    
                     if valid_indices:
+                        # Transfer only the small list of indices
                         mask_indices = torch.tensor(valid_indices, device=self.device, dtype=torch.long)
                         gpu_scores.index_fill_(0, mask_indices, -float('inf'))
                 
-                # Rank on GPU
+                # Rank
+                # Note: .item() here is unavoidable for logic flow, but happens only once per triple
                 rank = (gpu_scores > target_score).sum().item() + 1
+                
                 mrr_sum += 1.0 / rank
                 if rank == 1:
                     hits1 += 1
