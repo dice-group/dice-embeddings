@@ -98,6 +98,7 @@ def run_experiment(args):
                 project=wandb_config['project'],
                 entity=wandb_config['entity'],
                 group=wandb_config['group'],
+                job_type=wandb_config.get('job_type'),
                 name=run_name,
                 config={
                     "dataset": dataset_type,
@@ -620,6 +621,10 @@ def main():
                         help='Wandb project name (default: bytegen-grid-search)')
     parser.add_argument('--wandb_entity', type=str, default=None,
                         help='Wandb entity/team name (default: None, uses default entity)')
+    parser.add_argument('--wandb_group', type=str, default=None,
+                        help='Wandb group name (default: auto-generated)')
+    parser.add_argument('--wandb_job_type', type=str, default='train',
+                        help='Wandb job type (default: train)')
     parser.add_argument('--no_wandb', action='store_true',
                         help='Disable wandb logging')
     # Model architecture arguments
@@ -672,9 +677,14 @@ def main():
         # Extract dataset name from path for run naming
         dataset_name = os.path.basename(args.data_path.rstrip('/'))
         
+        # Determine group name
+        group_name = args.wandb_group if args.wandb_group else f"grid-search-{dataset_name}-{args.epochs}ep"
+        
         wandb.init(
             project=args.wandb_project,
             entity=args.wandb_entity,
+            group=group_name,
+            job_type="summary",
             name=f"grid-search-{dataset_name}-{args.epochs}ep",
             config={
                 "data_path": args.data_path,
@@ -692,15 +702,18 @@ def main():
                 "lr": args.lr,
                 "label_smoothing": args.label_smoothing,
                 "eval_batch_size": args.eval_batch_size,
+                "wandb_group": group_name,
+                "wandb_job_type": args.wandb_job_type
             }
         )
         wandb_config = {
             "project": args.wandb_project,
             "entity": args.wandb_entity,
-            "group": f"grid-search-{dataset_name}-{args.epochs}ep",
+            "group": group_name,
+            "job_type": args.wandb_job_type,
             "api_key": wandb_api_key
         }
-        print(f"Wandb initialized: project={args.wandb_project}, entity={args.wandb_entity or 'default'}")
+        print(f"Wandb initialized: project={args.wandb_project}, entity={args.wandb_entity or 'default'}, group={group_name}")
     
     # Detect available GPUs
     num_gpus = torch.cuda.device_count()
