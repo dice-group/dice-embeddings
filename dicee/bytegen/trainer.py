@@ -371,7 +371,7 @@ class Trainer:
             
             # Compute sampled metrics at the end of each epoch
             if wandb.run is not None:
-                metrics = self._compute_sampled_metrics(sample_size=200, batch_size=self.eval_batch_size)
+                metrics = self._compute_sampled_metrics(sample_size=128, batch_size=self.eval_batch_size)
                 # Use the step count at the end of the epoch
                 current_step = (epoch + 1) * len(self.train_loader)
                 wandb.log({
