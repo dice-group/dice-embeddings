@@ -249,7 +249,7 @@ class Trainer:
                         # Flattening is usually faster than permuting for CE in PyTorch
                         loss_per_token = F.cross_entropy(
                             shift_logits.view(-1, shift_logits.size(-1)),
-                            shift_labels.view(-1),
+                            shift_labels.reshape(-1),
                             reduction='none',
                             ignore_index=self.tokenizer.pad_token_id
                         )
