@@ -34,7 +34,7 @@ class ByteGenDataset(Dataset):
                 self._add_triple(h, r, t)
                 
                 # Add inverse relations for training to double graph density
-                if inverse and split == 'train':
+                if inverse:
                     self._add_triple(t, "INV_" + r, h)
 
     def _add_triple(self, h_str, r_str, t_str):
@@ -118,7 +118,7 @@ class IsolatedTripleDataset(Dataset):
                 h, r, t = parts[0], parts[1], parts[2]
                 self._add_triple(h, r, t)
                 
-                if inverse and split == 'train':
+                if inverse:
                     self._add_triple(t, "INV_" + r, h)
         
         # Set block_size: auto-calculate if None, otherwise validate
@@ -264,7 +264,7 @@ class ByteGenBFSDataset(Dataset):
                 h, r, t = parts[0], parts[1], parts[2]
                 self._add_triple(h, r, t)
                 
-                if inverse and split == 'train':
+                if inverse:
                     self._add_triple(t, "INV_" + r, h)
 
     def _add_triple(self, h_str, r_str, t_str):

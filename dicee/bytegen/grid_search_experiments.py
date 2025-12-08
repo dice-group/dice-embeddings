@@ -119,7 +119,7 @@ def run_experiment(args):
             # For Isolated: auto-calculate block_size from data to ensure it works for eval
             # First load with block_size=None to auto-calculate per-split minimums
             train_ds = IsolatedTripleDataset(dataset_path, tokenizer, split='train', block_size=None, inverse=inverse)
-            test_ds = IsolatedTripleDataset(dataset_path, tokenizer, split='test', block_size=None)
+            test_ds = IsolatedTripleDataset(dataset_path, tokenizer, split='test', block_size=None, inverse=inverse)
             
             # Compute eval-safe block_size (considers ALL entities as potential candidates)
             block_size = IsolatedTripleDataset.compute_required_block_size(train_ds, test_ds)
@@ -131,11 +131,11 @@ def run_experiment(args):
         elif dataset_type == 'BFS':
             block_size = 256
             train_ds = ByteGenBFSDataset(dataset_path, tokenizer, split='train', block_size=block_size, inverse=inverse)
-            test_ds = ByteGenBFSDataset(dataset_path, tokenizer, split='test', block_size=block_size)
+            test_ds = ByteGenBFSDataset(dataset_path, tokenizer, split='test', block_size=block_size, inverse=inverse)
         else:  # RandomWalk
             block_size = 256
             train_ds = ByteGenDataset(dataset_path, tokenizer, split='train', block_size=block_size, inverse=inverse)
-            test_ds = ByteGenDataset(dataset_path, tokenizer, split='test', block_size=block_size)
+            test_ds = ByteGenDataset(dataset_path, tokenizer, split='test', block_size=block_size, inverse=inverse)
         
         # Config with optimized parameters from run.py
         conf = ByteGenConfig(
@@ -337,15 +337,25 @@ def create_plots(df: pd.DataFrame, output_dir: str = "comparison_results", log_t
                 train_inverse_vals.append(0)
                 test_inverse_vals.append(0)
         
-        # Plot 4 bars per config: Train-Normal, Test-Normal, Train-Inverse, Test-Inverse
-        ax.bar(x - 1.5*width, train_normal_vals, width, color=train_color_normal, edgecolor='black', 
-               linewidth=0.5, label='Train')
-        ax.bar(x - 0.5*width, test_normal_vals, width, color=test_color_normal, edgecolor='black', 
-               linewidth=0.5, label='Test')
-        ax.bar(x + 0.5*width, train_inverse_vals, width, color=train_color_inverse, edgecolor='black', 
-               linewidth=0.5, hatch='///', label='Train (Inv)')
-        ax.bar(x + 1.5*width, test_inverse_vals, width, color=test_color_inverse, edgecolor='black', 
-               linewidth=0.5, hatch='///', label='Test (Inv)')
+        # Plot bars based on available data
+        has_normal = any(v > 0 for v in train_normal_vals)
+        
+        if not has_normal:
+             # Assume only Inverse data is relevant/present - center and remove special styling
+             ax.bar(x - 0.5*width, train_inverse_vals, width, color=train_color_inverse, edgecolor='black', 
+                   linewidth=0.5, label='Train')
+             ax.bar(x + 0.5*width, test_inverse_vals, width, color=test_color_inverse, edgecolor='black', 
+                   linewidth=0.5, label='Test')
+        else:
+             # Plot 4 bars per config: Train-Normal, Test-Normal, Train-Inverse, Test-Inverse
+             ax.bar(x - 1.5*width, train_normal_vals, width, color=train_color_normal, edgecolor='black', 
+                    linewidth=0.5, label='Train')
+             ax.bar(x - 0.5*width, test_normal_vals, width, color=test_color_normal, edgecolor='black', 
+                    linewidth=0.5, label='Test')
+             ax.bar(x + 0.5*width, train_inverse_vals, width, color=train_color_inverse, edgecolor='black', 
+                    linewidth=0.5, label='Train (Inv)')
+             ax.bar(x + 1.5*width, test_inverse_vals, width, color=test_color_inverse, edgecolor='black', 
+                    linewidth=0.5, label='Test (Inv)')
         
         ax.set_title(name, fontweight='bold')
         ax.set_ylabel(name)
@@ -658,7 +668,7 @@ def main():
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     
     dataset_types = ['RandomWalk', 'BFS', 'Isolated']
-    inverse_settings = [True, False]
+    inverse_settings = [True]
     experiments = [
         ('Byte', None),
         ('BPE', 260),
