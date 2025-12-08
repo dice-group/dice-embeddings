@@ -8,6 +8,7 @@ class CausalSelfAttention(nn.Module):
         assert config.n_embd % config.n_head == 0
         self.c_attn = nn.Linear(config.n_embd, 3 * config.n_embd)
         self.c_proj = nn.Linear(config.n_embd, config.n_embd)
+        self.c_proj._is_residual_proj = True
         self.resid_dropout = nn.Dropout(config.dropout)
         self.n_head = config.n_head
         self.n_embd = config.n_embd
@@ -70,6 +71,7 @@ class MLP(nn.Module):
         super().__init__()
         self.c_fc    = nn.Linear(config.n_embd, 4 * config.n_embd)
         self.c_proj  = nn.Linear(4 * config.n_embd, config.n_embd)
+        self.c_proj._is_residual_proj = True
         self.dropout = nn.Dropout(config.dropout)
         self.gelu = nn.GELU()
 

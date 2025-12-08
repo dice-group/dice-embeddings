@@ -42,6 +42,12 @@ class ByteGenModel(nn.Module):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
             if module.bias is not None:
                 torch.nn.init.zeros_(module.bias)
+            
+            # Special scaled init to the residual projections, per GPT-2 paper
+            if getattr(module, '_is_residual_proj', False):
+                scale = 1.0 / (2 * self.config.n_layer) ** 0.5
+                torch.nn.init.normal_(module.weight, mean=0.0, std=0.02 * scale)
+                
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
         elif isinstance(module, nn.LayerNorm):
