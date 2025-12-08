@@ -12,7 +12,7 @@ from dicee.bytegen.evaluator import Evaluator
 if __name__ == "__main__":
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     # Setup
-    dataset_path = os.path.join(os.getcwd(), "KGs/UMLS")
+    dataset_path = os.path.join(os.getcwd(), "KGs/WN18RR")
     
     # Initialize Tokenizer (with inverse=True to match dataset)
     USE_INVERSE = True
