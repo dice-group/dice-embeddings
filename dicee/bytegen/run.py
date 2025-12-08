@@ -2,6 +2,7 @@ import os
 from sympy import Inverse
 from torch.utils.data import DataLoader
 import torch
+import wandb
 from dicee.bytegen.bytegen import ByteGenModel, ByteGenConfig
 from dicee.bytegen.tokenizer import ByteTokenizer, train_bpe_tokenizer
 from dicee.bytegen.dataset import ByteGenDataset, ByteGenBFSDataset, IsolatedTripleDataset
@@ -11,6 +12,7 @@ from dicee.bytegen.evaluator import Evaluator
 
 if __name__ == "__main__":
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
+    wandb.init(project="bytegen-experiment")
     # Setup
     dataset_path = os.path.join(os.getcwd(), "KGs/WN18RR")
     
