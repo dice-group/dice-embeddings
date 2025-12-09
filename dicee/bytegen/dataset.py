@@ -283,7 +283,7 @@ class ByteGenBFSDataset(Dataset):
         h_start, r_start, t_start = self.triples[idx]
         
         # Build sequence: [H] [SEP_HR] [R] [SEP_RT] [T] [EOS]
-        seq = seq = [self.tokenizer.eos_token_id] + list(h_start) + \
+        seq = [self.tokenizer.eos_token_id] + list(h_start) + \
           [self.tokenizer.sep_hr_token_id] + list(r_start) + \
           [self.tokenizer.sep_rt_token_id] + list(t_start) + \
           [self.tokenizer.eos_token_id]
