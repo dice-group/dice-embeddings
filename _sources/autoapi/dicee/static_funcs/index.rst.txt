@@ -45,11 +45,6 @@ Functions
    dicee.static_funcs.intialize_model
    dicee.static_funcs.load_json
    dicee.static_funcs.save_embeddings
-   dicee.static_funcs.random_prediction
-   dicee.static_funcs.deploy_triple_prediction
-   dicee.static_funcs.deploy_tail_entity_prediction
-   dicee.static_funcs.deploy_head_entity_prediction
-   dicee.static_funcs.deploy_relation_prediction
    dicee.static_funcs.vocab_to_parquet
    dicee.static_funcs.create_experiment_folder
    dicee.static_funcs.continual_training_setup_executor
@@ -227,16 +222,6 @@ Module Contents
    :param indexes: List of index labels (entity/relation names).
    :param path: Output file path.
 
-
-.. py:function:: random_prediction(pre_trained_kge)
-
-.. py:function:: deploy_triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object)
-
-.. py:function:: deploy_tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, top_k)
-
-.. py:function:: deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, top_k)
-
-.. py:function:: deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k)
 
 .. py:function:: vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into)
 

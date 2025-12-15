@@ -478,9 +478,6 @@ Package Contents
 
 
 
-   .. py:method:: deploy(share: bool = False, top_k: int = 10)
-
-
    .. py:method:: predict_literals(entity: Union[List[str], str] = None, attribute: Union[List[str], str] = None, denormalize_preds: bool = True) -> numpy.ndarray
 
       Predicts literal values for given entities and attributes.

@@ -107,11 +107,6 @@
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.intialize_model"><code class="docutils literal notranslate"><span class="pre">intialize_model()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.load_json"><code class="docutils literal notranslate"><span class="pre">load_json()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.save_embeddings"><code class="docutils literal notranslate"><span class="pre">save_embeddings()</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.random_prediction"><code class="docutils literal notranslate"><span class="pre">random_prediction()</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.deploy_triple_prediction"><code class="docutils literal notranslate"><span class="pre">deploy_triple_prediction()</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.deploy_tail_entity_prediction"><code class="docutils literal notranslate"><span class="pre">deploy_tail_entity_prediction()</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.deploy_head_entity_prediction"><code class="docutils literal notranslate"><span class="pre">deploy_head_entity_prediction()</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.deploy_relation_prediction"><code class="docutils literal notranslate"><span class="pre">deploy_relation_prediction()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.vocab_to_parquet"><code class="docutils literal notranslate"><span class="pre">vocab_to_parquet()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.create_experiment_folder"><code class="docutils literal notranslate"><span class="pre">create_experiment_folder()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.continual_training_setup_executor"><code class="docutils literal notranslate"><span class="pre">continual_training_setup_executor()</span></code></a></li>
@@ -244,52 +239,37 @@ serialization, and various helper operations.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.save_embeddings" title="dicee.static_funcs.save_embeddings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_embeddings</span></code></a>(→ None)</p></td>
 <td><p>Save embeddings to a CSV file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.random_prediction" title="dicee.static_funcs.random_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">random_prediction</span></code></a>(pre_trained_kge)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.vocab_to_parquet" title="dicee.static_funcs.vocab_to_parquet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vocab_to_parquet</span></code></a>(vocab_to_idx, name, ...)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.deploy_triple_prediction" title="dicee.static_funcs.deploy_triple_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deploy_triple_prediction</span></code></a>(pre_trained_kge, str_subject, ...)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.deploy_tail_entity_prediction" title="dicee.static_funcs.deploy_tail_entity_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deploy_tail_entity_prediction</span></code></a>(pre_trained_kge, ...)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.deploy_head_entity_prediction" title="dicee.static_funcs.deploy_head_entity_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deploy_head_entity_prediction</span></code></a>(pre_trained_kge, ...)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.deploy_relation_prediction" title="dicee.static_funcs.deploy_relation_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deploy_relation_prediction</span></code></a>(pre_trained_kge, ...)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.vocab_to_parquet" title="dicee.static_funcs.vocab_to_parquet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vocab_to_parquet</span></code></a>(vocab_to_idx, name, ...)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.create_experiment_folder" title="dicee.static_funcs.create_experiment_folder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_experiment_folder</span></code></a>(→ str)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.create_experiment_folder" title="dicee.static_funcs.create_experiment_folder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_experiment_folder</span></code></a>(→ str)</p></td>
 <td><p>Create a timestamped experiment folder.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.continual_training_setup_executor" title="dicee.static_funcs.continual_training_setup_executor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">continual_training_setup_executor</span></code></a>(→ None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.continual_training_setup_executor" title="dicee.static_funcs.continual_training_setup_executor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">continual_training_setup_executor</span></code></a>(→ None)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.exponential_function" title="dicee.static_funcs.exponential_function"><code class="xref py py-obj docutils literal notranslate"><span class="pre">exponential_function</span></code></a>(→ torch.FloatTensor)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.exponential_function" title="dicee.static_funcs.exponential_function"><code class="xref py py-obj docutils literal notranslate"><span class="pre">exponential_function</span></code></a>(→ torch.FloatTensor)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.load_numpy" title="dicee.static_funcs.load_numpy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_numpy</span></code></a>(→ numpy.ndarray)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.load_numpy" title="dicee.static_funcs.load_numpy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_numpy</span></code></a>(→ numpy.ndarray)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.evaluate" title="dicee.static_funcs.evaluate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate</span></code></a>(entity_to_idx, scores, easy_answers, hard_answers)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.evaluate" title="dicee.static_funcs.evaluate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate</span></code></a>(entity_to_idx, scores, easy_answers, hard_answers)</p></td>
 <td><p># &#64;TODO: CD: Renamed this function</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.download_file" title="dicee.static_funcs.download_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_file</span></code></a>(url[, destination_folder])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.download_file" title="dicee.static_funcs.download_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_file</span></code></a>(url[, destination_folder])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.download_files_from_url" title="dicee.static_funcs.download_files_from_url"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_files_from_url</span></code></a>(→ None)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.download_files_from_url" title="dicee.static_funcs.download_files_from_url"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_files_from_url</span></code></a>(→ None)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.download_pretrained_model" title="dicee.static_funcs.download_pretrained_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_pretrained_model</span></code></a>(→ str)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.download_pretrained_model" title="dicee.static_funcs.download_pretrained_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_pretrained_model</span></code></a>(→ str)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.write_csv_from_model_parallel" title="dicee.static_funcs.write_csv_from_model_parallel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_csv_from_model_parallel</span></code></a>(path)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.write_csv_from_model_parallel" title="dicee.static_funcs.write_csv_from_model_parallel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_csv_from_model_parallel</span></code></a>(path)</p></td>
 <td><p>Create</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.from_pretrained_model_write_embeddings_into_csv" title="dicee.static_funcs.from_pretrained_model_write_embeddings_into_csv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_pretrained_model_write_embeddings_into_csv</span></code></a>(→ None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.from_pretrained_model_write_embeddings_into_csv" title="dicee.static_funcs.from_pretrained_model_write_embeddings_into_csv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_pretrained_model_write_embeddings_into_csv</span></code></a>(→ None)</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -543,31 +523,6 @@ serialization, and various helper operations.</p>
 </dd>
 </dl>
 </dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.static_funcs.random_prediction">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">random_prediction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pre_trained_kge</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.static_funcs.random_prediction" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.static_funcs.deploy_triple_prediction">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">deploy_triple_prediction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pre_trained_kge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str_subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str_predicate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str_object</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.static_funcs.deploy_triple_prediction" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.static_funcs.deploy_tail_entity_prediction">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">deploy_tail_entity_prediction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pre_trained_kge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str_subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str_predicate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.static_funcs.deploy_tail_entity_prediction" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.static_funcs.deploy_head_entity_prediction">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">deploy_head_entity_prediction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pre_trained_kge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str_object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str_predicate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.static_funcs.deploy_head_entity_prediction" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.static_funcs.deploy_relation_prediction">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">deploy_relation_prediction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pre_trained_kge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str_subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str_object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.static_funcs.deploy_relation_prediction" title="Link to this definition"></a></dt>
-<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs.vocab_to_parquet">
