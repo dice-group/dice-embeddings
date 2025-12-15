@@ -21,7 +21,7 @@ from torch.optim.lr_scheduler import LambdaLR
 
 import dicee.models.base_model
 from .abstracts import AbstractCallback
-from .eval_static_funcs import evaluate_ensemble_link_prediction_performance
+from .evaluation.ensemble import evaluate_ensemble_link_prediction_performance
 from .static_funcs import save_checkpoint_model, save_pickle
 
 
