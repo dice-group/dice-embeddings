@@ -4,7 +4,7 @@ Provides the KG class for handling knowledge graph data including
 loading, preprocessing, and indexing operations.
 """
 import sys
-from typing import Dict, Iterator, List, Optional, Tuple, Union
+from typing import Dict, Iterator, List, Optional, Tuple
 
 import pandas as pd
 import polars as pl
