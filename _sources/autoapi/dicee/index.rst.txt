@@ -3,6 +3,20 @@ dicee
 
 .. py:module:: dicee
 
+.. autoapi-nested-parse::
+
+   DICE Embeddings - Knowledge Graph Embedding Library.
+
+   A library for training and using knowledge graph embedding models
+   with support for various scoring techniques and training strategies.
+
+   Submodules:
+       evaluation: Model evaluation functions and Evaluator class
+       models: KGE model implementations
+       trainer: Training orchestration
+       scripts: Utility scripts
+
+
 
 Submodules
 ----------
@@ -17,6 +31,7 @@ Submodules
    /autoapi/dicee/config/index
    /autoapi/dicee/dataset_classes/index
    /autoapi/dicee/eval_static_funcs/index
+   /autoapi/dicee/evaluation/index
    /autoapi/dicee/evaluator/index
    /autoapi/dicee/executer/index
    /autoapi/dicee/knowledge_graph/index
@@ -46,2307 +61,190 @@ Classes
 
 .. autoapisummary::
 
-   dicee.Pyke
-   dicee.DistMult
-   dicee.CKeci
-   dicee.Keci
-   dicee.TransE
-   dicee.DeCaL
-   dicee.DualE
-   dicee.ComplEx
-   dicee.AConEx
-   dicee.AConvO
-   dicee.AConvQ
-   dicee.ConvQ
-   dicee.ConvO
-   dicee.ConEx
-   dicee.QMult
-   dicee.OMult
-   dicee.Shallom
-   dicee.LFMult
-   dicee.CoKE
-   dicee.PykeenKGE
-   dicee.BytE
-   dicee.BaseKGE
-   dicee.EnsembleKGE
-   dicee.DICE_Trainer
+   dicee.Execute
    dicee.KGE
-   dicee.BPE_NegativeSamplingDataset
-   dicee.MultiLabelDataset
-   dicee.MultiClassClassificationDataset
-   dicee.OnevsAllDataset
-   dicee.KvsAll
-   dicee.AllvsAll
-   dicee.OnevsSample
-   dicee.KvsSampleDataset
-   dicee.NegSampleDataset
-   dicee.TriplePredictionDataset
-   dicee.CVDataModule
-   dicee.LiteralDataset
    dicee.QueryGenerator
-
-
-Functions
----------
-
-.. autoapisummary::
-
-   dicee.create_recipriocal_triples
-   dicee.get_er_vocab
-   dicee.get_re_vocab
-   dicee.get_ee_vocab
-   dicee.timeit
-   dicee.save_pickle
-   dicee.load_pickle
-   dicee.load_term_mapping
-   dicee.select_model
-   dicee.load_model
-   dicee.load_model_ensemble
-   dicee.save_numpy_ndarray
-   dicee.numpy_data_type_changer
-   dicee.save_checkpoint_model
-   dicee.store
-   dicee.add_noisy_triples
-   dicee.read_or_load_kg
-   dicee.intialize_model
-   dicee.load_json
-   dicee.save_embeddings
-   dicee.random_prediction
-   dicee.deploy_triple_prediction
-   dicee.deploy_tail_entity_prediction
-   dicee.deploy_head_entity_prediction
-   dicee.deploy_relation_prediction
-   dicee.vocab_to_parquet
-   dicee.create_experiment_folder
-   dicee.continual_training_setup_executor
-   dicee.exponential_function
-   dicee.load_numpy
-   dicee.evaluate
-   dicee.download_file
-   dicee.download_files_from_url
-   dicee.download_pretrained_model
-   dicee.write_csv_from_model_parallel
-   dicee.from_pretrained_model_write_embeddings_into_csv
-   dicee.mapping_from_first_two_cols_to_third
-   dicee.timeit
-   dicee.load_term_mapping
-   dicee.reload_dataset
-   dicee.construct_dataset
+   dicee.DICE_Trainer
+   dicee.Evaluator
 
 
 Package Contents
 ----------------
 
-.. py:class:: Pyke(args)
+.. py:class:: Execute(args, continuous_training: bool = False)
 
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+   Executor class for training, retraining and evaluating KGE models.
 
+   Handles the complete workflow:
+   1. Loading & Preprocessing & Serializing input data
+   2. Training & Validation & Testing
+   3. Storing all necessary information
 
-   A Physical Embedding Model for Knowledge Graphs
+   .. attribute:: args
 
+      Processed input arguments.
 
-   .. py:attribute:: name
-      :value: 'Pyke'
+   .. attribute:: distributed
 
+      Whether distributed training is enabled.
 
+   .. attribute:: rank
 
-   .. py:attribute:: dist_func
+      Process rank in distributed training.
 
+   .. attribute:: world_size
 
-   .. py:attribute:: margin
-      :value: 1.0
+      Total number of processes.
 
+   .. attribute:: local_rank
 
+      Local GPU rank.
 
-   .. py:method:: forward_triples(x: torch.LongTensor)
+   .. attribute:: trainer
 
-      :param x:
+      Training handler instance.
 
+   .. attribute:: trained_model
 
+      The trained model after training completes.
 
-.. py:class:: DistMult(args)
+   .. attribute:: knowledge_graph
 
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+      The loaded knowledge graph.
 
+   .. attribute:: report
 
-   Embedding Entities and Relations for Learning and Inference in Knowledge Bases
-   https://arxiv.org/abs/1412.6575
+      Dictionary storing training metrics and results.
 
+   .. attribute:: evaluator
 
-   .. py:attribute:: name
-      :value: 'DistMult'
-
-
-
-   .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
-
-      :param emb_h:
-      :param emb_r:
-      :param emb_E:
-
-
-
-   .. py:method:: forward_k_vs_all(x: torch.LongTensor)
+      Model evaluation handler.
 
 
-   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor)
+   .. py:attribute:: distributed
 
 
-   .. py:method:: score(h, r, t)
+   .. py:attribute:: args
 
 
-.. py:class:: CKeci(args)
-
-   Bases: :py:obj:`Keci`
-
-
-   Without learning dimension scaling
-
-
-   .. py:attribute:: name
-      :value: 'CKeci'
-
-
-
-   .. py:attribute:: requires_grad_for_interactions
+   .. py:attribute:: is_continual_training
       :value: False
 
 
 
-.. py:class:: Keci(args)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Base class for all neural network modules.
-
-   Your models should also subclass this class.
-
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
-
-       import torch.nn as nn
-       import torch.nn.functional as F
-
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
-
-
-   .. py:attribute:: name
-      :value: 'Keci'
-
-
-
-   .. py:attribute:: p
-
-
-   .. py:attribute:: q
-
-
-   .. py:attribute:: r
-
-
-   .. py:attribute:: requires_grad_for_interactions
-      :value: True
-
-
-
-   .. py:method:: compute_sigma_pp(hp, rp)
-
-      Compute  sigma_{pp} = \sum_{i=1}^{p-1} \sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k
-
-      sigma_{pp} captures the interactions between along p bases
-      For instance, let p e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
-      This can be implemented with a nested two for loops
-
-                      results = []
-                      for i in range(p - 1):
-                          for k in range(i + 1, p):
-                              results.append(hp[:, :, i] * rp[:, :, k] - hp[:, :, k] * rp[:, :, i])
-                      sigma_pp = torch.stack(results, dim=2)
-                      assert sigma_pp.shape == (b, r, int((p * (p - 1)) / 2))
-
-      Yet, this computation would be quite inefficient. Instead, we compute interactions along all p,
-      e.g., e1e1, e1e2, e1e3,
-            e2e1, e2e2, e2e3,
-            e3e1, e3e2, e3e3
-      Then select the triangular matrix without diagonals: e1e2, e1e3, e2e3.
-
-
-
-   .. py:method:: compute_sigma_qq(hq, rq)
-
-      Compute  sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k
-      sigma_{q} captures the interactions between along q bases
-      For instance, let q e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
-      This can be implemented with a nested two for loops
-
-                      results = []
-                      for j in range(q - 1):
-                          for k in range(j + 1, q):
-                              results.append(hq[:, :, j] * rq[:, :, k] - hq[:, :, k] * rq[:, :, j])
-                      sigma_qq = torch.stack(results, dim=2)
-                      assert sigma_qq.shape == (b, r, int((q * (q - 1)) / 2))
-
-      Yet, this computation would be quite inefficient. Instead, we compute interactions along all p,
-      e.g., e1e1, e1e2, e1e3,
-            e2e1, e2e2, e2e3,
-            e3e1, e3e2, e3e3
-      Then select the triangular matrix without diagonals: e1e2, e1e3, e2e3.
-
-
-
-   .. py:method:: compute_sigma_pq(*, hp, hq, rp, rq)
-
-      \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
-
-      results = []
-      sigma_pq = torch.zeros(b, r, p, q)
-      for i in range(p):
-          for j in range(q):
-              sigma_pq[:, :, i, j] = hp[:, :, i] * rq[:, :, j] - hq[:, :, j] * rp[:, :, i]
-      print(sigma_pq.shape)
-
-
-
-
-   .. py:method:: apply_coefficients(hp, hq, rp, rq)
-
-      Multiplying a base vector with its scalar coefficient
-
-
-
-   .. py:method:: clifford_multiplication(h0, hp, hq, r0, rp, rq)
-
-      Compute our CL multiplication
-
-              h = h_0 + \sum_{i=1}^p h_i e_i + \sum_{j=p+1}^{p+q} h_j e_j
-              r = r_0 + \sum_{i=1}^p r_i e_i + \sum_{j=p+1}^{p+q} r_j e_j
-
-              ei ^2 = +1     for i =< i =< p
-              ej ^2 = -1     for p < j =< p+q
-              ei ej = -eje1  for i
-      eq j
-
-              h r =   sigma_0 + sigma_p + sigma_q + sigma_{pp} + sigma_{q}+ sigma_{pq}
-              where
-                      (1) sigma_0 = h_0 r_0 + \sum_{i=1}^p (h_0 r_i) e_i - \sum_{j=p+1}^{p+q} (h_j r_j) e_j
-
-                      (2) sigma_p = \sum_{i=1}^p (h_0 r_i + h_i r_0) e_i
-
-                      (3) sigma_q = \sum_{j=p+1}^{p+q} (h_0 r_j + h_j r_0) e_j
-
-                      (4) sigma_{pp} = \sum_{i=1}^{p-1} \sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k
-
-                      (5) sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k
-
-                      (6) sigma_{pq} = \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
-
-
-
-
-
-   .. py:method:: construct_cl_multivector(x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
-
-      Construct a batch of multivectors Cl_{p,q}(\mathbb{R}^d)
-
-      Parameter
-      ---------
-      x: torch.FloatTensor with (n,d) shape
-
-      :returns: * **a0** (*torch.FloatTensor with (n,r) shape*)
-                * **ap** (*torch.FloatTensor with (n,r,p) shape*)
-                * **aq** (*torch.FloatTensor with (n,r,q) shape*)
-
-
-
-   .. py:method:: forward_k_vs_with_explicit(x: torch.Tensor)
-
-
-   .. py:method:: k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
-
-
-   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
-
-      Kvsall training
-
-      (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
-      (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
-      (3) Perform Cl multiplication
-      (4) Inner product of (3) and all entity embeddings
-
-      forward_k_vs_with_explicit and this funcitons are identical
-      Parameter
-      ---------
-      x: torch.LongTensor with (n,2) shape
-      :rtype: torch.FloatTensor with (n, |E|) shape
-
-
-
-   .. py:method:: construct_batch_selected_cl_multivector(x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
-
-      Construct a batch of batchs multivectors Cl_{p,q}(\mathbb{R}^d)
-
-      Parameter
-      ---------
-      x: torch.FloatTensor with (n,k, d) shape
-
-      :returns: * **a0** (*torch.FloatTensor with (n,k, m) shape*)
-                * **ap** (*torch.FloatTensor with (n,k, m, p) shape*)
-                * **aq** (*torch.FloatTensor with (n,k, m, q) shape*)
-
-
-
-   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor
-
-      Parameter
-      ---------
-      x: torch.LongTensor with (n,2) shape
-
-      target_entity_idx: torch.LongTensor with (n, k ) shape k denotes the selected number of examples.
-
-      :rtype: torch.FloatTensor with (n, k) shape
-
-
-
-   .. py:method:: score(h, r, t)
-
-
-   .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
-
-      Parameter
-      ---------
-      x: torch.LongTensor with (n,3) shape
-
-      :rtype: torch.FloatTensor with (n) shape
-
-
-
-.. py:class:: TransE(args)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Translating Embeddings for Modeling
-   Multi-relational Data
-   https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf
-
-
-   .. py:attribute:: name
-      :value: 'TransE'
-
-
-
-   .. py:attribute:: margin
-      :value: 4
-
-
-
-   .. py:method:: score(head_ent_emb, rel_ent_emb, tail_ent_emb)
-
-
-   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
-
-
-.. py:class:: DeCaL(args)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Base class for all neural network modules.
-
-   Your models should also subclass this class.
-
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
-
-       import torch.nn as nn
-       import torch.nn.functional as F
-
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
-
-
-   .. py:attribute:: name
-      :value: 'DeCaL'
-
-
-
-   .. py:attribute:: entity_embeddings
-
-
-   .. py:attribute:: relation_embeddings
-
-
-   .. py:attribute:: p
-
-
-   .. py:attribute:: q
-
-
-   .. py:attribute:: r
-
-
-   .. py:attribute:: re
-
-
-   .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
-
-      Parameter
-      ---------
-      x: torch.LongTensor with (n, ) shape
-
-      :rtype: torch.FloatTensor with (n) shape
-
-
-
-   .. py:method:: cl_pqr(a: torch.tensor) -> torch.tensor
-
-      Input: tensor(batch_size, emb_dim) ---> output: tensor with 1+p+q+r components with size (batch_size, emb_dim/(1+p+q+r)) each.
-
-      1) takes a tensor of size (batch_size, emb_dim), split it into 1 + p + q +r components, hence 1+p+q+r must be a divisor
-      of the emb_dim.
-      2) Return a list of the 1+p+q+r components vectors, each are tensors of size (batch_size, emb_dim/(1+p+q+r))
-
-
-
-   .. py:method:: compute_sigmas_single(list_h_emb, list_r_emb, list_t_emb)
-
-      here we compute all the sums with no others vectors interaction taken with the scalar product with t, that is,
-
-      .. math::
-
-           s0 = h_0r_0t_0
-           s1 = \sum_{i=1}^{p}h_ir_it_0
-           s2 = \sum_{j=p+1}^{p+q}h_jr_jt_0
-           s3 = \sum_{i=1}^{q}(h_0r_it_i + h_ir_0t_i)
-           s4 = \sum_{i=p+1}^{p+q}(h_0r_it_i + h_ir_0t_i)
-           s5 = \sum_{i=p+q+1}^{p+q+r}(h_0r_it_i + h_ir_0t_i)
-
-      and return:
-
-      .. math::
-
-          sigma_0t = \sigma_0 \cdot t_0 = s0 + s1 -s2
-          s3, s4 and s5
-
-
-
-
-
-   .. py:method:: compute_sigmas_multivect(list_h_emb, list_r_emb)
-
-      Here we compute and return all the sums with vectors interaction for the same and different bases.
-
-      For same bases vectors interaction we have
-
-      .. math::
-
-           \sigma_pp = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(h_ir_{i'}-h_{i'}r_i) (models the interactions between e_i and e_i' for 1 <= i, i' <= p)
-           \sigma_qq = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(h_jr_{j'}-h_{j'} (models the interactions between e_j and e_j' for p+1 <= j, j' <= p+q)
-           \sigma_rr = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(h_kr_{k'}-h_{k'}r_k) (models the interactions between e_k and e_k' for p+q+1 <= k, k' <= p+q+r)
-
-      For different base vector interactions, we have
-
-       .. math::
-
-           \sigma_pq = \sum_{i=1}^{p}\sum_{j=p+1}^{p+q}(h_ir_j - h_jr_i) (interactionsn between e_i and e_j for 1<=i <=p and p+1<= j <= p+q)
-           \sigma_pr = \sum_{i=1}^{p}\sum_{k=p+q+1}^{p+q+r}(h_ir_k - h_kr_i) (interactionsn between e_i and e_k for 1<=i <=p and p+q+1<= k <= p+q+r)
-           \sigma_qr = \sum_{j=p+1}^{p+q}\sum_{j=p+q+1}^{p+q+r}(h_jr_k - h_kr_j) (interactionsn between e_j and e_k for p+1 <= j <=p+q and p+q+1<= j <= p+q+r)
-
-
-
-
-   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
-
-      Kvsall training
-
-      (1) Retrieve real-valued embedding vectors for heads and relations
-      (2) Construct head entity and relation embeddings according to Cl_{p,q, r}(\mathbb{R}^d) .
-      (3) Perform Cl multiplication
-      (4) Inner product of (3) and all entity embeddings
-
-      forward_k_vs_with_explicit and this funcitons are identical
-      Parameter
-      ---------
-      x: torch.LongTensor with (n, ) shape
-      :rtype: torch.FloatTensor with (n, |E|) shape
-
-
-
-   .. py:method:: apply_coefficients(h0, hp, hq, hk, r0, rp, rq, rk)
-
-      Multiplying a base vector with its scalar coefficient
-
-
-
-   .. py:method:: construct_cl_multivector(x: torch.FloatTensor, re: int, p: int, q: int, r: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
-
-      Construct a batch of multivectors Cl_{p,q,r}(\mathbb{R}^d)
-
-      Parameter
-      ---------
-      x: torch.FloatTensor with (n,d) shape
-
-      :returns: * **a0** (*torch.FloatTensor*)
-                * **ap** (*torch.FloatTensor*)
-                * **aq** (*torch.FloatTensor*)
-                * **ar** (*torch.FloatTensor*)
-
-
-
-   .. py:method:: compute_sigma_pp(hp, rp)
-
-      Compute
-      .. math::
-
-          \sigma_{p,p}^* = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(x_iy_{i'}-x_{i'}y_i)
-
-      \sigma_{pp} captures the interactions between along p bases
-      For instance, let p e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
-      This can be implemented with a nested two for loops
-
-                      results = []
-                      for i in range(p - 1):
-                          for k in range(i + 1, p):
-                              results.append(hp[:, :, i] * rp[:, :, k] - hp[:, :, k] * rp[:, :, i])
-                      sigma_pp = torch.stack(results, dim=2)
-                      assert sigma_pp.shape == (b, r, int((p * (p - 1)) / 2))
-
-      Yet, this computation would be quite inefficient. Instead, we compute interactions along all p,
-      e.g., e1e1, e1e2, e1e3,
-            e2e1, e2e2, e2e3,
-            e3e1, e3e2, e3e3
-      Then select the triangular matrix without diagonals: e1e2, e1e3, e2e3.
-
-
-
-   .. py:method:: compute_sigma_qq(hq, rq)
-
-      Compute
-
-      .. math::
-
-          \sigma_{q,q}^* = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(x_jy_{j'}-x_{j'}y_j) Eq. 16
-
-      sigma_{q} captures the interactions between along q bases
-      For instance, let q e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
-      This can be implemented with a nested two for loops
-
-                      results = []
-                      for j in range(q - 1):
-                          for k in range(j + 1, q):
-                              results.append(hq[:, :, j] * rq[:, :, k] - hq[:, :, k] * rq[:, :, j])
-                      sigma_qq = torch.stack(results, dim=2)
-                      assert sigma_qq.shape == (b, r, int((q * (q - 1)) / 2))
-
-      Yet, this computation would be quite inefficient. Instead, we compute interactions along all p,
-      e.g., e1e1, e1e2, e1e3,
-            e2e1, e2e2, e2e3,
-            e3e1, e3e2, e3e3
-      Then select the triangular matrix without diagonals: e1e2, e1e3, e2e3.
-
-
-
-   .. py:method:: compute_sigma_rr(hk, rk)
-
-      .. math::
-
-          \sigma_{r,r}^* = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(x_ky_{k'}-x_{k'}y_k)
-
-
-
-
-   .. py:method:: compute_sigma_pq(*, hp, hq, rp, rq)
-
-      Compute
-
-      .. math::
-
-          \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
-
-      results = []
-      sigma_pq = torch.zeros(b, r, p, q)
-      for i in range(p):
-          for j in range(q):
-              sigma_pq[:, :, i, j] = hp[:, :, i] * rq[:, :, j] - hq[:, :, j] * rp[:, :, i]
-      print(sigma_pq.shape)
-
-
-
-
-   .. py:method:: compute_sigma_pr(*, hp, hk, rp, rk)
-
-      Compute
-
-      .. math::
-
-          \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
-
-      results = []
-      sigma_pq = torch.zeros(b, r, p, q)
-      for i in range(p):
-          for j in range(q):
-              sigma_pq[:, :, i, j] = hp[:, :, i] * rq[:, :, j] - hq[:, :, j] * rp[:, :, i]
-      print(sigma_pq.shape)
-
-
-
-
-   .. py:method:: compute_sigma_qr(*, hq, hk, rq, rk)
-
-      .. math::
-
-          \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
-
-      results = []
-      sigma_pq = torch.zeros(b, r, p, q)
-      for i in range(p):
-          for j in range(q):
-              sigma_pq[:, :, i, j] = hp[:, :, i] * rq[:, :, j] - hq[:, :, j] * rp[:, :, i]
-      print(sigma_pq.shape)
-
-
-
-
-.. py:class:: DualE(args)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Dual Quaternion Knowledge Graph Embeddings (https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657)
-
-
-   .. py:attribute:: name
-      :value: 'DualE'
-
-
-
-   .. py:attribute:: entity_embeddings
-
-
-   .. py:attribute:: relation_embeddings
-
-
-   .. py:attribute:: num_ent
+   .. py:attribute:: trainer
+      :type:  Optional[dicee.trainer.DICE_Trainer]
       :value: None
 
 
 
-   .. py:method:: kvsall_score(e_1_h, e_2_h, e_3_h, e_4_h, e_5_h, e_6_h, e_7_h, e_8_h, e_1_t, e_2_t, e_3_t, e_4_t, e_5_t, e_6_t, e_7_t, e_8_t, r_1, r_2, r_3, r_4, r_5, r_6, r_7, r_8) -> torch.tensor
-
-      KvsAll scoring function
-
-      Input
-      ---------
-      x: torch.LongTensor with (n, ) shape
-
-      Output
-      -------
-      torch.FloatTensor with (n) shape
-
-
-
-   .. py:method:: forward_triples(idx_triple: torch.tensor) -> torch.tensor
-
-      Negative Sampling forward pass:
-
-      Input
-      ---------
-      x: torch.LongTensor with (n, ) shape
-
-      Output
-      -------
-      torch.FloatTensor with (n) shape
-
-
-
-   .. py:method:: forward_k_vs_all(x)
-
-      KvsAll forward pass
-
-      Input
-      ---------
-      x: torch.LongTensor with (n, ) shape
-
-      Output
-      -------
-      torch.FloatTensor with (n) shape
-
-
-
-
-   .. py:method:: T(x: torch.tensor) -> torch.tensor
-
-      Transpose function
-
-      Input: Tensor with shape (nxm)
-      Output: Tensor with shape (mxn)
-
-
-
-.. py:class:: ComplEx(args)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Base class for all neural network modules.
-
-   Your models should also subclass this class.
-
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
-
-       import torch.nn as nn
-       import torch.nn.functional as F
-
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
-
-
-   .. py:attribute:: name
-      :value: 'ComplEx'
-
-
-
-   .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor)
-      :staticmethod:
-
-
-
-   .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
-      :staticmethod:
-
-
-      :param emb_h:
-      :param emb_r:
-      :param emb_E:
-
-
-
-   .. py:method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
-
-
-   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor)
-
-
-.. py:class:: AConEx(args)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Additive Convolutional ComplEx Knowledge Graph Embeddings
-
-
-   .. py:attribute:: name
-      :value: 'AConEx'
-
-
-
-   .. py:attribute:: conv2d
-
-
-   .. py:attribute:: fc_num_input
-
-
-   .. py:attribute:: fc1
-
-
-   .. py:attribute:: norm_fc1
-
-
-   .. py:attribute:: bn_conv2d
-
-
-   .. py:attribute:: feature_map_dropout
-
-
-   .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
-
-      Compute residual score of two complex-valued embeddings.
-      :param C_1: a tuple of two pytorch tensors that corresponds complex-valued embeddings
-      :param C_2: a tuple of two pytorch tensors that corresponds complex-valued embeddings
-      :return:
-
-
-
-   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
-
-
-   .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
-
-      :param x:
-
-
-
-   .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
-
-
-.. py:class:: AConvO(args: dict)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Additive Convolutional Octonion Knowledge Graph Embeddings
-
-
-   .. py:attribute:: name
-      :value: 'AConvO'
-
-
-
-   .. py:attribute:: conv2d
-
-
-   .. py:attribute:: fc_num_input
-
-
-   .. py:attribute:: fc1
-
-
-   .. py:attribute:: bn_conv2d
-
-
-   .. py:attribute:: norm_fc1
-
-
-   .. py:attribute:: feature_map_dropout
-
-
-   .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
-      :staticmethod:
-
-
-
-   .. py:method:: residual_convolution(O_1, O_2)
-
-
-   .. py:method:: forward_triples(x: torch.Tensor) -> torch.Tensor
-
-      :param x:
-
-
-
-   .. py:method:: forward_k_vs_all(x: torch.Tensor)
-
-      Given a head entity and a relation (h,r), we compute scores for all entities.
-      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
-      Given a batch of head entities and relations => shape (size of batch,| Entities|)
-
-
-
-.. py:class:: AConvQ(args)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Additive Convolutional Quaternion Knowledge Graph Embeddings
-
-
-   .. py:attribute:: name
-      :value: 'AConvQ'
-
-
-
-   .. py:attribute:: entity_embeddings
-
-
-   .. py:attribute:: relation_embeddings
-
-
-   .. py:attribute:: conv2d
-
-
-   .. py:attribute:: fc_num_input
-
-
-   .. py:attribute:: fc1
-
-
-   .. py:attribute:: bn_conv1
-
-
-   .. py:attribute:: bn_conv2
-
-
-   .. py:attribute:: feature_map_dropout
-
-
-   .. py:method:: residual_convolution(Q_1, Q_2)
-
-
-   .. py:method:: forward_triples(indexed_triple: torch.Tensor) -> torch.Tensor
-
-      :param x:
-
-
-
-   .. py:method:: forward_k_vs_all(x: torch.Tensor)
-
-      Given a head entity and a relation (h,r), we compute scores for all entities.
-      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
-      Given a batch of head entities and relations => shape (size of batch,| Entities|)
-
-
-
-.. py:class:: ConvQ(args)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Convolutional Quaternion Knowledge Graph Embeddings
-
-
-
-
-   .. py:attribute:: name
-      :value: 'ConvQ'
-
-
-
-   .. py:attribute:: entity_embeddings
-
-
-   .. py:attribute:: relation_embeddings
-
-
-   .. py:attribute:: conv2d
-
-
-   .. py:attribute:: fc_num_input
-
-
-   .. py:attribute:: fc1
-
-
-   .. py:attribute:: bn_conv1
-
-
-   .. py:attribute:: bn_conv2
-
-
-   .. py:attribute:: feature_map_dropout
-
-
-   .. py:method:: residual_convolution(Q_1, Q_2)
-
-
-   .. py:method:: forward_triples(indexed_triple: torch.Tensor) -> torch.Tensor
-
-      :param x:
-
-
-
-   .. py:method:: forward_k_vs_all(x: torch.Tensor)
-
-      Given a head entity and a relation (h,r), we compute scores for all entities.
-      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
-      Given a batch of head entities and relations => shape (size of batch,| Entities|)
-
-
-
-.. py:class:: ConvO(args: dict)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Base class for all neural network modules.
-
-   Your models should also subclass this class.
-
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
-
-       import torch.nn as nn
-       import torch.nn.functional as F
-
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
-
-
-   .. py:attribute:: name
-      :value: 'ConvO'
-
-
-
-   .. py:attribute:: conv2d
-
-
-   .. py:attribute:: fc_num_input
-
-
-   .. py:attribute:: fc1
-
-
-   .. py:attribute:: bn_conv2d
-
-
-   .. py:attribute:: norm_fc1
-
-
-   .. py:attribute:: feature_map_dropout
-
-
-   .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
-      :staticmethod:
-
-
-
-   .. py:method:: residual_convolution(O_1, O_2)
-
-
-   .. py:method:: forward_triples(x: torch.Tensor) -> torch.Tensor
-
-      :param x:
-
-
-
-   .. py:method:: forward_k_vs_all(x: torch.Tensor)
-
-      Given a head entity and a relation (h,r), we compute scores for all entities.
-      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
-      Given a batch of head entities and relations => shape (size of batch,| Entities|)
-
-
-
-.. py:class:: ConEx(args)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Convolutional ComplEx Knowledge Graph Embeddings
-
-
-   .. py:attribute:: name
-      :value: 'ConEx'
-
-
-
-   .. py:attribute:: conv2d
-
-
-   .. py:attribute:: fc_num_input
-
-
-   .. py:attribute:: fc1
-
-
-   .. py:attribute:: norm_fc1
-
-
-   .. py:attribute:: bn_conv2d
-
-
-   .. py:attribute:: feature_map_dropout
-
-
-   .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
-
-      Compute residual score of two complex-valued embeddings.
-      :param C_1: a tuple of two pytorch tensors that corresponds complex-valued embeddings
-      :param C_2: a tuple of two pytorch tensors that corresponds complex-valued embeddings
-      :return:
-
-
-
-   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
-
-
-   .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
-
-      :param x:
-
-
-
-   .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
-
-
-.. py:class:: QMult(args)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Base class for all neural network modules.
-
-   Your models should also subclass this class.
-
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
-
-       import torch.nn as nn
-       import torch.nn.functional as F
-
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
-
-
-   .. py:attribute:: name
-      :value: 'QMult'
-
-
-
-   .. py:attribute:: explicit
-      :value: True
-
-
-
-   .. py:method:: quaternion_multiplication_followed_by_inner_product(h, r, t)
-
-      :param h: shape: (`*batch_dims`, dim)
-          The head representations.
-      :param r: shape: (`*batch_dims`, dim)
-          The head representations.
-      :param t: shape: (`*batch_dims`, dim)
-          The tail representations.
-      :return:
-          Triple scores.
-
-
-
-   .. py:method:: quaternion_normalizer(x: torch.FloatTensor) -> torch.FloatTensor
-      :staticmethod:
-
-
-      Normalize the length of relation vectors, if the forward constraint has not been applied yet.
-
-      Absolute value of a quaternion
-
-      .. math::
-
-          |a + bi + cj + dk| = \sqrt{a^2 + b^2 + c^2 + d^2}
-
-      L2 norm of quaternion vector:
-
-      .. math::
-          \|x\|^2 = \sum_{i=1}^d |x_i|^2
-                   = \sum_{i=1}^d (x_i.re^2 + x_i.im_1^2 + x_i.im_2^2 + x_i.im_3^2)
-      :param x:
-          The vector.
-
-      :return:
-          The normalized vector.
-
-
-
-   .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor)
-
-
-   .. py:method:: k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
-
-      :param bpe_head_ent_emb:
-      :param bpe_rel_ent_emb:
-      :param E:
-
-
-
-   .. py:method:: forward_k_vs_all(x)
-
-      :param x:
-
-
-
-   .. py:method:: forward_k_vs_sample(x, target_entity_idx)
-
-      Completed.
-      Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
-      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
-      Given a batch of head entities and relations => shape (size of batch,| Entities|)
-
-
-
-.. py:class:: OMult(args)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Base class for all neural network modules.
-
-   Your models should also subclass this class.
-
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
-
-       import torch.nn as nn
-       import torch.nn.functional as F
-
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
-
-
-   .. py:attribute:: name
-      :value: 'OMult'
-
-
-
-   .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
-      :staticmethod:
-
-
-
-   .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor)
-
-
-   .. py:method:: k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
-
-
-   .. py:method:: forward_k_vs_all(x)
-
-      Completed.
-      Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
-      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
-      Given a batch of head entities and relations => shape (size of batch,| Entities|)
-
-
-
-.. py:class:: Shallom(args)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090)
-
-
-   .. py:attribute:: name
-      :value: 'Shallom'
-
-
-
-   .. py:attribute:: shallom
-
-
-   .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, None]
-
-
-   .. py:method:: forward_k_vs_all(x) -> torch.FloatTensor
-
-
-   .. py:method:: forward_triples(x) -> torch.FloatTensor
-
-      :param x:
-      :return:
-
-
-
-.. py:class:: LFMult(args)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:
-   f(x) = \sum_{i=0}^{d-1} a_k x^{i%d} and use the three differents scoring function as in the paper to evaluate the score.
-   We also consider combining with Neural Networks.
-
-
-   .. py:attribute:: name
-      :value: 'LFMult'
-
-
-
-   .. py:attribute:: entity_embeddings
-
-
-   .. py:attribute:: relation_embeddings
-
-
-   .. py:attribute:: degree
-
-
-   .. py:attribute:: m
-
-
-   .. py:attribute:: x_values
-
-
-   .. py:method:: forward_triples(idx_triple)
-
-      :param x:
-
-
-
-   .. py:method:: construct_multi_coeff(x)
-
-
-   .. py:method:: poly_NN(x, coefh, coefr, coeft)
-
-      Constructing a 2 layers NN to represent the embeddings.
-      h = \sigma(wh^T x + bh ),  r = \sigma(wr^T x + br ),  t = \sigma(wt^T x + bt )
-
-
-
-   .. py:method:: linear(x, w, b)
-
-
-   .. py:method:: scalar_batch_NN(a, b, c)
-
-      element wise multiplication between a,b and c:
-      Inputs : a, b, c ====> torch.tensor of size batch_size x m x d
-      Output : a tensor of size batch_size x d
-
-
-
-   .. py:method:: tri_score(coeff_h, coeff_r, coeff_t)
-
-      this part implement the trilinear scoring techniques:
-
-      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d}
-
-      1. generate the range for i,j and k from [0 d-1]
-
-      2. perform
-      \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d} in parallel for every batch
-
-      3. take the sum over each batch
-
-
-
-
-   .. py:method:: vtp_score(h, r, t)
-
-      this part implement the vector triple product scoring techniques:
-
-      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*c_j*b_k - b_i*c_j*a_k}{(1+(i+j)%d)(1+k)}
-
-      1. generate the range for i,j and k from [0 d-1]
-
-      2. Compute the first and second terms of the sum
-
-      3.  Multiply with then denominator and take the sum
-
-      4. take the sum over each batch
-
-
-
-
-   .. py:method:: comp_func(h, r, t)
-
-      this part implement the function composition scoring techniques: i.e. score = <hor, t>
-
-
-
-   .. py:method:: polynomial(coeff, x, degree)
-
-      This function takes a matrix tensor of coefficients (coeff), a tensor vector of points x  and range of integer [0,1,...d]
-      and return a vector tensor (coeff[0][0] + coeff[0][1]x +...+ coeff[0][d]x^d,
-                          coeff[1][0] + coeff[1][1]x +...+ coeff[1][d]x^d)
-                                  ....
-
-
-
-   .. py:method:: pop(coeff, x, degree)
-
-      This function allow us to evaluate the composition of two polynomes without for loops :)
-      it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  and range of integer [0,1,...d]
-          and return a tensor (coeff[0][0] + coeff[0][1]x +...+ coeff[0][d]x^d,
-                              coeff[1][0] + coeff[1][1]x +...+ coeff[1][d]x^d)
-                                      ....
-
-
-
-.. py:class:: CoKE(args, config: CoKEConfig = CoKEConfig())
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Contextualized Knowledge Graph Embedding (CoKE) model.
-   Based on: https://arxiv.org/pdf/1911.02168.
-
-   CoKE uses a transformer encoder to learn contextualized representations of entities and relations.
-   For link prediction, it predicts masked elements in (head, relation, tail) triples using
-   bidirectional attention, similar to BERT's masked language modeling approach.
-
-   The model creates a sequence [head_emb, relation_emb, mask_emb], adds positional embeddings,
-   and processes it through transformer layers to predict the tail entity.
-
-
-   .. py:attribute:: name
-      :value: 'CoKE'
-
-
-
-   .. py:attribute:: config
-
-
-   .. py:attribute:: pos_emb
-
-
-   .. py:attribute:: mask_emb
-
-
-   .. py:attribute:: blocks
-
-
-   .. py:attribute:: ln_f
-
-
-   .. py:attribute:: coke_dropout
-
-
-   .. py:method:: forward_k_vs_all(x: torch.Tensor)
-
-
-   .. py:method:: score(emb_h, emb_r, emb_t)
-
-
-   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor)
-
-
-.. py:class:: PykeenKGE(args: dict)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   A class for using knowledge graph embedding models implemented in Pykeen
-
-   Notes:
-   Pykeen_DistMult: C
-   Pykeen_ComplEx:
-   Pykeen_QuatE:
-   Pykeen_MuRE:
-   Pykeen_CP:
-   Pykeen_HolE:
-   Pykeen_HolE:
-   Pykeen_HolE:
-   Pykeen_TransD:
-   Pykeen_TransE:
-   Pykeen_TransF:
-   Pykeen_TransH:
-   Pykeen_TransR:
-
-
-   .. py:attribute:: model_kwargs
-
-
-   .. py:attribute:: name
-
-
-   .. py:attribute:: model
-
-
-   .. py:attribute:: loss_history
-      :value: []
-
-
-
-   .. py:attribute:: args
-
-
-   .. py:attribute:: entity_embeddings
+   .. py:attribute:: trained_model
       :value: None
 
 
 
-   .. py:attribute:: relation_embeddings
+   .. py:attribute:: knowledge_graph
+      :type:  Optional[dicee.knowledge_graph.KG]
       :value: None
-
-
-
-   .. py:method:: forward_k_vs_all(x: torch.LongTensor)
-
-      # => Explicit version by this we can apply bn and dropout
-
-      # (1) Retrieve embeddings of heads and relations +  apply Dropout & Normalization if given.
-      h, r = self.get_head_relation_representation(x)
-      # (2) Reshape (1).
-      if self.last_dim > 0:
-          h = h.reshape(len(x), self.embedding_dim, self.last_dim)
-          r = r.reshape(len(x), self.embedding_dim, self.last_dim)
-      # (3) Reshape all entities.
-      if self.last_dim > 0:
-          t = self.entity_embeddings.weight.reshape(self.num_entities, self.embedding_dim, self.last_dim)
-      else:
-          t = self.entity_embeddings.weight
-      # (4) Call the score_t from interactions to generate triple scores.
-      return self.interaction.score_t(h=h, r=r, all_entities=t, slice_size=1)
-
-
-
-   .. py:method:: forward_triples(x: torch.LongTensor) -> torch.FloatTensor
-
-      # => Explicit version by this we can apply bn and dropout
-
-      # (1) Retrieve embeddings of heads, relations and tails and apply Dropout & Normalization if given.
-      h, r, t = self.get_triple_representation(x)
-      # (2) Reshape (1).
-      if self.last_dim > 0:
-          h = h.reshape(len(x), self.embedding_dim, self.last_dim)
-          r = r.reshape(len(x), self.embedding_dim, self.last_dim)
-          t = t.reshape(len(x), self.embedding_dim, self.last_dim)
-      # (3) Compute the triple score
-      return self.interaction.score(h=h, r=r, t=t, slice_size=None, slice_dim=0)
-
-
-
-   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx)
-      :abstractmethod:
-
-
-
-.. py:class:: BytE(*args, **kwargs)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Base class for all neural network modules.
-
-   Your models should also subclass this class.
-
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
-
-       import torch.nn as nn
-       import torch.nn.functional as F
-
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
-
-
-   .. py:attribute:: name
-      :value: 'BytE'
-
-
-
-   .. py:attribute:: config
-
-
-   .. py:attribute:: temperature
-      :value: 0.5
-
-
-
-   .. py:attribute:: topk
-      :value: 2
-
-
-
-   .. py:attribute:: transformer
-
-
-   .. py:attribute:: lm_head
-
-
-   .. py:method:: loss_function(yhat_batch, y_batch)
-
-      :param yhat_batch:
-      :param y_batch:
-
-
-
-   .. py:method:: forward(x: torch.LongTensor)
-
-      :param x:
-      :type x: B by T tensor
-
-
-
-   .. py:method:: generate(idx, max_new_tokens, temperature=1.0, top_k=None)
-
-      Take a conditioning sequence of indices idx (LongTensor of shape (b,t)) and complete
-      the sequence max_new_tokens times, feeding the predictions back into the model each time.
-      Most likely you'll want to make sure to be in model.eval() mode of operation for this.
-
-
-
-   .. py:method:: training_step(batch, batch_idx=None)
-
-      Here you compute and return the training loss and some additional metrics for e.g. the progress bar or
-      logger.
-
-      :param batch: The output of your data iterable, normally a :class:`~torch.utils.data.DataLoader`.
-      :param batch_idx: The index of this batch.
-      :param dataloader_idx: The index of the dataloader that produced this batch.
-                             (only if multiple dataloaders used)
-
-      :returns:
-
-                - :class:`~torch.Tensor` - The loss tensor
-                - ``dict`` - A dictionary which can include any keys, but must include the key ``'loss'`` in the case of
-                  automatic optimization.
-                - ``None`` - In automatic optimization, this will skip to the next batch (but is not supported for
-                  multi-GPU, TPU, or DeepSpeed). For manual optimization, this has no special meaning, as returning
-                  the loss is not required.
-
-      In this step you'd normally do the forward pass and calculate the loss for a batch.
-      You can also do fancier things like multiple forward passes or something model specific.
-
-      Example::
-
-          def training_step(self, batch, batch_idx):
-              x, y, z = batch
-              out = self.encoder(x)
-              loss = self.loss(out, x)
-              return loss
-
-      To use multiple optimizers, you can switch to 'manual optimization' and control their stepping:
-
-      .. code-block:: python
-
-          def __init__(self):
-              super().__init__()
-              self.automatic_optimization = False
-
-
-          # Multiple optimizers (e.g.: GANs)
-          def training_step(self, batch, batch_idx):
-              opt1, opt2 = self.optimizers()
-
-              # do training_step with encoder
-              ...
-              opt1.step()
-              # do training_step with decoder
-              ...
-              opt2.step()
-
-      .. note::
-
-         When ``accumulate_grad_batches`` > 1, the loss returned here will be automatically
-         normalized by ``accumulate_grad_batches`` internally.
-
-
-
-.. py:class:: BaseKGE(args: dict)
-
-   Bases: :py:obj:`BaseKGELightning`
-
-
-   Base class for all neural network modules.
-
-   Your models should also subclass this class.
-
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
-
-       import torch.nn as nn
-       import torch.nn.functional as F
-
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
-
-
-   .. py:attribute:: args
-
-
-   .. py:attribute:: embedding_dim
-      :value: None
-
-
-
-   .. py:attribute:: num_entities
-      :value: None
-
-
-
-   .. py:attribute:: num_relations
-      :value: None
-
-
-
-   .. py:attribute:: num_tokens
-      :value: None
-
-
-
-   .. py:attribute:: learning_rate
-      :value: None
-
-
-
-   .. py:attribute:: apply_unit_norm
-      :value: None
-
-
-
-   .. py:attribute:: input_dropout_rate
-      :value: None
-
-
-
-   .. py:attribute:: hidden_dropout_rate
-      :value: None
-
-
-
-   .. py:attribute:: optimizer_name
-      :value: None
-
-
-
-   .. py:attribute:: feature_map_dropout_rate
-      :value: None
-
-
-
-   .. py:attribute:: kernel_size
-      :value: None
-
-
-
-   .. py:attribute:: num_of_output_channels
-      :value: None
-
-
-
-   .. py:attribute:: weight_decay
-      :value: None
-
-
-
-   .. py:attribute:: loss
-
-
-   .. py:attribute:: selected_optimizer
-      :value: None
-
-
-
-   .. py:attribute:: normalizer_class
-      :value: None
-
-
-
-   .. py:attribute:: normalize_head_entity_embeddings
-
-
-   .. py:attribute:: normalize_relation_embeddings
-
-
-   .. py:attribute:: normalize_tail_entity_embeddings
-
-
-   .. py:attribute:: hidden_normalizer
-
-
-   .. py:attribute:: param_init
-
-
-   .. py:attribute:: input_dp_ent_real
-
-
-   .. py:attribute:: input_dp_rel_real
-
-
-   .. py:attribute:: hidden_dropout
-
-
-   .. py:attribute:: loss_history
-      :value: []
-
-
-
-   .. py:attribute:: byte_pair_encoding
-
-
-   .. py:attribute:: max_length_subword_tokens
-
-
-   .. py:attribute:: block_size
-
-
-   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
-
-      :param x:
-      :type x: B x 2 x T
-
-
-
-   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
-
-      byte pair encoded neural link predictors
-
-      :param -------:
-
-
-
-   .. py:method:: init_params_with_sanity_checking()
-
-
-   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
-
-      :param x:
-      :param y_idx:
-      :param ordered_bpe_entities:
-
-
-
-   .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
-
-      :param x:
-
-
-
-   .. py:method:: forward_k_vs_all(*args, **kwargs)
-
-
-   .. py:method:: forward_k_vs_sample(*args, **kwargs)
-
-
-   .. py:method:: get_triple_representation(idx_hrt)
-
-
-   .. py:method:: get_head_relation_representation(indexed_triple)
-
-
-   .. py:method:: get_sentence_representation(x: torch.LongTensor)
-
-      :param x shape (b:
-      :param 3:
-      :param t):
-
-
-
-   .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
-
-      :param x:
-      :type x: B x 2 x T
-
-
-
-   .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
-
-
-.. py:class:: EnsembleKGE(models: list = None, seed_model=None, pretrained_models: List = None)
-
-   .. py:attribute:: name
-
-
-   .. py:attribute:: train_mode
-      :value: True
-
-
-
-   .. py:attribute:: args
-
-
-   .. py:method:: named_children()
-
-
-   .. py:property:: example_input_array
-
-
-   .. py:method:: parameters()
-
-
-   .. py:method:: modules()
-
-
-   .. py:method:: __iter__()
-
-
-   .. py:method:: __len__()
-
-
-   .. py:method:: eval()
-
-
-   .. py:method:: to(device)
-
-
-   .. py:method:: state_dict()
-
-      Return the state dict of the ensemble.
-
-
-
-   .. py:method:: load_state_dict(state_dict, strict=True)
-
-      Load the state dict into the ensemble.
-
-
-
-   .. py:method:: mem_of_model()
-
-
-   .. py:method:: __call__(x_batch)
-
-
-   .. py:method:: step()
-
-
-   .. py:method:: get_embeddings()
-
-
-   .. py:method:: __str__()
-
-
-.. py:function:: create_recipriocal_triples(x)
-
-   Add inverse triples into dask dataframe
-   :param x:
-   :return:
-
-
-.. py:function:: get_er_vocab(data, file_path: str = None)
-
-.. py:function:: get_re_vocab(data, file_path: str = None)
-
-.. py:function:: get_ee_vocab(data, file_path: str = None)
-
-.. py:function:: timeit(func)
-
-.. py:function:: save_pickle(*, data: object = None, file_path=str)
-
-.. py:function:: load_pickle(file_path=str)
-
-.. py:function:: load_term_mapping(file_path=str)
-
-.. py:function:: select_model(args: dict, is_continual_training: bool = None, storage_path: str = None)
-
-.. py:function:: load_model(path_of_experiment_folder: str, model_name='model.pt', verbose=0) -> Tuple[object, Tuple[dict, dict]]
-
-   Load weights and initialize pytorch module from namespace arguments
-
-
-.. py:function:: load_model_ensemble(path_of_experiment_folder: str) -> Tuple[dicee.models.base_model.BaseKGE, Tuple[pandas.DataFrame, pandas.DataFrame]]
-
-   Construct Ensemble Of weights and initialize pytorch module from namespace arguments
-
-   (1) Detect models under given path
-   (2) Accumulate parameters of detected models
-   (3) Normalize parameters
-   (4) Insert (3) into model.
-
-
-.. py:function:: save_numpy_ndarray(*, data: numpy.ndarray, file_path: str)
-
-.. py:function:: numpy_data_type_changer(train_set: numpy.ndarray, num: int) -> numpy.ndarray
-
-   Detect most efficient data type for a given triples
-   :param train_set:
-   :param num:
-   :return:
-
-
-.. py:function:: save_checkpoint_model(model, path: str) -> None
-
-   Store Pytorch model into disk
-
-
-.. py:function:: store(trained_model, model_name: str = 'model', full_storage_path: str = None, save_embeddings_as_csv=False) -> None
-
-.. py:function:: add_noisy_triples(train_set: pandas.DataFrame, add_noise_rate: float) -> pandas.DataFrame
-
-   Add randomly constructed triples
-   :param train_set:
-   :param add_noise_rate:
-   :return:
-
-
-.. py:function:: read_or_load_kg(args, cls)
-
-.. py:function:: intialize_model(args: dict, verbose=0) -> Tuple[object, str]
-
-.. py:function:: load_json(p: str) -> dict
-
-.. py:function:: save_embeddings(embeddings: numpy.ndarray, indexes, path: str) -> None
-
-   Save it as CSV if memory allows.
-   :param embeddings:
-   :param indexes:
-   :param path:
-   :return:
-
-
-.. py:function:: random_prediction(pre_trained_kge)
-
-.. py:function:: deploy_triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object)
-
-.. py:function:: deploy_tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, top_k)
-
-.. py:function:: deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, top_k)
-
-.. py:function:: deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k)
-
-.. py:function:: vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into)
-
-.. py:function:: create_experiment_folder(folder_name='Experiments')
-
-.. py:function:: continual_training_setup_executor(executor) -> None
-
-.. py:function:: exponential_function(x: numpy.ndarray, lam: float, ascending_order=True) -> torch.FloatTensor
-
-.. py:function:: load_numpy(path) -> numpy.ndarray
-
-.. py:function:: evaluate(entity_to_idx, scores, easy_answers, hard_answers)
-
-   # @TODO: CD: Renamed this function
-   Evaluate multi hop query answering on different query types
-
-
-.. py:function:: download_file(url, destination_folder='.')
-
-.. py:function:: download_files_from_url(base_url: str, destination_folder='.') -> None
-
-   :param base_url:
-   :type base_url: e.g. "https://files.dice-research.org/projects/DiceEmbeddings/KINSHIP-Keci-dim128-epoch256-KvsAll"
-   :param destination_folder:
-   :type destination_folder: e.g. "KINSHIP-Keci-dim128-epoch256-KvsAll"
-
-
-.. py:function:: download_pretrained_model(url: str) -> str
-
-.. py:function:: write_csv_from_model_parallel(path: str)
-
-   Create
-
-
-.. py:function:: from_pretrained_model_write_embeddings_into_csv(path: str) -> None
-
-.. py:class:: DICE_Trainer(args, is_continual_training: bool, storage_path, evaluator=None)
-
-   DICE_Trainer implement
-    1- Pytorch Lightning trainer (https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html)
-    2- Multi-GPU Trainer(https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html)
-    3- CPU Trainer
-
-    Parameter
-    ---------
-    args
-
-    is_continual_training:bool
-
-    storage_path:str
-
-    evaluator:
-
-    Returns
-    -------
-    report:dict
 
 
 
    .. py:attribute:: report
-
-
-   .. py:attribute:: args
-
-
-   .. py:attribute:: trainer
-      :value: None
-
-
-
-   .. py:attribute:: is_continual_training
-
-
-   .. py:attribute:: storage_path
+      :type:  Dict
 
 
    .. py:attribute:: evaluator
+      :type:  Optional[dicee.evaluator.Evaluator]
       :value: None
 
 
 
-   .. py:attribute:: form_of_labelling
+   .. py:attribute:: start_time
+      :type:  Optional[float]
       :value: None
 
 
 
-   .. py:method:: continual_start(knowledge_graph)
+   .. py:method:: is_rank_zero() -> bool
 
-      (1) Initialize training.
-      (2) Load model
-      (3) Load trainer
-      (3) Fit model
+
+   .. py:method:: cleanup()
+
+
+   .. py:method:: setup_executor() -> None
+
+      Set up storage directories for the experiment.
+
+      Creates or reuses experiment directories based on configuration.
+      Saves the configuration to a JSON file.
+
+
+
+   .. py:method:: create_and_store_kg() -> None
+
+      Create knowledge graph and store as memory-mapped file.
+
+      Only executed on rank 0 in distributed training.
+      Skips if memmap already exists.
+
+
+
+   .. py:method:: load_from_memmap() -> None
+
+      Load knowledge graph from memory-mapped file.
+
+
+
+   .. py:method:: save_trained_model() -> None
+
+      Save a knowledge graph embedding model
+
+      (1) Send model to eval mode and cpu.
+      (2) Store the memory footprint of the model.
+      (3) Save the model into disk.
+      (4) Update the stats of KG again ?
+
+      Parameter
+      ----------
+
+      :rtype: None
+
+
+
+   .. py:method:: end(form_of_labelling: str) -> dict
+
+      End training
+
+      (1) Store trained model.
+      (2) Report runtimes.
+      (3) Eval model if required.
 
       Parameter
       ---------
 
-      :returns: * *model*
-                * **form_of_labelling** (*str*)
+      :rtype: A dict containing information about the training and/or evaluation
 
 
 
-   .. py:method:: initialize_trainer(callbacks: List) -> lightning.Trainer | dicee.trainer.model_parallelism.TensorParallel | dicee.trainer.torch_trainer.TorchTrainer | dicee.trainer.torch_trainer_ddp.TorchDDPTrainer
+   .. py:method:: write_report() -> None
 
-      Initialize Trainer from input arguments
-
-
-
-   .. py:method:: initialize_or_load_model()
-
-
-   .. py:method:: init_dataloader(dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader
-
-
-   .. py:method:: init_dataset() -> torch.utils.data.Dataset
-
-
-   .. py:method:: start(knowledge_graph: Union[dicee.knowledge_graph.KG, numpy.memmap]) -> Tuple[dicee.models.base_model.BaseKGE, str]
-
-      Start the training
-
-      (1) Initialize Trainer
-      (2) Initialize or load a pretrained KGE model
-
-      in DDP setup, we need to load the memory map of already read/index KG.
+      Report training related information in a report.json file
 
 
 
-   .. py:method:: k_fold_cross_validation(dataset) -> Tuple[dicee.models.base_model.BaseKGE, str]
+   .. py:method:: start() -> dict
 
-      Perform K-fold Cross-Validation
+      Start training
 
-      1. Obtain K train and test splits.
-      2. For each split,
-          2.1 initialize trainer and model
-          2.2. Train model with configuration provided in args.
-          2.3. Compute the mean reciprocal rank (MRR) score of the model on the test respective split.
-      3. Report the mean and average MRR .
+      # (1) Loading the Data
+      # (2) Create an evaluator object.
+      # (3) Create a trainer object.
+      # (4) Start the training
 
-      :param self:
-      :param dataset:
-      :return: model
+      Parameter
+      ---------
+
+      :rtype: A dict containing information about the training and/or evaluation
 
 
 
@@ -2599,946 +497,6 @@ Package Contents
 
 
 
-.. py:function:: mapping_from_first_two_cols_to_third(train_set_idx)
-
-.. py:function:: timeit(func)
-
-.. py:function:: load_term_mapping(file_path=str)
-
-.. py:function:: reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, label_smoothing_rate)
-
-   Reload the files from disk to construct the Pytorch dataset
-
-
-.. py:function:: construct_dataset(*, train_set: Union[numpy.ndarray, list], valid_set=None, test_set=None, ordered_bpe_entities=None, train_target_indices=None, target_dim: int = None, entity_to_idx: dict, relation_to_idx: dict, form_of_labelling: str, scoring_technique: str, neg_ratio: int, label_smoothing_rate: float, byte_pair_encoding=None, block_size: int = None) -> torch.utils.data.Dataset
-
-.. py:class:: BPE_NegativeSamplingDataset(train_set: torch.LongTensor, ordered_shaped_bpe_entities: torch.LongTensor, neg_ratio: int)
-
-   Bases: :py:obj:`torch.utils.data.Dataset`
-
-
-   An abstract class representing a :class:`Dataset`.
-
-   All datasets that represent a map from keys to data samples should subclass
-   it. All subclasses should overwrite :meth:`__getitem__`, supporting fetching a
-   data sample for a given key. Subclasses could also optionally overwrite
-   :meth:`__len__`, which is expected to return the size of the dataset by many
-   :class:`~torch.utils.data.Sampler` implementations and the default options
-   of :class:`~torch.utils.data.DataLoader`. Subclasses could also
-   optionally implement :meth:`__getitems__`, for speedup batched samples
-   loading. This method accepts list of indices of samples of batch and returns
-   list of samples.
-
-   .. note::
-     :class:`~torch.utils.data.DataLoader` by default constructs an index
-     sampler that yields integral indices.  To make it work with a map-style
-     dataset with non-integral indices/keys, a custom sampler must be provided.
-
-
-   .. py:attribute:: train_set
-
-
-   .. py:attribute:: ordered_bpe_entities
-
-
-   .. py:attribute:: num_bpe_entities
-
-
-   .. py:attribute:: neg_ratio
-
-
-   .. py:attribute:: num_datapoints
-
-
-   .. py:method:: __len__()
-
-
-   .. py:method:: __getitem__(idx)
-
-
-   .. py:method:: collate_fn(batch_shaped_bpe_triples: List[Tuple[torch.Tensor, torch.Tensor]])
-
-
-.. py:class:: MultiLabelDataset(train_set: torch.LongTensor, train_indices_target: torch.LongTensor, target_dim: int, torch_ordered_shaped_bpe_entities: torch.LongTensor)
-
-   Bases: :py:obj:`torch.utils.data.Dataset`
-
-
-   An abstract class representing a :class:`Dataset`.
-
-   All datasets that represent a map from keys to data samples should subclass
-   it. All subclasses should overwrite :meth:`__getitem__`, supporting fetching a
-   data sample for a given key. Subclasses could also optionally overwrite
-   :meth:`__len__`, which is expected to return the size of the dataset by many
-   :class:`~torch.utils.data.Sampler` implementations and the default options
-   of :class:`~torch.utils.data.DataLoader`. Subclasses could also
-   optionally implement :meth:`__getitems__`, for speedup batched samples
-   loading. This method accepts list of indices of samples of batch and returns
-   list of samples.
-
-   .. note::
-     :class:`~torch.utils.data.DataLoader` by default constructs an index
-     sampler that yields integral indices.  To make it work with a map-style
-     dataset with non-integral indices/keys, a custom sampler must be provided.
-
-
-   .. py:attribute:: train_set
-
-
-   .. py:attribute:: train_indices_target
-
-
-   .. py:attribute:: target_dim
-
-
-   .. py:attribute:: num_datapoints
-
-
-   .. py:attribute:: torch_ordered_shaped_bpe_entities
-
-
-   .. py:attribute:: collate_fn
-      :value: None
-
-
-
-   .. py:method:: __len__()
-
-
-   .. py:method:: __getitem__(idx)
-
-
-.. py:class:: MultiClassClassificationDataset(subword_units: numpy.ndarray, block_size: int = 8)
-
-   Bases: :py:obj:`torch.utils.data.Dataset`
-
-
-   Dataset for the 1vsALL training strategy
-
-   :param train_set_idx: Indexed triples for the training.
-   :param entity_idxs: mapping.
-   :param relation_idxs: mapping.
-   :param form: ?
-   :param num_workers: int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
-
-   :rtype: torch.utils.data.Dataset
-
-
-   .. py:attribute:: train_data
-
-
-   .. py:attribute:: block_size
-      :value: 8
-
-
-
-   .. py:attribute:: num_of_data_points
-
-
-   .. py:attribute:: collate_fn
-      :value: None
-
-
-
-   .. py:method:: __len__()
-
-
-   .. py:method:: __getitem__(idx)
-
-
-.. py:class:: OnevsAllDataset(train_set_idx: numpy.ndarray, entity_idxs)
-
-   Bases: :py:obj:`torch.utils.data.Dataset`
-
-
-   Dataset for the 1vsALL training strategy
-
-   :param train_set_idx: Indexed triples for the training.
-   :param entity_idxs: mapping.
-   :param relation_idxs: mapping.
-   :param form: ?
-   :param num_workers: int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
-
-   :rtype: torch.utils.data.Dataset
-
-
-   .. py:attribute:: train_data
-
-
-   .. py:attribute:: target_dim
-
-
-   .. py:attribute:: collate_fn
-      :value: None
-
-
-
-   .. py:method:: __len__()
-
-
-   .. py:method:: __getitem__(idx)
-
-
-.. py:class:: KvsAll(train_set_idx: numpy.ndarray, entity_idxs, relation_idxs, form, store=None, label_smoothing_rate: float = 0.0)
-
-   Bases: :py:obj:`torch.utils.data.Dataset`
-
-
-   Creates a dataset for KvsAll training by inheriting from torch.utils.data.Dataset.
-       Let D denote a dataset for KvsAll training and be defined as D:= {(x,y)_i}_i ^N, where
-       x: (h,r) is an unique tuple of an entity h \in E and a relation r \in R that has been seed in the input graph.
-       y: denotes a multi-label vector \in [0,1]^{|E|} is a binary label.
-   orall y_i =1 s.t. (h r E_i) \in KG
-
-       .. note::
-           TODO
-
-       Parameters
-       ----------
-       train_set_idx : numpy.ndarray
-           n by 3 array representing n triples
-
-       entity_idxs : dictonary
-           string representation of an entity to its integer id
-
-       relation_idxs : dictonary
-           string representation of a relation to its integer id
-
-       Returns
-       -------
-       self : torch.utils.data.Dataset
-
-       See Also
-       --------
-
-       Notes
-       -----
-
-       Examples
-       --------
-       >>> a = KvsAll()
-       >>> a
-       ? array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-
-
-
-   .. py:attribute:: train_data
-      :value: None
-
-
-
-   .. py:attribute:: train_target
-      :value: None
-
-
-
-   .. py:attribute:: label_smoothing_rate
-
-
-   .. py:attribute:: collate_fn
-      :value: None
-
-
-
-   .. py:method:: __len__()
-
-
-   .. py:method:: __getitem__(idx)
-
-
-.. py:class:: AllvsAll(train_set_idx: numpy.ndarray, entity_idxs, relation_idxs, label_smoothing_rate=0.0)
-
-   Bases: :py:obj:`torch.utils.data.Dataset`
-
-
-   Creates a dataset for AllvsAll training by inheriting from torch.utils.data.Dataset.
-       Let D denote a dataset for AllvsAll training and be defined as D:= {(x,y)_i}_i ^N, where
-       x: (h,r) is a possible unique tuple of an entity h \in E and a relation r \in R. Hence N = |E| x |R|
-       y: denotes a multi-label vector \in [0,1]^{|E|} is a binary label.
-   orall y_i =1 s.t. (h r E_i) \in KG
-
-       .. note::
-           AllvsAll extends KvsAll via none existing (h,r). Hence, it adds data points that are labelled without 1s,
-            only with 0s.
-
-       Parameters
-       ----------
-       train_set_idx : numpy.ndarray
-           n by 3 array representing n triples
-
-       entity_idxs : dictonary
-           string representation of an entity to its integer id
-
-       relation_idxs : dictonary
-           string representation of a relation to its integer id
-
-       Returns
-       -------
-       self : torch.utils.data.Dataset
-
-       See Also
-       --------
-
-       Notes
-       -----
-
-       Examples
-       --------
-       >>> a = AllvsAll()
-       >>> a
-       ? array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-
-
-
-   .. py:attribute:: train_data
-      :value: None
-
-
-
-   .. py:attribute:: train_target
-      :value: None
-
-
-
-   .. py:attribute:: label_smoothing_rate
-
-
-   .. py:attribute:: collate_fn
-      :value: None
-
-
-
-   .. py:attribute:: target_dim
-
-
-   .. py:method:: __len__()
-
-
-   .. py:method:: __getitem__(idx)
-
-
-.. py:class:: OnevsSample(train_set: numpy.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0)
-
-   Bases: :py:obj:`torch.utils.data.Dataset`
-
-
-   A custom PyTorch Dataset class for knowledge graph embeddings, which includes
-   both positive and negative sampling for a given dataset for multi-class classification problem..
-
-   :param train_set: A numpy array containing triples of knowledge graph data.
-                     Each triple consists of (head_entity, relation, tail_entity).
-   :type train_set: np.ndarray
-   :param num_entities: The number of unique entities in the knowledge graph.
-   :type num_entities: int
-   :param num_relations: The number of unique relations in the knowledge graph.
-   :type num_relations: int
-   :param neg_sample_ratio: The number of negative samples to be generated
-                            per positive sample. Must be a positive integer and less than num_entities.
-   :type neg_sample_ratio: int, optional
-   :param label_smoothing_rate: A label smoothing rate to apply to the
-                                positive and negative labels. Defaults to 0.0.
-   :type label_smoothing_rate: float, optional
-
-   .. attribute:: train_data
-
-      The input data converted into a PyTorch tensor.
-
-      :type: torch.Tensor
-
-   .. attribute:: num_entities
-
-      Number of entities in the dataset.
-
-      :type: int
-
-   .. attribute:: num_relations
-
-      Number of relations in the dataset.
-
-      :type: int
-
-   .. attribute:: neg_sample_ratio
-
-      Ratio of negative samples to be drawn for each positive sample.
-
-      :type: int
-
-   .. attribute:: label_smoothing_rate
-
-      The smoothing factor applied to the labels.
-
-      :type: torch.Tensor
-
-   .. attribute:: collate_fn
-
-      A function that can be used to collate data samples into
-      batches (set to None by default).
-
-      :type: function, optional
-
-
-   .. py:attribute:: train_data
-
-
-   .. py:attribute:: num_entities
-
-
-   .. py:attribute:: num_relations
-
-
-   .. py:attribute:: neg_sample_ratio
-      :value: None
-
-
-
-   .. py:attribute:: label_smoothing_rate
-
-
-   .. py:attribute:: collate_fn
-      :value: None
-
-
-
-   .. py:method:: __len__()
-
-      Returns the number of samples in the dataset.
-
-
-
-   .. py:method:: __getitem__(idx)
-
-      Retrieves a single data sample from the dataset at the given index.
-
-      :param idx: The index of the sample to retrieve.
-      :type idx: int
-
-      :returns:
-
-                A tuple consisting of:
-                    - x (torch.Tensor): The head and relation part of the triple.
-                    - y_idx (torch.Tensor): The concatenated indices of the true object (tail entity)
-                      and the indices of the negative samples.
-                    - y_vec (torch.Tensor): A vector containing the labels for the positive and
-                      negative samples, with label smoothing applied.
-      :rtype: tuple
-
-
-
-.. py:class:: KvsSampleDataset(train_set_idx: numpy.ndarray, entity_idxs, relation_idxs, form, store=None, neg_ratio=None, label_smoothing_rate: float = 0.0)
-
-   Bases: :py:obj:`torch.utils.data.Dataset`
-
-
-       KvsSample a Dataset:
-           D:= {(x,y)_i}_i ^N, where
-               . x:(h,r) is a unique h \in E and a relation r \in R and
-               . y \in [0,1]^{|E|} is a binary label.
-   orall y_i =1 s.t. (h r E_i) \in KG
-              At each mini-batch construction, we subsample(y), hence n
-               |new_y| << |E|
-               new_y contains all 1's if sum(y)< neg_sample ratio
-               new_y contains
-          Parameters
-          ----------
-          train_set_idx
-              Indexed triples for the training.
-          entity_idxs
-              mapping.
-          relation_idxs
-              mapping.
-          form
-              ?
-          store
-               ?
-          label_smoothing_rate
-              ?
-          Returns
-          -------
-          torch.utils.data.Dataset
-
-
-
-   .. py:attribute:: train_data
-      :value: None
-
-
-
-   .. py:attribute:: train_target
-      :value: None
-
-
-
-   .. py:attribute:: neg_ratio
-      :value: None
-
-
-
-   .. py:attribute:: num_entities
-
-
-   .. py:attribute:: label_smoothing_rate
-
-
-   .. py:attribute:: collate_fn
-      :value: None
-
-
-
-   .. py:attribute:: max_num_of_classes
-
-
-   .. py:method:: __len__()
-
-
-   .. py:method:: __getitem__(idx)
-
-
-.. py:class:: NegSampleDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1)
-
-   Bases: :py:obj:`torch.utils.data.Dataset`
-
-
-   An abstract class representing a :class:`Dataset`.
-
-   All datasets that represent a map from keys to data samples should subclass
-   it. All subclasses should overwrite :meth:`__getitem__`, supporting fetching a
-   data sample for a given key. Subclasses could also optionally overwrite
-   :meth:`__len__`, which is expected to return the size of the dataset by many
-   :class:`~torch.utils.data.Sampler` implementations and the default options
-   of :class:`~torch.utils.data.DataLoader`. Subclasses could also
-   optionally implement :meth:`__getitems__`, for speedup batched samples
-   loading. This method accepts list of indices of samples of batch and returns
-   list of samples.
-
-   .. note::
-     :class:`~torch.utils.data.DataLoader` by default constructs an index
-     sampler that yields integral indices.  To make it work with a map-style
-     dataset with non-integral indices/keys, a custom sampler must be provided.
-
-
-   .. py:attribute:: neg_sample_ratio
-
-
-   .. py:attribute:: train_triples
-
-
-   .. py:attribute:: length
-
-
-   .. py:attribute:: num_entities
-
-
-   .. py:attribute:: num_relations
-
-
-   .. py:attribute:: labels
-
-
-   .. py:attribute:: train_set
-      :value: []
-
-
-
-   .. py:method:: __len__()
-
-
-   .. py:method:: __getitem__(idx)
-
-
-.. py:class:: TriplePredictionDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0)
-
-   Bases: :py:obj:`torch.utils.data.Dataset`
-
-
-       Triple Dataset
-
-           D:= {(x)_i}_i ^N, where
-               . x:(h,r, t) \in KG is a unique h \in E and a relation r \in R and
-               . collact_fn => Generates negative triples
-
-           collect_fn:
-   orall (h,r,t) \in G obtain, create negative triples{(h,r,x),(,r,t),(h,m,t)}
-
-           y:labels are represented in torch.float16
-          Parameters
-          ----------
-          train_set_idx
-              Indexed triples for the training.
-          entity_idxs
-              mapping.
-          relation_idxs
-              mapping.
-          form
-              ?
-          store
-               ?
-          label_smoothing_rate
-
-
-          collate_fn: batch:List[torch.IntTensor]
-          Returns
-          -------
-          torch.utils.data.Dataset
-
-
-
-   .. py:attribute:: label_smoothing_rate
-
-
-   .. py:attribute:: neg_sample_ratio
-
-
-   .. py:attribute:: train_set
-
-
-   .. py:attribute:: length
-
-
-   .. py:attribute:: num_entities
-
-
-   .. py:attribute:: num_relations
-
-
-   .. py:method:: __len__()
-
-
-   .. py:method:: __getitem__(idx)
-
-
-   .. py:method:: collate_fn(batch: List[torch.Tensor])
-
-
-.. py:class:: CVDataModule(train_set_idx: numpy.ndarray, num_entities, num_relations, neg_sample_ratio, batch_size, num_workers)
-
-   Bases: :py:obj:`pytorch_lightning.LightningDataModule`
-
-
-   Create a Dataset for cross validation
-
-   :param train_set_idx: Indexed triples for the training.
-   :param num_entities: entity to index mapping.
-   :param num_relations: relation to index mapping.
-   :param batch_size: int
-   :param form: ?
-   :param num_workers: int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
-
-   :rtype: ?
-
-
-   .. py:attribute:: train_set_idx
-
-
-   .. py:attribute:: num_entities
-
-
-   .. py:attribute:: num_relations
-
-
-   .. py:attribute:: neg_sample_ratio
-
-
-   .. py:attribute:: batch_size
-
-
-   .. py:attribute:: num_workers
-
-
-   .. py:method:: train_dataloader() -> torch.utils.data.DataLoader
-
-      An iterable or collection of iterables specifying training samples.
-
-      For more information about multiple dataloaders, see this :ref:`section <multiple-dataloaders>`.
-
-      The dataloader you return will not be reloaded unless you set
-      :paramref:`~pytorch_lightning.trainer.trainer.Trainer.reload_dataloaders_every_n_epochs` to
-      a positive integer.
-
-      For data processing use the following pattern:
-
-          - download in :meth:`prepare_data`
-          - process and split in :meth:`setup`
-
-      However, the above are only necessary for distributed processing.
-
-      .. warning:: do not assign state in prepare_data
-
-      - :meth:`~pytorch_lightning.trainer.trainer.Trainer.fit`
-      - :meth:`prepare_data`
-      - :meth:`setup`
-
-      .. note::
-
-         Lightning tries to add the correct sampler for distributed and arbitrary hardware.
-         There is no need to set it yourself.
-
-
-
-   .. py:method:: setup(*args, **kwargs)
-
-      Called at the beginning of fit (train + validate), validate, test, or predict. This is a good hook when you
-      need to build models dynamically or adjust something about them. This hook is called on every process when
-      using DDP.
-
-      :param stage: either ``'fit'``, ``'validate'``, ``'test'``, or ``'predict'``
-
-      Example::
-
-          class LitModel(...):
-              def __init__(self):
-                  self.l1 = None
-
-              def prepare_data(self):
-                  download_data()
-                  tokenize()
-
-                  # don't do this
-                  self.something = else
-
-              def setup(self, stage):
-                  data = load_data(...)
-                  self.l1 = nn.Linear(28, data.num_classes)
-
-
-
-
-   .. py:method:: transfer_batch_to_device(*args, **kwargs)
-
-      Override this hook if your :class:`~torch.utils.data.DataLoader` returns tensors wrapped in a custom data
-      structure.
-
-      The data types listed below (and any arbitrary nesting of them) are supported out of the box:
-
-      - :class:`torch.Tensor` or anything that implements `.to(...)`
-      - :class:`list`
-      - :class:`dict`
-      - :class:`tuple`
-
-      For anything else, you need to define how the data is moved to the target device (CPU, GPU, TPU, ...).
-
-      .. note::
-
-         This hook should only transfer the data and not modify it, nor should it move the data to
-         any other device than the one passed in as argument (unless you know what you are doing).
-         To check the current state of execution of this hook you can use
-         ``self.trainer.training/testing/validating/predicting`` so that you can
-         add different logic as per your requirement.
-
-      :param batch: A batch of data that needs to be transferred to a new device.
-      :param device: The target device as defined in PyTorch.
-      :param dataloader_idx: The index of the dataloader to which the batch belongs.
-
-      :returns: A reference to the data on the new device.
-
-      Example::
-
-          def transfer_batch_to_device(self, batch, device, dataloader_idx):
-              if isinstance(batch, CustomBatch):
-                  # move all tensors in your custom data structure to the device
-                  batch.samples = batch.samples.to(device)
-                  batch.targets = batch.targets.to(device)
-              elif dataloader_idx == 0:
-                  # skip device transfer for the first dataloader or anything you wish
-                  pass
-              else:
-                  batch = super().transfer_batch_to_device(batch, device, dataloader_idx)
-              return batch
-
-      .. seealso::
-
-         - :meth:`move_data_to_device`
-         - :meth:`apply_to_collection`
-
-
-
-   .. py:method:: prepare_data(*args, **kwargs)
-
-      Use this to download and prepare data. Downloading and saving data with multiple processes (distributed
-      settings) will result in corrupted data. Lightning ensures this method is called only within a single process,
-      so you can safely add your downloading logic within.
-
-      .. warning:: DO NOT set state to the model (use ``setup`` instead)
-          since this is NOT called on every device
-
-      Example::
-
-          def prepare_data(self):
-              # good
-              download_data()
-              tokenize()
-              etc()
-
-              # bad
-              self.split = data_split
-              self.some_state = some_other_state()
-
-      In a distributed environment, ``prepare_data`` can be called in two ways
-      (using :ref:`prepare_data_per_node<common/lightning_module:prepare_data_per_node>`)
-
-      1. Once per node. This is the default and is only called on LOCAL_RANK=0.
-      2. Once in total. Only called on GLOBAL_RANK=0.
-
-      Example::
-
-          # DEFAULT
-          # called once per node on LOCAL_RANK=0 of that node
-          class LitDataModule(LightningDataModule):
-              def __init__(self):
-                  super().__init__()
-                  self.prepare_data_per_node = True
-
-
-          # call on GLOBAL_RANK=0 (great for shared file systems)
-          class LitDataModule(LightningDataModule):
-              def __init__(self):
-                  super().__init__()
-                  self.prepare_data_per_node = False
-
-      This is called before requesting the dataloaders:
-
-      .. code-block:: python
-
-          model.prepare_data()
-          initialize_distributed()
-          model.setup(stage)
-          model.train_dataloader()
-          model.val_dataloader()
-          model.test_dataloader()
-          model.predict_dataloader()
-
-
-
-
-.. py:class:: LiteralDataset(file_path: str, ent_idx: dict = None, normalization_type: str = 'z-norm', sampling_ratio: float = None, loader_backend: str = 'pandas')
-
-   Bases: :py:obj:`torch.utils.data.Dataset`
-
-
-   Dataset for loading and processing literal data for training Literal Embedding model.
-   This dataset handles the loading, normalization, and preparation of triples
-   for training a literal embedding model.
-
-   Extends torch.utils.data.Dataset for supporting PyTorch dataloaders.
-
-   .. attribute:: train_file_path
-
-      Path to the training data file.
-
-      :type: str
-
-   .. attribute:: normalization
-
-      Type of normalization to apply ('z-norm', 'min-max', or None).
-
-      :type: str
-
-   .. attribute:: normalization_params
-
-      Parameters used for normalization.
-
-      :type: dict
-
-   .. attribute:: sampling_ratio
-
-      Fraction of the training set to use for ablations.
-
-      :type: float
-
-   .. attribute:: entity_to_idx
-
-      Mapping of entities to their indices.
-
-      :type: dict
-
-   .. attribute:: num_entities
-
-      Total number of entities.
-
-      :type: int
-
-   .. attribute:: data_property_to_idx
-
-      Mapping of data properties to their indices.
-
-      :type: dict
-
-   .. attribute:: num_data_properties
-
-      Total number of data properties.
-
-      :type: int
-
-   .. attribute:: loader_backend
-
-      Backend to use for loading data ('pandas' or 'rdflib').
-
-      :type: str
-
-
-   .. py:attribute:: train_file_path
-
-
-   .. py:attribute:: loader_backend
-      :value: 'pandas'
-
-
-
-   .. py:attribute:: normalization_type
-      :value: 'z-norm'
-
-
-
-   .. py:attribute:: normalization_params
-
-
-   .. py:attribute:: sampling_ratio
-      :value: None
-
-
-
-   .. py:attribute:: entity_to_idx
-      :value: None
-
-
-
-   .. py:attribute:: num_entities
-
-
-   .. py:method:: __getitem__(index)
-
-
-   .. py:method:: __len__()
-
-
-   .. py:method:: load_and_validate_literal_data(file_path: str = None, loader_backend: str = 'pandas') -> pandas.DataFrame
-      :staticmethod:
-
-
-      Loads and validates the literal data file.
-      :param file_path: Path to the literal data file.
-      :type file_path: str
-
-      :returns: DataFrame containing the loaded and validated data.
-      :rtype: pd.DataFrame
-
-
-
-   .. py:method:: denormalize(preds_norm, attributes, normalization_params) -> numpy.ndarray
-      :staticmethod:
-
-
-      Denormalizes the predictions based on the normalization type.
-
-      Args:
-      preds_norm (np.ndarray): Normalized predictions to be denormalized.
-      attributes (list): List of attributes corresponding to the predictions.
-      normalization_params (dict): Dictionary containing normalization parameters for each attribute.
-
-      :returns: Denormalized predictions.
-      :rtype: np.ndarray
-
-
-
 .. py:class:: QueryGenerator(train_path, val_path: str, test_path: str, ent2id: Dict = None, rel2id: Dict = None, seed: int = 1, gen_valid: bool = False, gen_test: bool = True)
 
    .. py:attribute:: train_path
@@ -3680,6 +638,350 @@ Package Contents
 
 
       Load Queries from Disk to Memory
+
+
+
+.. py:class:: DICE_Trainer(args, is_continual_training: bool, storage_path, evaluator=None)
+
+   DICE_Trainer implement
+    1- Pytorch Lightning trainer (https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html)
+    2- Multi-GPU Trainer(https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html)
+    3- CPU Trainer
+
+    Parameter
+    ---------
+    args
+
+    is_continual_training:bool
+
+    storage_path:str
+
+    evaluator:
+
+    Returns
+    -------
+    report:dict
+
+
+
+   .. py:attribute:: report
+
+
+   .. py:attribute:: args
+
+
+   .. py:attribute:: trainer
+      :value: None
+
+
+
+   .. py:attribute:: is_continual_training
+
+
+   .. py:attribute:: storage_path
+
+
+   .. py:attribute:: evaluator
+      :value: None
+
+
+
+   .. py:attribute:: form_of_labelling
+      :value: None
+
+
+
+   .. py:method:: continual_start(knowledge_graph)
+
+      (1) Initialize training.
+      (2) Load model
+      (3) Load trainer
+      (3) Fit model
+
+      Parameter
+      ---------
+
+      :returns: * *model*
+                * **form_of_labelling** (*str*)
+
+
+
+   .. py:method:: initialize_trainer(callbacks: List) -> lightning.Trainer | dicee.trainer.model_parallelism.TensorParallel | dicee.trainer.torch_trainer.TorchTrainer | dicee.trainer.torch_trainer_ddp.TorchDDPTrainer
+
+      Initialize Trainer from input arguments
+
+
+
+   .. py:method:: initialize_or_load_model()
+
+
+   .. py:method:: init_dataloader(dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader
+
+
+   .. py:method:: init_dataset() -> torch.utils.data.Dataset
+
+
+   .. py:method:: start(knowledge_graph: Union[dicee.knowledge_graph.KG, numpy.memmap]) -> Tuple[dicee.models.base_model.BaseKGE, str]
+
+      Start the training
+
+      (1) Initialize Trainer
+      (2) Initialize or load a pretrained KGE model
+
+      in DDP setup, we need to load the memory map of already read/index KG.
+
+
+
+   .. py:method:: k_fold_cross_validation(dataset) -> Tuple[dicee.models.base_model.BaseKGE, str]
+
+      Perform K-fold Cross-Validation
+
+      1. Obtain K train and test splits.
+      2. For each split,
+          2.1 initialize trainer and model
+          2.2. Train model with configuration provided in args.
+          2.3. Compute the mean reciprocal rank (MRR) score of the model on the test respective split.
+      3. Report the mean and average MRR .
+
+      :param self:
+      :param dataset:
+      :return: model
+
+
+
+.. py:class:: Evaluator(args, is_continual_training: bool = False)
+
+   Evaluator class for KGE models in various downstream tasks.
+
+   Orchestrates link prediction evaluation with different scoring techniques
+   including standard evaluation and byte-pair encoding based evaluation.
+
+   .. attribute:: er_vocab
+
+      Entity-relation to tail vocabulary for filtered ranking.
+
+   .. attribute:: re_vocab
+
+      Relation-entity (tail) to head vocabulary.
+
+   .. attribute:: ee_vocab
+
+      Entity-entity to relation vocabulary.
+
+   .. attribute:: num_entities
+
+      Total number of entities in the knowledge graph.
+
+   .. attribute:: num_relations
+
+      Total number of relations in the knowledge graph.
+
+   .. attribute:: args
+
+      Configuration arguments.
+
+   .. attribute:: report
+
+      Dictionary storing evaluation results.
+
+   .. attribute:: during_training
+
+      Whether evaluation is happening during training.
+
+   .. rubric:: Example
+
+   >>> from dicee.evaluation import Evaluator
+   >>> evaluator = Evaluator(args)
+   >>> results = evaluator.eval(dataset, model, 'EntityPrediction')
+   >>> print(f"Test MRR: {results['Test']['MRR']:.4f}")
+
+
+   .. py:attribute:: re_vocab
+      :type:  Optional[Dict]
+      :value: None
+
+
+
+   .. py:attribute:: er_vocab
+      :type:  Optional[Dict]
+      :value: None
+
+
+
+   .. py:attribute:: ee_vocab
+      :type:  Optional[Dict]
+      :value: None
+
+
+
+   .. py:attribute:: func_triple_to_bpe_representation
+      :value: None
+
+
+
+   .. py:attribute:: is_continual_training
+      :value: False
+
+
+
+   .. py:attribute:: num_entities
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: num_relations
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: domain_constraints_per_rel
+      :value: None
+
+
+
+   .. py:attribute:: range_constraints_per_rel
+      :value: None
+
+
+
+   .. py:attribute:: args
+
+
+   .. py:attribute:: report
+      :type:  Dict
+
+
+   .. py:attribute:: during_training
+      :value: False
+
+
+
+   .. py:method:: vocab_preparation(dataset) -> None
+
+      Prepare vocabularies from the dataset for evaluation.
+
+      Resolves any future objects and saves vocabularies to disk.
+
+      :param dataset: Knowledge graph dataset with vocabulary attributes.
+
+
+
+   .. py:method:: eval(dataset, trained_model, form_of_labelling: str, during_training: bool = False) -> Optional[Dict]
+
+      Evaluate the trained model on the dataset.
+
+      :param dataset: Knowledge graph dataset (KG instance).
+      :param trained_model: The trained KGE model.
+      :param form_of_labelling: Type of labelling ('EntityPrediction' or 'RelationPrediction').
+      :param during_training: Whether evaluation is during training.
+
+      :returns: Dictionary of evaluation metrics, or None if evaluation is skipped.
+
+
+
+   .. py:method:: eval_rank_of_head_and_tail_entity(*, train_set, valid_set=None, test_set=None, trained_model) -> None
+
+      Evaluate with negative sampling scoring.
+
+
+
+   .. py:method:: eval_rank_of_head_and_tail_byte_pair_encoded_entity(*, train_set=None, valid_set=None, test_set=None, ordered_bpe_entities, trained_model) -> None
+
+      Evaluate with BPE-encoded entities and negative sampling.
+
+
+
+   .. py:method:: eval_with_byte(*, raw_train_set, raw_valid_set=None, raw_test_set=None, trained_model, form_of_labelling) -> None
+
+      Evaluate BytE model with generation.
+
+
+
+   .. py:method:: eval_with_bpe_vs_all(*, raw_train_set, raw_valid_set=None, raw_test_set=None, trained_model, form_of_labelling) -> None
+
+      Evaluate with BPE and KvsAll scoring.
+
+
+
+   .. py:method:: eval_with_vs_all(*, train_set, valid_set=None, test_set=None, trained_model, form_of_labelling) -> None
+
+      Evaluate with KvsAll or 1vsAll scoring.
+
+
+
+   .. py:method:: evaluate_lp_k_vs_all(model, triple_idx, info: str = None, form_of_labelling: str = None) -> Dict[str, float]
+
+      Filtered link prediction evaluation with KvsAll scoring.
+
+      :param model: The trained model to evaluate.
+      :param triple_idx: Integer-indexed test triples.
+      :param info: Description to print.
+      :param form_of_labelling: 'EntityPrediction' or 'RelationPrediction'.
+
+      :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+
+   .. py:method:: evaluate_lp_with_byte(model, triples: List[List[str]], info: str = None) -> Dict[str, float]
+
+      Evaluate BytE model with text generation.
+
+      :param model: BytE model.
+      :param triples: String triples.
+      :param info: Description to print.
+
+      :returns: Dictionary with placeholder metrics (-1 values).
+
+
+
+   .. py:method:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], info: str = None, form_of_labelling: str = None) -> Dict[str, float]
+
+      Evaluate BPE model with KvsAll scoring.
+
+      :param model: BPE-enabled model.
+      :param triples: String triples.
+      :param info: Description to print.
+      :param form_of_labelling: Type of labelling.
+
+      :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+
+   .. py:method:: evaluate_lp(model, triple_idx, info: str) -> Dict[str, float]
+
+      Evaluate link prediction with negative sampling.
+
+      :param model: The model to evaluate.
+      :param triple_idx: Integer-indexed triples.
+      :param info: Description to print.
+
+      :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+
+   .. py:method:: dummy_eval(trained_model, form_of_labelling: str) -> None
+
+      Run evaluation from saved data (for continual training).
+
+      :param trained_model: The trained model.
+      :param form_of_labelling: Type of labelling.
+
+
+
+   .. py:method:: eval_with_data(dataset, trained_model, triple_idx: numpy.ndarray, form_of_labelling: str) -> Dict[str, float]
+
+      Evaluate a trained model on a given dataset.
+
+      :param dataset: Knowledge graph dataset.
+      :param trained_model: The trained model.
+      :param triple_idx: Integer-indexed triples to evaluate.
+      :param form_of_labelling: Type of labelling.
+
+      :returns: Dictionary with evaluation metrics.
+
+      :raises ValueError: If scoring technique is invalid.
 
 
 

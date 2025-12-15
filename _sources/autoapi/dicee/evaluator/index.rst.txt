@@ -3,6 +3,18 @@ dicee.evaluator
 
 .. py:module:: dicee.evaluator
 
+.. autoapi-nested-parse::
+
+   Evaluator module for knowledge graph embedding models.
+
+   This module provides backward compatibility by re-exporting from the
+   new dicee.evaluation module.
+
+   .. deprecated::
+       Use ``dicee.evaluation.Evaluator`` instead. This module will be
+       removed in a future version.
+
+
 
 Classes
 -------
@@ -15,26 +27,67 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: Evaluator(args, is_continual_training=None)
+.. py:class:: Evaluator(args, is_continual_training: bool = False)
 
-    Evaluator class to evaluate KGE models in various downstream tasks
+   Evaluator class for KGE models in various downstream tasks.
 
-    Arguments
-   ----------
-   executor: Executor class instance
+   Orchestrates link prediction evaluation with different scoring techniques
+   including standard evaluation and byte-pair encoding based evaluation.
+
+   .. attribute:: er_vocab
+
+      Entity-relation to tail vocabulary for filtered ranking.
+
+   .. attribute:: re_vocab
+
+      Relation-entity (tail) to head vocabulary.
+
+   .. attribute:: ee_vocab
+
+      Entity-entity to relation vocabulary.
+
+   .. attribute:: num_entities
+
+      Total number of entities in the knowledge graph.
+
+   .. attribute:: num_relations
+
+      Total number of relations in the knowledge graph.
+
+   .. attribute:: args
+
+      Configuration arguments.
+
+   .. attribute:: report
+
+      Dictionary storing evaluation results.
+
+   .. attribute:: during_training
+
+      Whether evaluation is happening during training.
+
+   .. rubric:: Example
+
+   >>> from dicee.evaluation import Evaluator
+   >>> evaluator = Evaluator(args)
+   >>> results = evaluator.eval(dataset, model, 'EntityPrediction')
+   >>> print(f"Test MRR: {results['Test']['MRR']:.4f}")
 
 
    .. py:attribute:: re_vocab
+      :type:  Optional[Dict]
       :value: None
 
 
 
    .. py:attribute:: er_vocab
+      :type:  Optional[Dict]
       :value: None
 
 
 
    .. py:attribute:: ee_vocab
+      :type:  Optional[Dict]
       :value: None
 
 
@@ -45,16 +98,28 @@ Module Contents
 
 
    .. py:attribute:: is_continual_training
-      :value: None
+      :value: False
 
 
 
    .. py:attribute:: num_entities
+      :type:  Optional[int]
       :value: None
 
 
 
    .. py:attribute:: num_relations
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: domain_constraints_per_rel
+      :value: None
+
+
+
+   .. py:attribute:: range_constraints_per_rel
       :value: None
 
 
@@ -63,6 +128,7 @@ Module Contents
 
 
    .. py:attribute:: report
+      :type:  Dict
 
 
    .. py:attribute:: during_training
@@ -72,70 +138,128 @@ Module Contents
 
    .. py:method:: vocab_preparation(dataset) -> None
 
-      A function to wait future objects for the attributes of executor
+      Prepare vocabularies from the dataset for evaluation.
+
+      Resolves any future objects and saves vocabularies to disk.
+
+      :param dataset: Knowledge graph dataset with vocabulary attributes.
 
 
-      :rtype: None
+
+   .. py:method:: eval(dataset, trained_model, form_of_labelling: str, during_training: bool = False) -> Optional[Dict]
+
+      Evaluate the trained model on the dataset.
+
+      :param dataset: Knowledge graph dataset (KG instance).
+      :param trained_model: The trained KGE model.
+      :param form_of_labelling: Type of labelling ('EntityPrediction' or 'RelationPrediction').
+      :param during_training: Whether evaluation is during training.
+
+      :returns: Dictionary of evaluation metrics, or None if evaluation is skipped.
 
 
 
-   .. py:method:: eval(dataset: dicee.knowledge_graph.KG, trained_model, form_of_labelling, during_training=False) -> None
+   .. py:method:: eval_rank_of_head_and_tail_entity(*, train_set, valid_set=None, test_set=None, trained_model) -> None
+
+      Evaluate with negative sampling scoring.
 
 
-   .. py:method:: eval_rank_of_head_and_tail_entity(*, train_set, valid_set=None, test_set=None, trained_model)
 
+   .. py:method:: eval_rank_of_head_and_tail_byte_pair_encoded_entity(*, train_set=None, valid_set=None, test_set=None, ordered_bpe_entities, trained_model) -> None
 
-   .. py:method:: eval_rank_of_head_and_tail_byte_pair_encoded_entity(*, train_set=None, valid_set=None, test_set=None, ordered_bpe_entities, trained_model)
+      Evaluate with BPE-encoded entities and negative sampling.
+
 
 
    .. py:method:: eval_with_byte(*, raw_train_set, raw_valid_set=None, raw_test_set=None, trained_model, form_of_labelling) -> None
 
-      Evaluate model after reciprocal triples are added
+      Evaluate BytE model with generation.
 
 
 
    .. py:method:: eval_with_bpe_vs_all(*, raw_train_set, raw_valid_set=None, raw_test_set=None, trained_model, form_of_labelling) -> None
 
-      Evaluate model after reciprocal triples are added
+      Evaluate with BPE and KvsAll scoring.
 
 
 
    .. py:method:: eval_with_vs_all(*, train_set, valid_set=None, test_set=None, trained_model, form_of_labelling) -> None
 
-      Evaluate model after reciprocal triples are added
+      Evaluate with KvsAll or 1vsAll scoring.
 
 
 
-   .. py:method:: evaluate_lp_k_vs_all(model, triple_idx, info=None, form_of_labelling=None)
+   .. py:method:: evaluate_lp_k_vs_all(model, triple_idx, info: str = None, form_of_labelling: str = None) -> Dict[str, float]
 
-      Filtered link prediction evaluation.
-      :param model:
-      :param triple_idx: test triples
-      :param info:
-      :param form_of_labelling:
-      :return:
+      Filtered link prediction evaluation with KvsAll scoring.
 
+      :param model: The trained model to evaluate.
+      :param triple_idx: Integer-indexed test triples.
+      :param info: Description to print.
+      :param form_of_labelling: 'EntityPrediction' or 'RelationPrediction'.
 
-
-   .. py:method:: evaluate_lp_with_byte(model, triples: List[List[str]], info=None)
-
-
-   .. py:method:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], info=None, form_of_labelling=None)
-
-      :param model:
-      :param triples:
-      :type triples: List of lists
-      :param info:
-      :param form_of_labelling:
+      :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 
 
 
-   .. py:method:: evaluate_lp(model, triple_idx, info: str)
+   .. py:method:: evaluate_lp_with_byte(model, triples: List[List[str]], info: str = None) -> Dict[str, float]
+
+      Evaluate BytE model with text generation.
+
+      :param model: BytE model.
+      :param triples: String triples.
+      :param info: Description to print.
+
+      :returns: Dictionary with placeholder metrics (-1 values).
 
 
-   .. py:method:: dummy_eval(trained_model, form_of_labelling: str)
+
+   .. py:method:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], info: str = None, form_of_labelling: str = None) -> Dict[str, float]
+
+      Evaluate BPE model with KvsAll scoring.
+
+      :param model: BPE-enabled model.
+      :param triples: String triples.
+      :param info: Description to print.
+      :param form_of_labelling: Type of labelling.
+
+      :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 
 
-   .. py:method:: eval_with_data(dataset, trained_model, triple_idx: numpy.ndarray, form_of_labelling: str)
+
+   .. py:method:: evaluate_lp(model, triple_idx, info: str) -> Dict[str, float]
+
+      Evaluate link prediction with negative sampling.
+
+      :param model: The model to evaluate.
+      :param triple_idx: Integer-indexed triples.
+      :param info: Description to print.
+
+      :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+
+   .. py:method:: dummy_eval(trained_model, form_of_labelling: str) -> None
+
+      Run evaluation from saved data (for continual training).
+
+      :param trained_model: The trained model.
+      :param form_of_labelling: Type of labelling.
+
+
+
+   .. py:method:: eval_with_data(dataset, trained_model, triple_idx: numpy.ndarray, form_of_labelling: str) -> Dict[str, float]
+
+      Evaluate a trained model on a given dataset.
+
+      :param dataset: Knowledge graph dataset.
+      :param trained_model: The trained model.
+      :param triple_idx: Integer-indexed triples to evaluate.
+      :param form_of_labelling: Type of labelling.
+
+      :returns: Dictionary with evaluation metrics.
+
+      :raises ValueError: If scoring technique is invalid.
+
 
 

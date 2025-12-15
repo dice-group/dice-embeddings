@@ -1,0 +1,291 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.evaluation.utils &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="dicee.evaluator" href="../../evaluator/index.html" />
+    <link rel="prev" title="dicee.evaluation.literal_prediction" href="../literal_prediction/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../../../../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">dicee</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../__main__/index.html">dicee.__main__</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstracts/index.html">dicee.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../analyse_experiments/index.html">dicee.analyse_experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../callbacks/index.html">dicee.callbacks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../config/index.html">dicee.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../dataset_classes/index.html">dicee.dataset_classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../eval_static_funcs/index.html">dicee.eval_static_funcs</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html">dicee.evaluation</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="../ensemble/index.html">dicee.evaluation.ensemble</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../evaluator/index.html">dicee.evaluation.evaluator</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../link_prediction/index.html">dicee.evaluation.link_prediction</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../literal_prediction/index.html">dicee.evaluation.literal_prediction</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">dicee.evaluation.utils</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#functions">Functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../evaluator/index.html">dicee.evaluator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../executer/index.html">dicee.executer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../models/index.html">dicee.models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../query_generator/index.html">dicee.query_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sanity_checkers/index.html">dicee.sanity_checkers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../scripts/index.html">dicee.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../static_funcs/index.html">dicee.static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../static_funcs_training/index.html">dicee.static_funcs_training</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../static_preprocess_funcs/index.html">dicee.static_preprocess_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../trainer/index.html">dicee.trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../weight_averaging/index.html">dicee.weight_averaging</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#classes">Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">dicee</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">dicee.evaluation</a></li>
+      <li class="breadcrumb-item active">dicee.evaluation.utils</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/autoapi/dicee/evaluation/utils/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-dicee.evaluation.utils">
+<span id="dicee-evaluation-utils"></span><h1>dicee.evaluation.utils<a class="headerlink" href="#module-dicee.evaluation.utils" title="Link to this heading"></a></h1>
+<p>Utility functions for evaluation module.</p>
+<p>This module contains shared helper functions used across different
+evaluation components.</p>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.utils.make_iterable_verbose" title="dicee.evaluation.utils.make_iterable_verbose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_iterable_verbose</span></code></a>(→ Iterable)</p></td>
+<td><p>Wrap an iterable with tqdm progress bar if verbose is True.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.utils.compute_metrics_from_ranks" title="dicee.evaluation.utils.compute_metrics_from_ranks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_metrics_from_ranks</span></code></a>(→ Dict[str, float])</p></td>
+<td><p>Compute standard link prediction metrics from ranks.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.utils.compute_metrics_from_ranks_simple" title="dicee.evaluation.utils.compute_metrics_from_ranks_simple"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_metrics_from_ranks_simple</span></code></a>(→ Dict[str, float])</p></td>
+<td><p>Compute link prediction metrics without scaling factor.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.utils.update_hits" title="dicee.evaluation.utils.update_hits"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_hits</span></code></a>(→ None)</p></td>
+<td><p>Update hits dictionary based on rank.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.utils.efficient_zero_grad" title="dicee.evaluation.utils.efficient_zero_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">efficient_zero_grad</span></code></a>(→ None)</p></td>
+<td><p>Efficiently zero gradients using parameter.grad = None.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.evaluation.utils.make_iterable_verbose">
+<span class="sig-prename descclassname"><span class="pre">dicee.evaluation.utils.</span></span><span class="sig-name descname"><span class="pre">make_iterable_verbose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterable_object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span></span></span><a class="headerlink" href="#dicee.evaluation.utils.make_iterable_verbose" title="Link to this definition"></a></dt>
+<dd><p>Wrap an iterable with tqdm progress bar if verbose is True.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>iterable_object</strong> – The iterable to potentially wrap.</p></li>
+<li><p><strong>verbose</strong> – Whether to show progress bar.</p></li>
+<li><p><strong>desc</strong> – Description for the progress bar.</p></li>
+<li><p><strong>position</strong> – Position of the progress bar.</p></li>
+<li><p><strong>leave</strong> – Whether to leave the progress bar after completion.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The original iterable or a tqdm-wrapped version.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.evaluation.utils.compute_metrics_from_ranks">
+<span class="sig-prename descclassname"><span class="pre">dicee.evaluation.utils.</span></span><span class="sig-name descname"><span class="pre">compute_metrics_from_ranks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ranks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_triples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hits_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_factor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dicee.evaluation.utils.compute_metrics_from_ranks" title="Link to this definition"></a></dt>
+<dd><p>Compute standard link prediction metrics from ranks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ranks</strong> – List of ranks for each prediction.</p></li>
+<li><p><strong>num_triples</strong> – Total number of triples evaluated.</p></li>
+<li><p><strong>hits_dict</strong> – Dictionary mapping hit levels to lists of hits.</p></li>
+<li><p><strong>scale_factor</strong> – Factor to scale the denominator (e.g., 2 for head+tail).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary containing H&#64;1, H&#64;3, <a class="reference external" href="mailto:H&#37;&#52;&#48;10">H<span>&#64;</span>10</a>, and MRR metrics.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.evaluation.utils.compute_metrics_from_ranks_simple">
+<span class="sig-prename descclassname"><span class="pre">dicee.evaluation.utils.</span></span><span class="sig-name descname"><span class="pre">compute_metrics_from_ranks_simple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ranks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_triples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hits_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dicee.evaluation.utils.compute_metrics_from_ranks_simple" title="Link to this definition"></a></dt>
+<dd><p>Compute link prediction metrics without scaling factor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ranks</strong> – List of ranks for each prediction.</p></li>
+<li><p><strong>num_triples</strong> – Total number of triples evaluated.</p></li>
+<li><p><strong>hits_dict</strong> – Dictionary mapping hit levels to lists of hits.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary containing H&#64;1, H&#64;3, <a class="reference external" href="mailto:H&#37;&#52;&#48;10">H<span>&#64;</span>10</a>, and MRR metrics.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.evaluation.utils.update_hits">
+<span class="sig-prename descclassname"><span class="pre">dicee.evaluation.utils.</span></span><span class="sig-name descname"><span class="pre">update_hits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rank</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hits_range</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.evaluation.utils.update_hits" title="Link to this definition"></a></dt>
+<dd><p>Update hits dictionary based on rank.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hits</strong> – Dictionary to update in-place.</p></li>
+<li><p><strong>rank</strong> – The rank to check against hit levels.</p></li>
+<li><p><strong>hits_range</strong> – List of hit levels to check (default: 1-10).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.evaluation.utils.efficient_zero_grad">
+<span class="sig-prename descclassname"><span class="pre">dicee.evaluation.utils.</span></span><span class="sig-name descname"><span class="pre">efficient_zero_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.evaluation.utils.efficient_zero_grad" title="Link to this definition"></a></dt>
+<dd><p>Efficiently zero gradients using parameter.grad = None.</p>
+<p>This is more efficient than optimizer.zero_grad() as it avoids
+memory operations.</p>
+<p>See: <a class="reference external" href="https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html">https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model</strong> – PyTorch model to zero gradients for.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../literal_prediction/index.html" class="btn btn-neutral float-left" title="dicee.evaluation.literal_prediction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../evaluator/index.html" class="btn btn-neutral float-right" title="dicee.evaluator" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

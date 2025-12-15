@@ -72,6 +72,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../../config/index.html">dicee.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../dataset_classes/index.html">dicee.dataset_classes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../eval_static_funcs/index.html">dicee.eval_static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../evaluation/index.html">dicee.evaluation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../evaluator/index.html">dicee.evaluator</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../executer/index.html">dicee.executer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
@@ -106,7 +107,6 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../index.html#attributes">Attributes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../index.html#classes">Classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../index.html#functions">Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
 </ul>
 </li>
@@ -140,6 +140,9 @@
              
   <section id="module-dicee.trainer.dice_trainer">
 <span id="dicee-trainer-dice-trainer"></span><h1>dicee.trainer.dice_trainer<a class="headerlink" href="#module-dicee.trainer.dice_trainer" title="Link to this heading"></a></h1>
+<p>DICE Trainer module for knowledge graph embedding training.</p>
+<p>Provides the DICE_Trainer class which supports multiple training backends
+including PyTorch Lightning, DDP, and custom CPU/GPU trainers.</p>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
@@ -154,14 +157,14 @@
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.dice_trainer.load_term_mapping" title="dicee.trainer.dice_trainer.load_term_mapping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_term_mapping</span></code></a>([file_path])</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.dice_trainer.load_term_mapping" title="dicee.trainer.dice_trainer.load_term_mapping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_term_mapping</span></code></a>(→ polars.DataFrame)</p></td>
+<td><p>Load term-to-index mapping from CSV file.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.trainer.dice_trainer.initialize_trainer" title="dicee.trainer.dice_trainer.initialize_trainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initialize_trainer</span></code></a>(...)</p></td>
-<td><p></p></td>
+<td><p>Initialize the appropriate trainer based on configuration.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.dice_trainer.get_callbacks" title="dicee.trainer.dice_trainer.get_callbacks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_callbacks</span></code></a>(args)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.dice_trainer.get_callbacks" title="dicee.trainer.dice_trainer.get_callbacks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_callbacks</span></code></a>(→ List)</p></td>
+<td><p>Create list of callbacks based on configuration.</p></td>
 </tr>
 </tbody>
 </table>
@@ -170,18 +173,51 @@
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.trainer.dice_trainer.load_term_mapping">
-<span class="sig-prename descclassname"><span class="pre">dicee.trainer.dice_trainer.</span></span><span class="sig-name descname"><span class="pre">load_term_mapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.trainer.dice_trainer.load_term_mapping" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.trainer.dice_trainer.</span></span><span class="sig-name descname"><span class="pre">load_term_mapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">polars.DataFrame</span></span></span><a class="headerlink" href="#dicee.trainer.dice_trainer.load_term_mapping" title="Link to this definition"></a></dt>
+<dd><p>Load term-to-index mapping from CSV file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> – Base path without extension.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Polars DataFrame containing the mapping.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.trainer.dice_trainer.initialize_trainer">
-<span class="sig-prename descclassname"><span class="pre">dicee.trainer.dice_trainer.</span></span><span class="sig-name descname"><span class="pre">initialize_trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer" title="dicee.trainer.torch_trainer.TorchTrainer"><span class="pre">dicee.trainer.torch_trainer.TorchTrainer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../model_parallelism/index.html#dicee.trainer.model_parallelism.TensorParallel" title="dicee.trainer.model_parallelism.TensorParallel"><span class="pre">dicee.trainer.model_parallelism.TensorParallel</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.TorchDDPTrainer" title="dicee.trainer.torch_trainer_ddp.TorchDDPTrainer"><span class="pre">dicee.trainer.torch_trainer_ddp.TorchDDPTrainer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">lightning.Trainer</span></span></span><a class="headerlink" href="#dicee.trainer.dice_trainer.initialize_trainer" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.trainer.dice_trainer.</span></span><span class="sig-name descname"><span class="pre">initialize_trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer" title="dicee.trainer.torch_trainer.TorchTrainer"><span class="pre">dicee.trainer.torch_trainer.TorchTrainer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../model_parallelism/index.html#dicee.trainer.model_parallelism.TensorParallel" title="dicee.trainer.model_parallelism.TensorParallel"><span class="pre">dicee.trainer.model_parallelism.TensorParallel</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.TorchDDPTrainer" title="dicee.trainer.torch_trainer_ddp.TorchDDPTrainer"><span class="pre">dicee.trainer.torch_trainer_ddp.TorchDDPTrainer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">lightning.Trainer</span></span></span><a class="headerlink" href="#dicee.trainer.dice_trainer.initialize_trainer" title="Link to this definition"></a></dt>
+<dd><p>Initialize the appropriate trainer based on configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> – Configuration arguments containing trainer type.</p></li>
+<li><p><strong>callbacks</strong> – List of training callbacks.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Initialized trainer instance.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>AssertionError</strong> – If trainer is None after initialization.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.trainer.dice_trainer.get_callbacks">
-<span class="sig-prename descclassname"><span class="pre">dicee.trainer.dice_trainer.</span></span><span class="sig-name descname"><span class="pre">get_callbacks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.trainer.dice_trainer.get_callbacks" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.trainer.dice_trainer.</span></span><span class="sig-name descname"><span class="pre">get_callbacks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="headerlink" href="#dicee.trainer.dice_trainer.get_callbacks" title="Link to this definition"></a></dt>
+<dd><p>Create list of callbacks based on configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> – Configuration arguments.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of callback instances.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.trainer.dice_trainer.DICE_Trainer">

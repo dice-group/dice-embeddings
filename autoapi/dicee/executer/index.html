@@ -72,19 +72,30 @@
 <li class="toctree-l3"><a class="reference internal" href="../config/index.html">dicee.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../dataset_classes/index.html">dicee.dataset_classes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../eval_static_funcs/index.html">dicee.eval_static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../evaluation/index.html">dicee.evaluation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../evaluator/index.html">dicee.evaluator</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">dicee.executer</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.executer.Execute"><code class="docutils literal notranslate"><span class="pre">Execute</span></code></a><ul>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.distributed"><code class="docutils literal notranslate"><span class="pre">Execute.distributed</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.args"><code class="docutils literal notranslate"><span class="pre">Execute.args</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.is_continual_training"><code class="docutils literal notranslate"><span class="pre">Execute.is_continual_training</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.distributed"><code class="docutils literal notranslate"><span class="pre">Execute.distributed</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.rank"><code class="docutils literal notranslate"><span class="pre">Execute.rank</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.world_size"><code class="docutils literal notranslate"><span class="pre">Execute.world_size</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.local_rank"><code class="docutils literal notranslate"><span class="pre">Execute.local_rank</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.trainer"><code class="docutils literal notranslate"><span class="pre">Execute.trainer</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.trained_model"><code class="docutils literal notranslate"><span class="pre">Execute.trained_model</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.knowledge_graph"><code class="docutils literal notranslate"><span class="pre">Execute.knowledge_graph</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.report"><code class="docutils literal notranslate"><span class="pre">Execute.report</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.evaluator"><code class="docutils literal notranslate"><span class="pre">Execute.evaluator</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">Execute.distributed</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">Execute.args</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.is_continual_training"><code class="docutils literal notranslate"><span class="pre">Execute.is_continual_training</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">Execute.trainer</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">Execute.trained_model</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">Execute.knowledge_graph</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id5"><code class="docutils literal notranslate"><span class="pre">Execute.report</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id6"><code class="docutils literal notranslate"><span class="pre">Execute.evaluator</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.start_time"><code class="docutils literal notranslate"><span class="pre">Execute.start_time</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.is_rank_zero"><code class="docutils literal notranslate"><span class="pre">Execute.is_rank_zero()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.cleanup"><code class="docutils literal notranslate"><span class="pre">Execute.cleanup()</span></code></a></li>
@@ -121,7 +132,6 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#classes">Classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../index.html#functions">Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
 </ul>
 </li>
@@ -154,12 +164,15 @@
              
   <section id="module-dicee.executer">
 <span id="dicee-executer"></span><h1>dicee.executer<a class="headerlink" href="#module-dicee.executer" title="Link to this heading"></a></h1>
+<p>Executor module for training, retraining and evaluating KGE models.</p>
+<p>This module provides the Execute and ContinuousExecute classes for managing
+the full lifecycle of knowledge graph embedding model training.</p>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.executer.Execute" title="dicee.executer.Execute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Execute</span></code></a></p></td>
-<td><p>A class for Training, Retraining and Evaluation a model.</p></td>
+<td><p>Executor class for training, retraining and evaluating KGE models.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.executer.ContinuousExecute" title="dicee.executer.ContinuousExecute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ContinuousExecute</span></code></a></p></td>
 <td><p>A subclass of Execute Class for retraining</p></td>
@@ -171,21 +184,80 @@
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.executer.Execute">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.executer.</span></span><span class="sig-name descname"><span class="pre">Execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">continuous_training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.executer.Execute" title="Link to this definition"></a></dt>
-<dd><p>A class for Training, Retraining and Evaluation a model.</p>
-<ol class="arabic simple">
-<li><p>Loading &amp; Preprocessing &amp; Serializing input data.</p></li>
-<li><p>Training &amp; Validation &amp; Testing</p></li>
-<li><p>Storing all necessary info</p></li>
-</ol>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.executer.Execute.distributed">
-<span class="sig-name descname"><span class="pre">distributed</span></span><a class="headerlink" href="#dicee.executer.Execute.distributed" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.executer.</span></span><span class="sig-name descname"><span class="pre">Execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">continuous_training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.executer.Execute" title="Link to this definition"></a></dt>
+<dd><p>Executor class for training, retraining and evaluating KGE models.</p>
+<p>Handles the complete workflow:
+1. Loading &amp; Preprocessing &amp; Serializing input data
+2. Training &amp; Validation &amp; Testing
+3. Storing all necessary information</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.executer.Execute.args">
 <span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#dicee.executer.Execute.args" title="Link to this definition"></a></dt>
+<dd><p>Processed input arguments.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.distributed">
+<span class="sig-name descname"><span class="pre">distributed</span></span><a class="headerlink" href="#dicee.executer.Execute.distributed" title="Link to this definition"></a></dt>
+<dd><p>Whether distributed training is enabled.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.rank">
+<span class="sig-name descname"><span class="pre">rank</span></span><a class="headerlink" href="#dicee.executer.Execute.rank" title="Link to this definition"></a></dt>
+<dd><p>Process rank in distributed training.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.world_size">
+<span class="sig-name descname"><span class="pre">world_size</span></span><a class="headerlink" href="#dicee.executer.Execute.world_size" title="Link to this definition"></a></dt>
+<dd><p>Total number of processes.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.local_rank">
+<span class="sig-name descname"><span class="pre">local_rank</span></span><a class="headerlink" href="#dicee.executer.Execute.local_rank" title="Link to this definition"></a></dt>
+<dd><p>Local GPU rank.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.trainer">
+<span class="sig-name descname"><span class="pre">trainer</span></span><a class="headerlink" href="#dicee.executer.Execute.trainer" title="Link to this definition"></a></dt>
+<dd><p>Training handler instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.trained_model">
+<span class="sig-name descname"><span class="pre">trained_model</span></span><a class="headerlink" href="#dicee.executer.Execute.trained_model" title="Link to this definition"></a></dt>
+<dd><p>The trained model after training completes.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.knowledge_graph">
+<span class="sig-name descname"><span class="pre">knowledge_graph</span></span><a class="headerlink" href="#dicee.executer.Execute.knowledge_graph" title="Link to this definition"></a></dt>
+<dd><p>The loaded knowledge graph.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.report">
+<span class="sig-name descname"><span class="pre">report</span></span><a class="headerlink" href="#dicee.executer.Execute.report" title="Link to this definition"></a></dt>
+<dd><p>Dictionary storing training metrics and results.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.evaluator">
+<span class="sig-name descname"><span class="pre">evaluator</span></span><a class="headerlink" href="#dicee.executer.Execute.evaluator" title="Link to this definition"></a></dt>
+<dd><p>Model evaluation handler.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">distributed</span></span><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -194,33 +266,33 @@
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.executer.Execute.trainer">
-<span class="sig-name descname"><span class="pre">trainer</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.executer.Execute.trainer" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">trainer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../trainer/index.html#dicee.trainer.DICE_Trainer" title="dicee.trainer.DICE_Trainer"><span class="pre">dicee.trainer.DICE_Trainer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.executer.Execute.trained_model">
-<span class="sig-name descname"><span class="pre">trained_model</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.executer.Execute.trained_model" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">trained_model</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.executer.Execute.knowledge_graph">
-<span class="sig-name descname"><span class="pre">knowledge_graph</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.executer.Execute.knowledge_graph" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">knowledge_graph</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><span class="pre">dicee.knowledge_graph.KG</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.executer.Execute.report">
-<span class="sig-name descname"><span class="pre">report</span></span><a class="headerlink" href="#dicee.executer.Execute.report" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">report</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.executer.Execute.evaluator">
-<span class="sig-name descname"><span class="pre">evaluator</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.executer.Execute.evaluator" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">evaluator</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../evaluator/index.html#dicee.evaluator.Evaluator" title="dicee.evaluator.Evaluator"><span class="pre">dicee.evaluator.Evaluator</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.executer.Execute.start_time">
-<span class="sig-name descname"><span class="pre">start_time</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.executer.Execute.start_time" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">start_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.executer.Execute.start_time" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -236,17 +308,24 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.Execute.setup_executor">
 <span class="sig-name descname"><span class="pre">setup_executor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.executer.Execute.setup_executor" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Set up storage directories for the experiment.</p>
+<p>Creates or reuses experiment directories based on configuration.
+Saves the configuration to a JSON file.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.Execute.create_and_store_kg">
-<span class="sig-name descname"><span class="pre">create_and_store_kg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#dicee.executer.Execute.create_and_store_kg" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">create_and_store_kg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.executer.Execute.create_and_store_kg" title="Link to this definition"></a></dt>
+<dd><p>Create knowledge graph and store as memory-mapped file.</p>
+<p>Only executed on rank 0 in distributed training.
+Skips if memmap already exists.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.Execute.load_from_memmap">
-<span class="sig-name descname"><span class="pre">load_from_memmap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#dicee.executer.Execute.load_from_memmap" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">load_from_memmap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.executer.Execute.load_from_memmap" title="Link to this definition"></a></dt>
+<dd><p>Load knowledge graph from memory-mapped file.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.Execute.save_trained_model">
@@ -277,8 +356,8 @@
 <li><p>Report runtimes.</p></li>
 <li><p>Eval model if required.</p></li>
 </ol>
-<section id="id1">
-<h3>Parameter<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<section id="id7">
+<h3>Parameter<a class="headerlink" href="#id7" title="Link to this heading"></a></h3>
 <dl class="field-list simple">
 <dt class="field-odd">rtype<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A dict containing information about the training and/or evaluation</p>
@@ -301,8 +380,8 @@
 # (2) Create an evaluator object.
 # (3) Create a trainer object.
 # (4) Start the training</p>
-<section id="id2">
-<h3>Parameter<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<section id="id8">
+<h3>Parameter<a class="headerlink" href="#id8" title="Link to this heading"></a></h3>
 <dl class="field-list simple">
 <dt class="field-odd">rtype<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A dict containing information about the training and/or evaluation</p>
@@ -335,8 +414,8 @@ Trained model is noted with the current time.</p>
 <li><p>Start continual training.</p></li>
 <li><p>Save trained model.</p></li>
 </ol>
-<section id="id3">
-<h3>Parameter<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<section id="id9">
+<h3>Parameter<a class="headerlink" href="#id9" title="Link to this heading"></a></h3>
 <dl class="field-list simple">
 <dt class="field-odd">rtype<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A dict containing information about the training and/or evaluation</p>

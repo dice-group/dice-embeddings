@@ -3,6 +3,14 @@ dicee.executer
 
 .. py:module:: dicee.executer
 
+.. autoapi-nested-parse::
+
+   Executor module for training, retraining and evaluating KGE models.
+
+   This module provides the Execute and ContinuousExecute classes for managing
+   the full lifecycle of knowledge graph embedding model training.
+
+
 
 Classes
 -------
@@ -16,13 +24,54 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: Execute(args, continuous_training=False)
+.. py:class:: Execute(args, continuous_training: bool = False)
 
-   A class for Training, Retraining and Evaluation a model.
+   Executor class for training, retraining and evaluating KGE models.
 
-   (1) Loading & Preprocessing & Serializing input data.
-   (2) Training & Validation & Testing
-   (3) Storing all necessary info
+   Handles the complete workflow:
+   1. Loading & Preprocessing & Serializing input data
+   2. Training & Validation & Testing
+   3. Storing all necessary information
+
+   .. attribute:: args
+
+      Processed input arguments.
+
+   .. attribute:: distributed
+
+      Whether distributed training is enabled.
+
+   .. attribute:: rank
+
+      Process rank in distributed training.
+
+   .. attribute:: world_size
+
+      Total number of processes.
+
+   .. attribute:: local_rank
+
+      Local GPU rank.
+
+   .. attribute:: trainer
+
+      Training handler instance.
+
+   .. attribute:: trained_model
+
+      The trained model after training completes.
+
+   .. attribute:: knowledge_graph
+
+      The loaded knowledge graph.
+
+   .. attribute:: report
+
+      Dictionary storing training metrics and results.
+
+   .. attribute:: evaluator
+
+      Model evaluation handler.
 
 
    .. py:attribute:: distributed
@@ -37,6 +86,7 @@ Module Contents
 
 
    .. py:attribute:: trainer
+      :type:  Optional[dicee.trainer.DICE_Trainer]
       :value: None
 
 
@@ -47,19 +97,23 @@ Module Contents
 
 
    .. py:attribute:: knowledge_graph
+      :type:  Optional[dicee.knowledge_graph.KG]
       :value: None
 
 
 
    .. py:attribute:: report
+      :type:  Dict
 
 
    .. py:attribute:: evaluator
+      :type:  Optional[dicee.evaluator.Evaluator]
       :value: None
 
 
 
    .. py:attribute:: start_time
+      :type:  Optional[float]
       :value: None
 
 
@@ -72,11 +126,26 @@ Module Contents
 
    .. py:method:: setup_executor() -> None
 
+      Set up storage directories for the experiment.
 
-   .. py:method:: create_and_store_kg()
+      Creates or reuses experiment directories based on configuration.
+      Saves the configuration to a JSON file.
 
 
-   .. py:method:: load_from_memmap()
+
+   .. py:method:: create_and_store_kg() -> None
+
+      Create knowledge graph and store as memory-mapped file.
+
+      Only executed on rank 0 in distributed training.
+      Skips if memmap already exists.
+
+
+
+   .. py:method:: load_from_memmap() -> None
+
+      Load knowledge graph from memory-mapped file.
+
 
 
    .. py:method:: save_trained_model() -> None

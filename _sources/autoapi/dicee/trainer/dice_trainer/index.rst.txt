@@ -3,6 +3,14 @@ dicee.trainer.dice_trainer
 
 .. py:module:: dicee.trainer.dice_trainer
 
+.. autoapi-nested-parse::
+
+   DICE Trainer module for knowledge graph embedding training.
+
+   Provides the DICE_Trainer class which supports multiple training backends
+   including PyTorch Lightning, DDP, and custom CPU/GPU trainers.
+
+
 
 Classes
 -------
@@ -25,11 +33,35 @@ Functions
 Module Contents
 ---------------
 
-.. py:function:: load_term_mapping(file_path=str)
+.. py:function:: load_term_mapping(file_path: str) -> polars.DataFrame
 
-.. py:function:: initialize_trainer(args, callbacks) -> dicee.trainer.torch_trainer.TorchTrainer | dicee.trainer.model_parallelism.TensorParallel | dicee.trainer.torch_trainer_ddp.TorchDDPTrainer | lightning.Trainer
+   Load term-to-index mapping from CSV file.
 
-.. py:function:: get_callbacks(args)
+   :param file_path: Base path without extension.
+
+   :returns: Polars DataFrame containing the mapping.
+
+
+.. py:function:: initialize_trainer(args, callbacks: List) -> Union[dicee.trainer.torch_trainer.TorchTrainer, dicee.trainer.model_parallelism.TensorParallel, dicee.trainer.torch_trainer_ddp.TorchDDPTrainer, lightning.Trainer]
+
+   Initialize the appropriate trainer based on configuration.
+
+   :param args: Configuration arguments containing trainer type.
+   :param callbacks: List of training callbacks.
+
+   :returns: Initialized trainer instance.
+
+   :raises AssertionError: If trainer is None after initialization.
+
+
+.. py:function:: get_callbacks(args) -> List
+
+   Create list of callbacks based on configuration.
+
+   :param args: Configuration arguments.
+
+   :returns: List of callback instances.
+
 
 .. py:class:: DICE_Trainer(args, is_continual_training: bool, storage_path, evaluator=None)
 

@@ -25,7 +25,7 @@
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="dicee.executer" href="../executer/index.html" />
-    <link rel="prev" title="dicee.eval_static_funcs" href="../eval_static_funcs/index.html" /> 
+    <link rel="prev" title="dicee.evaluation.utils" href="../evaluation/utils/index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -72,20 +72,31 @@
 <li class="toctree-l3"><a class="reference internal" href="../config/index.html">dicee.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../dataset_classes/index.html">dicee.dataset_classes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../eval_static_funcs/index.html">dicee.eval_static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../evaluation/index.html">dicee.evaluation</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">dicee.evaluator</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.evaluator.Evaluator"><code class="docutils literal notranslate"><span class="pre">Evaluator</span></code></a><ul>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.re_vocab"><code class="docutils literal notranslate"><span class="pre">Evaluator.re_vocab</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.er_vocab"><code class="docutils literal notranslate"><span class="pre">Evaluator.er_vocab</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.re_vocab"><code class="docutils literal notranslate"><span class="pre">Evaluator.re_vocab</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.ee_vocab"><code class="docutils literal notranslate"><span class="pre">Evaluator.ee_vocab</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.func_triple_to_bpe_representation"><code class="docutils literal notranslate"><span class="pre">Evaluator.func_triple_to_bpe_representation</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.is_continual_training"><code class="docutils literal notranslate"><span class="pre">Evaluator.is_continual_training</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.num_entities"><code class="docutils literal notranslate"><span class="pre">Evaluator.num_entities</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.num_relations"><code class="docutils literal notranslate"><span class="pre">Evaluator.num_relations</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.args"><code class="docutils literal notranslate"><span class="pre">Evaluator.args</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.report"><code class="docutils literal notranslate"><span class="pre">Evaluator.report</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.during_training"><code class="docutils literal notranslate"><span class="pre">Evaluator.during_training</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">Evaluator.re_vocab</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">Evaluator.er_vocab</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">Evaluator.ee_vocab</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.func_triple_to_bpe_representation"><code class="docutils literal notranslate"><span class="pre">Evaluator.func_triple_to_bpe_representation</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.is_continual_training"><code class="docutils literal notranslate"><span class="pre">Evaluator.is_continual_training</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">Evaluator.num_entities</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">Evaluator.num_relations</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.domain_constraints_per_rel"><code class="docutils literal notranslate"><span class="pre">Evaluator.domain_constraints_per_rel</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.range_constraints_per_rel"><code class="docutils literal notranslate"><span class="pre">Evaluator.range_constraints_per_rel</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id5"><code class="docutils literal notranslate"><span class="pre">Evaluator.args</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id6"><code class="docutils literal notranslate"><span class="pre">Evaluator.report</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id7"><code class="docutils literal notranslate"><span class="pre">Evaluator.during_training</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.vocab_preparation"><code class="docutils literal notranslate"><span class="pre">Evaluator.vocab_preparation()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.eval"><code class="docutils literal notranslate"><span class="pre">Evaluator.eval()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.evaluator.Evaluator.eval_rank_of_head_and_tail_entity"><code class="docutils literal notranslate"><span class="pre">Evaluator.eval_rank_of_head_and_tail_entity()</span></code></a></li>
@@ -122,7 +133,6 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#classes">Classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../index.html#functions">Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
 </ul>
 </li>
@@ -155,12 +165,19 @@
              
   <section id="module-dicee.evaluator">
 <span id="dicee-evaluator"></span><h1>dicee.evaluator<a class="headerlink" href="#module-dicee.evaluator" title="Link to this heading"></a></h1>
+<p>Evaluator module for knowledge graph embedding models.</p>
+<p>This module provides backward compatibility by re-exporting from the
+new dicee.evaluation module.</p>
+<div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version Use: </span><code class="docutils literal notranslate"><span class="pre">dicee.evaluation.Evaluator</span></code> instead. This module will be
+removed in a future version.</p>
+</div>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluator.Evaluator" title="dicee.evaluator.Evaluator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Evaluator</span></code></a></p></td>
-<td><p>Evaluator class to evaluate KGE models in various downstream tasks</p></td>
+<td><p>Evaluator class for KGE models in various downstream tasks.</p></td>
 </tr>
 </tbody>
 </table>
@@ -169,24 +186,78 @@
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.evaluator.</span></span><span class="sig-name descname"><span class="pre">Evaluator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_continual_training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.evaluator.Evaluator" title="Link to this definition"></a></dt>
-<dd><blockquote>
-<div><p>Evaluator class to evaluate KGE models in various downstream tasks</p>
-<p>Arguments</p>
-</div></blockquote>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.evaluator.Evaluator.re_vocab">
-<span class="sig-name descname"><span class="pre">re_vocab</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.evaluator.Evaluator.re_vocab" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.evaluator.</span></span><span class="sig-name descname"><span class="pre">Evaluator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_continual_training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.evaluator.Evaluator" title="Link to this definition"></a></dt>
+<dd><p>Evaluator class for KGE models in various downstream tasks.</p>
+<p>Orchestrates link prediction evaluation with different scoring techniques
+including standard evaluation and byte-pair encoding based evaluation.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator.er_vocab">
-<span class="sig-name descname"><span class="pre">er_vocab</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.evaluator.Evaluator.er_vocab" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">er_vocab</span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.er_vocab" title="Link to this definition"></a></dt>
+<dd><p>Entity-relation to tail vocabulary for filtered ranking.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.evaluator.Evaluator.re_vocab">
+<span class="sig-name descname"><span class="pre">re_vocab</span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.re_vocab" title="Link to this definition"></a></dt>
+<dd><p>Relation-entity (tail) to head vocabulary.</p>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator.ee_vocab">
-<span class="sig-name descname"><span class="pre">ee_vocab</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.evaluator.Evaluator.ee_vocab" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">ee_vocab</span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.ee_vocab" title="Link to this definition"></a></dt>
+<dd><p>Entity-entity to relation vocabulary.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.evaluator.Evaluator.num_entities">
+<span class="sig-name descname"><span class="pre">num_entities</span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.num_entities" title="Link to this definition"></a></dt>
+<dd><p>Total number of entities in the knowledge graph.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.evaluator.Evaluator.num_relations">
+<span class="sig-name descname"><span class="pre">num_relations</span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.num_relations" title="Link to this definition"></a></dt>
+<dd><p>Total number of relations in the knowledge graph.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.evaluator.Evaluator.args">
+<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.args" title="Link to this definition"></a></dt>
+<dd><p>Configuration arguments.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.evaluator.Evaluator.report">
+<span class="sig-name descname"><span class="pre">report</span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.report" title="Link to this definition"></a></dt>
+<dd><p>Dictionary storing evaluation results.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.evaluator.Evaluator.during_training">
+<span class="sig-name descname"><span class="pre">during_training</span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.during_training" title="Link to this definition"></a></dt>
+<dd><p>Whether evaluation is happening during training.</p>
+</dd></dl>
+
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">dicee.evaluation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Evaluator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">evaluator</span> <span class="o">=</span> <span class="n">Evaluator</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="s1">&#39;EntityPrediction&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Test MRR: </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;Test&#39;</span><span class="p">][</span><span class="s1">&#39;MRR&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">re_vocab</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">er_vocab</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">ee_vocab</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -196,123 +267,214 @@
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator.is_continual_training">
-<span class="sig-name descname"><span class="pre">is_continual_training</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.evaluator.Evaluator.is_continual_training" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">is_continual_training</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.evaluator.Evaluator.is_continual_training" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.evaluator.Evaluator.num_entities">
-<span class="sig-name descname"><span class="pre">num_entities</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.evaluator.Evaluator.num_entities" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">num_entities</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.evaluator.Evaluator.num_relations">
-<span class="sig-name descname"><span class="pre">num_relations</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.evaluator.Evaluator.num_relations" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">num_relations</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.evaluator.Evaluator.args">
-<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.args" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.evaluator.Evaluator.domain_constraints_per_rel">
+<span class="sig-name descname"><span class="pre">domain_constraints_per_rel</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.evaluator.Evaluator.domain_constraints_per_rel" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.evaluator.Evaluator.report">
-<span class="sig-name descname"><span class="pre">report</span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.report" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.evaluator.Evaluator.range_constraints_per_rel">
+<span class="sig-name descname"><span class="pre">range_constraints_per_rel</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.evaluator.Evaluator.range_constraints_per_rel" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.evaluator.Evaluator.during_training">
-<span class="sig-name descname"><span class="pre">during_training</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.evaluator.Evaluator.during_training" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">report</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">during_training</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator.vocab_preparation">
 <span class="sig-name descname"><span class="pre">vocab_preparation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.vocab_preparation" title="Link to this definition"></a></dt>
-<dd><p>A function to wait future objects for the attributes of executor</p>
+<dd><p>Prepare vocabularies from the dataset for evaluation.</p>
+<p>Resolves any future objects and saves vocabularies to disk.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dataset</strong> – Knowledge graph dataset with vocabulary attributes.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator.eval">
-<span class="sig-name descname"><span class="pre">eval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><span class="pre">dicee.knowledge_graph.KG</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">during_training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.eval" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">eval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">during_training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.eval" title="Link to this definition"></a></dt>
+<dd><p>Evaluate the trained model on the dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> – Knowledge graph dataset (KG instance).</p></li>
+<li><p><strong>trained_model</strong> – The trained KGE model.</p></li>
+<li><p><strong>form_of_labelling</strong> – Type of labelling (‘EntityPrediction’ or ‘RelationPrediction’).</p></li>
+<li><p><strong>during_training</strong> – Whether evaluation is during training.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary of evaluation metrics, or None if evaluation is skipped.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator.eval_rank_of_head_and_tail_entity">
-<span class="sig-name descname"><span class="pre">eval_rank_of_head_and_tail_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.evaluator.Evaluator.eval_rank_of_head_and_tail_entity" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">eval_rank_of_head_and_tail_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.eval_rank_of_head_and_tail_entity" title="Link to this definition"></a></dt>
+<dd><p>Evaluate with negative sampling scoring.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator.eval_rank_of_head_and_tail_byte_pair_encoded_entity">
-<span class="sig-name descname"><span class="pre">eval_rank_of_head_and_tail_byte_pair_encoded_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ordered_bpe_entities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.evaluator.Evaluator.eval_rank_of_head_and_tail_byte_pair_encoded_entity" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">eval_rank_of_head_and_tail_byte_pair_encoded_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ordered_bpe_entities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.eval_rank_of_head_and_tail_byte_pair_encoded_entity" title="Link to this definition"></a></dt>
+<dd><p>Evaluate with BPE-encoded entities and negative sampling.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator.eval_with_byte">
 <span class="sig-name descname"><span class="pre">eval_with_byte</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_train_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_valid_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_test_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.eval_with_byte" title="Link to this definition"></a></dt>
-<dd><p>Evaluate model after reciprocal triples are added</p>
+<dd><p>Evaluate BytE model with generation.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator.eval_with_bpe_vs_all">
 <span class="sig-name descname"><span class="pre">eval_with_bpe_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_train_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_valid_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_test_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.eval_with_bpe_vs_all" title="Link to this definition"></a></dt>
-<dd><p>Evaluate model after reciprocal triples are added</p>
+<dd><p>Evaluate with BPE and KvsAll scoring.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator.eval_with_vs_all">
 <span class="sig-name descname"><span class="pre">eval_with_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.eval_with_vs_all" title="Link to this definition"></a></dt>
-<dd><p>Evaluate model after reciprocal triples are added</p>
+<dd><p>Evaluate with KvsAll or 1vsAll scoring.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator.evaluate_lp_k_vs_all">
-<span class="sig-name descname"><span class="pre">evaluate_lp_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triple_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.evaluator.Evaluator.evaluate_lp_k_vs_all" title="Link to this definition"></a></dt>
-<dd><p>Filtered link prediction evaluation.
-:param model:
-:param triple_idx: test triples
-:param info:
-:param form_of_labelling:
-:return:</p>
+<span class="sig-name descname"><span class="pre">evaluate_lp_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triple_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.evaluate_lp_k_vs_all" title="Link to this definition"></a></dt>
+<dd><p>Filtered link prediction evaluation with KvsAll scoring.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – The trained model to evaluate.</p></li>
+<li><p><strong>triple_idx</strong> – Integer-indexed test triples.</p></li>
+<li><p><strong>info</strong> – Description to print.</p></li>
+<li><p><strong>form_of_labelling</strong> – ‘EntityPrediction’ or ‘RelationPrediction’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with H&#64;1, H&#64;3, <a class="reference external" href="mailto:H&#37;&#52;&#48;10">H<span>&#64;</span>10</a>, and MRR metrics.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator.evaluate_lp_with_byte">
-<span class="sig-name descname"><span class="pre">evaluate_lp_with_byte</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.evaluator.Evaluator.evaluate_lp_with_byte" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">evaluate_lp_with_byte</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.evaluate_lp_with_byte" title="Link to this definition"></a></dt>
+<dd><p>Evaluate BytE model with text generation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – BytE model.</p></li>
+<li><p><strong>triples</strong> – String triples.</p></li>
+<li><p><strong>info</strong> – Description to print.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with placeholder metrics (-1 values).</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator.evaluate_lp_bpe_k_vs_all">
-<span class="sig-name descname"><span class="pre">evaluate_lp_bpe_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.evaluator.Evaluator.evaluate_lp_bpe_k_vs_all" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
+<span class="sig-name descname"><span class="pre">evaluate_lp_bpe_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.evaluate_lp_bpe_k_vs_all" title="Link to this definition"></a></dt>
+<dd><p>Evaluate BPE model with KvsAll scoring.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>model</strong></p></li>
-<li><p><strong>triples</strong> (<em>List</em><em> of </em><em>lists</em>)</p></li>
-<li><p><strong>info</strong></p></li>
-<li><p><strong>form_of_labelling</strong></p></li>
+<li><p><strong>model</strong> – BPE-enabled model.</p></li>
+<li><p><strong>triples</strong> – String triples.</p></li>
+<li><p><strong>info</strong> – Description to print.</p></li>
+<li><p><strong>form_of_labelling</strong> – Type of labelling.</p></li>
 </ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with H&#64;1, H&#64;3, <a class="reference external" href="mailto:H&#37;&#52;&#48;10">H<span>&#64;</span>10</a>, and MRR metrics.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator.evaluate_lp">
-<span class="sig-name descname"><span class="pre">evaluate_lp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triple_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.evaluator.Evaluator.evaluate_lp" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">evaluate_lp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triple_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.evaluate_lp" title="Link to this definition"></a></dt>
+<dd><p>Evaluate link prediction with negative sampling.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – The model to evaluate.</p></li>
+<li><p><strong>triple_idx</strong> – Integer-indexed triples.</p></li>
+<li><p><strong>info</strong> – Description to print.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with H&#64;1, H&#64;3, <a class="reference external" href="mailto:H&#37;&#52;&#48;10">H<span>&#64;</span>10</a>, and MRR metrics.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator.dummy_eval">
-<span class="sig-name descname"><span class="pre">dummy_eval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.evaluator.Evaluator.dummy_eval" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">dummy_eval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.dummy_eval" title="Link to this definition"></a></dt>
+<dd><p>Run evaluation from saved data (for continual training).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trained_model</strong> – The trained model.</p></li>
+<li><p><strong>form_of_labelling</strong> – Type of labelling.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.evaluator.Evaluator.eval_with_data">
-<span class="sig-name descname"><span class="pre">eval_with_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triple_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.evaluator.Evaluator.eval_with_data" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">eval_with_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triple_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dicee.evaluator.Evaluator.eval_with_data" title="Link to this definition"></a></dt>
+<dd><p>Evaluate a trained model on a given dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> – Knowledge graph dataset.</p></li>
+<li><p><strong>trained_model</strong> – The trained model.</p></li>
+<li><p><strong>triple_idx</strong> – Integer-indexed triples to evaluate.</p></li>
+<li><p><strong>form_of_labelling</strong> – Type of labelling.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with evaluation metrics.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If scoring technique is invalid.</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -323,7 +485,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../eval_static_funcs/index.html" class="btn btn-neutral float-left" title="dicee.eval_static_funcs" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../evaluation/utils/index.html" class="btn btn-neutral float-left" title="dicee.evaluation.utils" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="../executer/index.html" class="btn btn-neutral float-right" title="dicee.executer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

@@ -3,6 +3,22 @@ dicee.static_funcs
 
 .. py:module:: dicee.static_funcs
 
+.. autoapi-nested-parse::
+
+   Static utility functions for DICE embeddings.
+
+   This module provides utility functions for model initialization, data loading,
+   serialization, and various helper operations.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.static_funcs.MODEL_REGISTRY
+
 
 Functions
 ---------
@@ -50,26 +66,90 @@ Functions
 Module Contents
 ---------------
 
-.. py:function:: create_recipriocal_triples(x)
+.. py:data:: MODEL_REGISTRY
+   :type:  Dict[str, Tuple[Type, str]]
 
-   Add inverse triples into dask dataframe
-   :param x:
-   :return:
+.. py:function:: create_recipriocal_triples(df: pandas.DataFrame) -> pandas.DataFrame
+
+   Add inverse triples to a DataFrame.
+
+   For each triple (s, p, o), creates an inverse triple (o, p_inverse, s).
+
+   :param df: DataFrame with 'subject', 'relation', and 'object' columns.
+
+   :returns: DataFrame with original and inverse triples concatenated.
 
 
-.. py:function:: get_er_vocab(data, file_path: str = None)
+.. py:function:: get_er_vocab(data: numpy.ndarray, file_path: Optional[str] = None) -> Dict[Tuple[int, int], List[int]]
 
-.. py:function:: get_re_vocab(data, file_path: str = None)
+   Build entity-relation to tail vocabulary.
 
-.. py:function:: get_ee_vocab(data, file_path: str = None)
+   :param data: Array of triples with shape (n, 3) where columns are (head, relation, tail).
+   :param file_path: Optional path to save the vocabulary as pickle.
 
-.. py:function:: timeit(func)
+   :returns: Dictionary mapping (head, relation) pairs to list of tail entities.
 
-.. py:function:: save_pickle(*, data: object = None, file_path=str)
 
-.. py:function:: load_pickle(file_path=str)
+.. py:function:: get_re_vocab(data: numpy.ndarray, file_path: Optional[str] = None) -> Dict[Tuple[int, int], List[int]]
 
-.. py:function:: load_term_mapping(file_path=str)
+   Build relation-entity (tail) to head vocabulary.
+
+   :param data: Array of triples with shape (n, 3) where columns are (head, relation, tail).
+   :param file_path: Optional path to save the vocabulary as pickle.
+
+   :returns: Dictionary mapping (relation, tail) pairs to list of head entities.
+
+
+.. py:function:: get_ee_vocab(data: numpy.ndarray, file_path: Optional[str] = None) -> Dict[Tuple[int, int], List[int]]
+
+   Build entity-entity to relation vocabulary.
+
+   :param data: Array of triples with shape (n, 3) where columns are (head, relation, tail).
+   :param file_path: Optional path to save the vocabulary as pickle.
+
+   :returns: Dictionary mapping (head, tail) pairs to list of relations.
+
+
+.. py:function:: timeit(func: Callable) -> Callable
+
+   Decorator to measure and print execution time and memory usage.
+
+   :param func: Function to be timed.
+
+   :returns: Wrapped function that prints timing information.
+
+
+.. py:function:: save_pickle(*, data: Optional[object] = None, file_path: str) -> None
+
+   Save data to a pickle file.
+
+   Note: Consider using more portable formats (JSON, Parquet) for new code.
+
+   :param data: Object to serialize. If None, nothing is saved.
+   :param file_path: Path where the pickle file will be saved.
+
+
+.. py:function:: load_pickle(file_path: str) -> object
+
+   Load data from a pickle file.
+
+   Note: Consider using more portable formats (JSON, Parquet) for new code.
+
+   :param file_path: Path to the pickle file.
+
+   :returns: Deserialized object from the pickle file.
+
+
+.. py:function:: load_term_mapping(file_path: str) -> Union[dict, polars.DataFrame]
+
+   Load term-to-index mapping from pickle or CSV file.
+
+   Attempts to load from pickle first, falls back to CSV if not found.
+
+   :param file_path: Base path without extension.
+
+   :returns: Dictionary or Polars DataFrame containing the mapping.
+
 
 .. py:function:: select_model(args: dict, is_continual_training: bool = None, storage_path: str = None)
 
@@ -115,17 +195,37 @@ Module Contents
 
 .. py:function:: read_or_load_kg(args, cls)
 
-.. py:function:: intialize_model(args: dict, verbose=0) -> Tuple[object, str]
+.. py:function:: intialize_model(args: Dict, verbose: int = 0) -> Tuple[dicee.models.base_model.BaseKGE, str]
 
-.. py:function:: load_json(p: str) -> dict
+   Initialize a knowledge graph embedding model.
 
-.. py:function:: save_embeddings(embeddings: numpy.ndarray, indexes, path: str) -> None
+   :param args: Dictionary containing model configuration including 'model' key.
+   :param verbose: Verbosity level. If > 0, prints initialization message.
 
-   Save it as CSV if memory allows.
-   :param embeddings:
-   :param indexes:
-   :param path:
-   :return:
+   :returns: Tuple of (initialized model, form of labelling string).
+
+   :raises ValueError: If the model name is not recognized.
+
+
+.. py:function:: load_json(path: str) -> Dict
+
+   Load JSON file into a dictionary.
+
+   :param path: Path to the JSON file.
+
+   :returns: Dictionary containing the JSON data.
+
+   :raises FileNotFoundError: If the file does not exist.
+   :raises json.JSONDecodeError: If the file contains invalid JSON.
+
+
+.. py:function:: save_embeddings(embeddings: numpy.ndarray, indexes: List, path: str) -> None
+
+   Save embeddings to a CSV file.
+
+   :param embeddings: NumPy array of embeddings with shape (n_items, embedding_dim).
+   :param indexes: List of index labels (entity/relation names).
+   :param path: Output file path.
 
 
 .. py:function:: random_prediction(pre_trained_kge)
@@ -140,7 +240,14 @@ Module Contents
 
 .. py:function:: vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into)
 
-.. py:function:: create_experiment_folder(folder_name='Experiments')
+.. py:function:: create_experiment_folder(folder_name: str = 'Experiments') -> str
+
+   Create a timestamped experiment folder.
+
+   :param folder_name: Base directory name for experiments.
+
+   :returns: Full path to the created experiment folder.
+
 
 .. py:function:: continual_training_setup_executor(executor) -> None
 

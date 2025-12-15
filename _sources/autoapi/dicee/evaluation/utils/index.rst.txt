@@ -1,0 +1,86 @@
+dicee.evaluation.utils
+======================
+
+.. py:module:: dicee.evaluation.utils
+
+.. autoapi-nested-parse::
+
+   Utility functions for evaluation module.
+
+   This module contains shared helper functions used across different
+   evaluation components.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   dicee.evaluation.utils.make_iterable_verbose
+   dicee.evaluation.utils.compute_metrics_from_ranks
+   dicee.evaluation.utils.compute_metrics_from_ranks_simple
+   dicee.evaluation.utils.update_hits
+   dicee.evaluation.utils.efficient_zero_grad
+
+
+Module Contents
+---------------
+
+.. py:function:: make_iterable_verbose(iterable_object: Iterable, verbose: bool, desc: str = 'Default', position: int = None, leave: bool = True) -> Iterable
+
+   Wrap an iterable with tqdm progress bar if verbose is True.
+
+   :param iterable_object: The iterable to potentially wrap.
+   :param verbose: Whether to show progress bar.
+   :param desc: Description for the progress bar.
+   :param position: Position of the progress bar.
+   :param leave: Whether to leave the progress bar after completion.
+
+   :returns: The original iterable or a tqdm-wrapped version.
+
+
+.. py:function:: compute_metrics_from_ranks(ranks: List[int], num_triples: int, hits_dict: Dict[int, List[float]], scale_factor: int = 1) -> Dict[str, float]
+
+   Compute standard link prediction metrics from ranks.
+
+   :param ranks: List of ranks for each prediction.
+   :param num_triples: Total number of triples evaluated.
+   :param hits_dict: Dictionary mapping hit levels to lists of hits.
+   :param scale_factor: Factor to scale the denominator (e.g., 2 for head+tail).
+
+   :returns: Dictionary containing H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: compute_metrics_from_ranks_simple(ranks: List[int], num_triples: int, hits_dict: Dict[int, List[float]]) -> Dict[str, float]
+
+   Compute link prediction metrics without scaling factor.
+
+   :param ranks: List of ranks for each prediction.
+   :param num_triples: Total number of triples evaluated.
+   :param hits_dict: Dictionary mapping hit levels to lists of hits.
+
+   :returns: Dictionary containing H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: update_hits(hits: Dict[int, List[float]], rank: int, hits_range: List[int] = None) -> None
+
+   Update hits dictionary based on rank.
+
+   :param hits: Dictionary to update in-place.
+   :param rank: The rank to check against hit levels.
+   :param hits_range: List of hit levels to check (default: 1-10).
+
+
+.. py:function:: efficient_zero_grad(model) -> None
+
+   Efficiently zero gradients using parameter.grad = None.
+
+   This is more efficient than optimizer.zero_grad() as it avoids
+   memory operations.
+
+   See: https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html
+
+   :param model: PyTorch model to zero gradients for.
+
+

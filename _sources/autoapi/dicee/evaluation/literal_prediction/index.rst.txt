@@ -1,0 +1,58 @@
+dicee.evaluation.literal_prediction
+===================================
+
+.. py:module:: dicee.evaluation.literal_prediction
+
+.. autoapi-nested-parse::
+
+   Literal prediction evaluation functions.
+
+   This module provides functions for evaluating literal/attribute prediction
+   performance of knowledge graph embedding models.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   dicee.evaluation.literal_prediction.evaluate_literal_prediction
+
+
+Module Contents
+---------------
+
+.. py:function:: evaluate_literal_prediction(kge_model, eval_file_path: str = None, store_lit_preds: bool = True, eval_literals: bool = True, loader_backend: str = 'pandas', return_attr_error_metrics: bool = False) -> Optional[pandas.DataFrame]
+
+   Evaluate trained literal prediction model on a test file.
+
+   Evaluates the literal prediction capabilities of a KGE model by
+   computing MAE and RMSE metrics for each attribute.
+
+   :param kge_model: Trained KGE model with literal prediction capability.
+   :param eval_file_path: Path to the evaluation file containing test literals.
+   :param store_lit_preds: If True, stores predictions to CSV file.
+   :param eval_literals: If True, evaluates and prints error metrics.
+   :param loader_backend: Backend for loading dataset ('pandas' or 'rdflib').
+   :param return_attr_error_metrics: If True, returns the metrics DataFrame.
+
+   :returns: DataFrame with per-attribute MAE and RMSE if return_attr_error_metrics
+             is True, otherwise None.
+
+   :raises RuntimeError: If the KGE model doesn't have a trained literal model.
+   :raises AssertionError: If model is invalid or test set has no valid data.
+
+   .. rubric:: Example
+
+   >>> from dicee import KGE
+   >>> from dicee.evaluation import evaluate_literal_prediction
+   >>> model = KGE(path="pretrained_model")
+   >>> metrics = evaluate_literal_prediction(
+   ...     model,
+   ...     eval_file_path="test_literals.csv",
+   ...     return_attr_error_metrics=True
+   ... )
+   >>> print(metrics)
+
+

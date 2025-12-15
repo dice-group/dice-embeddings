@@ -1,0 +1,131 @@
+dicee.evaluation.link_prediction
+================================
+
+.. py:module:: dicee.evaluation.link_prediction
+
+.. autoapi-nested-parse::
+
+   Link prediction evaluation functions.
+
+   This module provides various functions for evaluating link prediction
+   performance of knowledge graph embedding models.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   dicee.evaluation.link_prediction.evaluate_link_prediction_performance
+   dicee.evaluation.link_prediction.evaluate_link_prediction_performance_with_reciprocals
+   dicee.evaluation.link_prediction.evaluate_link_prediction_performance_with_bpe_reciprocals
+   dicee.evaluation.link_prediction.evaluate_link_prediction_performance_with_bpe
+   dicee.evaluation.link_prediction.evaluate_lp
+   dicee.evaluation.link_prediction.evaluate_bpe_lp
+   dicee.evaluation.link_prediction.evaluate_lp_bpe_k_vs_all
+
+
+Module Contents
+---------------
+
+.. py:function:: evaluate_link_prediction_performance(model, triples, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List]) -> Dict[str, float]
+
+   Evaluate link prediction performance with head and tail prediction.
+
+   Performs filtered evaluation where known correct answers are filtered
+   out before computing ranks.
+
+   :param model: KGE model wrapper with entity/relation mappings.
+   :param triples: Test triples as list of (head, relation, tail) strings.
+   :param er_vocab: Mapping (entity, relation) -> list of valid tail entities.
+   :param re_vocab: Mapping (relation, entity) -> list of valid head entities.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: evaluate_link_prediction_performance_with_reciprocals(model, triples, er_vocab: Dict[Tuple, List]) -> Dict[str, float]
+
+   Evaluate link prediction with reciprocal relations.
+
+   Optimized for models trained with reciprocal triples where only
+   tail prediction is needed.
+
+   :param model: KGE model wrapper.
+   :param triples: Test triples as list of (head, relation, tail) strings.
+   :param er_vocab: Mapping (entity, relation) -> list of valid tail entities.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: evaluate_link_prediction_performance_with_bpe_reciprocals(model, within_entities: List[str], triples: List[List[str]], er_vocab: Dict[Tuple, List]) -> Dict[str, float]
+
+   Evaluate link prediction with BPE encoding and reciprocals.
+
+   :param model: KGE model wrapper with BPE support.
+   :param within_entities: List of entities to evaluate within.
+   :param triples: Test triples as list of [head, relation, tail] strings.
+   :param er_vocab: Mapping (entity, relation) -> list of valid tail entities.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: evaluate_link_prediction_performance_with_bpe(model, within_entities: List[str], triples: List[Tuple[str]], er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List]) -> Dict[str, float]
+
+   Evaluate link prediction with BPE encoding (head and tail).
+
+   :param model: KGE model wrapper with BPE support.
+   :param within_entities: List of entities to evaluate within.
+   :param triples: Test triples as list of (head, relation, tail) tuples.
+   :param er_vocab: Mapping (entity, relation) -> list of valid tail entities.
+   :param re_vocab: Mapping (relation, entity) -> list of valid head entities.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: evaluate_lp(model, triple_idx, num_entities: int, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info: str = 'Eval Starts', batch_size: int = 128, chunk_size: int = 1000) -> Dict[str, float]
+
+   Evaluate link prediction with batched processing.
+
+   Memory-efficient evaluation using chunked entity scoring.
+
+   :param model: The KGE model to evaluate.
+   :param triple_idx: Integer-indexed triples as numpy array.
+   :param num_entities: Total number of entities.
+   :param er_vocab: Mapping (head_idx, rel_idx) -> list of tail indices.
+   :param re_vocab: Mapping (rel_idx, tail_idx) -> list of head indices.
+   :param info: Description to print.
+   :param batch_size: Batch size for triple processing.
+   :param chunk_size: Chunk size for entity scoring.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info: str = 'Eval Starts') -> Dict[str, float]
+
+   Evaluate link prediction with BPE-encoded entities.
+
+   :param model: The KGE model to evaluate.
+   :param triple_idx: List of BPE-encoded triple tuples.
+   :param all_bpe_shaped_entities: All entities with BPE representations.
+   :param er_vocab: Mapping for tail filtering.
+   :param re_vocab: Mapping for head filtering.
+   :param info: Description to print.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], er_vocab: Dict = None, batch_size: int = None, func_triple_to_bpe_representation: Callable = None, str_to_bpe_entity_to_idx: Dict = None) -> Dict[str, float]
+
+   Evaluate BPE link prediction with KvsAll scoring.
+
+   :param model: The KGE model wrapper.
+   :param triples: List of string triples.
+   :param er_vocab: Entity-relation vocabulary for filtering.
+   :param batch_size: Batch size for processing.
+   :param func_triple_to_bpe_representation: Function to convert triples to BPE.
+   :param str_to_bpe_entity_to_idx: Mapping from string entities to BPE indices.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+

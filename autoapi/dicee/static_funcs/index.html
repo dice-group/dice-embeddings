@@ -72,6 +72,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../config/index.html">dicee.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../dataset_classes/index.html">dicee.dataset_classes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../eval_static_funcs/index.html">dicee.eval_static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../evaluation/index.html">dicee.evaluation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../evaluator/index.html">dicee.evaluator</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../executer/index.html">dicee.executer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
@@ -82,8 +83,10 @@
 <li class="toctree-l3"><a class="reference internal" href="../sanity_checkers/index.html">dicee.sanity_checkers</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../scripts/index.html">dicee.scripts</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">dicee.static_funcs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#attributes">Attributes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.MODEL_REGISTRY"><code class="docutils literal notranslate"><span class="pre">MODEL_REGISTRY</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.create_recipriocal_triples"><code class="docutils literal notranslate"><span class="pre">create_recipriocal_triples()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.get_er_vocab"><code class="docutils literal notranslate"><span class="pre">get_er_vocab()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.get_re_vocab"><code class="docutils literal notranslate"><span class="pre">get_re_vocab()</span></code></a></li>
@@ -132,7 +135,6 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#classes">Classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../index.html#functions">Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
 </ul>
 </li>
@@ -165,33 +167,46 @@
              
   <section id="module-dicee.static_funcs">
 <span id="dicee-static-funcs"></span><h1>dicee.static_funcs<a class="headerlink" href="#module-dicee.static_funcs" title="Link to this heading"></a></h1>
+<p>Static utility functions for DICE embeddings.</p>
+<p>This module provides utility functions for model initialization, data loading,
+serialization, and various helper operations.</p>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.MODEL_REGISTRY" title="dicee.static_funcs.MODEL_REGISTRY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MODEL_REGISTRY</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.create_recipriocal_triples" title="dicee.static_funcs.create_recipriocal_triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_recipriocal_triples</span></code></a>(x)</p></td>
-<td><p>Add inverse triples into dask dataframe</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.create_recipriocal_triples" title="dicee.static_funcs.create_recipriocal_triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_recipriocal_triples</span></code></a>(→ pandas.DataFrame)</p></td>
+<td><p>Add inverse triples to a DataFrame.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.get_er_vocab" title="dicee.static_funcs.get_er_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_er_vocab</span></code></a>(data[, file_path])</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.get_er_vocab" title="dicee.static_funcs.get_er_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_er_vocab</span></code></a>(→ Dict[Tuple[int, int], List[int]])</p></td>
+<td><p>Build entity-relation to tail vocabulary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.get_re_vocab" title="dicee.static_funcs.get_re_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_re_vocab</span></code></a>(data[, file_path])</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.get_re_vocab" title="dicee.static_funcs.get_re_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_re_vocab</span></code></a>(→ Dict[Tuple[int, int], List[int]])</p></td>
+<td><p>Build relation-entity (tail) to head vocabulary.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.get_ee_vocab" title="dicee.static_funcs.get_ee_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_ee_vocab</span></code></a>(data[, file_path])</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.get_ee_vocab" title="dicee.static_funcs.get_ee_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_ee_vocab</span></code></a>(→ Dict[Tuple[int, int], List[int]])</p></td>
+<td><p>Build entity-entity to relation vocabulary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.timeit" title="dicee.static_funcs.timeit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">timeit</span></code></a>(func)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.timeit" title="dicee.static_funcs.timeit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">timeit</span></code></a>(→ Callable)</p></td>
+<td><p>Decorator to measure and print execution time and memory usage.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.save_pickle" title="dicee.static_funcs.save_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_pickle</span></code></a>(*[, data, file_path])</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.save_pickle" title="dicee.static_funcs.save_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_pickle</span></code></a>(→ None)</p></td>
+<td><p>Save data to a pickle file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.load_pickle" title="dicee.static_funcs.load_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_pickle</span></code></a>([file_path])</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.load_pickle" title="dicee.static_funcs.load_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_pickle</span></code></a>(→ object)</p></td>
+<td><p>Load data from a pickle file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.load_term_mapping" title="dicee.static_funcs.load_term_mapping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_term_mapping</span></code></a>([file_path])</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.load_term_mapping" title="dicee.static_funcs.load_term_mapping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_term_mapping</span></code></a>(→ Union[dict, polars.DataFrame])</p></td>
+<td><p>Load term-to-index mapping from pickle or CSV file.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.select_model" title="dicee.static_funcs.select_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">select_model</span></code></a>(args[, is_continual_training, storage_path])</p></td>
 <td><p></p></td>
@@ -220,14 +235,14 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.read_or_load_kg" title="dicee.static_funcs.read_or_load_kg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_or_load_kg</span></code></a>(args, cls)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.intialize_model" title="dicee.static_funcs.intialize_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">intialize_model</span></code></a>(→ Tuple[object, str])</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.intialize_model" title="dicee.static_funcs.intialize_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">intialize_model</span></code></a>(...)</p></td>
+<td><p>Initialize a knowledge graph embedding model.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.load_json" title="dicee.static_funcs.load_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_json</span></code></a>(→ dict)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.load_json" title="dicee.static_funcs.load_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_json</span></code></a>(→ Dict)</p></td>
+<td><p>Load JSON file into a dictionary.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.save_embeddings" title="dicee.static_funcs.save_embeddings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_embeddings</span></code></a>(→ None)</p></td>
-<td><p>Save it as CSV if memory allows.</p></td>
+<td><p>Save embeddings to a CSV file.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.random_prediction" title="dicee.static_funcs.random_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">random_prediction</span></code></a>(pre_trained_kge)</p></td>
 <td><p></p></td>
@@ -247,8 +262,8 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.vocab_to_parquet" title="dicee.static_funcs.vocab_to_parquet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vocab_to_parquet</span></code></a>(vocab_to_idx, name, ...)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.create_experiment_folder" title="dicee.static_funcs.create_experiment_folder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_experiment_folder</span></code></a>([folder_name])</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.create_experiment_folder" title="dicee.static_funcs.create_experiment_folder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_experiment_folder</span></code></a>(→ str)</p></td>
+<td><p>Create a timestamped experiment folder.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.continual_training_setup_executor" title="dicee.static_funcs.continual_training_setup_executor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">continual_training_setup_executor</span></code></a>(→ None)</p></td>
 <td><p></p></td>
@@ -282,48 +297,135 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="dicee.static_funcs.MODEL_REGISTRY">
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">MODEL_REGISTRY</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Type</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#dicee.static_funcs.MODEL_REGISTRY" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs.create_recipriocal_triples">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">create_recipriocal_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.static_funcs.create_recipriocal_triples" title="Link to this definition"></a></dt>
-<dd><p>Add inverse triples into dask dataframe
-:param x:
-:return:</p>
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">create_recipriocal_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#dicee.static_funcs.create_recipriocal_triples" title="Link to this definition"></a></dt>
+<dd><p>Add inverse triples to a DataFrame.</p>
+<p>For each triple (s, p, o), creates an inverse triple (o, p_inverse, s).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>df</strong> – DataFrame with ‘subject’, ‘relation’, and ‘object’ columns.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>DataFrame with original and inverse triples concatenated.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs.get_er_vocab">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">get_er_vocab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.static_funcs.get_er_vocab" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">get_er_vocab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dicee.static_funcs.get_er_vocab" title="Link to this definition"></a></dt>
+<dd><p>Build entity-relation to tail vocabulary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Array of triples with shape (n, 3) where columns are (head, relation, tail).</p></li>
+<li><p><strong>file_path</strong> – Optional path to save the vocabulary as pickle.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary mapping (head, relation) pairs to list of tail entities.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs.get_re_vocab">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">get_re_vocab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.static_funcs.get_re_vocab" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">get_re_vocab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dicee.static_funcs.get_re_vocab" title="Link to this definition"></a></dt>
+<dd><p>Build relation-entity (tail) to head vocabulary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Array of triples with shape (n, 3) where columns are (head, relation, tail).</p></li>
+<li><p><strong>file_path</strong> – Optional path to save the vocabulary as pickle.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary mapping (relation, tail) pairs to list of head entities.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs.get_ee_vocab">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">get_ee_vocab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.static_funcs.get_ee_vocab" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">get_ee_vocab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dicee.static_funcs.get_ee_vocab" title="Link to this definition"></a></dt>
+<dd><p>Build entity-entity to relation vocabulary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Array of triples with shape (n, 3) where columns are (head, relation, tail).</p></li>
+<li><p><strong>file_path</strong> – Optional path to save the vocabulary as pickle.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary mapping (head, tail) pairs to list of relations.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs.timeit">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">timeit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.static_funcs.timeit" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">timeit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span></span></span><a class="headerlink" href="#dicee.static_funcs.timeit" title="Link to this definition"></a></dt>
+<dd><p>Decorator to measure and print execution time and memory usage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>func</strong> – Function to be timed.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Wrapped function that prints timing information.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs.save_pickle">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">save_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.static_funcs.save_pickle" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">save_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.static_funcs.save_pickle" title="Link to this definition"></a></dt>
+<dd><p>Save data to a pickle file.</p>
+<p>Note: Consider using more portable formats (JSON, Parquet) for new code.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Object to serialize. If None, nothing is saved.</p></li>
+<li><p><strong>file_path</strong> – Path where the pickle file will be saved.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs.load_pickle">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">load_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.static_funcs.load_pickle" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">load_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">object</span></span></span><a class="headerlink" href="#dicee.static_funcs.load_pickle" title="Link to this definition"></a></dt>
+<dd><p>Load data from a pickle file.</p>
+<p>Note: Consider using more portable formats (JSON, Parquet) for new code.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> – Path to the pickle file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Deserialized object from the pickle file.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs.load_term_mapping">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">load_term_mapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.static_funcs.load_term_mapping" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">load_term_mapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">polars.DataFrame</span></span></span><a class="headerlink" href="#dicee.static_funcs.load_term_mapping" title="Link to this definition"></a></dt>
+<dd><p>Load term-to-index mapping from pickle or CSV file.</p>
+<p>Attempts to load from pickle first, falls back to CSV if not found.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> – Base path without extension.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary or Polars DataFrame containing the mapping.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs.select_model">
@@ -389,22 +491,57 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs.intialize_model">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">intialize_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">object</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dicee.static_funcs.intialize_model" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">intialize_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><span class="pre">dicee.models.base_model.BaseKGE</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dicee.static_funcs.intialize_model" title="Link to this definition"></a></dt>
+<dd><p>Initialize a knowledge graph embedding model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> – Dictionary containing model configuration including ‘model’ key.</p></li>
+<li><p><strong>verbose</strong> – Verbosity level. If &gt; 0, prints initialization message.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tuple of (initialized model, form of labelling string).</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the model name is not recognized.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs.load_json">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">load_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#dicee.static_funcs.load_json" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">load_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="headerlink" href="#dicee.static_funcs.load_json" title="Link to this definition"></a></dt>
+<dd><p>Load JSON file into a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> – Path to the JSON file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary containing the JSON data.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>FileNotFoundError</strong> – If the file does not exist.</p></li>
+<li><p><strong>json.JSONDecodeError</strong> – If the file contains invalid JSON.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs.save_embeddings">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">save_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embeddings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indexes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.static_funcs.save_embeddings" title="Link to this definition"></a></dt>
-<dd><p>Save it as CSV if memory allows.
-:param embeddings:
-:param indexes:
-:param path:
-:return:</p>
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">save_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">embeddings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indexes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.static_funcs.save_embeddings" title="Link to this definition"></a></dt>
+<dd><p>Save embeddings to a CSV file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>embeddings</strong> – NumPy array of embeddings with shape (n_items, embedding_dim).</p></li>
+<li><p><strong>indexes</strong> – List of index labels (entity/relation names).</p></li>
+<li><p><strong>path</strong> – Output file path.</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -439,8 +576,17 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs.create_experiment_folder">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">create_experiment_folder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Experiments'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.static_funcs.create_experiment_folder" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">create_experiment_folder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Experiments'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#dicee.static_funcs.create_experiment_folder" title="Link to this definition"></a></dt>
+<dd><p>Create a timestamped experiment folder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>folder_name</strong> – Base directory name for experiments.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Full path to the created experiment folder.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs.continual_training_setup_executor">

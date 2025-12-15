@@ -3,6 +3,14 @@ dicee.callbacks
 
 .. py:module:: dicee.callbacks
 
+.. autoapi-nested-parse::
+
+   Callbacks for training lifecycle events.
+
+   Provides callback classes for various training events including
+   epoch end, model saving, weight averaging, and evaluation.
+
+
 
 Classes
 -------
@@ -37,12 +45,9 @@ Module Contents
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
 
-   Abstract class for Callback class for knowledge graph embedding models
+   Callback to store epoch losses to a CSV file.
 
-
-   Parameter
-   ---------
-
+   :param path: Directory path where the loss file will be saved.
 
 
    .. py:attribute:: path
@@ -50,16 +55,10 @@ Module Contents
 
    .. py:method:: on_fit_end(trainer, model) -> None
 
-      Store epoch loss
+      Store epoch loss history to CSV file.
 
-
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The trainer instance.
+      :param model: The model being trained.
 
 
 

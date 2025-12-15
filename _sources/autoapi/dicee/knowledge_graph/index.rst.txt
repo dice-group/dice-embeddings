@@ -3,6 +3,14 @@ dicee.knowledge_graph
 
 .. py:module:: dicee.knowledge_graph
 
+.. autoapi-nested-parse::
+
+   Knowledge Graph module for data loading and preprocessing.
+
+   Provides the KG class for handling knowledge graph data including
+   loading, preprocessing, and indexing operations.
+
+
 
 Classes
 -------
@@ -15,9 +23,44 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: KG(dataset_dir: str = None, byte_pair_encoding: bool = False, padding: bool = False, add_noise_rate: float = None, sparql_endpoint: str = None, path_single_kg: str = None, path_for_deserialization: str = None, add_reciprocal: bool = None, eval_model: str = None, read_only_few: int = None, sample_triples_ratio: float = None, path_for_serialization: str = None, entity_to_idx=None, relation_to_idx=None, backend=None, training_technique: str = None, separator: str = None)
+.. py:class:: KG(dataset_dir: Optional[str] = None, byte_pair_encoding: bool = False, padding: bool = False, add_noise_rate: Optional[float] = None, sparql_endpoint: Optional[str] = None, path_single_kg: Optional[str] = None, path_for_deserialization: Optional[str] = None, add_reciprocal: Optional[bool] = None, eval_model: Optional[str] = None, read_only_few: Optional[int] = None, sample_triples_ratio: Optional[float] = None, path_for_serialization: Optional[str] = None, entity_to_idx: Optional[Dict] = None, relation_to_idx: Optional[Dict] = None, backend: Optional[str] = None, training_technique: Optional[str] = None, separator: Optional[str] = None)
 
-   Knowledge Graph
+   Knowledge Graph container and processor.
+
+   Handles loading, preprocessing, and indexing of knowledge graph data
+   from various sources including files, SPARQL endpoints, and serialized formats.
+
+   .. attribute:: dataset_dir
+
+      Path to directory containing train/valid/test files.
+
+   .. attribute:: num_entities
+
+      Total number of unique entities.
+
+   .. attribute:: num_relations
+
+      Total number of unique relations.
+
+   .. attribute:: train_set
+
+      Indexed training triples as numpy array.
+
+   .. attribute:: valid_set
+
+      Indexed validation triples (optional).
+
+   .. attribute:: test_set
+
+      Indexed test triples (optional).
+
+   .. attribute:: entity_to_idx
+
+      Mapping from entity strings to indices.
+
+   .. attribute:: relation_to_idx
+
+      Mapping from relation strings to indices.
 
 
    .. py:attribute:: dataset_dir
@@ -51,11 +94,13 @@ Module Contents
 
 
    .. py:attribute:: num_entities
+      :type:  Optional[int]
       :value: None
 
 
 
    .. py:attribute:: num_relations
+      :type:  Optional[int]
       :value: None
 
 
@@ -110,7 +155,43 @@ Module Contents
 
 
 
+   .. py:attribute:: separator
+      :value: None
+
+
+
+   .. py:attribute:: raw_train_set
+      :value: None
+
+
+
+   .. py:attribute:: raw_valid_set
+      :value: None
+
+
+
+   .. py:attribute:: raw_test_set
+      :value: None
+
+
+
+   .. py:attribute:: train_set
+      :value: None
+
+
+
+   .. py:attribute:: valid_set
+      :value: None
+
+
+
+   .. py:attribute:: test_set
+      :value: None
+
+
+
    .. py:attribute:: idx_entity_to_bpe_shaped
+      :type:  Dict
 
 
    .. py:attribute:: enc
@@ -120,6 +201,7 @@ Module Contents
 
 
    .. py:attribute:: num_bpe_entities
+      :type:  Optional[int]
       :value: None
 
 
@@ -133,6 +215,7 @@ Module Contents
 
 
    .. py:attribute:: max_length_subword_tokens
+      :type:  Optional[int]
       :value: None
 
 
@@ -143,6 +226,7 @@ Module Contents
 
 
    .. py:attribute:: target_dim
+      :type:  Optional[int]
       :value: None
 
 
@@ -157,11 +241,6 @@ Module Contents
 
 
 
-   .. py:attribute:: separator
-      :value: None
-
-
-
    .. py:attribute:: description_of_input
       :value: None
 
@@ -169,24 +248,46 @@ Module Contents
 
    .. py:method:: describe() -> None
 
+      Generate a description string of the dataset statistics.
+
+
 
    .. py:property:: entities_str
-      :type: List
+      :type: List[str]
 
+
+      Get list of all entity strings.
 
 
    .. py:property:: relations_str
-      :type: List
+      :type: List[str]
+
+
+      Get list of all relation strings.
+
+
+   .. py:method:: exists(h: str, r: str, t: str) -> bool
+
+      Check if a triple exists in the training set.
+
+      :param h: Head entity string.
+      :param r: Relation string.
+      :param t: Tail entity string.
+
+      :returns: True if the triple exists, False otherwise.
 
 
 
-   .. py:method:: exists(h: str, r: str, t: str)
+   .. py:method:: __iter__() -> Iterator[Tuple[str, str, str]]
+
+      Iterate over training triples as string tuples.
 
 
-   .. py:method:: __iter__()
 
+   .. py:method:: __len__() -> int
 
-   .. py:method:: __len__()
+      Return number of triples in the raw training set.
+
 
 
    .. py:method:: func_triple_to_bpe_representation(triple: List[str])

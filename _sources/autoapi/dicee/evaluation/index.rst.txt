@@ -1,0 +1,500 @@
+dicee.evaluation
+================
+
+.. py:module:: dicee.evaluation
+
+.. autoapi-nested-parse::
+
+   Evaluation module for knowledge graph embedding models.
+
+   This module provides comprehensive evaluation capabilities for KGE models,
+   including link prediction, literal prediction, and ensemble evaluation.
+
+   Modules:
+       link_prediction: Functions for evaluating link prediction performance
+       literal_prediction: Functions for evaluating literal/attribute prediction
+       ensemble: Functions for ensemble model evaluation
+       evaluator: Main Evaluator class for integrated evaluation
+       utils: Shared utility functions for evaluation
+
+   .. rubric:: Example
+
+   >>> from dicee.evaluation import Evaluator
+   >>> from dicee.evaluation.link_prediction import evaluate_link_prediction_performance
+   >>> from dicee.evaluation.ensemble import evaluate_ensemble_link_prediction_performance
+
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/dicee/evaluation/ensemble/index
+   /autoapi/dicee/evaluation/evaluator/index
+   /autoapi/dicee/evaluation/link_prediction/index
+   /autoapi/dicee/evaluation/literal_prediction/index
+   /autoapi/dicee/evaluation/utils/index
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   dicee.evaluation.Evaluator
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   dicee.evaluation.evaluate_link_prediction_performance
+   dicee.evaluation.evaluate_link_prediction_performance_with_reciprocals
+   dicee.evaluation.evaluate_link_prediction_performance_with_bpe
+   dicee.evaluation.evaluate_link_prediction_performance_with_bpe_reciprocals
+   dicee.evaluation.evaluate_lp
+   dicee.evaluation.evaluate_lp_bpe_k_vs_all
+   dicee.evaluation.evaluate_bpe_lp
+   dicee.evaluation.evaluate_literal_prediction
+   dicee.evaluation.evaluate_ensemble_link_prediction_performance
+   dicee.evaluation.compute_metrics_from_ranks
+   dicee.evaluation.make_iterable_verbose
+
+
+Package Contents
+----------------
+
+.. py:class:: Evaluator(args, is_continual_training: bool = False)
+
+   Evaluator class for KGE models in various downstream tasks.
+
+   Orchestrates link prediction evaluation with different scoring techniques
+   including standard evaluation and byte-pair encoding based evaluation.
+
+   .. attribute:: er_vocab
+
+      Entity-relation to tail vocabulary for filtered ranking.
+
+   .. attribute:: re_vocab
+
+      Relation-entity (tail) to head vocabulary.
+
+   .. attribute:: ee_vocab
+
+      Entity-entity to relation vocabulary.
+
+   .. attribute:: num_entities
+
+      Total number of entities in the knowledge graph.
+
+   .. attribute:: num_relations
+
+      Total number of relations in the knowledge graph.
+
+   .. attribute:: args
+
+      Configuration arguments.
+
+   .. attribute:: report
+
+      Dictionary storing evaluation results.
+
+   .. attribute:: during_training
+
+      Whether evaluation is happening during training.
+
+   .. rubric:: Example
+
+   >>> from dicee.evaluation import Evaluator
+   >>> evaluator = Evaluator(args)
+   >>> results = evaluator.eval(dataset, model, 'EntityPrediction')
+   >>> print(f"Test MRR: {results['Test']['MRR']:.4f}")
+
+
+   .. py:attribute:: re_vocab
+      :type:  Optional[Dict]
+      :value: None
+
+
+
+   .. py:attribute:: er_vocab
+      :type:  Optional[Dict]
+      :value: None
+
+
+
+   .. py:attribute:: ee_vocab
+      :type:  Optional[Dict]
+      :value: None
+
+
+
+   .. py:attribute:: func_triple_to_bpe_representation
+      :value: None
+
+
+
+   .. py:attribute:: is_continual_training
+      :value: False
+
+
+
+   .. py:attribute:: num_entities
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: num_relations
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: domain_constraints_per_rel
+      :value: None
+
+
+
+   .. py:attribute:: range_constraints_per_rel
+      :value: None
+
+
+
+   .. py:attribute:: args
+
+
+   .. py:attribute:: report
+      :type:  Dict
+
+
+   .. py:attribute:: during_training
+      :value: False
+
+
+
+   .. py:method:: vocab_preparation(dataset) -> None
+
+      Prepare vocabularies from the dataset for evaluation.
+
+      Resolves any future objects and saves vocabularies to disk.
+
+      :param dataset: Knowledge graph dataset with vocabulary attributes.
+
+
+
+   .. py:method:: eval(dataset, trained_model, form_of_labelling: str, during_training: bool = False) -> Optional[Dict]
+
+      Evaluate the trained model on the dataset.
+
+      :param dataset: Knowledge graph dataset (KG instance).
+      :param trained_model: The trained KGE model.
+      :param form_of_labelling: Type of labelling ('EntityPrediction' or 'RelationPrediction').
+      :param during_training: Whether evaluation is during training.
+
+      :returns: Dictionary of evaluation metrics, or None if evaluation is skipped.
+
+
+
+   .. py:method:: eval_rank_of_head_and_tail_entity(*, train_set, valid_set=None, test_set=None, trained_model) -> None
+
+      Evaluate with negative sampling scoring.
+
+
+
+   .. py:method:: eval_rank_of_head_and_tail_byte_pair_encoded_entity(*, train_set=None, valid_set=None, test_set=None, ordered_bpe_entities, trained_model) -> None
+
+      Evaluate with BPE-encoded entities and negative sampling.
+
+
+
+   .. py:method:: eval_with_byte(*, raw_train_set, raw_valid_set=None, raw_test_set=None, trained_model, form_of_labelling) -> None
+
+      Evaluate BytE model with generation.
+
+
+
+   .. py:method:: eval_with_bpe_vs_all(*, raw_train_set, raw_valid_set=None, raw_test_set=None, trained_model, form_of_labelling) -> None
+
+      Evaluate with BPE and KvsAll scoring.
+
+
+
+   .. py:method:: eval_with_vs_all(*, train_set, valid_set=None, test_set=None, trained_model, form_of_labelling) -> None
+
+      Evaluate with KvsAll or 1vsAll scoring.
+
+
+
+   .. py:method:: evaluate_lp_k_vs_all(model, triple_idx, info: str = None, form_of_labelling: str = None) -> Dict[str, float]
+
+      Filtered link prediction evaluation with KvsAll scoring.
+
+      :param model: The trained model to evaluate.
+      :param triple_idx: Integer-indexed test triples.
+      :param info: Description to print.
+      :param form_of_labelling: 'EntityPrediction' or 'RelationPrediction'.
+
+      :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+
+   .. py:method:: evaluate_lp_with_byte(model, triples: List[List[str]], info: str = None) -> Dict[str, float]
+
+      Evaluate BytE model with text generation.
+
+      :param model: BytE model.
+      :param triples: String triples.
+      :param info: Description to print.
+
+      :returns: Dictionary with placeholder metrics (-1 values).
+
+
+
+   .. py:method:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], info: str = None, form_of_labelling: str = None) -> Dict[str, float]
+
+      Evaluate BPE model with KvsAll scoring.
+
+      :param model: BPE-enabled model.
+      :param triples: String triples.
+      :param info: Description to print.
+      :param form_of_labelling: Type of labelling.
+
+      :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+
+   .. py:method:: evaluate_lp(model, triple_idx, info: str) -> Dict[str, float]
+
+      Evaluate link prediction with negative sampling.
+
+      :param model: The model to evaluate.
+      :param triple_idx: Integer-indexed triples.
+      :param info: Description to print.
+
+      :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+
+   .. py:method:: dummy_eval(trained_model, form_of_labelling: str) -> None
+
+      Run evaluation from saved data (for continual training).
+
+      :param trained_model: The trained model.
+      :param form_of_labelling: Type of labelling.
+
+
+
+   .. py:method:: eval_with_data(dataset, trained_model, triple_idx: numpy.ndarray, form_of_labelling: str) -> Dict[str, float]
+
+      Evaluate a trained model on a given dataset.
+
+      :param dataset: Knowledge graph dataset.
+      :param trained_model: The trained model.
+      :param triple_idx: Integer-indexed triples to evaluate.
+      :param form_of_labelling: Type of labelling.
+
+      :returns: Dictionary with evaluation metrics.
+
+      :raises ValueError: If scoring technique is invalid.
+
+
+
+.. py:function:: evaluate_link_prediction_performance(model, triples, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List]) -> Dict[str, float]
+
+   Evaluate link prediction performance with head and tail prediction.
+
+   Performs filtered evaluation where known correct answers are filtered
+   out before computing ranks.
+
+   :param model: KGE model wrapper with entity/relation mappings.
+   :param triples: Test triples as list of (head, relation, tail) strings.
+   :param er_vocab: Mapping (entity, relation) -> list of valid tail entities.
+   :param re_vocab: Mapping (relation, entity) -> list of valid head entities.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: evaluate_link_prediction_performance_with_reciprocals(model, triples, er_vocab: Dict[Tuple, List]) -> Dict[str, float]
+
+   Evaluate link prediction with reciprocal relations.
+
+   Optimized for models trained with reciprocal triples where only
+   tail prediction is needed.
+
+   :param model: KGE model wrapper.
+   :param triples: Test triples as list of (head, relation, tail) strings.
+   :param er_vocab: Mapping (entity, relation) -> list of valid tail entities.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: evaluate_link_prediction_performance_with_bpe(model, within_entities: List[str], triples: List[Tuple[str]], er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List]) -> Dict[str, float]
+
+   Evaluate link prediction with BPE encoding (head and tail).
+
+   :param model: KGE model wrapper with BPE support.
+   :param within_entities: List of entities to evaluate within.
+   :param triples: Test triples as list of (head, relation, tail) tuples.
+   :param er_vocab: Mapping (entity, relation) -> list of valid tail entities.
+   :param re_vocab: Mapping (relation, entity) -> list of valid head entities.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: evaluate_link_prediction_performance_with_bpe_reciprocals(model, within_entities: List[str], triples: List[List[str]], er_vocab: Dict[Tuple, List]) -> Dict[str, float]
+
+   Evaluate link prediction with BPE encoding and reciprocals.
+
+   :param model: KGE model wrapper with BPE support.
+   :param within_entities: List of entities to evaluate within.
+   :param triples: Test triples as list of [head, relation, tail] strings.
+   :param er_vocab: Mapping (entity, relation) -> list of valid tail entities.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: evaluate_lp(model, triple_idx, num_entities: int, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info: str = 'Eval Starts', batch_size: int = 128, chunk_size: int = 1000) -> Dict[str, float]
+
+   Evaluate link prediction with batched processing.
+
+   Memory-efficient evaluation using chunked entity scoring.
+
+   :param model: The KGE model to evaluate.
+   :param triple_idx: Integer-indexed triples as numpy array.
+   :param num_entities: Total number of entities.
+   :param er_vocab: Mapping (head_idx, rel_idx) -> list of tail indices.
+   :param re_vocab: Mapping (rel_idx, tail_idx) -> list of head indices.
+   :param info: Description to print.
+   :param batch_size: Batch size for triple processing.
+   :param chunk_size: Chunk size for entity scoring.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], er_vocab: Dict = None, batch_size: int = None, func_triple_to_bpe_representation: Callable = None, str_to_bpe_entity_to_idx: Dict = None) -> Dict[str, float]
+
+   Evaluate BPE link prediction with KvsAll scoring.
+
+   :param model: The KGE model wrapper.
+   :param triples: List of string triples.
+   :param er_vocab: Entity-relation vocabulary for filtering.
+   :param batch_size: Batch size for processing.
+   :param func_triple_to_bpe_representation: Function to convert triples to BPE.
+   :param str_to_bpe_entity_to_idx: Mapping from string entities to BPE indices.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info: str = 'Eval Starts') -> Dict[str, float]
+
+   Evaluate link prediction with BPE-encoded entities.
+
+   :param model: The KGE model to evaluate.
+   :param triple_idx: List of BPE-encoded triple tuples.
+   :param all_bpe_shaped_entities: All entities with BPE representations.
+   :param er_vocab: Mapping for tail filtering.
+   :param re_vocab: Mapping for head filtering.
+   :param info: Description to print.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: evaluate_literal_prediction(kge_model, eval_file_path: str = None, store_lit_preds: bool = True, eval_literals: bool = True, loader_backend: str = 'pandas', return_attr_error_metrics: bool = False) -> Optional[pandas.DataFrame]
+
+   Evaluate trained literal prediction model on a test file.
+
+   Evaluates the literal prediction capabilities of a KGE model by
+   computing MAE and RMSE metrics for each attribute.
+
+   :param kge_model: Trained KGE model with literal prediction capability.
+   :param eval_file_path: Path to the evaluation file containing test literals.
+   :param store_lit_preds: If True, stores predictions to CSV file.
+   :param eval_literals: If True, evaluates and prints error metrics.
+   :param loader_backend: Backend for loading dataset ('pandas' or 'rdflib').
+   :param return_attr_error_metrics: If True, returns the metrics DataFrame.
+
+   :returns: DataFrame with per-attribute MAE and RMSE if return_attr_error_metrics
+             is True, otherwise None.
+
+   :raises RuntimeError: If the KGE model doesn't have a trained literal model.
+   :raises AssertionError: If model is invalid or test set has no valid data.
+
+   .. rubric:: Example
+
+   >>> from dicee import KGE
+   >>> from dicee.evaluation import evaluate_literal_prediction
+   >>> model = KGE(path="pretrained_model")
+   >>> metrics = evaluate_literal_prediction(
+   ...     model,
+   ...     eval_file_path="test_literals.csv",
+   ...     return_attr_error_metrics=True
+   ... )
+   >>> print(metrics)
+
+
+.. py:function:: evaluate_ensemble_link_prediction_performance(models: List, triples, er_vocab: Dict[Tuple, List], weights: Optional[List[float]] = None, batch_size: int = 512, weighted_averaging: bool = True, normalize_scores: bool = True) -> Dict[str, float]
+
+   Evaluate link prediction performance of an ensemble of KGE models.
+
+   Combines predictions from multiple models using weighted or simple
+   averaging, with optional score normalization.
+
+   :param models: List of KGE models (e.g., snapshots from training).
+   :param triples: Test triples as numpy array or list, shape (N, 3),
+                   with integer indices (head, relation, tail).
+   :param er_vocab: Mapping (head_idx, rel_idx) -> list of tail indices
+                    for filtered evaluation.
+   :param weights: Weights for model averaging. Required if weighted_averaging
+                   is True. Must sum to 1 for proper averaging.
+   :param batch_size: Batch size for processing triples.
+   :param weighted_averaging: If True, use weighted averaging of predictions.
+                              If False, use simple mean.
+   :param normalize_scores: If True, normalize scores to [0, 1] range per
+                            sample before averaging.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+   :raises AssertionError: If weighted_averaging is True but weights are not
+       provided or have wrong length.
+
+   .. rubric:: Example
+
+   >>> from dicee.evaluation import evaluate_ensemble_link_prediction_performance
+   >>> models = [model1, model2, model3]
+   >>> weights = [0.5, 0.3, 0.2]
+   >>> results = evaluate_ensemble_link_prediction_performance(
+   ...     models, test_triples, er_vocab,
+   ...     weights=weights, weighted_averaging=True
+   ... )
+   >>> print(f"MRR: {results['MRR']:.4f}")
+
+
+.. py:function:: compute_metrics_from_ranks(ranks: List[int], num_triples: int, hits_dict: Dict[int, List[float]], scale_factor: int = 1) -> Dict[str, float]
+
+   Compute standard link prediction metrics from ranks.
+
+   :param ranks: List of ranks for each prediction.
+   :param num_triples: Total number of triples evaluated.
+   :param hits_dict: Dictionary mapping hit levels to lists of hits.
+   :param scale_factor: Factor to scale the denominator (e.g., 2 for head+tail).
+
+   :returns: Dictionary containing H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: make_iterable_verbose(iterable_object: Iterable, verbose: bool, desc: str = 'Default', position: int = None, leave: bool = True) -> Iterable
+
+   Wrap an iterable with tqdm progress bar if verbose is True.
+
+   :param iterable_object: The iterable to potentially wrap.
+   :param verbose: Whether to show progress bar.
+   :param desc: Description for the progress bar.
+   :param position: Position of the progress bar.
+   :param leave: Whether to leave the progress bar after completion.
+
+   :returns: The original iterable or a tqdm-wrapped version.
+
+

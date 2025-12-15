@@ -3,6 +3,14 @@ dicee.config
 
 .. py:module:: dicee.config
 
+.. autoapi-nested-parse::
+
+   Configuration module for DICE embeddings.
+
+   Provides the Namespace class with default configuration values
+   for training knowledge graph embedding models.
+
+
 
 Classes
 -------
@@ -20,10 +28,11 @@ Module Contents
    Bases: :py:obj:`argparse.Namespace`
 
 
-   Simple object for storing attributes.
+   Extended Namespace with default KGE training configuration.
 
-   Implements equality by attribute names and values, and provides a simple
-   string representation.
+   Provides sensible defaults for all training parameters while
+   allowing easy customization through command-line arguments
+   or direct assignment.
 
 
    .. py:attribute:: dataset_dir

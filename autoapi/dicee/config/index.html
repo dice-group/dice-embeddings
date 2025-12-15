@@ -138,6 +138,7 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../dataset_classes/index.html">dicee.dataset_classes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../eval_static_funcs/index.html">dicee.eval_static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../evaluation/index.html">dicee.evaluation</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../evaluator/index.html">dicee.evaluator</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../executer/index.html">dicee.executer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
@@ -156,7 +157,6 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#classes">Classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../index.html#functions">Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
 </ul>
 </li>
@@ -189,12 +189,15 @@
              
   <section id="module-dicee.config">
 <span id="dicee-config"></span><h1>dicee.config<a class="headerlink" href="#module-dicee.config" title="Link to this heading"></a></h1>
+<p>Configuration module for DICE embeddings.</p>
+<p>Provides the Namespace class with default configuration values
+for training knowledge graph embedding models.</p>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.config.Namespace" title="dicee.config.Namespace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Namespace</span></code></a></p></td>
-<td><p>Simple object for storing attributes.</p></td>
+<td><p>Extended Namespace with default KGE training configuration.</p></td>
 </tr>
 </tbody>
 </table>
@@ -205,9 +208,10 @@
 <dt class="sig sig-object py" id="dicee.config.Namespace">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.config.</span></span><span class="sig-name descname"><span class="pre">Namespace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.config.Namespace" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">argparse.Namespace</span></code></p>
-<p>Simple object for storing attributes.</p>
-<p>Implements equality by attribute names and values, and provides a simple
-string representation.</p>
+<p>Extended Namespace with default KGE training configuration.</p>
+<p>Provides sensible defaults for all training parameters while
+allowing easy customization through command-line arguments
+or direct assignment.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.dataset_dir">
 <span class="sig-name descname"><span class="pre">dataset_dir</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.dataset_dir" title="Link to this definition"></a></dt>
