@@ -9,6 +9,16 @@
 
 # DICE Embeddings: Hardware-agnostic Framework for Large-scale Knowledge Graph Embeddings
 
+## Quick Reference
+
+| Feature | Command/Code |
+|---------|-------------|
+| **Install (CPU)** | `pip install dicee --extra-index-url https://download.pytorch.org/whl/cpu` |
+| **Install (GPU)** | `pip install dicee` |
+| **Train model** | `dicee --dataset_dir "KGs/UMLS" --model Keci` |
+| **Load pretrained** | `from dicee import KGE; model = KGE(path='...')` |
+| **Predict links** | `model.predict_topk(h=["entity"], r=["relation"], topk=10)` |
+
 Knowledge graph embedding research has mainly focused on learning continuous representations of knowledge graphs towards the link prediction problem. 
 Recently developed frameworks can be effectively applied in a wide range of research-related applications.
 Yet, using these frameworks in real-world applications becomes more challenging as the size of the knowledge graph grows.
@@ -33,8 +43,8 @@ PytorchLightning allows us to use state-of-the-art model parallelism techniques 
 without extra effort.
 With our framework, practitioners can directly use PytorchLightning for model parallelism to train gigantic embedding models.
 
-**Why [Hugging-face Gradio](https://huggingface.co/gradio)?**
-Deploy a pre-trained embedding model without writing a single line of code.
+**Why [Huggingface](https://huggingface.co/)?**
+Seamlessly deploy and share pre-trained embedding models through the Huggingface ecosystem.
 
 ## For more please visit [dice-embeddings](https://dice-group.github.io/dice-embeddings/)!
 
@@ -454,21 +464,6 @@ mure.predict_topk(h=["Mongolia"],r=["isLocatedIn"],topk=3)
 ```
 
 </details>
-
-## How to Deploy
-<details> <summary> To see a single line of code</summary>
-
-```python
-from dicee import KGE
-KGE(path='...').deploy(share=True,top_k=10)
-```
-
-</details>
-
-<details> <summary> To see the interface of the webservice</summary>
-<img src="dicee/lp.png" alt="Italian Trulli">
-</details>
-
 
 ## Link Prediction Benchmarks
 

@@ -1,8 +1,7 @@
 from typing import List, Tuple, Set, Iterable, Dict, Union
 import torch
 from .abstracts import BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrainKGE
-from .static_funcs import random_prediction, deploy_triple_prediction, deploy_tail_entity_prediction, \
-    deploy_relation_prediction, deploy_head_entity_prediction, load_pickle
+from .static_funcs import load_pickle
 from .evaluation.link_prediction import evaluate_lp
 import numpy as np
 import sys
@@ -1261,48 +1260,6 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
                             if len(extended_triples) == at_most:
                                 return extended_triples
         return extended_triples
-
-    def deploy(self, share: bool = False, top_k: int = 10):
-        # Lazy import
-        import gradio as gr
-
-        def predict(str_subject: str, str_predicate: str, str_object: str, random_examples: bool):
-
-            if random_examples:
-                return random_prediction(self)
-            else:
-                if self.is_seen(entity=str_subject) and self.is_seen(
-                        relation=str_predicate) and self.is_seen(entity=str_object):
-                    """ Triple Prediction """
-                    return deploy_triple_prediction(self, str_subject, str_predicate, str_object)
-
-                elif self.is_seen(entity=str_subject) and self.is_seen(
-                        relation=str_predicate):
-                    """ Tail Entity Prediction """
-                    return deploy_tail_entity_prediction(self, str_subject, str_predicate, top_k)
-                elif self.is_seen(entity=str_object) and self.is_seen(
-                        relation=str_predicate):
-                    """ Head Entity Prediction """
-                    return deploy_head_entity_prediction(self, str_object, str_predicate, top_k)
-                elif self.is_seen(entity=str_subject) and self.is_seen(entity=str_object):
-                    """ Relation Prediction """
-                    return deploy_relation_prediction(self, str_subject, str_object, top_k)
-                else:
-                    KeyError('Uncovered scenario')
-            # If user simply select submit
-            return random_prediction(self)
-
-        gr.Interface(
-            fn=predict,
-            inputs=[gr.Textbox(lines=1, placeholder=None, label='Subject'),
-                    gr.Textbox(lines=1, placeholder=None, label='Predicate'),
-                    gr.Textbox(lines=1, placeholder=None, label='Object'), "checkbox"],
-            outputs=[gr.Textbox(label='Input Triple'),
-                     gr.Dataframe(label='Outputs', type='pandas')],
-            title=f'{self.name} Deployment',
-            description='1. Enter a triple to compute its score,\n'
-                        '2. Enter a subject and predicate pair to obtain most likely top ten entities or\n'
-                        '3. Checked the random examples box and click submit').launch(share=share)
 
     def predict_literals(
         self,

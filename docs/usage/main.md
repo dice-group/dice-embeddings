@@ -42,9 +42,8 @@ PytorchLightning allows us to use state-of-the-art model parallelism techniques 
 without extra effort.
 With our framework, practitioners can directly use PytorchLightning for model parallelism to train gigantic embedding models.
 
-**Why [Hugging-face Gradio](https://huggingface.co/gradio)?**
-Deploy a pre-trained embedding model without writing a single line of code.
-
+**Why [Huggingface](https://huggingface.co/)?**
+Seamlessly deploy and share pre-trained embedding models through the Huggingface ecosystem.
 
 ## Installation
 
