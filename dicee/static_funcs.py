@@ -626,48 +626,6 @@ def save_embeddings(embeddings: np.ndarray, indexes: List, path: str) -> None:
         print('Computation will continue.')
 
 
-def random_prediction(pre_trained_kge):
-    head_entity: List[str]
-    relation: List[str]
-    tail_entity: List[str]
-    head_entity = pre_trained_kge.sample_entity(1)
-    relation = pre_trained_kge.sample_relation(1)
-    tail_entity = pre_trained_kge.sample_entity(1)
-    triple_score = pre_trained_kge.triple_score(h=head_entity,
-                                                r=relation,
-                                                t=tail_entity)
-    return f'( {head_entity[0]},{relation[0]}, {tail_entity[0]} )', pd.DataFrame({'Score': triple_score})
-
-
-def deploy_triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object):
-    triple_score = pre_trained_kge.triple_score(h=[str_subject],
-                                                r=[str_predicate],
-                                                t=[str_object])
-    return f'( {str_subject}, {str_predicate}, {str_object} )', pd.DataFrame({'Score': triple_score})
-
-
-def deploy_tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, top_k):
-    if pre_trained_kge.model.name == 'Shallom':
-        print('Tail entity prediction is not available for Shallom')
-        raise NotImplementedError
-    str_entity_scores = pre_trained_kge.predict_topk(h=[str_subject], r=[str_predicate], topk=top_k)
-
-    return f'(  {str_subject},  {str_predicate}, ? )', pd.DataFrame(str_entity_scores,columns=["entity","score"])
-
-
-def deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, top_k):
-    if pre_trained_kge.model.name == 'Shallom':
-        print('Head entity prediction is not available for Shallom')
-        raise NotImplementedError
-    str_entity_scores = pre_trained_kge.predict_topk(t=[str_object], r=[str_predicate], topk=top_k)
-    return f'(  ?,  {str_predicate}, {str_object} )', pd.DataFrame(str_entity_scores,columns=["entity","score"])
-
-
-def deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
-    str_relation_scores = pre_trained_kge.predict_topk(h=[str_subject], t=[str_object], topk=top_k)
-    return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame(str_relation_scores,columns=["relation","score"])
-
-
 @timeit
 def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     # @TODO: This function should take any DASK/Pandas DataFrame or Series.
