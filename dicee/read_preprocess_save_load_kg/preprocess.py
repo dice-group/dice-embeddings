@@ -324,17 +324,17 @@ class PreprocessKG:
             splits.append(self.kg.raw_test_set)
         df_str_kg = pl.concat(splits)
         
-        # Build entity vocabulary
+        # Build entity vocabulary (sorted alphabetically for deterministic indexing)
         print("Collecting entities...")
-        subjects = df_str_kg.select(pl.col("subject").unique(maintain_order=True).alias("entity"))
-        objects = df_str_kg.select(pl.col("object").unique(maintain_order=True).alias("entity"))
-        self.kg.entity_to_idx = pl.concat([subjects, objects], how="vertical").unique(maintain_order=True)
+        subjects = df_str_kg.select(pl.col("subject").unique().alias("entity"))
+        objects = df_str_kg.select(pl.col("object").unique().alias("entity"))
+        self.kg.entity_to_idx = pl.concat([subjects, objects], how="vertical").unique().sort("entity")
         self.kg.entity_to_idx = self.kg.entity_to_idx.with_row_index("index").select(["index", "entity"])
         print(f"Unique entities: {len(self.kg.entity_to_idx)}")
         
-        # Build relation vocabulary
+        # Build relation vocabulary (sorted alphabetically for deterministic indexing)
         print('Relation Indexing...')
-        self.kg.relation_to_idx = df_str_kg.select(pl.col("relation").unique(maintain_order=True))
+        self.kg.relation_to_idx = df_str_kg.select(pl.col("relation").unique()).sort("relation")
         self.kg.relation_to_idx = self.kg.relation_to_idx.with_row_index("index").select(["index", "relation"])
         del df_str_kg
         # Index datasets
@@ -377,16 +377,10 @@ class PreprocessKG:
         df_str_kg = pd.concat(splits, ignore_index=True)
         print('Creating a mapping from entities to integer indexes...')
         # (5) Create a bijection mapping from entities of (2) to integer indexes.
-        # ravel('K') => Return a contiguous flattened array.
-        # ‘K’ means to read the elements in the order they occur in memory,
-        # except for reversing the data when strides are negative.
-        # ordered_list = pd.unique(df_str_kg[['subject', 'object']].values.ravel('K')).tolist()
-        # self.kg.entity_to_idx = {k: i for i, k in enumerate(ordered_list)}
-        # Instead of dict, storing it in a pandas dataframe
-        self.kg.entity_to_idx = pd.concat((df_str_kg['subject'],df_str_kg['object'])).to_frame("entity").drop_duplicates(keep="first",ignore_index=True)
-        # 5. Create a bijection mapping  from relations to integer indexes.
-        # ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K')).tolist()
-        # self.kg.relation_to_idx = {k: i for i, k in enumerate(ordered_list)}
-        self.kg.relation_to_idx = df_str_kg['relation'].to_frame("relation").drop_duplicates(keep="first", ignore_index=True)
+        # Build entity vocabulary (sorted alphabetically for deterministic indexing)
+        # This ensures the same entity always gets the same index regardless of input order
+        self.kg.entity_to_idx = pd.concat((df_str_kg['subject'],df_str_kg['object'])).drop_duplicates().sort_values().reset_index(drop=True).to_frame("entity")
+        # Build relation vocabulary (sorted alphabetically for deterministic indexing)
+        self.kg.relation_to_idx = df_str_kg['relation'].drop_duplicates().sort_values().reset_index(drop=True).to_frame("relation")
 
         # del ordered_list
