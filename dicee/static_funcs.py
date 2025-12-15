@@ -1,99 +1,198 @@
-import numpy as np
-import torch
+"""Static utility functions for DICE embeddings.
+
+This module provides utility functions for model initialization, data loading,
+serialization, and various helper operations.
+"""
+import csv
 import datetime
-from typing import Tuple, List
-from .models import Pyke, DistMult, CKeci, Keci, TransE, DeCaL, DualE,\
-    ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom, LFMult, CoKE
+import functools
+import glob
+import json
+import os
+import pickle
+import time
+from collections import defaultdict
+from typing import Callable, Dict, List, Optional, Tuple, Type, Union
+
+import numpy as np
+import pandas as pd
+import polars as pl
+import psutil
+import requests
+import torch
+
+from .models import (
+    AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ,
+    DeCaL, DistMult, DualE, Keci, LFMult, OMult, Pyke, QMult, Shallom, TransE
+)
+from .models.base_model import BaseKGE
+from .models.ensemble import EnsembleKGE
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
-import time
-import pandas as pd
-import json
-import glob
-import functools
-import os
-import psutil
-from .models.base_model import BaseKGE
-import pickle
-from collections import defaultdict
-import polars as pl
-import requests
-import csv
-from .models.ensemble import EnsembleKGE
 
-def create_recipriocal_triples(x):
+# Model registry mapping model names to their classes and labelling types
+MODEL_REGISTRY: Dict[str, Tuple[Type, str]] = {
+    'Shallom': (Shallom, 'RelationPrediction'),
+    'ConEx': (ConEx, 'EntityPrediction'),
+    'AConEx': (AConEx, 'EntityPrediction'),
+    'QMult': (QMult, 'EntityPrediction'),
+    'OMult': (OMult, 'EntityPrediction'),
+    'ConvQ': (ConvQ, 'EntityPrediction'),
+    'AConvQ': (AConvQ, 'EntityPrediction'),
+    'ConvO': (ConvO, 'EntityPrediction'),
+    'AConvO': (AConvO, 'EntityPrediction'),
+    'ComplEx': (ComplEx, 'EntityPrediction'),
+    'DistMult': (DistMult, 'EntityPrediction'),
+    'TransE': (TransE, 'EntityPrediction'),
+    'Pyke': (Pyke, 'EntityPrediction'),
+    'Keci': (Keci, 'EntityPrediction'),
+    'CKeci': (CKeci, 'EntityPrediction'),
+    'BytE': (BytE, 'EntityPrediction'),
+    'LFMult': (LFMult, 'EntityPrediction'),
+    'DeCaL': (DeCaL, 'EntityPrediction'),
+    'DualE': (DualE, 'EntityPrediction'),
+    'CoKE': (CoKE, 'EntityPrediction'),
+}
+
+def create_recipriocal_triples(df: pd.DataFrame) -> pd.DataFrame:
+    """Add inverse triples to a DataFrame.
+
+    For each triple (s, p, o), creates an inverse triple (o, p_inverse, s).
+
+    Args:
+        df: DataFrame with 'subject', 'relation', and 'object' columns.
+
+    Returns:
+        DataFrame with original and inverse triples concatenated.
     """
-    Add inverse triples into dask dataframe
-    :param x:
-    :return:
+    inverse_df = pd.DataFrame({
+        'subject': df['object'],
+        'relation': df['relation'] + '_inverse',
+        'object': df['subject']
+    })
+    return pd.concat([df, inverse_df], ignore_index=True)
+
+
+def get_er_vocab(data: np.ndarray, file_path: Optional[str] = None) -> Dict[Tuple[int, int], List[int]]:
+    """Build entity-relation to tail vocabulary.
+
+    Args:
+        data: Array of triples with shape (n, 3) where columns are (head, relation, tail).
+        file_path: Optional path to save the vocabulary as pickle.
+
+    Returns:
+        Dictionary mapping (head, relation) pairs to list of tail entities.
     """
-    return pd.concat([x, x['object'].to_frame(name='subject').join(
-        x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
-        x['subject'].to_frame(name='object'))], ignore_index=True)
-
-
-def get_er_vocab(data, file_path: str = None):
-    # head entity and relation
-    er_vocab = defaultdict(list)
-    for triple in data:
-        h, r, t = triple
+    er_vocab: Dict[Tuple[int, int], List[int]] = defaultdict(list)
+    for h, r, t in data:
         er_vocab[(h, r)].append(t)
     if file_path:
         save_pickle(data=er_vocab, file_path=file_path)
     return er_vocab
 
 
-def get_re_vocab(data, file_path: str = None):
-    # head entity and relation
-    re_vocab = defaultdict(list)
-    for triple in data:
-        re_vocab[(triple[1], triple[2])].append(triple[0])
+def get_re_vocab(data: np.ndarray, file_path: Optional[str] = None) -> Dict[Tuple[int, int], List[int]]:
+    """Build relation-entity (tail) to head vocabulary.
+
+    Args:
+        data: Array of triples with shape (n, 3) where columns are (head, relation, tail).
+        file_path: Optional path to save the vocabulary as pickle.
+
+    Returns:
+        Dictionary mapping (relation, tail) pairs to list of head entities.
+    """
+    re_vocab: Dict[Tuple[int, int], List[int]] = defaultdict(list)
+    for h, r, t in data:
+        re_vocab[(r, t)].append(h)
     if file_path:
         save_pickle(data=re_vocab, file_path=file_path)
     return re_vocab
 
 
-def get_ee_vocab(data, file_path: str = None):
-    # head entity and relation
-    ee_vocab = defaultdict(list)
-    for triple in data:
-        ee_vocab[(triple[0], triple[2])].append(triple[1])
+def get_ee_vocab(data: np.ndarray, file_path: Optional[str] = None) -> Dict[Tuple[int, int], List[int]]:
+    """Build entity-entity to relation vocabulary.
+
+    Args:
+        data: Array of triples with shape (n, 3) where columns are (head, relation, tail).
+        file_path: Optional path to save the vocabulary as pickle.
+
+    Returns:
+        Dictionary mapping (head, tail) pairs to list of relations.
+    """
+    ee_vocab: Dict[Tuple[int, int], List[int]] = defaultdict(list)
+    for h, r, t in data:
+        ee_vocab[(h, t)].append(r)
     if file_path:
         save_pickle(data=ee_vocab, file_path=file_path)
     return ee_vocab
 
 
-def timeit(func):
+def timeit(func: Callable) -> Callable:
+    """Decorator to measure and print execution time and memory usage.
+
+    Args:
+        func: Function to be timed.
+
+    Returns:
+        Wrapped function that prints timing information.
+    """
     @functools.wraps(func)
     def timeit_wrapper(*args, **kwargs):
         start_time = time.perf_counter()
         result = func(*args, **kwargs)
-        end_time = time.perf_counter()
-        total_time = end_time - start_time
-        print(
-            f'Took {total_time:.4f} secs '
-            f'| Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
+        total_time = time.perf_counter() - start_time
+        memory_mb = psutil.Process(os.getpid()).memory_info().rss / 1_000_000
+        print(f'Took {total_time:.4f} secs | Current Memory Usage {memory_mb:.5f} MB')
         return result
-
     return timeit_wrapper
 
-# TODO:CD: Deprecate the pickle usage for data serialization.
-def save_pickle(*, data: object=None, file_path=str):
-    if data:
-        pickle.dump(data, open(file_path, "wb"))
+def save_pickle(*, data: Optional[object] = None, file_path: str) -> None:
+    """Save data to a pickle file.
+
+    Note: Consider using more portable formats (JSON, Parquet) for new code.
+
+    Args:
+        data: Object to serialize. If None, nothing is saved.
+        file_path: Path where the pickle file will be saved.
+    """
+    if data is not None:
+        with open(file_path, 'wb') as f:
+            pickle.dump(data, f)
     else:
         print("Input data is None. Nothing to save.")
-# TODO:CD: Deprecate the pickle usage for data serialization.
-def load_pickle(file_path=str):
+
+
+def load_pickle(file_path: str) -> object:
+    """Load data from a pickle file.
+
+    Note: Consider using more portable formats (JSON, Parquet) for new code.
+
+    Args:
+        file_path: Path to the pickle file.
+
+    Returns:
+        Deserialized object from the pickle file.
+    """
     with open(file_path, 'rb') as f:
         return pickle.load(f)
 
-def load_term_mapping(file_path=str):
+def load_term_mapping(file_path: str) -> Union[dict, pl.DataFrame]:
+    """Load term-to-index mapping from pickle or CSV file.
+
+    Attempts to load from pickle first, falls back to CSV if not found.
+
+    Args:
+        file_path: Base path without extension.
+
+    Returns:
+        Dictionary or Polars DataFrame containing the mapping.
+    """
+    pickle_path = f"{file_path}.p"
     try:
-        return load_pickle(file_path=file_path+".p")
+        return load_pickle(file_path=pickle_path)
     except FileNotFoundError:
-        print(f"python file not found\t{file_path} with .p extension")
-    return pl.read_csv(file_path + ".csv")
+        print(f"Pickle file not found: {pickle_path}, loading from CSV")
+        return pl.read_csv(f"{file_path}.csv")
 
 # @TODO: Could these funcs can be merged?
 def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None):
@@ -392,8 +491,39 @@ def read_or_load_kg(args, cls):
     return kg
 
 
-def intialize_model(args: dict,verbose=0) -> Tuple[object, str]:
-    if verbose>0:
+def intialize_model(args: Dict, verbose: int = 0) -> Tuple[BaseKGE, str]:
+    """Initialize a knowledge graph embedding model.
+
+    Args:
+        args: Dictionary containing model configuration including 'model' key.
+        verbose: Verbosity level. If > 0, prints initialization message.
+
+    Returns:
+        Tuple of (initialized model, form of labelling string).
+
+    Raises:
+        ValueError: If the model name is not recognized.
+    """
+    if verbose > 0:
+        print(f"Initializing {args['model']}...")
+    model_name = args['model']
+
+    # Handle PyKEEN models
+    if "pykeen" in model_name.lower():
+        return PykeenKGE(args=args), "EntityPrediction"
+
+    # Use model registry for standard models
+    if model_name in MODEL_REGISTRY:
+        model_class, form_of_labelling = MODEL_REGISTRY[model_name]
+        return model_class(args=args), form_of_labelling
+
+    raise ValueError(f"Unknown model: {model_name}. Available models: {list(MODEL_REGISTRY.keys())}")
+
+
+# Keep backward compatibility - this is now handled by the registry
+def _legacy_intialize_model(args: dict, verbose: int = 0) -> Tuple[object, str]:
+    """Legacy model initialization (deprecated, use intialize_model instead)."""
+    if verbose > 0:
         print(f"Initializing {args['model']}...")
     model_name = args['model']
     if "pykeen" in model_name.lower():
@@ -460,29 +590,40 @@ def intialize_model(args: dict,verbose=0) -> Tuple[object, str]:
         model = CoKE(args=args)
         form_of_labelling = 'EntityPrediction'
     else:
-        raise ValueError(f"--model_name: {model_name} is not found.")
+        raise ValueError(f"Unknown model: {model_name}. Available models: {list(MODEL_REGISTRY.keys())}")
     return model, form_of_labelling
 
 
-def load_json(p: str) -> dict:
-    with open(p, 'r') as r:
-        args = json.load(r)
-    return args
+def load_json(path: str) -> Dict:
+    """Load JSON file into a dictionary.
 
+    Args:
+        path: Path to the JSON file.
 
-def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
+    Returns:
+        Dictionary containing the JSON data.
+
+    Raises:
+        FileNotFoundError: If the file does not exist.
+        json.JSONDecodeError: If the file contains invalid JSON.
     """
-    Save it as CSV if memory allows.
-    :param embeddings:
-    :param indexes:
-    :param path:
-    :return:
+    with open(path, 'r') as f:
+        return json.load(f)
+
+
+def save_embeddings(embeddings: np.ndarray, indexes: List, path: str) -> None:
+    """Save embeddings to a CSV file.
+
+    Args:
+        embeddings: NumPy array of embeddings with shape (n_items, embedding_dim).
+        indexes: List of index labels (entity/relation names).
+        path: Output file path.
     """
     try:
         pd.DataFrame(embeddings, index=indexes).to_csv(path)
-    except KeyError or AttributeError as e:
-        print('Exception occurred at saving entity embeddings. Computation will continue')
-        print(e)
+    except (KeyError, AttributeError) as e:
+        print(f'Exception occurred while saving embeddings: {e}')
+        print('Computation will continue.')
 
 
 def random_prediction(pre_trained_kge):
@@ -535,12 +676,18 @@ def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     print('Done !\n')
 
 
-def create_experiment_folder(folder_name='Experiments'):
-    directory = os.getcwd() + "/" + folder_name + "/"
-    # folder_name = str(datetime.datetime.now())
-    folder_name = str(datetime.datetime.now()).replace(":", "-")
-    # path_of_folder = directory + folder_name
-    path_of_folder = os.path.join(directory, folder_name)
+def create_experiment_folder(folder_name: str = 'Experiments') -> str:
+    """Create a timestamped experiment folder.
+
+    Args:
+        folder_name: Base directory name for experiments.
+
+    Returns:
+        Full path to the created experiment folder.
+    """
+    directory = os.path.join(os.getcwd(), folder_name)
+    timestamp = str(datetime.datetime.now()).replace(":", "-")
+    path_of_folder = os.path.join(directory, timestamp)
     os.makedirs(path_of_folder)
     return path_of_folder
 

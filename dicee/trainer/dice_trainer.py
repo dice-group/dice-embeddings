@@ -1,29 +1,67 @@
+"""DICE Trainer module for knowledge graph embedding training.
+
+Provides the DICE_Trainer class which supports multiple training backends
+including PyTorch Lightning, DDP, and custom CPU/GPU trainers.
+"""
+import copy
+import os
+from typing import List, Optional, Tuple, Union
+
 import lightning as pl
+import numpy as np
+import pandas as pd
 import polars
-from typing import Union
-from dicee.models.base_model import BaseKGE
-from dicee.static_funcs import select_model
-from dicee.weight_averaging import ASWA, SWA, SWAG, EMA, TWA
-from dicee.callbacks import Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb, PeriodicEvalCallback, LRScheduler
+import torch
+
+from dicee.callbacks import (
+    AccumulateEpochLossCallback,
+    Eval,
+    KronE,
+    LRScheduler,
+    PeriodicEvalCallback,
+    Perturb,
+    PrintCallback,
+)
 from dicee.dataset_classes import construct_dataset
+from dicee.knowledge_graph import KG
+from dicee.models.base_model import BaseKGE
+from dicee.static_funcs import select_model, timeit
+from dicee.weight_averaging import ASWA, EMA, SWA, SWAG, TWA
+
+from ..models.ensemble import EnsembleKGE
+from .model_parallelism import TensorParallel
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
-from .model_parallelism import TensorParallel
-from ..models.ensemble import EnsembleKGE
-from ..static_funcs import timeit
-import os
-import torch
-import pandas as pd
-import copy
-from typing import List, Tuple
-from ..knowledge_graph import KG
-import numpy as np
 
-def load_term_mapping(file_path=str):
-    return polars.read_csv(file_path + ".csv")
+def load_term_mapping(file_path: str) -> polars.DataFrame:
+    """Load term-to-index mapping from CSV file.
+
+    Args:
+        file_path: Base path without extension.
+
+    Returns:
+        Polars DataFrame containing the mapping.
+    """
+    return polars.read_csv(f"{file_path}.csv")
 
 
-def initialize_trainer(args, callbacks)->TorchTrainer | TensorParallel | TorchDDPTrainer | pl.Trainer:
+def initialize_trainer(
+    args,
+    callbacks: List
+) -> Union[TorchTrainer, TensorParallel, TorchDDPTrainer, pl.Trainer]:
+    """Initialize the appropriate trainer based on configuration.
+
+    Args:
+        args: Configuration arguments containing trainer type.
+        callbacks: List of training callbacks.
+
+    Returns:
+        Initialized trainer instance.
+
+    Raises:
+        AssertionError: If trainer is None after initialization.
+    """
+    trainer: Optional[Union[TorchTrainer, TensorParallel, TorchDDPTrainer, pl.Trainer]] = None
     if args.trainer == 'torchCPUTrainer':
         print('Initializing TorchTrainer CPU Trainer...', end='\t')
         trainer = TorchTrainer(args, callbacks=callbacks)
@@ -37,37 +75,9 @@ def initialize_trainer(args, callbacks)->TorchTrainer | TensorParallel | TorchDD
     elif args.trainer == 'PL':
         print('Initializing Pytorch-lightning Trainer', end='\t')
         kwargs = vars(args)
-        # kwargs["callbacks"] = callbacks
-        """
-        max_time: Optional[Union[str, timedelta, Dict[str, int]]] = None,
-        limit_train_batches: Optional[Union[int, float]] = None,
-        limit_val_batches: Optional[Union[int, float]] = None,
-        limit_test_batches: Optional[Union[int, float]] = None,
-        limit_predict_batches: Optional[Union[int, float]] = None,
-        overfit_batches: Union[int, float] = 0.0,
-        val_check_interval: Optional[Union[int, float]] = None,
-        check_val_every_n_epoch: Optional[int] = 1,
-        num_sanity_val_steps: Optional[int] = None,
-        log_every_n_steps: Optional[int] = None,
-        enable_checkpointing: Optional[bool] = None,
-        enable_progress_bar: Optional[bool] = None,
-        enable_model_summary: Optional[bool] = None,
-        accumulate_grad_batches: int = 1,
-        gradient_clip_val: Optional[Union[int, float]] = None,
-        gradient_clip_algorithm: Optional[str] = None,
-        deterministic: Optional[Union[bool, _LITERAL_WARN]] = None,
-        benchmark: Optional[bool] = None,
-        inference_mode: bool = True,
-        use_distributed_sampler: bool = True,
-        profiler: Optional[Union[Profiler, str]] = None,
-        detect_anomaly: bool = False,
-        plugins: Optional[Union[_PLUGIN_INPUT, List[_PLUGIN_INPUT]]] = None,
-        sync_batchnorm: bool = False,
-        reload_dataloaders_every_n_epochs: int = 0,
-        default_root_dir: Optional[_PATH] = None,)
-        """
-        # @TODO: callbacks need to be ad
-        trainer= pl.Trainer(accelerator=kwargs.get("accelerator", "auto"),
+        # NOTE: PyTorch Lightning Trainer has many optional parameters
+        # See: https://lightning.ai/docs/pytorch/stable/common/trainer.html
+        trainer = pl.Trainer(accelerator=kwargs.get("accelerator", "auto"),
                           strategy=kwargs.get("strategy", "auto"),
                           num_nodes=kwargs.get("num_nodes", 1),
                           precision=kwargs.get("precision", None),
@@ -87,37 +97,73 @@ def initialize_trainer(args, callbacks)->TorchTrainer | TensorParallel | TorchDD
     return trainer
 
 
+def get_callbacks(args) -> List:
+    """Create list of callbacks based on configuration.
 
-def get_callbacks(args):
+    Args:
+        args: Configuration arguments.
+
+    Returns:
+        List of callback instances.
+    """
     callbacks = [
         pl.pytorch.callbacks.ModelSummary(),
         PrintCallback(),
         AccumulateEpochLossCallback(path=args.full_storage_path)
     ]
+
+    # Weight averaging callbacks (mutually exclusive)
     if args.swa:
         print(f"Starting Stochastic Weight Averaging (SWA) at Epoch: {args.swa_start_epoch}")
-        callbacks.append(SWA(swa_start_epoch=args.swa_start_epoch, lr_init=args.lr,
-                            max_epochs=args.num_epochs, swa_c_epochs=args.swa_c_epochs))
+        callbacks.append(SWA(
+            swa_start_epoch=args.swa_start_epoch,
+            lr_init=args.lr,
+            max_epochs=args.num_epochs,
+            swa_c_epochs=args.swa_c_epochs
+        ))
     elif args.swag:
         print(f"Starting Stochastic Weight Averaging-Gaussian (SWA-G) at Epoch: {args.swa_start_epoch}")
-        callbacks.append(SWAG(swa_start_epoch=args.swa_start_epoch, lr_init=args.lr,
-                            max_epochs=args.num_epochs, swa_c_epochs=args.swa_c_epochs))
+        callbacks.append(SWAG(
+            swa_start_epoch=args.swa_start_epoch,
+            lr_init=args.lr,
+            max_epochs=args.num_epochs,
+            swa_c_epochs=args.swa_c_epochs
+        ))
     elif args.ema:
         print(f"Starting Exponential Moving Average (EMA) at Epoch: {args.swa_start_epoch}")
-        callbacks.append(EMA(ema_start_epoch=args.swa_start_epoch, max_epochs=args.num_epochs, ema_c_epochs=args.swa_c_epochs))
+        callbacks.append(EMA(
+            ema_start_epoch=args.swa_start_epoch,
+            max_epochs=args.num_epochs,
+            ema_c_epochs=args.swa_c_epochs
+        ))
     elif args.twa:
         print(f"Starting Trainable Weight Averaging at Epoch: {args.swa_start_epoch}")
-        callbacks.append(TWA(twa_start_epoch=args.swa_start_epoch, lr_init=args.lr, max_epochs=args.num_epochs, twa_c_epochs=args.swa_c_epochs))
+        callbacks.append(TWA(
+            twa_start_epoch=args.swa_start_epoch,
+            lr_init=args.lr,
+            max_epochs=args.num_epochs,
+            twa_c_epochs=args.swa_c_epochs
+        ))
     elif args.adaptive_swa:
         callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
     elif args.adaptive_lr:
-        callbacks.append(LRScheduler(adaptive_lr_config=args.adaptive_lr, total_epochs=args.num_epochs,
-                        experiment_dir=args.full_storage_path, eta_max=args.lr))
-    
+        callbacks.append(LRScheduler(
+            adaptive_lr_config=args.adaptive_lr,
+            total_epochs=args.num_epochs,
+            experiment_dir=args.full_storage_path,
+            eta_max=args.lr
+        ))
+
+    # Periodic evaluation callback
     if args.eval_every_n_epochs > 0 or args.eval_at_epochs is not None:
-        callbacks.append(PeriodicEvalCallback(experiment_path=args.full_storage_path, max_epochs=args.num_epochs,
-                        eval_every_n_epoch=args.eval_every_n_epochs, eval_at_epochs=args.eval_at_epochs,
-                        save_model_every_n_epoch=args.save_every_n_epochs, n_epochs_eval_model=args.n_epochs_eval_model))
+        callbacks.append(PeriodicEvalCallback(
+            experiment_path=args.full_storage_path,
+            max_epochs=args.num_epochs,
+            eval_every_n_epoch=args.eval_every_n_epochs,
+            eval_at_epochs=args.eval_at_epochs,
+            save_model_every_n_epoch=args.save_every_n_epochs,
+            n_epochs_eval_model=args.n_epochs_eval_model
+        ))
 
     if isinstance(args.callbacks, list):
         return callbacks

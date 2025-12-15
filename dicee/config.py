@@ -1,5 +1,18 @@
+"""Configuration module for DICE embeddings.
+
+Provides the Namespace class with default configuration values
+for training knowledge graph embedding models.
+"""
 import argparse
+
+
 class Namespace(argparse.Namespace):
+    """Extended Namespace with default KGE training configuration.
+
+    Provides sensible defaults for all training parameters while
+    allowing easy customization through command-line arguments
+    or direct assignment.
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.dataset_dir: str = None

@@ -1,49 +1,65 @@
+"""Evaluator module for knowledge graph embedding models.
+
+Provides evaluation capabilities for various downstream tasks including
+link prediction and entity ranking.
+"""
+import json
+import pickle
+from typing import Dict, List, Optional, Tuple
+
+import numpy as np
 import pandas as pd
 import torch
-import numpy as np
-import json
 
-from . import load_json
-from .static_funcs import pickle
-from .static_funcs_training import evaluate_lp, evaluate_bpe_lp
-from typing import Tuple, List
 from .knowledge_graph import KG
+from .static_funcs import load_json
+from .static_funcs_training import evaluate_bpe_lp, evaluate_lp
 
 
 class Evaluator:
+    """Evaluator class for KGE models in various downstream tasks.
+
+    Supports link prediction evaluation with different scoring techniques
+    including standard evaluation and byte-pair encoding based evaluation.
+
+    Attributes:
+        er_vocab: Entity-relation to tail vocabulary for filtered ranking.
+        re_vocab: Relation-entity (tail) to head vocabulary.
+        ee_vocab: Entity-entity to relation vocabulary.
+        num_entities: Total number of entities in the knowledge graph.
+        num_relations: Total number of relations in the knowledge graph.
+        args: Configuration arguments.
+        report: Dictionary storing evaluation results.
     """
-        Evaluator class to evaluate KGE models in various downstream tasks
 
-        Arguments
-       ----------
-       executor: Executor class instance
-   """
+    def __init__(self, args, is_continual_training: bool = False):
+        """Initialize the evaluator.
 
-    def __init__(self, args, is_continual_training=None):
-        self.re_vocab = None
-        self.er_vocab = None
-        self.ee_vocab = None
+        Args:
+            args: Configuration arguments containing evaluation settings.
+            is_continual_training: Whether this is continual training mode.
+        """
+        self.re_vocab: Optional[Dict] = None
+        self.er_vocab: Optional[Dict] = None
+        self.ee_vocab: Optional[Dict] = None
         self.func_triple_to_bpe_representation = None
         self.is_continual_training = is_continual_training
-        self.num_entities = None
-        self.num_relations = None
-        self.domain_constraints_per_rel, self.range_constraints_per_rel = None, None
+        self.num_entities: Optional[int] = None
+        self.num_relations: Optional[int] = None
+        self.domain_constraints_per_rel = None
+        self.range_constraints_per_rel = None
         self.args = args
-        self.report = dict()
+        self.report: Dict = {}
         self.during_training = False
 
-    def vocab_preparation(self, dataset) -> None:
-        """
-        A function to wait future objects for the attributes of executor
+    def vocab_preparation(self, dataset: KG) -> None:
+        """Prepare vocabularies from the dataset for evaluation.
 
-        Arguments
-        ----------
+        Resolves any future objects and saves vocabularies to disk.
 
-        Return
-        ----------
-        None
+        Args:
+            dataset: Knowledge graph dataset with vocabulary attributes.
         """
-        # print("** VOCAB Prep **")
         if isinstance(dataset.er_vocab, dict):
             self.er_vocab = dataset.er_vocab
         else:
@@ -65,12 +81,28 @@ class Evaluator:
 
         pickle.dump(self.er_vocab, open(self.args.full_storage_path + "/er_vocab.p", "wb"))
         pickle.dump(self.re_vocab, open(self.args.full_storage_path + "/re_vocab.p", "wb"))
-        pickle.dump(self.ee_vocab, open(self.args.full_storage_path + "/ee_vocab.p", "wb"))
+        with open(self.args.full_storage_path + "/ee_vocab.p", 'wb') as f:
+            pickle.dump(self.ee_vocab, f)
 
-    # @timeit
-    def eval(self, dataset: KG, trained_model, form_of_labelling, during_training=False) -> None:
-        assert isinstance(dataset, KG), "dataset must be KG"
-        # @TODO: Why this reassigment ?
+    def eval(
+        self,
+        dataset: KG,
+        trained_model,
+        form_of_labelling: str,
+        during_training: bool = False
+    ) -> Optional[Dict]:
+        """Evaluate the trained model on the dataset.
+
+        Args:
+            dataset: Knowledge graph dataset.
+            trained_model: The trained KGE model.
+            form_of_labelling: Type of labelling ('EntityPrediction' or 'RelationPrediction').
+            during_training: Whether evaluation is during training.
+
+        Returns:
+            Dictionary of evaluation metrics, or None if evaluation is skipped.
+        """
+        assert isinstance(dataset, KG), "dataset must be KG instance"
         self.during_training = during_training
         # (1) Exit, if the flag is not set
         if self.args.eval_model is None:
