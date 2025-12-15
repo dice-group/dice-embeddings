@@ -1,44 +1,49 @@
-import datetime
-import time
-import numpy as np
-import torch
-import os
-import json
+"""Callbacks for training lifecycle events.
+
+Provides callback classes for various training events including
+epoch end, model saving, weight averaging, and evaluation.
+"""
 import copy
+import datetime
+import json
+import math
+import os
+import time
+from collections import defaultdict
+
+import numpy as np
+import pandas as pd
+import torch
+from pytorch_lightning.utilities import rank_zero_only
+from torch._dynamo.eval_frame import OptimizedModule
+from torch.optim.lr_scheduler import LambdaLR
 
 import dicee.models.base_model
-from .static_funcs import save_checkpoint_model, save_pickle
 from .abstracts import AbstractCallback
-import pandas as pd
-from collections import defaultdict
-import math
-from torch.optim.lr_scheduler import LambdaLR
-from torch._dynamo.eval_frame import OptimizedModule
-from .eval_static_funcs import evaluate_ensemble_link_prediction_performance
-from pytorch_lightning.utilities import rank_zero_only
+from .evaluation.ensemble import evaluate_ensemble_link_prediction_performance
+from .static_funcs import save_checkpoint_model, save_pickle
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
+    """Callback to store epoch losses to a CSV file.
+
+    Args:
+        path: Directory path where the loss file will be saved.
+    """
+
     def __init__(self, path: str):
         super().__init__()
         self.path = path
 
     def on_fit_end(self, trainer, model) -> None:
+        """Store epoch loss history to CSV file.
+
+        Args:
+            trainer: The trainer instance.
+            model: The model being trained.
         """
-        Store epoch loss
-
-
-        Parameter
-        ---------
-        trainer:
-
-        model:
-
-        Returns
-        ---------
-        None
-        """
-        pd.DataFrame(model.loss_history, columns=['EpochLoss']).to_csv(f'{self.path}/epoch_losses.csv')
+        loss_df = pd.DataFrame(model.loss_history, columns=['EpochLoss'])
+        loss_df.to_csv(os.path.join(self.path, 'epoch_losses.csv'))
 
 
 class PrintCallback(AbstractCallback):

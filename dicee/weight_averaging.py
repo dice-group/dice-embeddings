@@ -8,7 +8,7 @@ from pytorch_lightning.utilities import rank_zero_only
 
 from .abstracts import AbstractCallback
 from dicee.models.ensemble import EnsembleKGE
-from .eval_static_funcs import evaluate_ensemble_link_prediction_performance
+from .evaluation.ensemble import evaluate_ensemble_link_prediction_performance
 
 class ASWA(AbstractCallback):
     """ Adaptive stochastic weight averaging

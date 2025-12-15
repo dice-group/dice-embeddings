@@ -3,7 +3,7 @@ import torch
 from .abstracts import BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrainKGE
 from .static_funcs import random_prediction, deploy_triple_prediction, deploy_tail_entity_prediction, \
     deploy_relation_prediction, deploy_head_entity_prediction, load_pickle
-from .static_funcs_training import evaluate_lp
+from .evaluation.link_prediction import evaluate_lp
 import numpy as np
 import sys
 import traceback
