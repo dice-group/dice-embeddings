@@ -249,9 +249,13 @@ class OnevsAllDataset(torch.utils.data.Dataset):
         super().__init__()
         assert isinstance(train_set_idx, np.memmap) or isinstance(train_set_idx, np.ndarray)
         assert len(train_set_idx) > 0
-        self.train_data = train_set_idx
+        # Sort by (head, relation, tail) to ensure order-independent training
+        # This prevents different input orderings from affecting optimization
+        sorted_indices = np.lexsort((train_set_idx[:, 2], train_set_idx[:, 1], train_set_idx[:, 0]))
+        self.train_data = train_set_idx[sorted_indices]
         self.target_dim = len(entity_idxs)
         self.collate_fn = None
+
     def __len__(self):
         return len(self.train_data)
 
@@ -308,7 +312,7 @@ class KvsAll(torch.utils.data.Dataset):
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.collate_fn = None
 
-        # (1) Create a dictionary of training data pints
+        # (1) Create a dictionary of training data points
         # Either from tuple of entities or tuple of an entity and a relation
         if store is None:
             store = dict()
@@ -316,8 +320,11 @@ class KvsAll(torch.utils.data.Dataset):
                 self.target_dim = len(relation_idxs)
                 for s_idx, p_idx, o_idx in train_set_idx:
                     store.setdefault((s_idx, o_idx), list()).append(p_idx)
+                # Sort keys to ensure order-independent training
+                store = dict(sorted(store.items()))
             elif form == 'EntityPrediction':
                 self.target_dim = len(entity_idxs)
+                # Note: mapping_from_first_two_cols_to_third already returns sorted dict
                 store = mapping_from_first_two_cols_to_third(train_set_idx)
             else:
                 raise NotImplementedError
@@ -403,10 +410,11 @@ class AllvsAll(torch.utils.data.Dataset):
         self.train_target = None
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.collate_fn = None
-        # (1) Create a dictionary of training data pints
+        # (1) Create a dictionary of training data points
         # Either from tuple of entities or tuple of an entity and a relation
         self.target_dim = len(entity_idxs)
         # (h,r) => [t]
+        # Note: mapping_from_first_two_cols_to_third already returns sorted dict
         store = mapping_from_first_two_cols_to_third(train_set_idx)
         print("Number of unique pairs:", len(store))
         for i in range(len(entity_idxs)):
@@ -414,6 +422,8 @@ class AllvsAll(torch.utils.data.Dataset):
                 if store.get((i, j), None) is None:
                     store[(i, j)] = list()
         print("Number of unique augmented pairs:", len(store))
+        # Re-sort after adding new keys to maintain consistent ordering
+        store = dict(sorted(store.items()))
         assert len(store) > 0
         self.train_data = torch.LongTensor(list(store.keys()))
 
@@ -478,8 +488,13 @@ class OnevsSample(torch.utils.data.Dataset):
         )
         assert neg_sample_ratio > 0, f"Negative sample ratio {neg_sample_ratio} must be greater than 0."
 
+        # Sort by (head, relation, tail) to ensure order-independent training
+        # This prevents different input orderings from affecting optimization
+        sorted_indices = np.lexsort((train_set[:, 2], train_set[:, 1], train_set[:, 0]))
+        sorted_train_set = train_set[sorted_indices]
+
         # Converting the input numpy array to a PyTorch tensor
-        self.train_data = torch.from_numpy(train_set).long()
+        self.train_data = torch.from_numpy(sorted_train_set).long()
         self.num_entities = num_entities
         self.num_relations = num_relations
         self.neg_sample_ratio = neg_sample_ratio
@@ -609,8 +624,13 @@ class NegSampleDataset(torch.utils.data.Dataset):
         # TLDL; replace Python objects with non-refcounted representations such as Pandas, Numpy or PyArrow objects
         self.neg_sample_ratio = torch.tensor(
             neg_sample_ratio)
-        #print("from numpy to torch")
-        self.train_triples = torch.from_numpy(train_set).unsqueeze(1)
+        
+        # Sort by (head, relation, tail) to ensure order-independent training
+        # This prevents different input orderings from affecting optimization
+        sorted_indices = np.lexsort((train_set[:, 2], train_set[:, 1], train_set[:, 0]))
+        sorted_train_set = train_set[sorted_indices]
+        
+        self.train_triples = torch.from_numpy(sorted_train_set).unsqueeze(1)
         self.length = len(self.train_triples)
         self.num_entities = torch.tensor(num_entities)
         self.num_relations = torch.tensor(num_relations)
@@ -679,8 +699,12 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.neg_sample_ratio = torch.tensor(
             neg_sample_ratio)  # 0 Implies that we do not add negative samples. This is needed during testing and validation
-        #self.train_set = torch.from_numpy(train_set)
-        self.train_set = train_set
+        
+        # Sort by (head, relation, tail) to ensure order-independent training
+        # This prevents different input orderings from affecting optimization
+        sorted_indices = np.lexsort((train_set[:, 2], train_set[:, 1], train_set[:, 0]))
+        self.train_set = train_set[sorted_indices]
+        
         assert num_entities >= max(self.train_set[:, 0]) and num_entities >= max(self.train_set[:, 2]), f"num_entities: {num_entities}, max(self.train_set[:, 0]): {max(self.train_set[:, 0])}, max(self.train_set[:, 2]): {max(self.train_set[:, 2])}"
         self.length = len(self.train_set)
         self.num_entities = torch.tensor(num_entities)

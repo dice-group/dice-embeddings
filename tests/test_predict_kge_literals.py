@@ -165,7 +165,7 @@ class TestPredictLitRegression:
         assert result.shape == (1,), "Expected array with shape (1,)"
         prediction = result[0]
         assert isinstance(prediction, (int, float)), "Result is not a numeric value"
-        assert 29.3 <= prediction <= 47.9, f"Result {prediction} is not within the expected range"
+        assert 55.5 <= prediction <= 62, f"Result {prediction} is not within the expected range"
 
         # remove literal test artifacts
         shutil.rmtree(os.path.dirname(train_file_path))
@@ -318,7 +318,7 @@ class TestKGELiteralsRegression:
         assert result.shape == (1,), "Expected array with shape (1,)"
         prediction = result[0]
         assert isinstance(prediction, (int, float)), "Result is not a numeric value"
-        assert 25.5 <= prediction <= 29.9, f"Result {prediction} is not within the expected range"
+        assert 35 <= prediction <= 39, f"Result {prediction} is not within the expected range"
 
         # remove literal test artifacts
         shutil.rmtree("Literal_KGs")
