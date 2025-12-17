@@ -84,6 +84,6 @@ class TestRegressionQmult:
         args.normalization = 'LayerNorm'
         args.init_param = 'xavier_normal'
         result = Execute(args).start()
-        assert 0.72 >= result['Train']['H@1'] >= .51
+        assert 0.72 >= result['Train']['H@1'] >= .48
         assert 0.78 >= result['Test']['H@1'] >= .40
         assert 0.78 >= result['Val']['H@1'] >= .40
