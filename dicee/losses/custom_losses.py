@@ -1004,3 +1004,87 @@ class testLoss(nn.Module):
         loss = -(y * torch.log(y_hat)+ (1 - y) * torch.log(1 - y_hat))
 
         return loss.mean()
+
+class NSSALoss(nn.Module):
+    """
+    Negative Sampling Self-Adversarial (NSSA) loss.
+
+    """
+
+    def __init__(
+        self,
+        temperature =  1.0,
+        positive_index = 0,
+        use_target_argmax = True,
+    ):
+        super().__init__()
+        self.temperature = temperature
+        self.positive_index = positive_index
+        self.use_target_argmax = use_target_argmax
+
+    def forward(
+        self,
+        pred,
+        target,
+        current_epoch=None
+    ):
+        temperature = self.temperature
+
+
+        # pos_idx = target.argmax(dim=1)
+        
+        # ratio = (pos_idx == 0).float().mean().item()
+        # print(f"Positive-at-0 ratio: {ratio:.4f}")
+
+        # if pred.size(1) == 1:
+        #     pos_pred = pred.squeeze(1)
+        #     neg_pred = pred.new_empty((pred.size(0), 0))
+
+        if self.use_target_argmax:
+            pos_idx = target.argmax(dim=1)
+        else:
+            pos_idx = torch.full(
+                (pred.size(0),),
+                self.positive_index,
+                device=pred.device,
+                dtype=torch.long,
+            )
+
+        pos_pred = pred.gather(1, pos_idx[:, None]).squeeze(1)
+
+        neg_mask = torch.ones_like(pred, dtype=torch.bool)
+        neg_mask.scatter_(1, pos_idx[:, None], False)
+        neg_pred = pred.masked_select(neg_mask).view(pred.size(0), pred.size(1) - 1)
+
+        # Positive term: -log sigma(pos)
+        pos_score = F.logsigmoid(pos_pred)
+
+        # Negative term: self-adversarial weighted log-sigmoid on negatives
+        weights = F.softmax(neg_pred * temperature, dim=1).detach()
+        neg_score = (weights * F.logsigmoid(-neg_pred)).sum(dim=1)
+
+        pos_loss = -pos_score.mean()
+        neg_loss = -neg_score.mean()
+
+        loss = (pos_loss + neg_loss) / 2
+
+        return loss
+
+class FocalLoss(nn.Module):
+
+    def __init__(self, gamma = 2.0):
+        super().__init__() 
+
+        self.gamma = gamma 
+
+    def forward(self, pred, target, current_epoch = None):
+
+        p = pred.sigmoid()
+
+        ce_loss = F.binary_cross_entropy_with_logits(pred, target, reduction="none")
+
+        pt = p * target + (1 - p) * (1 - target)
+        loss = ce_loss * ((1 - pt) ** self.gamma)
+
+        return loss
+
