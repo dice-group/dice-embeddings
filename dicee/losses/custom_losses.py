@@ -715,7 +715,6 @@ class EwLoss(nn.Module):
     Paper Reference:
       - "Assigns weights... to decrease the weights of easily discriminated samples" [cite: 205]
       - Formula: EwLoss = -log σ(γ - f_pos) - Σ_j (p_j)^α * log σ(f_neg_j - γ) [cite: 249]
-
     Parameters
     ----------
     margin : float, default=1.0
@@ -1087,4 +1086,3 @@ class FocalLoss(nn.Module):
         loss = ce_loss * ((1 - pt) ** self.gamma)
 
         return loss
-

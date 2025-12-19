@@ -9,3 +9,27 @@ __pycache__/
 
 Experiments/
 checkpoints/
+
+# Model artifacts
+saved_models/
+*.pt
+*.pth
+*.npy
+*.npz
+
+# Logs & experiments
+lightning_logs/
+bo_outputs/
+param_logs/
+Experiments/
+
+# Datasets & KG dumps
+Datasets_*/
+KGs/
+UNITKEG/
+
+# Env & misc
+venv/
+wget-log
+.matplotlib/
+__pycache__/
