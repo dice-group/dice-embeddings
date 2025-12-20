@@ -835,11 +835,6 @@ class EwLoss(nn.Module):
 
 
 class SynMarginLoss(nn.Module):
-    """
-    Syn-margin loss from "A Margin-based Loss with Synthetic Negative Samples for Continuous-output Machine Translation"
-    (Bhat et al., WNGT 2019). This adaptation creates synthetic negatives directly from predicted and target embeddings.
-    For KGE models we obtain a predicted embedding by weighting the entity embedding table with the model scores.
-    """
 
     def __init__(self,
                  mode: str = "projection",
