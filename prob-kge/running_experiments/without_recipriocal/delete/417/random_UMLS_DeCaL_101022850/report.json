@@ -1,0 +1,11 @@
+{
+    "num_train_triples": 5216,
+    "num_entities": 135,
+    "num_relations": 45,
+    "max_length_subword_tokens": null,
+    "runtime_kg_loading": 0.14225339889526367,
+    "EstimatedSizeMB": 0.005494117736816406,
+    "NumParam": 5761,
+    "path_experiment_folder": "running_experiments/without_recipriocal/delete/417/random_UMLS_DeCaL_101022850",
+    "Runtime": 1.5879743099212646
+}

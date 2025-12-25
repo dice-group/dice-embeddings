@@ -1,0 +1,11 @@
+{
+    "num_train_triples": 10432,
+    "num_entities": 135,
+    "num_relations": 99,
+    "max_length_subword_tokens": null,
+    "runtime_kg_loading": 0.147172212600708,
+    "EstimatedSizeMB": 0.00714111328125,
+    "NumParam": 7488,
+    "path_experiment_folder": "running_experiments/with_recipriocal/delete/208/wb_centloss_forward_UMLS_DistMult_2430986565",
+    "Runtime": 3.1934151649475098
+}

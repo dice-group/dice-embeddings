@@ -1,0 +1,11 @@
+{
+    "num_train_triples": 8544,
+    "num_entities": 104,
+    "num_relations": 25,
+    "max_length_subword_tokens": null,
+    "runtime_kg_loading": 0.14957737922668457,
+    "EstimatedSizeMB": 0.003936767578125,
+    "NumParam": 4128,
+    "path_experiment_folder": "running_experiments/without_recipriocal/delete/512/score_KINSHIP_ComplEx_3087940365",
+    "Runtime": 2.5072712898254395
+}

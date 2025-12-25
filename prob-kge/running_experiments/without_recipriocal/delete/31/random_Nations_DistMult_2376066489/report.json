@@ -1,0 +1,11 @@
+{
+    "num_train_triples": 1592,
+    "num_entities": 14,
+    "num_relations": 55,
+    "max_length_subword_tokens": null,
+    "runtime_kg_loading": 0.11461019515991211,
+    "EstimatedSizeMB": 0.002105712890625,
+    "NumParam": 2208,
+    "path_experiment_folder": "running_experiments/without_recipriocal/delete/31/random_Nations_DistMult_2376066489",
+    "Runtime": 1.0421490669250488
+}

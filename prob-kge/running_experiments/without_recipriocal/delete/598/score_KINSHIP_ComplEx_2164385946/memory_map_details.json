@@ -1,0 +1,9 @@
+{
+    "shape": [
+        8544,
+        3
+    ],
+    "dtype": "|i1",
+    "num_entities": 104,
+    "num_relations": 25
+}
