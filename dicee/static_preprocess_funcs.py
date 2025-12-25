@@ -49,8 +49,9 @@ def preprocesses_input_args(args):
     if args.eval_model == 'None':
         args.eval_model = None
     # reciprocal checking
+    # TODO: reciprocal checking are not always useful, we should make it optional
     if args.scoring_technique in ["AllvsAll", "1vsSample", "KvsAll", "1vsAll", "KvsSample"]:
-        args.apply_reciprical_or_noise = True
+        args.apply_reciprical_or_noise = False # True 
     elif args.scoring_technique in ["NegSample", "Sentence"]:
         args.apply_reciprical_or_noise = False
     else:

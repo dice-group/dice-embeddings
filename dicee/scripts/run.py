@@ -45,7 +45,7 @@ def get_default_arguments(description=None):
                         help="Available knowledge graph embedding models. "
                              "To use other knowledge graph embedding models available in python, e.g.,"
                              "**Pykeen_BoxE** and add this into choices")
-    parser.add_argument('--optim', type=str, default='Adopt',
+    parser.add_argument('--optim', type=str, default='Adam',
                         help='An optimizer',
                         choices=['Adam', 'AdamW', 'SGD',"NAdam", "Adagrad", "ASGD", "Adopt"])
     parser.add_argument('--embedding_dim', type=int, default=32,

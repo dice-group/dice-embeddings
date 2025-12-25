@@ -97,6 +97,8 @@ class PykeenKGE(BaseKGE):
             else:
                 pass
 
+        
+    
     def forward_k_vs_all(self, x: torch.LongTensor):
         """
         # => Explicit version by this we can apply bn and dropout
