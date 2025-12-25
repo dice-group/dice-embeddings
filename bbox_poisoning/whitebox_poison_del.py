@@ -5,15 +5,87 @@ import torch
 import torch.nn.functional as F
 from typing import Literal
 import torch.nn as nn
+import pandas as pd
 
 Triple = Tuple[str, str, str]
 
+import pandas as pd
+import networkx as nx
+
+def triples_and_scores_to_csv(
+    triples,
+    scores,
+    out_csv_path="triples_with_scores_and_centrality.csv",
+):
+    """
+    triples: list of (h, r, t) where h/t are entity indices (ints), r is relation index (int)
+    scores:  list of floats, same length/order as triples
+    """
+
+    if len(triples) != len(scores):
+        raise ValueError(f"len(triples)={len(triples)} must equal len(scores)={len(scores)}")
+
+    # Build graphs from (h,t). Relations ignored for graph structure, as requested.
+    Gd = nx.DiGraph()
+    Gu = nx.Graph()
+
+    for (h, r, t) in triples:
+        Gd.add_edge(h, t)
+        Gu.add_edge(h, t)
+
+    # Degrees
+    deg_dir_total = dict(Gd.degree())      # in+out
+    deg_dir_in = dict(Gd.in_degree())
+    deg_dir_out = dict(Gd.out_degree())
+    deg_undir = dict(Gu.degree())
+
+    # Edge betweenness
+    ebc_dir = nx.edge_betweenness_centrality(Gd, normalized=False)
+    ebc_undir_raw = nx.edge_betweenness_centrality(Gu, normalized=False)
+    ebc_undir = {frozenset((u, v)): v for (u, v), v in ebc_undir_raw.items()}
+
+    rows = []
+    for (h, r, t), score in zip(triples, scores):
+        # Directed
+        h_deg_dir = deg_dir_total.get(h, 0)
+        t_deg_dir = deg_dir_total.get(t, 0)
+
+        node_deg_avg_dir = (h_deg_dir + t_deg_dir) / 2.0
+        edge_degree_centrality_dir = (h_deg_dir + t_deg_dir - 2)   # "edge centrality" via endpoints
+        edge_betweenness_dir = ebc_dir.get((h, t), 0.0)
+
+        # Undirected
+        h_deg_undir = deg_undir.get(h, 0)
+        t_deg_undir = deg_undir.get(t, 0)
+
+        node_deg_avg_undir = (h_deg_undir + t_deg_undir) / 2.0
+        edge_degree_centrality_undir = (h_deg_undir + t_deg_undir - 2)
+        edge_betweenness_undir = ebc_undir.get(frozenset((h, t)), 0.0)
+
+        rows.append({
+            "h": h, "r": r, "t": t,
+            "score": float(score),
+
+            # directed metrics
+            "edge_betweenness_dir": edge_betweenness_dir,
+            "edge_degree_centrality_dir": edge_degree_centrality_dir,
+            "node_degree_avg_dir": node_deg_avg_dir,
+            "h_in_degree": deg_dir_in.get(h, 0),
+            "h_out_degree": deg_dir_out.get(h, 0),
+            "t_in_degree": deg_dir_in.get(t, 0),
+            "t_out_degree": deg_dir_out.get(t, 0),
+
+            # undirected metrics
+            "edge_betweenness_undir": edge_betweenness_undir,
+            "edge_degree_centrality_undir": edge_degree_centrality_undir,
+            "node_degree_avg_undir": node_deg_avg_undir,
+        })
+
+    df = pd.DataFrame(rows)
+    df.to_csv(out_csv_path, index=False)
+    return df
+
 def _resolve_embeddings_or_raise(model, num_entities, num_relations):
-    """
-    Try to obtain the entity/relation embedding modules from the model.
-    First look for `model.entity_embeddings` / `model.relation_embeddings`,
-    otherwise search for nn.Embedding modules that match table sizes.
-    """
     ent_emb = getattr(model, "entity_embeddings", None)
     rel_emb = getattr(model, "relation_embeddings", None)
 
@@ -44,6 +116,10 @@ def _norm_vec(x, p = "l2"):
     else:
         raise ValueError("p must be 'l2' or 'linf'")
 
+def canon(x):
+    s = str(x)
+    
+    return s
 
 def remove_by_gradient_influence_forward(
     triples,
@@ -63,7 +139,9 @@ def remove_by_gradient_influence_forward(
     model = model.to(device)
     model.train(False)  
 
-    e2i, r2i = entity_to_idx, relation_to_idx
+    e2i = {canon(k): v for k, v in entity_to_idx.items()}
+    r2i = {canon(k): v for k, v in relation_to_idx.items()}
+
     num_entities, num_relations = len(e2i), len(r2i)
 
     ent_emb, rel_emb = _resolve_embeddings_or_raise(model, num_entities, num_relations)
@@ -78,6 +156,8 @@ def remove_by_gradient_influence_forward(
     scores: List[Tuple[float, int]] = [] 
 
     for i, (h, r, t) in enumerate(triples):
+        h, r, t = canon(h), canon(r), canon(t)
+
         try:
             hi, ri, ti = e2i[h], r2i[r], e2i[t]
         except KeyError as e:
@@ -135,9 +215,9 @@ def triples_to_idx_with_maps(
     idx = torch.empty((len(triples), 3), dtype=torch.long)
     for i, (h, r, t) in enumerate(triples):
         try:
-            idx[i, 0] = entity_to_idx[h]
-            idx[i, 1] = relation_to_idx[r]
-            idx[i, 2] = entity_to_idx[t]
+            idx[i, 0] = entity_to_idx[str(h)]
+            idx[i, 1] = relation_to_idx[str(r)]
+            idx[i, 2] = entity_to_idx[str(t)]
         except KeyError as e:
             raise KeyError(f"Label not found in model maps while indexing {triples[i]}: {e}")
     return idx
@@ -202,46 +282,140 @@ def remove_by_simple_centrality(
         removed.append(remaining.pop(i))
     return removed, remaining
 
-@torch.no_grad()
+import torch
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def visualize_loss(loss, bins=50, title="Per-triple loss distribution",
+                   show_stats=True, save_path=None):
+    """
+    Visualize a 1D vector of per-triple losses.
+
+    Parameters
+    ----------
+    loss : torch.Tensor or np.ndarray or list[float]
+        Per-triple loss values, shape [N].
+    bins : int
+        Number of histogram bins.
+    title : str
+        Plot title.
+    show_stats : bool
+        If True, prints basic stats (mean, std, percentiles).
+    save_path : str or None
+        If given, saves the figure to this path instead of (or in addition to) showing it.
+    """
+    # convert to numpy
+    if isinstance(loss, torch.Tensor):
+        loss_np = loss.detach().cpu().numpy()
+    else:
+        loss_np = np.asarray(loss, dtype=np.float32)
+
+    if show_stats:
+        mean = float(loss_np.mean())
+        std = float(loss_np.std())
+        p10 = float(np.percentile(loss_np, 10))
+        p50 = float(np.percentile(loss_np, 50))
+        p90 = float(np.percentile(loss_np, 90))
+        print(f"Loss stats:")
+        print(f"  mean    = {mean:.6f}")
+        print(f"  std     = {std:.6f}")
+        print(f"  p10     = {p10:.6f}")
+        print(f"  median  = {p50:.6f}")
+        print(f"  p90     = {p90:.6f}")
+
+    plt.figure(figsize=(7, 4))
+    plt.hist(loss_np, bins=bins, alpha=0.7)
+    plt.axvline(loss_np.mean(), color="red", linestyle="--", label="mean loss")
+    plt.xlabel("Loss")
+    plt.ylabel("Count")
+    plt.title(title)
+    plt.legend()
+
+    if save_path is not None:
+        plt.savefig(save_path, bbox_inches="tight")
+    else:
+        plt.show()
+    plt.close()
+
+
+import random
+
+def _sample_diff(pool, old, rng):
+    if len(pool) < 2:
+        return old
+    new = old
+    while new == old:
+        new = rng.choice(pool)
+    return new
+
+def corrupt_triples_at_indices(
+    triples,
+    pick_idx,
+    entity_to_idx,
+    relation_to_idx,
+    p_corrupt_head=0.45,
+    p_corrupt_rel=0.10,
+    p_corrupt_tail=0.45,
+    avoid_existing=True,
+    max_tries=50,
+    seed=None,
+):
+    rng = random.Random(seed)
+
+    # Pools match triple element types: if triples use strings -> keys, if ints -> idx values
+    sample_ent = (lambda x: list(entity_to_idx.keys())) if isinstance(triples[0][0], str) else (lambda x: list(entity_to_idx.values()))
+    sample_rel = (lambda x: list(relation_to_idx.keys())) if isinstance(triples[0][1], str) else (lambda x: list(relation_to_idx.values()))
+    ent_pool = sample_ent(None)
+    rel_pool = sample_rel(None)
+
+    noisy = list(triples)
+    existing = set(triples) if avoid_existing else None
+
+    # Precompute cumulative probs
+    p1 = p_corrupt_head
+    p2 = p_corrupt_head + p_corrupt_rel
+    p3 = p2 + p_corrupt_tail
+    if abs(p3 - 1.0) > 1e-6:
+        # normalize if user passed weird values
+        s = p3
+        p1, p2 = p1 / s, p2 / s
+
+    for i in pick_idx:
+        h, r, t = noisy[i]
+
+        for _ in range(max_tries):
+            u = rng.random()
+            if u < p1:
+                h2, r2, t2 = _sample_diff(ent_pool, h, rng), r, t
+            elif u < p2:
+                h2, r2, t2 = h, _sample_diff(rel_pool, r, rng), t
+            else:
+                h2, r2, t2 = h, r, _sample_diff(ent_pool, t, rng)
+
+            cand = (h2, r2, t2)
+            if (not avoid_existing) or (cand not in existing):
+                noisy[i] = cand
+                if avoid_existing:
+                    existing.add(cand)
+                break
+
+    return noisy
+
+
+#@torch.no_grad()
 def remove_by_centrality_plus_loss_forward(
-    triples: List[Triple],
+    triples,
     *,
     model,                                  
     entity_to_idx,
     relation_to_idx,
-    budget,
-    centrality,
-    undirected,
-    mode = "endpoint",  
-    alpha = 1.0,                
-    batch_size = 10000,
+    budget,             
+    batch_size = 100,
     device = None,
 ):
-
     device = device or (next(model.parameters()).device if any(True for _ in model.parameters()) else torch.device("cpu"))
     model = model.to(device).eval()
-
-    Gd = _build_entity_digraph(triples)
-    G = Gd.to_undirected(as_view=True) if undirected else Gd
-
-    if mode == "edge":
-        edge_c = nx.edge_betweenness_centrality(G, normalized=True)
-        cent_vals = [edge_c.get((h, t), 0.0) for (h, _, t) in triples]
-    elif centrality == "harmonic":
-        node_c = nx.harmonic_centrality(G)
-        cent_vals = [0.5 * (node_c.get(h, 0.0) + node_c.get(t, 0.0)) for (h, _, t) in triples]
-    elif centrality == "closeness":
-        node_c = nx.closeness_centrality(G)
-        cent_vals = [0.5 * (node_c.get(h, 0.0) + node_c.get(t, 0.0)) for (h, _, t) in triples]
-    else:
-        raise ValueError("centrality must be 'harmonic' or 'closeness' when mode='endpoint'")
-
-    c = torch.tensor(cent_vals, dtype=torch.float32)
-    cmin, cmax = float(torch.min(c)), float(torch.max(c))
-    if cmax > cmin:
-        c_norm = (c - cmin) / (cmax - cmin)
-    else:
-        c_norm = torch.zeros_like(c)
 
     idx = triples_to_idx_with_maps(triples, entity_to_idx, relation_to_idx).to(device)
     logits_list = []
@@ -249,18 +423,86 @@ def remove_by_centrality_plus_loss_forward(
         z = model.forward_triples(idx[s:s+batch_size]).reshape(-1)
         logits_list.append(z.detach().to("cpu"))
     logits = torch.cat(logits_list, dim=0)
+
     prob = torch.sigmoid(logits)   
+    
+    mu = prob.mean()   
+    dist = torch.abs(prob - mu)
+    pick_idx = torch.topk(dist, k=budget, largest=False).indices.tolist()
 
-    score = (c_norm ** alpha) * prob  
-    topk = min(budget, len(triples))
-    pick_idx = torch.topk(score, k=topk, largest=True).indices.tolist()
+    visualize_loss(prob, bins=60, title="UMLS train per-triple loss", save_path=f"NEWWW_UMLS_Dismult.png")
 
-    removed = [triples[i] for i in pick_idx]
-    keep_mask = [True] * len(triples)
-    for i in pick_idx: keep_mask[i] = False
-    kept = [t for i, t in enumerate(triples) if keep_mask[i]]
-    return removed, kept
+    #dist = prob
+    #pick_idx = torch.topk(dist, k=budget, largest=False).indices.tolist()
 
+    #dist = prob
+    #pick_idx = torch.topk(dist, k=budget, largest=True).indices.tolist()
+
+    #removed = [triples[i] for i in pick_idx]
+    #keep_mask = [True] * len(triples)
+    #for i in pick_idx:
+    #    keep_mask[i] = False
+    #kept = [t for i, t in enumerate(triples) if keep_mask[i]]
+
+    #return removed, kept
+    
+    """
+    import torch.nn.functional as F
+    import math
+
+    idx = triples_to_idx_with_maps(triples, entity_to_idx, relation_to_idx).to(device)
+    N = idx.size(0)
+    grad_scores = torch.zeros(N, device=device, dtype=torch.float32)
+
+    model.train()
+    for p in model.parameters():
+        p.requires_grad_(True)
+
+    for s in range(0, N, batch_size):
+        model.zero_grad(set_to_none=True)
+
+        batch_idx = idx[s:s+batch_size]                     
+        z = model.forward_triples(batch_idx).reshape(-1)    
+
+        target = torch.ones_like(z, device=z.device)
+        batch_loss = F.binary_cross_entropy_with_logits(
+            z, target, reduction="none"
+        )                                                   
+        # make it scalar
+        loss_scalar = batch_loss.mean()
+        loss_scalar.backward()
+
+        total = torch.tensor(0.0, device=device)
+        for p in model.parameters():
+            if p.grad is None:
+                continue
+            total = total + (p.grad.detach() ** 2).sum()
+
+        grad_norm_sq = total.item()  # squared norm
+        grad_scores[s:s+batch_idx.size(0)] = grad_norm_sq   # same score for all triples in this batch
+
+    grad_scores = grad_scores.detach().cpu()
+    visualize_loss(grad_scores, bins=60, title="UMLS train per-triple loss", save_path=f"complex_umls_train_grad_hist.png")
+
+    mu_g = grad_scores.mean()
+    dist_g = torch.abs(grad_scores - mu_g)  # distance from mean grad norm
+    #dist_g = grad_scores 
+    # remove triples whose grad norm is closest to the mean
+    pick_idx = torch.topk(dist_g, k=budget, largest=False).indices.tolist()
+    """
+
+    noisy_triples = corrupt_triples_at_indices(
+        triples=triples,
+        pick_idx=pick_idx,
+        entity_to_idx=entity_to_idx,
+        relation_to_idx=relation_to_idx,
+        seed=0,                 
+        avoid_existing=True
+    )
+
+    return [], noisy_triples
+
+    
 @torch.no_grad()
 def remove_by_global_argmax_forward(
     triples,
@@ -285,9 +527,9 @@ def remove_by_global_argmax_forward(
     logits = torch.cat(logits_list, dim=0)
 
     if criterion == "low_loss":
-        scores = -F.softplus(-logits)  # higher score => lower loss
+        scores = -F.softplus(-logits)  
     elif criterion == "high_prob":
-        scores = torch.sigmoid(logits) # higher score => higher prob
+        scores = torch.sigmoid(logits) 
     else:
         raise ValueError("criterion must be 'low_loss' or 'high_prob'")
 

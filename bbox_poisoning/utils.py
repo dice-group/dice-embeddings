@@ -471,4 +471,4 @@ def save_triples(triple_list, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         for h, r, t in triple_list:
-            f.write(f"{h}\t{r}\t{t}\n")
+            f.write(f"{str(h)}\t{str(r)}\t{str(t)}\n")

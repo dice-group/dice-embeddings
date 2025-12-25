@@ -16,44 +16,46 @@ from whitebox_poison_del import (
     remove_by_endpoint_closeness,   
     remove_by_edge_betweenness        
 )
+from config import (DBS, 
+                    MODELS, 
+                    RECIPRIOCAL, 
+                    PERCENTAGES, 
+                    BATCH_SIZE, 
+                    LEARNING_RATE, 
+                    NUM_EXPERIMENTS, 
+                    NUM_EPOCHS, 
+                    EMB_DIM, 
+                    LOSS_FN, 
+                    SCORING_TECH, 
+                    OPTIM 
+                    )
+
+from typing import List, Tuple, Dict, Optional, Set, Literal
+from collections import defaultdict
+import networkx as nx
 
 
-DBS = ["WN18RR"] #["UMLS", "KINSHIP", "NELL-995-h100", "FB15k-237"] #, ["WN18RR", "YAGO3-10"]
-MODELS = ["DistMult", "ComplEx", "Pykeen_TransE", "Pykeen_TransH", "Pykeen_MuRE", "Pykeen_RotatE", "DeCaL", "Keci"]
-
-recipriocal = "without_recipriocal"
-
-ORACLE_ROOT = Path(f"./saved_models/{recipriocal}/")    
+ORACLE_ROOT = Path(f"./saved_models/{RECIPRIOCAL}/")    
 ORACLE_ROOT.mkdir(parents=True, exist_ok=True)
 
-SAVED_DATASETS_ROOT = Path(f"./saved_datasets/{recipriocal}/")
+SAVED_DATASETS_ROOT = Path(f"./saved_datasets/{RECIPRIOCAL}/")
 SAVED_DATASETS_ROOT.mkdir(parents=True, exist_ok=True)
 
-RUNS_ROOT = Path(f"./running_experiments/{recipriocal}/")
+RUNS_ROOT = Path(f"./running_experiments/{RECIPRIOCAL}/")
 RUNS_ROOT.mkdir(parents=True, exist_ok=True)
 
-RESULTS_ROOT = Path(f"./final_results/{recipriocal}/")
+RESULTS_ROOT = Path(f"./final_results/{RECIPRIOCAL}/")
 RESULTS_ROOT.mkdir(parents=True, exist_ok=True)
 
-REPORTS_ROOT = Path(f"./reports/{recipriocal}")
+REPORTS_ROOT = Path(f"./reports/{RECIPRIOCAL}")
 REPORTS_ROOT.mkdir(parents=True, exist_ok=True)
 
 MASTER_SEED = 12345
 seed_src = random.Random(MASTER_SEED)
-NUM_EXPERIMENTS = 3
 EXPERIMENT_SEEDS = [seed_src.randrange(2 ** 32) for _ in range(NUM_EXPERIMENTS)]
 
+
 ORACLE_SEEDS = EXPERIMENT_SEEDS
-
-PERCENTAGES = [0.02, 0.04, 0.08, 0.16, 0.32]
-
-BATCH_SIZE = "256"
-LEARNING_RATE = "0.01"
-NUM_EPOCHS = "100"
-EMB_DIM = "32"
-LOSS_FN = "BCELoss"
-SCORING_TECH = "KvsAll"
-OPTIM = "Adam"
 
 def save_deleted_and_eval(
     original_triples,
@@ -67,7 +69,7 @@ def save_deleted_and_eval(
     test_path,
     valid_path,
 ):
-    out_dir = SAVED_DATASETS_ROOT / DB / "centerality" / "delete" / feature_tag / MODEL / str(top_k) / str(experiment_idx)
+    out_dir = SAVED_DATASETS_ROOT / DB / "delete" / feature_tag / MODEL / str(top_k) / str(experiment_seed)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     removed = set(original_triples) - set(kept_triples)
@@ -88,7 +90,7 @@ def save_deleted_and_eval(
         seed=experiment_seed,
         scoring_technique=SCORING_TECH,
         optim=OPTIM,
-        path_to_store_single_run=str(RUNS_ROOT / f"delete/{top_k}/{feature_tag}_{DB}_{MODEL}_{experiment_idx}")
+        path_to_store_single_run=str(RUNS_ROOT / f"delete/{top_k}/{feature_tag}_{DB}_{MODEL}_{experiment_seed}")
     )
     return res["Test"]["MRR"]
 
@@ -103,6 +105,54 @@ def load_oracle(DB: str, MODEL: str, oracle_seed: int):
         raise AttributeError(f"Loaded oracle at {path} is missing entity/relation maps")
 
     return oracle
+
+
+import random
+
+def perturb_random(triples, k, seed):
+    rng = random.Random(seed)
+    n = len(triples)
+    if k <= 0 or n == 0:
+        return list(triples)
+
+    k = min(k, n)
+
+    heads = [h for h, r, t in triples]
+    rels  = [r for h, r, t in triples]
+    tails = [t for h, r, t in triples]
+
+    idx = list(range(n))
+    rng.shuffle(idx)
+    pick = set(idx[:k])
+
+    out = []
+    for i, (h, r, t) in enumerate(triples):
+        if i not in pick:
+            out.append((h, r, t))
+            continue
+
+        which = rng.randint(0, 2)
+
+        if which == 0:
+            new_h = rng.choice(heads)
+            while new_h == h and len(set(heads)) > 1:
+                new_h = rng.choice(heads)
+            out.append((new_h, r, t))
+
+        elif which == 1:
+            new_r = rng.choice(rels)
+            while new_r == r and len(set(rels)) > 1:
+                new_r = rng.choice(rels)
+            out.append((h, new_r, t))
+
+        else:
+            new_t = rng.choice(tails)
+            while new_t == t and len(set(tails)) > 1:
+                new_t = rng.choice(tails)
+            out.append((h, r, new_t))
+
+    return [], out
+
 
 def delete_random(triples, k, seed):
     rng = random.Random(seed)
@@ -156,36 +206,35 @@ def main():
 
                 for top_k in budgets:
                     print(f"\n=== DELETE | {DB} | {MODEL} | oracle_seed={oracle_seed} | budget={top_k} ===")
-
+                    
                     # -------- Random deletion --------
                     print("[RandomDelete] selecting...")
-                    _, kept_rand = delete_random(train_triples, top_k, seed=exp_seed)
+                    _, kept_rand = perturb_random(train_triples, top_k, seed=exp_seed)
+
                     mrr_rand = save_deleted_and_eval(
                         train_triples, kept_rand, "random", DB, top_k, exp_idx, MODEL, exp_seed, TEST_PATH, VALID_PATH
                     )
                     res_rand.append(f"{mrr_rand}")
-
+         
                     # -------- Whitebox: Centrality + Loss --------
-                    print("[WB Cent+Loss Delete] selecting...")
+                    print("[WB Score Delete selecting...")
                     removed_cl, kept_cl = remove_by_centrality_plus_loss_forward(
                         train_triples,
                         model=oracle.model,
                         entity_to_idx=oracle.entity_to_idx,
                         relation_to_idx=oracle.relation_to_idx,
                         budget=top_k,
-                        centrality="harmonic",
-                        undirected=True,
-                        mode="endpoint",              
-                        alpha=1.0,                   
-                        batch_size=10000,
+                        batch_size=100,
                         device=device,
                     )
                     mrr_wb_cl = save_deleted_and_eval(
                         train_triples, kept_cl, "wb_centloss_forward", DB, top_k, exp_idx, MODEL, exp_seed, TEST_PATH, VALID_PATH
                     )
                     res_wb_centloss.append(mrr_wb_cl)
-
+                    """
                     # -------- Whitebox: Global Argmax --------
+                    
+               
                     print("[WB GlobalArgmax Delete] selecting...")
                     removed_ga, kept_ga = remove_by_global_argmax_forward(
                         train_triples,
@@ -201,7 +250,7 @@ def main():
                         train_triples, kept_ga, "wb_gargmax_forward", DB, top_k, exp_idx, MODEL, exp_seed, TEST_PATH, VALID_PATH
                     )
                     res_wb_gargmax.append(mrr_wb_ga)
-
+                    
                     # -------- Whitebox: Gradient Influence (FGSM-style) --------
                     print("[WB GradInfluence Delete] selecting...")
                     removed_gi, kept_gi = remove_by_gradient_influence_forward(
@@ -220,7 +269,6 @@ def main():
                     res_wb_ginfluence.append(mrr_wb_gi)
 
                     #-----------------------------------------
-
                     to_remove_cl = remove_by_endpoint_closeness(train_triples, top_k, undirected=False)
 
                     triples_after_removal_close = [t for t in train_triples if t not in to_remove_cl]
@@ -233,7 +281,6 @@ def main():
                     res_simple_closeness.append(mrr_wb_simple_closeness)
 
                     #-----------------------------------------
-
                     to_remove_bw = remove_by_edge_betweenness(train_triples, top_k, approx_k=100)
 
                     triples_after_removal_betw = [t for t in train_triples if t not in to_remove_bw]
@@ -262,19 +309,19 @@ def main():
                     }
                     report_path.parent.mkdir(parents=True, exist_ok=True)
                     report_path.write_text(json.dumps(report, indent=2))
-
+                """
                 # ----- write CSV + figure for this (DB, MODEL, exp_idx) -----
                 out_dir = RESULTS_ROOT / DB / MODEL / "delete"
                 out_dir.mkdir(parents=True, exist_ok=True)
                 out_csv = out_dir / f"results-delete-{DB}-{MODEL}-{exp_idx}-seed-{exp_seed}.csv"
                 rows = [
                     ("Deletion Ratios", PERCENTAGES),
-                    ("RandomDelete", res_rand),
-                    ("Cent+Loss ", res_wb_centloss),
-                    ("GlobalArgmax ", res_wb_gargmax),
-                    ("GradInfluence ", res_wb_ginfluence),
-                    ("Simple Closeness ", res_simple_closeness),
-                    ("Simple Betweenness ", res_simple_betweenness),
+                    ("Random", res_rand),
+                    ("Score ", res_wb_centloss),
+                    #("GlobalArgmax ", res_wb_gargmax),
+                    #("GradInfluence ", res_wb_ginfluence),
+                    #("Simple Closeness ", res_simple_closeness),
+                    #("Simple Betweenness ", res_simple_betweenness),
                 ]
                 with open(out_csv, "w", newline="") as f:
                     w = csv.writer(f)

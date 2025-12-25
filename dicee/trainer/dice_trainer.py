@@ -3,7 +3,7 @@ import polars
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb #, GradientNormLogger
+from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb , StepLossCallback
 from dicee.dataset_classes import construct_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
@@ -101,7 +101,8 @@ def get_callbacks(args):
     callbacks = [
         pl.pytorch.callbacks.ModelSummary(),
         PrintCallback(),
-        AccumulateEpochLossCallback(path=args.full_storage_path)
+        AccumulateEpochLossCallback(path=args.full_storage_path),
+        StepLossCallback(path="./steploss/", save_csv=True)
     ]
     #if getattr(args, "swa", False):
     #    callbacks.append(pl.pytorch.callbacks.StochasticWeightAveraging(swa_lrs=args.lr, swa_epoch_start=1))
@@ -120,8 +121,8 @@ def get_callbacks(args):
             callbacks.append(KronE())
         elif k == 'Eval':
             callbacks.append(Eval(path=args.full_storage_path, epoch_ratio=v.get('epoch_ratio')))
-        #elif k == 'GradientNormLogger':
-        #    callbacks.append(GradientNormLogger())
+        elif k == 'StepLossCallback':
+            callbacks.append(StepLossCallback(path="./steploss/", save_csv=True))
         else:
             raise RuntimeError(f'Incorrect callback:{k}')
     return callbacks

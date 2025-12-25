@@ -14,9 +14,11 @@ def run_dicee_eval(
     loss_function,
     seed,
     path_to_store_single_run,
-    scoring_technique="KvsAll",
-    optim="Adam",
+    scoring_technique,
+    optim,
     ):
+
+    print("scoring_technique: ", scoring_technique)
 
     args = get_default_arguments(description=[
         "--dataset_dir", dataset_folder,
@@ -26,11 +28,12 @@ def run_dicee_eval(
         "--lr", learning_rate,
         "--embedding_dim", embedding_dim,
         "--loss_fn", loss_function,
-        "--scoring_technique", "KvsAll",
-        "--optim", "Adam",
+        "--scoring_technique", scoring_technique,
+        "--optim", optim,
         "--save_embeddings_as_csv",
         "--path_to_store_single_run", path_to_store_single_run,
         "--random_seed", str(seed),
+        "--eval_model", "test",
     ])
     result = Execute(args=args).start()
 

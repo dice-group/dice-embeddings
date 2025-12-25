@@ -7,6 +7,7 @@ import dicee.models.base_model
 from .static_funcs import save_checkpoint_model, save_pickle
 from .abstracts import AbstractCallback
 import pandas as pd
+import os
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
@@ -492,11 +493,119 @@ class Perturb(AbstractCallback):
             raise RuntimeError(f"--level is given as {self.level}!")
 
 
-class GradientNormLogger(AbstractCallback):
-    def on_after_backward(self, trainer, model):
-        total_norm = 0
-        for param in model.parameters():
-            if param.grad is not None:
-                total_norm += param.grad.norm(2).item()
 
-        #trainer.logger.experiment.add_scalar("gradient_norm", total_norm, trainer.global_step)
+class StepLossCallback(AbstractCallback):
+
+    def __init__(
+        self,
+        path=None,
+        every_n_steps=1,
+        print_loss=True,
+        save_csv=False,
+        csv_name="step_losses.csv",
+    ):
+        super().__init__()
+        self.path = path
+        self.every_n_steps = int(every_n_steps)
+        self.print_loss = bool(print_loss)
+        self.save_csv = bool(save_csv)
+        self.csv_name = csv_name
+        self.records = []  
+
+    @staticmethod
+    def _rank0(trainer) -> bool:
+        if hasattr(trainer, "is_global_zero"):
+            return bool(trainer.is_global_zero)
+        gr = getattr(trainer, "global_rank", 0)
+        lr = getattr(trainer, "local_rank", 0)
+        return (gr == 0 and lr == 0)
+
+    @staticmethod
+    def _to_float(x):
+        if x is None:
+            return None
+        if isinstance(x, (float, int)):
+            return float(x)
+        if torch.is_tensor(x):
+            return float(x.detach().cpu().item())
+        return None
+
+    def _extract_loss(self, trainer, model, outputs=None, **kwargs):
+        if "loss" in kwargs:
+            v = self._to_float(kwargs["loss"])
+            if v is not None:
+                return v
+
+        if "outputs" in kwargs and outputs is None:
+            outputs = kwargs["outputs"]
+
+        if isinstance(outputs, dict):
+            for k in ("loss", "loss_step", "train_loss"):
+                if k in outputs:
+                    v = self._to_float(outputs[k])
+                    if v is not None:
+                        return v
+        else:
+            v = self._to_float(outputs)
+            if v is not None:
+                return v
+
+        for k in ("loss_step", "loss", "train_loss"):
+            if hasattr(trainer, k):
+                v = self._to_float(getattr(trainer, k))
+                if v is not None:
+                    return v
+
+        for k in ("loss_step", "loss"):
+            if hasattr(model, k):
+                v = self._to_float(getattr(model, k))
+                if v is not None:
+                    return v
+
+        return None
+
+    def on_train_batch_end(self, trainer, model, *args, **kwargs):
+        outputs = kwargs.get("outputs", None)
+        batch_idx = kwargs.get("batch_idx", None)
+
+        if outputs is None and len(args) >= 1:
+            if torch.is_tensor(args[0]) or isinstance(args[0], dict) or isinstance(args[0], (float, int)):
+                outputs = args[0]
+                if len(args) >= 3:
+                    batch_idx = args[2]
+            else:
+                if len(args) >= 3 and (torch.is_tensor(args[2]) or isinstance(args[2], dict)):
+                    outputs = args[2]
+                if len(args) >= 2:
+                    batch_idx = args[1]
+
+        loss_val = self._extract_loss(trainer, model, outputs=outputs, **kwargs)
+        if loss_val is None:
+            return
+
+        step = getattr(trainer, "global_step", None)
+        epoch = getattr(trainer, "current_epoch", None)
+
+        if step is None:
+            step = len(self.records)
+
+        if self.every_n_steps > 1 and (int(step) % self.every_n_steps) != 0:
+            return
+
+        rec = {"step": int(step), "epoch": int(epoch) if epoch is not None else None,
+               "batch_idx": int(batch_idx) if batch_idx is not None else None,
+               "loss": float(loss_val)}
+        self.records.append(rec)
+
+        #if self.print_loss and self._rank0(trainer):
+        #    print(f"[step={rec['step']}] loss={rec['loss']:.6g}")
+
+    def on_fit_end(self, trainer, model):
+        print(f"StepLossCallback: Storing step losses to {self.path}/{self.csv_name}")
+
+        if not self.save_csv or self.path is None:
+            return
+        if not self._rank0(trainer):
+            return
+        os.makedirs(self.path, exist_ok=True)
+        pd.DataFrame(self.records).to_csv(os.path.join(self.path, self.csv_name), index=False)

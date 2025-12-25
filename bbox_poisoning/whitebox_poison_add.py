@@ -194,6 +194,9 @@ def _pick_best_for_pattern(
 
     return best
 
+def canon(x: object) -> str:
+    s = str(x)
+    return s
 
 def add_corrupted_by_fgsm_forward(
     triples,
@@ -213,17 +216,20 @@ def add_corrupted_by_fgsm_forward(
     progress_every=None,
 ):
 
-    budget = max(0, min(budget, len(triples)))
-    if budget == 0:
-        return []
 
     device = device or (next(model.parameters()).device if any(True for _ in model.parameters()) else torch.device("cpu"))
     model = model.to(device)
     model.train(False)
+    
 
-    e2i, r2i = entity_to_idx, relation_to_idx
-    I2E = {i: e for e, i in e2i.items()}
-    I2R = {i: r for r, i in r2i.items()}
+    e2i = {canon(k): v for k, v in entity_to_idx.items()}   
+    r2i = {canon(k): v for k, v in relation_to_idx.items()}
+
+    I2E = {v: canon(k) for k, v in entity_to_idx.items()}
+    I2R = {v: canon(k) for k, v in relation_to_idx.items()}
+
+    triples = [(canon(h), canon(r), canon(t)) for (h, r, t) in triples]
+
     num_entities, num_relations = len(e2i), len(r2i)
 
     ent_emb, rel_emb = _resolve_embeddings_or_raise(model, num_entities, num_relations)
@@ -328,9 +334,9 @@ def triples_to_idx_with_maps(
     idx = torch.empty((len(triples), 3), dtype=torch.long)
     for i, (h, r, t) in enumerate(triples):
         try:
-            idx[i, 0] = entity_to_idx[h]
-            idx[i, 1] = relation_to_idx[r]
-            idx[i, 2] = entity_to_idx[t]
+            idx[i, 0] = entity_to_idx[str(h)]
+            idx[i, 1] = relation_to_idx[str(r)]
+            idx[i, 2] = entity_to_idx[str(t)]
         except KeyError as e:
             raise KeyError(f"Label not found in model maps while indexing {triples[i]}: {e}")
     return idx
@@ -422,19 +428,31 @@ def add_corrupted_by_centrality_and_loss_forward(
     centrality = "harmonic",          
     undirected = True,
     mode = "both",
-    top_k_nodes = 1000,
+    top_k_nodes,
     avoid_existing_edge = True,
     restrict_by_relation = False,
     forbidden = None,
-    batch_size = 65536,
+    batch_size,
     device = None,
 ):
 
-    device = device or (next(model.parameters()).device if any(True for _ in model.parameters()) else torch.device("cpu"))
+    e2i = {canon(k): v for k, v in entity_to_idx.items()}
+    r2i = {canon(k): v for k, v in relation_to_idx.items()}
+    triples = [(canon(h), canon(r), canon(t)) for (h, r, t) in triples]
+
+    if forbidden:
+        forbidden = {(canon(h), canon(r), canon(t)) for (h, r, t) in forbidden}
+    
+    if device is None:
+        try:
+            device = next(model.parameters()).device
+        except StopIteration:
+            device = torch.device("cpu")
     model = model.to(device).eval()
 
     Gd = _build_entity_digraph(triples)
     G = Gd.to_undirected(as_view=True) if undirected else Gd
+    
     if centrality == "betweenness":
         node_cent = nx.betweenness_centrality(G, normalized=True)
     elif centrality == "closeness":
@@ -456,7 +474,9 @@ def add_corrupted_by_centrality_and_loss_forward(
     if not cands:
         return []
 
-    e2i, r2i = entity_to_idx, relation_to_idx
+    cands = [(canon(h), canon(r), canon(t)) for (h, r, t) in cands]
+    
+
     cands = [c for c in cands if c[0] in e2i and c[1] in r2i and c[2] in e2i]
     if not cands:
         return []

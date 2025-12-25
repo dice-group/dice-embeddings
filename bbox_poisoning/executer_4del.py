@@ -31,6 +31,7 @@ def run_dicee_eval(
         "--save_embeddings_as_csv",
         "--path_to_store_single_run", path_to_store_single_run,
         "--random_seed", str(seed),
+        "--eval_model", "test",
     ])
     result = Execute(args=args).start()
 

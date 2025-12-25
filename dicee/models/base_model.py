@@ -56,7 +56,11 @@ class BaseKGELightning(pl.LightningModule):
 
         loss_batch = self.loss(yhat_batch, y_batch, current_epoch=self.current_epoch) #, gradient_norm=total_norm)
 
-        #self.log("gradient_norm", total_norm, prog_bar=True, on_step=True, on_epoch=True)
+        #print(f"loss = {loss_batch.item()}")
+        #print(batch_idx)
+        
+
+        self.log("per_triple_loss", loss_batch.item(), prog_bar=True, on_step=True, on_epoch=True)
 
         self.training_step_outputs.append(loss_batch.item())
         self.log("loss",
