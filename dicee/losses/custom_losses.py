@@ -983,38 +983,19 @@ class WaveLoss(nn.Module):
         # Return mean loss over the batch (standard practice for optimization)
         return wave_loss.mean()
 
-class testLoss(nn.Module):
-    def __init__(self, eps = 1e-8):
-
-        super().__init__()
-        self.eps = eps
-
-    def forward(self, pred, target, current_epoch = None):
-
-        y_hat = torch.sigmoid(pred)
-        y_hat = torch.clamp(y_hat, min = self.eps, max= 1.0 - self.eps)
-        
-        y = target.float() 
-        loss = -(y * torch.log(y_hat)+ (1 - y) * torch.log(1 - y_hat))
-
-        return loss.mean()
-
 class NSSALoss(nn.Module):
     """
     Negative Sampling Self-Adversarial (NSSA) loss.
-
     """
 
     def __init__(
         self,
-        temperature =  1.0,
-        positive_index = 0,
-        use_target_argmax = True,
+        temperature = 20.0,
+        positive_threshold = 0.5, #Semantic threshlod for postive classes
     ):
         super().__init__()
         self.temperature = temperature
-        self.positive_index = positive_index
-        self.use_target_argmax = use_target_argmax
+        self.positive_threshold = positive_threshold
 
     def forward(
         self,
@@ -1024,49 +1005,41 @@ class NSSALoss(nn.Module):
     ):
         temperature = self.temperature
 
+        if pred.dim() == 1:
+            pred = pred.unsqueeze(0)
 
-        # pos_idx = target.argmax(dim=1)
-        
-        # ratio = (pos_idx == 0).float().mean().item()
-        # print(f"Positive-at-0 ratio: {ratio:.4f}")
+        if target.dim() == 1:
+            target = target.unsqueeze(0)
 
-        # if pred.size(1) == 1:
-        #     pos_pred = pred.squeeze(1)
-        #     neg_pred = pred.new_empty((pred.size(0), 0))
+        pos_mask = target > self.positive_threshold
+        neg_mask = ~pos_mask
 
-        if self.use_target_argmax:
-            pos_idx = target.argmax(dim=1)
-        else:
-            pos_idx = torch.full(
-                (pred.size(0),),
-                self.positive_index,
-                device=pred.device,
-                dtype=torch.long,
-            )
+        batch_loss = pred.new_tensor(0.0)
+        valid_rows = 0
 
-        pos_pred = pred.gather(1, pos_idx[:, None]).squeeze(1)
+        for row_pred, row_pos_mask, row_neg_mask in zip(pred, pos_mask, neg_mask):
+            pos_scores = row_pred[row_pos_mask]
+            neg_scores = row_pred[row_neg_mask]
 
-        neg_mask = torch.ones_like(pred, dtype=torch.bool)
-        neg_mask.scatter_(1, pos_idx[:, None], False)
-        neg_pred = pred.masked_select(neg_mask).view(pred.size(0), pred.size(1) - 1)
+            if pos_scores.numel() == 0 or neg_scores.numel() == 0:
+                continue
 
-        # Positive term: -log sigma(pos)
-        pos_score = F.logsigmoid(pos_pred)
+            pos_score = F.logsigmoid(pos_scores).mean()
+            weights = F.softmax(neg_scores * temperature, dim=0).detach()
+            neg_score = (weights * F.logsigmoid(-neg_scores)).sum()
 
-        # Negative term: self-adversarial weighted log-sigmoid on negatives
-        weights = F.softmax(neg_pred * temperature, dim=1).detach()
-        neg_score = (weights * F.logsigmoid(-neg_pred)).sum(dim=1)
+            row_loss = (-pos_score - neg_score) / 2
+            batch_loss = batch_loss + row_loss
+            valid_rows += 1
 
-        pos_loss = -pos_score.mean()
-        neg_loss = -neg_score.mean()
+        if valid_rows == 0:
+            return pred.new_tensor(0.0, requires_grad=True)
 
-        loss = (pos_loss + neg_loss) / 2
-
-        return loss
+        return batch_loss / valid_rows
 
 class FocalLoss(nn.Module):
 
-    def __init__(self, gamma = 2.0):
+    def __init__(self, gamma = 2.5):
         super().__init__() 
 
         self.gamma = gamma 
