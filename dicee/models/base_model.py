@@ -7,6 +7,7 @@ from torch.nn import functional as F
 from .adopt import ADOPT
 from dicee.losses.custom_losses import (
                                         DefaultBCELoss,
+                                        WeightedBCELoss,
                                         LabelSmoothingLoss,
                                         LabelRelaxationLoss,
                                         AdaptiveLabelSmoothingLoss,
@@ -17,8 +18,17 @@ from dicee.losses.custom_losses import (
                                         AggregatedLSandLR,
                                         ACLS,
                                         UNITEI,
-                                       #GradientBasedLSLR,
-                                       #GradientBasedAdaptiveLSLR
+                                        AGCELoss,
+                                        AULoss,
+                                        AELoss,
+                                        RoBoSS,
+                                        EwLoss,
+                                        SynMarginLoss,
+                                        WaveLoss,
+                                        NSSALoss,
+                                        FocalLoss,
+                                        #GradientBasedLSLR,
+                                        #GradientBasedAdaptiveLSLR
                                         )
 
 class BaseKGELightning(pl.LightningModule):
@@ -83,6 +93,9 @@ class BaseKGELightning(pl.LightningModule):
         #        total_norm += param.grad.norm(2).item()
 
         loss_batch = self.loss(yhat_batch, y_batch, current_epoch=self.current_epoch) #, gradient_norm=total_norm)
+        if loss_batch.numel() != 1:
+            # Some losses (e.g., FocalLoss) may return per-element values.
+            loss_batch = loss_batch.mean()
 
         #self.log("gradient_norm", total_norm, prog_bar=True, on_step=True, on_epoch=True)
 
@@ -214,6 +227,8 @@ class BaseKGE(BaseKGELightning):
             self.loss = LabelRelaxationLoss(alpha=self.args["label_relaxation_alpha"])
         if self.args["loss_fn"] == "BCELoss":
             self.loss = DefaultBCELoss()
+        if self.args["loss_fn"] == "WeightedBCELoss":
+            self.loss = WeightedBCELoss()
         if self.args["loss_fn"] == "CombinedLSandLR":
             self.loss = CombinedLSandLR(smoothness_ratio=self.args["label_smoothing_rate"], alpha=self.args["label_relaxation_alpha"])
         if self.args["loss_fn"] == "AdaptiveLabelSmoothingLoss":
@@ -230,6 +245,24 @@ class BaseKGE(BaseKGELightning):
             self.loss = ACLS()
         if self.args["loss_fn"] == "UNITEI":
             self.loss = UNITEI()
+        if self.args["loss_fn"] == "AGCELoss":
+            self.loss = AGCELoss()
+        if self.args["loss_fn"] == "AULoss":
+            self.loss = AULoss()
+        if self.args["loss_fn"] == "AELoss":
+            self.loss = AELoss()
+        if self.args["loss_fn"] == "RoBoSS":
+            self.loss = RoBoSS()
+        if self.args["loss_fn"] == "EwLoss":
+            self.loss = EwLoss()
+        if self.args["loss_fn"] == "SynMarginLoss":
+            self.loss = SynMarginLoss()
+        if self.args["loss_fn"] == "WaveLoss":
+            self.loss = WaveLoss()
+        if self.args["loss_fn"] == "NSSALoss":
+            self.loss = NSSALoss()
+        if self.args["loss_fn"] == "FocalLoss":
+            self.loss = FocalLoss()
 
        #if self.args["loss_fn"] == "GradientBasedLSLR":
        #    self.loss = GradientBasedLSLR()

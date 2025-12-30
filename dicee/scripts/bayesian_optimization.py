@@ -22,19 +22,19 @@ def objective(trial, model, dataset, loss):
     learning_rate = 0.1 #trial.suggest_float("learning_rate", 0.01, 0.1)
 
 
-    if loss == 'AGCE':
+    if loss == 'AGCELoss':
         agce_a = trial.suggest_float('agce_a', 1e-3, 1.0, log = True)
         agce_q = trial.suggest_float('agce_q', 1e-3, 1.0, log = True)
         parser.add_argument('--agce_a', type=float, default=agce_a)
         parser.add_argument('--agce_q', type=float, default=agce_q)
     
-    elif loss == 'AUL':
+    elif loss == 'AULoss':
         aul_a = trial.suggest_float("aul_a", 1.01, 2.0)
         aul_p = trial.suggest_float("aul_p",1e-4, 1.0)
         parser.add_argument("--aul_a", type=float, default=aul_a)
         parser.add_argument("--aul_p", type=float, default=aul_p)
     
-    elif loss == "AEL":
+    elif loss == "AELoss":
         a_ael = trial.suggest_float("a_ael", 0.01, 1.0)
         parser.add_argument("--a_ael", type=float, default=a_ael)
 
@@ -67,7 +67,7 @@ def objective(trial, model, dataset, loss):
     parser.add_argument('--weight_decay', type=float, default=0.0)
     parser.add_argument('--scoring_technique', default="KvsAll")
     parser.add_argument("--random_seed", type=int, default=1)
-    parser.add_argument("--eval_model", type=str, default="test")
+    parser.add_argument("--eval_model", type=str, default="train_val_test")
     parser.add_argument("--add_noise_rate", type=float, default=0.0)
     parser.add_argument("--sparql_endpoint", type=str, default=None)
     parser.add_argument("--path_single_kg", type=str, default=None)
@@ -89,6 +89,7 @@ def objective(trial, model, dataset, loss):
     parser.add_argument('--degree', type=int, default=0)
     parser.add_argument("--save_embeddings_as_csv", action="store_true")
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
+    parser.add_argument("--label_smoothing_rate", type=float, default=0.0)
 
     args = parser.parse_args()
     result = Execute(args=args).start()
@@ -99,14 +100,14 @@ def main():
     # set according to your environment TODO: make it as a parameter
     script_dir = os.path.dirname(os.path.abspath(__file__))
     root = os.path.join(script_dir, "../..")
-    main_path = os.path.join(root, "Datasets_Perturbed")
+    main_path = os.path.join(root, "Datasets_Perturbed/")
 
     report_folder_name = "./bo_outputs/512_05_100Epochs/"
     report_file_name = "bayesian_optimization_report.txt"
 
     datasets = ["WN18RR", "FB15k-237"]  #, "KINSHIP" , "NELL-995-h100", "WN18RR", "FB15k-237"]
     models = ["DistMult", "ComplEx", "Pykeen_MuRE", "Pykeen_RotatE", "QMult"]  # , "Pykeen_MuRE", "QMult", "Pykeen_DistMult", "Pykeen_ComplEx", "Pykeen_BoxE", "Pykeen_RotatE"]
-    losses = ['AGCE', 'AEL', 'WaveLoss', 'RoBoSS']  # , 'AUL', 'AEL', 'WaveLoss', 'RoBoSS']
+    losses = ['AGCELoss', 'AELoss', 'WaveLoss', 'RoBoSS']  # , 'AUL', 'AEL', 'WaveLoss', 'RoBoSS']
 
     number_of_runs = 30
 
@@ -158,4 +159,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
