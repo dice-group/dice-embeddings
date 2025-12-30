@@ -104,11 +104,11 @@ def main():
     report_folder_name = "./bo_outputs/512_05_100Epochs/"
     report_file_name = "bayesian_optimization_report.txt"
 
-    datasets = ["UMLS"]  #, "KINSHIP" , "NELL-995-h100", "WN18RR", "FB15k-237"]
-    models = ["Keci"]  # , "Pykeen_MuRE", "QMult", "Pykeen_DistMult", "Pykeen_ComplEx", "Pykeen_BoxE", "Pykeen_RotatE"]
-    losses = ['AGCE']  # , 'AUL', 'AEL', 'WaveLoss', 'RoBoSS']
+    datasets = ["WN18RR", "FB15k-237"]  #, "KINSHIP" , "NELL-995-h100", "WN18RR", "FB15k-237"]
+    models = ["DistMult", "ComplEx", "Pykeen_MuRE", "Pykeen_RotatE", "QMult"]  # , "Pykeen_MuRE", "QMult", "Pykeen_DistMult", "Pykeen_ComplEx", "Pykeen_BoxE", "Pykeen_RotatE"]
+    losses = ['AGCE', 'AEL', 'WaveLoss', 'RoBoSS']  # , 'AUL', 'AEL', 'WaveLoss', 'RoBoSS']
 
-    number_of_runs = 40
+    number_of_runs = 30
 
     os.makedirs(os.path.dirname(report_folder_name), exist_ok=True)
 
