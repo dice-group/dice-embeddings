@@ -84,7 +84,7 @@ with open('README.md', 'r') as fh:
 setup(
     name="dicee",
     description="Dice embedding is an hardware-agnostic framework for large-scale knowledge graph embedding applications",
-    version="0.2.0",
+    version="0.2.1",
     packages=find_packages(exclude=["tests", "tests.*"]),
     extras_require=extras,
     install_requires=list(install_requires),
@@ -92,9 +92,9 @@ setup(
     author_email='caglardemir8@gmail.com',
     url='https://github.com/dice-group/dice-embeddings',
     classifiers=[
-        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "License :: OSI Approved :: MIT License"],
-    python_requires='>=3.10',
+    python_requires='>=3.11',
     entry_points={"console_scripts":
                       ["dicee=dicee.scripts.run:main",
                        "dicee_vector_db=dicee.scripts.index_serve:main"]},
