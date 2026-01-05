@@ -983,6 +983,6 @@ Package Contents
 
 
 .. py:data:: __version__
-   :value: '0.1.5'
+   :value: '0.2.1'
 
 
