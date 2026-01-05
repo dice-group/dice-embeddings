@@ -4,17 +4,21 @@ This module contains shared helper functions used across different
 evaluation components.
 """
 
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Optional
 
 import numpy as np
 from tqdm import tqdm
+
+# Standard hit levels for link prediction evaluation
+DEFAULT_HITS_RANGE: List[int] = [1, 3, 10]
+ALL_HITS_RANGE: List[int] = list(range(1, 11))
 
 
 def make_iterable_verbose(
     iterable_object: Iterable,
     verbose: bool,
     desc: str = "Default",
-    position: int = None,
+    position: Optional[int] = None,
     leave: bool = True
 ) -> Iterable:
     """Wrap an iterable with tqdm progress bar if verbose is True.
@@ -97,21 +101,35 @@ def compute_metrics_from_ranks_simple(
 def update_hits(
     hits: Dict[int, List[float]],
     rank: int,
-    hits_range: List[int] = None
+    hits_range: Optional[List[int]] = None
 ) -> None:
     """Update hits dictionary based on rank.
 
     Args:
         hits: Dictionary to update in-place.
         rank: The rank to check against hit levels.
-        hits_range: List of hit levels to check (default: 1-10).
+        hits_range: List of hit levels to check (default: ALL_HITS_RANGE).
     """
     if hits_range is None:
-        hits_range = list(range(1, 11))
+        hits_range = ALL_HITS_RANGE
 
     for hits_level in hits_range:
         if rank <= hits_level:
             hits[hits_level].append(1.0)
+
+
+def create_hits_dict(hits_range: Optional[List[int]] = None) -> Dict[int, List[float]]:
+    """Create an initialized hits dictionary.
+
+    Args:
+        hits_range: List of hit levels to initialize (default: ALL_HITS_RANGE).
+
+    Returns:
+        Dictionary with empty lists for each hit level.
+    """
+    if hits_range is None:
+        hits_range = ALL_HITS_RANGE
+    return {i: [] for i in hits_range}
 
 
 def efficient_zero_grad(model) -> None:

@@ -9,7 +9,12 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import torch
 
-from .utils import compute_metrics_from_ranks_simple
+from .utils import (
+    compute_metrics_from_ranks_simple,
+    update_hits,
+    create_hits_dict,
+    ALL_HITS_RANGE,
+)
 
 
 @torch.no_grad()
@@ -59,9 +64,9 @@ def evaluate_ensemble_link_prediction_performance(
         >>> print(f"MRR: {results['MRR']:.4f}")
     """
     num_triples = len(triples)
-    ranks = []
-    hits_range = list(range(1, 11))
-    hits = {i: [] for i in hits_range}
+    ranks: List[int] = []
+    hits_range = ALL_HITS_RANGE
+    hits = create_hits_dict(hits_range)
     n_models = len(models)
 
     # Validate weights for weighted averaging
@@ -119,10 +124,7 @@ def evaluate_ensemble_link_prediction_performance(
         for j in range(data_batch.shape[0]):
             rank = torch.where(sort_idxs[j] == e2_idx[j])[0].item() + 1
             ranks.append(rank)
-
-            for hits_level in hits_range:
-                if rank <= hits_level:
-                    hits[hits_level].append(1.0)
+            update_hits(hits, rank, hits_range)
 
     assert len(triples) == len(ranks) == num_triples
     return compute_metrics_from_ranks_simple(ranks, num_triples, hits)

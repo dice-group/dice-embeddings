@@ -28,7 +28,15 @@ from .link_prediction import (
 )
 from .literal_prediction import evaluate_literal_prediction
 from .ensemble import evaluate_ensemble_link_prediction_performance
-from .utils import compute_metrics_from_ranks, make_iterable_verbose
+from .utils import (
+    compute_metrics_from_ranks,
+    compute_metrics_from_ranks_simple,
+    make_iterable_verbose,
+    update_hits,
+    create_hits_dict,
+    DEFAULT_HITS_RANGE,
+    ALL_HITS_RANGE,
+)
 
 __all__ = [
     # Main evaluator class
@@ -47,5 +55,11 @@ __all__ = [
     "evaluate_ensemble_link_prediction_performance",
     # Utilities
     "compute_metrics_from_ranks",
+    "compute_metrics_from_ranks_simple",
     "make_iterable_verbose",
+    "update_hits",
+    "create_hits_dict",
+    # Constants
+    "DEFAULT_HITS_RANGE",
+    "ALL_HITS_RANGE",
 ]

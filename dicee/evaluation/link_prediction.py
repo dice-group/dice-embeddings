@@ -4,13 +4,19 @@ This module provides various functions for evaluating link prediction
 performance of knowledge graph embedding models.
 """
 
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
 from tqdm import tqdm
 
-from .utils import compute_metrics_from_ranks, compute_metrics_from_ranks_simple
+from .utils import (
+    compute_metrics_from_ranks,
+    compute_metrics_from_ranks_simple,
+    update_hits,
+    create_hits_dict,
+    ALL_HITS_RANGE,
+)
 
 
 @torch.no_grad()
@@ -131,9 +137,9 @@ def evaluate_link_prediction_performance_with_reciprocals(
     relation_to_idx = model.relation_to_idx
     batch_size = model.model.args["batch_size"]
     num_triples = len(triples)
-    ranks = []
-    hits_range = list(range(1, 11))
-    hits = {i: [] for i in hits_range}
+    ranks: List[int] = []
+    hits_range = ALL_HITS_RANGE
+    hits = create_hits_dict(hits_range)
 
     for i in range(0, num_triples, batch_size):
         str_data_batch = triples[i:i + batch_size]
@@ -162,9 +168,7 @@ def evaluate_link_prediction_performance_with_reciprocals(
         for j in range(data_batch.shape[0]):
             rank = torch.where(sort_idxs[j] == e2_idx[j])[0].item() + 1
             ranks.append(rank)
-            for hits_level in hits_range:
-                if rank <= hits_level:
-                    hits[hits_level].append(1.0)
+            update_hits(hits, rank, hits_range)
 
     assert len(triples) == len(ranks) == num_triples
     return compute_metrics_from_ranks_simple(ranks, num_triples, hits)
@@ -195,9 +199,9 @@ def evaluate_link_prediction_performance_with_bpe_reciprocals(
 
     batch_size = model.model.args["batch_size"]
     num_triples = len(triples)
-    ranks = []
-    hits_range = list(range(1, 11))
-    hits = {i: [] for i in hits_range}
+    ranks: List[int] = []
+    hits_range = ALL_HITS_RANGE
+    hits = create_hits_dict(hits_range)
 
     model.model.ordered_bpe_entities = padded_bpe_within_entities
 
@@ -227,9 +231,7 @@ def evaluate_link_prediction_performance_with_bpe_reciprocals(
         for j, (_, __, str_t) in enumerate(str_data_batch):
             rank = torch.where(sort_idxs[j] == entity_to_idx[str_t])[0].item() + 1
             ranks.append(rank)
-            for hits_level in hits_range:
-                if rank <= hits_level:
-                    hits[hits_level].append(1.0)
+            update_hits(hits, rank, hits_range)
 
     assert len(triples) == len(ranks) == num_triples
     return compute_metrics_from_ranks_simple(ranks, num_triples, hits)
@@ -580,10 +582,10 @@ def evaluate_bpe_lp(
 def evaluate_lp_bpe_k_vs_all(
     model,
     triples: List[List[str]],
-    er_vocab: Dict = None,
-    batch_size: int = None,
-    func_triple_to_bpe_representation: Callable = None,
-    str_to_bpe_entity_to_idx: Dict = None
+    er_vocab: Optional[Dict] = None,
+    batch_size: Optional[int] = None,
+    func_triple_to_bpe_representation: Optional[Callable] = None,
+    str_to_bpe_entity_to_idx: Optional[Dict] = None
 ) -> Dict[str, float]:
     """Evaluate BPE link prediction with KvsAll scoring.
 
@@ -597,12 +599,18 @@ def evaluate_lp_bpe_k_vs_all(
 
     Returns:
         Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+    Raises:
+        ValueError: If batch_size is not provided.
     """
+    if batch_size is None:
+        raise ValueError("batch_size must be provided")
+
     model.model.eval()
     num_triples = len(triples)
-    ranks = []
-    hits_range = list(range(1, 11))
-    hits = {i: [] for i in hits_range}
+    ranks: List[int] = []
+    hits_range = ALL_HITS_RANGE
+    hits = create_hits_dict(hits_range)
 
     for i in range(0, num_triples, batch_size):
         str_data_batch = triples[i:i + batch_size]
@@ -628,9 +636,7 @@ def evaluate_lp_bpe_k_vs_all(
             t = str_data_batch[j][2]
             rank = torch.where(sort_idxs[j] == str_to_bpe_entity_to_idx[t])[0].item() + 1
             ranks.append(rank)
-            for hits_level in hits_range:
-                if rank <= hits_level:
-                    hits[hits_level].append(1.0)
+            update_hits(hits, rank, hits_range)
 
     assert len(triples) == len(ranks) == num_triples
     return compute_metrics_from_ranks_simple(ranks, num_triples, hits)
