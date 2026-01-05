@@ -13,6 +13,14 @@ dicee.evaluation.evaluator
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.evaluation.evaluator.VALID_SCORING_TECHNIQUES
+
+
 Classes
 -------
 
@@ -23,6 +31,8 @@ Classes
 
 Module Contents
 ---------------
+
+.. py:data:: VALID_SCORING_TECHNIQUES
 
 .. py:class:: Evaluator(args, is_continual_training: bool = False)
 
@@ -186,7 +196,7 @@ Module Contents
 
 
 
-   .. py:method:: evaluate_lp_k_vs_all(model, triple_idx, info: str = None, form_of_labelling: str = None) -> Dict[str, float]
+   .. py:method:: evaluate_lp_k_vs_all(model, triple_idx, info: Optional[str] = None, form_of_labelling: Optional[str] = None) -> Dict[str, float]
 
       Filtered link prediction evaluation with KvsAll scoring.
 
@@ -199,7 +209,7 @@ Module Contents
 
 
 
-   .. py:method:: evaluate_lp_with_byte(model, triples: List[List[str]], info: str = None) -> Dict[str, float]
+   .. py:method:: evaluate_lp_with_byte(model, triples: List[List[str]], info: Optional[str] = None) -> Dict[str, float]
 
       Evaluate BytE model with text generation.
 
@@ -211,7 +221,7 @@ Module Contents
 
 
 
-   .. py:method:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], info: str = None, form_of_labelling: str = None) -> Dict[str, float]
+   .. py:method:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], info: Optional[str] = None, form_of_labelling: Optional[str] = None) -> Dict[str, float]
 
       Evaluate BPE model with KvsAll scoring.
 

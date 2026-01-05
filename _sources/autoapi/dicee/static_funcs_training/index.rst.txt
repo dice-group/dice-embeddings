@@ -62,7 +62,7 @@ Module Contents
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 
 
-.. py:function:: make_iterable_verbose(iterable_object: Iterable, verbose: bool, desc: str = 'Default', position: int = None, leave: bool = True) -> Iterable
+.. py:function:: make_iterable_verbose(iterable_object: Iterable, verbose: bool, desc: str = 'Default', position: Optional[int] = None, leave: bool = True) -> Iterable
 
    Wrap an iterable with tqdm progress bar if verbose is True.
 

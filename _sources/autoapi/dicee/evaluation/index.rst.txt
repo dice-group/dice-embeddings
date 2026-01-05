@@ -38,6 +38,15 @@ Submodules
    /autoapi/dicee/evaluation/utils/index
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.evaluation.DEFAULT_HITS_RANGE
+   dicee.evaluation.ALL_HITS_RANGE
+
+
 Classes
 -------
 
@@ -61,7 +70,10 @@ Functions
    dicee.evaluation.evaluate_literal_prediction
    dicee.evaluation.evaluate_ensemble_link_prediction_performance
    dicee.evaluation.compute_metrics_from_ranks
+   dicee.evaluation.compute_metrics_from_ranks_simple
    dicee.evaluation.make_iterable_verbose
+   dicee.evaluation.update_hits
+   dicee.evaluation.create_hits_dict
 
 
 Package Contents
@@ -229,7 +241,7 @@ Package Contents
 
 
 
-   .. py:method:: evaluate_lp_k_vs_all(model, triple_idx, info: str = None, form_of_labelling: str = None) -> Dict[str, float]
+   .. py:method:: evaluate_lp_k_vs_all(model, triple_idx, info: Optional[str] = None, form_of_labelling: Optional[str] = None) -> Dict[str, float]
 
       Filtered link prediction evaluation with KvsAll scoring.
 
@@ -242,7 +254,7 @@ Package Contents
 
 
 
-   .. py:method:: evaluate_lp_with_byte(model, triples: List[List[str]], info: str = None) -> Dict[str, float]
+   .. py:method:: evaluate_lp_with_byte(model, triples: List[List[str]], info: Optional[str] = None) -> Dict[str, float]
 
       Evaluate BytE model with text generation.
 
@@ -254,7 +266,7 @@ Package Contents
 
 
 
-   .. py:method:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], info: str = None, form_of_labelling: str = None) -> Dict[str, float]
+   .. py:method:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], info: Optional[str] = None, form_of_labelling: Optional[str] = None) -> Dict[str, float]
 
       Evaluate BPE model with KvsAll scoring.
 
@@ -375,7 +387,7 @@ Package Contents
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 
 
-.. py:function:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], er_vocab: Dict = None, batch_size: int = None, func_triple_to_bpe_representation: Callable = None, str_to_bpe_entity_to_idx: Dict = None) -> Dict[str, float]
+.. py:function:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], er_vocab: Optional[Dict] = None, batch_size: Optional[int] = None, func_triple_to_bpe_representation: Optional[Callable] = None, str_to_bpe_entity_to_idx: Optional[Dict] = None) -> Dict[str, float]
 
    Evaluate BPE link prediction with KvsAll scoring.
 
@@ -387,6 +399,8 @@ Package Contents
    :param str_to_bpe_entity_to_idx: Mapping from string entities to BPE indices.
 
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+   :raises ValueError: If batch_size is not provided.
 
 
 .. py:function:: evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info: str = 'Eval Starts') -> Dict[str, float]
@@ -485,7 +499,18 @@ Package Contents
    :returns: Dictionary containing H@1, H@3, H@10, and MRR metrics.
 
 
-.. py:function:: make_iterable_verbose(iterable_object: Iterable, verbose: bool, desc: str = 'Default', position: int = None, leave: bool = True) -> Iterable
+.. py:function:: compute_metrics_from_ranks_simple(ranks: List[int], num_triples: int, hits_dict: Dict[int, List[float]]) -> Dict[str, float]
+
+   Compute link prediction metrics without scaling factor.
+
+   :param ranks: List of ranks for each prediction.
+   :param num_triples: Total number of triples evaluated.
+   :param hits_dict: Dictionary mapping hit levels to lists of hits.
+
+   :returns: Dictionary containing H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: make_iterable_verbose(iterable_object: Iterable, verbose: bool, desc: str = 'Default', position: Optional[int] = None, leave: bool = True) -> Iterable
 
    Wrap an iterable with tqdm progress bar if verbose is True.
 
@@ -497,4 +522,30 @@ Package Contents
 
    :returns: The original iterable or a tqdm-wrapped version.
 
+
+.. py:function:: update_hits(hits: Dict[int, List[float]], rank: int, hits_range: Optional[List[int]] = None) -> None
+
+   Update hits dictionary based on rank.
+
+   :param hits: Dictionary to update in-place.
+   :param rank: The rank to check against hit levels.
+   :param hits_range: List of hit levels to check (default: ALL_HITS_RANGE).
+
+
+.. py:function:: create_hits_dict(hits_range: Optional[List[int]] = None) -> Dict[int, List[float]]
+
+   Create an initialized hits dictionary.
+
+   :param hits_range: List of hit levels to initialize (default: ALL_HITS_RANGE).
+
+   :returns: Dictionary with empty lists for each hit level.
+
+
+.. py:data:: DEFAULT_HITS_RANGE
+   :type:  List[int]
+   :value: [1, 3, 10]
+
+
+.. py:data:: ALL_HITS_RANGE
+   :type:  List[int]
 

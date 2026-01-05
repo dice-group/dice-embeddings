@@ -12,6 +12,15 @@ dicee.evaluation.utils
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.evaluation.utils.DEFAULT_HITS_RANGE
+   dicee.evaluation.utils.ALL_HITS_RANGE
+
+
 Functions
 ---------
 
@@ -21,13 +30,22 @@ Functions
    dicee.evaluation.utils.compute_metrics_from_ranks
    dicee.evaluation.utils.compute_metrics_from_ranks_simple
    dicee.evaluation.utils.update_hits
+   dicee.evaluation.utils.create_hits_dict
    dicee.evaluation.utils.efficient_zero_grad
 
 
 Module Contents
 ---------------
 
-.. py:function:: make_iterable_verbose(iterable_object: Iterable, verbose: bool, desc: str = 'Default', position: int = None, leave: bool = True) -> Iterable
+.. py:data:: DEFAULT_HITS_RANGE
+   :type:  List[int]
+   :value: [1, 3, 10]
+
+
+.. py:data:: ALL_HITS_RANGE
+   :type:  List[int]
+
+.. py:function:: make_iterable_verbose(iterable_object: Iterable, verbose: bool, desc: str = 'Default', position: Optional[int] = None, leave: bool = True) -> Iterable
 
    Wrap an iterable with tqdm progress bar if verbose is True.
 
@@ -63,13 +81,22 @@ Module Contents
    :returns: Dictionary containing H@1, H@3, H@10, and MRR metrics.
 
 
-.. py:function:: update_hits(hits: Dict[int, List[float]], rank: int, hits_range: List[int] = None) -> None
+.. py:function:: update_hits(hits: Dict[int, List[float]], rank: int, hits_range: Optional[List[int]] = None) -> None
 
    Update hits dictionary based on rank.
 
    :param hits: Dictionary to update in-place.
    :param rank: The rank to check against hit levels.
-   :param hits_range: List of hit levels to check (default: 1-10).
+   :param hits_range: List of hit levels to check (default: ALL_HITS_RANGE).
+
+
+.. py:function:: create_hits_dict(hits_range: Optional[List[int]] = None) -> Dict[int, List[float]]
+
+   Create an initialized hits dictionary.
+
+   :param hits_range: List of hit levels to initialize (default: ALL_HITS_RANGE).
+
+   :returns: Dictionary with empty lists for each hit level.
 
 
 .. py:function:: efficient_zero_grad(model) -> None

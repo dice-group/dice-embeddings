@@ -79,12 +79,14 @@
 <li class="toctree-l5"><a class="reference internal" href="../link_prediction/index.html">dicee.evaluation.link_prediction</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../literal_prediction/index.html">dicee.evaluation.literal_prediction</a></li>
 <li class="toctree-l5 current"><a class="current reference internal" href="#">dicee.evaluation.utils</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#attributes">Attributes</a></li>
 <li class="toctree-l6"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
 </ul>
 </li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../index.html#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../index.html#functions">Functions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
@@ -144,6 +146,19 @@
 <p>Utility functions for evaluation module.</p>
 <p>This module contains shared helper functions used across different
 evaluation components.</p>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.utils.DEFAULT_HITS_RANGE" title="dicee.evaluation.utils.DEFAULT_HITS_RANGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DEFAULT_HITS_RANGE</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.utils.ALL_HITS_RANGE" title="dicee.evaluation.utils.ALL_HITS_RANGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ALL_HITS_RANGE</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
@@ -160,7 +175,10 @@ evaluation components.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.utils.update_hits" title="dicee.evaluation.utils.update_hits"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_hits</span></code></a>(→ None)</p></td>
 <td><p>Update hits dictionary based on rank.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.utils.efficient_zero_grad" title="dicee.evaluation.utils.efficient_zero_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">efficient_zero_grad</span></code></a>(→ None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.utils.create_hits_dict" title="dicee.evaluation.utils.create_hits_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_hits_dict</span></code></a>(→ Dict[int, List[float]])</p></td>
+<td><p>Create an initialized hits dictionary.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.utils.efficient_zero_grad" title="dicee.evaluation.utils.efficient_zero_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">efficient_zero_grad</span></code></a>(→ None)</p></td>
 <td><p>Efficiently zero gradients using parameter.grad = None.</p></td>
 </tr>
 </tbody>
@@ -168,9 +186,19 @@ evaluation components.</p>
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="dicee.evaluation.utils.DEFAULT_HITS_RANGE">
+<span class="sig-prename descclassname"><span class="pre">dicee.evaluation.utils.</span></span><span class="sig-name descname"><span class="pre">DEFAULT_HITS_RANGE</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[1,</span> <span class="pre">3,</span> <span class="pre">10]</span></em><a class="headerlink" href="#dicee.evaluation.utils.DEFAULT_HITS_RANGE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="dicee.evaluation.utils.ALL_HITS_RANGE">
+<span class="sig-prename descclassname"><span class="pre">dicee.evaluation.utils.</span></span><span class="sig-name descname"><span class="pre">ALL_HITS_RANGE</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#dicee.evaluation.utils.ALL_HITS_RANGE" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.evaluation.utils.make_iterable_verbose">
-<span class="sig-prename descclassname"><span class="pre">dicee.evaluation.utils.</span></span><span class="sig-name descname"><span class="pre">make_iterable_verbose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterable_object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span></span></span><a class="headerlink" href="#dicee.evaluation.utils.make_iterable_verbose" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">dicee.evaluation.utils.</span></span><span class="sig-name descname"><span class="pre">make_iterable_verbose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iterable_object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">desc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leave</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterable</span></span></span><a class="headerlink" href="#dicee.evaluation.utils.make_iterable_verbose" title="Link to this definition"></a></dt>
 <dd><p>Wrap an iterable with tqdm progress bar if verbose is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -227,15 +255,29 @@ evaluation components.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.evaluation.utils.update_hits">
-<span class="sig-prename descclassname"><span class="pre">dicee.evaluation.utils.</span></span><span class="sig-name descname"><span class="pre">update_hits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rank</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hits_range</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.evaluation.utils.update_hits" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">dicee.evaluation.utils.</span></span><span class="sig-name descname"><span class="pre">update_hits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rank</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hits_range</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.evaluation.utils.update_hits" title="Link to this definition"></a></dt>
 <dd><p>Update hits dictionary based on rank.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>hits</strong> – Dictionary to update in-place.</p></li>
 <li><p><strong>rank</strong> – The rank to check against hit levels.</p></li>
-<li><p><strong>hits_range</strong> – List of hit levels to check (default: 1-10).</p></li>
+<li><p><strong>hits_range</strong> – List of hit levels to check (default: ALL_HITS_RANGE).</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.evaluation.utils.create_hits_dict">
+<span class="sig-prename descclassname"><span class="pre">dicee.evaluation.utils.</span></span><span class="sig-name descname"><span class="pre">create_hits_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hits_range</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dicee.evaluation.utils.create_hits_dict" title="Link to this definition"></a></dt>
+<dd><p>Create an initialized hits dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hits_range</strong> – List of hit levels to initialize (default: ALL_HITS_RANGE).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with empty lists for each hit level.</p>
 </dd>
 </dl>
 </dd></dl>
