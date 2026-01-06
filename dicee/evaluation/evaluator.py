@@ -15,7 +15,18 @@ import pandas as pd
 import torch
 
 from .link_prediction import evaluate_lp, evaluate_bpe_lp
-from .utils import compute_metrics_from_ranks_simple
+from .utils import (
+    compute_metrics_from_ranks_simple,
+    update_hits,
+    create_hits_dict,
+    ALL_HITS_RANGE,
+)
+
+# Valid scoring techniques
+VALID_SCORING_TECHNIQUES = frozenset([
+    "AllvsAll", "KvsAll", "1vsSample", "KvsSample", "1vsAll", "NegSample",
+    "BatchRelaxedKvsAll", "BatchRelaxed1vsAll", "PvsAll", "CCvsAll"
+])
 
 
 class Evaluator:
@@ -384,8 +395,8 @@ class Evaluator:
         self,
         model,
         triple_idx,
-        info: str = None,
-        form_of_labelling: str = None
+        info: Optional[str] = None,
+        form_of_labelling: Optional[str] = None
     ) -> Dict[str, float]:
         """Filtered link prediction evaluation with KvsAll scoring.
 
@@ -400,9 +411,9 @@ class Evaluator:
         """
         model.eval()
         num_triples = len(triple_idx)
-        ranks = []
-        hits_range = list(range(1, 11))
-        hits = {i: [] for i in hits_range}
+        ranks: List[int] = []
+        hits_range = ALL_HITS_RANGE
+        hits = create_hits_dict(hits_range)
 
         if info and not self.during_training:
             print(info + ':', end=' ')
@@ -434,8 +445,8 @@ class Evaluator:
         hits_range: List[int]
     ) -> Tuple[List[int], Dict[int, List[float]]]:
         """Evaluate relation prediction task."""
-        ranks = []
-        hits = {i: [] for i in hits_range}
+        ranks: List[int] = []
+        hits = create_hits_dict(hits_range)
 
         for i in range(0, num_triples, self.args.batch_size):
             data_batch = triple_idx[i:i + self.args.batch_size]
@@ -455,9 +466,7 @@ class Evaluator:
             for j in range(data_batch.shape[0]):
                 rank = torch.where(sort_idxs[j] == r_idx[j])[0].item() + 1
                 ranks.append(rank)
-                for hits_level in hits_range:
-                    if rank <= hits_level:
-                        hits[hits_level].append(1.0)
+                update_hits(hits, rank, hits_range)
 
         return ranks, hits
 
@@ -469,8 +478,8 @@ class Evaluator:
         hits_range: List[int]
     ) -> Tuple[List[int], Dict[int, List[float]]]:
         """Evaluate entity prediction task."""
-        ranks = []
-        hits = {i: [] for i in hits_range}
+        ranks: List[int] = []
+        hits = create_hits_dict(hits_range)
 
         for i in range(0, num_triples, self.args.batch_size):
             data_batch = triple_idx[i:i + self.args.batch_size]
@@ -496,9 +505,7 @@ class Evaluator:
             for j in range(data_batch.shape[0]):
                 rank = torch.where(sort_idxs[j] == e2_idx[j])[0].item() + 1
                 ranks.append(rank)
-                for hits_level in hits_range:
-                    if rank <= hits_level:
-                        hits[hits_level].append(1.0)
+                update_hits(hits, rank, hits_range)
 
         return ranks, hits
 
@@ -507,7 +514,7 @@ class Evaluator:
         self,
         model,
         triples: List[List[str]],
-        info: str = None
+        info: Optional[str] = None
     ) -> Dict[str, float]:
         """Evaluate BytE model with text generation.
 
@@ -548,8 +555,8 @@ class Evaluator:
         self,
         model,
         triples: List[List[str]],
-        info: str = None,
-        form_of_labelling: str = None
+        info: Optional[str] = None,
+        form_of_labelling: Optional[str] = None
     ) -> Dict[str, float]:
         """Evaluate BPE model with KvsAll scoring.
 
@@ -564,9 +571,9 @@ class Evaluator:
         """
         model.eval()
         num_triples = len(triples)
-        ranks = []
-        hits_range = list(range(1, 11))
-        hits = {i: [] for i in hits_range}
+        ranks: List[int] = []
+        hits_range = ALL_HITS_RANGE
+        hits = create_hits_dict(hits_range)
 
         if info and not self.during_training:
             print(info + ':', end=' ')
@@ -600,9 +607,7 @@ class Evaluator:
                     sort_idxs[j] == model.str_to_bpe_entity_to_idx[t]
                 )[0].item() + 1
                 ranks.append(rank)
-                for hits_level in hits_range:
-                    if rank <= hits_level:
-                        hits[hits_level].append(1.0)
+                update_hits(hits, rank, hits_range)
 
         assert len(triples) == len(ranks) == num_triples
 
