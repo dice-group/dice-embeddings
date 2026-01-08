@@ -2,6 +2,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from config import DBS
 
 EXPECTED = ["DB", "RunModel", "DataModel", "Ratio", "Seed", "MRR"]
 
@@ -82,7 +83,7 @@ def compute_delta_vs_baseline(df: pd.DataFrame) -> pd.DataFrame:
     return merged
 
 
-def main(csv_path: str, out_dir: str = "analysis_plots"):
+def main(csv_path: str, out_dir: str = "analysis_plots", db=""):
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -90,29 +91,29 @@ def main(csv_path: str, out_dir: str = "analysis_plots"):
 
     # 1) Heatmap: mean MRR across all ratios+seeds
     mean_mrr = df.groupby(["RunModel", "DataModel"])["MRR"].mean().unstack()
-    heatmap(mean_mrr, "Mean MRR (all ratios, all seeds)",
-            save_path=str(out_dir / "heatmap_mean_mrr_all.png"),
+    heatmap(mean_mrr, f"Mean MRR (all ratios, all seeds) db= {db}",
+            save_path=str(out_dir / f"heatmap_mean_mrr_all_{db}.png"),
             fmt="{:.3f}")
 
     # 2) Heatmap: mean ΔMRR vs baseline (RunModel==DataModel)
     merged = compute_delta_vs_baseline(df)
     mean_delta = merged.groupby(["RunModel", "DataModel"])["DeltaMRR"].mean().unstack()
-    heatmap(mean_delta, "Mean ΔMRR vs baseline (RunModel==DataModel)",
-            save_path=str(out_dir / "heatmap_mean_delta_all.png"),
+    heatmap(mean_delta, f"Mean ΔMRR vs baseline (RunModel==DataModel) db= {db}",
+            save_path=str(out_dir / f"heatmap_mean_delta_all_{db}.png"),
             fmt="{:+.3f}")
 
     # 3) Per-ratio heatmaps
     for ratio in sorted(df["Ratio"].unique()):
         df_r = df[df["Ratio"] == ratio]
         mean_mrr_r = df_r.groupby(["RunModel", "DataModel"])["MRR"].mean().unstack()
-        heatmap(mean_mrr_r, f"Mean MRR (ratio={ratio})",
-                save_path=str(out_dir / f"heatmap_mean_mrr_ratio_{ratio}.png"),
+        heatmap(mean_mrr_r, f"Mean MRR (ratio={ratio}) db= {db}",
+                save_path=str(out_dir / f"heatmap_mean_mrr_ratio_{ratio}_{db}.png"),
                 fmt="{:.3f}")
 
         merged_r = compute_delta_vs_baseline(df_r)
         mean_delta_r = merged_r.groupby(["RunModel", "DataModel"])["DeltaMRR"].mean().unstack()
-        heatmap(mean_delta_r, f"Mean ΔMRR vs baseline (ratio={ratio})",
-                save_path=str(out_dir / f"heatmap_mean_delta_ratio_{ratio}.png"),
+        heatmap(mean_delta_r, f"Mean ΔMRR vs baseline (ratio={ratio} db= {db})",
+                save_path=str(out_dir / f"heatmap_mean_delta_ratio_{ratio}_{db}.png"),
                 fmt="{:+.3f}")
 
     # 4) Print “which DataModel is worse than baseline” with effect size (pp)
@@ -126,4 +127,5 @@ def main(csv_path: str, out_dir: str = "analysis_plots"):
 
 if __name__ == "__main__":
     # Change this to your actual CSV path
-    main("./combinations/UMLS/performance.csv", out_dir="analysis_plots")
+    for db in DBS:
+        main(f"./combinations/{db}/performance.csv", out_dir="analysis_plots", db=db)

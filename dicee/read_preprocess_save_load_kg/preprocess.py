@@ -206,6 +206,7 @@ class PreprocessKG:
         assert self.kg.raw_train_set.columns.tolist() == ['subject', 'relation', 'object']
         
         # Add reciprocal or noisy triples
+        """
         self.kg.raw_train_set = apply_reciprocal_or_noise(add_reciprocal=self.kg.add_reciprocal,
                                                           eval_model=self.kg.eval_model,
                                                           df=self.kg.raw_train_set, info="Train")
@@ -215,6 +216,7 @@ class PreprocessKG:
         self.kg.raw_test_set = apply_reciprocal_or_noise(add_reciprocal=self.kg.add_reciprocal,
                                                          eval_model=self.kg.eval_model,
                                                          df=self.kg.raw_test_set, info="Test")
+        """
         
         # Transform DataFrames to list of tuples with BPE encoding
         self.kg.train_set = self.__replace_values_df(df=self.kg.raw_train_set, f=self.kg.enc.encode)

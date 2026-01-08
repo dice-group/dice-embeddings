@@ -7,9 +7,7 @@ from config import (
     BATCH_SIZE, LEARNING_RATE, NUM_EPOCHS, EMB_DIM, SCORING_TECH, OPTIM
 )
 
-# Example:
-# DATA_ROOT / DB / data_model / ratio / seed / {train,val,test}.txt
-DATA_ROOT = Path("/home/adel/Documents/new_dice_embeddings/dice-embeddings/prob-kge/saved_datasets/without_recipriocal")
+DATA_ROOT = Path("./saved_perturbed_datasets/without_recipriocal")
 
 EXP_TYPE = "combinations"   
 
@@ -20,7 +18,7 @@ def sorted_dirs(parent: Path):
     return sorted([p for p in parent.iterdir() if p.is_dir()], key=lambda x: x.name)
 
 for DB in DBS:
-    for run_model in ["DeCaL"]: #MODELS:
+    for run_model in MODELS:
         out_csv = Path(f"{EXP_TYPE}/{DB}/performance.csv")
         out_csv.parent.mkdir(parents=True, exist_ok=True)
 
@@ -64,7 +62,7 @@ for DB in DBS:
                             batch_size=BATCH_SIZE,
                             learning_rate=LEARNING_RATE,
                             embedding_dim=EMB_DIM,
-                            path_to_store_single_run=f"saved_models/{RECIPRIOCAL}/{DB}/{run_model}/",
+                            path_to_store_single_run=f"saved_models_4_db/{RECIPRIOCAL}/{DB}/{run_model}/",
                             scoring_technique=SCORING_TECH,
                             optim=OPTIM,
                             seed=seed,
