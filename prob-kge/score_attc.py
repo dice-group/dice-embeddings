@@ -4,7 +4,7 @@ import os, csv
 
 from config import (
     DBS, MODELS, RECIPRIOCAL,
-    BATCH_SIZE, LEARNING_RATE, NUM_EPOCHS, EMB_DIM, SCORING_TECH, OPTIM
+    BATCH_SIZE, LEARNING_RATE, NUM_EPOCHS, EMB_DIM, SCORING_TECH, OPTIM, QUANTIES
 )
 
 
@@ -25,7 +25,7 @@ for DB in DBS:
     out_csv.parent.mkdir(parents=True, exist_ok=True)
 
     file_exists = out_csv.is_file()
-    fieldnames = ["DB", "RunModel", "DataModel", "Ratio", "Seed", "MRR"]
+    fieldnames = ["DB", "RunModel", "DataModel", "Ratio", "Quantile", "Seed", "MRR"]
 
     with open(out_csv, "a", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames)
@@ -35,51 +35,56 @@ for DB in DBS:
         for run_model in MODELS:
             
             data_model = run_model
+
+            for lo, hi in QUANTIES:
+                quantile = f"{lo}-{hi}"
+                print(quantile)
             
-            data_model_dir = DATA_ROOT / DB / "delete" / "score" / data_model
+                data_model_dir = DATA_ROOT / DB / "delete" / "score" / quantile / data_model
 
-            if not is_dir(data_model_dir):
-                print(f"[skip] missing data folder: {data_model_dir}")
-                continue
+                if not is_dir(data_model_dir):
+                    print(f"[skip] missing data folder: {data_model_dir}")
+                    continue
 
-            for ratio_dir in sorted_dirs(data_model_dir):
-                for seed_dir in sorted_dirs(ratio_dir):
-                    # expect train/val/test.txt inside each seed folder
-                    train_path = seed_dir / "train.txt"
-                    val_path   = seed_dir / "val.txt"
-                    test_path  = seed_dir / "test.txt"
+                for ratio_dir in sorted_dirs(data_model_dir):
+                    for seed_dir in sorted_dirs(ratio_dir):
+                        # expect train/val/test.txt inside each seed folder
+                        train_path = seed_dir / "train.txt"
+                        val_path   = seed_dir / "val.txt"
+                        test_path  = seed_dir / "test.txt"
 
-                    print(train_path)
+                        print(train_path)
 
-                    
+                        
 
-                    dataset_folder = str(seed_dir)
-                    seed = int(seed_dir.name) if seed_dir.name.isdigit() else 45
-                    ratio = ratio_dir.name
+                        dataset_folder = str(seed_dir)
+                        seed = int(seed_dir.name) if seed_dir.name.isdigit() else 45
+                        ratio = ratio_dir.name
 
-                    print(f"DB={DB} run_model={run_model} data_model={data_model} ratio={ratio} seed={seed}")
+                        print(f"DB={DB} run_model={run_model} data_model={data_model} ratio={ratio} seed={seed}")
 
-                    res = run_dicee_eval(
-                        dataset_folder=dataset_folder,
-                        model=run_model,
-                        num_epochs=NUM_EPOCHS,
-                        batch_size=BATCH_SIZE,
-                        learning_rate=LEARNING_RATE,
-                        embedding_dim=EMB_DIM,
-                        path_to_store_single_run=f"saved_models_4_db/{RECIPRIOCAL}/{DB}/{run_model}/",
-                        scoring_technique=SCORING_TECH,
-                        optim=OPTIM,
-                        seed=seed,
-                    )
+                        res = run_dicee_eval(
+                            dataset_folder=dataset_folder,
+                            model=run_model,
+                            num_epochs=NUM_EPOCHS,
+                            batch_size=BATCH_SIZE,
+                            learning_rate=LEARNING_RATE,
+                            embedding_dim=EMB_DIM,
+                            path_to_store_single_run=f"saved_models_4_db/{RECIPRIOCAL}/{DB}/{run_model}/",
+                            scoring_technique=SCORING_TECH,
+                            optim=OPTIM,
+                            seed=seed,
+                        )
 
-                    w.writerow({
-                        "DB": DB,
-                        "RunModel": run_model,
-                        "DataModel": data_model,
-                        "Ratio": ratio,
-                        "Seed": seed_dir.name,
-                        "MRR": res["Test"]["MRR"],
-                    })
+                        w.writerow({
+                            "DB": DB,
+                            "RunModel": run_model,
+                            "DataModel": data_model,
+                            "Ratio": ratio,
+                            "Quantile": quantile,
+                            "Seed": seed_dir.name,
+                            "MRR": res["Test"]["MRR"],
+                        })
 
-                    f.flush()
+                        f.flush()
 

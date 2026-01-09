@@ -22,7 +22,8 @@ from config import (DBS,
                     NUM_EPOCHS, 
                     EMB_DIM, 
                     SCORING_TECH, 
-                    OPTIM 
+                    OPTIM ,
+                    QUANTIES
                     )
 
 from typing import List, Tuple, Dict, Optional, Set, Literal
@@ -53,8 +54,10 @@ def save_perturbed_dataset(
     experiment_seed,
     test_path,
     valid_path,
+    q_lo,
+    q_hi
 ):
-    out_dir = SAVED_DATASETS_ROOT / DB / "delete" / feature_tag / MODEL / str(top_k) / str(experiment_seed)
+    out_dir = SAVED_DATASETS_ROOT / DB / "delete" / feature_tag / f"{q_lo}-{q_hi}" / MODEL / str(top_k) / str(experiment_seed)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     perturbed = set(original_triples) - set(kept_triples)
@@ -179,29 +182,35 @@ def main():
                     _, kept_rand = perturb_random(train_triples, top_k, seed=exp_seed)
 
                     save_perturbed_dataset(
-                        train_triples, kept_rand, "random", DB, top_k, exp_idx, MODEL, exp_seed, TEST_PATH, VALID_PATH
+                        train_triples, kept_rand, "random", DB, top_k, exp_idx, MODEL, exp_seed, TEST_PATH, VALID_PATH, 0, 0
                     )
                     
 
                     # -------- Score based deletion --------
                     print("Score Delete...")
-                    removed_cl, kept_cl = score_based_deletion(
-                        train_triples,
-                        model=oracle.model,
-                        entity_to_idx=oracle.entity_to_idx,
-                        relation_to_idx=oracle.relation_to_idx,
-                        budget=top_k,
-                        batch_size=1000,
-                        device=device,
-                        model_name=MODEL,
-                        db_name=DB,
-                        q1=0.85,
-                        q2=0.95
-                    )
+                    
+                    
 
-                    save_perturbed_dataset(
-                        train_triples, kept_cl, "score", DB, top_k, exp_idx, MODEL, exp_seed, TEST_PATH, VALID_PATH
-                    )
+                    for i, (q_lo, q_hi) in enumerate(QUANTIES):
+                        print(f"bin {i}: [{q_lo:.2f}, {q_hi:.2f}]")
+
+                        kept_cl = score_based_deletion(
+                            train_triples,
+                            model=oracle.model,
+                            entity_to_idx=oracle.entity_to_idx,
+                            relation_to_idx=oracle.relation_to_idx,
+                            budget=top_k,
+                            batch_size=1000,
+                            device=device,
+                            model_name=MODEL,
+                            db_name=DB,
+                            q1=q_lo,
+                            q2=q_hi
+                        )
+
+                        save_perturbed_dataset(
+                            train_triples, kept_cl, "score", DB, top_k, exp_idx, MODEL, exp_seed, TEST_PATH, VALID_PATH, q_lo, q_hi
+                        )
                     
 
 if __name__ == "__main__":

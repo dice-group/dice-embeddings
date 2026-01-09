@@ -252,7 +252,7 @@ def score_based_deletion(
         avoid_existing=True
     )
 
-    return [], noisy_triples
+    return noisy_triples
 
     """
     removed = [triples[i] for i in pick_idx]

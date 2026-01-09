@@ -127,7 +127,7 @@ def grouped_colored_boxplot_all_ratios(
 
 def main():
 
-    df = load_results_csv("./score/KINSHIP/performance.csv")  # <-- change path
+    df = load_results_csv("./score/UMLS/performance.csv")  # <-- change path
 
     outdir = "boxplots_all_ratios_colored"
     for (db, runmodel), _ in df.groupby(["DB", "RunModel"], sort=True):
