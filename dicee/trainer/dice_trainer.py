@@ -78,7 +78,8 @@ def initialize_trainer(args, callbacks)->TorchTrainer | TensorParallel | TorchDD
                           max_steps=kwargs.get("max_step", -1),
                           min_steps=kwargs.get("min_steps", None),
                           detect_anomaly=False,
-                          barebones=False)
+                          barebones=False,
+                          enable_checkpointing=not kwargs.get('disable_checkpointing', False))
     else:
         print('Initializing TorchTrainer CPU Trainer...', end='\t')
         trainer = TorchTrainer(args, callbacks=callbacks)

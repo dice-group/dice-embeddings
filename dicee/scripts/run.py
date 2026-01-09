@@ -150,6 +150,8 @@ def get_default_arguments(description=None):
                         choices=["None", "train", "train_val", "train_val_test", "val_test", "val", "train_test","test"],
                         help='Evaluating link prediction performance on data splits while performing periodic evaluation.')
 
+    parser.add_argument('--disable_checkpointing', action='store_true', help='Disable creation of checkpoints during training')
+    
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)
