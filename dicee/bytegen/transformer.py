@@ -42,9 +42,19 @@ class CausalSelfAttention(nn.Module):
                 dropout_p=self.dropout_p if self.training else 0.0,
                 is_causal=True
             )
+        elif T == 1:
+            # Single token generation: can attend to all cached tokens, no mask needed
+            # This path uses FlashAttention when available
+            y = F.scaled_dot_product_attention(
+                q, k, v,
+                attn_mask=None,
+                dropout_p=self.dropout_p if self.training else 0.0,
+                is_causal=False
+            )
         else:
-            # With cache: need custom mask that allows full attention to prefix
-            # but causal attention among new tokens
+            # Multiple new tokens with cache: need custom mask that allows full attention 
+            # to prefix but causal attention among new tokens
+            # Note: This path falls back to memory-efficient attention (no FlashAttention)
             T_new = T  # Number of new query positions
             T_total = k.size(2)  # Total KV length (prefix + new)
             T_prefix = T_total - T_new

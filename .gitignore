@@ -187,3 +187,9 @@ Literal_KGs/
 
 # VS code Stuff
 .vscode/
+
+# wandb
+wandb/
+
+# tokenizer
+tokenizer.json

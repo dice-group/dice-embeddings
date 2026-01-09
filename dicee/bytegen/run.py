@@ -14,7 +14,7 @@ if __name__ == "__main__":
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     wandb.init(project="bytegen-experiment")
     # Setup
-    dataset_path = os.path.join(os.getcwd(), "KGs/WN18RR")
+    dataset_path = os.path.join(os.getcwd(), "KGs/Countries-S3")
     
     # Initialize Tokenizer (with inverse=True to match dataset)
     USE_INVERSE = True
@@ -32,7 +32,7 @@ if __name__ == "__main__":
         n_head=8, 
         n_embd=512, 
         dropout=0.1,  # Add dropout for generalization
-        batch_size=32,
+        batch_size=64,
         lr=3e-4,
         vocab_size=tokenizer.vocab_size
     )
