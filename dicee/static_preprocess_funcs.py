@@ -137,4 +137,7 @@ def mapping_from_first_two_cols_to_third(train_set_idx):
     store = dict()
     for s_idx, p_idx, o_idx in train_set_idx:
         store.setdefault((s_idx, p_idx), list()).append(o_idx)
-    return store
+    # Sort keys to ensure order-independent training
+    # This prevents different input orderings from affecting optimization
+    sorted_store = dict(sorted(store.items()))
+    return sorted_store

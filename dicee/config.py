@@ -1,5 +1,18 @@
+"""Configuration module for DICE embeddings.
+
+Provides the Namespace class with default configuration values
+for training knowledge graph embedding models.
+"""
 import argparse
+
+
 class Namespace(argparse.Namespace):
+    """Extended Namespace with default KGE training configuration.
+
+    Provides sensible defaults for all training parameters while
+    allowing easy customization through command-line arguments
+    or direct assignment.
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.dataset_dir: str = None
@@ -132,6 +145,15 @@ class Namespace(argparse.Namespace):
         self.swa: bool = False
         "Stochastic weight averaging"
 
+        self.swag: bool = False
+        """Stochastic weight averaging - Gaussian"""
+
+        self.ema: bool = False
+        """Exponential Moving Average"""
+
+        self.twa: bool = False
+        """Trainable weight averaging"""
+
         self.block_size: int = None
         "block size of LLM"
 
@@ -158,6 +180,9 @@ class Namespace(argparse.Namespace):
 
         self.swa_start_epoch: int = None
         """Epoch at which to start applying stochastic weight averaging."""
+
+        self.swa_c_epochs: int = 1
+        """Number of epochs to average over for SWA, SWAG, EMA, TWA."""
 
 
     def __iter__(self):

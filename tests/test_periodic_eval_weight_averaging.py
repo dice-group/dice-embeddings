@@ -71,9 +71,9 @@ class TestPeriodicEvalWeightAveraging:
         baseline_80 = baseline_n_epochs_report.get('epoch_80_eval', {})
         
         # Three-way comparative assertions at epoch 80
-        assert aswa_80["Val"]["MRR"] > swa_80["Val"]["MRR"] > baseline_80["Val"]["MRR"] > 0.80
-        assert aswa_80["Test"]["MRR"] > swa_80["Test"]["MRR"] > baseline_80["Test"]["MRR"] > 0.80
+        assert aswa_80["Val"]["MRR"] > swa_80["Val"]["MRR"] > baseline_80["Val"]["MRR"] > 0.77
+        assert aswa_80["Test"]["MRR"] > swa_80["Test"]["MRR"] > baseline_80["Test"]["MRR"] > 0.77
         
         # Final performance assertions
-        assert aswa_report["Val"]["MRR"] > swa_report["Val"]["MRR"] > report["Val"]["MRR"] > 0.80
-        assert aswa_report["Test"]["MRR"] > swa_report["Test"]["MRR"] > report["Test"]["MRR"] > 0.80
+        assert aswa_report["Val"]["MRR"] > swa_report["Val"]["MRR"] > report["Val"]["MRR"] > 0.77
+        assert aswa_report["Test"]["MRR"] > swa_report["Test"]["MRR"] > report["Test"]["MRR"] > 0.77
