@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Literal
 from dicee.bytegen.transformer import Block
 
 # Configuration
@@ -16,19 +17,30 @@ class ByteGenConfig:
     lr: float = 1e-4
     batch_size: int = 32
     device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
+    
+    # Position embedding configuration
+    position_embedding_type: Literal['absolute', 'rope'] = 'absolute'
+    rope_base: int = 10000  # Base frequency for RoPE
+
 
 class ByteGenModel(nn.Module):
     def __init__(self, config: ByteGenConfig):
         super().__init__()
         self.config = config
         
-        self.transformer = nn.ModuleDict(dict(
-            wte = nn.Embedding(config.vocab_size, config.n_embd),
-            wpe = nn.Embedding(config.block_size, config.n_embd),
-            drop = nn.Dropout(config.dropout),
-            h = nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
-            ln_f = nn.LayerNorm(config.n_embd),
-        ))
+        # Build transformer modules
+        modules = {
+            'wte': nn.Embedding(config.vocab_size, config.n_embd),
+            'drop': nn.Dropout(config.dropout),
+            'h': nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
+            'ln_f': nn.LayerNorm(config.n_embd),
+        }
+        
+        # Position embedding only for absolute mode
+        if config.position_embedding_type == 'absolute':
+            modules['wpe'] = nn.Embedding(config.block_size, config.n_embd)
+        
+        self.transformer = nn.ModuleDict(modules)
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
         
         # Weight tying
@@ -58,26 +70,34 @@ class ByteGenModel(nn.Module):
         device = idx.device
         b, t = idx.size()
         
+        # Calculate position offset for KV cache
         if past_kvs is not None:
-            past_length = past_kvs[0][0].size(2)
-            pos = torch.arange(past_length, past_length + t, dtype=torch.long, device=device)
+            position_offset = past_kvs[0][0].size(2)
         else:
-            pos = torch.arange(0, t, dtype=torch.long, device=device)
-        tok_emb = self.transformer.wte(idx) 
-        pos_emb = self.transformer.wpe(pos) 
+            position_offset = 0
         
-        x = self.transformer.drop(tok_emb + pos_emb)
+        # Token embeddings
+        tok_emb = self.transformer.wte(idx)
+        
+        # Add position embeddings only for absolute mode
+        if self.config.position_embedding_type == 'absolute':
+            pos = torch.arange(position_offset, position_offset + t, dtype=torch.long, device=device)
+            pos_emb = self.transformer.wpe(pos)
+            x = self.transformer.drop(tok_emb + pos_emb)
+        else:
+            # For RoPE, no additive position embedding - positions are applied in attention
+            x = self.transformer.drop(tok_emb)
 
         new_past_key_values = []
         
         for i, block in enumerate(self.transformer.h):
             layer_past = past_kvs[i] if past_kvs is not None else None
-            x, layer_present = block(x, past_kv=layer_past)
+            x, layer_present = block(x, past_kv=layer_past, position_offset=position_offset)
             new_past_key_values.append(layer_present)
             
         x = self.transformer.ln_f(x)
         logits = self.lm_head(x)
-        return logits ,new_past_key_values
+        return logits, new_past_key_values
 
     def generate(self, idx, tokenizer, max_new_tokens, temperature=1.0, top_k=None):
         self.eval()
