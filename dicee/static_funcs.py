@@ -289,22 +289,12 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
     else:
         if verbose>0:
             print('Loading entity and relation indexes...', end=' ')
-        try:
-            # Maybe ? https://docs.python.org/3/library/mmap.html
-            # TODO:CD: Deprecate the pickle usage for data serialization.
-            # TODO: CD: We do not need to keep the mapping in memory
-            with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
-                entity_to_idx = pickle.load(f)
-        except FileNotFoundError:
-            entity_to_idx = { v["entity"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv",index_col=0).to_dict(orient='index').items()}
+    
+        entity_to_idx = { v["entity"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv",index_col=0,dtype=str).to_dict(orient='index').items()}
 
-        try:
-            # TODO:CD: Deprecate the pickle usage for data serialization.
-            # TODO: CD: We do not need to keep the mapping in memory
-            with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
-                relation_to_idx = pickle.load(f)
-        except FileNotFoundError:
-            relation_to_idx = { v["relation"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv",index_col=0).to_dict(orient='index').items()}
+        relation_to_idx = { v["relation"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv",index_col=0,dtype=str).to_dict(orient='index').items()}
+
+
         if verbose > 0:
             print(f'Done! It took {time.time() - start_time:.4f}')
         return model, (entity_to_idx, relation_to_idx)
