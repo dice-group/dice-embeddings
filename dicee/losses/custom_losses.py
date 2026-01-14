@@ -452,24 +452,7 @@ class UNITEI(nn.Module):
 
 
 class RoBoSS(nn.Module):
-    """
-    Implementation of RoBoSS loss function based on Eq. 8 of the paper.
-    
-    Paper Definition:
-    L(u) = lambda * (1 - (a*u + 1) * exp(-a*u))  if u > 0
-         = 0                                     if u <= 0
-    
-    where u = 1 - y * pred (margin violation)
-    
-    Parameters:
-    -----------
-    a : float
-        Shape parameter controlling intensity of penalty 
-    b : float
-       Bounding parameter (lambda in paper) 
-    margin : float
-        Margin value (1.0 for SVM in paper)
-    """
+
     def __init__(self, a_roboss=5.0, lambda_roboss=1.5, margin=1.0, normalize_scores=False):
         super().__init__()
         self.a_roboss = float(a_roboss)
@@ -478,15 +461,16 @@ class RoBoSS(nn.Module):
         self.normalize_scores = normalize_scores
         self.eps = 1e-8
 
-    def _normalize_scores(self, pred: torch.Tensor) -> torch.Tensor:
+    def _normalize_scores(self, pred):
         if self.normalize_scores:
             return torch.tanh(pred)
         return pred
 
     def forward(self, pred, target, current_epoch = None):
         target = target.float()
+        print(type(target))
         pred = pred.float()
-        
+        print(type(pred))
     
         pred = self._normalize_scores(pred)
         
@@ -494,20 +478,12 @@ class RoBoSS(nn.Module):
         if target.min() >= 0 and target.max() <= 1:
             target = 2 * target - 1
         
-        # Calculate u (margin violation)
-        # u = 1 - y(w^T x + b). 
         u = self.margin - (target * pred)
         
-        # Calculate Loss based on Eq. 8
-        # L = b * (1 - (a*u + 1) * exp(-a*u))
-        
-        # Term 1: (au + 1)
         term1 = (self.a_roboss * u) + 1.0
         
-        # Term 2: exp(-au)
         term2 = torch.exp(-self.a_roboss * u)
-        
-        # lambda * (1 - term1 * term2)
+
         loss_values = self.lambda_roboss * (1.0 - (term1 * term2))
         
         # Apply condition: Loss is 0 if u <= 0 (Correctly classified)
@@ -921,66 +897,28 @@ class SynMarginLoss(nn.Module):
 
 
 class WaveLoss(nn.Module):
-    """
-    Implementation of the Wave Loss Function from "Advancing Supervised Learning 
-    with the Wave Loss Function" (Akhtar et al., 2024).
-
-    This implementation adheres to the properties defined in Section 2.1:
-    1. Smoothness: Differentiable everywhere (no truncation like Hinge/ReLU)[cite: 486].
-    2. Noise Insensitivity: Applies loss even when u <= 0 (correctly classified).
-    3. Boundedness: The loss is bounded by 1/lambda.
-
-    Mathematical formulation (Eq 10)[cite: 480]:
-        L_wave(u) = (1/λ) * (1 - 1/(1 + λ*u²*exp(wave_a*u)))
-
-    where u (ξ in the paper) is defined as: u = 1 - y * pred.
-    """
-    def __init__(
-        self,
-        wave_a: float = 1.5,
-        lambda_param: float = 0.5,
-        eps: float = 1e-8,
-    ):
-        """
-        Args:
-            wave_a (float): Shape parameter 'a'[cite: 482].
-            lambda_param (float): Bounding parameter 'lambda'[cite: 482].
-            eps (float): Small constant for numerical stability.
-        """
+    def __init__(self, wave_a = 1.5, lambda_param = 0.5, eps = 1e-8):
         super().__init__()
-        self.wave_a = float(wave_a)
-        self.lambda_param = float(lambda_param)
-        self.eps = float(eps)
+        self.wave_a = wave_a
+        self.lambda_param = lambda_param
+        self.eps = eps
 
     def forward(self, pred: torch.Tensor, target: torch.Tensor, current_epoch = None):
-        """
-        Args:
-            pred: Predicted scores (w^T x + b).
-            target: Labels. If binary {0,1}, they are converted to {-1,1} as per SVM standard.
-        """
         target = target.float()
         pred = pred.float()
 
-        # The paper defines y in {-1, 1}[cite: 262].
-        # If targets are [0, 1], convert them.
         if target.min() >= 0 and target.max() <= 1:
             target = 2 * target - 1 
 
-        # Calculate u (denoted as xi in Eq 14 and 15)
-        # The standard formulation uses a hard margin of 1.
         u = 1.0 - (target * pred)
 
-        # Implementation of Eq (10)
-        u_sq = u * u
+        u_sqr = u * u
         exp_term = torch.exp(self.wave_a * u)
         
-        # Denominator: 1 + λ * u^2 * e^(wave_a*u)
-        denom = 1.0 + self.lambda_param * u_sq * exp_term + self.eps
+        denom = 1.0 + self.lambda_param * u_sqr * exp_term + self.eps
 
-        # Final Loss: (1/λ) * (1 - 1/denominator)
         wave_loss = (1.0 / self.lambda_param) * (1.0 - 1.0 / denom)
 
-        # Return mean loss over the batch (standard practice for optimization)
         return wave_loss.mean()
 
 class NSSALoss(nn.Module):
@@ -990,67 +928,88 @@ class NSSALoss(nn.Module):
 
     def __init__(
         self,
-        temperature = 20.0,
+        nssa_alpha = 1.0,
         positive_threshold = 0.5, #Semantic threshlod for postive classes
     ):
         super().__init__()
-        self.temperature = temperature
+        self.nssa_alpha = nssa_alpha
         self.positive_threshold = positive_threshold
 
+    # def forward(
+    #     self,
+    #     pred,
+    #     target,
+    #     current_epoch=None
+    # ):
+
+    #     pos_mask = target > self.positive_threshold
+    #     neg_mask = ~pos_mask
+
+    #     # Handle 1D targets (single row) vs batched 2D targets.
+    #     if target.dim() == 1:
+    #         if not (pos_mask.any() and neg_mask.any()):
+    #             return pred.new_tensor(0.0, requires_grad=True)
+    #     else:
+    #         # Masking invalid rows
+    #         valid_mask = pos_mask.any(dim=1) & neg_mask.any(dim=1)
+    #         if not valid_mask.any():
+    #             return pred.new_tensor(0.0, requires_grad=True)
+
+    #         pred = pred[valid_mask]
+    #         pos_mask = pos_mask[valid_mask]
+    #         neg_mask = neg_mask[valid_mask]
+
+    #     pos_scores = pred.masked_select(pos_mask)
+    #     pos_loss = -F.logsigmoid(pos_scores).mean()
+
+    #     neg_scores = pred.masked_select(neg_mask)
+    #     weights = F.softmax(neg_scores * self.nssa_alpha, dim=0).detach()
+    #     neg_loss = -(weights * F.logsigmoid(-neg_scores)).sum()
+
+    #     return (pos_loss + neg_loss) / 2
     def forward(
         self,
         pred,
         target,
         current_epoch=None
     ):
-        temperature = self.temperature
-
-        if pred.dim() == 1:
-            pred = pred.unsqueeze(0)
-
-        if target.dim() == 1:
-            target = target.unsqueeze(0)
-
+    
         pos_mask = target > self.positive_threshold
         neg_mask = ~pos_mask
-
-        batch_loss = pred.new_tensor(0.0)
-        valid_rows = 0
-
-        for row_pred, row_pos_mask, row_neg_mask in zip(pred, pos_mask, neg_mask):
-            pos_scores = row_pred[row_pos_mask]
-            neg_scores = row_pred[row_neg_mask]
-
-            if pos_scores.numel() == 0 or neg_scores.numel() == 0:
+        
+        pos_scores = pred[pos_mask]
+        pos_loss = -F.logsigmoid(pos_scores).mean()
+        
+        neg_loss = 0
+        batch_size = pred.size(0)
+        
+        for i in range(batch_size):
+            row_neg_scores = pred[i][neg_mask[i]]
+            if row_neg_scores.numel() == 0:
                 continue
-
-            pos_score = F.logsigmoid(pos_scores).mean()
-            weights = F.softmax(neg_scores * temperature, dim=0).detach()
-            neg_score = (weights * F.logsigmoid(-neg_scores)).sum()
-
-            row_loss = (-pos_score - neg_score) / 2
-            batch_loss = batch_loss + row_loss
-            valid_rows += 1
-
-        if valid_rows == 0:
-            return pred.new_tensor(0.0, requires_grad=True)
-
-        return batch_loss / valid_rows
+                
+            weights = F.softmax(row_neg_scores * self.nssa_alpha, dim=0).detach()
+            neg_loss += -(weights * F.logsigmoid(-row_neg_scores)).sum()
+            
+        return (pos_loss + (neg_loss / batch_size)) / 2
 
 class FocalLoss(nn.Module):
 
-    def __init__(self, gamma = 2.5):
+    def __init__(self, gamma = 2.0, alpha = 0.25):
         super().__init__() 
 
         self.gamma = gamma 
+        self.alpha = alpha 
 
     def forward(self, pred, target, current_epoch = None):
 
-        p = pred.sigmoid()
+        p = torch.sigmoid(pred).clamp(1e-6, 1 - 1e-6)
 
         ce_loss = F.binary_cross_entropy_with_logits(pred, target, reduction="none")
 
         pt = p * target + (1 - p) * (1 - target)
-        loss = ce_loss * ((1 - pt) ** self.gamma)
+        alpha_t = self.alpha * target + (1 - self.alpha) * (1 - target)
 
-        return loss
+        loss = alpha_t * ((1 - pt) ** self.gamma) * ce_loss
+
+        return loss.mean()
