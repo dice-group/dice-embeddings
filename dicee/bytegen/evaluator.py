@@ -69,7 +69,7 @@ class Evaluator:
             try:
                 # 'reduce-overhead' is great for small batches but can be unstable. 
                 # If you crash, switch mode to 'default'
-                self.model = torch.compile(self.model, mode='reduce-overhead')
+                self.model = torch.compile(self.model, mode='default')
                 self._compiled = True
                 print("Model compiled with torch.compile")
             except Exception as e:

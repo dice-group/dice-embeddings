@@ -168,6 +168,11 @@ def run_experiment(args):
             eval_batch_size=eval_batch_size
         )
         trainer.train(epochs)
+        
+        # Clear training memory before evaluation
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        gc.collect()
                 
         # Evaluate on BOTH train and test sets
         evaluator = Evaluator(model, train_ds, test_ds, tokenizer)
