@@ -177,6 +177,33 @@ def run_experiment(args):
         end_time = time.time()
         duration = end_time - start_time
 
+        # Save model with config name
+        models_dir = os.path.join(output_dir, "models")
+        os.makedirs(models_dir, exist_ok=True)
+        model_filename = f"{dataset_type}_{tokenizer_name}_Inv{inverse}.pt"
+        model_path = os.path.join(models_dir, model_filename)
+        torch.save({
+            'model_state_dict': model.state_dict(),
+            'config': {
+                'block_size': block_size,
+                'n_layer': n_layer,
+                'n_head': n_head,
+                'n_embd': n_embd,
+                'dropout': dropout,
+                'vocab_size': actual_vocab_size,
+                'batch_size': batch_size,
+                'lr': lr,
+            },
+            'tokenizer_type': tokenizer_type,
+            'vocab_size_arg': vocab_size_arg,
+            'dataset_type': dataset_type,
+            'inverse': inverse,
+            'epochs': epochs,
+            'train_metrics': train_metrics,
+            'test_metrics': test_metrics,
+        }, model_path)
+        print(f"[GPU {gpu_id}] Model saved to {model_path}")
+
         del model, optimizer, trainer, train_loader, train_ds, test_ds
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
