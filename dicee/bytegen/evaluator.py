@@ -133,6 +133,13 @@ class Evaluator:
                 ranks = better_than_target.sum(dim=1) + 1 
                 
                 gpu_ranks_list.append(ranks)
+                
+                # Cleanup intermediate tensors to prevent fragmentation
+                del scores, target_scores, better_than_target
+        
+        # Clear fragmented memory after evaluation loop
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
             
         if not gpu_ranks_list:
             return {}
@@ -222,6 +229,8 @@ class Evaluator:
                 
                 # Normalize by length
                 gpu_scores[i : i + current_batch_size] = summed_scores / cand_lens
-                
+        
+        # Explicit cleanup to prevent memory fragmentation
+        del prefix_kvs, prefix_logits, last_prefix_logit
 
         return gpu_scores

@@ -295,6 +295,14 @@ class Trainer:
                 mrr_sum += 1.0 / rank
                 if rank == 1:
                     hits1 += 1
+                
+                # Explicit memory cleanup to prevent accumulation and fragmentation
+                del prefix_kv, batch_kv, prefix_logits, cand_logits
+                gpu_scores.zero_()  # Reuse instead of reallocating
+        
+        # Clear fragmented memory before returning to training
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
         
         self.model.train()
         return {

@@ -14,7 +14,7 @@ if __name__ == "__main__":
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     wandb.init(project="bytegen-experiment")
     # Setup
-    dataset_path = os.path.join(os.getcwd(), "KGs/UMLS")
+    dataset_path = os.path.join(os.getcwd(), "KGs/Countries-S3")
     
     # Initialize Tokenizer (with inverse=True to match dataset)
     USE_INVERSE = True
@@ -29,11 +29,11 @@ if __name__ == "__main__":
     
     conf = ByteGenConfig(
         block_size=BFS_BLOCK_SIZE,  # Larger for BFS sequences
-        n_layer=6, 
-        n_head=2, 
-        n_embd=16, 
+        n_layer=8, 
+        n_head=8, 
+        n_embd=512, 
         dropout=0.0,  # Add dropout for generalization
-        batch_size=128,
+        batch_size=64,
         lr=3e-4,
         vocab_size=tokenizer.vocab_size
     )
@@ -47,9 +47,9 @@ if __name__ == "__main__":
     optimizer = torch.optim.AdamW(model.parameters(), lr=conf.lr)
     
     # Trainer - with H@1 diagnostic every 10 epochs
-    EPOCHS = 100
+    EPOCHS = 300
     trainer = Trainer(model, train_loader, conf, tokenizer, optimizer, 
-                      label_smoothing=0.1, warmup_epochs=5,
+                      label_smoothing=0.0, warmup_epochs=5,
                       train_dataset=train_ds)
     trainer.train(EPOCHS)
             
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         try:
             context = tokenizer.encode(head)
             x = torch.tensor([context], dtype=torch.long, device=conf.device)
-            y = model.generate(x, tokenizer, max_new_tokens=64, temperature=0.8, top_k=10)
+            y = model.generate(x, tokenizer, max_new_tokens=128, temperature=0.8, top_k=10)
             
             out = y[0].tolist()
             decoded = tokenizer.decode(out)
