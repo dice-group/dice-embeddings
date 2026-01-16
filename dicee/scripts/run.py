@@ -61,6 +61,19 @@ def get_default_arguments(description=None):
     parser.add_argument("--trainer", type=str, default='PL',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP', "TP"],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only), TP (Model Paralelisim)')
+    # PyTorch Lightning specific arguments
+    parser.add_argument("--accelerator", type=str, default="auto",
+                        help='PyTorch Lightning accelerator (e.g., "gpu", "cpu", "auto")')
+    parser.add_argument("--strategy", type=str, default="auto",
+                        help='PyTorch Lightning strategy (e.g., "ddp", "deepspeed_stage_3", "auto")')
+    parser.add_argument("--num_nodes", type=int, default=1,
+                        help='Number of nodes for distributed training')
+    parser.add_argument("--precision", type=str, default=None,
+                        help='PyTorch Lightning precision (e.g., "16", "32", "bf16")')
+    parser.add_argument("--max_step", type=int, default=-1,
+                        help='Maximum number of training steps (-1 for no limit)')
+    parser.add_argument("--min_steps", type=int, default=None,
+                        help='Minimum number of training steps')
     parser.add_argument('--scoring_technique', default="NegSample",
                         help="Training technique for knowledge graph embedding model",
                         choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "1vsSample", "KvsSample"])
