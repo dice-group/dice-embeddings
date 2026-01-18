@@ -633,10 +633,15 @@ def main():
     
     print(f"\n📊 Configuration:")
     print(f"   • Data path: {args.data_path}")
-    print(f"   • Epochs: {epochs}")
-    print(f"   • GPUs: {num_gpus}")
-    print(f"   • Checkpoint interval: {checkpoint_interval or 'disabled'}")
     print(f"   • Output: {args.output_dir}")
+    print(f"   • GPUs: {num_gpus}")
+    print(f"   • Epochs: {epochs}")
+    print(f"   • Batch size: {args.batch_size}")
+    print(f"   • Learning rate: {args.lr}")
+    print(f"   • Model: {args.n_layer}L / {args.n_head}H / {args.n_embd}D (dropout={args.dropout})")
+    print(f"   • Label smoothing: {args.label_smoothing}")
+    print(f"   • Eval batch size: {args.eval_batch_size}")
+    print(f"   • Checkpoint interval: {checkpoint_interval or 'disabled'}")
     print("="*60)
     
     # Ask for confirmation unless --yes flag is provided
