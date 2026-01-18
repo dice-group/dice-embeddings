@@ -34,9 +34,15 @@ def get_experiment_key(dataset_type: str, tokenizer_type: str, vocab_size: int, 
     return f"{dataset_type}_{tok_label}_Inv{inverse}"
 
 
-def load_completed_experiments(output_dir: str) -> set:
-    """Load completed experiments from existing results CSV and saved models."""
+def load_completed_experiments(output_dir: str) -> tuple[set, list]:
+    """Load completed experiments from existing results CSV and saved models.
+    
+    Returns:
+        tuple: (set of completed experiment keys, list of result dicts)
+    """
     completed = set()
+    results_from_csv = {}  # key -> result dict
+    results_from_models = {}  # key -> result dict (only for experiments not in CSV)
     
     # Method 1: Check CSV results
     csv_path = os.path.join(output_dir, "grid_search_results.csv")
@@ -53,6 +59,7 @@ def load_completed_experiments(output_dir: str) -> set:
                         row['Inverse']
                     )
                     completed.add(key)
+                    results_from_csv[key] = row.to_dict()
             print(f"Found {len(completed)} completed experiments in CSV")
         except Exception as e:
             print(f"Warning: Could not load previous results from CSV: {e}")
@@ -61,6 +68,7 @@ def load_completed_experiments(output_dir: str) -> set:
     models_dir = os.path.join(output_dir, "models")
     if os.path.exists(models_dir):
         model_files = [f for f in os.listdir(models_dir) if f.endswith('.pt')]
+        models_added = 0
         for model_file in model_files:
             # Parse model filename: {dataset_type}_{tokenizer_name}_Inv{inverse}.pt
             # Examples: RandomWalk_ByteTokenizer_InvTrue.pt, BFS_BPE-512_InvFalse.pt
@@ -86,18 +94,66 @@ def load_completed_experiments(output_dir: str) -> set:
                         else:
                             continue
                         
+                        # Only load from model file if not already in CSV
                         if key not in completed:
                             completed.add(key)
+                            models_added += 1
+                            
+                            # Try to load metrics from model file
+                            model_path = os.path.join(models_dir, model_file)
+                            try:
+                                checkpoint = torch.load(model_path, map_location='cpu', weights_only=False)
+                                train_metrics = checkpoint.get('train_metrics', {})
+                                test_metrics = checkpoint.get('test_metrics', {})
+                                config = checkpoint.get('config', {})
+                                
+                                results_from_models[key] = {
+                                    "Dataset": dataset_type,
+                                    "Inverse": inverse,
+                                    "Tokenizer": tokenizer_name,
+                                    "Vocab Size": config.get('vocab_size', checkpoint.get('vocab_size_arg', 0)),
+                                    "Block Size": config.get('block_size', 0),
+                                    "Params": 0,  # Not stored in old format
+                                    "Epochs": checkpoint.get('epochs', 0),
+                                    "Time (s)": 0.0,  # Not stored in old format
+                                    # Train metrics
+                                    "Train_MRR": train_metrics.get('mrr', 0.0),
+                                    "Train_H@1": train_metrics.get('h1', 0.0),
+                                    "Train_H@3": train_metrics.get('h3', 0.0),
+                                    "Train_H@10": train_metrics.get('h10', 0.0),
+                                    # Test metrics
+                                    "Test_MRR": test_metrics.get('mrr', 0.0),
+                                    "Test_H@1": test_metrics.get('h1', 0.0),
+                                    "Test_H@3": test_metrics.get('h3', 0.0),
+                                    "Test_H@10": test_metrics.get('h10', 0.0),
+                                }
+                            except Exception as e:
+                                print(f"Warning: Could not load metrics from {model_file}: {e}")
+                                # Add placeholder result
+                                results_from_models[key] = {
+                                    "Dataset": dataset_type,
+                                    "Inverse": inverse,
+                                    "Tokenizer": tokenizer_name,
+                                    "Vocab Size": 0,
+                                    "Block Size": 0,
+                                    "Params": 0,
+                                    "Epochs": 0,
+                                    "Time (s)": 0.0,
+                                    "Train_MRR": 0.0, "Train_H@1": 0.0, "Train_H@3": 0.0, "Train_H@10": 0.0,
+                                    "Test_MRR": 0.0, "Test_H@1": 0.0, "Test_H@3": 0.0, "Test_H@10": 0.0,
+                                }
                         break
         
-        model_count = len([f for f in model_files])
-        if model_count > 0:
-            print(f"Found {model_count} saved model files in {models_dir}")
+        if models_added > 0:
+            print(f"Found {models_added} additional completed experiments from model files")
     
     if completed:
         print(f"Total: {len(completed)} completed experiments detected")
     
-    return completed
+    # Combine results: CSV results take precedence, then model file results
+    all_results = list(results_from_csv.values()) + list(results_from_models.values())
+    
+    return completed, all_results
 
 
 def save_run_config(output_dir: str, config: dict):
@@ -465,13 +521,9 @@ def main():
     completed_experiments = set()
     existing_results = []
     if is_resume:
-        completed_experiments = load_completed_experiments(args.output_dir)
-        # Load existing results to merge later
-        csv_path = os.path.join(args.output_dir, "grid_search_results.csv")
-        if os.path.exists(csv_path):
-            existing_df = pd.read_csv(csv_path)
-            existing_results = existing_df.to_dict('records')
-            print(f"Loaded {len(existing_results)} existing results")
+        completed_experiments, existing_results = load_completed_experiments(args.output_dir)
+        if existing_results:
+            print(f"Loaded {len(existing_results)} existing results (from CSV and/or model files)")
     
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     
@@ -627,6 +679,22 @@ def main():
             print(f"   • {exp}")
     else:
         print("\n✨ All experiments already completed! Nothing to run.")
+        # Still generate visualizations with existing results
+        if existing_results:
+            df = pd.DataFrame(existing_results)
+            print(f"\nGenerating visualizations from {len(df)} existing results...")
+            
+            # Log overall best approaches
+            log_best_approaches(df)
+            
+            # Create visualization plots
+            create_plots(df, output_dir=args.output_dir, log_to_wandb=use_wandb)
+            
+            # Save to CSV in output directory
+            csv_path = os.path.join(args.output_dir, "grid_search_results.csv")
+            df.to_csv(csv_path, index=False)
+            print(f"\nFull results saved to {csv_path}")
+        
         if use_wandb:
             wandb.finish()
         return
