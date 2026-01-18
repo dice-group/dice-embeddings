@@ -310,12 +310,21 @@ class Trainer:
             "h1": hits1 / len(sample_indices)
         }
 
-    def train(self, epochs: int = 500):
+    def train(self, epochs: int = 500, checkpoint_interval: int = None):
+        """
+        Train the model for a given number of epochs.
+        
+        Args:
+            epochs: Number of epochs to train for
+            checkpoint_interval: Save checkpoint every N epochs (None = only save final model)
+        """
         print(f"Starting training for {epochs} epochs...")
         print(f"  - Warmup epochs: {self.warmup_epochs}")
         print(f"  - Label smoothing: {self.label_smoothing}")
         print(f"  - Gradient clipping: {self.grad_clip}")
         print(f"  - Base LR: {self.config.lr}")
+        if checkpoint_interval:
+            print(f"  - Checkpoint interval: every {checkpoint_interval} epochs")
         
         self.model.train()
         scheduler = self._create_scheduler(epochs)
@@ -392,6 +401,10 @@ class Trainer:
             if scheduler is not None:
                 scheduler.step()
             
+            # Save checkpoint at specified intervals
+            if checkpoint_interval and (epoch + 1) % checkpoint_interval == 0:
+                checkpoint_path = os.path.join(self.save_path, f"checkpoint_epoch_{epoch + 1}.pt")
+                self.save_model(epoch + 1, checkpoint_path)
             
         self.save_model(epochs, os.path.join(self.save_path, f"model_epoch_{epochs}.pt"))
 

@@ -3,6 +3,7 @@ import time
 import argparse
 import torch
 import pandas as pd
+import json
 from multiprocessing import Pool, set_start_method, Manager
 from torch.utils.data import DataLoader
 from dotenv import load_dotenv
@@ -26,13 +27,66 @@ def init_worker(q):
     global gpu_queue
     gpu_queue = q
 
+
+def get_experiment_key(dataset_type: str, tokenizer_type: str, vocab_size: int, inverse: bool) -> str:
+    """Generate a unique key for an experiment configuration."""
+    tok_label = "Byte" if tokenizer_type == 'Byte' else f"BPE-{vocab_size}"
+    return f"{dataset_type}_{tok_label}_Inv{inverse}"
+
+
+def load_completed_experiments(output_dir: str) -> set:
+    """Load completed experiments from existing results CSV."""
+    csv_path = os.path.join(output_dir, "grid_search_results.csv")
+    completed = set()
+    
+    if os.path.exists(csv_path):
+        try:
+            df = pd.read_csv(csv_path)
+            for _, row in df.iterrows():
+                # Check if the experiment has valid results (non-zero metrics)
+                if row.get('Test_MRR', 0) > 0 or row.get('Train_MRR', 0) > 0:
+                    key = get_experiment_key(
+                        row['Dataset'], 
+                        'Byte' if row['Tokenizer'] == 'ByteTokenizer' else 'BPE',
+                        row.get('Vocab Size', 0),
+                        row['Inverse']
+                    )
+                    completed.add(key)
+            print(f"Found {len(completed)} completed experiments in {csv_path}")
+        except Exception as e:
+            print(f"Warning: Could not load previous results: {e}")
+    
+    return completed
+
+
+def save_run_config(output_dir: str, config: dict):
+    """Save run configuration including wandb run ID."""
+    config_path = os.path.join(output_dir, "run_config.json")
+    with open(config_path, 'w') as f:
+        json.dump(config, f, indent=2)
+    print(f"Run config saved to {config_path}")
+
+
+def load_run_config(output_dir: str) -> dict:
+    """Load run configuration from previous run."""
+    config_path = os.path.join(output_dir, "run_config.json")
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as f:
+            return json.load(f)
+    return {}
+
+
 def run_experiment(args):
     """Worker function for parallel execution."""
     (tokenizer_type, vocab_size_arg, dataset_type, inverse, epochs, dataset_path, output_dir,
-     n_layer, n_head, n_embd, dropout, batch_size, lr, label_smoothing, eval_batch_size, wandb_config) = args
+     n_layer, n_head, n_embd, dropout, batch_size, lr, label_smoothing, eval_batch_size, 
+     wandb_config, checkpoint_interval) = args
     
     # Get a free GPU ID from the queue
     gpu_id = gpu_queue.get()
+    
+    # Generate experiment key for this run
+    experiment_key = get_experiment_key(dataset_type, tokenizer_type, vocab_size_arg, inverse)
     
     # Setup logging
     log_dir = os.path.join(output_dir, "logs")
@@ -41,6 +95,10 @@ def run_experiment(args):
     tok_label = "Byte" if tokenizer_type == 'Byte' else f"BPE-{vocab_size_arg}"
     log_filename = f"gpu{gpu_id}_{dataset_type}_{tok_label}_Inv{inverse}.log"
     log_path = os.path.join(log_dir, log_filename)
+    
+    # Setup checkpoint directory for this experiment
+    checkpoint_dir = os.path.join(output_dir, "checkpoints", experiment_key)
+    os.makedirs(checkpoint_dir, exist_ok=True)
     
     print(f"[GPU {gpu_id}] 🚀 Starting {dataset_type} {tok_label} Inv={inverse}. Logs: {log_path}")
     
@@ -162,12 +220,13 @@ def run_experiment(args):
         # Trainer with updated parameters (matching run.py)
         trainer = Trainer(
             model, train_loader, conf, tokenizer, optimizer,
+            save_path=checkpoint_dir,
             label_smoothing=label_smoothing,
             warmup_epochs=5,
             train_dataset=train_ds,
             eval_batch_size=eval_batch_size
         )
-        trainer.train(epochs)
+        trainer.train(epochs, checkpoint_interval=checkpoint_interval)
         
         # Clear training memory before evaluation
         if torch.cuda.is_available():
@@ -298,15 +357,53 @@ def main():
                         help='Label smoothing (default: 0.0)')
     parser.add_argument('--eval_batch_size', type=int, default=8192*2,
                         help='Batch size for evaluation (default: 8192)')
+    parser.add_argument('--resume', type=str, default=None,
+                        help='Resume from a previous run by providing the output directory path')
+    parser.add_argument('--checkpoint_interval', type=int, default=50,
+                        help='Save checkpoint every N epochs (default: 50, set to 0 to disable)')
+    parser.add_argument('--wandb_run_id', type=str, default=None,
+                        help='Manually specify wandb run ID to resume (useful when resuming on a different machine)')
+    parser.add_argument('-y', '--yes', action='store_true',
+                        help='Skip confirmation prompt and run immediately')
     args = parser.parse_args()
     
-    # Auto-generate output directory if not provided
-    if args.output_dir is None:
-        dataset_name = os.path.basename(args.data_path.rstrip('/'))
-        args.output_dir = f"results_{dataset_name}_{args.epochs}ep"
+    # Handle resume mode
+    is_resume = args.resume is not None
+    if is_resume:
+        args.output_dir = args.resume
+        if not os.path.exists(args.output_dir):
+            raise FileNotFoundError(f"Resume directory not found: {args.output_dir}")
+        print(f"=== RESUME MODE: Resuming from {args.output_dir} ===")
+        
+        # Load previous run config
+        prev_config = load_run_config(args.output_dir)
+        if prev_config:
+            # Use data_path from previous config if not explicitly overridden
+            if 'data_path' in prev_config and args.data_path == 'KGs/UMLS':
+                args.data_path = prev_config['data_path']
+            if 'epochs' in prev_config:
+                args.epochs = prev_config['epochs']
+            print(f"Loaded config: data_path={args.data_path}, epochs={args.epochs}")
+    else:
+        # Auto-generate output directory if not provided
+        if args.output_dir is None:
+            dataset_name = os.path.basename(args.data_path.rstrip('/'))
+            args.output_dir = f"results_{dataset_name}_{args.epochs}ep"
     
     # Create output directory
     os.makedirs(args.output_dir, exist_ok=True)
+    
+    # Load completed experiments if resuming
+    completed_experiments = set()
+    existing_results = []
+    if is_resume:
+        completed_experiments = load_completed_experiments(args.output_dir)
+        # Load existing results to merge later
+        csv_path = os.path.join(args.output_dir, "grid_search_results.csv")
+        if os.path.exists(csv_path):
+            existing_df = pd.read_csv(csv_path)
+            existing_results = existing_df.to_dict('records')
+            print(f"Loaded {len(existing_results)} existing results")
     
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     
@@ -322,6 +419,8 @@ def main():
     # Initialize wandb
     use_wandb = not args.no_wandb
     wandb_config = None
+    wandb_run_id = None
+    
     if use_wandb:
         # Check if API key is available (from env or .env file)
         wandb_api_key = os.getenv("WANDB_API_KEY")
@@ -334,32 +433,55 @@ def main():
         # Determine group name
         group_name = args.wandb_group if args.wandb_group else f"grid-search-{dataset_name}-{args.epochs}ep"
         
-        wandb.init(
-            project=args.wandb_project,
-            entity=args.wandb_entity,
-            group=group_name,
-            job_type="summary",
-            name=f"grid-search-{dataset_name}-{args.epochs}ep",
-            config={
-                "data_path": args.data_path,
-                "epochs": args.epochs,
-                "output_dir": args.output_dir,
-                "dataset_types": dataset_types,
-                "inverse_settings": inverse_settings,
-                "tokenizers": [f"{t}-{v}" if v else t for t, v in experiments],
-                # Model architecture
-                "n_layer": args.n_layer,
-                "n_head": args.n_head,
-                "n_embd": args.n_embd,
-                "dropout": args.dropout,
-                "batch_size": args.batch_size,
-                "lr": args.lr,
-                "label_smoothing": args.label_smoothing,
-                "eval_batch_size": args.eval_batch_size,
-                "wandb_group": group_name,
-                "wandb_job_type": args.wandb_job_type
-            }
-        )
+        # Check for existing wandb run ID when resuming
+        prev_config = load_run_config(args.output_dir) if is_resume else {}
+        # Priority: CLI arg > config file
+        wandb_run_id = args.wandb_run_id or prev_config.get('wandb_run_id')
+        
+        if is_resume and wandb_run_id:
+            print(f"Attempting to resume wandb run: {wandb_run_id}")
+            try:
+                wandb.init(
+                    project=prev_config.get('wandb_project', args.wandb_project),
+                    entity=prev_config.get('wandb_entity', args.wandb_entity),
+                    id=wandb_run_id,
+                    resume="must"
+                )
+                print(f"Successfully resumed wandb run: {wandb_run_id}")
+            except Exception as e:
+                print(f"Warning: Could not resume wandb run {wandb_run_id}: {e}")
+                print("Starting a new wandb run instead...")
+                wandb_run_id = None  # Reset to create new run
+        
+        if not wandb_run_id:
+            wandb.init(
+                project=args.wandb_project,
+                entity=args.wandb_entity,
+                group=group_name,
+                job_type="summary",
+                name=f"grid-search-{dataset_name}-{args.epochs}ep",
+                config={
+                    "data_path": args.data_path,
+                    "epochs": args.epochs,
+                    "output_dir": args.output_dir,
+                    "dataset_types": dataset_types,
+                    "inverse_settings": inverse_settings,
+                    "tokenizers": [f"{t}-{v}" if v else t for t, v in experiments],
+                    # Model architecture
+                    "n_layer": args.n_layer,
+                    "n_head": args.n_head,
+                    "n_embd": args.n_embd,
+                    "dropout": args.dropout,
+                    "batch_size": args.batch_size,
+                    "lr": args.lr,
+                    "label_smoothing": args.label_smoothing,
+                    "eval_batch_size": args.eval_batch_size,
+                    "wandb_group": group_name,
+                    "wandb_job_type": args.wandb_job_type
+                }
+            )
+            wandb_run_id = wandb.run.id
+        
         wandb_config = {
             "project": args.wandb_project,
             "entity": args.wandb_entity,
@@ -367,7 +489,27 @@ def main():
             "job_type": args.wandb_job_type,
             "api_key": wandb_api_key
         }
-        print(f"Wandb initialized: project={args.wandb_project}, entity={args.wandb_entity or 'default'}, group={group_name}")
+        print(f"Wandb initialized: project={args.wandb_project}, entity={args.wandb_entity or 'default'}, group={group_name}, run_id={wandb_run_id}")
+    
+    # Save run config (including wandb run ID for resume)
+    run_config = {
+        "data_path": args.data_path,
+        "epochs": args.epochs,
+        "output_dir": args.output_dir,
+        "wandb_project": args.wandb_project,
+        "wandb_entity": args.wandb_entity,
+        "wandb_run_id": wandb_run_id,
+        "n_layer": args.n_layer,
+        "n_head": args.n_head,
+        "n_embd": args.n_embd,
+        "dropout": args.dropout,
+        "batch_size": args.batch_size,
+        "lr": args.lr,
+        "label_smoothing": args.label_smoothing,
+        "eval_batch_size": args.eval_batch_size,
+        "checkpoint_interval": args.checkpoint_interval,
+    }
+    save_run_config(args.output_dir, run_config)
     
     # Detect available GPUs
     num_gpus = torch.cuda.device_count()
@@ -378,18 +520,74 @@ def main():
     print(f"Output directory: {args.output_dir}")
     
     epochs = args.epochs
+    checkpoint_interval = args.checkpoint_interval if args.checkpoint_interval > 0 else None
     
     # Build all experiment configs - GPU ID is now managed by queue
     all_configs = []
+    pending_experiments = []
+    completed_list = []
+    
     for i, (dataset_type, inverse, (tokenizer_type, vocab_size)) in enumerate(
         [(d, inv, exp) for d in dataset_types for inv in inverse_settings for exp in experiments]
     ):
+        # Check if experiment is already completed
+        exp_key = get_experiment_key(dataset_type, tokenizer_type, vocab_size, inverse)
+        if exp_key in completed_experiments:
+            completed_list.append(exp_key)
+            continue
+        
+        pending_experiments.append(exp_key)
         all_configs.append((tokenizer_type, vocab_size, dataset_type, inverse, epochs, 
                            args.data_path, args.output_dir,
                            args.n_layer, args.n_head, args.n_embd, args.dropout, 
-                           args.batch_size, args.lr, args.label_smoothing, args.eval_batch_size, wandb_config))
+                           args.batch_size, args.lr, args.label_smoothing, args.eval_batch_size, 
+                           wandb_config, checkpoint_interval))
     
-    print(f"Running {len(all_configs)} experiments across {num_gpus} GPUs...")
+    # Display experiment plan
+    print("\n" + "="*60)
+    print("EXPERIMENT PLAN")
+    print("="*60)
+    
+    if completed_list:
+        print(f"\n✅ COMPLETED ({len(completed_list)} experiments - will be skipped):")
+        for exp in completed_list:
+            print(f"   • {exp}")
+    
+    if pending_experiments:
+        print(f"\n🔄 PENDING ({len(pending_experiments)} experiments - will be run):")
+        for exp in pending_experiments:
+            print(f"   • {exp}")
+    else:
+        print("\n✨ All experiments already completed! Nothing to run.")
+        if use_wandb:
+            wandb.finish()
+        return
+    
+    print(f"\n📊 Configuration:")
+    print(f"   • Data path: {args.data_path}")
+    print(f"   • Epochs: {epochs}")
+    print(f"   • GPUs: {num_gpus}")
+    print(f"   • Checkpoint interval: {checkpoint_interval or 'disabled'}")
+    print(f"   • Output: {args.output_dir}")
+    print("="*60)
+    
+    # Ask for confirmation unless --yes flag is provided
+    if not args.yes:
+        try:
+            response = input(f"\nProceed with {len(pending_experiments)} experiments? [y/N]: ").strip().lower()
+            if response not in ('y', 'yes'):
+                print("Aborted by user.")
+                if use_wandb:
+                    wandb.finish()
+                return
+        except EOFError:
+            # Non-interactive mode (e.g., running in background)
+            print("Non-interactive mode detected. Use --yes to skip confirmation.")
+            if use_wandb:
+                wandb.finish()
+            return
+    
+    print(f"\n🚀 Starting {len(all_configs)} experiments across {num_gpus} GPUs...")
 
     # Create manager for queue to handle GPU assignment
     manager = Manager()
@@ -400,9 +598,39 @@ def main():
     # Run in parallel with one process per GPU
     # maxtasksperchild=1 ensures fresh process for each task to release memory completely
     with Pool(processes=num_gpus, initializer=init_worker, initargs=(queue,), maxtasksperchild=1) as pool:
-        results = pool.map(run_experiment, all_configs, chunksize=1)
-            
-    df = pd.DataFrame(results)
+        new_results = pool.map(run_experiment, all_configs, chunksize=1)
+    
+    # Merge new results with existing results
+    if existing_results:
+        # Create a set of new result keys for deduplication
+        new_keys = set()
+        for r in new_results:
+            key = get_experiment_key(
+                r['Dataset'], 
+                'Byte' if r['Tokenizer'] == 'ByteTokenizer' else 'BPE',
+                r.get('Vocab Size', 0),
+                r['Inverse']
+            )
+            new_keys.add(key)
+        
+        # Keep existing results that weren't re-run
+        merged_results = []
+        for r in existing_results:
+            key = get_experiment_key(
+                r['Dataset'], 
+                'Byte' if r['Tokenizer'] == 'ByteTokenizer' else 'BPE',
+                r.get('Vocab Size', 0),
+                r['Inverse']
+            )
+            if key not in new_keys:
+                merged_results.append(r)
+        
+        # Add new results
+        merged_results.extend(new_results)
+        df = pd.DataFrame(merged_results)
+        print(f"Merged {len(existing_results)} existing + {len(new_results)} new = {len(merged_results)} total results")
+    else:
+        df = pd.DataFrame(new_results)
     
     # Log individual experiment results to wandb
     if use_wandb:
