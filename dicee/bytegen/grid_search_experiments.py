@@ -35,10 +35,11 @@ def get_experiment_key(dataset_type: str, tokenizer_type: str, vocab_size: int, 
 
 
 def load_completed_experiments(output_dir: str) -> set:
-    """Load completed experiments from existing results CSV."""
-    csv_path = os.path.join(output_dir, "grid_search_results.csv")
+    """Load completed experiments from existing results CSV and saved models."""
     completed = set()
     
+    # Method 1: Check CSV results
+    csv_path = os.path.join(output_dir, "grid_search_results.csv")
     if os.path.exists(csv_path):
         try:
             df = pd.read_csv(csv_path)
@@ -52,9 +53,49 @@ def load_completed_experiments(output_dir: str) -> set:
                         row['Inverse']
                     )
                     completed.add(key)
-            print(f"Found {len(completed)} completed experiments in {csv_path}")
+            print(f"Found {len(completed)} completed experiments in CSV")
         except Exception as e:
-            print(f"Warning: Could not load previous results: {e}")
+            print(f"Warning: Could not load previous results from CSV: {e}")
+    
+    # Method 2: Check for saved model files (for runs before resume logic was added)
+    models_dir = os.path.join(output_dir, "models")
+    if os.path.exists(models_dir):
+        model_files = [f for f in os.listdir(models_dir) if f.endswith('.pt')]
+        for model_file in model_files:
+            # Parse model filename: {dataset_type}_{tokenizer_name}_Inv{inverse}.pt
+            # Examples: RandomWalk_ByteTokenizer_InvTrue.pt, BFS_BPE-512_InvFalse.pt
+            base_name = model_file.replace('.pt', '')
+            parts = base_name.rsplit('_Inv', 1)
+            if len(parts) == 2:
+                dataset_tokenizer = parts[0]
+                inverse_str = parts[1]
+                
+                # Parse dataset and tokenizer
+                for ds in ['RandomWalk', 'BFS', 'Isolated']:
+                    if dataset_tokenizer.startswith(ds + '_'):
+                        dataset_type = ds
+                        tokenizer_name = dataset_tokenizer[len(ds) + 1:]
+                        inverse = inverse_str == 'True'
+                        
+                        # Convert tokenizer name to key format
+                        if tokenizer_name == 'ByteTokenizer':
+                            key = get_experiment_key(dataset_type, 'Byte', None, inverse)
+                        elif tokenizer_name.startswith('BPE-'):
+                            vocab_size = int(tokenizer_name.split('-')[1])
+                            key = get_experiment_key(dataset_type, 'BPE', vocab_size, inverse)
+                        else:
+                            continue
+                        
+                        if key not in completed:
+                            completed.add(key)
+                        break
+        
+        model_count = len([f for f in model_files])
+        if model_count > 0:
+            print(f"Found {model_count} saved model files in {models_dir}")
+    
+    if completed:
+        print(f"Total: {len(completed)} completed experiments detected")
     
     return completed
 
