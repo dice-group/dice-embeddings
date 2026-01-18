@@ -416,15 +416,42 @@ def main():
             raise FileNotFoundError(f"Resume directory not found: {args.output_dir}")
         print(f"=== RESUME MODE: Resuming from {args.output_dir} ===")
         
-        # Load previous run config
+        # Load previous run config and restore all parameters
         prev_config = load_run_config(args.output_dir)
         if prev_config:
-            # Use data_path from previous config if not explicitly overridden
-            if 'data_path' in prev_config and args.data_path == 'KGs/UMLS':
-                args.data_path = prev_config['data_path']
-            if 'epochs' in prev_config:
-                args.epochs = prev_config['epochs']
-            print(f"Loaded config: data_path={args.data_path}, epochs={args.epochs}")
+            # Restore all parameters from previous config (CLI args override if explicitly set)
+            # We check against default values to detect if user explicitly set them
+            defaults = {
+                'data_path': 'KGs/UMLS',
+                'epochs': 300,
+                'n_layer': 8,
+                'n_head': 8,
+                'n_embd': 512,
+                'dropout': 0.0,
+                'batch_size': 32,
+                'lr': 3e-4,
+                'label_smoothing': 0.0,
+                'eval_batch_size': 8192*2,
+                'checkpoint_interval': 50,
+                'wandb_project': 'bytegen-grid-search',
+                'wandb_entity': None,
+            }
+            
+            restored = []
+            for key, default_val in defaults.items():
+                if key in prev_config:
+                    current_val = getattr(args, key, default_val)
+                    # If current value is the default, use the saved config value
+                    if current_val == default_val:
+                        setattr(args, key, prev_config[key])
+                        if prev_config[key] != default_val:
+                            restored.append(f"{key}={prev_config[key]}")
+            
+            if restored:
+                print(f"Restored from config: {', '.join(restored)}")
+            print(f"Using: data_path={args.data_path}, epochs={args.epochs}, batch_size={args.batch_size}")
+        else:
+            print("Warning: No run_config.json found. Using CLI arguments or defaults.")
     else:
         # Auto-generate output directory if not provided
         if args.output_dir is None:
