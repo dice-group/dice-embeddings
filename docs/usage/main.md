@@ -1,6 +1,6 @@
 ## Dicee Manual
 
-**Version:** dicee 0.2.0
+**Version:** dicee 0.3.0
 
 **GitHub repository:** [https://github.com/dice-group/dice-embeddings](https://github.com/dice-group/dice-embeddings)
 
