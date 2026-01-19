@@ -19,8 +19,8 @@
       <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../../../../_static/documentation_options.js?v=c6726a90"></script>
-      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
@@ -170,7 +170,7 @@
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGELightning">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.base_model.</span></span><span class="sig-name descname"><span class="pre">BaseKGELightning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.base_model.</span></span><span class="sig-name descname"><span class="pre">BaseKGELightning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">lightning.LightningModule</span></code></p>
 <p>Base class for all neural network modules.</p>
 <p>Your models should also subclass this class.</p>
@@ -206,7 +206,7 @@ evaluation mode.</p>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGELightning.training_step_outputs">
-<span class="sig-name descname"><span class="pre">training_step_outputs</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.training_step_outputs" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">training_step_outputs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.training_step_outputs" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -510,7 +510,7 @@ yourself.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.base_model.</span></span><span class="sig-name descname"><span class="pre">BaseKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGE" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.base_model.</span></span><span class="sig-name descname"><span class="pre">BaseKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGE" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#dicee.models.base_model.BaseKGELightning" title="dicee.models.base_model.BaseKGELightning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGELightning</span></code></a></p>
 <p>Base class for all neural network modules.</p>
 <p>Your models should also subclass this class.</p>
@@ -551,67 +551,67 @@ evaluation mode.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.embedding_dim">
-<span class="sig-name descname"><span class="pre">embedding_dim</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGE.embedding_dim" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">embedding_dim</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.embedding_dim" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.num_entities">
-<span class="sig-name descname"><span class="pre">num_entities</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGE.num_entities" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.num_entities" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.num_relations">
-<span class="sig-name descname"><span class="pre">num_relations</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGE.num_relations" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.num_relations" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.num_tokens">
-<span class="sig-name descname"><span class="pre">num_tokens</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGE.num_tokens" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_tokens</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.num_tokens" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.learning_rate">
-<span class="sig-name descname"><span class="pre">learning_rate</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGE.learning_rate" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">learning_rate</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.learning_rate" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.apply_unit_norm">
-<span class="sig-name descname"><span class="pre">apply_unit_norm</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGE.apply_unit_norm" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply_unit_norm</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.apply_unit_norm" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.input_dropout_rate">
-<span class="sig-name descname"><span class="pre">input_dropout_rate</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGE.input_dropout_rate" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">input_dropout_rate</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.input_dropout_rate" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.hidden_dropout_rate">
-<span class="sig-name descname"><span class="pre">hidden_dropout_rate</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGE.hidden_dropout_rate" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">hidden_dropout_rate</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.hidden_dropout_rate" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.optimizer_name">
-<span class="sig-name descname"><span class="pre">optimizer_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGE.optimizer_name" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">optimizer_name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.optimizer_name" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.feature_map_dropout_rate">
-<span class="sig-name descname"><span class="pre">feature_map_dropout_rate</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGE.feature_map_dropout_rate" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">feature_map_dropout_rate</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.feature_map_dropout_rate" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.kernel_size">
-<span class="sig-name descname"><span class="pre">kernel_size</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGE.kernel_size" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">kernel_size</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.kernel_size" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.num_of_output_channels">
-<span class="sig-name descname"><span class="pre">num_of_output_channels</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGE.num_of_output_channels" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_of_output_channels</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.num_of_output_channels" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.weight_decay">
-<span class="sig-name descname"><span class="pre">weight_decay</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGE.weight_decay" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">weight_decay</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.weight_decay" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -621,12 +621,12 @@ evaluation mode.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.selected_optimizer">
-<span class="sig-name descname"><span class="pre">selected_optimizer</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGE.selected_optimizer" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">selected_optimizer</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.selected_optimizer" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.normalizer_class">
-<span class="sig-name descname"><span class="pre">normalizer_class</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGE.normalizer_class" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">normalizer_class</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.normalizer_class" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -671,7 +671,7 @@ evaluation mode.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.loss_history">
-<span class="sig-name descname"><span class="pre">loss_history</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.models.base_model.BaseKGE.loss_history" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">loss_history</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.loss_history" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -792,7 +792,7 @@ evaluation mode.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.base_model.IdentityClass">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.base_model.</span></span><span class="sig-name descname"><span class="pre">IdentityClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.IdentityClass" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.base_model.</span></span><span class="sig-name descname"><span class="pre">IdentityClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.IdentityClass" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
 <p>Base class for all neural network modules.</p>
 <p>Your models should also subclass this class.</p>
@@ -828,7 +828,7 @@ evaluation mode.</p>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.base_model.IdentityClass.args">
-<span class="sig-name descname"><span class="pre">args</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.base_model.IdentityClass.args" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">args</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.base_model.IdentityClass.args" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -838,7 +838,7 @@ evaluation mode.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.IdentityClass.forward">
-<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.IdentityClass.forward" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.IdentityClass.forward" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

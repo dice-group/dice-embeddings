@@ -19,8 +19,8 @@
       <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../../../../_static/documentation_options.js?v=c6726a90"></script>
-      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
@@ -164,7 +164,7 @@
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.pykeen_models.</span></span><span class="sig-name descname"><span class="pre">PykeenKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.pykeen_models.</span></span><span class="sig-name descname"><span class="pre">PykeenKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>A class for using knowledge graph embedding models implemented in Pykeen</p>
 <p>Notes:
@@ -198,7 +198,7 @@ Pykeen_TransR:</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.loss_history">
-<span class="sig-name descname"><span class="pre">loss_history</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.loss_history" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">loss_history</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></span><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.loss_history" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -208,12 +208,12 @@ Pykeen_TransR:</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.entity_embeddings">
-<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.entity_embeddings" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.entity_embeddings" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.relation_embeddings">
-<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.relation_embeddings" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.relation_embeddings" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -260,7 +260,7 @@ return self.interaction.score(h=h, r=r, t=t, slice_size=None, slice_dim=0)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.forward_k_vs_sample">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.forward_k_vs_sample" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.forward_k_vs_sample" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

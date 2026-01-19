@@ -19,8 +19,8 @@
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
-      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -206,7 +206,7 @@ for training knowledge graph embedding models.</p>
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.config.Namespace">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.config.</span></span><span class="sig-name descname"><span class="pre">Namespace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.config.Namespace" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.config.</span></span><span class="sig-name descname"><span class="pre">Namespace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.config.Namespace" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">argparse.Namespace</span></code></p>
 <p>Extended Namespace with default KGE training configuration.</p>
 <p>Provides sensible defaults for all training parameters while
@@ -214,85 +214,85 @@ allowing easy customization through command-line arguments
 or direct assignment.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.dataset_dir">
-<span class="sig-name descname"><span class="pre">dataset_dir</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.dataset_dir" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">dataset_dir</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.config.Namespace.dataset_dir" title="Link to this definition"></a></dt>
 <dd><p>The path of a folder containing train.txt, and/or valid.txt and/or test.txt</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.save_embeddings_as_csv">
-<span class="sig-name descname"><span class="pre">save_embeddings_as_csv</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.config.Namespace.save_embeddings_as_csv" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">save_embeddings_as_csv</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#dicee.config.Namespace.save_embeddings_as_csv" title="Link to this definition"></a></dt>
 <dd><p>Embeddings of entities and relations are stored into CSV files to facilitate easy usage.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.storage_path">
-<span class="sig-name descname"><span class="pre">storage_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Experiments'</span></em><a class="headerlink" href="#dicee.config.Namespace.storage_path" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">storage_path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Experiments'</span></span><a class="headerlink" href="#dicee.config.Namespace.storage_path" title="Link to this definition"></a></dt>
 <dd><p>A directory named with time of execution under –storage_path that contains related data about embeddings.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.path_to_store_single_run">
-<span class="sig-name descname"><span class="pre">path_to_store_single_run</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.path_to_store_single_run" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">path_to_store_single_run</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.config.Namespace.path_to_store_single_run" title="Link to this definition"></a></dt>
 <dd><p>A single directory created that contains related data about embeddings.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.path_single_kg">
-<span class="sig-name descname"><span class="pre">path_single_kg</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.path_single_kg" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">path_single_kg</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.config.Namespace.path_single_kg" title="Link to this definition"></a></dt>
 <dd><p>Path of a file corresponding to the input knowledge graph</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.sparql_endpoint">
-<span class="sig-name descname"><span class="pre">sparql_endpoint</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.sparql_endpoint" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">sparql_endpoint</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.config.Namespace.sparql_endpoint" title="Link to this definition"></a></dt>
 <dd><p>An endpoint of a triple store.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.model">
-<span class="sig-name descname"><span class="pre">model</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Keci'</span></em><a class="headerlink" href="#dicee.config.Namespace.model" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">model</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Keci'</span></span><a class="headerlink" href="#dicee.config.Namespace.model" title="Link to this definition"></a></dt>
 <dd><p>KGE model</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.optim">
-<span class="sig-name descname"><span class="pre">optim</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Adam'</span></em><a class="headerlink" href="#dicee.config.Namespace.optim" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">optim</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Adam'</span></span><a class="headerlink" href="#dicee.config.Namespace.optim" title="Link to this definition"></a></dt>
 <dd><p>Optimizer</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.embedding_dim">
-<span class="sig-name descname"><span class="pre">embedding_dim</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">64</span></em><a class="headerlink" href="#dicee.config.Namespace.embedding_dim" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">embedding_dim</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">64</span></span><a class="headerlink" href="#dicee.config.Namespace.embedding_dim" title="Link to this definition"></a></dt>
 <dd><p>Size of continuous vector representation of an entity/relation</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.num_epochs">
-<span class="sig-name descname"><span class="pre">num_epochs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">150</span></em><a class="headerlink" href="#dicee.config.Namespace.num_epochs" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_epochs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">150</span></span><a class="headerlink" href="#dicee.config.Namespace.num_epochs" title="Link to this definition"></a></dt>
 <dd><p>Number of pass over the training data</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.batch_size">
-<span class="sig-name descname"><span class="pre">batch_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1024</span></em><a class="headerlink" href="#dicee.config.Namespace.batch_size" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">batch_size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1024</span></span><a class="headerlink" href="#dicee.config.Namespace.batch_size" title="Link to this definition"></a></dt>
 <dd><p>Mini-batch size if it is None, an automatic batch finder technique applied</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.lr">
-<span class="sig-name descname"><span class="pre">lr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.1</span></em><a class="headerlink" href="#dicee.config.Namespace.lr" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">lr</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.1</span></span><a class="headerlink" href="#dicee.config.Namespace.lr" title="Link to this definition"></a></dt>
 <dd><p>Learning rate</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.add_noise_rate">
-<span class="sig-name descname"><span class="pre">add_noise_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.add_noise_rate" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">add_noise_rate</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.config.Namespace.add_noise_rate" title="Link to this definition"></a></dt>
 <dd><p>The ratio of added random triples into training dataset</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.gpus">
-<span class="sig-name descname"><span class="pre">gpus</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.gpus" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">gpus</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.config.Namespace.gpus" title="Link to this definition"></a></dt>
 <dd><p>Number GPUs to be used during training</p>
 </dd></dl>
 
@@ -312,67 +312,67 @@ or direct assignment.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.backend">
-<span class="sig-name descname"><span class="pre">backend</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'pandas'</span></em><a class="headerlink" href="#dicee.config.Namespace.backend" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">backend</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'pandas'</span></span><a class="headerlink" href="#dicee.config.Namespace.backend" title="Link to this definition"></a></dt>
 <dd><p>Backend to read, process, and index input knowledge graph. pandas, polars and rdflib available</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.separator">
-<span class="sig-name descname"><span class="pre">separator</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\\s+'</span></em><a class="headerlink" href="#dicee.config.Namespace.separator" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">separator</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\\s+'</span></span><a class="headerlink" href="#dicee.config.Namespace.separator" title="Link to this definition"></a></dt>
 <dd><p>separator for extracting head, relation and tail from a triple</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.trainer">
-<span class="sig-name descname"><span class="pre">trainer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'torchCPUTrainer'</span></em><a class="headerlink" href="#dicee.config.Namespace.trainer" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">trainer</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'torchCPUTrainer'</span></span><a class="headerlink" href="#dicee.config.Namespace.trainer" title="Link to this definition"></a></dt>
 <dd><p>Trainer for knowledge graph embedding model</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.scoring_technique">
-<span class="sig-name descname"><span class="pre">scoring_technique</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'KvsAll'</span></em><a class="headerlink" href="#dicee.config.Namespace.scoring_technique" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">scoring_technique</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'KvsAll'</span></span><a class="headerlink" href="#dicee.config.Namespace.scoring_technique" title="Link to this definition"></a></dt>
 <dd><p>Scoring technique for knowledge graph embedding models</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.neg_ratio">
-<span class="sig-name descname"><span class="pre">neg_ratio</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#dicee.config.Namespace.neg_ratio" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">neg_ratio</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="headerlink" href="#dicee.config.Namespace.neg_ratio" title="Link to this definition"></a></dt>
 <dd><p>Negative ratio for a true triple in NegSample training_technique</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.weight_decay">
-<span class="sig-name descname"><span class="pre">weight_decay</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#dicee.config.Namespace.weight_decay" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">weight_decay</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#dicee.config.Namespace.weight_decay" title="Link to this definition"></a></dt>
 <dd><p>Weight decay for all trainable params</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.normalization">
-<span class="sig-name descname"><span class="pre">normalization</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'None'</span></em><a class="headerlink" href="#dicee.config.Namespace.normalization" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">normalization</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'None'</span></span><a class="headerlink" href="#dicee.config.Namespace.normalization" title="Link to this definition"></a></dt>
 <dd><p>LayerNorm, BatchNorm1d, or None</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.init_param">
-<span class="sig-name descname"><span class="pre">init_param</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.init_param" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">init_param</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.config.Namespace.init_param" title="Link to this definition"></a></dt>
 <dd><p>xavier_normal or None</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.gradient_accumulation_steps">
-<span class="sig-name descname"><span class="pre">gradient_accumulation_steps</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#dicee.config.Namespace.gradient_accumulation_steps" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">gradient_accumulation_steps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="headerlink" href="#dicee.config.Namespace.gradient_accumulation_steps" title="Link to this definition"></a></dt>
 <dd><p>Not tested e</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.num_folds_for_cv">
-<span class="sig-name descname"><span class="pre">num_folds_for_cv</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#dicee.config.Namespace.num_folds_for_cv" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_folds_for_cv</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="headerlink" href="#dicee.config.Namespace.num_folds_for_cv" title="Link to this definition"></a></dt>
 <dd><p>Number of folds for CV</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.eval_model">
-<span class="sig-name descname"><span class="pre">eval_model</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'train_val_test'</span></em><a class="headerlink" href="#dicee.config.Namespace.eval_model" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">eval_model</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'train_val_test'</span></span><a class="headerlink" href="#dicee.config.Namespace.eval_model" title="Link to this definition"></a></dt>
 <dd><p>[“None”, “train”, “train_val”, “train_val_test”, “test”]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -383,36 +383,36 @@ or direct assignment.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.save_model_at_every_epoch">
-<span class="sig-name descname"><span class="pre">save_model_at_every_epoch</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.save_model_at_every_epoch" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">save_model_at_every_epoch</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.config.Namespace.save_model_at_every_epoch" title="Link to this definition"></a></dt>
 <dd><p>Not tested</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.label_smoothing_rate">
-<span class="sig-name descname"><span class="pre">label_smoothing_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#dicee.config.Namespace.label_smoothing_rate" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">label_smoothing_rate</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#dicee.config.Namespace.label_smoothing_rate" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.num_core">
-<span class="sig-name descname"><span class="pre">num_core</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#dicee.config.Namespace.num_core" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_core</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="headerlink" href="#dicee.config.Namespace.num_core" title="Link to this definition"></a></dt>
 <dd><p>Number of CPUs to be used in the mini-batch loading process</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.random_seed">
-<span class="sig-name descname"><span class="pre">random_seed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#dicee.config.Namespace.random_seed" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">random_seed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="headerlink" href="#dicee.config.Namespace.random_seed" title="Link to this definition"></a></dt>
 <dd><p>Random Seed</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.sample_triples_ratio">
-<span class="sig-name descname"><span class="pre">sample_triples_ratio</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.sample_triples_ratio" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">sample_triples_ratio</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.config.Namespace.sample_triples_ratio" title="Link to this definition"></a></dt>
 <dd><p>Read some triples that are uniformly at random sampled. Ratio being between 0 and 1</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.read_only_few">
-<span class="sig-name descname"><span class="pre">read_only_few</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.read_only_few" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_only_few</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.config.Namespace.read_only_few" title="Link to this definition"></a></dt>
 <dd><p>Read only first few triples</p>
 </dd></dl>
 
@@ -424,49 +424,49 @@ or direct assignment.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.kernel_size">
-<span class="sig-name descname"><span class="pre">kernel_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#dicee.config.Namespace.kernel_size" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">kernel_size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></span><a class="headerlink" href="#dicee.config.Namespace.kernel_size" title="Link to this definition"></a></dt>
 <dd><p>Size of a square kernel in a convolution operation</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.num_of_output_channels">
-<span class="sig-name descname"><span class="pre">num_of_output_channels</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">32</span></em><a class="headerlink" href="#dicee.config.Namespace.num_of_output_channels" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_of_output_channels</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">32</span></span><a class="headerlink" href="#dicee.config.Namespace.num_of_output_channels" title="Link to this definition"></a></dt>
 <dd><p>Number of slices in the generated feature map by convolution.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.p">
-<span class="sig-name descname"><span class="pre">p</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#dicee.config.Namespace.p" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">p</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="headerlink" href="#dicee.config.Namespace.p" title="Link to this definition"></a></dt>
 <dd><p>P parameter of Clifford Embeddings</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.q">
-<span class="sig-name descname"><span class="pre">q</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#dicee.config.Namespace.q" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">q</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></span><a class="headerlink" href="#dicee.config.Namespace.q" title="Link to this definition"></a></dt>
 <dd><p>Q parameter of Clifford Embeddings</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.input_dropout_rate">
-<span class="sig-name descname"><span class="pre">input_dropout_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#dicee.config.Namespace.input_dropout_rate" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">input_dropout_rate</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#dicee.config.Namespace.input_dropout_rate" title="Link to this definition"></a></dt>
 <dd><p>Dropout rate on embeddings of input triples</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.hidden_dropout_rate">
-<span class="sig-name descname"><span class="pre">hidden_dropout_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#dicee.config.Namespace.hidden_dropout_rate" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">hidden_dropout_rate</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#dicee.config.Namespace.hidden_dropout_rate" title="Link to this definition"></a></dt>
 <dd><p>Dropout rate on hidden representations of  input triples</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.feature_map_dropout_rate">
-<span class="sig-name descname"><span class="pre">feature_map_dropout_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#dicee.config.Namespace.feature_map_dropout_rate" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">feature_map_dropout_rate</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#dicee.config.Namespace.feature_map_dropout_rate" title="Link to this definition"></a></dt>
 <dd><p>Dropout rate on a feature map generated by a convolution operation</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.byte_pair_encoding">
-<span class="sig-name descname"><span class="pre">byte_pair_encoding</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.config.Namespace.byte_pair_encoding" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">byte_pair_encoding</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#dicee.config.Namespace.byte_pair_encoding" title="Link to this definition"></a></dt>
 <dd><p>Byte pair encoding</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -477,73 +477,73 @@ or direct assignment.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.adaptive_swa">
-<span class="sig-name descname"><span class="pre">adaptive_swa</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.config.Namespace.adaptive_swa" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">adaptive_swa</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#dicee.config.Namespace.adaptive_swa" title="Link to this definition"></a></dt>
 <dd><p>Adaptive stochastic weight averaging</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.swa">
-<span class="sig-name descname"><span class="pre">swa</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.config.Namespace.swa" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">swa</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#dicee.config.Namespace.swa" title="Link to this definition"></a></dt>
 <dd><p>Stochastic weight averaging</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.swag">
-<span class="sig-name descname"><span class="pre">swag</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.config.Namespace.swag" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">swag</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#dicee.config.Namespace.swag" title="Link to this definition"></a></dt>
 <dd><p>Stochastic weight averaging - Gaussian</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.ema">
-<span class="sig-name descname"><span class="pre">ema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.config.Namespace.ema" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">ema</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#dicee.config.Namespace.ema" title="Link to this definition"></a></dt>
 <dd><p>Exponential Moving Average</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.twa">
-<span class="sig-name descname"><span class="pre">twa</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.config.Namespace.twa" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">twa</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#dicee.config.Namespace.twa" title="Link to this definition"></a></dt>
 <dd><p>Trainable weight averaging</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.block_size">
-<span class="sig-name descname"><span class="pre">block_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.block_size" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">block_size</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.config.Namespace.block_size" title="Link to this definition"></a></dt>
 <dd><p>block size of LLM</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.continual_learning">
-<span class="sig-name descname"><span class="pre">continual_learning</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.continual_learning" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">continual_learning</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.config.Namespace.continual_learning" title="Link to this definition"></a></dt>
 <dd><p>Path of a pretrained model size of LLM</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.auto_batch_finding">
-<span class="sig-name descname"><span class="pre">auto_batch_finding</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.config.Namespace.auto_batch_finding" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">auto_batch_finding</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#dicee.config.Namespace.auto_batch_finding" title="Link to this definition"></a></dt>
 <dd><p>A flag for using auto batch finding</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.eval_every_n_epochs">
-<span class="sig-name descname"><span class="pre">eval_every_n_epochs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#dicee.config.Namespace.eval_every_n_epochs" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">eval_every_n_epochs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="headerlink" href="#dicee.config.Namespace.eval_every_n_epochs" title="Link to this definition"></a></dt>
 <dd><p>Evaluate model every n epochs. If 0, no evaluation is applied.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.save_every_n_epochs">
-<span class="sig-name descname"><span class="pre">save_every_n_epochs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.config.Namespace.save_every_n_epochs" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">save_every_n_epochs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#dicee.config.Namespace.save_every_n_epochs" title="Link to this definition"></a></dt>
 <dd><p>Save model every n epochs. If True, save model at every epoch.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.eval_at_epochs">
-<span class="sig-name descname"><span class="pre">eval_at_epochs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.eval_at_epochs" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">eval_at_epochs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.config.Namespace.eval_at_epochs" title="Link to this definition"></a></dt>
 <dd><p>List of epoch numbers at which to evaluate the model (e.g., 1 5 10).</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.n_epochs_eval_model">
-<span class="sig-name descname"><span class="pre">n_epochs_eval_model</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'val_test'</span></em><a class="headerlink" href="#dicee.config.Namespace.n_epochs_eval_model" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">n_epochs_eval_model</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'val_test'</span></span><a class="headerlink" href="#dicee.config.Namespace.n_epochs_eval_model" title="Link to this definition"></a></dt>
 <dd><p>Evaluating link prediction performance on data splits while performing periodic evaluation.</p>
 </dd></dl>
 
@@ -560,13 +560,13 @@ or direct assignment.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.swa_start_epoch">
-<span class="sig-name descname"><span class="pre">swa_start_epoch</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.swa_start_epoch" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">swa_start_epoch</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.config.Namespace.swa_start_epoch" title="Link to this definition"></a></dt>
 <dd><p>Epoch at which to start applying stochastic weight averaging.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.swa_c_epochs">
-<span class="sig-name descname"><span class="pre">swa_c_epochs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#dicee.config.Namespace.swa_c_epochs" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">swa_c_epochs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></span><a class="headerlink" href="#dicee.config.Namespace.swa_c_epochs" title="Link to this definition"></a></dt>
 <dd><p>Number of epochs to average over for SWA, SWAG, EMA, TWA.</p>
 </dd></dl>
 
