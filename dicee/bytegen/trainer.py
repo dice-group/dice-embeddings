@@ -26,7 +26,7 @@ class Trainer:
         self.model = model
         self.train_loader = train_loader
         self.config = config
-        self.optimizer = optimizer or torch.optim.AdamW(model.parameters(), lr=config.lr)
+        self.optimizer = optimizer or torch.optim.AdamW(model.parameters(), lr=config.lr, weight_decay=config.weight_decay)
         self.device = config.device
         self.tokenizer = tokenizer
         self.save_path = save_path
@@ -323,6 +323,7 @@ class Trainer:
         print(f"  - Label smoothing: {self.label_smoothing}")
         print(f"  - Gradient clipping: {self.grad_clip}")
         print(f"  - Base LR: {self.config.lr}")
+        print(f"  - Weight decay: {self.config.weight_decay}")
         if checkpoint_interval:
             print(f"  - Checkpoint interval: every {checkpoint_interval} epochs")
         

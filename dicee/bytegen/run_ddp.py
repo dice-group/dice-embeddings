@@ -48,7 +48,7 @@ if __name__ == "__main__":
     model = ByteGenModel(conf).to(conf.device)
     # DDP
     model = DistributedDataParallel(model, device_ids=[local_rank])
-    optimizer = torch.optim.AdamW(model.parameters(), lr=conf.lr)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=conf.lr, weight_decay=conf.weight_decay)
     
     # Trainer
     EPOCHS = 300

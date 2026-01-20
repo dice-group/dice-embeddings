@@ -44,7 +44,7 @@ if __name__ == "__main__":
     
     # Model
     model = ByteGenModel(conf).to(conf.device)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=conf.lr)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=conf.lr, weight_decay=conf.weight_decay)
     
     # Trainer - with H@1 diagnostic every 10 epochs
     EPOCHS = 300

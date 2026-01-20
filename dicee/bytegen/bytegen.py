@@ -15,6 +15,7 @@ class ByteGenConfig:
     n_embd: int = 256
     dropout: float = 0.1
     lr: float = 1e-4
+    weight_decay: float = 0.0  # L2 regularization for AdamW optimizer
     batch_size: int = 32
     device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
     

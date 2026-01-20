@@ -176,7 +176,7 @@ def load_run_config(output_dir: str) -> dict:
 def run_experiment(args):
     """Worker function for parallel execution."""
     (tokenizer_type, vocab_size_arg, dataset_type, inverse, epochs, dataset_path, output_dir,
-     n_layer, n_head, n_embd, dropout, batch_size, lr, label_smoothing, eval_batch_size, 
+     n_layer, n_head, n_embd, dropout, batch_size, lr, label_smoothing, weight_decay, eval_batch_size, 
      wandb_config, checkpoint_interval) = args
     
     # Get a free GPU ID from the queue
@@ -300,6 +300,7 @@ def run_experiment(args):
             dropout=dropout,
             batch_size=batch_size,
             lr=lr,
+            weight_decay=weight_decay,
             vocab_size=actual_vocab_size,
             device=device
         )
@@ -308,7 +309,7 @@ def run_experiment(args):
         
         # Model
         model = ByteGenModel(conf).to(device)
-        optimizer = torch.optim.AdamW(model.parameters(), lr=conf.lr)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=conf.lr, weight_decay=conf.weight_decay)
         
         # Count parameters
         num_params = sum(p.numel() for p in model.parameters())
@@ -452,6 +453,8 @@ def main():
                         help='Learning rate (default: 3e-4)')
     parser.add_argument('--label_smoothing', type=float, default=0.0,
                         help='Label smoothing (default: 0.0)')
+    parser.add_argument('--weight_decay', type=float, default=0.0,
+                        help='Weight decay for AdamW optimizer (default: 0.0)')
     parser.add_argument('--eval_batch_size', type=int, default=8192*2,
                         help='Batch size for evaluation (default: 8192)')
     parser.add_argument('--resume', type=str, default=None,
@@ -487,6 +490,7 @@ def main():
                 'batch_size': 32,
                 'lr': 3e-4,
                 'label_smoothing': 0.0,
+                'weight_decay': 0.0,
                 'eval_batch_size': 8192*2,
                 'checkpoint_interval': 50,
                 'wandb_project': 'bytegen-grid-search',
@@ -595,6 +599,7 @@ def main():
                     "batch_size": args.batch_size,
                     "lr": args.lr,
                     "label_smoothing": args.label_smoothing,
+                    "weight_decay": args.weight_decay,
                     "eval_batch_size": args.eval_batch_size,
                     "wandb_group": group_name,
                     "wandb_job_type": args.wandb_job_type
@@ -626,6 +631,7 @@ def main():
         "batch_size": args.batch_size,
         "lr": args.lr,
         "label_smoothing": args.label_smoothing,
+        "weight_decay": args.weight_decay,
         "eval_batch_size": args.eval_batch_size,
         "checkpoint_interval": args.checkpoint_interval,
     }
@@ -660,7 +666,7 @@ def main():
         all_configs.append((tokenizer_type, vocab_size, dataset_type, inverse, epochs, 
                            args.data_path, args.output_dir,
                            args.n_layer, args.n_head, args.n_embd, args.dropout, 
-                           args.batch_size, args.lr, args.label_smoothing, args.eval_batch_size, 
+                           args.batch_size, args.lr, args.label_smoothing, args.weight_decay, args.eval_batch_size, 
                            wandb_config, checkpoint_interval))
     
     # Display experiment plan
@@ -708,6 +714,7 @@ def main():
     print(f"   • Learning rate: {args.lr}")
     print(f"   • Model: {args.n_layer}L / {args.n_head}H / {args.n_embd}D (dropout={args.dropout})")
     print(f"   • Label smoothing: {args.label_smoothing}")
+    print(f"   • Weight decay: {args.weight_decay}")
     print(f"   • Eval batch size: {args.eval_batch_size}")
     print(f"   • Checkpoint interval: {checkpoint_interval or 'disabled'}")
     print("="*60)
