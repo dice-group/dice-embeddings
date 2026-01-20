@@ -273,6 +273,7 @@ def run_experiment(args):
             # For Isolated: auto-calculate block_size from data to ensure it works for eval
             # First load with block_size=None to auto-calculate per-split minimums
             train_ds = IsolatedTripleDataset(dataset_path, tokenizer, split='train', block_size=None, inverse=inverse)
+            valid_ds = IsolatedTripleDataset(dataset_path, tokenizer, split='valid', block_size=None, inverse=inverse)
             test_ds = IsolatedTripleDataset(dataset_path, tokenizer, split='test', block_size=None, inverse=inverse)
             
             # Compute eval-safe block_size (considers ALL entities as potential candidates)
@@ -280,15 +281,18 @@ def run_experiment(args):
             
             # Update datasets to use the eval-safe block_size
             train_ds.block_size = block_size
+            valid_ds.block_size = block_size
             test_ds.block_size = block_size
             print(f"[GPU {gpu_id}] Isolated block_size set to {block_size} (eval-safe)")
         elif dataset_type == 'BFS':
             block_size = 256
             train_ds = ByteGenBFSDataset(dataset_path, tokenizer, split='train', block_size=block_size, inverse=inverse)
+            valid_ds = ByteGenBFSDataset(dataset_path, tokenizer, split='valid', block_size=block_size, inverse=inverse)
             test_ds = ByteGenBFSDataset(dataset_path, tokenizer, split='test', block_size=block_size, inverse=inverse)
         else:  # RandomWalk
             block_size = 256
             train_ds = ByteGenDataset(dataset_path, tokenizer, split='train', block_size=block_size, inverse=inverse)
+            valid_ds = ByteGenDataset(dataset_path, tokenizer, split='valid', block_size=block_size, inverse=inverse)
             test_ds = ByteGenDataset(dataset_path, tokenizer, split='test', block_size=block_size, inverse=inverse)
         
         # Config with optimized parameters from run.py
@@ -316,13 +320,14 @@ def run_experiment(args):
         print(f"[GPU {gpu_id}] Model parameters: {num_params}")
 
         # Trainer with updated parameters (matching run.py)
+        # Note: valid_ds is used for early stopping, test_ds is only for final evaluation
         trainer = Trainer(
             model, train_loader, conf, tokenizer, optimizer,
             save_path=checkpoint_dir,
             label_smoothing=label_smoothing,
             warmup_epochs=5,
             train_dataset=train_ds,
-            test_dataset=test_ds,
+            valid_dataset=valid_ds,
             eval_batch_size=eval_batch_size,
             early_stopping_patience=early_stopping_patience,
             early_stopping_sample_size=early_stopping_sample_size
@@ -369,7 +374,7 @@ def run_experiment(args):
         }, model_path)
         print(f"[GPU {gpu_id}] Model saved to {model_path}")
 
-        del model, optimizer, trainer, train_loader, train_ds, test_ds
+        del model, optimizer, trainer, train_loader, train_ds, valid_ds, test_ds
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         gc.collect()

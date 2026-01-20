@@ -22,7 +22,7 @@ class Trainer:
     def __init__(self, model: ByteGenModel, train_loader: DataLoader, config: ByteGenConfig, tokenizer: ByteTokenizer, 
                  optimizer: torch.optim.Optimizer = None, save_path: str = "checkpoints",
                  warmup_epochs: int = 5, label_smoothing: float = 0.0, grad_clip: float = 1.0,
-                 train_dataset=None, test_dataset=None, eval_batch_size: int = 128,
+                 train_dataset=None, valid_dataset=None, eval_batch_size: int = 128,
                  early_stopping_patience: int = None, early_stopping_sample_size: int = 64):
         self.model = model
         self.train_loader = train_loader
@@ -35,24 +35,24 @@ class Trainer:
         self.label_smoothing = label_smoothing
         self.grad_clip = grad_clip
         self.train_dataset = train_dataset
-        self.test_dataset = test_dataset
+        self.valid_dataset = valid_dataset
         self.eval_batch_size = eval_batch_size
         self.early_stopping_patience = early_stopping_patience
         self.early_stopping_sample_size = early_stopping_sample_size
         os.makedirs(self.save_path, exist_ok=True)
         
-        # Build entity list for H@1 computation (include both train and test entities)
+        # Build entity list for H@1 computation (include both train and valid entities)
         if train_dataset is not None:
             # Collect entities from train dataset
             all_entities = set(
                 [t[0] for t in train_dataset.triples] + 
                 [t[2] for t in train_dataset.triples]
             )
-            # Also include test entities if test_dataset is provided
-            if test_dataset is not None:
+            # Also include valid entities if valid_dataset is provided
+            if valid_dataset is not None:
                 all_entities.update(
-                    [t[0] for t in test_dataset.triples] + 
-                    [t[2] for t in test_dataset.triples]
+                    [t[0] for t in valid_dataset.triples] + 
+                    [t[2] for t in valid_dataset.triples]
                 )
             
             # Sort by length for efficient batching
@@ -87,14 +87,14 @@ class Trainer:
             for h, r, t in train_dataset.triples:
                 self.hr_to_t[(h, r)].add(t)
             
-            # Build known facts for test filtering (includes both train and test)
-            if test_dataset is not None:
+            # Build known facts for validation filtering (includes both train and valid)
+            if valid_dataset is not None:
                 self.hr_to_t_all = defaultdict(set)
                 # Include train facts
                 for h, r, t in train_dataset.triples:
                     self.hr_to_t_all[(h, r)].add(t)
-                # Include test facts
-                for h, r, t in test_dataset.triples:
+                # Include valid facts
+                for h, r, t in valid_dataset.triples:
                     self.hr_to_t_all[(h, r)].add(t)
             else:
                 self.hr_to_t_all = None
@@ -336,20 +336,20 @@ class Trainer:
             "h1": hits1 / len(sample_indices)
         }
 
-    def _compute_sampled_test_metrics(self, sample_size: int = 200, batch_size: int = 512) -> Dict[str, float]:
+    def _compute_sampled_val_metrics(self, sample_size: int = 200, batch_size: int = 512) -> Dict[str, float]:
         """
-        Compute MRR and H@1 on a sample of TEST triples.
-        Uses filtered ranking (filters all known facts from train+test).
+        Compute MRR and H@1 on a sample of VALIDATION triples.
+        Uses filtered ranking (filters all known facts from train+valid).
         """
-        if self.test_dataset is None or self.entities is None:
+        if self.valid_dataset is None or self.entities is None:
             return {"mrr": 0.0, "h1": 0.0}
         
         import random
         
         self.model.eval()
         
-        # Sample triples from TEST dataset
-        triples = self.test_dataset.triples
+        # Sample triples from VALIDATION dataset
+        triples = self.valid_dataset.triples
         sample_indices = random.sample(range(len(triples)), min(sample_size, len(triples)))
         
         mrr_sum = 0.0
@@ -484,7 +484,7 @@ class Trainer:
         scheduler = self._create_scheduler(epochs)
         
         # Early stopping state
-        best_test_mrr = -1.0
+        best_val_mrr = -1.0
         best_epoch = 0
         best_model_state = None
         epochs_without_improvement = 0
@@ -559,37 +559,37 @@ class Trainer:
                     "epoch": epoch + 1
                 }, step=current_step)
             
-            # Compute test metrics if test_dataset is provided
-            if self.test_dataset is not None:
-                test_metrics = self._compute_sampled_test_metrics(
+            # Compute validation metrics if valid_dataset is provided
+            if self.valid_dataset is not None:
+                val_metrics = self._compute_sampled_val_metrics(
                     sample_size=self.early_stopping_sample_size, 
                     batch_size=self.eval_batch_size
                 )
                 if wandb.run is not None:
                     wandb.log({
-                        "test/sampled_mrr": test_metrics["mrr"],
-                        "test/sampled_h1": test_metrics["h1"],
+                        "val/sampled_mrr": val_metrics["mrr"],
+                        "val/sampled_h1": val_metrics["h1"],
                         "epoch": epoch + 1
                     }, step=current_step)
                 
                 # Early stopping logic
                 if self.early_stopping_patience is not None:
-                    current_test_mrr = test_metrics["mrr"]
+                    current_val_mrr = val_metrics["mrr"]
                     
-                    if current_test_mrr > best_test_mrr:
-                        best_test_mrr = current_test_mrr
+                    if current_val_mrr > best_val_mrr:
+                        best_val_mrr = current_val_mrr
                         best_epoch = epoch + 1
                         epochs_without_improvement = 0
                         # Save best model state
                         model_to_save = self.model.module if hasattr(self.model, "module") else self.model
                         best_model_state = {k: v.cpu().clone() for k, v in model_to_save.state_dict().items()}
-                        print(f"  [Early Stop] New best test MRR: {best_test_mrr:.4f} at epoch {best_epoch}")
+                        print(f"  [Early Stop] New best val MRR: {best_val_mrr:.4f} at epoch {best_epoch}")
                     else:
                         epochs_without_improvement += 1
-                        print(f"  [Early Stop] No improvement for {epochs_without_improvement}/{self.early_stopping_patience} epochs (best: {best_test_mrr:.4f} at epoch {best_epoch})")
+                        print(f"  [Early Stop] No improvement for {epochs_without_improvement}/{self.early_stopping_patience} epochs (best: {best_val_mrr:.4f} at epoch {best_epoch})")
                         
                         if epochs_without_improvement >= self.early_stopping_patience:
-                            print(f"  [Early Stop] Stopping early at epoch {epoch + 1}. Best test MRR: {best_test_mrr:.4f} at epoch {best_epoch}")
+                            print(f"  [Early Stop] Stopping early at epoch {epoch + 1}. Best val MRR: {best_val_mrr:.4f} at epoch {best_epoch}")
                             early_stopped = True
                             break
 
@@ -604,13 +604,13 @@ class Trainer:
         
         # Restore best model if early stopping was used and we have a best state
         if self.early_stopping_patience is not None and best_model_state is not None:
-            print(f"Restoring best model from epoch {best_epoch} (test MRR: {best_test_mrr:.4f})")
+            print(f"Restoring best model from epoch {best_epoch} (val MRR: {best_val_mrr:.4f})")
             model_to_restore = self.model.module if hasattr(self.model, "module") else self.model
             # Move state back to device
             best_model_state = {k: v.to(self.device) for k, v in best_model_state.items()}
             model_to_restore.load_state_dict(best_model_state)
             self.best_epoch = best_epoch
-            self.best_test_mrr = best_test_mrr
+            self.best_val_mrr = best_val_mrr
         
         final_epoch = best_epoch if early_stopped else epochs
         self.save_model(final_epoch, os.path.join(self.save_path, f"model_epoch_{final_epoch}.pt"))
