@@ -17,7 +17,7 @@ from .static_funcs import *  # noqa
 from .trainer import DICE_Trainer  # noqa
 from .evaluation import Evaluator  # noqa
 
-__version__ = '0.2.1'
+__version__ = '0.3.0'
 
 __all__ = [
     'Execute',
