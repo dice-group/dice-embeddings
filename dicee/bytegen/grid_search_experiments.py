@@ -177,7 +177,7 @@ def run_experiment(args):
     """Worker function for parallel execution."""
     (tokenizer_type, vocab_size_arg, dataset_type, inverse, epochs, dataset_path, output_dir,
      n_layer, n_head, n_embd, dropout, batch_size, lr, label_smoothing, weight_decay, eval_batch_size, 
-     wandb_config, checkpoint_interval) = args
+     wandb_config, checkpoint_interval, early_stopping_patience, early_stopping_sample_size) = args
     
     # Get a free GPU ID from the queue
     gpu_id = gpu_queue.get()
@@ -322,7 +322,10 @@ def run_experiment(args):
             label_smoothing=label_smoothing,
             warmup_epochs=5,
             train_dataset=train_ds,
-            eval_batch_size=eval_batch_size
+            test_dataset=test_ds,
+            eval_batch_size=eval_batch_size,
+            early_stopping_patience=early_stopping_patience,
+            early_stopping_sample_size=early_stopping_sample_size
         )
         trainer.train(epochs, checkpoint_interval=checkpoint_interval)
         
@@ -461,6 +464,10 @@ def main():
                         help='Resume from a previous run by providing the output directory path')
     parser.add_argument('--checkpoint_interval', type=int, default=50,
                         help='Save checkpoint every N epochs (default: 50, set to 0 to disable)')
+    parser.add_argument('--early_stopping_patience', type=int, default=None,
+                        help='Early stopping patience in epochs (default: None = disabled, suggested: 20)')
+    parser.add_argument('--early_stopping_sample_size', type=int, default=64,
+                        help='Number of test triples to sample for early stopping MRR (default: 64)')
     parser.add_argument('--wandb_run_id', type=str, default=None,
                         help='Manually specify wandb run ID to resume (useful when resuming on a different machine)')
     parser.add_argument('-y', '--yes', action='store_true',
@@ -493,6 +500,8 @@ def main():
                 'weight_decay': 0.0,
                 'eval_batch_size': 8192*2,
                 'checkpoint_interval': 50,
+                'early_stopping_patience': None,
+                'early_stopping_sample_size': 64,
                 'wandb_project': 'bytegen-grid-search',
                 'wandb_entity': None,
             }
@@ -634,6 +643,8 @@ def main():
         "weight_decay": args.weight_decay,
         "eval_batch_size": args.eval_batch_size,
         "checkpoint_interval": args.checkpoint_interval,
+        "early_stopping_patience": args.early_stopping_patience,
+        "early_stopping_sample_size": args.early_stopping_sample_size,
     }
     save_run_config(args.output_dir, run_config)
     
@@ -667,7 +678,8 @@ def main():
                            args.data_path, args.output_dir,
                            args.n_layer, args.n_head, args.n_embd, args.dropout, 
                            args.batch_size, args.lr, args.label_smoothing, args.weight_decay, args.eval_batch_size, 
-                           wandb_config, checkpoint_interval))
+                           wandb_config, checkpoint_interval,
+                           args.early_stopping_patience, args.early_stopping_sample_size))
     
     # Display experiment plan
     print("\n" + "="*60)
@@ -717,6 +729,10 @@ def main():
     print(f"   • Weight decay: {args.weight_decay}")
     print(f"   • Eval batch size: {args.eval_batch_size}")
     print(f"   • Checkpoint interval: {checkpoint_interval or 'disabled'}")
+    if args.early_stopping_patience is not None:
+        print(f"   • Early stopping: patience={args.early_stopping_patience}, sample_size={args.early_stopping_sample_size}")
+    else:
+        print(f"   • Early stopping: disabled")
     print("="*60)
     
     # Ask for confirmation unless --yes flag is provided

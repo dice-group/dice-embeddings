@@ -22,7 +22,8 @@ class Trainer:
     def __init__(self, model: ByteGenModel, train_loader: DataLoader, config: ByteGenConfig, tokenizer: ByteTokenizer, 
                  optimizer: torch.optim.Optimizer = None, save_path: str = "checkpoints",
                  warmup_epochs: int = 5, label_smoothing: float = 0.0, grad_clip: float = 1.0,
-                 train_dataset=None, eval_batch_size: int = 128):
+                 train_dataset=None, test_dataset=None, eval_batch_size: int = 128,
+                 early_stopping_patience: int = None, early_stopping_sample_size: int = 64):
         self.model = model
         self.train_loader = train_loader
         self.config = config
@@ -34,16 +35,28 @@ class Trainer:
         self.label_smoothing = label_smoothing
         self.grad_clip = grad_clip
         self.train_dataset = train_dataset
+        self.test_dataset = test_dataset
         self.eval_batch_size = eval_batch_size
+        self.early_stopping_patience = early_stopping_patience
+        self.early_stopping_sample_size = early_stopping_sample_size
         os.makedirs(self.save_path, exist_ok=True)
         
-        # Build entity list for H@1 computation
+        # Build entity list for H@1 computation (include both train and test entities)
         if train_dataset is not None:
-            # Sort by length for efficient batching
-            self.entities = sorted(list(set(
+            # Collect entities from train dataset
+            all_entities = set(
                 [t[0] for t in train_dataset.triples] + 
                 [t[2] for t in train_dataset.triples]
-            )), key=lambda x: (len(x), x))
+            )
+            # Also include test entities if test_dataset is provided
+            if test_dataset is not None:
+                all_entities.update(
+                    [t[0] for t in test_dataset.triples] + 
+                    [t[2] for t in test_dataset.triples]
+                )
+            
+            # Sort by length for efficient batching
+            self.entities = sorted(list(all_entities), key=lambda x: (len(x), x))
             self.entity_to_idx = {e: i for i, e in enumerate(self.entities)}
             
             # Pre-compute entity tensor for fast evaluation
@@ -68,17 +81,30 @@ class Trainer:
             self.entity_tensor = self.entity_tensor.to(self.device)
             self.entity_lengths = self.entity_lengths.to(self.device)
 
-            # Build known facts for filtering
+            # Build known facts for filtering (train set)
             self.known_facts = set((h, r, t) for h, r, t in train_dataset.triples)
             self.hr_to_t = defaultdict(set)
             for h, r, t in train_dataset.triples:
                 self.hr_to_t[(h, r)].add(t)
+            
+            # Build known facts for test filtering (includes both train and test)
+            if test_dataset is not None:
+                self.hr_to_t_all = defaultdict(set)
+                # Include train facts
+                for h, r, t in train_dataset.triples:
+                    self.hr_to_t_all[(h, r)].add(t)
+                # Include test facts
+                for h, r, t in test_dataset.triples:
+                    self.hr_to_t_all[(h, r)].add(t)
+            else:
+                self.hr_to_t_all = None
         else:
             self.entities = None
             self.entity_tensor = None
             self.entity_lengths = None
             self.known_facts = None
             self.hr_to_t = None
+            self.hr_to_t_all = None
 
     def _create_scheduler(self, epochs: int):
         """Create LR scheduler with linear warmup followed by cosine annealing."""
@@ -310,6 +336,131 @@ class Trainer:
             "h1": hits1 / len(sample_indices)
         }
 
+    def _compute_sampled_test_metrics(self, sample_size: int = 200, batch_size: int = 512) -> Dict[str, float]:
+        """
+        Compute MRR and H@1 on a sample of TEST triples.
+        Uses filtered ranking (filters all known facts from train+test).
+        """
+        if self.test_dataset is None or self.entities is None:
+            return {"mrr": 0.0, "h1": 0.0}
+        
+        import random
+        
+        self.model.eval()
+        
+        # Sample triples from TEST dataset
+        triples = self.test_dataset.triples
+        sample_indices = random.sample(range(len(triples)), min(sample_size, len(triples)))
+        
+        mrr_sum = 0.0
+        hits1 = 0
+        
+        # AMP setup
+        use_amp = str(self.device).startswith('cuda')
+        dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+        
+        num_candidates = self.entity_tensor.size(0)
+        
+        # Pre-allocate scores tensor on GPU to avoid allocation overhead
+        gpu_scores = torch.zeros(num_candidates, device=self.device, dtype=torch.float32)
+        
+        # Pre-calculate candidate lengths on CPU to avoid .item() syncs if entity_lengths is on GPU
+        cpu_cand_lens = self.entity_lengths.cpu() if hasattr(self.entity_lengths, "cpu") else self.entity_lengths
+
+        with torch.inference_mode():
+            for idx in sample_indices:
+                h, r, t = triples[idx]
+                
+                # Build prefix: [EOS] H [SEP_HR] R [SEP_RT]
+                prefix = [self.tokenizer.eos_token_id] + list(h) + \
+                         [self.tokenizer.sep_hr_token_id] + list(r) + \
+                         [self.tokenizer.sep_rt_token_id]
+                
+                prefix_tensor = torch.tensor([prefix], dtype=torch.long, device=self.device)
+                
+                # --- Step 1: Cache Prefix KV ---
+                with torch.amp.autocast(device_type='cuda', dtype=dtype, enabled=use_amp):
+                    prefix_logits, prefix_kv = self.model(prefix_tensor)
+                    prefix_kv = [(k.clone(), v.clone()) for k, v in prefix_kv]
+                    last_prefix_logit = prefix_logits[:, -1:, :]  # [1, 1, V]
+                
+                # --- Step 2: Batched Candidate Evaluation ---
+                for i in range(0, num_candidates, batch_size):
+                    end_i = min(i + batch_size, num_candidates)
+                    curr_batch_size = end_i - i
+                    
+                    cand_batch = self.entity_tensor[i : end_i]
+                    max_len_in_batch = cpu_cand_lens[i : end_i].max().item()
+                    cand_batch = cand_batch[:, :max_len_in_batch]
+                    
+                    if cand_batch.device != self.device:
+                        cand_batch = cand_batch.to(self.device, non_blocking=True)
+                    
+                    batch_kv = [
+                        (k.expand(curr_batch_size, -1, -1, -1),
+                         v.expand(curr_batch_size, -1, -1, -1))
+                        for k, v in prefix_kv
+                    ]
+                    
+                    with torch.amp.autocast(device_type='cuda', dtype=dtype, enabled=use_amp):
+                        cand_logits, _ = self.model(cand_batch, past_kvs=batch_kv)
+                        batch_prefix_logit = last_prefix_logit.expand(curr_batch_size, -1, -1)
+                        full_logits = torch.cat([batch_prefix_logit, cand_logits], dim=1)
+                        
+                        shift_logits = full_logits[:, :-1, :].contiguous()
+                        shift_labels = cand_batch
+                        
+                        loss_per_token = F.cross_entropy(
+                            shift_logits.view(-1, shift_logits.size(-1)),
+                            shift_labels.reshape(-1),
+                            reduction='none',
+                            ignore_index=self.tokenizer.pad_token_id
+                        )
+                        
+                        loss_per_token = loss_per_token.view(curr_batch_size, -1)
+                        summed_scores = -loss_per_token.sum(dim=1)
+                        batch_lens = cpu_cand_lens[i:end_i].to(self.device, non_blocking=True)
+                        gpu_scores[i : end_i] = summed_scores / batch_lens
+                
+                # --- Step 3: Filtering & Ranking ---
+                if t not in self.entity_to_idx:
+                    continue
+                    
+                target_idx = self.entity_to_idx[t]
+                target_score = gpu_scores[target_idx]
+                
+                # Filter ALL known facts (train + test) for proper filtered ranking
+                valid_tails = self.hr_to_t_all.get((h, r), set()) if self.hr_to_t_all else set()
+                
+                if len(valid_tails) > 1:
+                    valid_indices = [
+                        self.entity_to_idx[vt] 
+                        for vt in valid_tails 
+                        if vt in self.entity_to_idx and vt != t
+                    ]
+                    
+                    if valid_indices:
+                        mask_indices = torch.tensor(valid_indices, device=self.device, dtype=torch.long)
+                        gpu_scores.index_fill_(0, mask_indices, -float('inf'))
+                
+                rank = (gpu_scores > target_score).sum().item() + 1
+                
+                mrr_sum += 1.0 / rank
+                if rank == 1:
+                    hits1 += 1
+                
+                del prefix_kv, batch_kv, prefix_logits, cand_logits
+                gpu_scores.zero_()
+        
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        
+        self.model.train()
+        return {
+            "mrr": mrr_sum / len(sample_indices),
+            "h1": hits1 / len(sample_indices)
+        }
+
     def train(self, epochs: int = 500, checkpoint_interval: int = None):
         """
         Train the model for a given number of epochs.
@@ -326,9 +477,18 @@ class Trainer:
         print(f"  - Weight decay: {self.config.weight_decay}")
         if checkpoint_interval:
             print(f"  - Checkpoint interval: every {checkpoint_interval} epochs")
+        if self.early_stopping_patience is not None:
+            print(f"  - Early stopping: patience={self.early_stopping_patience}, sample_size={self.early_stopping_sample_size}")
         
         self.model.train()
         scheduler = self._create_scheduler(epochs)
+        
+        # Early stopping state
+        best_test_mrr = -1.0
+        best_epoch = 0
+        best_model_state = None
+        epochs_without_improvement = 0
+        early_stopped = False
         
         for epoch in range(epochs):
             total_loss = 0
@@ -388,15 +548,50 @@ class Trainer:
                     })
             
             # Compute sampled metrics at the end of each epoch
+            current_step = (epoch + 1) * len(self.train_loader)
+            
+            # Compute train metrics
+            train_metrics = self._compute_sampled_metrics(sample_size=64, batch_size=self.eval_batch_size)
             if wandb.run is not None:
-                metrics = self._compute_sampled_metrics(sample_size=64, batch_size=self.eval_batch_size)
-                # Use the step count at the end of the epoch
-                current_step = (epoch + 1) * len(self.train_loader)
                 wandb.log({
-                    "train/sampled_mrr": metrics["mrr"],
-                    "train/sampled_h1": metrics["h1"],
+                    "train/sampled_mrr": train_metrics["mrr"],
+                    "train/sampled_h1": train_metrics["h1"],
                     "epoch": epoch + 1
                 }, step=current_step)
+            
+            # Compute test metrics if test_dataset is provided
+            if self.test_dataset is not None:
+                test_metrics = self._compute_sampled_test_metrics(
+                    sample_size=self.early_stopping_sample_size, 
+                    batch_size=self.eval_batch_size
+                )
+                if wandb.run is not None:
+                    wandb.log({
+                        "test/sampled_mrr": test_metrics["mrr"],
+                        "test/sampled_h1": test_metrics["h1"],
+                        "epoch": epoch + 1
+                    }, step=current_step)
+                
+                # Early stopping logic
+                if self.early_stopping_patience is not None:
+                    current_test_mrr = test_metrics["mrr"]
+                    
+                    if current_test_mrr > best_test_mrr:
+                        best_test_mrr = current_test_mrr
+                        best_epoch = epoch + 1
+                        epochs_without_improvement = 0
+                        # Save best model state
+                        model_to_save = self.model.module if hasattr(self.model, "module") else self.model
+                        best_model_state = {k: v.cpu().clone() for k, v in model_to_save.state_dict().items()}
+                        print(f"  [Early Stop] New best test MRR: {best_test_mrr:.4f} at epoch {best_epoch}")
+                    else:
+                        epochs_without_improvement += 1
+                        print(f"  [Early Stop] No improvement for {epochs_without_improvement}/{self.early_stopping_patience} epochs (best: {best_test_mrr:.4f} at epoch {best_epoch})")
+                        
+                        if epochs_without_improvement >= self.early_stopping_patience:
+                            print(f"  [Early Stop] Stopping early at epoch {epoch + 1}. Best test MRR: {best_test_mrr:.4f} at epoch {best_epoch}")
+                            early_stopped = True
+                            break
 
             # Step scheduler after each epoch (only if it exists)
             if scheduler is not None:
@@ -406,8 +601,19 @@ class Trainer:
             if checkpoint_interval and (epoch + 1) % checkpoint_interval == 0:
                 checkpoint_path = os.path.join(self.save_path, f"checkpoint_epoch_{epoch + 1}.pt")
                 self.save_model(epoch + 1, checkpoint_path)
-            
-        self.save_model(epochs, os.path.join(self.save_path, f"model_epoch_{epochs}.pt"))
+        
+        # Restore best model if early stopping was used and we have a best state
+        if self.early_stopping_patience is not None and best_model_state is not None:
+            print(f"Restoring best model from epoch {best_epoch} (test MRR: {best_test_mrr:.4f})")
+            model_to_restore = self.model.module if hasattr(self.model, "module") else self.model
+            # Move state back to device
+            best_model_state = {k: v.to(self.device) for k, v in best_model_state.items()}
+            model_to_restore.load_state_dict(best_model_state)
+            self.best_epoch = best_epoch
+            self.best_test_mrr = best_test_mrr
+        
+        final_epoch = best_epoch if early_stopped else epochs
+        self.save_model(final_epoch, os.path.join(self.save_path, f"model_epoch_{final_epoch}.pt"))
 
     def save_model(self, epoch, path):
         model_to_save = self.model.module if hasattr(self.model, "module") else self.model
