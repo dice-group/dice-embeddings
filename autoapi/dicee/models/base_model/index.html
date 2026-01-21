@@ -170,7 +170,7 @@
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGELightning">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.base_model.</span></span><span class="sig-name descname"><span class="pre">BaseKGELightning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.base_model.</span></span><span class="sig-name descname"><span class="pre">BaseKGELightning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGELightning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">lightning.LightningModule</span></code></p>
 <p>Base class for all neural network modules.</p>
 <p>Your models should also subclass this class.</p>
@@ -211,13 +211,13 @@ evaluation mode.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGELightning.mem_of_model">
-<span class="sig-name descname"><span class="pre">mem_of_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.mem_of_model" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">mem_of_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGELightning.mem_of_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.mem_of_model" title="Link to this definition"></a></dt>
 <dd><p>Size of model in MB and number of params</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGELightning.training_step">
-<span class="sig-name descname"><span class="pre">training_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.training_step" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">training_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGELightning.training_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.training_step" title="Link to this definition"></a></dt>
 <dd><p>Here you compute and return the training loss and some additional metrics for e.g. the progress bar or
 logger.</p>
 <dl class="field-list simple">
@@ -278,7 +278,7 @@ normalized by <code class="docutils literal notranslate"><span class="pre">accum
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGELightning.loss_function">
-<span class="sig-name descname"><span class="pre">loss_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yhat_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.loss_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">loss_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yhat_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGELightning.loss_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.loss_function" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -291,7 +291,7 @@ normalized by <code class="docutils literal notranslate"><span class="pre">accum
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGELightning.on_train_epoch_end">
-<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.on_train_epoch_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGELightning.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.on_train_epoch_end" title="Link to this definition"></a></dt>
 <dd><p>Called in the training loop at the very end of the epoch.</p>
 <p>To access all batch outputs at the end of the epoch, you can cache step outputs as an attribute of the
 <code class="xref py py-class docutils literal notranslate"><span class="pre">LightningModule</span></code> and access them in this hook:</p>
@@ -317,12 +317,12 @@ normalized by <code class="docutils literal notranslate"><span class="pre">accum
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGELightning.test_epoch_end">
-<span class="sig-name descname"><span class="pre">test_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.test_epoch_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">test_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGELightning.test_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.test_epoch_end" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGELightning.test_dataloader">
-<span class="sig-name descname"><span class="pre">test_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.test_dataloader" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">test_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGELightning.test_dataloader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.test_dataloader" title="Link to this definition"></a></dt>
 <dd><p>An iterable or collection of iterables specifying test samples.</p>
 <p>For more information about multiple dataloaders, see this <span class="xref std std-ref">section</span>.</p>
 <p>For data processing use the following pattern:</p>
@@ -356,7 +356,7 @@ this method.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGELightning.val_dataloader">
-<span class="sig-name descname"><span class="pre">val_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.val_dataloader" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">val_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGELightning.val_dataloader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.val_dataloader" title="Link to this definition"></a></dt>
 <dd><p>An iterable or collection of iterables specifying validation samples.</p>
 <p>For more information about multiple dataloaders, see this <span class="xref std std-ref">section</span>.</p>
 <p>The dataloader you return will not be reloaded unless you set
@@ -383,7 +383,7 @@ implement this method.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGELightning.predict_dataloader">
-<span class="sig-name descname"><span class="pre">predict_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.predict_dataloader" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">predict_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGELightning.predict_dataloader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.predict_dataloader" title="Link to this definition"></a></dt>
 <dd><p>An iterable or collection of iterables specifying prediction samples.</p>
 <p>For more information about multiple dataloaders, see this <span class="xref std std-ref">section</span>.</p>
 <p>It’s recommended that all data downloads and preparation happen in <code class="xref py py-meth docutils literal notranslate"><span class="pre">prepare_data()</span></code>.</p>
@@ -406,7 +406,7 @@ There is no need to set it yourself.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGELightning.train_dataloader">
-<span class="sig-name descname"><span class="pre">train_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.train_dataloader" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">train_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGELightning.train_dataloader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.train_dataloader" title="Link to this definition"></a></dt>
 <dd><p>An iterable or collection of iterables specifying training samples.</p>
 <p>For more information about multiple dataloaders, see this <span class="xref std std-ref">section</span>.</p>
 <p>The dataloader you return will not be reloaded unless you set
@@ -438,7 +438,7 @@ There is no need to set it yourself.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGELightning.configure_optimizers">
-<span class="sig-name descname"><span class="pre">configure_optimizers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.configure_optimizers" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">configure_optimizers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGELightning.configure_optimizers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.configure_optimizers" title="Link to this definition"></a></dt>
 <dd><p>Choose what optimizers and learning-rate schedulers to use in your optimization. Normally you’d need one.
 But in the case of GANs or similar you might have multiple. Optimization with multiple optimizers only works in
 the manual optimization mode.</p>
@@ -510,7 +510,7 @@ yourself.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.base_model.</span></span><span class="sig-name descname"><span class="pre">BaseKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGE" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.base_model.</span></span><span class="sig-name descname"><span class="pre">BaseKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGE" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#dicee.models.base_model.BaseKGELightning" title="dicee.models.base_model.BaseKGELightning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGELightning</span></code></a></p>
 <p>Base class for all neural network modules.</p>
 <p>Your models should also subclass this class.</p>
@@ -691,7 +691,7 @@ evaluation mode.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.forward_byte_pair_encoded_k_vs_all">
-<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.forward_byte_pair_encoded_k_vs_all" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGE.forward_byte_pair_encoded_k_vs_all" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>x</strong> (<em>B x 2 x T</em>)</p>
@@ -701,7 +701,7 @@ evaluation mode.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.forward_byte_pair_encoded_triple">
-<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_triple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.forward_byte_pair_encoded_triple" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_triple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_triple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGE.forward_byte_pair_encoded_triple" title="Link to this definition"></a></dt>
 <dd><p>byte pair encoded neural link predictors</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -712,12 +712,12 @@ evaluation mode.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.init_params_with_sanity_checking">
-<span class="sig-name descname"><span class="pre">init_params_with_sanity_checking</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.init_params_with_sanity_checking" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">init_params_with_sanity_checking</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.init_params_with_sanity_checking"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGE.init_params_with_sanity_checking" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.forward" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGE.forward" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -731,7 +731,7 @@ evaluation mode.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.forward_triples">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.forward_triples" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGE.forward_triples" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>x</strong></p>
@@ -741,27 +741,27 @@ evaluation mode.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.forward_k_vs_all">
-<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.forward_k_vs_all" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGE.forward_k_vs_all" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.forward_k_vs_sample">
-<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.forward_k_vs_sample" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGE.forward_k_vs_sample" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.get_triple_representation">
-<span class="sig-name descname"><span class="pre">get_triple_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_hrt</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.get_triple_representation" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_triple_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_hrt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.get_triple_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGE.get_triple_representation" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.get_head_relation_representation">
-<span class="sig-name descname"><span class="pre">get_head_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.get_head_relation_representation" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_head_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.get_head_relation_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGE.get_head_relation_representation" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.get_sentence_representation">
-<span class="sig-name descname"><span class="pre">get_sentence_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.get_sentence_representation" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_sentence_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.get_sentence_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGE.get_sentence_representation" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -775,7 +775,7 @@ evaluation mode.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.get_bpe_head_and_relation_representation">
-<span class="sig-name descname"><span class="pre">get_bpe_head_and_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.get_bpe_head_and_relation_representation" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_bpe_head_and_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.get_bpe_head_and_relation_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGE.get_bpe_head_and_relation_representation" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>x</strong> (<em>B x 2 x T</em>)</p>
@@ -785,14 +785,14 @@ evaluation mode.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGE.get_embeddings">
-<span class="sig-name descname"><span class="pre">get_embeddings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dicee.models.base_model.BaseKGE.get_embeddings" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_embeddings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.get_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGE.get_embeddings" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.base_model.IdentityClass">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.base_model.</span></span><span class="sig-name descname"><span class="pre">IdentityClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.IdentityClass" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.base_model.</span></span><span class="sig-name descname"><span class="pre">IdentityClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#IdentityClass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.IdentityClass" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
 <p>Base class for all neural network modules.</p>
 <p>Your models should also subclass this class.</p>
@@ -833,12 +833,12 @@ evaluation mode.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.IdentityClass.__call__">
-<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.IdentityClass.__call__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#IdentityClass.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.IdentityClass.__call__" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.IdentityClass.forward">
-<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.models.base_model.IdentityClass.forward" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#IdentityClass.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.IdentityClass.forward" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>

@@ -1,0 +1,454 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.models.real &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../../../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dicee.models.real</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dicee.models.real</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseKGE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dicee.models.transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Block</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+
+<div class="viewcode-block" id="DistMult">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.DistMult">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DistMult</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Embedding Entities and Relations for Learning and Inference in Knowledge Bases</span>
+<span class="sd">    https://arxiv.org/abs/1412.6575&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;DistMult&#39;</span>
+
+<div class="viewcode-block" id="DistMult.k_vs_all_score">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.DistMult.k_vs_all_score">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">k_vs_all_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emb_h</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">emb_r</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">emb_E</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        emb_h</span>
+<span class="sd">        emb_r</span>
+<span class="sd">        emb_E</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dropout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_normalizer</span><span class="p">(</span><span class="n">emb_h</span> <span class="o">*</span> <span class="n">emb_r</span><span class="p">)),</span> <span class="n">emb_E</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="DistMult.forward_k_vs_all">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.DistMult.forward_k_vs_all">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
+        <span class="n">emb_head</span><span class="p">,</span> <span class="n">emb_rel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_vs_all_score</span><span class="p">(</span><span class="n">emb_h</span><span class="o">=</span><span class="n">emb_head</span><span class="p">,</span> <span class="n">emb_r</span><span class="o">=</span><span class="n">emb_rel</span><span class="p">,</span> <span class="n">emb_E</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DistMult.forward_k_vs_sample">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.DistMult.forward_k_vs_sample">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
+        <span class="c1"># (b,d),     (b,d)</span>
+        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_rel_real</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="c1"># (b, d)</span>
+        <span class="n">hr</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd, bd -&gt; bd&#39;</span><span class="p">,</span> <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_rel_real</span><span class="p">)</span>
+        <span class="c1"># (b, k, d)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span><span class="n">target_entity_idx</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd, bkd -&gt; bk&#39;</span><span class="p">,</span> <span class="n">hr</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="DistMult.score">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.DistMult.score">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dropout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_normalizer</span><span class="p">(</span><span class="n">h</span> <span class="o">*</span> <span class="n">r</span><span class="p">))</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TransE">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.TransE">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TransE</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Translating Embeddings for Modeling</span>
+<span class="sd">    Multi-relational Data</span>
+<span class="sd">    https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;TransE&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_norm</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">margin</span> <span class="o">=</span> <span class="mi">4</span>
+
+<div class="viewcode-block" id="TransE.score">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.TransE.score">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span><span class="p">):</span>
+        <span class="c1"># Original d:=|| s+p - t||_2 \approx 0 distance, if true</span>
+        <span class="c1"># if d =0 sigma(5-0) =&gt; 1</span>
+        <span class="c1"># if d =5 sigma(5-5) =&gt; 0.5</span>
+        <span class="c1"># Update: sigmoid( \gamma - d)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">margin</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">pairwise_distance</span><span class="p">(</span><span class="n">head_ent_emb</span> <span class="o">+</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span><span class="p">,</span>
+                                                                   <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_norm</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TransE.forward_k_vs_all">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.TransE.forward_k_vs_all">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_rel_real</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">pairwise_distance</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">emb_head_real</span> <span class="o">+</span> <span class="n">emb_rel_real</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_norm</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">margin</span> <span class="o">-</span> <span class="n">distance</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Shallom">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.Shallom">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Shallom</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090) &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Shallom&#39;</span>
+        <span class="n">shallom_width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shallom</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_dropout_rate</span><span class="p">),</span>
+                                           <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">shallom_width</span><span class="p">),</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">normalizer_class</span><span class="p">(</span><span class="n">shallom_width</span><span class="p">),</span>
+                                           <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span>
+                                           <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dropout_rate</span><span class="p">),</span>
+                                           <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">shallom_width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Shallom.get_embeddings">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.Shallom.get_embeddings">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="Shallom.forward_k_vs_all">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.Shallom.forward_k_vs_all">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+        <span class="n">e1_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+        <span class="n">e2_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+        <span class="n">e1_idx</span><span class="p">,</span> <span class="n">e2_idx</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">emb_s</span><span class="p">,</span> <span class="n">emb_o</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span><span class="n">e1_idx</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span><span class="n">e2_idx</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">shallom</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">emb_s</span><span class="p">,</span> <span class="n">emb_o</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Shallom.forward_triples">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.Shallom.forward_triples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        :param x:</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">assert</span> <span class="n">d</span> <span class="o">==</span> <span class="mi">3</span>
+        <span class="n">scores_for_all_relations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_k_vs_all</span><span class="p">(</span><span class="n">x</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="n">scores_for_all_relations</span><span class="p">[:,</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Pyke">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.Pyke">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Pyke</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; A Physical Embedding Model for Knowledge Graphs &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Pyke&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dist_func</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">PairwiseDistance</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">margin</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+<div class="viewcode-block" id="Pyke.forward_triples">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.Pyke.forward_triples">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
+        <span class="c1"># (1) get embeddings for a batch of entities and relations</span>
+        <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="c1"># (2) Compute the Euclidean distance from head to relation</span>
+        <span class="n">dist_head_rel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist_func</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">)</span>
+        <span class="n">dist_rel_tail</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dist_func</span><span class="p">(</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span><span class="p">)</span>
+        <span class="n">avg_dist</span> <span class="o">=</span> <span class="p">(</span><span class="n">dist_head_rel</span> <span class="o">+</span> <span class="n">dist_rel_tail</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">margin</span> <span class="o">-</span> <span class="n">avg_dist</span></div>
+</div>
+
+
+<div class="viewcode-block" id="CoKEConfig">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.CoKEConfig">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CoKEConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configuration for the CoKE (Contextualized Knowledge Graph Embedding) model.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        block_size: Sequence length for transformer (3 for triples: head, relation, tail)</span>
+<span class="sd">        vocab_size: Total vocabulary size (num_entities + num_relations)</span>
+<span class="sd">        n_layer: Number of transformer layers</span>
+<span class="sd">        n_head: Number of attention heads per layer</span>
+<span class="sd">        n_embd: Embedding dimension (set to match model embedding_dim)</span>
+<span class="sd">        dropout: Dropout rate applied throughout the model</span>
+<span class="sd">        bias: Whether to use bias in linear layers</span>
+<span class="sd">        causal: Whether to use causal masking (False for bidirectional attention)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">block_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>           <span class="c1"># triples -&gt; TODO: LF: for multi-hop this needs to be bigger</span>
+    <span class="n">vocab_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span>        <span class="c1"># Must be set to num_entities + num_relations before initializing CoKE</span>
+    <span class="n">n_layer</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span>             
+    <span class="n">n_head</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span>               
+    <span class="n">n_embd</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span>             
+    <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span>          <span class="c1"># according to paper in [0.1 - 0.5]</span>
+    <span class="n">bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>             <span class="c1"># idk if better with false?</span>
+    <span class="n">causal</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>          <span class="c1"># non-causal so that we gather information in mask token </span></div>
+
+
+<div class="viewcode-block" id="CoKE">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.CoKE">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CoKE</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Contextualized Knowledge Graph Embedding (CoKE) model.</span>
+<span class="sd">    Based on: https://arxiv.org/pdf/1911.02168.</span>
+<span class="sd">    </span>
+<span class="sd">    CoKE uses a transformer encoder to learn contextualized representations of entities and relations.</span>
+<span class="sd">    For link prediction, it predicts masked elements in (head, relation, tail) triples using</span>
+<span class="sd">    bidirectional attention, similar to BERT&#39;s masked language modeling approach.</span>
+<span class="sd">    </span>
+<span class="sd">    The model creates a sequence [head_emb, relation_emb, mask_emb], adds positional embeddings,</span>
+<span class="sd">    and processes it through transformer layers to predict the tail entity.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">CoKEConfig</span> <span class="o">=</span> <span class="n">CoKEConfig</span><span class="p">()):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;CoKE&#39;</span>
+
+        <span class="c1"># Configure model dimensions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">vocab_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">n_embd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
+    
+        <span class="c1"># Positional and mask embeddings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos_emb</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">block_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mask_emb</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">))</span>
+
+        <span class="c1"># Transformer layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span><span class="n">Block</span><span class="p">(</span><span class="n">config</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">n_layer</span><span class="p">)])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ln_f</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">coke_dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">dropout</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CoKE.forward_k_vs_all">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.CoKE.forward_k_vs_all">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">device</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Get embeddings for head and relation</span>
+        <span class="n">head_emb</span><span class="p">,</span> <span class="n">rel_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># (b, dim), (b, dim)</span>
+        <span class="n">mask_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_emb</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (b, dim)</span>
+        
+        <span class="c1"># Create sequence: [head, relation, mask]</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">head_emb</span><span class="p">,</span> <span class="n">rel_emb</span><span class="p">,</span> <span class="n">mask_emb</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (b, 3, dim)</span>
+        
+        <span class="c1"># Add positional embeddings</span>
+        <span class="n">pos_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>  <span class="c1"># (3,) -&gt; TODO: LF: here 3 has to change according to voacb size (in case we want multi-hop)</span>
+        <span class="n">pos_ids</span> <span class="o">=</span> <span class="n">pos_ids</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>  <span class="c1"># (b, 3) TODO: LF: same as above</span>
+        <span class="n">pos_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_emb</span><span class="p">(</span><span class="n">pos_ids</span><span class="p">)</span>  <span class="c1"># (b, 3, dim)</span>
+        <span class="n">x_tok</span> <span class="o">=</span> <span class="n">seq</span> <span class="o">+</span> <span class="n">pos_emb</span>  <span class="c1"># (b, 3, dim)</span>
+
+        <span class="c1"># Pass through transformer layers</span>
+        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">:</span>
+            <span class="n">x_tok</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span>
+        <span class="n">x_tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ln_f</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span>
+
+        <span class="c1"># Extract the mask token&#39;s hidden state (position 2)</span>
+        <span class="n">h_mask</span> <span class="o">=</span> <span class="n">x_tok</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">h_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coke_dropout</span><span class="p">(</span><span class="n">h_mask</span><span class="p">)</span>
+
+        <span class="c1"># Score against all entity embeddings</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_tail_entity_embeddings</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="n">h_mask</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">E</span><span class="o">.</span><span class="n">t</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="n">scores</span> </div>
+
+
+<div class="viewcode-block" id="CoKE.score">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.CoKE.score">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emb_h</span><span class="p">,</span> <span class="n">emb_r</span><span class="p">,</span> <span class="n">emb_t</span><span class="p">):</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">emb_h</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">emb_h</span><span class="o">.</span><span class="n">device</span>
+        
+        <span class="c1"># Create sequence with mask token</span>
+        <span class="n">mask_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_emb</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">emb_h</span><span class="p">,</span> <span class="n">emb_r</span><span class="p">,</span> <span class="n">mask_emb</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        
+        <span class="c1"># Add positional embeddings</span>
+        <span class="n">pos_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">pos_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_emb</span><span class="p">(</span><span class="n">pos_ids</span><span class="p">)</span>
+        <span class="n">x_tok</span> <span class="o">=</span> <span class="n">seq</span> <span class="o">+</span> <span class="n">pos_emb</span>
+
+        <span class="c1"># Pass through transformer</span>
+        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">:</span>
+            <span class="n">x_tok</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span>
+        <span class="n">x_tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ln_f</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span>
+        
+        <span class="c1"># Extract mask token hidden state</span>
+        <span class="n">h_mask</span> <span class="o">=</span> <span class="n">x_tok</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">h_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coke_dropout</span><span class="p">(</span><span class="n">h_mask</span><span class="p">)</span>
+
+        <span class="c1"># Compute similarity between mask representation and tail embedding</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd -&gt; b&#39;</span><span class="p">,</span> <span class="n">h_mask</span><span class="p">,</span> <span class="n">emb_t</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">score</span></div>
+
+
+<div class="viewcode-block" id="CoKE.forward_k_vs_sample">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.CoKE.forward_k_vs_sample">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
+        <span class="n">emb_head</span><span class="p">,</span> <span class="n">emb_rel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">emb_head</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">emb_tail</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span><span class="n">target_entity_idx</span><span class="p">)</span>  <span class="c1"># (b, k, dim)</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">emb_head</span><span class="o">.</span><span class="n">device</span>
+        
+        <span class="c1"># Create sequence with mask token</span>
+        <span class="n">mask_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_emb</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">emb_head</span><span class="p">,</span> <span class="n">emb_rel</span><span class="p">,</span> <span class="n">mask_emb</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        
+        <span class="c1"># Add positional embeddings</span>
+        <span class="n">pos_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">pos_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_emb</span><span class="p">(</span><span class="n">pos_ids</span><span class="p">)</span>
+        <span class="n">x_tok</span> <span class="o">=</span> <span class="n">seq</span> <span class="o">+</span> <span class="n">pos_emb</span>
+        
+        <span class="c1"># Pass through transformer</span>
+        <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">:</span>
+            <span class="n">x_tok</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span>
+        <span class="n">x_tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ln_f</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span>
+        
+        <span class="c1"># Extract mask token hidden state</span>
+        <span class="n">h_mask</span> <span class="o">=</span> <span class="n">x_tok</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">h_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coke_dropout</span><span class="p">(</span><span class="n">h_mask</span><span class="p">)</span>
+
+        <span class="n">scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd, bkd -&gt; bk&#39;</span><span class="p">,</span> <span class="n">h_mask</span><span class="p">,</span> <span class="n">emb_tail</span><span class="p">)</span> <span class="c1"># dot product between each batch (how simlar is mask to all k tails in batch x)</span>
+                                                         <span class="c1">#output: (b,k) -&gt; k scores per batch</span>
+
+        <span class="k">return</span> <span class="n">scores</span></div>
+</div>
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
