@@ -91,7 +91,7 @@ def evaluate_literal_prediction(
         print(f"Literal predictions saved to {prediction_path}")
     try:
         from sklearn.metrics import mean_absolute_error, root_mean_squared_error
-    except ImportError as e:
+    except ImportError:
         raise ImportError(
             "scikit-learn is required for evaluating literal prediction metrics. "
             "Please install it using 'pip install scikit-learn'."
