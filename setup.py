@@ -16,7 +16,7 @@ _core_deps = [
     "numpy==1.26.4",
     "torch>=2.5.1",
     "lightning>=2.5.0.post0",
-    "pandas>=2.1.0",
+    "pandas<=2.3.3",
     "requests>=2.32.3",
     "polars>=0.16.14",
     "pytorch_lightning>=2.5.1",
