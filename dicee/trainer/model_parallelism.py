@@ -1,6 +1,4 @@
 import torch
-from ..abstracts import AbstractTrainer
-from ..static_funcs_training import make_iterable_verbose
 from typing import Tuple
 import time
 
