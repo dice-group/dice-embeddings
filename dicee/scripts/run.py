@@ -60,7 +60,7 @@ def get_default_arguments(description=None):
                              '"Perturb": {"level": "out", "ratio": 0.2, "method": "RN", "scaler": 0.3}')
     parser.add_argument("--trainer", type=str, default='PL',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP'],
-                        help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only), TP (Model Paralelisim)')
+                        help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
     parser.add_argument('--scoring_technique', default="NegSample",
                         help="Training technique for knowledge graph embedding model",
                         choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "1vsSample", "KvsSample"])
@@ -135,9 +135,6 @@ def get_default_arguments(description=None):
     parser.add_argument("--twa",
                         action="store_true",
                         help="Trainable Weight Averaging")
-    parser.add_argument("--auto_batch_finding",
-                        action="store_true",
-                        help="Find a batch size fitting in GPUs. Only available for TP trainer")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
     

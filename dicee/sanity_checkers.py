@@ -113,4 +113,4 @@ def sanity_check_callback_args(args):
 
     # TWA/SWAG trainer compatibility
     if any([args.twa, args.swag]) and args.trainer in {"torchDDP"}:
-        raise NotImplementedError("TWA and SWAG are not supported with TP or torchDDP trainers.")
+        raise NotImplementedError("TWA and SWAG are not supported with torchDDP trainer.")

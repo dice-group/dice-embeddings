@@ -801,13 +801,10 @@ def from_pretrained_model_write_embeddings_into_csv(path: str) -> None:
     entity_csv_path = os.path.join(path, f"{config['model']}_entity_embeddings.csv")
     relation_csv_path = os.path.join(path, f"{config['model']}_relation_embeddings.csv")
 
-    if config["trainer"]=="TP":
-        entity_emb, relation_emb = write_csv_from_model_parallel(path)
-    else:
-        # Load model
-        model = torch.load(os.path.join(path, "model.pt"))
-        # Assuming model has a get_embeddings method
-        entity_emb, relation_emb = model["entity_embeddings.weight"], model["relation_embeddings.weight"]
+    # Load model
+    model = torch.load(os.path.join(path, "model.pt"))
+    # Assuming model has a get_embeddings method
+    entity_emb, relation_emb = model["entity_embeddings.weight"], model["relation_embeddings.weight"]
     str_entity = pd.read_csv(f"{path}/entity_to_idx.csv", index_col=0)["entity"]
     assert str_entity.index.is_monotonic_increasing
     str_entity=str_entity.to_list()
