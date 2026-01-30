@@ -4,14 +4,6 @@ dicee.trainer.model_parallelism
 .. py:module:: dicee.trainer.model_parallelism
 
 
-Classes
--------
-
-.. autoapisummary::
-
-   dicee.trainer.model_parallelism.TensorParallel
-
-
 Functions
 ---------
 
@@ -30,27 +22,4 @@ Module Contents
 .. py:function:: find_good_batch_size(train_loader, tp_ensemble_model)
 
 .. py:function:: forward_backward_update_loss(z: Tuple, ensemble_model) -> float
-
-.. py:class:: TensorParallel(args, callbacks)
-
-   Bases: :py:obj:`dicee.abstracts.AbstractTrainer`
-
-
-   Abstract class for Trainer class for knowledge graph embedding models
-
-
-   Parameter
-   ---------
-   args : str
-       ?
-
-   callbacks: list
-           ?
-
-
-   .. py:method:: fit(*args, **kwargs)
-
-      Train model
-
-
 

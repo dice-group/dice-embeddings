@@ -213,8 +213,8 @@
         <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">swa_start_epoch</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;SWA Start Epoch must be greater than 0&quot;</span>
 
     <span class="c1"># TWA/SWAG trainer compatibility</span>
-    <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">args</span><span class="o">.</span><span class="n">twa</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">swag</span><span class="p">])</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;TP&quot;</span><span class="p">,</span> <span class="s2">&quot;torchDDP&quot;</span><span class="p">}:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;TWA and SWAG are not supported with TP or torchDDP trainers.&quot;</span><span class="p">)</span></div>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">args</span><span class="o">.</span><span class="n">twa</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">swag</span><span class="p">])</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;torchDDP&quot;</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;TWA and SWAG are not supported with torchDDP trainer.&quot;</span><span class="p">)</span></div>
 
 </pre></div>
 
