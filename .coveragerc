@@ -2,6 +2,7 @@
 omit =
     tests/*
     /tmp/*
+    */_remote_module_non_scriptable*
 
 [report]
 exclude_lines =

@@ -1,8 +1,8 @@
 [![Downloads](https://static.pepy.tech/badge/dicee)](https://pepy.tech/project/dicee)
 [![Downloads](https://img.shields.io/pypi/dm/dicee)](https://pypi.org/project/dicee/)
 [![Coverage](https://img.shields.io/badge/coverage-54%25-green)](https://dice-group.github.io/dice-embeddings/usage/main.html#coverage-report)
-[![Pypi](https://img.shields.io/badge/pypi-0.3.0-blue)](https://pypi.org/project/dicee/0.3.0/)
-[![Docs](https://img.shields.io/badge/documentation-0.3.0-yellow)](https://dice-group.github.io/dice-embeddings/index.html)
+[![Pypi](https://img.shields.io/badge/pypi-0.3.2-blue)](https://pypi.org/project/dicee/0.3.2/)
+[![Docs](https://img.shields.io/badge/documentation-0.3.2-yellow)](https://dice-group.github.io/dice-embeddings/index.html)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dice-group/dice-embeddings)
 
 ![dicee_logo](docs/_static/images/dicee_logo.png)

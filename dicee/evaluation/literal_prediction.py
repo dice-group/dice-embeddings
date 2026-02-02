@@ -8,7 +8,7 @@ import os
 from typing import Optional
 
 import pandas as pd
-from sklearn.metrics import mean_absolute_error, root_mean_squared_error
+
 
 
 def evaluate_literal_prediction(
@@ -89,7 +89,13 @@ def evaluate_literal_prediction(
         prediction_path = os.path.join(kge_model.path, "lit_predictions.csv")
         prediction_df.to_csv(prediction_path, index=False)
         print(f"Literal predictions saved to {prediction_path}")
-
+    try:
+        from sklearn.metrics import mean_absolute_error, root_mean_squared_error
+    except ImportError:
+        raise ImportError(
+            "scikit-learn is required for evaluating literal prediction metrics. "
+            "Please install it using 'pip install scikit-learn'."
+        )
     # Calculate and store error metrics
     if eval_literals:
         attr_error_metrics = test_df.groupby("attribute").agg(

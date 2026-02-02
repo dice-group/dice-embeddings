@@ -7,7 +7,7 @@ import functools
 import pandas as pd
 import pickle
 import os
-import psutil
+
 import requests
 from typing import Tuple
 import polars as pl
@@ -132,6 +132,11 @@ def apply_reciprocal_or_noise(add_reciprocal: bool, eval_model: str, df: object 
 
 
 def timeit(func):
+    try:
+        import psutil
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError('psutil is required for memory profiling but is part of the optional dependencies.'
+                                  ' Install it via `pip install psutil`')
     @functools.wraps(func)
     def timeit_wrapper(*args, **kwargs):
         start_time = time.perf_counter()
