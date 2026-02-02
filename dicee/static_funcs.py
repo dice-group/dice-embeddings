@@ -13,7 +13,7 @@ import pickle
 import time
 from collections import defaultdict
 from typing import Callable, Dict, List, Optional, Tuple, Type, Union
-
+import psutil
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -135,11 +135,6 @@ def timeit(func: Callable) -> Callable:
     Returns:
         Wrapped function that prints timing information.
     """
-    try:
-        import psutil
-    except ModuleNotFoundError:
-        raise ModuleNotFoundError("psutil is required for the timeit decorator but is part of the optional dependencies."
-                                  " Please install it via 'pip install psutil'.")
     @functools.wraps(func)
     def timeit_wrapper(*args, **kwargs):
         start_time = time.perf_counter()
