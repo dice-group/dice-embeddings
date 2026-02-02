@@ -1,10 +1,8 @@
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 import os
 import pandas as pd
-import rdflib
 import numpy as np
 import torch
-import pytorch_lightning as pl
 from typing import List, Tuple, Union
 from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
 from .static_funcs import timeit, load_term_mapping
@@ -249,9 +247,13 @@ class OnevsAllDataset(torch.utils.data.Dataset):
         super().__init__()
         assert isinstance(train_set_idx, np.memmap) or isinstance(train_set_idx, np.ndarray)
         assert len(train_set_idx) > 0
-        self.train_data = train_set_idx
+        # Sort by (head, relation, tail) to ensure order-independent training
+        # This prevents different input orderings from affecting optimization
+        sorted_indices = np.lexsort((train_set_idx[:, 2], train_set_idx[:, 1], train_set_idx[:, 0]))
+        self.train_data = train_set_idx[sorted_indices]
         self.target_dim = len(entity_idxs)
         self.collate_fn = None
+
     def __len__(self):
         return len(self.train_data)
 
@@ -260,6 +262,7 @@ class OnevsAllDataset(torch.utils.data.Dataset):
         triple= torch.from_numpy(self.train_data[idx].copy()).long()
         y_vec[triple[2]] = 1
         return triple[:2], y_vec
+        
 class KvsAll(torch.utils.data.Dataset):
     """ Creates a dataset for KvsAll training by inheriting from torch.utils.data.Dataset.
     Let D denote a dataset for KvsAll training and be defined as D:= {(x,y)_i}_i ^N, where
@@ -307,7 +310,7 @@ class KvsAll(torch.utils.data.Dataset):
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.collate_fn = None
 
-        # (1) Create a dictionary of training data pints
+        # (1) Create a dictionary of training data points
         # Either from tuple of entities or tuple of an entity and a relation
         if store is None:
             store = dict()
@@ -315,8 +318,11 @@ class KvsAll(torch.utils.data.Dataset):
                 self.target_dim = len(relation_idxs)
                 for s_idx, p_idx, o_idx in train_set_idx:
                     store.setdefault((s_idx, o_idx), list()).append(p_idx)
+                # Sort keys to ensure order-independent training
+                store = dict(sorted(store.items()))
             elif form == 'EntityPrediction':
                 self.target_dim = len(entity_idxs)
+                # Note: mapping_from_first_two_cols_to_third already returns sorted dict
                 store = mapping_from_first_two_cols_to_third(train_set_idx)
             else:
                 raise NotImplementedError
@@ -402,10 +408,11 @@ class AllvsAll(torch.utils.data.Dataset):
         self.train_target = None
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.collate_fn = None
-        # (1) Create a dictionary of training data pints
+        # (1) Create a dictionary of training data points
         # Either from tuple of entities or tuple of an entity and a relation
         self.target_dim = len(entity_idxs)
         # (h,r) => [t]
+        # Note: mapping_from_first_two_cols_to_third already returns sorted dict
         store = mapping_from_first_two_cols_to_third(train_set_idx)
         print("Number of unique pairs:", len(store))
         for i in range(len(entity_idxs)):
@@ -413,6 +420,8 @@ class AllvsAll(torch.utils.data.Dataset):
                 if store.get((i, j), None) is None:
                     store[(i, j)] = list()
         print("Number of unique augmented pairs:", len(store))
+        # Re-sort after adding new keys to maintain consistent ordering
+        store = dict(sorted(store.items()))
         assert len(store) > 0
         self.train_data = torch.LongTensor(list(store.keys()))
 
@@ -477,8 +486,13 @@ class OnevsSample(torch.utils.data.Dataset):
         )
         assert neg_sample_ratio > 0, f"Negative sample ratio {neg_sample_ratio} must be greater than 0."
 
+        # Sort by (head, relation, tail) to ensure order-independent training
+        # This prevents different input orderings from affecting optimization
+        sorted_indices = np.lexsort((train_set[:, 2], train_set[:, 1], train_set[:, 0]))
+        sorted_train_set = train_set[sorted_indices]
+
         # Converting the input numpy array to a PyTorch tensor
-        self.train_data = torch.from_numpy(train_set).long()
+        self.train_data = torch.from_numpy(sorted_train_set).long()
         self.num_entities = num_entities
         self.num_relations = num_relations
         self.neg_sample_ratio = neg_sample_ratio
@@ -608,33 +622,39 @@ class NegSampleDataset(torch.utils.data.Dataset):
         # TLDL; replace Python objects with non-refcounted representations such as Pandas, Numpy or PyArrow objects
         self.neg_sample_ratio = torch.tensor(
             neg_sample_ratio)
-        print("from numpy to torch")
-        self.train_set = torch.from_numpy(train_set).unsqueeze(1)
-        self.length = len(self.train_set)
+        
+        # Sort by (head, relation, tail) to ensure order-independent training
+        # This prevents different input orderings from affecting optimization
+        sorted_indices = np.lexsort((train_set[:, 2], train_set[:, 1], train_set[:, 0]))
+        sorted_train_set = train_set[sorted_indices]
+        
+        self.train_triples = torch.from_numpy(sorted_train_set).unsqueeze(1)
+        self.length = len(self.train_triples)
         self.num_entities = torch.tensor(num_entities)
         self.num_relations = torch.tensor(num_relations)
+        self.labels = torch.tensor([1.0, 0.0])
+
+        # Precompute negatives and stack with positives
+        self.train_set = []
+        for triple in self.train_triples:
+            # (1) Sample an entity.
+            corr_entities = torch.randint(0, high=self.num_entities, size=(1,))
+            # (2) Flip a coin
+            if torch.rand(1) >= 0.5:
+                # (2.1) Corrupt (1) via tai.
+                negative_triple = torch.cat((triple[:, 0], triple[:, 1], corr_entities), dim=0).unsqueeze(0)
+            else:
+                # (2.2) Corrupt (1) via head.
+                negative_triple = torch.cat((corr_entities, triple[:, 1], triple[:, 2]), dim=0).unsqueeze(0)
+            # (3) Concat positive and negative triples.
+            self.train_set.append(torch.cat((triple, negative_triple), dim=0))
 
     def __len__(self):
         return self.length
 
     def __getitem__(self, idx):
-        # (1) Get a triple.
-        triple = self.train_set[idx]
-        # (2) Sample an entity.
-        corr_entities = torch.randint(0, high=self.num_entities, size=(1,))
-        # (3) Flip a coin
-        if torch.rand(1) >= 0.5:
-            # (3.1) Corrupt (1) via tai.
-            negative_triple = torch.cat((triple[:, 0], triple[:, 1], corr_entities), dim=0).unsqueeze(0)
-        else:
-            # (3.1) Corrupt (1) via head.
-            negative_triple = torch.cat((corr_entities, triple[:, 1], triple[:, 2]), dim=0).unsqueeze(0)
-        # (4) Concat positive and negative triples.
-        x = torch.cat((triple, negative_triple), dim=0)
-        # (5) Concat labels of (4).
-        y = torch.tensor([1.0, 0.0])
-        return x, y
-
+        # get i-th training sample with positive and negative triple stacked
+        return self.train_set[idx], self.labels
 
 class TriplePredictionDataset(torch.utils.data.Dataset):
     """
@@ -677,9 +697,13 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.neg_sample_ratio = torch.tensor(
             neg_sample_ratio)  # 0 Implies that we do not add negative samples. This is needed during testing and validation
-        #self.train_set = torch.from_numpy(train_set)
-        self.train_set = train_set
-        assert num_entities >= max(self.train_set[:, 0]) and num_entities >= max(self.train_set[:, 2])
+        
+        # Sort by (head, relation, tail) to ensure order-independent training
+        # This prevents different input orderings from affecting optimization
+        sorted_indices = np.lexsort((train_set[:, 2], train_set[:, 1], train_set[:, 0]))
+        self.train_set = train_set[sorted_indices]
+        
+        assert num_entities >= max(self.train_set[:, 0]) and num_entities >= max(self.train_set[:, 2]), f"num_entities: {num_entities}, max(self.train_set[:, 0]): {max(self.train_set[:, 0])}, max(self.train_set[:, 2]): {max(self.train_set[:, 2])}"
         self.length = len(self.train_set)
         self.num_entities = torch.tensor(num_entities)
         self.num_relations = torch.tensor(num_relations)
@@ -748,63 +772,6 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
         """
         return x, label
 
-
-class CVDataModule(pl.LightningDataModule):
-    """
-       Create a Dataset for cross validation
-
-       Parameters
-       ----------
-       train_set_idx
-           Indexed triples for the training.
-       num_entities
-           entity to index mapping.
-       num_relations
-           relation to index mapping.
-       batch_size
-           int
-       form
-           ?
-       num_workers
-           int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
-
-
-
-       Returns
-       -------
-       ?
-       """
-
-    def __init__(self, train_set_idx: np.ndarray, num_entities, num_relations, neg_sample_ratio, batch_size,
-                 num_workers):
-        super().__init__()
-        assert isinstance(train_set_idx, np.ndarray)
-        self.train_set_idx = train_set_idx
-        self.num_entities = num_entities
-        self.num_relations = num_relations
-        self.neg_sample_ratio = neg_sample_ratio
-        self.batch_size = batch_size
-        self.num_workers = num_workers
-
-    def train_dataloader(self) -> DataLoader:
-        train_set = TriplePredictionDataset(self.train_set_idx,
-                                            num_entities=self.num_entities,
-                                            num_relations=self.num_relations,
-                                            neg_sample_ratio=self.neg_sample_ratio)
-        return DataLoader(train_set, batch_size=self.batch_size,
-                          shuffle=True,
-                          num_workers=self.num_workers,
-                          collate_fn=train_set.collate_fn)
-
-    def setup(self, *args, **kwargs):
-        pass
-
-    def transfer_batch_to_device(self, *args, **kwargs):
-        pass
-
-    def prepare_data(self, *args, **kwargs):
-        # Nothing to be prepared for now.
-        pass
 
 class LiteralDataset(Dataset):
     """Dataset for loading and processing literal data for training Literal Embedding model.
@@ -931,7 +898,12 @@ class LiteralDataset(Dataset):
         Returns:
             pd.DataFrame: DataFrame containing the loaded and validated data.
         """
-
+        try:
+            import rdflib
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError(
+                "rdflib is required for loading RDF files. Please install it via 'pip install rdflib'."
+            )
         # Check if the file exists
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Data file not found at {file_path}")

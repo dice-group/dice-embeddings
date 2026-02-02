@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 import torch.nn.functional as F
 from tqdm import tqdm
+import pandas as pd
 
 
 class AbstractTrainer:
@@ -75,6 +76,24 @@ class AbstractTrainer:
         """
         for c in self.callbacks:
             c.on_fit_end(*args, **kwargs)
+
+    def on_train_epoch_start(self, *args, **kwargs):
+        """
+        A function to call callbacks at the start of an epoch.
+
+        Parameter
+        ---------
+        args
+
+        kwargs
+
+
+        Returns
+        -------
+        None
+        """
+        for c in self.callbacks:
+            c.on_train_epoch_start(*args, **kwargs)
 
     def on_train_epoch_end(self, *args, **kwargs):
         """
@@ -845,4 +864,8 @@ class BaseInteractiveTrainKGE:
         self.literal_dataset = literal_dataset
         torch.save(literal_model.state_dict(), self.path + "/literal_model.pt")
         print(f"Literal Embedding model saved to {self.path}/literal_model.pt")
+        self.idx_to_data_property = {v: k for k, v in self.data_property_to_idx.items()}
+        df = pd.DataFrame.from_dict(self.idx_to_data_property, orient="index", columns=["attribute"])
+        df.to_csv(self.path + "/attribute_to_idx.csv")
+        print(f"Literal attributes indexing saved to {self.path}/attribute_to_idx.csv")
 

@@ -7,9 +7,12 @@ import functools
 import pandas as pd
 import pickle
 import os
-import psutil
+
 import requests
 from typing import Tuple
+import polars as pl
+from multiprocessing import Process, cpu_count
+from tqdm import tqdm
 
 def polars_dataframe_indexer(df_polars:polars.DataFrame, idx_entity:polars.DataFrame, idx_relation:polars.DataFrame)->polars.DataFrame:
     """
@@ -120,20 +123,20 @@ def pandas_dataframe_indexer(df_pandas: pd.DataFrame, idx_entity: pd.DataFrame, 
     return df_pandas
 
 
-def apply_reciprical_or_noise(add_reciprical: bool, eval_model: str, df: object = None, info: str = None):
-    """ (1) Add reciprocal triples (2) Add noisy triples """
-    # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
-    if add_reciprical and eval_model:
-        if df is not None:
-            print(f'Adding reciprocal triples to {info}, e.g. KG:= (s, p, o) union (o, p_inverse, s)')
-            return create_recipriocal_triples(df)
-        else:
-            return None
-    else:
-        return df
+def apply_reciprocal_or_noise(add_reciprocal: bool, eval_model: str, df: object = None, info: str = None):
+    """Add reciprocal triples if conditions are met"""
+    if add_reciprocal and eval_model and df is not None:
+        print(f'Adding reciprocal triples to {info}, e.g. KG:= (s, p, o) union (o, p_inverse, s)')
+        return create_recipriocal_triples(df)
+    return df
 
 
 def timeit(func):
+    try:
+        import psutil
+    except ModuleNotFoundError:
+        raise ModuleNotFoundError('psutil is required for memory profiling but is part of the optional dependencies.'
+                                  ' Install it via `pip install psutil`')
     @functools.wraps(func)
     def timeit_wrapper(*args, **kwargs):
         start_time = time.perf_counter()
@@ -148,73 +151,69 @@ def timeit(func):
     return timeit_wrapper
 
 
-@timeit
-def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator:str=None) -> polars.DataFrame:
-    """ Load and Preprocess via Polars """
-    assert separator is not None, "separator cannot be None"
-    print(f'*** Reading {data_path} with Polars ***')
-    # (1) Load the data.
-    #try:
-    if ".zst" in data_path:
-        df= polars.read_csv(data_path,n_rows=None if read_only_few is None else read_only_few)
-    else:
-        df = polars.read_csv(data_path,
-                             has_header=False,
-                             low_memory=False,
-                             n_rows=None if read_only_few is None else read_only_few,
-                             columns=[0, 1, 2],
-                             dtypes=[polars.String],
-                             new_columns=['subject', 'relation', 'object'],
-                             separator=separator)
-    #except ValueError as err:
-    #    raise ValueError(f"{err}\nYou may want to use a different separator.")
-    # (2) Sample from (1).
-    if sample_triples_ratio:
-        print(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')
-        df = df.sample(frac=sample_triples_ratio)
-        print(df.shape)
-    # (3) Type heuristic prediction: If KG is an RDF KG, remove all triples where subject is not <?>.
-    h = df.head().to_pandas()
-    if sum(h["subject"].str.startswith('<')) + sum(h["relation"].str.startswith('<')) > 2:
+def _filter_literal_triples(df, backend: str):
+    """Remove triples with literal values if RDF format detected"""
+    sample = df.head().to_pandas() if backend == "polars" else df.head()
+    if sum(sample["subject"].str.startswith('<')) + sum(sample["relation"].str.startswith('<')) > 2:
         print('Removing triples with literal values...')
-        df = df.filter(polars.col("object").str.starts_with('<'))
+        if backend == "polars":
+            return df.filter(polars.col("object").str.starts_with('<'))
+        else:
+            return df[df["object"].str.startswith('<', na=False)]
     return df
 
 
 @timeit
-def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None,separator:str=None):
+def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator:str=None) -> polars.DataFrame:
+    """Load and Preprocess via Polars"""
+    assert separator is not None, "separator cannot be None"
+    print(f'*** Reading {data_path} with Polars ***')
+    
+    if ".zst" in data_path:
+        df = polars.read_csv(data_path, n_rows=read_only_few)
+    else:
+        df = polars.read_csv(data_path,
+                             has_header=False,
+                             low_memory=False,
+                             n_rows=read_only_few,
+                             columns=[0, 1, 2],
+                             dtypes=[polars.String],
+                             new_columns=['subject', 'relation', 'object'],
+                             separator=separator)
+    
+    if sample_triples_ratio:
+        print(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')
+        df = df.sample(frac=sample_triples_ratio)
+        print(df.shape)
+    
+    return _filter_literal_triples(df, "polars")
+
+
+@timeit
+def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator:str=None):
+    """Load and Preprocess via Pandas"""
     assert separator is not None, "separator cannot be None"
     print(f'*** Reading {data_path} with Pandas ***')
-    if data_path[-3:] in [".nt","ttl", 'txt', 'csv', 'zst']:
-        print('Reading with pandas.read_csv with sep ** s+ ** ...')
+    
+    if data_path[-3:] in [".nt", "ttl", 'txt', 'csv', 'zst']:
         df = pd.read_csv(data_path,
-                         sep=separator,#"\s+",
+                         sep=separator,
                          header=None,
-                         nrows=None if read_only_few is None else read_only_few,
+                         nrows=read_only_few,
                          usecols=[0, 1, 2],
                          names=['subject', 'relation', 'object'],
                          dtype=str)
     else:
         df = pd.read_parquet(data_path, engine='pyarrow')
-        # (2)a Read only few if it is asked.
-        if isinstance(read_only_few, int):
-            if read_only_few > 0:
-                print(f'Reading only few input data {read_only_few}...')
-                df = df.head(read_only_few)
-                print('Done !\n')
-    # (3) Read only sample
+        if read_only_few and read_only_few > 0:
+            print(f'Reading only few input data {read_only_few}...')
+            df = df.head(read_only_few)
+    
     if sample_triples_ratio:
         print(f'Subsampling {sample_triples_ratio} of input data...')
         df = df.sample(frac=sample_triples_ratio)
-        print('Done !\n')
-    if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) > 2:
-        # (4) Drop Rows/triples with double or boolean: Example preprocessing
-        # Drop of object does not start with **<**.
-        # Specifying na to be False instead of NaN.
-        print('Removing triples with literal values...')
-        df = df[df["object"].str.startswith('<', na=False)]
-        print('Done !\n')
-    return df
+    
+    return _filter_literal_triples(df, "pandas")
 
 
 def read_from_disk(data_path: str, read_only_few: int = None,
@@ -225,7 +224,7 @@ def read_from_disk(data_path: str, read_only_few: int = None,
     # If path exits
     if glob.glob(data_path):
         # (1) Detect data format
-        dformat = data_path[data_path.find(".") + 1:]
+        dformat = os.path.splitext(data_path)[1].lower().replace(".", "")
         if dformat in ["ttl", "owl", "turtle", "rdf/xml"] and backend != "rdflib":
             raise RuntimeError(
                 f"Data with **{dformat}** format cannot be read via --backend pandas or polars. Use --backend rdflib")
@@ -247,12 +246,110 @@ def read_from_disk(data_path: str, read_only_few: int = None,
         return None
 
 
-def read_from_triple_store(endpoint: str = None):
+def count_triples(endpoint: str) -> int:
+    """Returns the total number of triples in the triple store."""
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/sparql-results+json"
+    }
+    query = """
+    SELECT (COUNT(*) AS ?count)
+    WHERE { ?s ?p ?o . }
+    """
+    response = requests.post(endpoint, data={"query": query}, headers=headers)
+    response.raise_for_status()
+    count = int(response.json()["results"]["bindings"][0]["count"]["value"])
+    return count
+
+
+def fetch_worker(endpoint: str, offsets: list[int], chunk_size: int, output_dir: str, worker_id: int):
+    """Worker process: fetch assigned chunks and save to disk with per-worker tqdm."""
+    os.makedirs(output_dir, exist_ok=True)
+    for offset in tqdm(offsets, desc=f"Read Triple Store. Worker {worker_id}", position=worker_id, leave=True):
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/sparql-results+json"
+        }
+        query = f"""
+        SELECT ?subject ?predicate ?object
+        WHERE {{
+            ?subject ?predicate ?object .
+        }}
+        LIMIT {chunk_size} OFFSET {offset}
+        """
+        response = requests.post(endpoint, data={"query": query}, headers=headers)
+        if not response.ok:
+            print(f"[Worker {worker_id}] Query failed at offset {offset}: {response.status_code}")
+            continue
+
+        bindings = response.json()["results"]["bindings"]
+        if not bindings:
+            continue
+
+        triples = [[b["subject"]["value"], b["predicate"]["value"], b["object"]["value"]] for b in bindings]
+        df = pd.DataFrame(triples, columns=["subject", "relation", "object"], dtype=str)
+
+        filename = os.path.join(output_dir, f"chunk_{offset}.parquet")
+        df.to_parquet(filename, index=False)
+
+
+def read_from_triple_store_with_polars(endpoint: str, chunk_size: int = 500000, output_dir: str = "triples_parquet"):
+    """Main function to read all triples in parallel, save as Parquet, and load into Polars dataframe."""
+    if os.path.exists(output_dir):
+        files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith(".parquet")]
+        if files:
+            print(f"\n*** Found parquet files in folder `{output_dir}`, will read from those. Otherwise, delete the folder.***\n")
+            parquet_files = sorted(files)
+            df_polars = pl.read_parquet(parquet_files)
+            return df_polars
+    
+    total_triples = count_triples(endpoint)
+    total_chunks = (total_triples + chunk_size - 1) // chunk_size
+    print(f"Total triples: {total_triples}, total chunks: {total_chunks}")
+
+    # Determine number of workers
+    num_workers = max(1, cpu_count())
+    print(f"Using {num_workers} worker processes.")
+
+    # Generate all offsets
+    all_offsets = [i * chunk_size for i in range(total_chunks)]
+
+    # Assign chunks deterministically to each worker
+    worker_offsets = [[] for _ in range(num_workers)]
+    for i, offset in enumerate(all_offsets):
+        worker_offsets[i % num_workers].append(offset)
+
+    # Launch worker processes
+    processes = []
+    for worker_id in range(num_workers):
+        p = Process(target=fetch_worker, args=(endpoint, worker_offsets[worker_id], chunk_size, output_dir, worker_id))
+        p.start()
+        processes.append(p)
+
+    # Wait for all workers to finish
+    for p in processes:
+        p.join()
+
+    # Read all Parquet chunks into a single Polars dataframe
+    parquet_files = sorted([os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith(".parquet")])
+    df_polars = pl.read_parquet(parquet_files)
+    return df_polars
+
+def read_from_triple_store_with_pandas(endpoint: str = None):
     """ Read triples from triple store into pandas dataframe """
     assert endpoint is not None
     assert isinstance(endpoint, str)
-    query = """SELECT ?subject ?predicate ?object WHERE {  ?subject ?predicate ?object}"""
-    response = requests.post(endpoint, data={'query': query})
+    headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/sparql-results+json"
+        }
+    query = """
+    SELECT ?subject ?predicate ?object
+    WHERE {{
+        ?subject ?predicate ?object .
+    }}
+    """
+    response = requests.post(endpoint, data={"query": query}, headers=headers)
     assert response.ok
     # Generator
     triples = ([triple['subject']['value'], triple['predicate']['value'], triple['object']['value']] for triple in

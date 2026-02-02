@@ -29,12 +29,15 @@ def get_default_arguments(description=None):
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
     parser.add_argument("--separator", type=str, default="\s+",
                         help='Pandas \s+, t for \t polars works with the last two.')
+    parser.add_argument("--reuse_existing_run_dir", action="store_true",
+                        help="If set, reuse the existing path_to_store_single_run directory if it exists. "
+                             "If not set, the directory will be deleted and recreated if it exists.")
     # Model related arguments
     parser.add_argument("--model", type=str,
                         default="Keci",
                         choices=["ComplEx", "Keci", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "DualE",
-                                 "BytE",
+                                 "BytE", "CoKE",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
                                  "Pykeen_TransE", "Pykeen_TransF", "Pykeen_TransH",
@@ -123,11 +126,40 @@ def get_default_arguments(description=None):
     parser.add_argument("--swa",
                         action="store_true",
                         help="Stochastic weight averaging")
+    parser.add_argument("--swag",
+                        action="store_true",
+                        help="Stochastic weight averaging - Gaussian")
+    parser.add_argument("--ema",
+                        action="store_true",
+                        help="Exponential Moving Average")
+    parser.add_argument("--twa",
+                        action="store_true",
+                        help="Trainable Weight Averaging")
     parser.add_argument("--auto_batch_finding",
                         action="store_true",
                         help="Find a batch size fitting in GPUs. Only available for TP trainer")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
+    
+    # Learning rate scheduling with configuration
+    parser.add_argument("--adaptive_lr", type=json.loads, default={},
+                        help='Enable adaptive learning rate scheduling with configuration. '
+                             'Example: {"scheduler_name": "cca", "lr_min": 0.01, "num_cycles": 10, '
+                             '"weighted_ensemble": true, "n_snapshots": 5}. '
+                             'Available schedulers: cca, mmcclr, deferred_cca, deferred_mmcclr')
+    parser.add_argument("--swa_start_epoch", type=int, default=None,
+                        help='Epoch at which to start applying stochastic weight averaging.')
+    parser.add_argument("--swa_c_epochs", type=int, default=1,
+                        help='Number of epochs to average over for SWA, SWAG, EMA, TWA.')
+    parser.add_argument('--eval_every_n_epochs', type=int, default=0,
+                        help='Evaluate model every n epochs. If 0, no evaluation is applied.')
+    parser.add_argument('--save_every_n_epochs', action='store_true',
+                        help='Save model every n epochs. If True, save model at every epoch.')
+    parser.add_argument('--eval_at_epochs',type=int,nargs='+', default=None,
+        help="List of epoch numbers at which to evaluate the model (e.g., 1 5 10).")
+    parser.add_argument("--n_epochs_eval_model", type=str, default="val_test",
+                        choices=["None", "train", "train_val", "train_val_test", "val_test", "val", "train_test","test"],
+                        help='Evaluating link prediction performance on data splits while performing periodic evaluation.')
 
     if description is None:
         return parser.parse_args()

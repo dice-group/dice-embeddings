@@ -1,6 +1,7 @@
 import os
 import glob
 import requests
+import torch
 
 
 def is_sparql_endpoint_alive(sparql_endpoint: str = None):
@@ -88,3 +89,28 @@ def sanity_checking_with_arguments(args):
     assert args.num_folds_for_cv >= 0,f"num_folds_for_cv can not be negative. Currently:{args.num_folds_for_cv}"
     validate_knowledge_graph(args)
 
+def sanity_check_callback_args(args):
+    """
+    Perform sanity checks on callback-related arguments.
+    """
+    gpu_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
+    # Check if any callbacks are requested
+    
+    if (args.trainer == "PL" and gpu_count >= 2) or args.trainer == "torchDDP":
+        if args.path_to_store_single_run is None:
+            raise NotImplementedError("Path to store experiments must be provided for Multi-GPU training.")
+        if args.adaptive_lr:
+            raise NotImplementedError("Adaptive learning rate is not supported with Multi-GPU training.")
+    has_callbacks = any([args.swa, args.swag, args.ema, args.adaptive_swa, args.twa, args.adaptive_lr, args.eval_every_n_epochs > 0,
+                          args.eval_at_epochs is not None])
+    if not has_callbacks:
+        return  # No callbacks, no checks needed
+
+    # SWA-related checks
+    if any([args.swa, args.swag, args.ema, args.twa]):
+        args.swa_start_epoch = args.swa_start_epoch or 1
+        assert args.swa_start_epoch > 0, "SWA Start Epoch must be greater than 0"
+
+    # TWA/SWAG trainer compatibility
+    if any([args.twa, args.swag]) and args.trainer in {"TP", "torchDDP"}:
+        raise NotImplementedError("TWA and SWAG are not supported with TP or torchDDP trainers.")

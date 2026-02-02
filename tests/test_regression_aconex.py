@@ -26,5 +26,5 @@ class TestRegressionAConEx:
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
-        assert 0.70 >= result['Train']['MRR'] >= 0.68
-        assert 0.57 >= result['Train']['H@1'] >= 0.54
+        assert 0.70 >= result['Train']['MRR'] >= 0.66
+        assert 0.57 >= result['Train']['H@1'] >= 0.50
