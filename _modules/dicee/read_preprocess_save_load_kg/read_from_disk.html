@@ -1,0 +1,207 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.read_preprocess_save_load_kg.read_from_disk &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../../../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dicee.read_preprocess_save_load_kg.read_from_disk</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dicee.read_preprocess_save_load_kg.read_from_disk</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_from_disk</span><span class="p">,</span> <span class="n">read_from_triple_store_with_pandas</span><span class="p">,</span> <span class="n">read_from_triple_store_with_polars</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<div class="viewcode-block" id="ReadFromDisk">
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/read_from_disk/index.html#dicee.read_preprocess_save_load_kg.ReadFromDisk">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ReadFromDisk</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read the data from disk into memory&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kg</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span> <span class="o">=</span> <span class="n">kg</span>
+
+<div class="viewcode-block" id="ReadFromDisk.start">
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/read_from_disk/index.html#dicee.read_preprocess_save_load_kg.ReadFromDisk.start">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read a knowledge graph from disk into memory</span>
+
+<span class="sd">        Data will be available at the train_set, test_set, valid_set attributes.</span>
+
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span> <span class="o">=</span> <span class="n">read_from_disk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_single_kg</span><span class="p">,</span>
+                                                   <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">read_only_few</span><span class="p">,</span>
+                                                   <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">sample_triples_ratio</span><span class="p">,</span>
+                                                   <span class="n">backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">backend</span><span class="p">,</span><span class="n">separator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">separator</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_noise_rate</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_noisy_triples_into_training</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;pandas&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span> <span class="o">=</span> <span class="n">read_from_triple_store_with_pandas</span><span class="p">(</span><span class="n">endpoint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;polars&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span> <span class="o">=</span> <span class="n">read_from_triple_store_with_polars</span><span class="p">(</span><span class="n">endpoint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Backend </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">backend</span><span class="si">}</span><span class="s2"> is not implemented for reading from a triple store. Please provide &#39;polars&#39; or &#39;pandas&#39; to --backend.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">dataset_dir</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="o">+</span> <span class="s1">&#39;/*&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="n">i</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span> <span class="o">=</span> <span class="n">read_from_disk</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">read_only_few</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">sample_triples_ratio</span><span class="p">,</span>
+                                                       <span class="n">backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">backend</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">separator</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_noise_rate</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">add_noisy_triples_into_training</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="n">i</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="o">=</span> <span class="n">read_from_disk</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">backend</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">separator</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="s1">&#39;valid&#39;</span> <span class="ow">in</span> <span class="n">i</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="o">=</span> <span class="n">read_from_disk</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">backend</span><span class="p">,</span> <span class="n">separator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">separator</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Not processed data: </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid data:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">data_dir</span><span class="si">}</span><span class="se">\t</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="si">}</span><span class="se">\t</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_single_kg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ReadFromDisk.add_noisy_triples_into_training">
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/read_from_disk/index.html#dicee.read_preprocess_save_load_kg.ReadFromDisk.add_noisy_triples_into_training">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_noisy_triples_into_training</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">num_noisy_triples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_noise_rate</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span>
+        <span class="n">list_of_entities</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">[[</span><span class="s1">&#39;subject&#39;</span><span class="p">,</span> <span class="s1">&#39;object&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="s1">&#39;K&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span>
+                                       <span class="c1"># Noisy triples</span>
+                                       <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                                           <span class="p">{</span><span class="s1">&#39;subject&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">list_of_entities</span><span class="p">,</span> <span class="n">num_noisy_triples</span><span class="p">),</span>
+                                            <span class="s1">&#39;relation&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+                                                <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">[[</span><span class="s1">&#39;relation&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="s1">&#39;K&#39;</span><span class="p">)),</span>
+                                                <span class="n">num_noisy_triples</span><span class="p">),</span>
+                                            <span class="s1">&#39;object&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">list_of_entities</span><span class="p">,</span> <span class="n">num_noisy_triples</span><span class="p">)}</span>
+                                       <span class="p">)</span>
+                                       <span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="n">s</span> <span class="o">+</span> <span class="n">num_noisy_triples</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

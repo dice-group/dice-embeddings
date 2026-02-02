@@ -1,0 +1,783 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.evaluation.link_prediction &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../../../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dicee.evaluation.link_prediction</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dicee.evaluation.link_prediction</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Link prediction evaluation functions.</span>
+
+<span class="sd">This module provides various functions for evaluating link prediction</span>
+<span class="sd">performance of knowledge graph embedding models.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">compute_metrics_from_ranks</span><span class="p">,</span>
+    <span class="n">compute_metrics_from_ranks_simple</span><span class="p">,</span>
+    <span class="n">update_hits</span><span class="p">,</span>
+    <span class="n">create_hits_dict</span><span class="p">,</span>
+    <span class="n">ALL_HITS_RANGE</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="evaluate_link_prediction_performance">
+<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/link_prediction/index.html#dicee.eval_static_funcs.evaluate_link_prediction_performance">[docs]</a>
+<span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_link_prediction_performance</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">triples</span><span class="p">,</span>
+    <span class="n">er_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span>
+    <span class="n">re_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate link prediction performance with head and tail prediction.</span>
+
+<span class="sd">    Performs filtered evaluation where known correct answers are filtered</span>
+<span class="sd">    out before computing ranks.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: KGE model wrapper with entity/relation mappings.</span>
+<span class="sd">        triples: Test triples as list of (head, relation, tail) strings.</span>
+<span class="sd">        er_vocab: Mapping (entity, relation) -&gt; list of valid tail entities.</span>
+<span class="sd">        re_vocab: Mapping (relation, entity) -&gt; list of valid head entities.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with H@1, H@3, H@10, and MRR metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="n">hits</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">reciprocal_ranks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">num_entities</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">num_entities</span>
+
+    <span class="n">all_entities</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+    <span class="n">all_entities</span> <span class="o">=</span> <span class="n">all_entities</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">all_entities</span><span class="p">),)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">))):</span>
+        <span class="n">data_point</span> <span class="o">=</span> <span class="n">triples</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">str_h</span><span class="p">,</span> <span class="n">str_r</span><span class="p">,</span> <span class="n">str_t</span> <span class="o">=</span> <span class="n">data_point</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">data_point</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">data_point</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="n">h</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_entity_index</span><span class="p">(</span><span class="n">str_h</span><span class="p">)</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_relation_index</span><span class="p">(</span><span class="n">str_r</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_entity_index</span><span class="p">(</span><span class="n">str_t</span><span class="p">)</span>
+
+        <span class="c1"># Predict missing tails</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">num_entities</span><span class="p">,),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">num_entities</span><span class="p">,),</span>
+            <span class="n">all_entities</span>
+        <span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">predictions_tails</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">forward_triples</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="c1"># Predict missing heads</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span>
+            <span class="n">all_entities</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">r</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">num_entities</span><span class="p">,),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">num_entities</span><span class="p">)</span>
+        <span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">predictions_heads</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">forward_triples</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">x</span>
+
+        <span class="c1"># Filtered tail ranking</span>
+        <span class="n">filt_tails</span> <span class="o">=</span> <span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">er_vocab</span><span class="p">[(</span><span class="n">str_h</span><span class="p">,</span> <span class="n">str_r</span><span class="p">)]]</span>
+        <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions_tails</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">predictions_tails</span><span class="p">[</span><span class="n">filt_tails</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+        <span class="n">predictions_tails</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions_tails</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">sort_idxs</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+        <span class="n">filt_tail_entity_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span> <span class="o">==</span> <span class="n">t</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Filtered head ranking</span>
+        <span class="n">filt_heads</span> <span class="o">=</span> <span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">re_vocab</span><span class="p">[(</span><span class="n">str_r</span><span class="p">,</span> <span class="n">str_t</span><span class="p">)]]</span>
+        <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions_heads</span><span class="p">[</span><span class="n">h</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">predictions_heads</span><span class="p">[</span><span class="n">filt_heads</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+        <span class="n">predictions_heads</span><span class="p">[</span><span class="n">h</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions_heads</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">sort_idxs</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+        <span class="n">filt_head_entity_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span> <span class="o">==</span> <span class="n">h</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Add 1 as numpy arrays are 0-indexed</span>
+        <span class="n">filt_head_entity_rank</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">filt_tail_entity_rank</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">rr</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">filt_head_entity_rank</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">filt_tail_entity_rank</span><span class="p">)</span>
+        <span class="n">reciprocal_ranks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rr</span><span class="p">)</span>
+
+        <span class="c1"># Compute Hit@N</span>
+        <span class="k">for</span> <span class="n">hits_level</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">filt_head_entity_rank</span> <span class="o">&lt;=</span> <span class="n">hits_level</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">res</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">filt_tail_entity_rank</span> <span class="o">&lt;=</span> <span class="n">hits_level</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">res</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">hits</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">hits_level</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">compute_metrics_from_ranks</span><span class="p">(</span>
+        <span class="n">ranks</span><span class="o">=</span><span class="p">[],</span>  <span class="c1"># Not used directly</span>
+        <span class="n">num_triples</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">),</span>
+        <span class="n">hits_dict</span><span class="o">=</span><span class="n">hits</span><span class="p">,</span>
+        <span class="n">scale_factor</span><span class="o">=</span><span class="mi">2</span>
+    <span class="p">)</span> <span class="o">|</span> <span class="p">{</span><span class="s1">&#39;MRR&#39;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">reciprocal_ranks</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))}</span></div>
+
+
+
+<div class="viewcode-block" id="evaluate_link_prediction_performance_with_reciprocals">
+<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/link_prediction/index.html#dicee.eval_static_funcs.evaluate_link_prediction_performance_with_reciprocals">[docs]</a>
+<span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_link_prediction_performance_with_reciprocals</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">triples</span><span class="p">,</span>
+    <span class="n">er_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate link prediction with reciprocal relations.</span>
+
+<span class="sd">    Optimized for models trained with reciprocal triples where only</span>
+<span class="sd">    tail prediction is needed.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: KGE model wrapper.</span>
+<span class="sd">        triples: Test triples as list of (head, relation, tail) strings.</span>
+<span class="sd">        er_vocab: Mapping (entity, relation) -&gt; list of valid tail entities.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with H@1, H@3, H@10, and MRR metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="n">entity_to_idx</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">entity_to_idx</span>
+    <span class="n">relation_to_idx</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">relation_to_idx</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;batch_size&quot;</span><span class="p">]</span>
+    <span class="n">num_triples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span>
+    <span class="n">ranks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">hits_range</span> <span class="o">=</span> <span class="n">ALL_HITS_RANGE</span>
+    <span class="n">hits</span> <span class="o">=</span> <span class="n">create_hits_dict</span><span class="p">(</span><span class="n">hits_range</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_triples</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+        <span class="n">str_data_batch</span> <span class="o">=</span> <span class="n">triples</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">]</span>
+        <span class="n">data_batch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="p">[</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">str_triple</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+             <span class="n">relation_to_idx</span><span class="p">[</span><span class="n">str_triple</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+             <span class="n">entity_to_idx</span><span class="p">[</span><span class="n">str_triple</span><span class="p">[</span><span class="mi">2</span><span class="p">]]]</span>
+            <span class="k">for</span> <span class="n">str_triple</span> <span class="ow">in</span> <span class="n">str_data_batch</span>
+        <span class="p">])</span>
+
+        <span class="n">e1_idx_r_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">data_batch</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
+        <span class="n">e2_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data_batch</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">e1_idx_r_idx</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">str_h</span><span class="p">,</span> <span class="n">str_r</span><span class="p">,</span> <span class="n">str_t</span> <span class="o">=</span> <span class="n">str_data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">id_e</span><span class="p">,</span> <span class="n">id_r</span><span class="p">,</span> <span class="n">id_e_target</span> <span class="o">=</span> <span class="n">data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+
+            <span class="n">filt</span> <span class="o">=</span> <span class="p">[</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">_</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">er_vocab</span><span class="p">[(</span><span class="n">str_h</span><span class="p">,</span> <span class="n">str_r</span><span class="p">)]]</span>
+            <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">filt</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+            <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
+
+        <span class="n">_</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">rank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">e2_idx</span><span class="p">[</span><span class="n">j</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">ranks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
+            <span class="n">update_hits</span><span class="p">(</span><span class="n">hits</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">hits_range</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">ranks</span><span class="p">)</span> <span class="o">==</span> <span class="n">num_triples</span>
+    <span class="k">return</span> <span class="n">compute_metrics_from_ranks_simple</span><span class="p">(</span><span class="n">ranks</span><span class="p">,</span> <span class="n">num_triples</span><span class="p">,</span> <span class="n">hits</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="evaluate_link_prediction_performance_with_bpe_reciprocals">
+<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/link_prediction/index.html#dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe_reciprocals">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_link_prediction_performance_with_bpe_reciprocals</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">within_entities</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+    <span class="n">er_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate link prediction with BPE encoding and reciprocals.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: KGE model wrapper with BPE support.</span>
+<span class="sd">        within_entities: List of entities to evaluate within.</span>
+<span class="sd">        triples: Test triples as list of [head, relation, tail] strings.</span>
+<span class="sd">        er_vocab: Mapping (entity, relation) -&gt; list of valid tail entities.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with H@1, H@3, H@10, and MRR metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">triples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="n">entity_to_idx</span> <span class="o">=</span> <span class="p">{</span><span class="n">ent</span><span class="p">:</span> <span class="n">id_</span> <span class="k">for</span> <span class="n">id_</span><span class="p">,</span> <span class="n">ent</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">within_entities</span><span class="p">)}</span>
+    <span class="n">padded_bpe_within_entities</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_bpe_token_representation</span><span class="p">(</span><span class="n">within_entities</span><span class="p">)</span>
+    <span class="n">padded_bpe_within_entities</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">padded_bpe_within_entities</span><span class="p">)</span>
+
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;batch_size&quot;</span><span class="p">]</span>
+    <span class="n">num_triples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span>
+    <span class="n">ranks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">hits_range</span> <span class="o">=</span> <span class="n">ALL_HITS_RANGE</span>
+    <span class="n">hits</span> <span class="o">=</span> <span class="n">create_hits_dict</span><span class="p">(</span><span class="n">hits_range</span><span class="p">)</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">ordered_bpe_entities</span> <span class="o">=</span> <span class="n">padded_bpe_within_entities</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_triples</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+        <span class="n">str_data_batch</span> <span class="o">=</span> <span class="n">triples</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">]</span>
+        <span class="n">str_heads</span><span class="p">,</span> <span class="n">str_rels</span> <span class="o">=</span> <span class="n">str_data_batch</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">str_data_batch</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="n">padded_bpe_heads</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">get_bpe_token_representation</span><span class="p">(</span><span class="n">str_heads</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">padded_bpe_rels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">get_bpe_token_representation</span><span class="p">(</span><span class="n">str_rels</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">e1_idx_r_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">padded_bpe_heads</span><span class="p">,</span> <span class="n">padded_bpe_rels</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">e1_idx_r_idx</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="p">(</span><span class="n">str_h</span><span class="p">,</span> <span class="n">str_r</span><span class="p">,</span> <span class="n">str_t</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">str_data_batch</span><span class="p">):</span>
+            <span class="n">id_e_target</span> <span class="o">=</span> <span class="n">entity_to_idx</span><span class="p">[</span><span class="n">str_t</span><span class="p">]</span>
+            <span class="n">filt</span> <span class="o">=</span> <span class="p">[</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">_</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">er_vocab</span><span class="p">[(</span><span class="n">str_h</span><span class="p">,</span> <span class="n">str_r</span><span class="p">)]]</span>
+            <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">filt</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+            <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
+
+        <span class="n">_</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">__</span><span class="p">,</span> <span class="n">str_t</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">str_data_batch</span><span class="p">):</span>
+            <span class="n">rank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">entity_to_idx</span><span class="p">[</span><span class="n">str_t</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">ranks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
+            <span class="n">update_hits</span><span class="p">(</span><span class="n">hits</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">hits_range</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">ranks</span><span class="p">)</span> <span class="o">==</span> <span class="n">num_triples</span>
+    <span class="k">return</span> <span class="n">compute_metrics_from_ranks_simple</span><span class="p">(</span><span class="n">ranks</span><span class="p">,</span> <span class="n">num_triples</span><span class="p">,</span> <span class="n">hits</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="evaluate_link_prediction_performance_with_bpe">
+<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/link_prediction/index.html#dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_link_prediction_performance_with_bpe</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">within_entities</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+    <span class="n">er_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span>
+    <span class="n">re_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate link prediction with BPE encoding (head and tail).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: KGE model wrapper with BPE support.</span>
+<span class="sd">        within_entities: List of entities to evaluate within.</span>
+<span class="sd">        triples: Test triples as list of (head, relation, tail) tuples.</span>
+<span class="sd">        er_vocab: Mapping (entity, relation) -&gt; list of valid tail entities.</span>
+<span class="sd">        re_vocab: Mapping (relation, entity) -&gt; list of valid head entities.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with H@1, H@3, H@10, and MRR metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">triples</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">3</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="n">hits</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">reciprocal_ranks</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">num_entities</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">within_entities</span><span class="p">)</span>
+    <span class="n">bpe_entity_to_idx</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">all_bpe_entities</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">str_entity</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">within_entities</span><span class="p">)):</span>
+        <span class="n">shaped_bpe_entity</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_bpe_token_representation</span><span class="p">(</span><span class="n">str_entity</span><span class="p">)</span>
+        <span class="n">bpe_entity_to_idx</span><span class="p">[</span><span class="n">shaped_bpe_entity</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span>
+        <span class="n">all_bpe_entities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">shaped_bpe_entity</span><span class="p">)</span>
+    <span class="n">all_bpe_entities</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">all_bpe_entities</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">str_h</span><span class="p">,</span> <span class="n">str_r</span><span class="p">,</span> <span class="n">str_t</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">triples</span><span class="p">):</span>
+        <span class="n">idx_bpe_h</span> <span class="o">=</span> <span class="n">bpe_entity_to_idx</span><span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">get_bpe_token_representation</span><span class="p">(</span><span class="n">str_h</span><span class="p">)]</span>
+        <span class="n">idx_bpe_t</span> <span class="o">=</span> <span class="n">bpe_entity_to_idx</span><span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">get_bpe_token_representation</span><span class="p">(</span><span class="n">str_t</span><span class="p">)]</span>
+
+        <span class="n">torch_bpe_h</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">get_bpe_token_representation</span><span class="p">(</span><span class="n">str_h</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">torch_bpe_r</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">get_bpe_token_representation</span><span class="p">(</span><span class="n">str_r</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">torch_bpe_t</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">get_bpe_token_representation</span><span class="p">(</span><span class="n">str_t</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Missing tail predictions</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">torch_bpe_h</span><span class="p">,</span> <span class="n">repeats</span><span class="o">=</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">torch_bpe_r</span><span class="p">,</span> <span class="n">repeats</span><span class="o">=</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+            <span class="n">all_bpe_entities</span>
+        <span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">predictions_tails</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="c1"># Missing head predictions</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span>
+            <span class="n">all_bpe_entities</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">torch_bpe_r</span><span class="p">,</span> <span class="n">repeats</span><span class="o">=</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">torch_bpe_t</span><span class="p">,</span> <span class="n">repeats</span><span class="o">=</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">predictions_heads</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="c1"># Filter tails</span>
+        <span class="n">filt_tails</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">bpe_entity_to_idx</span><span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">get_bpe_token_representation</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">er_vocab</span><span class="p">[(</span><span class="n">str_h</span><span class="p">,</span> <span class="n">str_r</span><span class="p">)]</span>
+        <span class="p">]</span>
+        <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions_tails</span><span class="p">[</span><span class="n">idx_bpe_t</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">predictions_tails</span><span class="p">[</span><span class="n">filt_tails</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+        <span class="n">predictions_tails</span><span class="p">[</span><span class="n">idx_bpe_t</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions_tails</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">sort_idxs</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+        <span class="n">filt_tail_entity_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span> <span class="o">==</span> <span class="n">idx_bpe_t</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Filter heads</span>
+        <span class="n">filt_heads</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">bpe_entity_to_idx</span><span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">get_bpe_token_representation</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">re_vocab</span><span class="p">[(</span><span class="n">str_r</span><span class="p">,</span> <span class="n">str_t</span><span class="p">)]</span>
+        <span class="p">]</span>
+        <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions_heads</span><span class="p">[</span><span class="n">idx_bpe_h</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">predictions_heads</span><span class="p">[</span><span class="n">filt_heads</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+        <span class="n">predictions_heads</span><span class="p">[</span><span class="n">idx_bpe_h</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions_heads</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">sort_idxs</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+        <span class="n">filt_head_entity_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span> <span class="o">==</span> <span class="n">idx_bpe_h</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">filt_head_entity_rank</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">filt_tail_entity_rank</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">rr</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">filt_head_entity_rank</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">filt_tail_entity_rank</span><span class="p">)</span>
+        <span class="n">reciprocal_ranks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rr</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">hits_level</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">filt_head_entity_rank</span> <span class="o">&lt;=</span> <span class="n">hits_level</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">res</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">filt_tail_entity_rank</span> <span class="o">&lt;=</span> <span class="n">hits_level</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">res</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">hits</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">hits_level</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">compute_metrics_from_ranks</span><span class="p">(</span>
+        <span class="n">ranks</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">num_triples</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">),</span>
+        <span class="n">hits_dict</span><span class="o">=</span><span class="n">hits</span><span class="p">,</span>
+        <span class="n">scale_factor</span><span class="o">=</span><span class="mi">2</span>
+    <span class="p">)</span> <span class="o">|</span> <span class="p">{</span><span class="s1">&#39;MRR&#39;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">reciprocal_ranks</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))}</span></div>
+
+
+
+<div class="viewcode-block" id="evaluate_lp">
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs_training/index.html#dicee.eval_static_funcs.evaluate_lp">[docs]</a>
+<span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_lp</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">triple_idx</span><span class="p">,</span>
+    <span class="n">num_entities</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">er_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span>
+    <span class="n">re_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span>
+    <span class="n">info</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Eval Starts&#39;</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
+    <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate link prediction with batched processing.</span>
+
+<span class="sd">    Memory-efficient evaluation using chunked entity scoring.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: The KGE model to evaluate.</span>
+<span class="sd">        triple_idx: Integer-indexed triples as numpy array.</span>
+<span class="sd">        num_entities: Total number of entities.</span>
+<span class="sd">        er_vocab: Mapping (head_idx, rel_idx) -&gt; list of tail indices.</span>
+<span class="sd">        re_vocab: Mapping (rel_idx, tail_idx) -&gt; list of head indices.</span>
+<span class="sd">        info: Description to print.</span>
+<span class="sd">        batch_size: Batch size for triple processing.</span>
+<span class="sd">        chunk_size: Chunk size for entity scoring.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with H@1, H@3, H@10, and MRR metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Model must be provided&quot;</span>
+    <span class="k">assert</span> <span class="n">triple_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;triple_idx must be provided&quot;</span>
+    <span class="k">assert</span> <span class="n">num_entities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;num_entities must be provided&quot;</span>
+    <span class="k">assert</span> <span class="n">er_vocab</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;er_vocab must be provided&quot;</span>
+    <span class="k">assert</span> <span class="n">re_vocab</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;re_vocab must be provided&quot;</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Num of triples </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">triple_idx</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">hits</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">reciprocal_ranks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">all_entities</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">batch_start</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">triple_idx</span><span class="p">),</span> <span class="n">batch_size</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Evaluating Batches&quot;</span><span class="p">):</span>
+        <span class="n">batch_end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">batch_start</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">triple_idx</span><span class="p">))</span>
+        <span class="n">batch_triples</span> <span class="o">=</span> <span class="n">triple_idx</span><span class="p">[</span><span class="n">batch_start</span><span class="p">:</span><span class="n">batch_end</span><span class="p">]</span>
+        <span class="n">batch_size_current</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch_triples</span><span class="p">)</span>
+
+        <span class="n">h_batch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">dp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">dp</span> <span class="ow">in</span> <span class="n">batch_triples</span><span class="p">])</span>
+        <span class="n">r_batch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">dp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">dp</span> <span class="ow">in</span> <span class="n">batch_triples</span><span class="p">])</span>
+        <span class="n">t_batch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">dp</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">dp</span> <span class="ow">in</span> <span class="n">batch_triples</span><span class="p">])</span>
+
+        <span class="n">predictions_tails</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">batch_size_current</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">)</span>
+        <span class="n">predictions_heads</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">batch_size_current</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">)</span>
+
+        <span class="c1"># Process entities in chunks</span>
+        <span class="k">for</span> <span class="n">chunk_start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">,</span> <span class="n">chunk_size</span><span class="p">):</span>
+            <span class="n">chunk_end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">chunk_start</span> <span class="o">+</span> <span class="n">chunk_size</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">)</span>
+            <span class="n">entities_chunk</span> <span class="o">=</span> <span class="n">all_entities</span><span class="p">[</span><span class="n">chunk_start</span><span class="p">:</span><span class="n">chunk_end</span><span class="p">]</span>
+            <span class="n">chunk_size_current</span> <span class="o">=</span> <span class="n">entities_chunk</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="c1"># Tail prediction</span>
+            <span class="n">x_tails</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span>
+                <span class="n">h_batch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">chunk_size_current</span><span class="p">),</span>
+                <span class="n">r_batch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">chunk_size_current</span><span class="p">),</span>
+                <span class="n">entities_chunk</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">batch_size_current</span><span class="p">)</span>
+            <span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">preds_tails</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x_tails</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size_current</span><span class="p">,</span> <span class="n">chunk_size_current</span><span class="p">)</span>
+            <span class="n">predictions_tails</span><span class="p">[:,</span> <span class="n">chunk_start</span><span class="p">:</span><span class="n">chunk_end</span><span class="p">]</span> <span class="o">=</span> <span class="n">preds_tails</span>
+            <span class="k">del</span> <span class="n">x_tails</span>
+
+            <span class="c1"># Head prediction</span>
+            <span class="n">x_heads</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span>
+                <span class="n">entities_chunk</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">batch_size_current</span><span class="p">),</span>
+                <span class="n">r_batch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">chunk_size_current</span><span class="p">),</span>
+                <span class="n">t_batch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">chunk_size_current</span><span class="p">)</span>
+            <span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">preds_heads</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x_heads</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size_current</span><span class="p">,</span> <span class="n">chunk_size_current</span><span class="p">)</span>
+            <span class="n">predictions_heads</span><span class="p">[:,</span> <span class="n">chunk_start</span><span class="p">:</span><span class="n">chunk_end</span><span class="p">]</span> <span class="o">=</span> <span class="n">preds_heads</span>
+            <span class="k">del</span> <span class="n">x_heads</span>
+
+        <span class="c1"># Compute filtered ranks</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size_current</span><span class="p">):</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">h_batch</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">r_batch</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">t_batch</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+            <span class="c1"># Tail filtering</span>
+            <span class="n">filt_tails</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">er_vocab</span><span class="p">[(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">)])</span> <span class="o">-</span> <span class="p">{</span><span class="n">t</span><span class="p">}</span>
+            <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions_tails</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">predictions_tails</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">filt_tails</span><span class="p">)]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+            <span class="n">predictions_tails</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions_tails</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">filt_tail_entity_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span> <span class="o">==</span> <span class="n">t</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1"># Head filtering</span>
+            <span class="n">filt_heads</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">re_vocab</span><span class="p">[(</span><span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">)])</span> <span class="o">-</span> <span class="p">{</span><span class="n">h</span><span class="p">}</span>
+            <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions_heads</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">h</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">predictions_heads</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">filt_heads</span><span class="p">)]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+            <span class="n">predictions_heads</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">h</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions_heads</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">filt_head_entity_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span> <span class="o">==</span> <span class="n">h</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="n">filt_head_entity_rank</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">filt_tail_entity_rank</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">rr</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">filt_head_entity_rank</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">filt_tail_entity_rank</span><span class="p">)</span>
+            <span class="n">reciprocal_ranks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rr</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">hits_level</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">filt_head_entity_rank</span> <span class="o">&lt;=</span> <span class="n">hits_level</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="n">res</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">filt_tail_entity_rank</span> <span class="o">&lt;=</span> <span class="n">hits_level</span> <span class="k">else</span> <span class="mi">0</span>
+                <span class="k">if</span> <span class="n">res</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">hits</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">hits_level</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="n">compute_metrics_from_ranks</span><span class="p">(</span>
+        <span class="n">ranks</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">num_triples</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">triple_idx</span><span class="p">),</span>
+        <span class="n">hits_dict</span><span class="o">=</span><span class="n">hits</span><span class="p">,</span>
+        <span class="n">scale_factor</span><span class="o">=</span><span class="mi">2</span>
+    <span class="p">)</span> <span class="o">|</span> <span class="p">{</span><span class="s1">&#39;MRR&#39;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">reciprocal_ranks</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">triple_idx</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))}</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">results</span></div>
+
+
+
+<div class="viewcode-block" id="evaluate_bpe_lp">
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs_training/index.html#dicee.eval_static_funcs.evaluate_bpe_lp">[docs]</a>
+<span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_bpe_lp</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">triple_idx</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">],</span>
+    <span class="n">all_bpe_shaped_entities</span><span class="p">,</span>
+    <span class="n">er_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span>
+    <span class="n">re_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span>
+    <span class="n">info</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Eval Starts&#39;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate link prediction with BPE-encoded entities.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: The KGE model to evaluate.</span>
+<span class="sd">        triple_idx: List of BPE-encoded triple tuples.</span>
+<span class="sd">        all_bpe_shaped_entities: All entities with BPE representations.</span>
+<span class="sd">        er_vocab: Mapping for tail filtering.</span>
+<span class="sd">        re_vocab: Mapping for head filtering.</span>
+<span class="sd">        info: Description to print.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with H@1, H@3, H@10, and MRR metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">triple_idx</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">triple_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">triple_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">3</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Num of triples </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">triple_idx</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">hits</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">reciprocal_ranks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">num_entities</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_bpe_shaped_entities</span><span class="p">)</span>
+
+    <span class="n">bpe_entity_to_idx</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">all_bpe_entities</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">str_entity</span><span class="p">,</span> <span class="n">bpe_entity</span><span class="p">,</span> <span class="n">shaped_bpe_entity</span><span class="p">)</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">all_bpe_shaped_entities</span><span class="p">)):</span>
+        <span class="n">bpe_entity_to_idx</span><span class="p">[</span><span class="n">shaped_bpe_entity</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span>
+        <span class="n">all_bpe_entities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">shaped_bpe_entity</span><span class="p">)</span>
+    <span class="n">all_bpe_entities</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">all_bpe_entities</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="n">bpe_h</span><span class="p">,</span> <span class="n">bpe_r</span><span class="p">,</span> <span class="n">bpe_t</span><span class="p">)</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">triple_idx</span><span class="p">):</span>
+        <span class="n">idx_bpe_h</span> <span class="o">=</span> <span class="n">bpe_entity_to_idx</span><span class="p">[</span><span class="n">bpe_h</span><span class="p">]</span>
+        <span class="n">idx_bpe_t</span> <span class="o">=</span> <span class="n">bpe_entity_to_idx</span><span class="p">[</span><span class="n">bpe_t</span><span class="p">]</span>
+
+        <span class="n">torch_bpe_h</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">bpe_h</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">torch_bpe_r</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">bpe_r</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">torch_bpe_t</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">bpe_t</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Tail predictions</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">torch_bpe_h</span><span class="p">,</span> <span class="n">repeats</span><span class="o">=</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">torch_bpe_r</span><span class="p">,</span> <span class="n">repeats</span><span class="o">=</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+            <span class="n">all_bpe_entities</span>
+        <span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">predictions_tails</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="c1"># Head predictions</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span>
+            <span class="n">all_bpe_entities</span><span class="p">,</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">torch_bpe_r</span><span class="p">,</span> <span class="n">repeats</span><span class="o">=</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">torch_bpe_t</span><span class="p">,</span> <span class="n">repeats</span><span class="o">=</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">predictions_heads</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="c1"># Filter tails</span>
+        <span class="n">filt_tails</span> <span class="o">=</span> <span class="p">[</span><span class="n">bpe_entity_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">er_vocab</span><span class="p">[(</span><span class="n">bpe_h</span><span class="p">,</span> <span class="n">bpe_r</span><span class="p">)]]</span>
+        <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions_tails</span><span class="p">[</span><span class="n">idx_bpe_t</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">predictions_tails</span><span class="p">[</span><span class="n">filt_tails</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+        <span class="n">predictions_tails</span><span class="p">[</span><span class="n">idx_bpe_t</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions_tails</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">filt_tail_entity_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span> <span class="o">==</span> <span class="n">idx_bpe_t</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Filter heads</span>
+        <span class="n">filt_heads</span> <span class="o">=</span> <span class="p">[</span><span class="n">bpe_entity_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">re_vocab</span><span class="p">[(</span><span class="n">bpe_r</span><span class="p">,</span> <span class="n">bpe_t</span><span class="p">)]]</span>
+        <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions_heads</span><span class="p">[</span><span class="n">idx_bpe_h</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">predictions_heads</span><span class="p">[</span><span class="n">filt_heads</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+        <span class="n">predictions_heads</span><span class="p">[</span><span class="n">idx_bpe_h</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions_heads</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">filt_head_entity_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span> <span class="o">==</span> <span class="n">idx_bpe_h</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">filt_head_entity_rank</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">filt_tail_entity_rank</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">rr</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">filt_head_entity_rank</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">filt_tail_entity_rank</span><span class="p">)</span>
+        <span class="n">reciprocal_ranks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rr</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">hits_level</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">filt_head_entity_rank</span> <span class="o">&lt;=</span> <span class="n">hits_level</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">res</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">filt_tail_entity_rank</span> <span class="o">&lt;=</span> <span class="n">hits_level</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">res</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">hits</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">hits_level</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="n">compute_metrics_from_ranks</span><span class="p">(</span>
+        <span class="n">ranks</span><span class="o">=</span><span class="p">[],</span>
+        <span class="n">num_triples</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">triple_idx</span><span class="p">),</span>
+        <span class="n">hits_dict</span><span class="o">=</span><span class="n">hits</span><span class="p">,</span>
+        <span class="n">scale_factor</span><span class="o">=</span><span class="mi">2</span>
+    <span class="p">)</span> <span class="o">|</span> <span class="p">{</span><span class="s1">&#39;MRR&#39;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">reciprocal_ranks</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">triple_idx</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))}</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">results</span></div>
+
+
+
+<div class="viewcode-block" id="evaluate_lp_bpe_k_vs_all">
+<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/link_prediction/index.html#dicee.eval_static_funcs.evaluate_lp_bpe_k_vs_all">[docs]</a>
+<span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">evaluate_lp_bpe_k_vs_all</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+    <span class="n">er_vocab</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">func_triple_to_bpe_representation</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">str_to_bpe_entity_to_idx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate BPE link prediction with KvsAll scoring.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: The KGE model wrapper.</span>
+<span class="sd">        triples: List of string triples.</span>
+<span class="sd">        er_vocab: Entity-relation vocabulary for filtering.</span>
+<span class="sd">        batch_size: Batch size for processing.</span>
+<span class="sd">        func_triple_to_bpe_representation: Function to convert triples to BPE.</span>
+<span class="sd">        str_to_bpe_entity_to_idx: Mapping from string entities to BPE indices.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with H@1, H@3, H@10, and MRR metrics.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If batch_size is not provided.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">batch_size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;batch_size must be provided&quot;</span><span class="p">)</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="n">num_triples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span>
+    <span class="n">ranks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">hits_range</span> <span class="o">=</span> <span class="n">ALL_HITS_RANGE</span>
+    <span class="n">hits</span> <span class="o">=</span> <span class="n">create_hits_dict</span><span class="p">(</span><span class="n">hits_range</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_triples</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+        <span class="n">str_data_batch</span> <span class="o">=</span> <span class="n">triples</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">batch_size</span><span class="p">]</span>
+        <span class="n">torch_batch_bpe_triple</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span>
+            <span class="n">func_triple_to_bpe_representation</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">str_data_batch</span>
+        <span class="p">])</span>
+
+        <span class="n">bpe_hr</span> <span class="o">=</span> <span class="n">torch_batch_bpe_triple</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">:]</span>
+        <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">bpe_hr</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">predictions</span><span class="p">)):</span>
+            <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">str_data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">id_e_target</span> <span class="o">=</span> <span class="n">str_to_bpe_entity_to_idx</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+            <span class="n">filt_idx_entities</span> <span class="o">=</span> <span class="p">[</span><span class="n">str_to_bpe_entity_to_idx</span><span class="p">[</span><span class="n">_</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">er_vocab</span><span class="p">[(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">)]]</span>
+
+            <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">filt_idx_entities</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+            <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
+
+        <span class="n">_</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">predictions</span><span class="p">)):</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">str_data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">rank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">str_to_bpe_entity_to_idx</span><span class="p">[</span><span class="n">t</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">ranks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
+            <span class="n">update_hits</span><span class="p">(</span><span class="n">hits</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">hits_range</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">ranks</span><span class="p">)</span> <span class="o">==</span> <span class="n">num_triples</span>
+    <span class="k">return</span> <span class="n">compute_metrics_from_ranks_simple</span><span class="p">(</span><span class="n">ranks</span><span class="p">,</span> <span class="n">num_triples</span><span class="p">,</span> <span class="n">hits</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

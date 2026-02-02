@@ -1,0 +1,527 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.read_preprocess_save_load_kg.preprocess &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../../../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dicee.read_preprocess_save_load_kg.preprocess</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dicee.read_preprocess_save_load_kg.preprocess</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">polars</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pl</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">timeit</span><span class="p">,</span> <span class="n">pandas_dataframe_indexer</span><span class="p">,</span> <span class="n">dataset_sanity_checking</span><span class="p">,</span> 
+                   <span class="n">get_er_vocab</span><span class="p">,</span> <span class="n">get_re_vocab</span><span class="p">,</span> <span class="n">get_ee_vocab</span><span class="p">,</span> <span class="n">apply_reciprocal_or_noise</span><span class="p">,</span> 
+                   <span class="n">polars_dataframe_indexer</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dicee.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">numpy_data_type_changer</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">concurrent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
+
+
+<div class="viewcode-block" id="PreprocessKG">
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PreprocessKG</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Preprocess the data in memory &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kg</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span> <span class="o">=</span> <span class="n">kg</span>
+
+<div class="viewcode-block" id="PreprocessKG.start">
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.start">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Preprocess train, valid and test datasets stored in knowledge graph instance</span>
+
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Process</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">byte_pair_encoding</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">padding</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_with_byte_pair_encoding_with_padding</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">byte_pair_encoding</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_with_byte_pair_encoding</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;polars&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_with_polars</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">backend</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;pandas&quot;</span><span class="p">,</span> <span class="s2">&quot;rdflib&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_with_pandas</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">backend</span><span class="si">}</span><span class="s1"> not found&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">byte_pair_encoding</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">valid_set</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">test_set</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">valid_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">test_set</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...&#39;</span><span class="p">)</span>
+            <span class="c1"># We need to benchmark the benefits of using futures  ?</span>
+            <span class="n">executor</span> <span class="o">=</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">ProcessPoolExecutor</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">er_vocab</span> <span class="o">=</span> <span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">get_er_vocab</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_for_serialization</span> <span class="o">+</span> <span class="s1">&#39;/er_vocab.p&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">re_vocab</span> <span class="o">=</span> <span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">get_re_vocab</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_for_serialization</span> <span class="o">+</span> <span class="s1">&#39;/re_vocab.p&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">ee_vocab</span> <span class="o">=</span> <span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">get_ee_vocab</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_for_serialization</span> <span class="o">+</span> <span class="s1">&#39;/ee_vocab.p&#39;</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">,</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">byte_pair_encoding</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">padding</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">training_technique</span> <span class="o">==</span> <span class="s2">&quot;NegSample&quot;</span><span class="p">:</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;No need to do anything&quot;&quot;&quot;</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">training_technique</span> <span class="o">==</span> <span class="s2">&quot;KvsAll&quot;</span><span class="p">:</span>
+                <span class="c1"># Construct the training data: A single data point is a unique pair of</span>
+                <span class="c1"># a sequence of sub-words representing an entity</span>
+                <span class="c1"># a sequence of sub-words representing a relation</span>
+                <span class="c1"># Mapping from a sequence of bpe entity to its unique integer index</span>
+                <span class="n">entity_to_idx</span> <span class="o">=</span> <span class="p">{</span><span class="n">shaped_bpe_ent</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">str_ent</span><span class="p">,</span> <span class="n">bpe_ent</span><span class="p">,</span> <span class="n">shaped_bpe_ent</span><span class="p">)</span> <span class="ow">in</span>
+                                 <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">ordered_bpe_entities</span><span class="p">)}</span>
+                <span class="n">er_tails</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="c1"># Iterate over bpe encoded triples to obtain a mapping from pair of bpe entity and relation to</span>
+                <span class="c1"># indices of bpe entities</span>
+                <span class="n">bpe_entities</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">:</span>
+                    <span class="n">er_tails</span><span class="o">.</span><span class="n">setdefault</span><span class="p">((</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">),</span> <span class="nb">list</span><span class="p">())</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">t</span><span class="p">])</span>
+                    <span class="n">bpe_entities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+                <span class="c1"># Generate a training data</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_target_indices</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">shaped_bpe_h</span><span class="p">,</span> <span class="n">shaped_bpe_r</span><span class="p">),</span> <span class="n">list_of_indices_of_tails</span> <span class="ow">in</span> <span class="n">er_tails</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">shaped_bpe_h</span><span class="p">,</span> <span class="n">shaped_bpe_r</span><span class="p">))</span>
+                    <span class="c1"># List of integers denoting the index of shaped_bpe_entities</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_target_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">list_of_indices_of_tails</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">target_dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">ordered_bpe_entities</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">training_technique</span> <span class="o">==</span> <span class="s2">&quot;AllvsAll&quot;</span><span class="p">:</span>
+                <span class="n">entity_to_idx</span> <span class="o">=</span> <span class="p">{</span><span class="n">shaped_bpe_ent</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">str_ent</span><span class="p">,</span> <span class="n">bpe_ent</span><span class="p">,</span> <span class="n">shaped_bpe_ent</span><span class="p">)</span> <span class="ow">in</span>
+                                 <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">ordered_bpe_entities</span><span class="p">)}</span>
+                <span class="n">er_tails</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+                <span class="n">bpe_entities</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">:</span>
+                    <span class="n">er_tails</span><span class="o">.</span><span class="n">setdefault</span><span class="p">((</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">),</span> <span class="nb">list</span><span class="p">())</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">t</span><span class="p">])</span>
+                    <span class="n">bpe_entities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+                <span class="n">bpe_tokens</span> <span class="o">=</span> <span class="p">{</span><span class="n">shaped_bpe_token</span> <span class="k">for</span> <span class="p">(</span><span class="n">str_entity</span><span class="p">,</span> <span class="n">bpe_entity</span><span class="p">,</span> <span class="n">shaped_bpe_token</span><span class="p">)</span> <span class="ow">in</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">ordered_bpe_entities</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">ordered_bpe_relations</span><span class="p">}</span>
+                <span class="c1"># Iterate over all</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">bpe_tokens</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">bpe_tokens</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">er_tails</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">er_tails</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+                <span class="c1"># Generate a training data</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_target_indices</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">shaped_bpe_h</span><span class="p">,</span> <span class="n">shaped_bpe_r</span><span class="p">),</span> <span class="n">list_of_indices_of_tails</span> <span class="ow">in</span> <span class="n">er_tails</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">shaped_bpe_h</span><span class="p">,</span> <span class="n">shaped_bpe_r</span><span class="p">))</span>
+                    <span class="c1"># List of integers denoting the index of shaped_bpe_entities</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_target_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">list_of_indices_of_tails</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">target_dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">ordered_bpe_entities</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot; Scoring technique </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">training_technique</span><span class="si">}</span><span class="s2"> with BPE not implemented&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">byte_pair_encoding</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">byte_pair_encoding</span><span class="p">:</span>
+            <span class="n">space_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">end_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">triples</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">h</span><span class="p">,</span> <span class="n">space_token</span><span class="p">,</span> <span class="o">*</span><span class="n">r</span><span class="p">,</span> <span class="n">space_token</span><span class="p">,</span> <span class="o">*</span><span class="n">t</span><span class="p">,</span> <span class="n">end_token</span><span class="p">]</span>
+                <span class="n">triples</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Clear raw data to free memory</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__replace_values_df</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span>
+        <span class="kc">None</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Map a n by 3 pandas dataframe containing n triples into a list of n tuples</span>
+<span class="sd">        where each tuple contains three tuples corresdoing to sequence of sub-word list representing head entity</span>
+<span class="sd">        relation, and tail entity respectivly.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        df: pandas.Dataframe</span>
+<span class="sd">        f: an encoder function.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">bpe_triples</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span><span class="o">.</span><span class="n">itertuples</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">))</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bpe_triples</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bpe_triples</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">bpe_triples</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">3</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bpe_triples</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bpe_triples</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="nb">int</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">bpe_triples</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__finding_max_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">concat_of_train_val_test</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">max_length_subword_tokens</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">concat_of_train_val_test</span><span class="p">:</span>
+            <span class="n">max_token_length_per_triple</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">len</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="n">max_token_length_per_triple</span> <span class="o">&gt;</span> <span class="n">max_length_subword_tokens</span><span class="p">:</span>
+                <span class="n">max_length_subword_tokens</span> <span class="o">=</span> <span class="n">max_token_length_per_triple</span>
+        <span class="k">return</span> <span class="n">max_length_subword_tokens</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__padding_in_place</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">max_length_subword_tokens</span><span class="p">,</span> <span class="n">bpe_subwords_to_shaped_bpe_entities</span><span class="p">,</span>
+                           <span class="n">bpe_subwords_to_shaped_bpe_relations</span><span class="p">):</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">o</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">max_length_subword_tokens</span><span class="p">:</span>
+                <span class="n">s_encoded</span> <span class="o">=</span> <span class="n">s</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">dummy_id</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_length_subword_tokens</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">)))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">s_encoded</span> <span class="o">=</span> <span class="n">s</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">max_length_subword_tokens</span><span class="p">:</span>
+                <span class="n">p_encoded</span> <span class="o">=</span> <span class="n">p</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">dummy_id</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_length_subword_tokens</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">p_encoded</span> <span class="o">=</span> <span class="n">p</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">max_length_subword_tokens</span><span class="p">:</span>
+                <span class="n">o_encoded</span> <span class="o">=</span> <span class="n">o</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">dummy_id</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_length_subword_tokens</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">o</span><span class="p">)))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">o_encoded</span> <span class="o">=</span> <span class="n">o</span>
+
+            <span class="n">bpe_subwords_to_shaped_bpe_entities</span><span class="p">[</span><span class="n">o</span><span class="p">]</span> <span class="o">=</span> <span class="n">o_encoded</span>
+            <span class="n">bpe_subwords_to_shaped_bpe_entities</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="n">s_encoded</span>
+
+            <span class="n">bpe_subwords_to_shaped_bpe_relations</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">=</span> <span class="n">p_encoded</span>
+            <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">s_encoded</span><span class="p">,</span> <span class="n">p_encoded</span><span class="p">,</span> <span class="n">o_encoded</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span>
+
+<div class="viewcode-block" id="PreprocessKG.preprocess_with_byte_pair_encoding">
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_byte_pair_encoding">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">preprocess_with_byte_pair_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="o">==</span> <span class="p">[</span><span class="s1">&#39;subject&#39;</span><span class="p">,</span> <span class="s1">&#39;relation&#39;</span><span class="p">,</span> <span class="s1">&#39;object&#39;</span><span class="p">]</span>
+        
+        <span class="c1"># Add reciprocal or noisy triples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span> <span class="o">=</span> <span class="n">apply_reciprocal_or_noise</span><span class="p">(</span><span class="n">add_reciprocal</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_reciprocal</span><span class="p">,</span>
+                                                          <span class="n">eval_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span><span class="p">,</span>
+                                                          <span class="n">df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="s2">&quot;Train&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="o">=</span> <span class="n">apply_reciprocal_or_noise</span><span class="p">(</span><span class="n">add_reciprocal</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_reciprocal</span><span class="p">,</span>
+                                                          <span class="n">eval_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span><span class="p">,</span>
+                                                          <span class="n">df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="s2">&quot;Validation&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="o">=</span> <span class="n">apply_reciprocal_or_noise</span><span class="p">(</span><span class="n">add_reciprocal</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_reciprocal</span><span class="p">,</span>
+                                                         <span class="n">eval_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span><span class="p">,</span>
+                                                         <span class="n">df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="s2">&quot;Test&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Transform DataFrames to list of tuples with BPE encoding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__replace_values_df</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">encode</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">valid_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__replace_values_df</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">encode</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">test_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__replace_values_df</span><span class="p">(</span><span class="n">df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">encode</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PreprocessKG.preprocess_with_byte_pair_encoding_with_padding">
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_byte_pair_encoding_with_padding">[docs]</a>
+    <span class="nd">@timeit</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">preprocess_with_byte_pair_encoding_with_padding</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Preprocess with byte pair encoding and add padding&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_with_byte_pair_encoding</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__finding_max_token</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">valid_set</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">test_set</span><span class="p">)</span>
+
+        <span class="c1"># Store padded bpe entities and relations</span>
+        <span class="n">bpe_subwords_to_shaped_bpe_entities</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">bpe_subwords_to_shaped_bpe_relations</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The longest sequence of sub-word units of entities and relations is &quot;</span><span class="p">,</span>
+              <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">max_length_subword_tokens</span><span class="p">)</span>
+        <span class="c1"># Padding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__padding_in_place</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">max_length_subword_tokens</span><span class="p">,</span>
+                                                    <span class="n">bpe_subwords_to_shaped_bpe_entities</span><span class="p">,</span>
+                                                    <span class="n">bpe_subwords_to_shaped_bpe_relations</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">valid_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__padding_in_place</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">valid_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">max_length_subword_tokens</span><span class="p">,</span>
+                                                        <span class="n">bpe_subwords_to_shaped_bpe_entities</span><span class="p">,</span>
+                                                        <span class="n">bpe_subwords_to_shaped_bpe_relations</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">test_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__padding_in_place</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">test_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">max_length_subword_tokens</span><span class="p">,</span>
+                                                       <span class="n">bpe_subwords_to_shaped_bpe_entities</span><span class="p">,</span>
+                                                       <span class="n">bpe_subwords_to_shaped_bpe_relations</span><span class="p">)</span>
+        <span class="c1"># Store str_entity, bpe_entity, padded_bpe_entity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">ordered_bpe_entities</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">k</span><span class="p">),</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span>
+                                               <span class="n">bpe_subwords_to_shaped_bpe_entities</span><span class="o">.</span><span class="n">items</span><span class="p">()],</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">ordered_bpe_relations</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">k</span><span class="p">),</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span>
+                                                <span class="n">bpe_subwords_to_shaped_bpe_relations</span><span class="o">.</span><span class="n">items</span><span class="p">()],</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">del</span> <span class="n">bpe_subwords_to_shaped_bpe_entities</span>
+        <span class="k">del</span> <span class="n">bpe_subwords_to_shaped_bpe_relations</span></div>
+
+
+<div class="viewcode-block" id="PreprocessKG.preprocess_with_pandas">
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_pandas">[docs]</a>
+    <span class="nd">@timeit</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">preprocess_with_pandas</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Preprocess with pandas: add reciprocal triples, construct vocabulary, and index datasets&quot;&quot;&quot;</span>
+        <span class="c1"># Add reciprocal or noisy triples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span> <span class="o">=</span> <span class="n">apply_reciprocal_or_noise</span><span class="p">(</span><span class="n">add_reciprocal</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_reciprocal</span><span class="p">,</span>
+                                                          <span class="n">eval_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span><span class="p">,</span>
+                                                          <span class="n">df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="s2">&quot;Train&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="o">=</span> <span class="n">apply_reciprocal_or_noise</span><span class="p">(</span><span class="n">add_reciprocal</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_reciprocal</span><span class="p">,</span>
+                                                          <span class="n">eval_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span><span class="p">,</span>
+                                                          <span class="n">df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="s2">&quot;Validation&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="o">=</span> <span class="n">apply_reciprocal_or_noise</span><span class="p">(</span><span class="n">add_reciprocal</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_reciprocal</span><span class="p">,</span>
+                                                         <span class="n">eval_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span><span class="p">,</span>
+                                                         <span class="n">df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="s2">&quot;Test&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Construct vocabulary</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sequential_vocabulary_construction</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">)</span>
+        
+        <span class="n">max_idx</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">num_relations</span><span class="p">)</span>
+
+        <span class="c1"># Index and convert datasets</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">index_and_convert</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Indexing </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1"> data with shape </span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
+            <span class="n">indexed</span> <span class="o">=</span> <span class="n">pandas_dataframe_indexer</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+            <span class="n">dataset_sanity_checking</span><span class="p">(</span><span class="n">indexed</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">num_relations</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">numpy_data_type_changer</span><span class="p">(</span><span class="n">indexed</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">max_idx</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span> <span class="o">=</span> <span class="n">index_and_convert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">valid_set</span> <span class="o">=</span> <span class="n">index_and_convert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="p">,</span> <span class="s2">&quot;valid&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">test_set</span> <span class="o">=</span> <span class="n">index_and_convert</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PreprocessKG.preprocess_with_polars">
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_polars">[docs]</a>
+    <span class="nd">@timeit</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">preprocess_with_polars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Preprocess with polars: add reciprocal triples and create indexed datasets&quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;*** Preprocessing Train Data:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1"> with Polars ***&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Add reciprocal triples</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_reciprocal</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">add_reciprocal</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">select</span><span class="p">([</span>
+                        <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s1">&#39;subject&#39;</span><span class="p">),</span>
+                        <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;relation&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;_inverse&#39;</span><span class="p">,</span>
+                        <span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;subject&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s1">&#39;object&#39;</span><span class="p">)</span>
+                    <span class="p">]))</span>
+                <span class="k">return</span> <span class="n">df</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Adding Reciprocal Triples...&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span> <span class="o">=</span> <span class="n">add_reciprocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="o">=</span> <span class="n">add_reciprocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="o">=</span> <span class="n">add_reciprocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span><span class="p">)</span>
+
+        <span class="c1"># Type checking</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+        <span class="c1"># Concatenate all splits for vocabulary construction</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Concat Splits...&#39;</span><span class="p">)</span>
+        <span class="n">splits</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">splits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">splits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span><span class="p">)</span>
+        <span class="n">df_str_kg</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">splits</span><span class="p">)</span>
+        
+        <span class="c1"># Build entity vocabulary (sorted alphabetically for deterministic indexing)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Collecting entities...&quot;</span><span class="p">)</span>
+        <span class="n">subjects</span> <span class="o">=</span> <span class="n">df_str_kg</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;subject&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;entity&quot;</span><span class="p">))</span>
+        <span class="n">objects</span> <span class="o">=</span> <span class="n">df_str_kg</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">alias</span><span class="p">(</span><span class="s2">&quot;entity&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">entity_to_idx</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">subjects</span><span class="p">,</span> <span class="n">objects</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s2">&quot;vertical&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="s2">&quot;entity&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">entity_to_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="o">.</span><span class="n">with_row_index</span><span class="p">(</span><span class="s2">&quot;index&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s2">&quot;index&quot;</span><span class="p">,</span> <span class="s2">&quot;entity&quot;</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unique entities: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Build relation vocabulary (sorted alphabetically for deterministic indexing)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Relation Indexing...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">relation_to_idx</span> <span class="o">=</span> <span class="n">df_str_kg</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">col</span><span class="p">(</span><span class="s2">&quot;relation&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="s2">&quot;relation&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">relation_to_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="o">.</span><span class="n">with_row_index</span><span class="p">(</span><span class="s2">&quot;index&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s2">&quot;index&quot;</span><span class="p">,</span> <span class="s2">&quot;relation&quot;</span><span class="p">])</span>
+        <span class="k">del</span> <span class="n">df_str_kg</span>
+        <span class="c1"># Index datasets</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Indexing Training Data </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span> <span class="o">=</span> <span class="n">polars_dataframe_indexer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">,</span> 
+                                                      <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Indexing Val Data </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">valid_set</span> <span class="o">=</span> <span class="n">polars_dataframe_indexer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">,</span> 
+                                                          <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Indexing Test Data </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">test_set</span> <span class="o">=</span> <span class="n">polars_dataframe_indexer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">,</span> 
+                                                         <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;*** Preprocessing Train Data:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s1"> with Polars DONE ***&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PreprocessKG.sequential_vocabulary_construction">
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.sequential_vocabulary_construction">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sequential_vocabulary_construction</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        (1) Read input data into memory</span>
+<span class="sd">        (2) Remove triples with a condition</span>
+<span class="sd">        (3) Serialize vocabularies in a pandas dataframe where</span>
+<span class="sd">                    =&gt; the index is integer and</span>
+<span class="sd">                    =&gt; a single column is string (e.g. URI)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+
+        <span class="c1"># Concatenate all data splits</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Concatenating data to build vocabulary...&#39;</span><span class="p">)</span>
+        <span class="n">splits</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">splits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">splits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span><span class="p">)</span>
+        <span class="n">df_str_kg</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">splits</span><span class="p">,</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Creating a mapping from entities to integer indexes...&#39;</span><span class="p">)</span>
+        <span class="c1"># (5) Create a bijection mapping from entities of (2) to integer indexes.</span>
+        <span class="c1"># Build entity vocabulary (sorted alphabetically for deterministic indexing)</span>
+        <span class="c1"># This ensures the same entity always gets the same index regardless of input order</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">entity_to_idx</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">df_str_kg</span><span class="p">[</span><span class="s1">&#39;subject&#39;</span><span class="p">],</span><span class="n">df_str_kg</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]))</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span><span class="o">.</span><span class="n">sort_values</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(</span><span class="s2">&quot;entity&quot;</span><span class="p">)</span>
+        <span class="c1"># Build relation vocabulary (sorted alphabetically for deterministic indexing)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">relation_to_idx</span> <span class="o">=</span> <span class="n">df_str_kg</span><span class="p">[</span><span class="s1">&#39;relation&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">drop_duplicates</span><span class="p">()</span><span class="o">.</span><span class="n">sort_values</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(</span><span class="s2">&quot;relation&quot;</span><span class="p">)</span></div>
+</div>
+
+
+        <span class="c1"># del ordered_list</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

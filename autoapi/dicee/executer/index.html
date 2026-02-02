@@ -184,7 +184,7 @@ the full lifecycle of knowledge graph embedding model training.</p>
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.executer.Execute">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.executer.</span></span><span class="sig-name descname"><span class="pre">Execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">continuous_training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.executer.Execute" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.executer.</span></span><span class="sig-name descname"><span class="pre">Execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">continuous_training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute" title="Link to this definition"></a></dt>
 <dd><p>Executor class for training, retraining and evaluating KGE models.</p>
 <p>Handles the complete workflow:
 1. Loading &amp; Preprocessing &amp; Serializing input data
@@ -297,17 +297,17 @@ the full lifecycle of knowledge graph embedding model training.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.Execute.is_rank_zero">
-<span class="sig-name descname"><span class="pre">is_rank_zero</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#dicee.executer.Execute.is_rank_zero" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">is_rank_zero</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.is_rank_zero"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.is_rank_zero" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.Execute.cleanup">
-<span class="sig-name descname"><span class="pre">cleanup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#dicee.executer.Execute.cleanup" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">cleanup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.cleanup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.cleanup" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.Execute.setup_executor">
-<span class="sig-name descname"><span class="pre">setup_executor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.executer.Execute.setup_executor" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">setup_executor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.setup_executor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.setup_executor" title="Link to this definition"></a></dt>
 <dd><p>Set up storage directories for the experiment.</p>
 <p>Creates or reuses experiment directories based on configuration.
 Saves the configuration to a JSON file.</p>
@@ -315,7 +315,7 @@ Saves the configuration to a JSON file.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.Execute.create_and_store_kg">
-<span class="sig-name descname"><span class="pre">create_and_store_kg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.executer.Execute.create_and_store_kg" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">create_and_store_kg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.create_and_store_kg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.create_and_store_kg" title="Link to this definition"></a></dt>
 <dd><p>Create knowledge graph and store as memory-mapped file.</p>
 <p>Only executed on rank 0 in distributed training.
 Skips if memmap already exists.</p>
@@ -323,13 +323,13 @@ Skips if memmap already exists.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.Execute.load_from_memmap">
-<span class="sig-name descname"><span class="pre">load_from_memmap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.executer.Execute.load_from_memmap" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">load_from_memmap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.load_from_memmap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.load_from_memmap" title="Link to this definition"></a></dt>
 <dd><p>Load knowledge graph from memory-mapped file.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.Execute.save_trained_model">
-<span class="sig-name descname"><span class="pre">save_trained_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.executer.Execute.save_trained_model" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">save_trained_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.save_trained_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.save_trained_model" title="Link to this definition"></a></dt>
 <dd><p>Save a knowledge graph embedding model</p>
 <ol class="arabic simple">
 <li><p>Send model to eval mode and cpu.</p></li>
@@ -349,7 +349,7 @@ Skips if memmap already exists.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.Execute.end">
-<span class="sig-name descname"><span class="pre">end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#dicee.executer.Execute.end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.end" title="Link to this definition"></a></dt>
 <dd><p>End training</p>
 <ol class="arabic simple">
 <li><p>Store trained model.</p></li>
@@ -368,13 +368,13 @@ Skips if memmap already exists.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.Execute.write_report">
-<span class="sig-name descname"><span class="pre">write_report</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.executer.Execute.write_report" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">write_report</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.write_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.write_report" title="Link to this definition"></a></dt>
 <dd><p>Report training related information in a report.json file</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.Execute.start">
-<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#dicee.executer.Execute.start" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.start" title="Link to this definition"></a></dt>
 <dd><p>Start training</p>
 <p># (1) Loading the Data
 # (2) Create an evaluator object.
@@ -394,7 +394,7 @@ Skips if memmap already exists.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.executer.ContinuousExecute">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.executer.</span></span><span class="sig-name descname"><span class="pre">ContinuousExecute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.executer.ContinuousExecute" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.executer.</span></span><span class="sig-name descname"><span class="pre">ContinuousExecute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/executer.html#ContinuousExecute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.ContinuousExecute" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#dicee.executer.Execute" title="dicee.executer.Execute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Execute</span></code></a></p>
 <p>A subclass of Execute Class for retraining</p>
 <ol class="arabic simple">
@@ -407,7 +407,7 @@ Trained model stored in the same folder as the seed model for the training.
 Trained model is noted with the current time.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.ContinuousExecute.continual_start">
-<span class="sig-name descname"><span class="pre">continual_start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#dicee.executer.ContinuousExecute.continual_start" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">continual_start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../../../_modules/dicee/executer.html#ContinuousExecute.continual_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.ContinuousExecute.continual_start" title="Link to this definition"></a></dt>
 <dd><p>Start Continual Training</p>
 <ol class="arabic simple">
 <li><p>Initialize training.</p></li>

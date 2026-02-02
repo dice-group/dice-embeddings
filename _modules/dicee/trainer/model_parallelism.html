@@ -1,0 +1,459 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.trainer.model_parallelism &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../../../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dicee.trainer.model_parallelism</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dicee.trainer.model_parallelism</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractTrainer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..static_funcs_training</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_iterable_verbose</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..models.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">EnsembleKGE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<div class="viewcode-block" id="extract_input_outputs">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.extract_input_outputs">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">extract_input_outputs</span><span class="p">(</span><span class="n">z</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="c1"># pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">z</span>
+        <span class="c1"># pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)</span>
+        <span class="k">if</span> <span class="n">device</span><span class="p">:</span>
+            <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">x_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">y_batch</span><span class="o">.</span><span class="n">pin_memory</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">,</span>
+                                                                                              <span class="n">non_blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_idx_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">,</span> <span class="o">=</span> <span class="n">z</span>
+        <span class="k">if</span> <span class="n">device</span><span class="p">:</span>
+            <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">,</span> <span class="n">y_idx_batch</span> <span class="o">=</span> <span class="n">x_batch</span><span class="o">.</span><span class="n">pin_memory</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">,</span>
+                                                                    <span class="n">non_blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">y_batch</span><span class="o">.</span><span class="n">pin_memory</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
+                <span class="n">device</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span> <span class="n">y_idx_batch</span><span class="o">.</span><span class="n">pin_memory</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">x_batch</span><span class="p">,</span> <span class="n">y_idx_batch</span><span class="p">),</span> <span class="n">y_batch</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unexpected batch shape..&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="find_good_batch_size">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.find_good_batch_size">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_good_batch_size</span><span class="p">(</span><span class="n">train_loader</span><span class="p">,</span><span class="n">tp_ensemble_model</span><span class="p">):</span>
+    <span class="c1"># () Initial batch size.</span>
+    <span class="n">initial_batch_size</span><span class="o">=</span><span class="n">train_loader</span><span class="o">.</span><span class="n">batch_size</span>
+    <span class="c1"># () # of training data points.</span>
+    <span class="n">training_dataset_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="c1"># () Batch is large enough.</span>
+    <span class="k">if</span> <span class="n">initial_batch_size</span> <span class="o">&gt;=</span> <span class="n">training_dataset_size</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">training_dataset_size</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="c1"># () Log the number of training data points.</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of training data points:&quot;</span><span class="p">,</span><span class="n">training_dataset_size</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">increase_batch_size_until_cuda_out_of_memory</span><span class="p">(</span><span class="n">ensemble_model</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span><span class="n">delta</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">delta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;delta cannot be None.&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="s2">&quot;delta must be a positive integer.&quot;</span>
+        <span class="c1"># () Store the batch sizes and GPU memory usages in a tuple.</span>
+        <span class="n">batch_sizes_and_mem_usages</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># () Increase the batch size until a stopping criterion is reached.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">start_time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="c1"># () Initialize a dataloader with a current batch_size</span>
+                <span class="n">train_dataloaders</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
+                                                                <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+                                                                <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                                                <span class="n">sampler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                <span class="n">batch_sampler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                <span class="n">num_workers</span><span class="o">=</span><span class="n">train_loader</span><span class="o">.</span><span class="n">num_workers</span><span class="p">,</span>
+                                                                <span class="n">collate_fn</span><span class="o">=</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">collate_fn</span><span class="p">,</span>
+                                                                <span class="n">pin_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                                <span class="n">drop_last</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                                <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                                                <span class="n">worker_init_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                                <span class="n">persistent_workers</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                
+                <span class="n">batch_loss</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batch_of_training_data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_dataloaders</span><span class="p">):</span>
+                    <span class="n">batch_loss</span> <span class="o">=</span> <span class="n">forward_backward_update_loss</span><span class="p">(</span><span class="n">batch_of_training_data</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
+                    <span class="k">break</span>
+                
+                <span class="n">global_free_memory</span><span class="p">,</span> <span class="n">total_memory</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">mem_get_info</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span>
+                <span class="n">percentage_used_gpu_memory</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_memory</span> <span class="o">-</span> <span class="n">global_free_memory</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_memory</span>
+                <span class="n">rt</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start_time</span>
+
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Random Batch Loss: </span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">0.4</span><span class="si">}</span><span class="se">\t</span><span class="s2">GPU Usage: </span><span class="si">{</span><span class="n">percentage_used_gpu_memory</span><span class="si">:</span><span class="s2">0.3</span><span class="si">}</span><span class="se">\t</span><span class="s2">Runtime: </span><span class="si">{</span><span class="n">rt</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\t</span><span class="s2">Batch Size: </span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Store the batch size and the runtime</span>
+                <span class="n">batch_sizes_and_mem_usages</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">rt</span><span class="p">))</span>
+                
+                <span class="c1"># ()</span>
+                <span class="c1"># https://github.com/pytorch/pytorch/issues/21819</span>
+                <span class="c1"># CD: as we reach close to 1.0 GPU memory usage, we observe RuntimeError: CUDA error: an illegal memory access was encountered.</span>
+                <span class="c1"># CD: To avoid this problem, we add the following condition as a temp solution.</span>
+                <span class="k">if</span> <span class="n">percentage_used_gpu_memory</span> <span class="o">&gt;</span> <span class="mf">0.9</span><span class="p">:</span>
+                    <span class="c1"># Mimik out of memory error</span>
+                    <span class="k">return</span> <span class="n">batch_sizes_and_mem_usages</span><span class="p">,</span> <span class="kc">False</span>
+                <span class="k">if</span> <span class="n">batch_size</span> <span class="o">&lt;</span> <span class="n">training_dataset_size</span><span class="p">:</span>
+                    <span class="c1"># Increase the batch size.</span>
+                    <span class="n">batch_size</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">batch_size</span> <span class="o">/</span> <span class="n">delta</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">batch_sizes_and_mem_usages</span><span class="p">,</span><span class="kc">True</span>
+                        
+        <span class="k">except</span> <span class="n">torch</span><span class="o">.</span><span class="n">OutOfMemoryError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;torch.OutOfMemoryError caught! </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">batch_sizes_and_mem_usages</span><span class="p">,</span> <span class="kc">False</span>
+
+    <span class="n">history_batch_sizes_and_mem_usages</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="n">initial_batch_size</span>
+
+    <span class="k">for</span> <span class="n">delta</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">result</span><span class="p">,</span><span class="n">flag</span><span class="o">=</span> <span class="n">increase_batch_size_until_cuda_out_of_memory</span><span class="p">(</span><span class="n">tp_ensemble_model</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span><span class="n">delta</span><span class="o">=</span><span class="n">delta</span><span class="p">)</span>
+        
+        <span class="n">history_batch_sizes_and_mem_usages</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_rt</span> <span class="o">=</span> <span class="n">history_batch_sizes_and_mem_usages</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">history_batch_sizes_and_mem_usages</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;GPU memory errorin the first try&quot;</span>
+            <span class="c1"># CUDA ERROR Observed </span>
+            <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_rt</span><span class="o">=</span><span class="n">history_batch_sizes_and_mem_usages</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+            <span class="c1"># https://github.com/pytorch/pytorch/issues/21819</span>
+            <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">batch_size</span><span class="o">&gt;=</span><span class="n">training_dataset_size</span><span class="p">:</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">training_dataset_size</span>
+            <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+    <span class="k">return</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_rt</span></div>
+
+
+
+<div class="viewcode-block" id="forward_backward_update_loss">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.forward_backward_update_loss">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">forward_backward_update_loss</span><span class="p">(</span><span class="n">z</span><span class="p">:</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span><span class="o">-&gt;</span><span class="nb">float</span><span class="p">:</span>
+    <span class="c1"># () Get a random batch of data points (z).</span>
+    <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">extract_input_outputs</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+    <span class="c1"># () Move the batch of labels into the master GPU : GPU-0.</span>
+    <span class="n">y_batch</span> <span class="o">=</span> <span class="n">y_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span>
+    <span class="c1"># () Forward pas on the batch of input data points (yhat on the master GPU).</span>
+    <span class="n">yhat</span> <span class="o">=</span> <span class="n">ensemble_model</span><span class="p">(</span><span class="n">x_batch</span><span class="p">)</span>
+    <span class="c1"># () Compute the loss.</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">binary_cross_entropy_with_logits</span><span class="p">(</span><span class="n">yhat</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
+    <span class="c1"># () Compute the gradient of the loss w.r.t. parameters.</span>
+    <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+    <span class="c1"># () Parameter update.</span>
+    <span class="n">ensemble_model</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="TensorParallel">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.TensorParallel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TensorParallel</span><span class="p">(</span><span class="n">AbstractTrainer</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="TensorParallel.fit">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.TensorParallel.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Train model        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="n">ensemble_model</span><span class="p">,</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ensemble_model</span><span class="p">,</span><span class="n">EnsembleKGE</span><span class="p">),</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Selected model must &quot;</span>
+                                                        <span class="sa">f</span><span class="s2">&quot;be an instance of EnsembleKGE</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">ensemble_model</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># () Run on_fit_start callbacks.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
+        <span class="c1"># () Sanity checking</span>
+        <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()</span><span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">ensemble_model</span><span class="p">)</span>
+        <span class="c1"># () Get DataLoader</span>
+        <span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;train_dataloaders&#39;</span><span class="p">]</span>
+        <span class="c1"># () Find a batch size so that available GPU memory is *almost* fully used.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">auto_batch_finding</span><span class="p">:</span>
+            <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_rt</span><span class="o">=</span><span class="n">find_good_batch_size</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
+
+            <span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">train_dataloader</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
+                                                            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+                                                            <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                                            <span class="n">sampler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                            <span class="n">batch_sampler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                            <span class="n">num_workers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">num_core</span><span class="p">,</span>
+                                                            <span class="n">collate_fn</span><span class="o">=</span><span class="n">train_dataloader</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">collate_fn</span><span class="p">,</span>
+                                                            <span class="n">pin_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                            <span class="n">drop_last</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                                            <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                                            <span class="n">worker_init_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                            <span class="n">persistent_workers</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="c1">#if batch_rt is not None:</span>
+            <span class="c1">#    expected_training_time=batch_rt * len(train_dataloader) * self.attributes.num_epochs</span>
+            <span class="c1"># print(f&quot;Exp.Training Runtime: {expected_training_time/60 :.3f} in mins\t|\tBatch Size:{batch_size}\t|\tBatch RT:{batch_rt:.3f}\t|\t # of batches:{len(train_dataloader)}\t|\t# of epochs:{self.attributes.num_epochs}&quot;)</span>
+
+        <span class="c1"># () Number of batches to reach a single epoch.</span>
+        <span class="n">num_of_batches</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">)</span>
+        <span class="c1"># () Start training.</span>
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="p">(</span><span class="n">tqdm_bar</span> <span class="o">:=</span> <span class="n">make_iterable_verbose</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">),</span>
+                                                        <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
+            <span class="c1"># () Accumulate the batch losses.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">on_train_epoch_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
+            <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1"># () Iterate over batches.</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">):</span>
+                <span class="c1"># () Forward, Loss, Backward, and Update on a given batch of data points.</span>
+                <span class="n">batch_loss</span> <span class="o">=</span> <span class="n">forward_backward_update_loss</span><span class="p">(</span><span class="n">z</span><span class="p">,</span><span class="n">ensemble_model</span><span class="p">)</span>
+                <span class="c1"># () Accumulate the batch losses to compute the epoch loss.</span>
+                <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">batch_loss</span>
+                <span class="c1"># if verbose=TRue, show info.</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">tqdm_bar</span><span class="p">,</span> <span class="s1">&#39;set_description_str&#39;</span><span class="p">):</span>
+                    <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_description_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epoch:</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_postfix_str</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;batch=</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">num_of_batches</span><span class="si">}</span><span class="s2">, loss_step=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, loss_epoch=</span><span class="si">{</span><span class="n">epoch_loss</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">i</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_postfix_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loss_step=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, loss_epoch=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># Store the epoch loss</span>
+            <span class="n">ensemble_model</span><span class="o">.</span><span class="n">loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_loss</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
+        <span class="c1"># Run on_fit_end callbacks after the training is done.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
+        <span class="c1"># Create and evaluate a combined model from the ensemble model.</span>
+        <span class="c1">#create_and_evaluate_combined_model(self, ensemble_model) # Experimental</span>
+        <span class="c1"># TODO: Later, maybe we should write a callback to save the models in disk</span>
+        <span class="k">return</span> <span class="n">ensemble_model</span></div>
+
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    </span>
+<span class="sd">    def batchwisefit(self, *args, **kwargs):</span>
+<span class="sd">        assert len(args) == 1</span>
+<span class="sd">        model, = args</span>
+<span class="sd">        # (1) Run the fit the start callback.</span>
+<span class="sd">        self.on_fit_start(self, model)</span>
+<span class="sd">        # (2) Setup DDP.</span>
+<span class="sd">        optimizer = model.configure_optimizers()</span>
+<span class="sd">        num_gpus = torch.cuda.device_count()</span>
+<span class="sd">        for epoch in (tqdm_bar := make_iterable_verbose(range(self.attributes.num_epochs),</span>
+<span class="sd">                                                        verbose=True, position=0, leave=True)):</span>
+<span class="sd">            epoch_loss = 0</span>
+<span class="sd">            num_of_batches = len(kwargs[&#39;train_dataloaders&#39;])</span>
+<span class="sd">            for i, (x_batch, y_batch) in enumerate(kwargs[&#39;train_dataloaders&#39;]):</span>
+<span class="sd">                # Define a large batch into small batches</span>
+<span class="sd">                x_splits = torch.chunk(x_batch, num_gpus)</span>
+<span class="sd">                y_splits = torch.chunk(y_batch, num_gpus)</span>
+
+<span class="sd">                # Forward pass. We need to paralelize it</span>
+<span class="sd">                gpu_losses = []</span>
+<span class="sd">                for gpu_id, (x_split, y_split) in enumerate(zip(x_splits, y_splits)):</span>
+<span class="sd">                    y_split = y_split.to(f&quot;cuda:{gpu_id}&quot;)</span>
+<span class="sd">                    h_emb, r_emb, t_emb = model.get_triple_representation(x_split)</span>
+<span class="sd">                    h_emb, r_emb, t_emb = h_emb.pin_memory().to(f&quot;cuda:{gpu_id}&quot;,</span>
+<span class="sd">                                                                non_blocking=True), r_emb.pin_memory().to(f&quot;cuda:{gpu_id}&quot;, non_blocking=True), t_emb.pin_memory().to(f&quot;cuda:{gpu_id}&quot;, non_blocking=True)</span>
+<span class="sd">                    yhat = model.score(h_emb, r_emb, t_emb)</span>
+<span class="sd">                    gpu_losses.append(torch.nn.functional.binary_cross_entropy_with_logits(yhat, y_split).to(&quot;cuda:0&quot;))</span>
+
+<span class="sd">                loss = sum(gpu_losses) / len(gpu_losses)</span>
+
+<span class="sd">                loss.backward()</span>
+<span class="sd">                batch_loss = loss.item()</span>
+<span class="sd">                optimizer.step()</span>
+<span class="sd">                optimizer.zero_grad(set_to_none=True)</span>
+
+<span class="sd">                epoch_loss += batch_loss</span>
+
+<span class="sd">                if hasattr(tqdm_bar, &#39;set_description_str&#39;):</span>
+<span class="sd">                    tqdm_bar.set_description_str(f&quot;Epoch:{epoch + 1}&quot;)</span>
+<span class="sd">                    if i &gt; 0:</span>
+<span class="sd">                        tqdm_bar.set_postfix_str(</span>
+<span class="sd">                            f&quot;batch={i} | {num_of_batches}, loss_step={batch_loss:.5f}, loss_epoch={epoch_loss / i:.5f}&quot;)</span>
+<span class="sd">                    else:</span>
+<span class="sd">                        tqdm_bar.set_postfix_str(f&quot;loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}&quot;)</span>
+
+<span class="sd">    def torch_buggy_fit(self, *args, **kwargs):</span>
+<span class="sd">        assert len(args) == 1</span>
+<span class="sd">        model, = args</span>
+<span class="sd">        # () Run the fit the start callback.</span>
+<span class="sd">        self.on_fit_start(self, model)</span>
+<span class="sd">        # () Init Process Group with NCCL.</span>
+<span class="sd">        torch.distributed.init_process_group(backend=&quot;nccl&quot;)</span>
+<span class="sd">        # () Get Rank and World Size.</span>
+<span class="sd">        rank = dist.get_rank()</span>
+<span class="sd">        world_size = dist.get_world_size()</span>
+<span class="sd">        # () Reinitialize Rank based on manuel seed rank.</span>
+<span class="sd">        torch.manual_seed(rank)</span>
+<span class="sd">        model.param_init(model.entity_embeddings.weight.data) </span>
+<span class="sd">        model.param_init(model.relation_embeddings.weight.data)</span>
+<span class="sd">        # () .</span>
+<span class="sd">        device = torch.device(f&#39;cuda:{rank}&#39;)</span>
+<span class="sd">        model.to(device)</span>
+<span class="sd">        # () .</span>
+<span class="sd">        optimizer = model.configure_optimizers()</span>
+<span class="sd">        # () .</span>
+<span class="sd">        for epoch in (tqdm_bar := make_iterable_verbose(range(self.attributes.num_epochs),</span>
+<span class="sd">                                                        verbose=True, position=0, leave=True)):</span>
+<span class="sd">            epoch_loss = 0</span>
+<span class="sd">            num_of_batches = len(kwargs[&#39;train_dataloaders&#39;])</span>
+<span class="sd">            # () .</span>
+<span class="sd">            for i, z in enumerate(kwargs[&#39;train_dataloaders&#39;]):</span>
+<span class="sd">                optimizer.zero_grad()</span>
+<span class="sd">                # () Get batch and move it on GPUs .</span>
+<span class="sd">                inputs,targets = extract_input_outputs(z,device)</span>
+<span class="sd">                # () Predict .</span>
+<span class="sd">                yhats = model(inputs)   </span>
+<span class="sd">                # () TODO: Pytorch Bug https://github.com/pytorch/pytorch/issues/58005 .</span>
+<span class="sd">                dist.all_reduce(yhats,op=dist.ReduceOp.SUM)</span>
+<span class="sd">                # () Compute loss .</span>
+<span class="sd">                loss = torch.nn.functional.binary_cross_entropy_with_logits(yhats, targets)</span>
+<span class="sd">                # () Backward .</span>
+<span class="sd">                loss.backward()</span>
+<span class="sd">                # () .</span>
+<span class="sd">                batch_loss = loss.item()</span>
+<span class="sd">                # () .</span>
+<span class="sd">                optimizer.step()</span>
+<span class="sd">                # () .</span>
+<span class="sd">                epoch_loss +=batch_loss</span>
+<span class="sd">                # () .</span>
+<span class="sd">                if rank==0 and hasattr(tqdm_bar, &#39;set_description_str&#39;):</span>
+<span class="sd">                    tqdm_bar.set_description_str(f&quot;Epoch:{epoch + 1}&quot;)</span>
+<span class="sd">                    if i &gt; 0:</span>
+<span class="sd">                        tqdm_bar.set_postfix_str(f&quot;batch={i} | {num_of_batches}, loss_step={batch_loss:.5f}, loss_epoch={epoch_loss / i:.5f}&quot;)</span>
+<span class="sd">                    else:</span>
+<span class="sd">                        tqdm_bar.set_postfix_str(f&quot;loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}&quot;)</span>
+<span class="sd">        # () .</span>
+<span class="sd">        torch.distributed.destroy_process_group()</span>
+<span class="sd">        # () .</span>
+<span class="sd">        self.on_fit_end(self, model)</span>
+
+<span class="sd">    def create_and_evaluate_combined_model( trainer,ensemble_model):</span>
+<span class="sd">     # Create and evaluate a combined model from the ensemble model</span>
+<span class="sd">    combined_model_args = ensemble_model.models[0].args</span>
+<span class="sd">    combined_entity_embeddings, combined_relation_embeddings = ensemble_model.get_embeddings()</span>
+<span class="sd">    combined_model_args[&quot;embedding_dim&quot;] = combined_entity_embeddings.shape[1]</span>
+<span class="sd">    combined_model, form_of_labelling = intialize_model(combined_model_args)</span>
+<span class="sd">    combined_model.entity_embeddings.weight.data = combined_entity_embeddings</span>
+<span class="sd">    combined_model.relation_embeddings.weight.data = combined_relation_embeddings</span>
+
+<span class="sd">    combined_model.eval()</span>
+<span class="sd">    combined_model.to(&quot;cpu&quot;)</span>
+<span class="sd">    print(f&quot;Evaluating combined Ensemble of {combined_model_args[&#39;model&#39;]}&quot;)</span>
+<span class="sd">    eval_result = trainer.evaluator.eval(dataset=trainer.dataset,</span>
+<span class="sd">                                        trained_model=combined_model,</span>
+<span class="sd">                                        form_of_labelling=form_of_labelling,</span>
+<span class="sd">                                        during_training=False)</span>
+<span class="sd">    trainer.evaluator.report[&quot;combined_model&quot;] = eval_result</span>
+<span class="sd">    torch.save(combined_model.state_dict(), f&#39;{trainer.attributes.full_storage_path}/model.pt&#39;)</span>
+<span class="sd">    return</span>
+
+<span class="sd">    &quot;&quot;&quot;</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

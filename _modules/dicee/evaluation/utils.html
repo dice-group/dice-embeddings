@@ -1,0 +1,285 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.evaluation.utils &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../../../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dicee.evaluation.utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dicee.evaluation.utils</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Utility functions for evaluation module.</span>
+
+<span class="sd">This module contains shared helper functions used across different</span>
+<span class="sd">evaluation components.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="c1"># Standard hit levels for link prediction evaluation</span>
+<span class="n">DEFAULT_HITS_RANGE</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">]</span>
+<span class="n">ALL_HITS_RANGE</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="make_iterable_verbose">
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs_training/index.html#dicee.evaluation.make_iterable_verbose">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_iterable_verbose</span><span class="p">(</span>
+    <span class="n">iterable_object</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">desc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Default&quot;</span><span class="p">,</span>
+    <span class="n">position</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">leave</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrap an iterable with tqdm progress bar if verbose is True.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        iterable_object: The iterable to potentially wrap.</span>
+<span class="sd">        verbose: Whether to show progress bar.</span>
+<span class="sd">        desc: Description for the progress bar.</span>
+<span class="sd">        position: Position of the progress bar.</span>
+<span class="sd">        leave: Whether to leave the progress bar after completion.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The original iterable or a tqdm-wrapped version.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">iterable_object</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="n">desc</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">position</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="n">leave</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">iterable_object</span></div>
+
+
+
+<div class="viewcode-block" id="compute_metrics_from_ranks">
+<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/utils/index.html#dicee.evaluation.compute_metrics_from_ranks">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_metrics_from_ranks</span><span class="p">(</span>
+    <span class="n">ranks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">num_triples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">hits_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
+    <span class="n">scale_factor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute standard link prediction metrics from ranks.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ranks: List of ranks for each prediction.</span>
+<span class="sd">        num_triples: Total number of triples evaluated.</span>
+<span class="sd">        hits_dict: Dictionary mapping hit levels to lists of hits.</span>
+<span class="sd">        scale_factor: Factor to scale the denominator (e.g., 2 for head+tail).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary containing H@1, H@3, H@10, and MRR metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">divisor</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">num_triples</span> <span class="o">*</span> <span class="n">scale_factor</span><span class="p">)</span>
+
+    <span class="n">hit_1</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[]))</span> <span class="o">/</span> <span class="n">divisor</span> <span class="k">if</span> <span class="mi">1</span> <span class="ow">in</span> <span class="n">hits_dict</span> <span class="k">else</span> <span class="mf">0.0</span>
+    <span class="n">hit_3</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="p">[]))</span> <span class="o">/</span> <span class="n">divisor</span> <span class="k">if</span> <span class="mi">3</span> <span class="ow">in</span> <span class="n">hits_dict</span> <span class="k">else</span> <span class="mf">0.0</span>
+    <span class="n">hit_10</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="p">[]))</span> <span class="o">/</span> <span class="n">divisor</span> <span class="k">if</span> <span class="mi">10</span> <span class="ow">in</span> <span class="n">hits_dict</span> <span class="k">else</span> <span class="mf">0.0</span>
+    <span class="n">mean_reciprocal_rank</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">ranks</span><span class="p">)</span> <span class="o">/</span> <span class="n">divisor</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;H@1&#39;</span><span class="p">:</span> <span class="n">hit_1</span><span class="p">,</span>
+        <span class="s1">&#39;H@3&#39;</span><span class="p">:</span> <span class="n">hit_3</span><span class="p">,</span>
+        <span class="s1">&#39;H@10&#39;</span><span class="p">:</span> <span class="n">hit_10</span><span class="p">,</span>
+        <span class="s1">&#39;MRR&#39;</span><span class="p">:</span> <span class="n">mean_reciprocal_rank</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="compute_metrics_from_ranks_simple">
+<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/utils/index.html#dicee.evaluation.compute_metrics_from_ranks_simple">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_metrics_from_ranks_simple</span><span class="p">(</span>
+    <span class="n">ranks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">num_triples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">hits_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute link prediction metrics without scaling factor.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ranks: List of ranks for each prediction.</span>
+<span class="sd">        num_triples: Total number of triples evaluated.</span>
+<span class="sd">        hits_dict: Dictionary mapping hit levels to lists of hits.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary containing H@1, H@3, H@10, and MRR metrics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hit_1</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[]))</span> <span class="o">/</span> <span class="n">num_triples</span> <span class="k">if</span> <span class="mi">1</span> <span class="ow">in</span> <span class="n">hits_dict</span> <span class="k">else</span> <span class="mf">0.0</span>
+    <span class="n">hit_3</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="p">[]))</span> <span class="o">/</span> <span class="n">num_triples</span> <span class="k">if</span> <span class="mi">3</span> <span class="ow">in</span> <span class="n">hits_dict</span> <span class="k">else</span> <span class="mf">0.0</span>
+    <span class="n">hit_10</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="p">[]))</span> <span class="o">/</span> <span class="n">num_triples</span> <span class="k">if</span> <span class="mi">10</span> <span class="ow">in</span> <span class="n">hits_dict</span> <span class="k">else</span> <span class="mf">0.0</span>
+    <span class="n">mean_reciprocal_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ranks</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;H@1&#39;</span><span class="p">:</span> <span class="n">hit_1</span><span class="p">,</span>
+        <span class="s1">&#39;H@3&#39;</span><span class="p">:</span> <span class="n">hit_3</span><span class="p">,</span>
+        <span class="s1">&#39;H@10&#39;</span><span class="p">:</span> <span class="n">hit_10</span><span class="p">,</span>
+        <span class="s1">&#39;MRR&#39;</span><span class="p">:</span> <span class="n">mean_reciprocal_rank</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="update_hits">
+<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/utils/index.html#dicee.evaluation.update_hits">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">update_hits</span><span class="p">(</span>
+    <span class="n">hits</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
+    <span class="n">rank</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">hits_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update hits dictionary based on rank.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        hits: Dictionary to update in-place.</span>
+<span class="sd">        rank: The rank to check against hit levels.</span>
+<span class="sd">        hits_range: List of hit levels to check (default: ALL_HITS_RANGE).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">hits_range</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">hits_range</span> <span class="o">=</span> <span class="n">ALL_HITS_RANGE</span>
+
+    <span class="k">for</span> <span class="n">hits_level</span> <span class="ow">in</span> <span class="n">hits_range</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">rank</span> <span class="o">&lt;=</span> <span class="n">hits_level</span><span class="p">:</span>
+            <span class="n">hits</span><span class="p">[</span><span class="n">hits_level</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="create_hits_dict">
+<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/utils/index.html#dicee.evaluation.create_hits_dict">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_hits_dict</span><span class="p">(</span><span class="n">hits_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create an initialized hits dictionary.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        hits_range: List of hit levels to initialize (default: ALL_HITS_RANGE).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary with empty lists for each hit level.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">hits_range</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">hits_range</span> <span class="o">=</span> <span class="n">ALL_HITS_RANGE</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">hits_range</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="efficient_zero_grad">
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs_training/index.html#dicee.evaluation.efficient_zero_grad">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">efficient_zero_grad</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Efficiently zero gradients using parameter.grad = None.</span>
+
+<span class="sd">    This is more efficient than optimizer.zero_grad() as it avoids</span>
+<span class="sd">    memory operations.</span>
+
+<span class="sd">    See: https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: PyTorch model to zero gradients for.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
+        <span class="n">param</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
