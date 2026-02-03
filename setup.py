@@ -21,6 +21,7 @@ _core_deps = [
     "polars>=0.16.14",
     "pytorch_lightning>=2.5.1",
     "tiktoken>=0.5.1",
+    "psutil>=5.9.4",
 ]
 
 # Optional dependencies for various features
@@ -29,7 +30,6 @@ _optional_deps = [
     "rdflib>=7.0.0",
     "tiktoken>=0.5.1",
     "pykeen>=1.10.2",
-    "psutil>=5.9.4",
     "matplotlib>=3.8.2",
     "zstandard>=0.21.0",
     "requests>=2.32.3",
