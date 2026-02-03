@@ -160,9 +160,6 @@ class Namespace(argparse.Namespace):
         self.continual_learning=None
         "Path of a pretrained model size of LLM"
 
-        self.auto_batch_finding=False
-        "A flag for using auto batch finding"
-
         self.eval_every_n_epochs: int = 0
         """Evaluate model every n epochs. If 0, no evaluation is applied."""
 

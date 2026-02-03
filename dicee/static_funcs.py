@@ -25,7 +25,6 @@ from .models import (
     DeCaL, DistMult, DualE, Keci, LFMult, OMult, Pyke, QMult, Shallom, TransE
 )
 from .models.base_model import BaseKGE
-from .models.ensemble import EnsembleKGE
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
 
@@ -200,22 +199,9 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
     assert isinstance(is_continual_training, bool)
     assert isinstance(storage_path, str)
     if is_continual_training:
-        # Check whether we have tensor parallelized KGE.
         files_under_storage_path = [f for f in os.listdir(storage_path) if os.path.isfile(os.path.join(storage_path, f))]
         num_of_partial_models_for_tensor_parallel= len([ i for i in files_under_storage_path if "partial" in i ])
-        if num_of_partial_models_for_tensor_parallel >= 1:
-            models=[]
-            labelling_flag=None
-            for i in range(num_of_partial_models_for_tensor_parallel):
-                model, labelling_flag = intialize_model(args)
-                weights = torch.load(storage_path + f'/model_partial_{i}.pt', torch.device('cpu'),weights_only=False)
-                model.load_state_dict(weights)
-                for parameter in model.parameters():
-                    parameter.requires_grad = True
-                model.train()
-                models.append(model)
-            return EnsembleKGE(pretrained_models=models), labelling_flag
-        else:
+        if not num_of_partial_models_for_tensor_parallel >= 1:
             print('Loading pre-trained model...')
             model, labelling_flag = intialize_model(args)
             try:
@@ -229,17 +215,7 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
                 raise e
             return model, labelling_flag
     else:
-        if args["trainer"]=="TP":
-            # If it is tensor parallelized KGE, then we need to create ensemble of models.
-            models = []
-            labelling_flag = None
-            for i in range(torch.cuda.device_count()):
-                args["random_seed"] = i
-                model, labelling_flag = intialize_model(args)
-                models.append(model)
-            model = EnsembleKGE(models=models)
-        else:
-            model, labelling_flag = intialize_model(args)
+        model, labelling_flag = intialize_model(args)
 
     return model, labelling_flag
 
@@ -396,11 +372,6 @@ def save_checkpoint_model(model, path: str) -> None:
     """ Store Pytorch model into disk"""
     if isinstance(model, BaseKGE):
         torch.save(model.state_dict(), path)
-    elif isinstance(model, EnsembleKGE):
-        # path comes with ../model_...
-        for i, partial_model in enumerate(model):
-            new_path=path.replace("model.pt",f"model_partial_{i}.pt")
-            torch.save(partial_model.state_dict(), new_path)
     else:
         torch.save(model.model.state_dict(), path)
 
@@ -825,13 +796,10 @@ def from_pretrained_model_write_embeddings_into_csv(path: str) -> None:
     entity_csv_path = os.path.join(path, f"{config['model']}_entity_embeddings.csv")
     relation_csv_path = os.path.join(path, f"{config['model']}_relation_embeddings.csv")
 
-    if config["trainer"]=="TP":
-        entity_emb, relation_emb = write_csv_from_model_parallel(path)
-    else:
-        # Load model
-        model = torch.load(os.path.join(path, "model.pt"))
-        # Assuming model has a get_embeddings method
-        entity_emb, relation_emb = model["entity_embeddings.weight"], model["relation_embeddings.weight"]
+    # Load model
+    model = torch.load(os.path.join(path, "model.pt"))
+    # Assuming model has a get_embeddings method
+    entity_emb, relation_emb = model["entity_embeddings.weight"], model["relation_embeddings.weight"]
     str_entity = pd.read_csv(f"{path}/entity_to_idx.csv", index_col=0)["entity"]
     assert str_entity.index.is_monotonic_increasing
     str_entity=str_entity.to_list()

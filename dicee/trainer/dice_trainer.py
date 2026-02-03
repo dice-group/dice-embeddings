@@ -28,8 +28,6 @@ from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model, timeit
 from dicee.weight_averaging import ASWA, EMA, SWA, SWAG, TWA
 
-from ..models.ensemble import EnsembleKGE
-from .model_parallelism import TensorParallel
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
 
@@ -48,7 +46,7 @@ def load_term_mapping(file_path: str) -> polars.DataFrame:
 def initialize_trainer(
     args,
     callbacks: List
-) -> Union[TorchTrainer, TensorParallel, TorchDDPTrainer, pl.Trainer]:
+) -> Union[TorchTrainer, TorchDDPTrainer, pl.Trainer]:
     """Initialize the appropriate trainer based on configuration.
 
     Args:
@@ -61,13 +59,10 @@ def initialize_trainer(
     Raises:
         AssertionError: If trainer is None after initialization.
     """
-    trainer: Optional[Union[TorchTrainer, TensorParallel, TorchDDPTrainer, pl.Trainer]] = None
+    trainer: Optional[Union[TorchTrainer, TorchDDPTrainer, pl.Trainer]] = None
     if args.trainer == 'torchCPUTrainer':
         print('Initializing TorchTrainer CPU Trainer...', end='\t')
         trainer = TorchTrainer(args, callbacks=callbacks)
-    elif args.trainer == 'TP':
-        print('Initializing TensorParallel...', end='\t')
-        trainer= TensorParallel(args, callbacks=callbacks)
     elif args.trainer == 'torchDDP':
         assert torch.cuda.is_available()
         print('Initializing TorchDDPTrainer GPU', end='\t')
@@ -242,7 +237,7 @@ class DICE_Trainer:
         return model, form_of_labelling
 
     @timeit
-    def initialize_trainer(self, callbacks: List) -> pl.Trainer | TensorParallel | TorchTrainer | TorchDDPTrainer:
+    def initialize_trainer(self, callbacks: List) -> pl.Trainer | TorchTrainer | TorchDDPTrainer:
         """ Initialize Trainer from input arguments """
         return initialize_trainer(self.args, callbacks)
 
@@ -335,21 +330,14 @@ class DICE_Trainer:
         assert isinstance(knowledge_graph, np.memmap) or isinstance(knowledge_graph, KG), \
             f"knowledge_graph must be an instance of KG or np.memmap. Currently {type(knowledge_graph)}"
         if self.args.num_folds_for_cv == 0:
-            self.trainer: Union[TensorParallel, TorchTrainer, TorchDDPTrainer, pl.Trainer]
+            self.trainer: Union[TorchTrainer, TorchDDPTrainer, pl.Trainer]
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
             model, form_of_labelling = self.initialize_or_load_model()
             self.trainer.evaluator = self.evaluator
             self.trainer.dataset = knowledge_graph
             self.trainer.form_of_labelling = form_of_labelling
             # TODO: Later, maybe we should write a callback to save the models in disk
-
-            if isinstance(self.trainer, TensorParallel):
-                assert isinstance(model, EnsembleKGE), type(model)
-
-                model = self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
-                assert isinstance(model,EnsembleKGE)
-            else:
-                self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
+            self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
 
 
             return model, form_of_labelling
@@ -373,7 +361,10 @@ class DICE_Trainer:
         """
         print(f'{self.args.num_folds_for_cv}-fold cross-validation')
         # (1) Create Kfold data
-        from sklearn.model_selection import KFold
+        try:
+            from sklearn.model_selection import KFold
+        except ImportError:
+            print("scikit-learn is required for K-Fold Cross Validation. Please install it via 'pip install scikit-learn'")
         kf = KFold(n_splits=self.args.num_folds_for_cv, shuffle=True, random_state=1)
         model = None
         eval_folds = []

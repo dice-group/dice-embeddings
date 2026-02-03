@@ -7,7 +7,6 @@ from torch._dynamo.eval_frame import OptimizedModule
 from pytorch_lightning.utilities import rank_zero_only
 
 from .abstracts import AbstractCallback
-from dicee.models.ensemble import EnsembleKGE
 from .evaluation.ensemble import evaluate_ensemble_link_prediction_performance
 
 class ASWA(AbstractCallback):
@@ -50,10 +49,7 @@ class ASWA(AbstractCallback):
 
     def get_aswa_state_dict(self, model):
         # (2) Question: Soft update or Rejection?!
-        if isinstance(model,EnsembleKGE):
-            ensemble_state_dict = torch.load(f"{self.path}/aswa.pt")
-        else:
-            ensemble_state_dict = torch.load(f"{self.path}/aswa.pt",  torch.device(next(model.parameters()).device))
+        ensemble_state_dict = torch.load(f"{self.path}/aswa.pt",  torch.device(next(model.parameters()).device))
         # Perform provision parameter update.
         with torch.no_grad():
             for k, parameters in model.state_dict().items():
@@ -209,9 +205,7 @@ class SWA(AbstractCallback):
         else:
             factor = lr_ratio
 
-        if isinstance(model, EnsembleKGE):
-            optimizers = getattr(model, "optimizers", [])
-        elif hasattr(trainer, "optimizers") and trainer.optimizers:
+        if hasattr(trainer, "optimizers") and trainer.optimizers:
                 optimizers = trainer.optimizers if isinstance(trainer.optimizers, list) else [trainer.optimizers]
         elif hasattr(trainer, "optimizer") and trainer.optimizer is not None:
                 optimizers = [trainer.optimizer]
@@ -236,22 +230,11 @@ class SWA(AbstractCallback):
             running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
             
             if self.swa_model is None:
-                # Case: EnsembleKGE
-                if isinstance(running_model, EnsembleKGE):
-                    self.swa_model = type(running_model)(running_model.models)
-                    self.swa_model.load_state_dict(running_model.state_dict())
-                
-                else:
-                    self.swa_model = type(running_model)(running_model.args)
-                    self.swa_model.load_state_dict(running_model.state_dict())
+                self.swa_model = type(running_model)(running_model.args)
+                self.swa_model.load_state_dict(running_model.state_dict())
 
-            if isinstance(running_model, EnsembleKGE):
-                # Update each submodel and its SWA counterpart
-                for submodel, swa_submodel in zip(running_model.models, self.swa_model.models):
-                    self.moving_average(swa_submodel, submodel, 1.0 / (self.swa_n + 1))
-            else:
-                # Single model case
-                self.moving_average(self.swa_model, running_model, 1.0 / (self.swa_n + 1))
+            # Single model case
+            self.moving_average(self.swa_model, running_model, 1.0 / (self.swa_n + 1))
 
             self.swa_n += 1
     
@@ -511,21 +494,13 @@ class EMA(AbstractCallback):
 
             if self.ema_model is None:
                 # Initialize EMA model as a copy of running model
-                if isinstance(running_model, EnsembleKGE):
-                    self.ema_model = type(running_model)(running_model.models)
-                    self.ema_model.load_state_dict(running_model.state_dict())
-                else:
-                    self.ema_model = type(running_model)(running_model.args)
-                    self.ema_model.load_state_dict(running_model.state_dict())
+                self.ema_model = type(running_model)(running_model.args)
+                self.ema_model.load_state_dict(running_model.state_dict())
 
             # Always use fixed decay since we start late
             decay_t = self.decay
 
-            if isinstance(running_model, EnsembleKGE):
-                for submodel, ema_submodel in zip(running_model.models, self.ema_model.models):
-                    self.ema_update(ema_submodel, submodel, decay_t)
-            else:
-                self.ema_update(self.ema_model, running_model, decay_t)
+            self.ema_update(self.ema_model, running_model, decay_t)
 
         # Make EMA model available for evaluation
         if model.args.get("eval_every_n_epochs", 0) > 0 or model.args.get("eval_at_epochs") is not None:
@@ -636,13 +611,8 @@ class TWA(AbstractCallback):
                         
             running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
             if self.twa_model is None:
-                # Case: EnsembleKGE
-                if isinstance(running_model, EnsembleKGE):
-                    self.twa_model = type(running_model)(running_model.models)
-                    self.twa_model.load_state_dict(running_model.state_dict())
-                else:       
-                    self.twa_model = type(running_model)(running_model.args)
-                    self.twa_model.load_state_dict(running_model.state_dict())
+                self.twa_model = type(running_model)(running_model.args)
+                self.twa_model.load_state_dict(running_model.state_dict())
 
                 # Build projection subspace using checkpoints {w_1, ..., w_n}
                 mean_w, P = self.build_projection(self.weight_samples)

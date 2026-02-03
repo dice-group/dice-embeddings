@@ -238,7 +238,7 @@ Weight Averaging can also be performed by aggregating weights of running model a
 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test" \
  --num_epochs 100 --swa --swa_start_epoch 50 --swa_c_epochs 2
 ``` 
-The weight averaging methods can also be used in multi-device settings using the `PL` trainer. However, some of the approaches are not currently supported for TP and torchDDP trainers.
+The weight averaging methods can also be used in multi-device settings using the `PL` trainer. However, some of the approaches are not currently supported for torchDDP trainer.
 
 The weight averaging methods can also be evaluated at certain epochs during training or at certain intervals.
 ```bash
