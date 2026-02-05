@@ -5,6 +5,32 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from .adopt import ADOPT
+from dicee.losses.custom_losses import (
+                                        DefaultBCELoss,
+                                        WeightedBCELoss,
+                                        LabelSmoothingLoss,
+                                        LabelRelaxationLoss,
+                                        AdaptiveLabelSmoothingLoss,
+                                        AdaptiveLabelRelaxationLoss,
+                                        CombinedLSandLR,
+                                        ConfidenceBasedAdaptiveLabelRelaxationLoss,
+                                        CombinedAdaptiveLSandAdaptiveLR,
+                                        AggregatedLSandLR,
+                                        ACLS,
+                                        UNITEI,
+                                        AGCELoss,
+                                        AULoss,
+                                        AELoss,
+                                        RoBoSS,
+                                        EwLoss,
+                                        SynMarginLoss,
+                                        WaveLoss,
+                                        NSSALoss,
+                                        FocalLoss,
+                                        LocalTripleLoss,
+                                        LocalTripleWithPriorPathLoss,
+                                        LocalTripleWithPriorAndAdaptivePathLoss
+                                        )
 
 class BaseKGELightning(pl.LightningModule):
     def __init__(self, *args, **kwargs):
@@ -34,7 +60,20 @@ class BaseKGELightning(pl.LightningModule):
         else:
             raise RuntimeError("Invalid batch received.")
 
-        loss_batch = self.loss_function(yhat_batch, y_batch)
+
+        if getattr(self.loss, "requires_x_batch", False):
+            if getattr(self.loss, "requires_model", False):
+                loss_batch = self.loss(yhat_batch, y_batch, x_batch=x_batch, model=self, current_epoch=self.current_epoch)
+            else:
+                loss_batch = self.loss(yhat_batch, y_batch, x_batch=x_batch, current_epoch=self.current_epoch)
+        else:
+            loss_batch = self.loss(yhat_batch, y_batch, current_epoch=self.current_epoch) #, gradient_norm=total_norm)
+        if loss_batch.numel() != 1:
+            # Some losses (e.g., FocalLoss) may return per-element values.
+            loss_batch = loss_batch.mean()
+
+        #self.log("gradient_norm", total_norm, prog_bar=True, on_step=True, on_epoch=True)
+
         self.training_step_outputs.append(loss_batch.item())
         self.log("loss",
                  value=loss_batch,
@@ -98,6 +137,7 @@ class BaseKGELightning(pl.LightningModule):
                                                        weight_decay=self.weight_decay)
         elif self.optimizer_name == 'Adopt':
             self.selected_optimizer = ADOPT(parameters, lr=self.learning_rate)
+
         elif self.optimizer_name == 'AdamW':
             self.selected_optimizer = torch.optim.AdamW(parameters, lr=self.learning_rate,
                                                        weight_decay=self.weight_decay)
@@ -114,7 +154,9 @@ class BaseKGELightning(pl.LightningModule):
                                                        weight_decay=self.weight_decay)
         else:
             raise KeyError(f"{self.optimizer_name} is not found!")
+        
         print(self.selected_optimizer)
+
         return self.selected_optimizer
 
 
@@ -135,7 +177,6 @@ class BaseKGE(BaseKGELightning):
         self.kernel_size = None
         self.num_of_output_channels = None
         self.weight_decay = None
-        self.loss = torch.nn.BCEWithLogitsLoss()
         self.selected_optimizer = None
         self.normalizer_class = None
         self.normalize_head_entity_embeddings = IdentityClass()
@@ -154,6 +195,115 @@ class BaseKGE(BaseKGELightning):
         self.byte_pair_encoding = self.args.get("byte_pair_encoding", False)
         self.max_length_subword_tokens = self.args.get("max_length_subword_tokens", None)
         self.block_size=self.args.get("block_size", None)
+
+        if self.args["loss_fn"] == "LS":
+            self.loss = LabelSmoothingLoss(smoothness_ratio=self.args["label_smoothing_rate"])
+        if self.args["loss_fn"] == "LRLoss":
+            self.loss = LabelRelaxationLoss(alpha=self.args["label_relaxation_alpha"])
+        if self.args["loss_fn"] == "BCELoss":
+            self.loss = DefaultBCELoss()
+        if self.args["loss_fn"] == "WeightedBCELoss":
+            self.loss = WeightedBCELoss()
+        if self.args["loss_fn"] == "CombinedLSandLR":
+            self.loss = CombinedLSandLR(smoothness_ratio=self.args["label_smoothing_rate"], alpha=self.args["label_relaxation_alpha"])
+        if self.args["loss_fn"] == "AdaptiveLabelSmoothingLoss":
+            self.loss = AdaptiveLabelSmoothingLoss()
+        if self.args["loss_fn"] == "AdaptiveLabelRelaxationLoss":
+            self.loss = AdaptiveLabelRelaxationLoss()
+        if self.args["loss_fn"] == "ConfidenceBasedAdaptiveLabelRelaxationLoss":
+            self.loss = ConfidenceBasedAdaptiveLabelRelaxationLoss()
+        if self.args["loss_fn"] == "CombinedAdaptiveLSandAdaptiveLR":
+            self.loss = CombinedAdaptiveLSandAdaptiveLR()
+        if self.args["loss_fn"] == "AggregatedLSandLR":
+            self.loss = AggregatedLSandLR()
+        if self.args["loss_fn"] == "ACLS":
+            self.loss = ACLS()
+        if self.args["loss_fn"] == "UNITEI":
+            self.loss = UNITEI()
+        if self.args["loss_fn"] == "AGCELoss":
+            self.loss = AGCELoss(
+                agce_a=self.args.get("agce_a", 0.1),
+                agce_q=self.args.get("agce_q", 1.0),
+                eps=self.args.get("agce_eps", 1e-8),
+                scale=self.args.get("agce_scale", 1.0),
+            )
+        if self.args["loss_fn"] == "AULoss":
+            self.loss = AULoss(
+                aul_a=self.args.get("aul_a", 1.5),
+                aul_p=self.args.get("aul_p", 0.9),
+                eps=self.args.get("aul_eps", 1e-7),
+                scale=self.args.get("aul_scale", 1.0),
+            )
+        if self.args["loss_fn"] == "AELoss":
+            self.loss = AELoss(
+                a_ael=self.args.get("a_ael", 0.2505943239407459),
+                eps=self.args.get("ael_eps", 1e-7),
+                scale=self.args.get("ael_scale", 1.0),
+            )
+        if self.args["loss_fn"] == "RoBoSS":
+            self.loss = RoBoSS(
+                a_roboss=self.args.get("a_roboss", 3.02),
+                lambda_roboss=self.args.get("lambda_roboss", 1.6),
+                margin=self.args.get("roboss_margin", 1.0),
+                normalize_scores=self.args.get("roboss_normalize_scores", False),
+            )
+        if self.args["loss_fn"] == "EwLoss":
+            self.loss = EwLoss()
+        if self.args["loss_fn"] == "SynMarginLoss":
+            self.loss = SynMarginLoss()
+        if self.args["loss_fn"] == "WaveLoss":
+            self.loss = WaveLoss(
+                wave_a=self.args.get("wave_a", 1.5),
+                lambda_param=self.args.get("lambda_param", 0.5),
+                eps=self.args.get("wave_eps", 1e-8),
+            )
+        if self.args["loss_fn"] == "NSSALoss":
+            self.loss = NSSALoss()
+
+        if self.args["loss_fn"] == "FocalLoss":
+            self.loss = FocalLoss()
+
+        if self.args["loss_fn"] == "LocalTripleLoss":
+            self.loss = LocalTripleLoss(
+                margin=self.args.get("local_margin", 1.0),
+                alpha=self.args.get("local_alpha", 0.9),
+                beta=self.args.get("local_beta", 1e-4),
+                min_conf=self.args.get("local_conf_min", 0.0),
+                max_conf=self.args.get("local_conf_max", 1.0),
+                positive_threshold=self.args.get("local_positive_threshold", 0.5),
+                use_max_negative=self.args.get("local_use_max_negative", True),
+                score_is_distance=self.args.get("local_score_is_distance", False),
+            )
+
+        if self.args["loss_fn"] == "LocalTripleWithPriorPathLoss":
+            self.loss = LocalTripleWithPriorPathLoss(
+                margin=self.args.get("local_margin", 1.0),
+                alpha=self.args.get("local_alpha", 0.9),
+                beta=self.args.get("local_beta", 1e-4),
+                min_conf=self.args.get("local_conf_min", 0.0),
+                max_conf=self.args.get("local_conf_max", 1.0),
+                positive_threshold=self.args.get("local_positive_threshold", 0.5),
+                use_max_negative=self.args.get("local_use_max_negative", True),
+                score_is_distance=self.args.get("local_score_is_distance", False),
+                lambda_1_lt=self.args.get("lambda_1_lt", 1.5),
+                lambda_2_pp=self.args.get("lambda_2_pp", 0.1),
+            )       
+        if self.args["loss_fn"] == "LocalTripleWithPriorAndAdaptivePathLoss":
+            self.loss = LocalTripleWithPriorAndAdaptivePathLoss(
+                margin=self.args.get("local_margin", 1.0),
+                alpha=self.args.get("local_alpha", 0.9),
+                beta=self.args.get("local_beta", 1e-4),
+                min_conf=self.args.get("local_conf_min", 0.0),
+                max_conf=self.args.get("local_conf_max", 1.0),
+                positive_threshold=self.args.get("local_positive_threshold", 0.5),
+                use_max_negative=self.args.get("local_use_max_negative", True),
+                score_is_distance=self.args.get("local_score_is_distance", False),
+                lambda_1_lt=self.args.get("lambda_1_lt", 1.5),
+                lambda_2_pp=self.args.get("lambda_2_pp", 0.1),
+                lambda_3_ap=self.args.get("lambda_3_ap", 0.4),
+                adaptive_use_l1=self.args.get("adaptive_use_l1", 1),
+            )       
+
         if self.byte_pair_encoding and self.args['model'] != "BytE":
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
             self.param_init(self.token_embeddings.weight.data)
@@ -368,8 +518,7 @@ class BaseKGE(BaseKGELightning):
         # (1) Split input into indexes.
         idx_head_entity, idx_relation, idx_tail_entity = idx_hrt[:, 0], idx_hrt[:, 1], idx_hrt[:, 2]
         # (2) Retrieve embeddings & Apply Dropout & Normalization
-        head_ent_emb = self.normalize_head_entity_embeddings(
-            self.input_dp_ent_real(self.entity_embeddings(idx_head_entity)))
+        head_ent_emb = self.normalize_head_entity_embeddings(self.input_dp_ent_real(self.entity_embeddings(idx_head_entity)))
         rel_ent_emb = self.normalize_relation_embeddings(self.input_dp_rel_real(self.relation_embeddings(idx_relation)))
         tail_ent_emb = self.normalize_tail_entity_embeddings(self.entity_embeddings(idx_tail_entity))
         return head_ent_emb, rel_ent_emb, tail_ent_emb
@@ -378,8 +527,7 @@ class BaseKGE(BaseKGELightning):
         # (1) Split input into indexes.
         idx_head_entity, idx_relation = indexed_triple[:, 0], indexed_triple[:, 1]
         # (2) Retrieve embeddings & Apply Dropout & Normalization
-        head_ent_emb = self.normalize_head_entity_embeddings(
-            self.input_dp_ent_real(self.entity_embeddings(idx_head_entity)))
+        head_ent_emb = self.normalize_head_entity_embeddings(self.input_dp_ent_real(self.entity_embeddings(idx_head_entity)))
         rel_ent_emb = self.normalize_relation_embeddings(self.input_dp_rel_real(self.relation_embeddings(idx_relation)))
         return head_ent_emb, rel_ent_emb
 
@@ -423,7 +571,7 @@ class BaseKGE(BaseKGELightning):
         # A sequence of sub-list embeddings representing an embedding of a head entity should be normalized to 0.
         # Therefore, the norm of a row vector obtained from T by D matrix must be 1.
         # B, T, D
-        head_ent_emb = F.normalize(head_ent_emb, p=2, dim=(1, 2))
+        head_ent_emb = F.normalize(head_ent_emb, p=2, dim=(1, 2)) #L2
         # B, T, D
         rel_emb = F.normalize(rel_emb, p=2, dim=(1, 2))
         return head_ent_emb, rel_emb
