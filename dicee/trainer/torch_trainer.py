@@ -3,8 +3,8 @@ from typing import Tuple
 from dicee.abstracts import AbstractTrainer
 import time
 import os
-import psutil
 from tqdm import tqdm
+import psutil
 
 class TorchTrainer(AbstractTrainer):
     """
@@ -31,7 +31,6 @@ class TorchTrainer(AbstractTrainer):
             self.device = torch.device(f'cuda:{self.attributes.gpus}' if torch.cuda.is_available() else 'cpu')
         else:
             self.device = 'cpu'
-        
         # https://psutil.readthedocs.io/en/latest/#psutil.Process
         self.process = psutil.Process(os.getpid())
 

@@ -1,10 +1,8 @@
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 import os
 import pandas as pd
-import rdflib
 import numpy as np
 import torch
-import pytorch_lightning as pl
 from typing import List, Tuple, Union
 from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
 from .static_funcs import timeit, load_term_mapping
@@ -775,63 +773,6 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
         return x, label
 
 
-class CVDataModule(pl.LightningDataModule):
-    """
-       Create a Dataset for cross validation
-
-       Parameters
-       ----------
-       train_set_idx
-           Indexed triples for the training.
-       num_entities
-           entity to index mapping.
-       num_relations
-           relation to index mapping.
-       batch_size
-           int
-       form
-           ?
-       num_workers
-           int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
-
-
-
-       Returns
-       -------
-       ?
-       """
-
-    def __init__(self, train_set_idx: np.ndarray, num_entities, num_relations, neg_sample_ratio, batch_size,
-                 num_workers):
-        super().__init__()
-        assert isinstance(train_set_idx, np.ndarray)
-        self.train_set_idx = train_set_idx
-        self.num_entities = num_entities
-        self.num_relations = num_relations
-        self.neg_sample_ratio = neg_sample_ratio
-        self.batch_size = batch_size
-        self.num_workers = num_workers
-
-    def train_dataloader(self) -> DataLoader:
-        train_set = TriplePredictionDataset(self.train_set_idx,
-                                            num_entities=self.num_entities,
-                                            num_relations=self.num_relations,
-                                            neg_sample_ratio=self.neg_sample_ratio)
-        return DataLoader(train_set, batch_size=self.batch_size,
-                          shuffle=True,
-                          num_workers=self.num_workers,
-                          collate_fn=train_set.collate_fn)
-
-    def setup(self, *args, **kwargs):
-        pass
-
-    def transfer_batch_to_device(self, *args, **kwargs):
-        pass
-
-    def prepare_data(self, *args, **kwargs):
-        # Nothing to be prepared for now.
-        pass
-
 class LiteralDataset(Dataset):
     """Dataset for loading and processing literal data for training Literal Embedding model.
     This dataset handles the loading, normalization, and preparation of triples
@@ -957,7 +898,12 @@ class LiteralDataset(Dataset):
         Returns:
             pd.DataFrame: DataFrame containing the loaded and validated data.
         """
-
+        try:
+            import rdflib
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError(
+                "rdflib is required for loading RDF files. Please install it via 'pip install rdflib'."
+            )
         # Check if the file exists
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Data file not found at {file_path}")
