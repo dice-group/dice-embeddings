@@ -705,14 +705,25 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;KeciTransformer&#39;</span>
         
+        <span class="c1"># Input dimension: h0 (r) + hp (r*p) + hq (r*q) + r0 (r) + rp (r*p) + rq (r*q) = 2 * embedding_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
+        
         <span class="c1"># Transformer configuration</span>
         <span class="n">n_layer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_layer&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-        <span class="n">n_head</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_head&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
         <span class="n">dropout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dropout&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
         <span class="n">bias</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bias&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         
-        <span class="c1"># Input dimension: h0 (r) + hp (r*p) + hq (r*q) + r0 (r) + rp (r*p) + rq (r*q) = 2 * embedding_dim</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
+        <span class="c1"># Calculate valid n_head: must divide input_dim evenly</span>
+        <span class="c1"># Use user-specified n_head if valid, otherwise find largest valid divisor &lt;= 4</span>
+        <span class="n">requested_n_head</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_head&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span> <span class="o">%</span> <span class="n">requested_n_head</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">n_head</span> <span class="o">=</span> <span class="n">requested_n_head</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Find largest divisor of input_dim that is &lt;= requested_n_head and &gt;= 1</span>
+            <span class="n">n_head</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">requested_n_head</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span> <span class="o">%</span> <span class="n">h</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">n_head</span> <span class="o">=</span> <span class="n">h</span>
         <span class="c1"># Sequence length is 1 (single embedding vector treated as one token)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">seq_len</span> <span class="o">=</span> <span class="mi">1</span>
         
