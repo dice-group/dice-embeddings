@@ -126,6 +126,7 @@ def construct_dataset(
             num_relations=len(relation_to_idx),
             neg_sample_ratio=neg_ratio,
             label_smoothing_rate=label_smoothing_rate,
+            seed=seed,
         )
     elif scoring_technique == "FixedNegSample":
         train_set = FixedNegSampleDataset(

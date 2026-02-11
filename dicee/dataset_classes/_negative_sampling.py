@@ -235,10 +235,19 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
         num_relations: int,
         neg_sample_ratio: int = 1,
         label_smoothing_rate: float = 0.0,
+        seed: int = None,
     ):
         assert isinstance(train_set, np.ndarray)
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.neg_sample_ratio = torch.tensor(neg_sample_ratio)
+
+        # Set the random seed for reproducibility if provided
+        self.seed = seed
+        if self.seed is not None:
+            torch.manual_seed(self.seed)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(self.seed)
+            np.random.seed(self.seed)
 
         # Sort by (head, relation, tail) to ensure order-independent training
         sorted_indices = np.lexsort(
