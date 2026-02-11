@@ -60,6 +60,7 @@ Classes
    dicee.models.Keci
    dicee.models.CKeci
    dicee.models.DeCaL
+   dicee.models.KeciTransformer
    dicee.models.BaseKGE
    dicee.models.PykeenKGE
    dicee.models.BaseKGE
@@ -3311,6 +3312,47 @@ Package Contents
               sigma_pq[:, :, i, j] = hp[:, :, i] * rq[:, :, j] - hq[:, :, j] * rp[:, :, i]
       print(sigma_pq.shape)
 
+
+
+
+.. py:class:: KeciTransformer(args)
+
+   Bases: :py:obj:`Keci`
+
+
+   Keci with Transformer architecture.
+
+   Concatenates h0, hp, hq, r0, rp, rq into a single embedding vector and processes through transformer.
+
+
+   .. py:attribute:: name
+      :value: 'KeciTransformer'
+
+
+
+   .. py:attribute:: input_dim
+
+
+   .. py:attribute:: seq_len
+      :value: 1
+
+
+
+   .. py:attribute:: transformer
+
+
+   .. py:attribute:: lm_head
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+
+      Kvsall training
+
+      Parameter
+      ---------
+      x: torch.LongTensor with (n,2) shape
+
+      :rtype: torch.FloatTensor with (n, |E|) shape
 
 
 

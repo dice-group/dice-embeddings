@@ -158,6 +158,18 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.clifford.Keci" title="dicee.models.clifford.Keci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keci</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.clifford.KeciTransformer" title="dicee.models.clifford.KeciTransformer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KeciTransformer</span></code></a></p></td>
+<td><p>Keci with Transformer architecture.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.clifford.TransformerBlock" title="dicee.models.clifford.TransformerBlock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransformerBlock</span></code></a></p></td>
+<td><p>A single transformer block with self-attention and MLP.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.clifford.TransformerSelfAttention" title="dicee.models.clifford.TransformerSelfAttention"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransformerSelfAttention</span></code></a></p></td>
+<td><p>Multi-head self-attention for the Keci Transformer.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.clifford.TransformerMLP" title="dicee.models.clifford.TransformerMLP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransformerMLP</span></code></a></p></td>
+<td><p>MLP for the Keci Transformer.</p></td>
+</tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.clifford.CKeci" title="dicee.models.clifford.CKeci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CKeci</span></code></a></p></td>
 <td><p>Without learning dimension scaling</p></td>
 </tr>
@@ -379,7 +391,7 @@ where</p>
 Parameter
 ———
 x: torch.LongTensor with (n,2) shape
-:rtype: torch.FloatTensor with (n, <a href="#id6"><span class="problematic" id="id7">|E|</span></a>) shape</p>
+:rtype: torch.FloatTensor with (n, <a href="#id7"><span class="problematic" id="id8">|E|</span></a>) shape</p>
 </dd></dl>
 
 <dl class="py method">
@@ -434,6 +446,165 @@ x: torch.LongTensor with (n,2) shape
 </dl>
 </section>
 </dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.clifford.KeciTransformer">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.clifford.</span></span><span class="sig-name descname"><span class="pre">KeciTransformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#KeciTransformer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.KeciTransformer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dicee.models.clifford.Keci" title="dicee.models.clifford.Keci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keci</span></code></a></p>
+<p>Keci with Transformer architecture.</p>
+<p>Concatenates h0, hp, hq, r0, rp, rq into a single embedding vector and processes through transformer.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.KeciTransformer.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'KeciTransformer'</span></span><a class="headerlink" href="#dicee.models.clifford.KeciTransformer.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.KeciTransformer.input_dim">
+<span class="sig-name descname"><span class="pre">input_dim</span></span><a class="headerlink" href="#dicee.models.clifford.KeciTransformer.input_dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.KeciTransformer.seq_len">
+<span class="sig-name descname"><span class="pre">seq_len</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></span><a class="headerlink" href="#dicee.models.clifford.KeciTransformer.seq_len" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.KeciTransformer.transformer">
+<span class="sig-name descname"><span class="pre">transformer</span></span><a class="headerlink" href="#dicee.models.clifford.KeciTransformer.transformer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.KeciTransformer.lm_head">
+<span class="sig-name descname"><span class="pre">lm_head</span></span><a class="headerlink" href="#dicee.models.clifford.KeciTransformer.lm_head" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.KeciTransformer.forward_k_vs_all">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#KeciTransformer.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.KeciTransformer.forward_k_vs_all" title="Link to this definition"></a></dt>
+<dd><p>Kvsall training</p>
+<section id="id4">
+<h3>Parameter<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<p>x: torch.LongTensor with (n,2) shape</p>
+<dl class="field-list simple">
+<dt class="field-odd">rtype<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor with (n, <a href="#id9"><span class="problematic" id="id10">|E|</span></a>) shape</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerBlock">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.clifford.</span></span><span class="sig-name descname"><span class="pre">TransformerBlock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_embd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_head</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#TransformerBlock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.TransformerBlock" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>A single transformer block with self-attention and MLP.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerBlock.ln_1">
+<span class="sig-name descname"><span class="pre">ln_1</span></span><a class="headerlink" href="#dicee.models.clifford.TransformerBlock.ln_1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerBlock.attn">
+<span class="sig-name descname"><span class="pre">attn</span></span><a class="headerlink" href="#dicee.models.clifford.TransformerBlock.attn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerBlock.ln_2">
+<span class="sig-name descname"><span class="pre">ln_2</span></span><a class="headerlink" href="#dicee.models.clifford.TransformerBlock.ln_2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerBlock.mlp">
+<span class="sig-name descname"><span class="pre">mlp</span></span><a class="headerlink" href="#dicee.models.clifford.TransformerBlock.mlp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerBlock.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#TransformerBlock.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.TransformerBlock.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerSelfAttention">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.clifford.</span></span><span class="sig-name descname"><span class="pre">TransformerSelfAttention</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_embd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_head</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#TransformerSelfAttention"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.TransformerSelfAttention" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Multi-head self-attention for the Keci Transformer.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerSelfAttention.c_attn">
+<span class="sig-name descname"><span class="pre">c_attn</span></span><a class="headerlink" href="#dicee.models.clifford.TransformerSelfAttention.c_attn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerSelfAttention.c_proj">
+<span class="sig-name descname"><span class="pre">c_proj</span></span><a class="headerlink" href="#dicee.models.clifford.TransformerSelfAttention.c_proj" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerSelfAttention.attn_dropout">
+<span class="sig-name descname"><span class="pre">attn_dropout</span></span><a class="headerlink" href="#dicee.models.clifford.TransformerSelfAttention.attn_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerSelfAttention.resid_dropout">
+<span class="sig-name descname"><span class="pre">resid_dropout</span></span><a class="headerlink" href="#dicee.models.clifford.TransformerSelfAttention.resid_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerSelfAttention.n_head">
+<span class="sig-name descname"><span class="pre">n_head</span></span><a class="headerlink" href="#dicee.models.clifford.TransformerSelfAttention.n_head" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerSelfAttention.n_embd">
+<span class="sig-name descname"><span class="pre">n_embd</span></span><a class="headerlink" href="#dicee.models.clifford.TransformerSelfAttention.n_embd" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerSelfAttention.dropout">
+<span class="sig-name descname"><span class="pre">dropout</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#dicee.models.clifford.TransformerSelfAttention.dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerSelfAttention.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#TransformerSelfAttention.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.TransformerSelfAttention.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerMLP">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.clifford.</span></span><span class="sig-name descname"><span class="pre">TransformerMLP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_embd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#TransformerMLP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.TransformerMLP" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>MLP for the Keci Transformer.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerMLP.c_fc">
+<span class="sig-name descname"><span class="pre">c_fc</span></span><a class="headerlink" href="#dicee.models.clifford.TransformerMLP.c_fc" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerMLP.gelu">
+<span class="sig-name descname"><span class="pre">gelu</span></span><a class="headerlink" href="#dicee.models.clifford.TransformerMLP.gelu" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerMLP.c_proj">
+<span class="sig-name descname"><span class="pre">c_proj</span></span><a class="headerlink" href="#dicee.models.clifford.TransformerMLP.c_proj" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerMLP.dropout">
+<span class="sig-name descname"><span class="pre">dropout</span></span><a class="headerlink" href="#dicee.models.clifford.TransformerMLP.dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.TransformerMLP.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#TransformerMLP.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.TransformerMLP.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -528,8 +699,8 @@ evaluation mode.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.clifford.DeCaL.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#DeCaL.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.DeCaL.forward_triples" title="Link to this definition"></a></dt>
-<dd><section id="id4">
-<h3>Parameter<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<dd><section id="id5">
+<h3>Parameter<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
 <p>x: torch.LongTensor with (n, ) shape</p>
 <dl class="field-list simple">
 <dt class="field-odd">rtype<span class="colon">:</span></dt>
@@ -597,7 +768,7 @@ s3, s4 and s5\]</div>
 Parameter
 ———
 x: torch.LongTensor with (n, ) shape
-:rtype: torch.FloatTensor with (n, <a href="#id8"><span class="problematic" id="id9">|E|</span></a>) shape</p>
+:rtype: torch.FloatTensor with (n, <a href="#id11"><span class="problematic" id="id12">|E|</span></a>) shape</p>
 </dd></dl>
 
 <dl class="py method">
@@ -610,8 +781,8 @@ x: torch.LongTensor with (n, ) shape
 <dt class="sig sig-object py" id="dicee.models.clifford.DeCaL.construct_cl_multivector">
 <span class="sig-name descname"><span class="pre">construct_cl_multivector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">re</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#DeCaL.construct_cl_multivector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.DeCaL.construct_cl_multivector" title="Link to this definition"></a></dt>
 <dd><p>Construct a batch of multivectors Cl_{p,q,r}(mathbb{R}^d)</p>
-<section id="id5">
-<h3>Parameter<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
+<section id="id6">
+<h3>Parameter<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
 <p>x: torch.FloatTensor with (n,d) shape</p>
 <dl class="field-list simple">
 <dt class="field-odd">returns<span class="colon">:</span></dt>
