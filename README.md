@@ -24,28 +24,6 @@ Recently developed frameworks can be effectively applied in a wide range of rese
 Yet, using these frameworks in real-world applications becomes more challenging as the size of the knowledge graph grows.
 
 We developed the DICE Embeddings framework (dicee) to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
-To achieve this goal, we rely on
-1. **[Pandas](https://pandas.pydata.org/) & Co.** to use parallelism at preprocessing a large knowledge graph,
-2. **[PyTorch](https://pytorch.org/) & Co.** to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and
-3. **[Huggingface](https://huggingface.co/)** to ease the deployment of pre-trained models.
-
-**Why [Pandas](https://pandas.pydata.org/) & Co. ?**
-A large knowledge graph can be read and preprocessed (e.g. removing literals) by pandas, modin, or polars in parallel.
-Through polars, a knowledge graph having more than 1 billion triples can be read in parallel fashion. 
-Importantly, using these frameworks allow us to perform all necessary computations on a single CPU as well as a cluster of computers.
-
-**Why [PyTorch](https://pytorch.org/) & Co. ?**
-PyTorch is one of the most popular machine learning frameworks available at the time of writing. 
-PytorchLightning facilitates scaling the training procedure of PyTorch without boilerplate.
-In our framework, we combine [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/).
-Users can choose the trainer class (e.g., DDP by Pytorch) to train large knowledge graph embedding models with billions of parameters.
-PytorchLightning allows us to use state-of-the-art model parallelism techniques (e.g. Fully Sharded Training, FairScale, or DeepSpeed)
-without extra effort.
-With our framework, practitioners can directly use PytorchLightning for model parallelism to train gigantic embedding models.
-
-**Why [Huggingface](https://huggingface.co/)?**
-Seamlessly deploy and share pre-trained embedding models through the Huggingface ecosystem.
-
 ## For more please visit [dice-embeddings](https://dice-group.github.io/dice-embeddings/)!
 
 ## Installation
@@ -299,49 +277,6 @@ dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_ep
 ```
 Currently, Periodic Evaluations as well as Ensemble Models can only be used in combination with `torchCPUTrainer` or `PL` trainer with a single CUDA-capable device.
 </details>
-
-## Search and Retrieval via Qdrant Vector Database
-
-<details> <summary> To see a code snippet </summary>
-
-```bash
-# Train an embedding model
-dicee --dataset_dir KGs/Countries-S1 --path_to_store_single_run CountryEmbeddings --model Keci --p 0 --q 1 --embedding_dim 256 --scoring_technique AllvsAll --num_epochs 300 --save_embeddings_as_csv
-```
-Start qdrant instance.
-
-```bash
-pip3 install fastapi uvicorn qdrant-client
-docker pull qdrant/qdrant && docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant
-```
-Upload Embeddings into vector database and start a webservice
-```bash
-dicee_vector_db --index --serve --path CountryEmbeddings --collection "countries_vdb"
-Creating a collection countries_vdb with distance metric:Cosine
-Completed!
-INFO:     Started server process [28953]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-```
-Retrieve an embedding vector.
-```bash
-curl -X 'GET' 'http://0.0.0.0:8000/api/get?q=germany' -H 'accept: application/json'
-# {"result": [{"name": "europe","vector": [...]}]}
-```
-Retrieve embedding vectors.
-```bash
-curl -X 'POST' 'http://0.0.0.0:8000/api/search_batch' -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"queries": ["brunei","guam"]}'
-# {"results": [{ "name": "europe","vector": [...]},{ "name": "northern_europe","vector": [...]}]}    
-```
-Retrieve an average of embedding vectors.
-```bash
-curl -X 'POST' 'http://0.0.0.0:8000/api/search_batch' -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"queries": ["europe","northern_europe"],"reducer": "mean"}'
-# {"results":{"name": ["europe","northern_europe"],"vectors": [...]}}
-```
-
-</details>
-
 
 ## Answering Complex Queries 
 <details> <summary> To see a code snippet </summary>
