@@ -144,16 +144,15 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.OnevsAllDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">OnevsAllDataset.__getitem__()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.dataset_classes.NegSampleDataset"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset</span></code></a><ul>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.NegSampleDataset.neg_sample_ratio"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset.neg_sample_ratio</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.NegSampleDataset.train_triples"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset.train_triples</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.NegSampleDataset.length"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset.length</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.NegSampleDataset.num_entities"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset.num_entities</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.NegSampleDataset.num_relations"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset.num_relations</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.NegSampleDataset.labels"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset.labels</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.NegSampleDataset.train_set"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset.train_set</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.NegSampleDataset.__len__"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset.__len__()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.NegSampleDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset.__getitem__()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.dataset_classes.FixedNegSampleDataset"><code class="docutils literal notranslate"><span class="pre">FixedNegSampleDataset</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.FixedNegSampleDataset.neg_sample_ratio"><code class="docutils literal notranslate"><span class="pre">FixedNegSampleDataset.neg_sample_ratio</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.FixedNegSampleDataset.num_entities"><code class="docutils literal notranslate"><span class="pre">FixedNegSampleDataset.num_entities</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.FixedNegSampleDataset.num_relations"><code class="docutils literal notranslate"><span class="pre">FixedNegSampleDataset.num_relations</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.FixedNegSampleDataset.collate_fn"><code class="docutils literal notranslate"><span class="pre">FixedNegSampleDataset.collate_fn</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.FixedNegSampleDataset.train_triples"><code class="docutils literal notranslate"><span class="pre">FixedNegSampleDataset.train_triples</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.FixedNegSampleDataset.length"><code class="docutils literal notranslate"><span class="pre">FixedNegSampleDataset.length</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.FixedNegSampleDataset.__len__"><code class="docutils literal notranslate"><span class="pre">FixedNegSampleDataset.__len__()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.dataset_classes.FixedNegSampleDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">FixedNegSampleDataset.__getitem__()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.dataset_classes.OnevsSample"><code class="docutils literal notranslate"><span class="pre">OnevsSample</span></code></a><ul>
@@ -288,8 +287,8 @@ used throughout DICE Embeddings into thematic sub-modules:</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.dataset_classes.OnevsAllDataset" title="dicee.dataset_classes.OnevsAllDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OnevsAllDataset</span></code></a></p></td>
 <td><p>Dataset for the 1-vs-All training strategy (multi-class).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.dataset_classes.NegSampleDataset" title="dicee.dataset_classes.NegSampleDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NegSampleDataset</span></code></a></p></td>
-<td><p>Pre-computed negative sampling dataset.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.dataset_classes.FixedNegSampleDataset" title="dicee.dataset_classes.FixedNegSampleDataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FixedNegSampleDataset</span></code></a></p></td>
+<td><p>Pre-computed (fixed) negative sampling dataset.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.dataset_classes.OnevsSample" title="dicee.dataset_classes.OnevsSample"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OnevsSample</span></code></a></p></td>
 <td><p>Dataset for 1-vs-Sample training (dynamic multi-class with negatives).</p></td>
@@ -702,13 +701,16 @@ whose single active position corresponds to the true tail entity.</p>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="dicee.dataset_classes.NegSampleDataset">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.dataset_classes.</span></span><span class="sig-name descname"><span class="pre">NegSampleDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_entities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_relations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_sample_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/dataset_classes/_negative_sampling.html#NegSampleDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.NegSampleDataset" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.dataset_classes.FixedNegSampleDataset">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.dataset_classes.</span></span><span class="sig-name descname"><span class="pre">FixedNegSampleDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_entities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_relations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_sample_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/dataset_classes/_negative_sampling.html#FixedNegSampleDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.FixedNegSampleDataset" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
-<p>Pre-computed negative sampling dataset.</p>
+<p>Pre-computed (fixed) negative sampling dataset.</p>
 <p>At construction time every positive triple is paired with one random
-negative (head- or tail-corrupted).  The pairs are stored so that
-<code class="docutils literal notranslate"><span class="pre">__getitem__</span></code> is a simple lookup.</p>
+negative (head- or tail-corrupted) using vectorized operations for
+efficiency.  The pairs are stored so that <code class="docutils literal notranslate"><span class="pre">__getitem__</span></code> is a simple
+lookup.</p>
+<p>This is useful when you want deterministic negatives across epochs
+(e.g., for reproducibility or debugging).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -720,55 +722,50 @@ negative (head- or tail-corrupted).  The pairs are stored so that
 </dd>
 </dl>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.dataset_classes.NegSampleDataset.neg_sample_ratio">
-<span class="sig-name descname"><span class="pre">neg_sample_ratio</span></span><a class="headerlink" href="#dicee.dataset_classes.NegSampleDataset.neg_sample_ratio" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.dataset_classes.FixedNegSampleDataset.neg_sample_ratio">
+<span class="sig-name descname"><span class="pre">neg_sample_ratio</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></span><a class="headerlink" href="#dicee.dataset_classes.FixedNegSampleDataset.neg_sample_ratio" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.dataset_classes.NegSampleDataset.train_triples">
-<span class="sig-name descname"><span class="pre">train_triples</span></span><a class="headerlink" href="#dicee.dataset_classes.NegSampleDataset.train_triples" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.dataset_classes.FixedNegSampleDataset.num_entities">
+<span class="sig-name descname"><span class="pre">num_entities</span></span><a class="headerlink" href="#dicee.dataset_classes.FixedNegSampleDataset.num_entities" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.dataset_classes.NegSampleDataset.length">
-<span class="sig-name descname"><span class="pre">length</span></span><a class="headerlink" href="#dicee.dataset_classes.NegSampleDataset.length" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.dataset_classes.FixedNegSampleDataset.num_relations">
+<span class="sig-name descname"><span class="pre">num_relations</span></span><a class="headerlink" href="#dicee.dataset_classes.FixedNegSampleDataset.num_relations" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.dataset_classes.NegSampleDataset.num_entities">
-<span class="sig-name descname"><span class="pre">num_entities</span></span><a class="headerlink" href="#dicee.dataset_classes.NegSampleDataset.num_entities" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.dataset_classes.FixedNegSampleDataset.collate_fn">
+<span class="sig-name descname"><span class="pre">collate_fn</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.dataset_classes.FixedNegSampleDataset.collate_fn" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.dataset_classes.NegSampleDataset.num_relations">
-<span class="sig-name descname"><span class="pre">num_relations</span></span><a class="headerlink" href="#dicee.dataset_classes.NegSampleDataset.num_relations" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.dataset_classes.FixedNegSampleDataset.train_triples">
+<span class="sig-name descname"><span class="pre">train_triples</span></span><a class="headerlink" href="#dicee.dataset_classes.FixedNegSampleDataset.train_triples" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.dataset_classes.NegSampleDataset.labels">
-<span class="sig-name descname"><span class="pre">labels</span></span><a class="headerlink" href="#dicee.dataset_classes.NegSampleDataset.labels" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.dataset_classes.NegSampleDataset.train_set">
-<span class="sig-name descname"><span class="pre">train_set</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></span><a class="headerlink" href="#dicee.dataset_classes.NegSampleDataset.train_set" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.dataset_classes.FixedNegSampleDataset.length">
+<span class="sig-name descname"><span class="pre">length</span></span><a class="headerlink" href="#dicee.dataset_classes.FixedNegSampleDataset.length" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.dataset_classes.NegSampleDataset.__len__">
-<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/dataset_classes/_negative_sampling.html#NegSampleDataset.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.NegSampleDataset.__len__" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.dataset_classes.FixedNegSampleDataset.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../../../_modules/dicee/dataset_classes/_negative_sampling.html#FixedNegSampleDataset.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.FixedNegSampleDataset.__len__" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.dataset_classes.NegSampleDataset.__getitem__">
-<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/dataset_classes/_negative_sampling.html#NegSampleDataset.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.NegSampleDataset.__getitem__" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.dataset_classes.FixedNegSampleDataset.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/dataset_classes/_negative_sampling.html#FixedNegSampleDataset.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.FixedNegSampleDataset.__getitem__" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.dataset_classes.OnevsSample">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.dataset_classes.</span></span><span class="sig-name descname"><span class="pre">OnevsSample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_entities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_relations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_sample_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_smoothing_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/dataset_classes/_negative_sampling.html#OnevsSample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.OnevsSample" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.dataset_classes.</span></span><span class="sig-name descname"><span class="pre">OnevsSample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_entities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_relations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_sample_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_smoothing_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/dataset_classes/_negative_sampling.html#OnevsSample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.OnevsSample" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.utils.data.Dataset</span></code></p>
 <p>Dataset for 1-vs-Sample training (dynamic multi-class with negatives).</p>
 <p>For every positive triple <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> the dataset draws
@@ -1011,7 +1008,7 @@ optional sub-sampling for ablation studies.</p>
 <li><p><strong>entity_to_idx</strong> (<em>dict</em>) – Name → index mappings.</p></li>
 <li><p><strong>relation_to_idx</strong> (<em>dict</em>) – Name → index mappings.</p></li>
 <li><p><strong>form_of_labelling</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">'EntityPrediction'</span></code> or <code class="docutils literal notranslate"><span class="pre">'RelationPrediction'</span></code>.</p></li>
-<li><p><strong>scoring_technique</strong> (<em>str</em>) – One of <code class="docutils literal notranslate"><span class="pre">'NegSample'</span></code>, <code class="docutils literal notranslate"><span class="pre">'1vsAll'</span></code>, <code class="docutils literal notranslate"><span class="pre">'1vsSample'</span></code>, <code class="docutils literal notranslate"><span class="pre">'KvsAll'</span></code>,
+<li><p><strong>scoring_technique</strong> (<em>str</em>) – One of <code class="docutils literal notranslate"><span class="pre">'NegSample'</span></code>, <code class="docutils literal notranslate"><span class="pre">'FixedNegSample'</span></code>, <code class="docutils literal notranslate"><span class="pre">'1vsAll'</span></code>, <code class="docutils literal notranslate"><span class="pre">'1vsSample'</span></code>, <code class="docutils literal notranslate"><span class="pre">'KvsAll'</span></code>,
 <code class="docutils literal notranslate"><span class="pre">'AllvsAll'</span></code>, <code class="docutils literal notranslate"><span class="pre">'KvsSample'</span></code>.</p></li>
 <li><p><strong>neg_ratio</strong> (<em>int</em>) – Negative sample ratio.</p></li>
 <li><p><strong>label_smoothing_rate</strong> (<em>float</em>) – Label smoothing coefficient.</p></li>

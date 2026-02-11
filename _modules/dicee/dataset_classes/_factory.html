@@ -108,7 +108,7 @@
     <span class="n">MultiLabelDataset</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">._label_based</span><span class="w"> </span><span class="kn">import</span> <span class="n">AllvsAll</span><span class="p">,</span> <span class="n">KvsAll</span><span class="p">,</span> <span class="n">KvsSampleDataset</span><span class="p">,</span> <span class="n">OnevsAllDataset</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">._negative_sampling</span><span class="w"> </span><span class="kn">import</span> <span class="n">OnevsSample</span><span class="p">,</span> <span class="n">TriplePredictionDataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">._negative_sampling</span><span class="w"> </span><span class="kn">import</span> <span class="n">FixedNegSampleDataset</span><span class="p">,</span> <span class="n">OnevsSample</span><span class="p">,</span> <span class="n">TriplePredictionDataset</span>
 
 
 <div class="viewcode-block" id="reload_dataset">
@@ -167,7 +167,7 @@
 <span class="sd">    form_of_labelling : str</span>
 <span class="sd">        ``&#39;EntityPrediction&#39;`` or ``&#39;RelationPrediction&#39;``.</span>
 <span class="sd">    scoring_technique : str</span>
-<span class="sd">        One of ``&#39;NegSample&#39;``, ``&#39;1vsAll&#39;``, ``&#39;1vsSample&#39;``, ``&#39;KvsAll&#39;``,</span>
+<span class="sd">        One of ``&#39;NegSample&#39;``, ``&#39;FixedNegSample&#39;``, ``&#39;1vsAll&#39;``, ``&#39;1vsSample&#39;``, ``&#39;KvsAll&#39;``,</span>
 <span class="sd">        ``&#39;AllvsAll&#39;``, ``&#39;KvsSample&#39;``.</span>
 <span class="sd">    neg_ratio : int</span>
 <span class="sd">        Negative sample ratio.</span>
@@ -220,6 +220,13 @@
             <span class="n">num_relations</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">relation_to_idx</span><span class="p">),</span>
             <span class="n">neg_sample_ratio</span><span class="o">=</span><span class="n">neg_ratio</span><span class="p">,</span>
             <span class="n">label_smoothing_rate</span><span class="o">=</span><span class="n">label_smoothing_rate</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">&quot;FixedNegSample&quot;</span><span class="p">:</span>
+        <span class="n">train_set</span> <span class="o">=</span> <span class="n">FixedNegSampleDataset</span><span class="p">(</span>
+            <span class="n">train_set</span><span class="o">=</span><span class="n">train_set</span><span class="p">,</span>
+            <span class="n">num_entities</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">entity_to_idx</span><span class="p">),</span>
+            <span class="n">num_relations</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">relation_to_idx</span><span class="p">),</span>
+            <span class="n">neg_sample_ratio</span><span class="o">=</span><span class="n">neg_ratio</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">elif</span> <span class="n">form_of_labelling</span> <span class="o">==</span> <span class="s2">&quot;EntityPrediction&quot;</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">&quot;1vsAll&quot;</span><span class="p">:</span>

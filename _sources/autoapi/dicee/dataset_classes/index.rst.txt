@@ -33,7 +33,7 @@ Classes
    dicee.dataset_classes.KvsAll
    dicee.dataset_classes.KvsSampleDataset
    dicee.dataset_classes.OnevsAllDataset
-   dicee.dataset_classes.NegSampleDataset
+   dicee.dataset_classes.FixedNegSampleDataset
    dicee.dataset_classes.OnevsSample
    dicee.dataset_classes.TriplePredictionDataset
    dicee.dataset_classes.LiteralDataset
@@ -365,16 +365,20 @@ Package Contents
    .. py:method:: __getitem__(idx)
 
 
-.. py:class:: NegSampleDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1)
+.. py:class:: FixedNegSampleDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
 
-   Pre-computed negative sampling dataset.
+   Pre-computed (fixed) negative sampling dataset.
 
    At construction time every positive triple is paired with one random
-   negative (head- or tail-corrupted).  The pairs are stored so that
-   ``__getitem__`` is a simple lookup.
+   negative (head- or tail-corrupted) using vectorized operations for
+   efficiency.  The pairs are stored so that ``__getitem__`` is a simple
+   lookup.
+
+   This is useful when you want deterministic negatives across epochs
+   (e.g., for reproducibility or debugging).
 
    :param train_set: ``(N, 3)`` integer-indexed triples.
    :type train_set: numpy.ndarray
@@ -387,12 +391,8 @@ Package Contents
 
 
    .. py:attribute:: neg_sample_ratio
+      :value: 1
 
-
-   .. py:attribute:: train_triples
-
-
-   .. py:attribute:: length
 
 
    .. py:attribute:: num_entities
@@ -401,21 +401,24 @@ Package Contents
    .. py:attribute:: num_relations
 
 
-   .. py:attribute:: labels
-
-
-   .. py:attribute:: train_set
-      :value: []
+   .. py:attribute:: collate_fn
+      :value: None
 
 
 
-   .. py:method:: __len__()
+   .. py:attribute:: train_triples
 
 
-   .. py:method:: __getitem__(idx)
+   .. py:attribute:: length
 
 
-.. py:class:: OnevsSample(train_set: numpy.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0)
+   .. py:method:: __len__() -> int
+
+
+   .. py:method:: __getitem__(idx: int) -> Tuple[torch.Tensor, torch.Tensor]
+
+
+.. py:class:: OnevsSample(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
@@ -620,7 +623,7 @@ Package Contents
    :type relation_to_idx: dict
    :param form_of_labelling: ``'EntityPrediction'`` or ``'RelationPrediction'``.
    :type form_of_labelling: str
-   :param scoring_technique: One of ``'NegSample'``, ``'1vsAll'``, ``'1vsSample'``, ``'KvsAll'``,
+   :param scoring_technique: One of ``'NegSample'``, ``'FixedNegSample'``, ``'1vsAll'``, ``'1vsSample'``, ``'KvsAll'``,
                              ``'AllvsAll'``, ``'KvsSample'``.
    :type scoring_technique: str
    :param neg_ratio: Negative sample ratio.
