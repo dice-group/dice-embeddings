@@ -30,7 +30,7 @@ from ._label_based import (  # noqa: F401
 
 # Negative-sampling datasets
 from ._negative_sampling import (  # noqa: F401
-    NegSampleDataset,
+    FixedNegSampleDataset,
     OnevsSample,
     TriplePredictionDataset,
 )
@@ -52,7 +52,7 @@ __all__ = [
     "KvsSampleDataset",
     "OnevsAllDataset",
     # Negative-sampling
-    "NegSampleDataset",
+    "FixedNegSampleDataset",
     "OnevsSample",
     "TriplePredictionDataset",
     # Literal
