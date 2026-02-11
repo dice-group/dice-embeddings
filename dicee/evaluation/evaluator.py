@@ -91,7 +91,7 @@ class Evaluator:
             self.re_vocab = dataset.re_vocab.result()
 
         if isinstance(dataset.ee_vocab, dict):
-            self.ee_vocab = dataset.ee_vocab.result()
+            self.ee_vocab = dataset.ee_vocab
         else:
             self.ee_vocab = dataset.ee_vocab.result()
 
