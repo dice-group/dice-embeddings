@@ -3,6 +3,23 @@ dicee.dataset_classes
 
 .. py:module:: dicee.dataset_classes
 
+.. autoapi-nested-parse::
+
+   Dataset classes for knowledge graph embedding training.
+
+   This package groups the various ``torch.utils.data.Dataset`` implementations
+   used throughout DICE Embeddings into thematic sub-modules:
+
+   * :mod:`._bpe` – Byte-pair-encoding related datasets.
+   * :mod:`._negative_sampling` – Negative sampling based datasets.
+   * :mod:`._label_based` – Multi-label / multi-class scoring datasets.
+   * :mod:`._literal` – Literal (numeric) embedding dataset.
+   * :mod:`._factory` – ``construct_dataset`` / ``reload_dataset`` helpers.
+
+   All public names are re-exported here so that existing ``from
+   dicee.dataset_classes import …`` statements continue to work unchanged.
+
+
 
 Classes
 -------
@@ -10,14 +27,14 @@ Classes
 .. autoapisummary::
 
    dicee.dataset_classes.BPE_NegativeSamplingDataset
-   dicee.dataset_classes.MultiLabelDataset
    dicee.dataset_classes.MultiClassClassificationDataset
-   dicee.dataset_classes.OnevsAllDataset
-   dicee.dataset_classes.KvsAll
+   dicee.dataset_classes.MultiLabelDataset
    dicee.dataset_classes.AllvsAll
-   dicee.dataset_classes.OnevsSample
+   dicee.dataset_classes.KvsAll
    dicee.dataset_classes.KvsSampleDataset
+   dicee.dataset_classes.OnevsAllDataset
    dicee.dataset_classes.NegSampleDataset
+   dicee.dataset_classes.OnevsSample
    dicee.dataset_classes.TriplePredictionDataset
    dicee.dataset_classes.LiteralDataset
 
@@ -27,41 +44,29 @@ Functions
 
 .. autoapisummary::
 
-   dicee.dataset_classes.reload_dataset
    dicee.dataset_classes.construct_dataset
+   dicee.dataset_classes.reload_dataset
 
 
-Module Contents
----------------
-
-.. py:function:: reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, label_smoothing_rate)
-
-   Reload the files from disk to construct the Pytorch dataset
-
-
-.. py:function:: construct_dataset(*, train_set: Union[numpy.ndarray, list], valid_set=None, test_set=None, ordered_bpe_entities=None, train_target_indices=None, target_dim: int = None, entity_to_idx: dict, relation_to_idx: dict, form_of_labelling: str, scoring_technique: str, neg_ratio: int, label_smoothing_rate: float, byte_pair_encoding=None, block_size: int = None) -> torch.utils.data.Dataset
+Package Contents
+----------------
 
 .. py:class:: BPE_NegativeSamplingDataset(train_set: torch.LongTensor, ordered_shaped_bpe_entities: torch.LongTensor, neg_ratio: int)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
 
-   An abstract class representing a :class:`Dataset`.
+   Dataset for negative sampling with byte-pair encoded triples.
 
-   All datasets that represent a map from keys to data samples should subclass
-   it. All subclasses should overwrite :meth:`__getitem__`, supporting fetching a
-   data sample for a given key. Subclasses could also optionally overwrite
-   :meth:`__len__`, which is expected to return the size of the dataset by many
-   :class:`~torch.utils.data.Sampler` implementations and the default options
-   of :class:`~torch.utils.data.DataLoader`. Subclasses could also
-   optionally implement :meth:`__getitems__`, for speedup batched samples
-   loading. This method accepts list of indices of samples of batch and returns
-   list of samples.
+   Each sample is a BPE-encoded triple. The custom ``collate_fn`` constructs
+   negatives by corrupting head or tail entities with random BPE entities.
 
-   .. note::
-     :class:`~torch.utils.data.DataLoader` by default constructs an index
-     sampler that yields integral indices.  To make it work with a map-style
-     dataset with non-integral indices/keys, a custom sampler must be provided.
+   :param train_set: Integer-encoded triples of shape ``(N, 3)``.
+   :type train_set: torch.LongTensor
+   :param ordered_shaped_bpe_entities: All BPE entity representations, ordered by entity index.
+   :type ordered_shaped_bpe_entities: torch.LongTensor
+   :param neg_ratio: Number of negative samples per positive triple.
+   :type neg_ratio: int
 
 
    .. py:attribute:: train_set
@@ -88,27 +93,62 @@ Module Contents
    .. py:method:: collate_fn(batch_shaped_bpe_triples: List[Tuple[torch.Tensor, torch.Tensor]])
 
 
+.. py:class:: MultiClassClassificationDataset(subword_units: numpy.ndarray, block_size: int = 8)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   Dataset for autoregressive multi-class classification on sub-word units.
+
+   Splits a flat sequence of sub-word token ids into overlapping windows of
+   size ``block_size`` for next-token prediction.
+
+   :param subword_units: 1-D array of sub-word token ids.
+   :type subword_units: numpy.ndarray
+   :param block_size: Context window length (default ``8``).
+   :type block_size: int, optional
+
+
+   .. py:attribute:: train_data
+
+
+   .. py:attribute:: block_size
+      :value: 8
+
+
+
+   .. py:attribute:: num_of_data_points
+
+
+   .. py:attribute:: collate_fn
+      :value: None
+
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(idx)
+
+
 .. py:class:: MultiLabelDataset(train_set: torch.LongTensor, train_indices_target: torch.LongTensor, target_dim: int, torch_ordered_shaped_bpe_entities: torch.LongTensor)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
 
-   An abstract class representing a :class:`Dataset`.
+   Multi-label dataset for BPE-based KvsAll / AllvsAll training.
 
-   All datasets that represent a map from keys to data samples should subclass
-   it. All subclasses should overwrite :meth:`__getitem__`, supporting fetching a
-   data sample for a given key. Subclasses could also optionally overwrite
-   :meth:`__len__`, which is expected to return the size of the dataset by many
-   :class:`~torch.utils.data.Sampler` implementations and the default options
-   of :class:`~torch.utils.data.DataLoader`. Subclasses could also
-   optionally implement :meth:`__getitems__`, for speedup batched samples
-   loading. This method accepts list of indices of samples of batch and returns
-   list of samples.
+   Each sample is a BPE-encoded ``(head, relation)`` pair together with a
+   binary multi-label target vector over all entities.
 
-   .. note::
-     :class:`~torch.utils.data.DataLoader` by default constructs an index
-     sampler that yields integral indices.  To make it work with a map-style
-     dataset with non-integral indices/keys, a custom sampler must be provided.
+   :param train_set: BPE-encoded input pairs of shape ``(N, 2, token_length)``.
+   :type train_set: torch.LongTensor
+   :param train_indices_target: Per-sample lists of positive target entity indices.
+   :type train_indices_target: torch.LongTensor
+   :param target_dim: Dimensionality of the target vector (number of entities).
+   :type target_dim: int
+   :param torch_ordered_shaped_bpe_entities: Ordered BPE entity representations.
+   :type torch_ordered_shaped_bpe_entities: torch.LongTensor
 
 
    .. py:attribute:: train_set
@@ -137,69 +177,46 @@ Module Contents
    .. py:method:: __getitem__(idx)
 
 
-.. py:class:: MultiClassClassificationDataset(subword_units: numpy.ndarray, block_size: int = 8)
+.. py:class:: AllvsAll(train_set_idx: numpy.ndarray, entity_idxs, relation_idxs, label_smoothing_rate=0.0)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
 
-   Dataset for the 1vsALL training strategy
+   Dataset for AllvsAll training (multi-label, exhaustive).
 
-   :param train_set_idx: Indexed triples for the training.
-   :param entity_idxs: mapping.
-   :param relation_idxs: mapping.
-   :param form: ?
-   :param num_workers: int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+   Extends the ``KvsAll`` idea: every *possible* ``(entity, relation)``
+   combination is included — not just those observed in the KG.  Pairs
+   without any known tail entities receive an all-zeros label vector.
 
-   :rtype: torch.utils.data.Dataset
+   :param train_set_idx: ``(N, 3)`` integer-indexed triples.
+   :type train_set_idx: numpy.ndarray
+   :param entity_idxs: Entity-name → index mapping.
+   :type entity_idxs: dict
+   :param relation_idxs: Relation-name → index mapping.
+   :type relation_idxs: dict
+   :param label_smoothing_rate: Label smoothing coefficient (default ``0.0``).
+   :type label_smoothing_rate: float, optional
 
 
    .. py:attribute:: train_data
-
-
-   .. py:attribute:: block_size
-      :value: 8
+      :value: None
 
 
 
-   .. py:attribute:: num_of_data_points
+   .. py:attribute:: train_target
+      :value: None
+
+
+
+   .. py:attribute:: label_smoothing_rate
 
 
    .. py:attribute:: collate_fn
       :value: None
 
-
-
-   .. py:method:: __len__()
-
-
-   .. py:method:: __getitem__(idx)
-
-
-.. py:class:: OnevsAllDataset(train_set_idx: numpy.ndarray, entity_idxs)
-
-   Bases: :py:obj:`torch.utils.data.Dataset`
-
-
-   Dataset for the 1vsALL training strategy
-
-   :param train_set_idx: Indexed triples for the training.
-   :param entity_idxs: mapping.
-   :param relation_idxs: mapping.
-   :param form: ?
-   :param num_workers: int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
-
-   :rtype: torch.utils.data.Dataset
-
-
-   .. py:attribute:: train_data
 
 
    .. py:attribute:: target_dim
-
-
-   .. py:attribute:: collate_fn
-      :value: None
-
 
 
    .. py:method:: __len__()
@@ -213,209 +230,31 @@ Module Contents
    Bases: :py:obj:`torch.utils.data.Dataset`
 
 
-   Creates a dataset for KvsAll training by inheriting from torch.utils.data.Dataset.
-       Let D denote a dataset for KvsAll training and be defined as D:= {(x,y)_i}_i ^N, where
-       x: (h,r) is an unique tuple of an entity h \in E and a relation r \in R that has been seed in the input graph.
-       y: denotes a multi-label vector \in [0,1]^{|E|} is a binary label.
-   orall y_i =1 s.t. (h r E_i) \in KG
+   Dataset for KvsAll training (multi-label).
 
-       .. note::
-           TODO
+   D := {(x, y)_i}_{i=1}^{N} where
+       * x = (h, r) is a unique (entity, relation) pair observed in the KG,
+       * y ∈ [0, 1]^{|E|} is a multi-label vector with y_j = 1 iff
+         (h, r, e_j) ∈ KG.
 
-       Parameters
-       ----------
-       train_set_idx : numpy.ndarray
-           n by 3 array representing n triples
-
-       entity_idxs : dictonary
-           string representation of an entity to its integer id
-
-       relation_idxs : dictonary
-           string representation of a relation to its integer id
-
-       Returns
-       -------
-       self : torch.utils.data.Dataset
-
-       See Also
-       --------
-
-       Notes
-       -----
-
-       Examples
-       --------
-       >>> a = KvsAll()
-       >>> a
-       ? array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-
-
-
-   .. py:attribute:: train_data
-      :value: None
-
-
-
-   .. py:attribute:: train_target
-      :value: None
-
-
-
-   .. py:attribute:: label_smoothing_rate
-
-
-   .. py:attribute:: collate_fn
-      :value: None
-
-
-
-   .. py:method:: __len__()
-
-
-   .. py:method:: __getitem__(idx)
-
-
-.. py:class:: AllvsAll(train_set_idx: numpy.ndarray, entity_idxs, relation_idxs, label_smoothing_rate=0.0)
-
-   Bases: :py:obj:`torch.utils.data.Dataset`
-
-
-   Creates a dataset for AllvsAll training by inheriting from torch.utils.data.Dataset.
-       Let D denote a dataset for AllvsAll training and be defined as D:= {(x,y)_i}_i ^N, where
-       x: (h,r) is a possible unique tuple of an entity h \in E and a relation r \in R. Hence N = |E| x |R|
-       y: denotes a multi-label vector \in [0,1]^{|E|} is a binary label.
-   orall y_i =1 s.t. (h r E_i) \in KG
-
-       .. note::
-           AllvsAll extends KvsAll via none existing (h,r). Hence, it adds data points that are labelled without 1s,
-            only with 0s.
-
-       Parameters
-       ----------
-       train_set_idx : numpy.ndarray
-           n by 3 array representing n triples
-
-       entity_idxs : dictonary
-           string representation of an entity to its integer id
-
-       relation_idxs : dictonary
-           string representation of a relation to its integer id
-
-       Returns
-       -------
-       self : torch.utils.data.Dataset
-
-       See Also
-       --------
-
-       Notes
-       -----
-
-       Examples
-       --------
-       >>> a = AllvsAll()
-       >>> a
-       ? array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-
-
-
-   .. py:attribute:: train_data
-      :value: None
-
-
-
-   .. py:attribute:: train_target
-      :value: None
-
-
-
-   .. py:attribute:: label_smoothing_rate
-
-
-   .. py:attribute:: collate_fn
-      :value: None
-
-
-
-   .. py:attribute:: target_dim
-
-
-   .. py:method:: __len__()
-
-
-   .. py:method:: __getitem__(idx)
-
-
-.. py:class:: OnevsSample(train_set: numpy.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0)
-
-   Bases: :py:obj:`torch.utils.data.Dataset`
-
-
-   A custom PyTorch Dataset class for knowledge graph embeddings, which includes
-   both positive and negative sampling for a given dataset for multi-class classification problem..
-
-   :param train_set: A numpy array containing triples of knowledge graph data.
-                     Each triple consists of (head_entity, relation, tail_entity).
-   :type train_set: np.ndarray
-   :param num_entities: The number of unique entities in the knowledge graph.
-   :type num_entities: int
-   :param num_relations: The number of unique relations in the knowledge graph.
-   :type num_relations: int
-   :param neg_sample_ratio: The number of negative samples to be generated
-                            per positive sample. Must be a positive integer and less than num_entities.
-   :type neg_sample_ratio: int, optional
-   :param label_smoothing_rate: A label smoothing rate to apply to the
-                                positive and negative labels. Defaults to 0.0.
+   :param train_set_idx: ``(N, 3)`` integer-indexed triples.
+   :type train_set_idx: numpy.ndarray
+   :param entity_idxs: Entity-name → index mapping.
+   :type entity_idxs: dict
+   :param relation_idxs: Relation-name → index mapping.
+   :type relation_idxs: dict
+   :param form: ``'EntityPrediction'`` or ``'RelationPrediction'``.
+   :type form: str
+   :param label_smoothing_rate: Label smoothing coefficient (default ``0.0``).
    :type label_smoothing_rate: float, optional
 
-   .. attribute:: train_data
-
-      The input data converted into a PyTorch tensor.
-
-      :type: torch.Tensor
-
-   .. attribute:: num_entities
-
-      Number of entities in the dataset.
-
-      :type: int
-
-   .. attribute:: num_relations
-
-      Number of relations in the dataset.
-
-      :type: int
-
-   .. attribute:: neg_sample_ratio
-
-      Ratio of negative samples to be drawn for each positive sample.
-
-      :type: int
-
-   .. attribute:: label_smoothing_rate
-
-      The smoothing factor applied to the labels.
-
-      :type: torch.Tensor
-
-   .. attribute:: collate_fn
-
-      A function that can be used to collate data samples into
-      batches (set to None by default).
-
-      :type: function, optional
-
 
    .. py:attribute:: train_data
+      :value: None
 
 
-   .. py:attribute:: num_entities
 
-
-   .. py:attribute:: num_relations
-
-
-   .. py:attribute:: neg_sample_ratio
+   .. py:attribute:: train_target
       :value: None
 
 
@@ -430,27 +269,8 @@ Module Contents
 
    .. py:method:: __len__()
 
-      Returns the number of samples in the dataset.
-
-
 
    .. py:method:: __getitem__(idx)
-
-      Retrieves a single data sample from the dataset at the given index.
-
-      :param idx: The index of the sample to retrieve.
-      :type idx: int
-
-      :returns:
-
-                A tuple consisting of:
-                    - x (torch.Tensor): The head and relation part of the triple.
-                    - y_idx (torch.Tensor): The concatenated indices of the true object (tail entity)
-                      and the indices of the negative samples.
-                    - y_vec (torch.Tensor): A vector containing the labels for the positive and
-                      negative samples, with label smoothing applied.
-      :rtype: tuple
-
 
 
 .. py:class:: KvsSampleDataset(train_set_idx: numpy.ndarray, entity_idxs, relation_idxs, form, store=None, neg_ratio=None, label_smoothing_rate: float = 0.0)
@@ -458,33 +278,23 @@ Module Contents
    Bases: :py:obj:`torch.utils.data.Dataset`
 
 
-       KvsSample a Dataset:
-           D:= {(x,y)_i}_i ^N, where
-               . x:(h,r) is a unique h \in E and a relation r \in R and
-               . y \in [0,1]^{|E|} is a binary label.
-   orall y_i =1 s.t. (h r E_i) \in KG
-              At each mini-batch construction, we subsample(y), hence n
-               |new_y| << |E|
-               new_y contains all 1's if sum(y)< neg_sample ratio
-               new_y contains
-          Parameters
-          ----------
-          train_set_idx
-              Indexed triples for the training.
-          entity_idxs
-              mapping.
-          relation_idxs
-              mapping.
-          form
-              ?
-          store
-               ?
-          label_smoothing_rate
-              ?
-          Returns
-          -------
-          torch.utils.data.Dataset
+   Dataset for KvsSample training (dynamic multi-label).
 
+   Like ``KvsAll`` but sub-samples the target vector at each access to keep
+   mini-batch sizes manageable when the entity set is large.
+
+   :param train_set_idx: ``(N, 3)`` integer-indexed triples.
+   :type train_set_idx: numpy.ndarray
+   :param entity_idxs: Entity-name → index mapping.
+   :type entity_idxs: dict
+   :param relation_idxs: Relation-name → index mapping.
+   :type relation_idxs: dict
+   :param form: ``'EntityPrediction'``.
+   :type form: str
+   :param neg_ratio: Number of negative samples per positive target.
+   :type neg_ratio: int
+   :param label_smoothing_rate: Label smoothing coefficient (default ``0.0``).
+   :type label_smoothing_rate: float, optional
 
 
    .. py:attribute:: train_data
@@ -522,27 +332,58 @@ Module Contents
    .. py:method:: __getitem__(idx)
 
 
+.. py:class:: OnevsAllDataset(train_set_idx: numpy.ndarray, entity_idxs)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   Dataset for the 1-vs-All training strategy (multi-class).
+
+   Each sample is a ``(head, relation)`` pair with a one-hot target vector
+   whose single active position corresponds to the true tail entity.
+
+   :param train_set_idx: ``(N, 3)`` integer-indexed triples.
+   :type train_set_idx: numpy.ndarray
+   :param entity_idxs: Entity-name → index mapping (used to determine the target dimension).
+   :type entity_idxs: dict
+
+
+   .. py:attribute:: train_data
+
+
+   .. py:attribute:: target_dim
+
+
+   .. py:attribute:: collate_fn
+      :value: None
+
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(idx)
+
+
 .. py:class:: NegSampleDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
 
-   An abstract class representing a :class:`Dataset`.
+   Pre-computed negative sampling dataset.
 
-   All datasets that represent a map from keys to data samples should subclass
-   it. All subclasses should overwrite :meth:`__getitem__`, supporting fetching a
-   data sample for a given key. Subclasses could also optionally overwrite
-   :meth:`__len__`, which is expected to return the size of the dataset by many
-   :class:`~torch.utils.data.Sampler` implementations and the default options
-   of :class:`~torch.utils.data.DataLoader`. Subclasses could also
-   optionally implement :meth:`__getitems__`, for speedup batched samples
-   loading. This method accepts list of indices of samples of batch and returns
-   list of samples.
+   At construction time every positive triple is paired with one random
+   negative (head- or tail-corrupted).  The pairs are stored so that
+   ``__getitem__`` is a simple lookup.
 
-   .. note::
-     :class:`~torch.utils.data.DataLoader` by default constructs an index
-     sampler that yields integral indices.  To make it work with a map-style
-     dataset with non-integral indices/keys, a custom sampler must be provided.
+   :param train_set: ``(N, 3)`` integer-indexed triples.
+   :type train_set: numpy.ndarray
+   :param num_entities: Total number of entities.
+   :type num_entities: int
+   :param num_relations: Total number of relations.
+   :type num_relations: int
+   :param neg_sample_ratio: Currently unused; kept for API compatibility (default ``1``).
+   :type neg_sample_ratio: int, optional
 
 
    .. py:attribute:: neg_sample_ratio
@@ -574,41 +415,77 @@ Module Contents
    .. py:method:: __getitem__(idx)
 
 
+.. py:class:: OnevsSample(train_set: numpy.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   Dataset for 1-vs-Sample training (dynamic multi-class with negatives).
+
+   For every positive triple ``(h, r, t)`` the dataset draws
+   ``neg_sample_ratio`` random entities as negatives and returns a label
+   vector that marks the true tail and the negatives.
+
+   :param train_set: ``(N, 3)`` integer-indexed triples.
+   :type train_set: numpy.ndarray
+   :param num_entities: Total number of entities.
+   :type num_entities: int
+   :param num_relations: Total number of relations.
+   :type num_relations: int
+   :param neg_sample_ratio: Number of negative samples per positive.
+   :type neg_sample_ratio: int
+   :param label_smoothing_rate: Label smoothing coefficient (default ``0.0``).
+   :type label_smoothing_rate: float, optional
+
+
+   .. py:attribute:: train_data
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:attribute:: num_relations
+
+
+   .. py:attribute:: neg_sample_ratio
+      :value: None
+
+
+
+   .. py:attribute:: label_smoothing_rate
+
+
+   .. py:attribute:: collate_fn
+      :value: None
+
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(idx)
+
+
 .. py:class:: TriplePredictionDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
 
-       Triple Dataset
+   Dataset for triple prediction with on-the-fly negative sampling.
 
-           D:= {(x)_i}_i ^N, where
-               . x:(h,r, t) \in KG is a unique h \in E and a relation r \in R and
-               . collact_fn => Generates negative triples
+   Each item is a single positive triple; the custom ``collate_fn``
+   generates a batch of mixed positive and negative triples.
 
-           collect_fn:
-   orall (h,r,t) \in G obtain, create negative triples{(h,r,x),(,r,t),(h,m,t)}
-
-           y:labels are represented in torch.float16
-          Parameters
-          ----------
-          train_set_idx
-              Indexed triples for the training.
-          entity_idxs
-              mapping.
-          relation_idxs
-              mapping.
-          form
-              ?
-          store
-               ?
-          label_smoothing_rate
-
-
-          collate_fn: batch:List[torch.IntTensor]
-          Returns
-          -------
-          torch.utils.data.Dataset
-
+   :param train_set: ``(N, 3)`` integer-indexed triples.
+   :type train_set: numpy.ndarray
+   :param num_entities: Total number of entities.
+   :type num_entities: int
+   :param num_relations: Total number of relations.
+   :type num_relations: int
+   :param neg_sample_ratio: Number of negative samples per positive triple (default ``1``).
+   :type neg_sample_ratio: int, optional
+   :param label_smoothing_rate: Label smoothing coefficient (default ``0.0``).
+   :type label_smoothing_rate: float, optional
 
 
    .. py:attribute:: label_smoothing_rate
@@ -643,65 +520,22 @@ Module Contents
    Bases: :py:obj:`torch.utils.data.Dataset`
 
 
-   Dataset for loading and processing literal data for training Literal Embedding model.
-   This dataset handles the loading, normalization, and preparation of triples
-   for training a literal embedding model.
+   Dataset for loading and processing literal data for Literal Embedding models.
 
-   Extends torch.utils.data.Dataset for supporting PyTorch dataloaders.
+   Handles loading, normalization, and preparation of ``(entity, attribute,
+   value)`` triples.  Supports z-score and min-max normalization as well as
+   optional sub-sampling for ablation studies.
 
-   .. attribute:: train_file_path
-
-      Path to the training data file.
-
-      :type: str
-
-   .. attribute:: normalization
-
-      Type of normalization to apply ('z-norm', 'min-max', or None).
-
-      :type: str
-
-   .. attribute:: normalization_params
-
-      Parameters used for normalization.
-
-      :type: dict
-
-   .. attribute:: sampling_ratio
-
-      Fraction of the training set to use for ablations.
-
-      :type: float
-
-   .. attribute:: entity_to_idx
-
-      Mapping of entities to their indices.
-
-      :type: dict
-
-   .. attribute:: num_entities
-
-      Total number of entities.
-
-      :type: int
-
-   .. attribute:: data_property_to_idx
-
-      Mapping of data properties to their indices.
-
-      :type: dict
-
-   .. attribute:: num_data_properties
-
-      Total number of data properties.
-
-      :type: int
-
-   .. attribute:: loader_backend
-
-      Backend to use for loading data ('pandas' or 'rdflib').
-
-      :type: str
+   :param file_path: Path to the training data file (CSV / TSV / RDF).
+   :type file_path: str
+   :param ent_idx: Entity-name → index mapping.
+   :type ent_idx: dict
+   :param normalization_type: ``'z-norm'``, ``'min-max'``, or ``None`` (default ``'z-norm'``).
+   :type normalization_type: str, optional
+   :param sampling_ratio: Fraction of the training set to keep (default ``None`` = use all).
+   :type sampling_ratio: float or None, optional
+   :param loader_backend: ``'pandas'`` or ``'rdflib'`` (default ``'pandas'``).
+   :type loader_backend: str, optional
 
 
    .. py:attribute:: train_file_path
@@ -743,12 +577,16 @@ Module Contents
       :staticmethod:
 
 
-      Loads and validates the literal data file.
-      :param file_path: Path to the literal data file.
-      :type file_path: str
+      Load and validate a literal data file.
 
-      :returns: DataFrame containing the loaded and validated data.
-      :rtype: pd.DataFrame
+      :param file_path: Path to the data file.
+      :type file_path: str
+      :param loader_backend: ``'pandas'`` or ``'rdflib'``.
+      :type loader_backend: str
+
+      :returns: Three-column DataFrame with columns ``head``, ``attribute``,
+                ``value``.
+      :rtype: pandas.DataFrame
 
 
 
@@ -756,15 +594,45 @@ Module Contents
       :staticmethod:
 
 
-      Denormalizes the predictions based on the normalization type.
+      Reverse the normalization applied during training.
 
-      Args:
-      preds_norm (np.ndarray): Normalized predictions to be denormalized.
-      attributes (list): List of attributes corresponding to the predictions.
-      normalization_params (dict): Dictionary containing normalization parameters for each attribute.
+      :param preds_norm: Normalized predictions.
+      :type preds_norm: numpy.ndarray
+      :param attributes: Attribute names corresponding to each prediction.
+      :type attributes: list
+      :param normalization_params: Parameters stored during training.
+      :type normalization_params: dict
 
       :returns: Denormalized predictions.
-      :rtype: np.ndarray
+      :rtype: numpy.ndarray
 
+
+
+.. py:function:: construct_dataset(*, train_set: Union[numpy.ndarray, list], valid_set=None, test_set=None, ordered_bpe_entities=None, train_target_indices=None, target_dim: int = None, entity_to_idx: dict, relation_to_idx: dict, form_of_labelling: str, scoring_technique: str, neg_ratio: int, label_smoothing_rate: float, byte_pair_encoding=None, block_size: int = None) -> torch.utils.data.Dataset
+
+   Build the appropriate dataset for the given training configuration.
+
+   :param train_set: Raw integer-indexed triples.
+   :type train_set: numpy.ndarray or list
+   :param entity_to_idx: Name → index mappings.
+   :type entity_to_idx: dict
+   :param relation_to_idx: Name → index mappings.
+   :type relation_to_idx: dict
+   :param form_of_labelling: ``'EntityPrediction'`` or ``'RelationPrediction'``.
+   :type form_of_labelling: str
+   :param scoring_technique: One of ``'NegSample'``, ``'1vsAll'``, ``'1vsSample'``, ``'KvsAll'``,
+                             ``'AllvsAll'``, ``'KvsSample'``.
+   :type scoring_technique: str
+   :param neg_ratio: Negative sample ratio.
+   :type neg_ratio: int
+   :param label_smoothing_rate: Label smoothing coefficient.
+   :type label_smoothing_rate: float
+
+   :rtype: torch.utils.data.Dataset
+
+
+.. py:function:: reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, label_smoothing_rate)
+
+   Reload training data from disk and construct a Pytorch dataset.
 
 
