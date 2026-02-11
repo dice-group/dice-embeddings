@@ -571,14 +571,25 @@ class KeciTransformer(Keci):
         super().__init__(args)
         self.name = 'KeciTransformer'
         
+        # Input dimension: h0 (r) + hp (r*p) + hq (r*q) + r0 (r) + rp (r*p) + rq (r*q) = 2 * embedding_dim
+        self.input_dim = 2 * self.embedding_dim
+        
         # Transformer configuration
         n_layer = self.args.get("n_layer", 4)
-        n_head = self.args.get("n_head", 4)
         dropout = self.args.get("dropout", 0.0)
         bias = self.args.get("bias", False)
         
-        # Input dimension: h0 (r) + hp (r*p) + hq (r*q) + r0 (r) + rp (r*p) + rq (r*q) = 2 * embedding_dim
-        self.input_dim = 2 * self.embedding_dim
+        # Calculate valid n_head: must divide input_dim evenly
+        # Use user-specified n_head if valid, otherwise find largest valid divisor <= 4
+        requested_n_head = self.args.get("n_head", 4)
+        if self.input_dim % requested_n_head == 0:
+            n_head = requested_n_head
+        else:
+            # Find largest divisor of input_dim that is <= requested_n_head and >= 1
+            n_head = 1
+            for h in range(1, requested_n_head + 1):
+                if self.input_dim % h == 0:
+                    n_head = h
         # Sequence length is 1 (single embedding vector treated as one token)
         self.seq_len = 1
         

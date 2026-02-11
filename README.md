@@ -246,9 +246,6 @@ dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_ep
 ```
 For more details on periodic evaluations, please refer to the periodic evaluation section below in this file.
 
----
-
-
 #### Periodic Evaluation during training
 
 The Periodic evaluation method automates periodic model evaluation and checkpointing during training. It allows evaluations at fixed intervals or specific epochs. Results and model states are stored systematically for efficient hyperparameter search.
