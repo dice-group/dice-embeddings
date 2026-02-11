@@ -217,7 +217,9 @@
 <span class="sd">    num_relations : int</span>
 <span class="sd">        Total number of relations.</span>
 <span class="sd">    neg_sample_ratio : int, optional</span>
-<span class="sd">        Currently unused; kept for API compatibility (default ``1``).</span>
+<span class="sd">        Number of negative samples per positive triple (default ``1``).</span>
+<span class="sd">    label_smoothing_rate : float, optional</span>
+<span class="sd">        Label smoothing coefficient (default ``0.0``).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
@@ -226,11 +228,13 @@
         <span class="n">num_entities</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">num_relations</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">neg_sample_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">label_smoothing_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">neg_sample_ratio</span> <span class="o">=</span> <span class="n">neg_sample_ratio</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="n">num_entities</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="n">num_relations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label_smoothing_rate</span> <span class="o">=</span> <span class="n">label_smoothing_rate</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">collate_fn</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1"># Sort by (head, relation, tail) to ensure order-independent training</span>
         <span class="n">sorted_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lexsort</span><span class="p">(</span>
@@ -250,16 +254,24 @@
 
         <span class="n">neg_triples_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neg_sample_ratio</span><span class="p">):</span>
+            <span class="c1"># Decide which position to corrupt per triple: 0=head, 1=tail</span>
+            <span class="c1"># Only corrupt entities (head or tail), not relations, for link prediction</span>
+            <span class="n">corruption_choice</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">(</span><span class="n">n</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+
             <span class="c1"># Random entities to corrupt with</span>
             <span class="n">corr_entities</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="p">(</span><span class="n">n</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
 
-            <span class="c1"># Decide head vs tail corruption per triple (True = corrupt tail)</span>
-            <span class="n">corrupt_tail</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mf">0.5</span>
-
             <span class="c1"># Build negative triples vectorized</span>
             <span class="n">neg_triples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_triples</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+
+            <span class="c1"># Corrupt head for triples where corruption_choice == 0</span>
+            <span class="n">corrupt_head</span> <span class="o">=</span> <span class="n">corruption_choice</span> <span class="o">==</span> <span class="mi">0</span>
+            <span class="n">neg_triples</span><span class="p">[</span><span class="n">corrupt_head</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">corr_entities</span><span class="p">[</span><span class="n">corrupt_head</span><span class="p">]</span>
+
+            <span class="c1"># Corrupt tail for triples where corruption_choice == 1</span>
+            <span class="n">corrupt_tail</span> <span class="o">=</span> <span class="n">corruption_choice</span> <span class="o">==</span> <span class="mi">1</span>
             <span class="n">neg_triples</span><span class="p">[</span><span class="n">corrupt_tail</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">corr_entities</span><span class="p">[</span><span class="n">corrupt_tail</span><span class="p">]</span>
-            <span class="n">neg_triples</span><span class="p">[</span><span class="o">~</span><span class="n">corrupt_tail</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">corr_entities</span><span class="p">[</span><span class="o">~</span><span class="n">corrupt_tail</span><span class="p">]</span>
+
             <span class="n">neg_triples_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">neg_triples</span><span class="p">)</span>
 
         <span class="c1"># Concatenate all negative triples: shape (neg_sample_ratio * N, 3)</span>
@@ -268,9 +280,16 @@
         <span class="c1"># Concatenate positives and negatives: shape ((1 + neg_sample_ratio) * N, 3)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train_set</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">train_triples</span><span class="p">,</span> <span class="n">all_neg_triples</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="c1"># Create labels: first N are 1.0 (positive), remaining are 0.0 (negative)</span>
+        <span class="c1"># Create labels: positives get (1 - smoothing), negatives get smoothing</span>
         <span class="n">num_negatives</span> <span class="o">=</span> <span class="n">n</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">neg_sample_ratio</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_negatives</span><span class="p">)],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">pos_labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_smoothing_rate</span>
+        <span class="n">neg_labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_negatives</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_smoothing_rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">pos_labels</span><span class="p">,</span> <span class="n">neg_labels</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Shuffle positives and negatives together to ensure mixed batches</span>
+        <span class="n">shuffle_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">[</span><span class="n">shuffle_indices</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">shuffle_indices</span><span class="p">]</span>
 
         <span class="c1"># Update length to reflect total number of samples</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span>

@@ -365,7 +365,7 @@ Package Contents
    .. py:method:: __getitem__(idx)
 
 
-.. py:class:: FixedNegSampleDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1)
+.. py:class:: FixedNegSampleDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
@@ -386,8 +386,10 @@ Package Contents
    :type num_entities: int
    :param num_relations: Total number of relations.
    :type num_relations: int
-   :param neg_sample_ratio: Currently unused; kept for API compatibility (default ``1``).
+   :param neg_sample_ratio: Number of negative samples per positive triple (default ``1``).
    :type neg_sample_ratio: int, optional
+   :param label_smoothing_rate: Label smoothing coefficient (default ``0.0``).
+   :type label_smoothing_rate: float, optional
 
 
    .. py:attribute:: neg_sample_ratio
@@ -399,6 +401,11 @@ Package Contents
 
 
    .. py:attribute:: num_relations
+
+
+   .. py:attribute:: label_smoothing_rate
+      :value: 0.0
+
 
 
    .. py:attribute:: collate_fn
