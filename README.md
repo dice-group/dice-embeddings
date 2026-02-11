@@ -93,12 +93,26 @@ dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique "NegSample" --
 dicee --dataset_dir "KGs/UMLS" --trainer "TP" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism in native torch
 OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" --trainer "torchDDP" --scoring_technique KvsAll --path_to_store_single_run "UMLS_torchDDP"
+
 ```
 A KGE model model can also be trained in multi-node multi-gpu DDP setting. 
 ```bash
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_torchDDP"
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_torchDDP"
 ```
+
+
+OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" --trainer "torchDDP" --scoring_technique KvsAll --path_to_store_single_run "UMLS_torchDDP"
+
+
+A KGE model model can also be trained in multi-node multi-gpu DDP setting. 
+
+```bash
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model None --trainer "torchDDP" --scoring_technique FixedNegSample --path_to_store_single_run "UMLS_torchDDP" --num_epochs 1
+
+```
+
+
 On large knowledge graphs, this configurations should be used.
 
 Note: When training with multi-GPU or Distributed Data Parallel (DDP) settings, you must provide the `--path_to_store_single_run` argument to specify where to store the results of a single training run. This ensures that all processes write to the correct directory and prevents conflicts.
