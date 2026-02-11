@@ -24,28 +24,6 @@ Recently developed frameworks can be effectively applied in a wide range of rese
 Yet, using these frameworks in real-world applications becomes more challenging as the size of the knowledge graph grows.
 
 We developed the DICE Embeddings framework (dicee) to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
-To achieve this goal, we rely on
-1. **[Pandas](https://pandas.pydata.org/) & Co.** to use parallelism at preprocessing a large knowledge graph,
-2. **[PyTorch](https://pytorch.org/) & Co.** to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and
-3. **[Huggingface](https://huggingface.co/)** to ease the deployment of pre-trained models.
-
-**Why [Pandas](https://pandas.pydata.org/) & Co. ?**
-A large knowledge graph can be read and preprocessed (e.g. removing literals) by pandas, modin, or polars in parallel.
-Through polars, a knowledge graph having more than 1 billion triples can be read in parallel fashion. 
-Importantly, using these frameworks allow us to perform all necessary computations on a single CPU as well as a cluster of computers.
-
-**Why [PyTorch](https://pytorch.org/) & Co. ?**
-PyTorch is one of the most popular machine learning frameworks available at the time of writing. 
-PytorchLightning facilitates scaling the training procedure of PyTorch without boilerplate.
-In our framework, we combine [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/).
-Users can choose the trainer class (e.g., DDP by Pytorch) to train large knowledge graph embedding models with billions of parameters.
-PytorchLightning allows us to use state-of-the-art model parallelism techniques (e.g. Fully Sharded Training, FairScale, or DeepSpeed)
-without extra effort.
-With our framework, practitioners can directly use PytorchLightning for model parallelism to train gigantic embedding models.
-
-**Why [Huggingface](https://huggingface.co/)?**
-Seamlessly deploy and share pre-trained embedding models through the Huggingface ecosystem.
-
 ## For more please visit [dice-embeddings](https://dice-group.github.io/dice-embeddings/)!
 
 ## Installation
@@ -94,7 +72,7 @@ python -m pytest -p no:warnings --ff # to run the failures first and then the re
 
 Training and scoring techniques
 * ```--trainer torchCPUTrainer | PL | MP | torchDDP ```
-* ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample ```
+* ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample | FixedNegSample```
 
 </details>
 
@@ -109,15 +87,17 @@ A KGE model can be trained with a state-of-the-art training technique ```--train
 dicee --dataset_dir "KGs/UMLS" --trainer "torchCPUTrainer" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism
 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
-# Model Parallelism
-dicee --dataset_dir "KGs/UMLS" --trainer "MP" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
+dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique "FixedNegSample" --model "Keci" --eval_model "train_val_test" --neg_ratio 1
+dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique "NegSample" --model "Keci" --eval_model "train_val_test" --neg_ratio 100
+# Tensor Parallelism
+dicee --dataset_dir "KGs/UMLS" --trainer "TP" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism in native torch
-OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" --trainer "torchDDP" --scoring_technique KvsAll
+OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" --trainer "torchDDP" --scoring_technique KvsAll --path_to_store_single_run "UMLS_torchDDP"
 ```
 A KGE model model can also be trained in multi-node multi-gpu DDP setting. 
 ```bash
-torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10"
-torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10"
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_torchDDP"
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_torchDDP"
 ```
 On large knowledge graphs, this configurations should be used.
 
@@ -147,7 +127,7 @@ dicee --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Keci
 
 #### Scoring Techniques
 
-We have implemented state-of-the-art scoring techniques to train a KGE model ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample ```.
+We have implemented state-of-the-art scoring techniques to train a KGE model ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample | FixedNegSample```.
 ```bash
 dicee --dataset_dir "KGs/YAGO3-10" --model Keci --trainer "torchCPUTrainer" --scoring_technique "NegSample" --neg_ratio 10 --num_epochs 10 --batch_size 10_000 --num_core 0 --eval_model None
 # Epoch:10: 100%|███████████| 10/10 [01:31<00:00,  9.11s/it, loss_step=0.09423, loss_epoch=0.07897]
@@ -299,49 +279,6 @@ dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_ep
 ```
 Currently, Periodic Evaluations as well as Ensemble Models can only be used in combination with `torchCPUTrainer` or `PL` trainer with a single CUDA-capable device.
 </details>
-
-## Search and Retrieval via Qdrant Vector Database
-
-<details> <summary> To see a code snippet </summary>
-
-```bash
-# Train an embedding model
-dicee --dataset_dir KGs/Countries-S1 --path_to_store_single_run CountryEmbeddings --model Keci --p 0 --q 1 --embedding_dim 256 --scoring_technique AllvsAll --num_epochs 300 --save_embeddings_as_csv
-```
-Start qdrant instance.
-
-```bash
-pip3 install fastapi uvicorn qdrant-client
-docker pull qdrant/qdrant && docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant
-```
-Upload Embeddings into vector database and start a webservice
-```bash
-dicee_vector_db --index --serve --path CountryEmbeddings --collection "countries_vdb"
-Creating a collection countries_vdb with distance metric:Cosine
-Completed!
-INFO:     Started server process [28953]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-```
-Retrieve an embedding vector.
-```bash
-curl -X 'GET' 'http://0.0.0.0:8000/api/get?q=germany' -H 'accept: application/json'
-# {"result": [{"name": "europe","vector": [...]}]}
-```
-Retrieve embedding vectors.
-```bash
-curl -X 'POST' 'http://0.0.0.0:8000/api/search_batch' -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"queries": ["brunei","guam"]}'
-# {"results": [{ "name": "europe","vector": [...]},{ "name": "northern_europe","vector": [...]}]}    
-```
-Retrieve an average of embedding vectors.
-```bash
-curl -X 'POST' 'http://0.0.0.0:8000/api/search_batch' -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"queries": ["europe","northern_europe"],"reducer": "mean"}'
-# {"results":{"name": ["europe","northern_europe"],"vectors": [...]}}
-```
-
-</details>
-
 
 ## Answering Complex Queries 
 <details> <summary> To see a code snippet </summary>

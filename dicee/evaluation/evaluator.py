@@ -171,7 +171,7 @@ class Evaluator:
                     trained_model=trained_model,
                     form_of_labelling=form_of_labelling
                 )
-        elif self.args.scoring_technique == 'NegSample':
+        elif self.args.scoring_technique in ['NegSample', 'FixedNegSample']:
             self.eval_rank_of_head_and_tail_entity(
                 train_set=dataset.train_set,
                 valid_set=dataset.valid_set,
