@@ -18,7 +18,7 @@ from ._bpe import (
     MultiLabelDataset,
 )
 from ._label_based import AllvsAll, KvsAll, KvsSampleDataset, OnevsAllDataset
-from ._negative_sampling import OnevsSample, TriplePredictionDataset
+from ._negative_sampling import FixedNegSampleDataset, OnevsSample, TriplePredictionDataset
 
 
 @timeit
@@ -72,7 +72,7 @@ def construct_dataset(
     form_of_labelling : str
         ``'EntityPrediction'`` or ``'RelationPrediction'``.
     scoring_technique : str
-        One of ``'NegSample'``, ``'1vsAll'``, ``'1vsSample'``, ``'KvsAll'``,
+        One of ``'NegSample'``, ``'FixedNegSample'``, ``'1vsAll'``, ``'1vsSample'``, ``'KvsAll'``,
         ``'AllvsAll'``, ``'KvsSample'``.
     neg_ratio : int
         Negative sample ratio.
@@ -125,6 +125,13 @@ def construct_dataset(
             num_relations=len(relation_to_idx),
             neg_sample_ratio=neg_ratio,
             label_smoothing_rate=label_smoothing_rate,
+        )
+    elif scoring_technique == "FixedNegSample":
+        train_set = FixedNegSampleDataset(
+            train_set=train_set,
+            num_entities=len(entity_to_idx),
+            num_relations=len(relation_to_idx),
+            neg_sample_ratio=neg_ratio,
         )
     elif form_of_labelling == "EntityPrediction":
         if scoring_technique == "1vsAll":

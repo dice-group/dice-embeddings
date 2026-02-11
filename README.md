@@ -72,7 +72,7 @@ python -m pytest -p no:warnings --ff # to run the failures first and then the re
 
 Training and scoring techniques
 * ```--trainer torchCPUTrainer | PL | MP | torchDDP ```
-* ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample ```
+* ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample | FixedNegSample```
 
 </details>
 
@@ -87,6 +87,9 @@ A KGE model can be trained with a state-of-the-art training technique ```--train
 dicee --dataset_dir "KGs/UMLS" --trainer "torchCPUTrainer" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism
 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
+
+
+dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique "FixedNegSample" --model "Keci" --eval_model "train_val_test"
 # Tensor Parallelism
 dicee --dataset_dir "KGs/UMLS" --trainer "TP" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism in native torch
@@ -125,7 +128,7 @@ dicee --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Keci
 
 #### Scoring Techniques
 
-We have implemented state-of-the-art scoring techniques to train a KGE model ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample ```.
+We have implemented state-of-the-art scoring techniques to train a KGE model ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample | FixedNegSample```.
 ```bash
 dicee --dataset_dir "KGs/YAGO3-10" --model Keci --trainer "torchCPUTrainer" --scoring_technique "NegSample" --neg_ratio 10 --num_epochs 10 --batch_size 10_000 --num_core 0 --eval_model None
 # Epoch:10: 100%|███████████| 10/10 [01:31<00:00,  9.11s/it, loss_step=0.09423, loss_epoch=0.07897]
