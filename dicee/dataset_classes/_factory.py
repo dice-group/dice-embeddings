@@ -132,6 +132,7 @@ def construct_dataset(
             num_entities=len(entity_to_idx),
             num_relations=len(relation_to_idx),
             neg_sample_ratio=neg_ratio,
+            label_smoothing_rate=label_smoothing_rate,
         )
     elif form_of_labelling == "EntityPrediction":
         if scoring_technique == "1vsAll":

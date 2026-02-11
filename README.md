@@ -87,9 +87,8 @@ A KGE model can be trained with a state-of-the-art training technique ```--train
 dicee --dataset_dir "KGs/UMLS" --trainer "torchCPUTrainer" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism
 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
-
-
-dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique "FixedNegSample" --model "Keci" --eval_model "train_val_test"
+dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique "FixedNegSample" --model "Keci" --eval_model "train_val_test" --neg_ratio 1
+dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique "NegSample" --model "Keci" --eval_model "train_val_test" --neg_ratio 100
 # Tensor Parallelism
 dicee --dataset_dir "KGs/UMLS" --trainer "TP" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism in native torch

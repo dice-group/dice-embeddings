@@ -116,7 +116,9 @@ class FixedNegSampleDataset(torch.utils.data.Dataset):
     num_relations : int
         Total number of relations.
     neg_sample_ratio : int, optional
-        Currently unused; kept for API compatibility (default ``1``).
+        Number of negative samples per positive triple (default ``1``).
+    label_smoothing_rate : float, optional
+        Label smoothing coefficient (default ``0.0``).
     """
 
     def __init__(
@@ -125,11 +127,13 @@ class FixedNegSampleDataset(torch.utils.data.Dataset):
         num_entities: int,
         num_relations: int,
         neg_sample_ratio: int = 1,
+        label_smoothing_rate: float = 0.0,
     ):
         assert isinstance(train_set, np.ndarray)
         self.neg_sample_ratio = neg_sample_ratio
         self.num_entities = num_entities
         self.num_relations = num_relations
+        self.label_smoothing_rate = label_smoothing_rate
         self.collate_fn = None
         # Sort by (head, relation, tail) to ensure order-independent training
         sorted_indices = np.lexsort(
@@ -149,16 +153,24 @@ class FixedNegSampleDataset(torch.utils.data.Dataset):
 
         neg_triples_list = []
         for _ in range(self.neg_sample_ratio):
+            # Decide which position to corrupt per triple: 0=head, 1=tail
+            # Only corrupt entities (head or tail), not relations, for link prediction
+            corruption_choice = torch.randint(0, 2, (n,), dtype=torch.long)
+
             # Random entities to corrupt with
             corr_entities = torch.randint(0, self.num_entities, (n,), dtype=torch.long)
 
-            # Decide head vs tail corruption per triple (True = corrupt tail)
-            corrupt_tail = torch.rand(n) >= 0.5
-
             # Build negative triples vectorized
             neg_triples = self.train_triples.clone()
+
+            # Corrupt head for triples where corruption_choice == 0
+            corrupt_head = corruption_choice == 0
+            neg_triples[corrupt_head, 0] = corr_entities[corrupt_head]
+
+            # Corrupt tail for triples where corruption_choice == 1
+            corrupt_tail = corruption_choice == 1
             neg_triples[corrupt_tail, 2] = corr_entities[corrupt_tail]
-            neg_triples[~corrupt_tail, 0] = corr_entities[~corrupt_tail]
+
             neg_triples_list.append(neg_triples)
 
         # Concatenate all negative triples: shape (neg_sample_ratio * N, 3)
@@ -167,9 +179,16 @@ class FixedNegSampleDataset(torch.utils.data.Dataset):
         # Concatenate positives and negatives: shape ((1 + neg_sample_ratio) * N, 3)
         self.train_set = torch.cat([self.train_triples, all_neg_triples], dim=0)
 
-        # Create labels: first N are 1.0 (positive), remaining are 0.0 (negative)
+        # Create labels: positives get (1 - smoothing), negatives get smoothing
         num_negatives = n * self.neg_sample_ratio
-        self.labels = torch.cat([torch.ones(n), torch.zeros(num_negatives)], dim=0)
+        pos_labels = torch.ones(n) - self.label_smoothing_rate
+        neg_labels = torch.zeros(num_negatives) + self.label_smoothing_rate
+        self.labels = torch.cat([pos_labels, neg_labels], dim=0)
+
+        # Shuffle positives and negatives together to ensure mixed batches
+        shuffle_indices = torch.randperm(len(self.train_set))
+        self.train_set = self.train_set[shuffle_indices]
+        self.labels = self.labels[shuffle_indices]
 
         # Update length to reflect total number of samples
         self.length = len(self.train_set)
