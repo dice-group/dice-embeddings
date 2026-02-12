@@ -1,6 +1,12 @@
 from dicee.executer import Execute
 import pytest
 from dicee.config import Namespace
+import os
+import torch
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+torch.set_num_threads(1)
+torch.set_num_interop_threads(1)
 
 class TestRegressionCoKE:
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -100,4 +106,3 @@ class TestRegressionCoKE:
         assert 0.45 >= result['Train']['H@1'] >= 0.25
         assert 0.45 >= result['Test']['H@1'] >= 0.25
         assert 0.45 >= result['Val']['H@1'] >= 0.25
-
