@@ -177,10 +177,15 @@ _:1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07
 <http://www.benchmark.org/family#hasParent> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
 ```
 
-**Continual Training:** the training phase of a pretrained model can be resumed. The model will saved in the same directory ``` --continual_learning "KeciFamilyRun"```.
+**Continual Training:** the training phase of a pretrained model can be resumed.
+The run reuses configuration and serialized artifacts from the existing experiment folder and stores updated outputs in the same directory using `--continual_learning "KeciFamilyRun"`.
 ```bash
 dicee --continual_learning "KeciFamilyRun" --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --backend rdflib --eval_model None
 ```
+The continual directory should contain the stored configuration and serialized training data (for example `configuration.json`, `memory_map_train_set.npy`, and mapping files `entity_to_idx`/`relation_to_idx` in `.csv` or legacy `.p` format).
+If `--eval_model` is set, evaluation runs after training using stored indexed artifacts. If `--eval_model None`, no evaluation is executed.
+Periodic evaluation and weight-averaging callbacks are also supported in continual training.
+
 #### Ensemble Learning with Knowledge Graph Embeddings
 
 The KGE models in our **dice-embedding** framework now support a range of state-of-the-art weight averaging techniques, including:
@@ -1153,4 +1158,3 @@ url={https://openreview.net/forum?id=6T45-4TFqaX}}
   organization={IEEE}
 ```
 For any questions or wishes, please contact:  ```caglar.demir@upb.de```
-
