@@ -185,7 +185,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">re_vocab</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">ee_vocab</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">ee_vocab</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">ee_vocab</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">ee_vocab</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
 
@@ -783,7 +783,7 @@
 
         <span class="n">train_set</span><span class="p">,</span> <span class="n">valid_set</span><span class="p">,</span> <span class="n">test_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_indexed_datasets</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;NegSample&#39;</span><span class="p">,</span> <span class="s1">&#39;FixedNegSample&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">==</span> <span class="s1">&#39;NegSample&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">eval_rank_of_head_and_tail_entity</span><span class="p">(</span>
                 <span class="n">train_set</span><span class="o">=</span><span class="n">train_set</span><span class="p">,</span>
                 <span class="n">valid_set</span><span class="o">=</span><span class="n">valid_set</span><span class="p">,</span>

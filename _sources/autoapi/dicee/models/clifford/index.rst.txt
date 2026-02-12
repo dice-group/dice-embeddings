@@ -10,10 +10,6 @@ Classes
 .. autoapisummary::
 
    dicee.models.clifford.Keci
-   dicee.models.clifford.KeciTransformer
-   dicee.models.clifford.TransformerBlock
-   dicee.models.clifford.TransformerSelfAttention
-   dicee.models.clifford.TransformerMLP
    dicee.models.clifford.CKeci
    dicee.models.clifford.DeCaL
 
@@ -247,127 +243,6 @@ Module Contents
 
       :rtype: torch.FloatTensor with (n) shape
 
-
-
-.. py:class:: KeciTransformer(args)
-
-   Bases: :py:obj:`Keci`
-
-
-   Keci with Transformer architecture.
-
-   Concatenates h0, hp, hq, r0, rp, rq into a single embedding vector and processes through transformer.
-
-
-   .. py:attribute:: name
-      :value: 'KeciTransformer'
-
-
-
-   .. py:attribute:: input_dim
-
-
-   .. py:attribute:: seq_len
-      :value: 1
-
-
-
-   .. py:attribute:: transformer
-
-
-   .. py:attribute:: lm_head
-
-
-   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
-
-      Kvsall training
-
-      Parameter
-      ---------
-      x: torch.LongTensor with (n,2) shape
-
-      :rtype: torch.FloatTensor with (n, |E|) shape
-
-
-
-.. py:class:: TransformerBlock(n_embd, n_head, dropout=0.0, bias=False)
-
-   Bases: :py:obj:`torch.nn.Module`
-
-
-   A single transformer block with self-attention and MLP.
-
-
-   .. py:attribute:: ln_1
-
-
-   .. py:attribute:: attn
-
-
-   .. py:attribute:: ln_2
-
-
-   .. py:attribute:: mlp
-
-
-   .. py:method:: forward(x)
-
-
-.. py:class:: TransformerSelfAttention(n_embd, n_head, dropout=0.0, bias=False)
-
-   Bases: :py:obj:`torch.nn.Module`
-
-
-   Multi-head self-attention for the Keci Transformer.
-
-
-   .. py:attribute:: c_attn
-
-
-   .. py:attribute:: c_proj
-
-
-   .. py:attribute:: attn_dropout
-
-
-   .. py:attribute:: resid_dropout
-
-
-   .. py:attribute:: n_head
-
-
-   .. py:attribute:: n_embd
-
-
-   .. py:attribute:: dropout
-      :value: 0.0
-
-
-
-   .. py:method:: forward(x)
-
-
-.. py:class:: TransformerMLP(n_embd, dropout=0.0, bias=False)
-
-   Bases: :py:obj:`torch.nn.Module`
-
-
-   MLP for the Keci Transformer.
-
-
-   .. py:attribute:: c_fc
-
-
-   .. py:attribute:: gelu
-
-
-   .. py:attribute:: c_proj
-
-
-   .. py:attribute:: dropout
-
-
-   .. py:method:: forward(x)
 
 
 .. py:class:: CKeci(args)

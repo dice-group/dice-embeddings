@@ -365,7 +365,7 @@ Package Contents
    .. py:method:: __getitem__(idx)
 
 
-.. py:class:: FixedNegSampleDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0, seed: int = None)
+.. py:class:: FixedNegSampleDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
@@ -409,11 +409,6 @@ Package Contents
 
 
    .. py:attribute:: collate_fn
-      :value: None
-
-
-
-   .. py:attribute:: seed
       :value: None
 
 
@@ -481,7 +476,7 @@ Package Contents
    .. py:method:: __getitem__(idx)
 
 
-.. py:class:: TriplePredictionDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0, seed: int = None)
+.. py:class:: TriplePredictionDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
@@ -507,11 +502,6 @@ Package Contents
 
 
    .. py:attribute:: neg_sample_ratio
-
-
-   .. py:attribute:: seed
-      :value: None
-
 
 
    .. py:attribute:: train_set
@@ -628,7 +618,7 @@ Package Contents
 
 
 
-.. py:function:: construct_dataset(*, train_set: Union[numpy.ndarray, list], valid_set=None, test_set=None, ordered_bpe_entities=None, train_target_indices=None, target_dim: int = None, entity_to_idx: dict, relation_to_idx: dict, form_of_labelling: str, scoring_technique: str, neg_ratio: int, label_smoothing_rate: float, byte_pair_encoding=None, block_size: int = None, seed: int = None) -> torch.utils.data.Dataset
+.. py:function:: construct_dataset(*, train_set: Union[numpy.ndarray, list], valid_set=None, test_set=None, ordered_bpe_entities=None, train_target_indices=None, target_dim: int = None, entity_to_idx: dict, relation_to_idx: dict, form_of_labelling: str, scoring_technique: str, neg_ratio: int, label_smoothing_rate: float, byte_pair_encoding=None, block_size: int = None) -> torch.utils.data.Dataset
 
    Build the appropriate dataset for the given training configuration.
 
