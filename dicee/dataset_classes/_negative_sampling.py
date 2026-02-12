@@ -1,11 +1,11 @@
 """Negative-sampling based dataset classes.
 
-Provides ``TriplePredictionDataset``, ``NegSampleDataset``, and
+Provides ``TriplePredictionDataset``, ``FixedNegSampleDataset``, and
 ``OnevsSample`` — datasets that generate negative triples by corrupting
 head or tail entities at training time.
 """
 
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import torch
@@ -35,8 +35,8 @@ class OnevsSample(torch.utils.data.Dataset):
     def __init__(
         self,
         train_set: np.ndarray,
-        num_entities,
-        num_relations,
+        num_entities: int,
+        num_relations: int,
         neg_sample_ratio: int = None,
         label_smoothing_rate: float = 0.0,
     ):
@@ -96,12 +96,16 @@ class OnevsSample(torch.utils.data.Dataset):
         return x, y_idx, y_vec
 
 
-class NegSampleDataset(torch.utils.data.Dataset):
-    """Pre-computed negative sampling dataset.
+class FixedNegSampleDataset(torch.utils.data.Dataset):
+    """Pre-computed (fixed) negative sampling dataset.
 
     At construction time every positive triple is paired with one random
-    negative (head- or tail-corrupted).  The pairs are stored so that
-    ``__getitem__`` is a simple lookup.
+    negative (head- or tail-corrupted) using vectorized operations for
+    efficiency.  The pairs are stored so that ``__getitem__`` is a simple
+    lookup.
+
+    This is useful when you want deterministic negatives across epochs
+    (e.g., for reproducibility or debugging).
 
     Parameters
     ----------
@@ -112,7 +116,9 @@ class NegSampleDataset(torch.utils.data.Dataset):
     num_relations : int
         Total number of relations.
     neg_sample_ratio : int, optional
-        Currently unused; kept for API compatibility (default ``1``).
+        Number of negative samples per positive triple (default ``1``).
+    label_smoothing_rate : float, optional
+        Label smoothing coefficient (default ``0.0``).
     """
 
     def __init__(
@@ -121,41 +127,77 @@ class NegSampleDataset(torch.utils.data.Dataset):
         num_entities: int,
         num_relations: int,
         neg_sample_ratio: int = 1,
+        label_smoothing_rate: float = 0.0,
     ):
         assert isinstance(train_set, np.ndarray)
-        self.neg_sample_ratio = torch.tensor(neg_sample_ratio)
-
+        self.neg_sample_ratio = neg_sample_ratio
+        self.num_entities = num_entities
+        self.num_relations = num_relations
+        self.label_smoothing_rate = label_smoothing_rate
+        self.collate_fn = None
         # Sort by (head, relation, tail) to ensure order-independent training
         sorted_indices = np.lexsort(
             (train_set[:, 2], train_set[:, 1], train_set[:, 0])
         )
         sorted_train_set = train_set[sorted_indices]
+        self.train_triples = torch.from_numpy(sorted_train_set).long()
 
-        self.train_triples = torch.from_numpy(sorted_train_set).unsqueeze(1)
         self.length = len(self.train_triples)
-        self.num_entities = torch.tensor(num_entities)
-        self.num_relations = torch.tensor(num_relations)
-        self.labels = torch.tensor([1.0, 0.0])
 
-        # Precompute negatives and stack with positives
-        self.train_set = []
-        for triple in self.train_triples:
-            corr_entities = torch.randint(0, high=self.num_entities, size=(1,))
-            if torch.rand(1) >= 0.5:
-                negative_triple = torch.cat(
-                    (triple[:, 0], triple[:, 1], corr_entities), dim=0
-                ).unsqueeze(0)
-            else:
-                negative_triple = torch.cat(
-                    (corr_entities, triple[:, 1], triple[:, 2]), dim=0
-                ).unsqueeze(0)
-            self.train_set.append(torch.cat((triple, negative_triple), dim=0))
+        # Vectorized negative generation
+        self._precompute_negatives()
 
-    def __len__(self):
+    def _precompute_negatives(self) -> None:
+        """Vectorized pre-computation of negative triples."""
+        n = self.length
+
+        neg_triples_list = []
+        for _ in range(self.neg_sample_ratio):
+            # Decide which position to corrupt per triple: 0=head, 1=tail
+            # Only corrupt entities (head or tail), not relations, for link prediction
+            corruption_choice = torch.randint(0, 2, (n,), dtype=torch.long)
+
+            # Random entities to corrupt with
+            corr_entities = torch.randint(0, self.num_entities, (n,), dtype=torch.long)
+
+            # Build negative triples vectorized
+            neg_triples = self.train_triples.clone()
+
+            # Corrupt head for triples where corruption_choice == 0
+            corrupt_head = corruption_choice == 0
+            neg_triples[corrupt_head, 0] = corr_entities[corrupt_head]
+
+            # Corrupt tail for triples where corruption_choice == 1
+            corrupt_tail = corruption_choice == 1
+            neg_triples[corrupt_tail, 2] = corr_entities[corrupt_tail]
+
+            neg_triples_list.append(neg_triples)
+
+        # Concatenate all negative triples: shape (neg_sample_ratio * N, 3)
+        all_neg_triples = torch.cat(neg_triples_list, dim=0)
+
+        # Concatenate positives and negatives: shape ((1 + neg_sample_ratio) * N, 3)
+        self.train_set = torch.cat([self.train_triples, all_neg_triples], dim=0)
+
+        # Create labels: positives get (1 - smoothing), negatives get smoothing
+        num_negatives = n * self.neg_sample_ratio
+        pos_labels = torch.ones(n) - self.label_smoothing_rate
+        neg_labels = torch.zeros(num_negatives) + self.label_smoothing_rate
+        self.labels = torch.cat([pos_labels, neg_labels], dim=0)
+
+        # Shuffle positives and negatives together to ensure mixed batches
+        shuffle_indices = torch.randperm(len(self.train_set))
+        self.train_set = self.train_set[shuffle_indices]
+        self.labels = self.labels[shuffle_indices]
+
+        # Update length to reflect total number of samples
+        self.length = len(self.train_set)
+
+    def __len__(self) -> int:
         return self.length
 
-    def __getitem__(self, idx):
-        return self.train_set[idx], self.labels
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        return self.train_set[idx], self.labels[idx]
 
 
 class TriplePredictionDataset(torch.utils.data.Dataset):
