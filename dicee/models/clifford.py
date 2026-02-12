@@ -82,7 +82,7 @@ class Keci(BaseKGE):
             sigma_qq = torch.einsum('nrp,nrx->nrpx', hq, rq) - torch.einsum('nrx,nrp->nrpx', hq, rq)
             sigma_qq = sigma_qq[:, :, indices[0], indices[1]]
         else:
-            sigma_qq = torch.zeros((len(hq), self.r, int((self.q * (self.q - 1)) / 2)))
+            sigma_qq = torch.zeros((len(hq), self.r, int((self.q * (self.q - 1)) / 2)), device=hq.device)
 
         return sigma_qq
 
@@ -571,8 +571,21 @@ class KeciTransformer(Keci):
         super().__init__(args)
         self.name = 'KeciTransformer'
         
-        # Input dimension: h0 (r) + hp (r*p) + hq (r*q) + r0 (r) + rp (r*p) + rq (r*q) = 2 * embedding_dim
-        self.input_dim = 2 * self.embedding_dim
+        # Boolean flag to include clifford multiplication in embedding
+        self.use_clifford_mul = self.args.get("use_clifford_mul", False)
+        
+        # Input dimension: 
+        # Original: h0 (r) + hp (r*p) + hq (r*q) + r0 (r) + rp (r*p) + rq (r*q) = 2 * embedding_dim
+        # Clifford multiplication: sigma_0 (r) + sigma_p (r*p) + sigma_q (r*q) + sigma_pp (r*(p*(p-1)/2)) + sigma_qq (r*(q*(q-1)/2)) + sigma_pq (r*p*q)
+        original_dim = 2 * self.embedding_dim
+        if self.use_clifford_mul:
+            clifford_dim = self.r + self.r * self.p + self.r * self.q + \
+                           self.r * int((self.p * (self.p - 1)) / 2) + \
+                           self.r * int((self.q * (self.q - 1)) / 2) + \
+                           self.r * self.p * self.q
+            self.input_dim = original_dim + clifford_dim
+        else:
+            self.input_dim = original_dim
         
         # Transformer configuration
         n_layer = self.args.get("n_layer", 4)
@@ -622,7 +635,7 @@ class KeciTransformer(Keci):
         h0, hp, hq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
         r0, rp, rq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
         
-        # (3) Flatten and concatenate h0, hp, hq, r0, rp, rq into single embedding vector
+        # (3) Flatten base embeddings
         # h0: (n, r), hp: (n, r, p), hq: (n, r, q), r0: (n, r), rp: (n, r, p), rq: (n, r, q)
         batch_size = h0.shape[0]
         
@@ -631,8 +644,23 @@ class KeciTransformer(Keci):
         rp_flat = rp.view(batch_size, -1)  # (n, r*p)
         rq_flat = rq.view(batch_size, -1)  # (n, r*q)
         
-        # Concatenate: (n, 2*embedding_dim)
-        x_emb = torch.cat([h0, hp_flat, hq_flat, r0, rp_flat, rq_flat], dim=1)
+        if self.use_clifford_mul:
+            # Compute clifford multiplication
+            sigma_0, sigma_p, sigma_q, sigma_pp, sigma_qq, sigma_pq = self.clifford_multiplication(h0, hp, hq, r0, rp, rq)
+            
+            # Flatten clifford multiplication results
+            sigma_p_flat = sigma_p.view(batch_size, -1)  # (n, r*p)
+            sigma_q_flat = sigma_q.view(batch_size, -1)  # (n, r*q)
+            sigma_pp_flat = sigma_pp.view(batch_size, -1)  # (n, r*p*(p-1)/2)
+            sigma_qq_flat = sigma_qq.view(batch_size, -1)  # (n, r*q*(q-1)/2)
+            sigma_pq_flat = sigma_pq.view(batch_size, -1)  # (n, r*p*q)
+            
+            # Concatenate all embeddings including clifford multiplication
+            x_emb = torch.cat([h0, hp_flat, hq_flat, r0, rp_flat, rq_flat, 
+                              sigma_0, sigma_p_flat, sigma_q_flat, sigma_pp_flat, sigma_qq_flat, sigma_pq_flat], dim=1)
+        else:
+            # Concatenate base embeddings only
+            x_emb = torch.cat([h0, hp_flat, hq_flat, r0, rp_flat, rq_flat], dim=1)
         
         # (4) Reshape for transformer: (n, 1, input_dim)
         x_emb = x_emb.unsqueeze(1)
