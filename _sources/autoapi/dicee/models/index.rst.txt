@@ -3330,7 +3330,7 @@ Package Contents
 
 
 
-   .. py:attribute:: input_dim
+   .. py:attribute:: use_clifford_mul
 
 
    .. py:attribute:: seq_len
