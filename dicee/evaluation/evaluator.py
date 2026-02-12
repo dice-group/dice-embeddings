@@ -656,7 +656,7 @@ class Evaluator:
 
         train_set, valid_set, test_set = self._load_indexed_datasets()
 
-        if self.args.scoring_technique == 'NegSample':
+        if self.args.scoring_technique in ['NegSample', 'FixedNegSample']:
             self.eval_rank_of_head_and_tail_entity(
                 train_set=train_set,
                 valid_set=valid_set,

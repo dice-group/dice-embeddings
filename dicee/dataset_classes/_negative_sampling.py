@@ -128,6 +128,7 @@ class FixedNegSampleDataset(torch.utils.data.Dataset):
         num_relations: int,
         neg_sample_ratio: int = 1,
         label_smoothing_rate: float = 0.0,
+        seed: int = None,
     ):
         assert isinstance(train_set, np.ndarray)
         self.neg_sample_ratio = neg_sample_ratio
@@ -135,6 +136,7 @@ class FixedNegSampleDataset(torch.utils.data.Dataset):
         self.num_relations = num_relations
         self.label_smoothing_rate = label_smoothing_rate
         self.collate_fn = None
+        self.seed = seed
         # Sort by (head, relation, tail) to ensure order-independent training
         sorted_indices = np.lexsort(
             (train_set[:, 2], train_set[:, 1], train_set[:, 0])
@@ -150,6 +152,12 @@ class FixedNegSampleDataset(torch.utils.data.Dataset):
     def _precompute_negatives(self) -> None:
         """Vectorized pre-computation of negative triples."""
         n = self.length
+
+        # Set the random seed for reproducibility if provided
+        if self.seed is not None:
+            torch.manual_seed(self.seed)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(self.seed)
 
         neg_triples_list = []
         for _ in range(self.neg_sample_ratio):
@@ -227,10 +235,19 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
         num_relations: int,
         neg_sample_ratio: int = 1,
         label_smoothing_rate: float = 0.0,
+        seed: int = None,
     ):
         assert isinstance(train_set, np.ndarray)
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.neg_sample_ratio = torch.tensor(neg_sample_ratio)
+
+        # Set the random seed for reproducibility if provided
+        self.seed = seed
+        if self.seed is not None:
+            torch.manual_seed(self.seed)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(self.seed)
+            np.random.seed(self.seed)
 
         # Sort by (head, relation, tail) to ensure order-independent training
         sorted_indices = np.lexsort(

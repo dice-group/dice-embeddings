@@ -60,6 +60,7 @@ def construct_dataset(
     label_smoothing_rate: float,
     byte_pair_encoding=None,
     block_size: int = None,
+    seed: int = None,
 ) -> torch.utils.data.Dataset:
     """Build the appropriate dataset for the given training configuration.
 
@@ -125,6 +126,7 @@ def construct_dataset(
             num_relations=len(relation_to_idx),
             neg_sample_ratio=neg_ratio,
             label_smoothing_rate=label_smoothing_rate,
+            seed=seed,
         )
     elif scoring_technique == "FixedNegSample":
         train_set = FixedNegSampleDataset(
@@ -133,6 +135,7 @@ def construct_dataset(
             num_relations=len(relation_to_idx),
             neg_sample_ratio=neg_ratio,
             label_smoothing_rate=label_smoothing_rate,
+            seed=seed,
         )
     elif form_of_labelling == "EntityPrediction":
         if scoring_technique == "1vsAll":

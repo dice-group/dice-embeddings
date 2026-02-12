@@ -22,7 +22,7 @@ import torch
 
 from .models import (
     AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ,
-    DeCaL, DistMult, DualE, Keci, LFMult, OMult, Pyke, QMult, Shallom, TransE
+    DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, OMult, Pyke, QMult, Shallom, TransE
 )
 from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
@@ -45,6 +45,7 @@ MODEL_REGISTRY: Dict[str, Tuple[Type, str]] = {
     'TransE': (TransE, 'EntityPrediction'),
     'Pyke': (Pyke, 'EntityPrediction'),
     'Keci': (Keci, 'EntityPrediction'),
+    'KeciTransformer': (KeciTransformer, 'EntityPrediction'),
     'CKeci': (CKeci, 'EntityPrediction'),
     'BytE': (BytE, 'EntityPrediction'),
     'LFMult': (LFMult, 'EntityPrediction'),
@@ -559,6 +560,9 @@ def _legacy_intialize_model(args: dict, verbose: int = 0) -> Tuple[object, str]:
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'Keci':
         model = Keci(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'KeciTransformer':
+        model = KeciTransformer(args=args)
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'CKeci':
         model = CKeci(args=args)
