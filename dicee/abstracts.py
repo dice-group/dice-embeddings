@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 import torch.nn.functional as F
 from tqdm import tqdm
+import pandas as pd
 
 
 class AbstractTrainer:
@@ -75,6 +76,24 @@ class AbstractTrainer:
         """
         for c in self.callbacks:
             c.on_fit_end(*args, **kwargs)
+
+    def on_train_epoch_start(self, *args, **kwargs):
+        """
+        A function to call callbacks at the start of an epoch.
+
+        Parameter
+        ---------
+        args
+
+        kwargs
+
+
+        Returns
+        -------
+        None
+        """
+        for c in self.callbacks:
+            c.on_train_epoch_start(*args, **kwargs)
 
     def on_train_epoch_end(self, *args, **kwargs):
         """
@@ -760,6 +779,7 @@ class BaseInteractiveTrainKGE:
         freeze_entity_embeddings: bool = True,
         gate_residual: bool = True,
         device: str = None,
+        suffle_data: bool = True
     ):
         """
         Trains the Literal Embeddings model using literal data.
@@ -775,6 +795,7 @@ class BaseInteractiveTrainKGE:
             freeze_entity_embeddings (bool): If True, freeze the entity embeddings during training.
             gate_residual (bool): If True, use gate residual connections in the model.
             device (str): Device to use for training ('cuda' or 'cpu'). If None, will use available GPU or CPU.
+            suffle_data (bool): If True, shuffle the dataset before training.
         """
         # Assign torch.seed to reproduice experiments
         torch.manual_seed(random_seed)
@@ -799,7 +820,7 @@ class BaseInteractiveTrainKGE:
 
         batch_data = DataLoader(
             dataset=literal_dataset,
-            shuffle=True,
+            shuffle=suffle_data,
             batch_size=batch_size,
         )
 
@@ -818,7 +839,7 @@ class BaseInteractiveTrainKGE:
 
         print(
             f"Training Literal Embedding model"
-            f"using pre-trained '{self.model.name}' embeddings."
+            f" using pre-trained '{self.model.name}' embeddings."
         )
 
         # Training loop
@@ -843,4 +864,8 @@ class BaseInteractiveTrainKGE:
         self.literal_dataset = literal_dataset
         torch.save(literal_model.state_dict(), self.path + "/literal_model.pt")
         print(f"Literal Embedding model saved to {self.path}/literal_model.pt")
+        self.idx_to_data_property = {v: k for k, v in self.data_property_to_idx.items()}
+        df = pd.DataFrame.from_dict(self.idx_to_data_property, orient="index", columns=["attribute"])
+        df.to_csv(self.path + "/attribute_to_idx.csv")
+        print(f"Literal attributes indexing saved to {self.path}/attribute_to_idx.csv")
 

@@ -1,4 +1,4 @@
-from .util import read_from_disk, read_from_triple_store
+from .util import read_from_disk, read_from_triple_store_with_pandas, read_from_triple_store_with_polars
 import glob
 import pandas as pd
 import numpy as np
@@ -35,7 +35,12 @@ class ReadFromDisk:
             self.kg.raw_valid_set = None
             self.kg.raw_test_set = None
         elif self.kg.sparql_endpoint is not None:
-            self.kg.raw_train_set = read_from_triple_store(endpoint=self.kg.sparql_endpoint)
+            if self.kg.backend == "pandas":
+                self.kg.raw_train_set = read_from_triple_store_with_pandas(endpoint=self.kg.sparql_endpoint)
+            elif self.kg.backend == "polars":
+                self.kg.raw_train_set = read_from_triple_store_with_polars(endpoint=self.kg.sparql_endpoint)
+            else:
+                raise NotImplementedError(f"Backend {self.kg.backend} is not implemented for reading from a triple store. Please provide 'polars' or 'pandas' to --backend.")
             self.kg.raw_valid_set = None
             self.kg.raw_test_set = None
         elif self.kg.dataset_dir:
@@ -43,6 +48,7 @@ class ReadFromDisk:
                 if 'train' in i:
                     self.kg.raw_train_set = read_from_disk(i, self.kg.read_only_few, self.kg.sample_triples_ratio,
                                                        backend=self.kg.backend, separator=self.kg.separator)
+
                     if self.kg.add_noise_rate:
                         self.add_noisy_triples_into_training()
                 elif 'test' in i and self.kg.eval_model is not None:

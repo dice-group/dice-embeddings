@@ -82,7 +82,7 @@ class Keci(BaseKGE):
             sigma_qq = torch.einsum('nrp,nrx->nrpx', hq, rq) - torch.einsum('nrx,nrp->nrpx', hq, rq)
             sigma_qq = sigma_qq[:, :, indices[0], indices[1]]
         else:
-            sigma_qq = torch.zeros((len(hq), self.r, int((self.q * (self.q - 1)) / 2)))
+            sigma_qq = torch.zeros((len(hq), self.r, int((self.q * (self.q - 1)) / 2)), device=hq.device)
 
         return sigma_qq
 
@@ -560,6 +560,194 @@ class Keci(BaseKGE):
         return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
 
 
+class KeciTransformer(Keci):
+    """
+    Keci with Transformer architecture.
+    
+    Concatenates h0, hp, hq, r0, rp, rq into a single embedding vector and processes through transformer.
+    """
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'KeciTransformer'
+        
+        # Boolean flag to include clifford multiplication in embedding
+        self.use_clifford_mul = self.args.get("use_clifford_mul", False)
+        
+        # Input dimension: 
+        # Original: h0 (r) + hp (r*p) + hq (r*q) + r0 (r) + rp (r*p) + rq (r*q) = 2 * embedding_dim
+        # Clifford multiplication: sigma_0 (r) + sigma_p (r*p) + sigma_q (r*q) + sigma_pp (r*(p*(p-1)/2)) + sigma_qq (r*(q*(q-1)/2)) + sigma_pq (r*p*q)
+        original_dim = 2 * self.embedding_dim
+        if self.use_clifford_mul:
+            clifford_dim = self.r + self.r * self.p + self.r * self.q + \
+                           self.r * int((self.p * (self.p - 1)) / 2) + \
+                           self.r * int((self.q * (self.q - 1)) / 2) + \
+                           self.r * self.p * self.q
+            self.input_dim = original_dim + clifford_dim
+        else:
+            self.input_dim = original_dim
+        
+        # Transformer configuration
+        n_layer = self.args.get("n_layer", 4)
+        dropout = self.args.get("dropout", 0.0)
+        bias = self.args.get("bias", False)
+        
+        # Calculate valid n_head: must divide input_dim evenly
+        # Use user-specified n_head if valid, otherwise find largest valid divisor <= 4
+        requested_n_head = self.args.get("n_head", 4)
+        if self.input_dim % requested_n_head == 0:
+            n_head = requested_n_head
+        else:
+            # Find largest divisor of input_dim that is <= requested_n_head and >= 1
+            n_head = 1
+            for h in range(1, requested_n_head + 1):
+                if self.input_dim % h == 0:
+                    n_head = h
+        # Sequence length is 1 (single embedding vector treated as one token)
+        self.seq_len = 1
+        
+        # Transformer components
+        self.transformer = torch.nn.ModuleDict(dict(
+            wpe=torch.nn.Embedding(self.seq_len, self.input_dim),  # positional embeddings
+            drop=torch.nn.Dropout(dropout),
+            h=torch.nn.ModuleList([TransformerBlock(self.input_dim, n_head, dropout, bias) for _ in range(n_layer)]),
+            ln_f=torch.nn.LayerNorm(self.input_dim, elementwise_affine=not bias),
+        ))
+        # Output projection: maps to number of entities for scoring
+        self.lm_head = torch.nn.Linear(self.input_dim, self.num_entities, bias=False)
+
+    def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
+        """
+        Kvsall training
+
+        Parameter
+        ---------
+        x: torch.LongTensor with (n,2) shape
+        
+        Returns
+        -------
+        torch.FloatTensor with (n, |E|) shape
+        """
+        # (1) Retrieve real-valued embedding vectors.
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        
+        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
+        h0, hp, hq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
+        r0, rp, rq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
+        
+        # (3) Flatten base embeddings
+        # h0: (n, r), hp: (n, r, p), hq: (n, r, q), r0: (n, r), rp: (n, r, p), rq: (n, r, q)
+        batch_size = h0.shape[0]
+        
+        hp_flat = hp.view(batch_size, -1)  # (n, r*p)
+        hq_flat = hq.view(batch_size, -1)  # (n, r*q)
+        rp_flat = rp.view(batch_size, -1)  # (n, r*p)
+        rq_flat = rq.view(batch_size, -1)  # (n, r*q)
+        
+        if self.use_clifford_mul:
+            # Compute clifford multiplication
+            sigma_0, sigma_p, sigma_q, sigma_pp, sigma_qq, sigma_pq = self.clifford_multiplication(h0, hp, hq, r0, rp, rq)
+            
+            # Flatten clifford multiplication results
+            sigma_p_flat = sigma_p.view(batch_size, -1)  # (n, r*p)
+            sigma_q_flat = sigma_q.view(batch_size, -1)  # (n, r*q)
+            sigma_pp_flat = sigma_pp.view(batch_size, -1)  # (n, r*p*(p-1)/2)
+            sigma_qq_flat = sigma_qq.view(batch_size, -1)  # (n, r*q*(q-1)/2)
+            sigma_pq_flat = sigma_pq.view(batch_size, -1)  # (n, r*p*q)
+            
+            # Concatenate all embeddings including clifford multiplication
+            x_emb = torch.cat([h0, hp_flat, hq_flat, r0, rp_flat, rq_flat, 
+                              sigma_0, sigma_p_flat, sigma_q_flat, sigma_pp_flat, sigma_qq_flat, sigma_pq_flat], dim=1)
+        else:
+            # Concatenate base embeddings only
+            x_emb = torch.cat([h0, hp_flat, hq_flat, r0, rp_flat, rq_flat], dim=1)
+        
+        # (4) Reshape for transformer: (n, 1, input_dim)
+        x_emb = x_emb.unsqueeze(1)
+        
+        # (5) Apply transformer
+        device = x_emb.device
+        pos = torch.arange(0, self.seq_len, dtype=torch.long, device=device)
+        
+        pos_emb = self.transformer.wpe(pos)
+        x_emb = self.transformer.drop(x_emb + pos_emb)
+        
+        for block in self.transformer.h:
+            x_emb = block(x_emb)
+        x_emb = self.transformer.ln_f(x_emb)
+        logits = self.lm_head(x_emb)  # (n, 1, num_entities)
+        
+        # (6) Squeeze and return logits directly as scores
+        return logits.squeeze(1)  # (n, num_entities)
+
+
+class TransformerBlock(torch.nn.Module):
+    """A single transformer block with self-attention and MLP."""
+    
+    def __init__(self, n_embd, n_head, dropout=0.0, bias=False):
+        super().__init__()
+        self.ln_1 = torch.nn.LayerNorm(n_embd, elementwise_affine=not bias)
+        self.attn = TransformerSelfAttention(n_embd, n_head, dropout, bias)
+        self.ln_2 = torch.nn.LayerNorm(n_embd, elementwise_affine=not bias)
+        self.mlp = TransformerMLP(n_embd, dropout, bias)
+
+    def forward(self, x):
+        x = x + self.attn(self.ln_1(x))
+        x = x + self.mlp(self.ln_2(x))
+        return x
+
+
+class TransformerSelfAttention(torch.nn.Module):
+    """Multi-head self-attention for the Keci Transformer."""
+    
+    def __init__(self, n_embd, n_head, dropout=0.0, bias=False):
+        super().__init__()
+        assert n_embd % n_head == 0
+        self.c_attn = torch.nn.Linear(n_embd, 3 * n_embd, bias=bias)
+        self.c_proj = torch.nn.Linear(n_embd, n_embd, bias=bias)
+        self.attn_dropout = torch.nn.Dropout(dropout)
+        self.resid_dropout = torch.nn.Dropout(dropout)
+        self.n_head = n_head
+        self.n_embd = n_embd
+        self.dropout = dropout
+
+    def forward(self, x):
+        B, T, C = x.size()
+        
+        q, k, v = self.c_attn(x).split(self.n_embd, dim=2)
+        k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+        q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+        v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+        
+        # Non-causal attention (bidirectional)
+        y = torch.nn.functional.scaled_dot_product_attention(
+            q, k, v, attn_mask=None,
+            dropout_p=self.dropout if self.training else 0,
+            is_causal=False
+        )
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        y = self.resid_dropout(self.c_proj(y))
+        return y
+
+
+class TransformerMLP(torch.nn.Module):
+    """MLP for the Keci Transformer."""
+    
+    def __init__(self, n_embd, dropout=0.0, bias=False):
+        super().__init__()
+        self.c_fc = torch.nn.Linear(n_embd, 4 * n_embd, bias=bias)
+        self.gelu = torch.nn.GELU()
+        self.c_proj = torch.nn.Linear(4 * n_embd, n_embd, bias=bias)
+        self.dropout = torch.nn.Dropout(dropout)
+
+    def forward(self, x):
+        x = self.c_fc(x)
+        x = self.gelu(x)
+        x = self.c_proj(x)
+        x = self.dropout(x)
+        return x
+
+
 class CKeci(Keci):
     " Without learning dimension scaling"
 
@@ -664,7 +852,7 @@ class DeCaL(BaseKGE):
             sigma_qq = 0
 
         if self.r >= 2:
-            sigma_rr = torch.sum(self.compute_sigma_qq(hk, rk), dim=[1, 2]).squeeze(-1)
+            sigma_rr = torch.sum(self.compute_sigma_rr(hk, rk), dim=[1, 2]).squeeze(-1)
         else:
             sigma_rr = 0
 
@@ -674,11 +862,11 @@ class DeCaL(BaseKGE):
             sigma_pq = 0
 
         if self.p >= 2 and self.r >= 2:
-            sigma_pr = torch.sum(self.compute_sigma_pq(hp=hp, hk=hk, rp=rp, rk=rk), dim=[1, 2, 3]).squeeze(-1)
+            sigma_pr = torch.sum(self.compute_sigma_pr(hp=hp, hk=hk, rp=rp, rk=rk), dim=[1, 2, 3]).squeeze(-1)
         else:
             sigma_pr = 0
         if self.q >= 2 and self.r >= 2:
-            sigma_qr = torch.sum(self.compute_sigma_pq(hq=hq, hk=hk, rq=rq, rk=rk), dim=[1, 2, 3]).squeeze(-1)
+            sigma_qr = torch.sum(self.compute_sigma_qr(hq=hq, hk=hk, rq=rq, rk=rk), dim=[1, 2, 3]).squeeze(-1)
         else:
             sigma_qr = 0
 

@@ -1,6 +1,6 @@
 ## Dicee Manual
 
-**Version:** dicee 0.2.0
+**Version:** dicee 0.3.2
 
 **GitHub repository:** [https://github.com/dice-group/dice-embeddings](https://github.com/dice-group/dice-embeddings)
 
@@ -42,9 +42,8 @@ PytorchLightning allows us to use state-of-the-art model parallelism techniques 
 without extra effort.
 With our framework, practitioners can directly use PytorchLightning for model parallelism to train gigantic embedding models.
 
-**Why [Hugging-face Gradio](https://huggingface.co/gradio)?**
-Deploy a pre-trained embedding model without writing a single line of code.
-
+**Why [Huggingface](https://huggingface.co/)?**
+Seamlessly deploy and share pre-trained embedding models through the Huggingface ecosystem.
 
 ## Installation
 

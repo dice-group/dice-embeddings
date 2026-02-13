@@ -13,7 +13,7 @@ class TestASWA:
         args.q = 1
         args.scoring_technique = "KvsAll"
         args.dataset_dir = "KGs/UMLS"
-        args.trainer = "torchCPUTrainer"
+        args.trainer = "PL"
         args.num_epochs = 100
         args.lr = 0.1
         args.embedding_dim = 32
@@ -27,12 +27,12 @@ class TestASWA:
         args.q = 1
         args.scoring_technique = "KvsAll"
         args.dataset_dir = "KGs/UMLS"
-        args.trainer = "torchCPUTrainer"
+        args.trainer = "PL"
         args.num_epochs = 100
         args.lr = 0.1
         args.embedding_dim = 32
         args.batch_size = 1024
-        # args.stochastic_weight_avg = True
+        args.swa = True
         swa_report = Execute(args).start()
 
         assert aswa_report["Val"]["MRR"] > swa_report["Val"]["MRR"]

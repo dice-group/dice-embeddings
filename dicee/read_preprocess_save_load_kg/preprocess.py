@@ -1,8 +1,9 @@
 import pandas as pd
 import polars as pl
-from .util import timeit, pandas_dataframe_indexer, dataset_sanity_checking
+from .util import (timeit, pandas_dataframe_indexer, dataset_sanity_checking, 
+                   get_er_vocab, get_re_vocab, get_ee_vocab, apply_reciprocal_or_noise, 
+                   polars_dataframe_indexer)
 from dicee.static_funcs import numpy_data_type_changer
-from .util import get_er_vocab, get_re_vocab, get_ee_vocab, apply_reciprical_or_noise, polars_dataframe_indexer
 import numpy as np
 import concurrent
 from typing import List, Tuple
@@ -38,9 +39,6 @@ class PreprocessKG:
         else:
             raise KeyError(f'{self.kg.backend} not found')
 
-        # TODO: Still we keep the raw and index data in memory
-        # print(self.kg.raw_train_set)
-        # print(self.kg.train_set)
         if self.kg.eval_model:
             if self.kg.byte_pair_encoding:
                 data = []
@@ -61,10 +59,8 @@ class PreprocessKG:
             self.kg.re_vocab = executor.submit(get_re_vocab, data, self.kg.path_for_serialization + '/re_vocab.p')
             self.kg.ee_vocab = executor.submit(get_ee_vocab, data, self.kg.path_for_serialization + '/ee_vocab.p')
 
-        # string containing
-        assert isinstance(self.kg.raw_train_set, pd.DataFrame) or isinstance(self.kg.raw_train_set, pl.DataFrame)
+        assert isinstance(self.kg.raw_train_set, (pd.DataFrame, pl.DataFrame))
 
-        # print("Creating dataset...")
         if self.kg.byte_pair_encoding and self.kg.padding:
             assert isinstance(self.kg.train_set, list)
             assert isinstance(self.kg.train_set[0], tuple)
@@ -130,29 +126,18 @@ class PreprocessKG:
             if self.kg.max_length_subword_tokens is None and self.kg.byte_pair_encoding:
                 self.kg.max_length_subword_tokens = len(self.kg.train_set[0][0])
         elif self.kg.byte_pair_encoding:
-            # (1) self.kg.train_set list of tuples, where each tuple consists of three tuples representing input triple.
-            # (2) Flatten (1) twice to obtain list of numbers
-
             space_token = self.kg.enc.encode(" ")[0]
             end_token = self.kg.enc.encode(".")[0]
             triples = []
             for (h, r, t) in self.kg.train_set:
-                x = []
-                x.extend(h)
-                x.append(space_token)
-                x.extend(r)
-                x.append(space_token)
-                x.extend(t)
-                x.append(end_token)
-                # print(self.kg.enc.decode(x))
+                x = [*h, space_token, *r, space_token, *t, end_token]
                 triples.extend(x)
             self.kg.train_set = np.array(triples)
         else:
-            # No need to keep the raw data in memory
-            # TODO: If BPE used, no need to clearn data for the time being,.
+            # Clear raw data to free memory
             self.kg.raw_train_set = None
             self.kg.raw_valid_set = None
-            self.kg.raw_test_set  = None
+            self.kg.raw_test_set = None
 
 
     @staticmethod
@@ -217,36 +202,28 @@ class PreprocessKG:
         return x
 
     def preprocess_with_byte_pair_encoding(self):
-        # n b
         assert isinstance(self.kg.raw_train_set, pd.DataFrame)
         assert self.kg.raw_train_set.columns.tolist() == ['subject', 'relation', 'object']
-        # (1)  Add recipriocal or noisy triples into raw_train_set, raw_valid_set, raw_test_set
-        self.kg.raw_train_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
+        
+        # Add reciprocal or noisy triples
+        self.kg.raw_train_set = apply_reciprocal_or_noise(add_reciprocal=self.kg.add_reciprocal,
                                                           eval_model=self.kg.eval_model,
                                                           df=self.kg.raw_train_set, info="Train")
-        self.kg.raw_valid_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
+        self.kg.raw_valid_set = apply_reciprocal_or_noise(add_reciprocal=self.kg.add_reciprocal,
                                                           eval_model=self.kg.eval_model,
                                                           df=self.kg.raw_valid_set, info="Validation")
-        self.kg.raw_test_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
+        self.kg.raw_test_set = apply_reciprocal_or_noise(add_reciprocal=self.kg.add_reciprocal,
                                                          eval_model=self.kg.eval_model,
                                                          df=self.kg.raw_test_set, info="Test")
-        # (2) Transformation from DataFrame to list of tuples.
-
+        
+        # Transform DataFrames to list of tuples with BPE encoding
         self.kg.train_set = self.__replace_values_df(df=self.kg.raw_train_set, f=self.kg.enc.encode)
-        # We need to add empty space for transformers
         self.kg.valid_set = self.__replace_values_df(df=self.kg.raw_valid_set, f=self.kg.enc.encode)
         self.kg.test_set = self.__replace_values_df(df=self.kg.raw_test_set, f=self.kg.enc.encode)
 
     @timeit
     def preprocess_with_byte_pair_encoding_with_padding(self) -> None:
-        """
-
-
-        Returns
-        -------
-
-        """
-
+        """Preprocess with byte pair encoding and add padding"""
         self.preprocess_with_byte_pair_encoding()
 
         self.kg.max_length_subword_tokens = self.__finding_max_token(
@@ -280,147 +257,102 @@ class PreprocessKG:
 
     @timeit
     def preprocess_with_pandas(self) -> None:
-        """
-        Preprocess train, valid and test datasets stored in knowledge graph instance with pandas
-
-        (1) Add recipriocal or noisy triples
-        (2) Construct vocabulary
-        (3) Index datasets
-
-        Parameter
-        ---------
-
-        Returns
-        -------
-        None
-        """
-        # (1)  Add recipriocal or noisy triples.
-        self.kg.raw_train_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
+        """Preprocess with pandas: add reciprocal triples, construct vocabulary, and index datasets"""
+        # Add reciprocal or noisy triples
+        self.kg.raw_train_set = apply_reciprocal_or_noise(add_reciprocal=self.kg.add_reciprocal,
                                                           eval_model=self.kg.eval_model,
                                                           df=self.kg.raw_train_set, info="Train")
-        self.kg.raw_valid_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
+        self.kg.raw_valid_set = apply_reciprocal_or_noise(add_reciprocal=self.kg.add_reciprocal,
                                                           eval_model=self.kg.eval_model,
                                                           df=self.kg.raw_valid_set, info="Validation")
-        self.kg.raw_test_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprocal,
+        self.kg.raw_test_set = apply_reciprocal_or_noise(add_reciprocal=self.kg.add_reciprocal,
                                                          eval_model=self.kg.eval_model,
                                                          df=self.kg.raw_test_set, info="Test")
 
-        # (2) Construct integer indexing for entities and relations.
+        # Construct vocabulary
         self.sequential_vocabulary_construction()
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
+        
+        max_idx = max(self.kg.num_entities, self.kg.num_relations)
 
-        # (3) Index datasets
-        self.kg.train_set = pandas_dataframe_indexer(self.kg.raw_train_set,
-                                                      self.kg.entity_to_idx,
-                                                      self.kg.relation_to_idx)
-        assert isinstance(self.kg.train_set, pd.core.frame.DataFrame)
-        self.kg.train_set = self.kg.train_set.values
-        self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
-                                                    num=max(self.kg.num_entities, self.kg.num_relations))
+        # Index and convert datasets
+        def index_and_convert(df, name):
+            print(f'Indexing {name} data with shape {df.shape}...')
+            indexed = pandas_dataframe_indexer(df, self.kg.entity_to_idx, self.kg.relation_to_idx).values
+            dataset_sanity_checking(indexed, self.kg.num_entities, self.kg.num_relations)
+            return numpy_data_type_changer(indexed, num=max_idx)
 
-        dataset_sanity_checking(self.kg.train_set, self.kg.num_entities, self.kg.num_relations)
+        self.kg.train_set = index_and_convert(self.kg.raw_train_set, "train")
+        
         if self.kg.raw_valid_set is not None:
-            self.kg.valid_set = pandas_dataframe_indexer(self.kg.raw_valid_set, self.kg.entity_to_idx,
-                                                          self.kg.relation_to_idx)
-            self.kg.valid_set = self.kg.valid_set.values
-            dataset_sanity_checking(self.kg.valid_set, self.kg.num_entities, self.kg.num_relations)
-            self.kg.valid_set = numpy_data_type_changer(self.kg.valid_set,
-                                                        num=max(self.kg.num_entities, self.kg.num_relations))
+            self.kg.valid_set = index_and_convert(self.kg.raw_valid_set, "valid")
 
         if self.kg.raw_test_set is not None:
-            self.kg.test_set = pandas_dataframe_indexer(self.kg.raw_test_set, self.kg.entity_to_idx,
-                                                         self.kg.relation_to_idx)
-            # To numpy
-            self.kg.test_set = self.kg.test_set.values
-            dataset_sanity_checking(self.kg.test_set, self.kg.num_entities, self.kg.num_relations)
-            self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
-                                                       num=max(self.kg.num_entities, self.kg.num_relations))
+            self.kg.test_set = index_and_convert(self.kg.raw_test_set, "test")
 
     @timeit
     def preprocess_with_polars(self) -> None:
-        """
-
-        Returns
-        -------
-
-        """
+        """Preprocess with polars: add reciprocal triples and create indexed datasets"""
         print(f'*** Preprocessing Train Data:{self.kg.raw_train_set.shape} with Polars ***')
 
-        # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
+        # Add reciprocal triples
         if self.kg.add_reciprocal and self.kg.eval_model:
-            def adding_reciprocal_triples():
-                """ Add reciprocal triples """
-                # (1.1) Add reciprocal triples into training set
-                self.kg.raw_train_set.extend(self.kg.raw_train_set.select([
-                    pl.col("object").alias('subject'),
-                    pl.col("relation")+'_inverse',
-                    pl.col("subject").alias('object')
-                ]))
-                if self.kg.raw_valid_set is not None:
-                    # (1.2) Add reciprocal triples into valid_set set.
-                    self.kg.raw_valid_set.extend(self.kg.raw_valid_set.select([
+            def add_reciprocal(df):
+                if df is not None:
+                    return df.extend(df.select([
                         pl.col("object").alias('subject'),
-                        pl.col("relation")+'_inverse',
+                        pl.col("relation") + '_inverse',
                         pl.col("subject").alias('object')
                     ]))
-                if self.kg.raw_test_set is not None:
-                    # (1.2) Add reciprocal triples into test set.
-                    self.kg.raw_test_set.extend(self.kg.raw_test_set.select([
-                        pl.col("object").alias('subject'),
-                        pl.col("relation")+'_inverse',
-                        pl.col("subject").alias('object')
-                    ]))
+                return df
 
             print('Adding Reciprocal Triples...')
-            adding_reciprocal_triples()
+            self.kg.raw_train_set = add_reciprocal(self.kg.raw_train_set)
+            self.kg.raw_valid_set = add_reciprocal(self.kg.raw_valid_set)
+            self.kg.raw_test_set = add_reciprocal(self.kg.raw_test_set)
 
-        # (2) Type checking
-        try:
-            assert isinstance(self.kg.raw_train_set, pl.DataFrame)
-        except TypeError:
-            raise TypeError(f"{type(self.kg.raw_train_set)}")
-        assert isinstance(self.kg.raw_valid_set, pl.DataFrame) or self.kg.raw_valid_set is None
-        assert isinstance(self.kg.raw_test_set, pl.DataFrame) or self.kg.raw_test_set is None
-        def concat_splits(train, val, test):
-            x = [train]
-            if val is not None:
-                x.append(val)
-            if test is not None:
-                x.append(test)
-            return pl.concat(x)
+        # Type checking
+        assert isinstance(self.kg.raw_train_set, pl.DataFrame)
+        assert self.kg.raw_valid_set is None or isinstance(self.kg.raw_valid_set, pl.DataFrame)
+        assert self.kg.raw_test_set is None or isinstance(self.kg.raw_test_set, pl.DataFrame)
+        # Concatenate all splits for vocabulary construction
         print('Concat Splits...')
-        df_str_kg = concat_splits(self.kg.raw_train_set, self.kg.raw_valid_set, self.kg.raw_test_set)
-        # () Select unique subject entities.
-        print("Collecting subject entities...")
-        subjects = df_str_kg.select(pl.col("subject").unique(maintain_order=True).alias("entity"))
-        print(f"Unique number of subjects:{len(subjects)}")
-        # () Select unique object entities.
-        print("Collecting object entities...")
-        objects = df_str_kg.select(pl.col("object").unique(maintain_order=True).alias("entity"))
-        # () Select unique entities.
-        self.kg.entity_to_idx = pl.concat([subjects, objects], how="vertical").unique(maintain_order=True)
+        splits = [self.kg.raw_train_set]
+        if self.kg.raw_valid_set is not None:
+            splits.append(self.kg.raw_valid_set)
+        if self.kg.raw_test_set is not None:
+            splits.append(self.kg.raw_test_set)
+        df_str_kg = pl.concat(splits)
+        
+        # Build entity vocabulary (sorted alphabetically for deterministic indexing)
+        print("Collecting entities...")
+        subjects = df_str_kg.select(pl.col("subject").unique().alias("entity"))
+        objects = df_str_kg.select(pl.col("object").unique().alias("entity"))
+        self.kg.entity_to_idx = pl.concat([subjects, objects], how="vertical").unique().sort("entity")
         self.kg.entity_to_idx = self.kg.entity_to_idx.with_row_index("index").select(["index", "entity"])
-        # () Write unique entities with indices.
+        print(f"Unique entities: {len(self.kg.entity_to_idx)}")
+        
+        # Build relation vocabulary (sorted alphabetically for deterministic indexing)
         print('Relation Indexing...')
-        self.kg.relation_to_idx = df_str_kg.select(pl.col("relation").unique(maintain_order=True)).with_row_index(
-            "index").select(["index", "relation"])
+        self.kg.relation_to_idx = df_str_kg.select(pl.col("relation").unique()).sort("relation")
+        self.kg.relation_to_idx = self.kg.relation_to_idx.with_row_index("index").select(["index", "relation"])
         del df_str_kg
+        # Index datasets
         print(f'Indexing Training Data {self.kg.raw_train_set.shape}...')
-        self.kg.train_set=polars_dataframe_indexer(self.kg.raw_train_set, self.kg.entity_to_idx, self.kg.relation_to_idx).to_numpy()
+        self.kg.train_set = polars_dataframe_indexer(self.kg.raw_train_set, self.kg.entity_to_idx, 
+                                                      self.kg.relation_to_idx).to_numpy()
 
         if self.kg.raw_valid_set is not None:
             print(f'Indexing Val Data {self.kg.raw_valid_set.shape}...')
-            self.kg.valid_set = polars_dataframe_indexer(self.kg.raw_valid_set, self.kg.entity_to_idx, self.kg.relation_to_idx).to_numpy()
+            self.kg.valid_set = polars_dataframe_indexer(self.kg.raw_valid_set, self.kg.entity_to_idx, 
+                                                          self.kg.relation_to_idx).to_numpy()
 
         if self.kg.raw_test_set is not None:
             print(f'Indexing Test Data {self.kg.raw_test_set.shape}...')
-            self.kg.test_set = polars_dataframe_indexer(self.kg.raw_test_set, self.kg.entity_to_idx, self.kg.relation_to_idx).to_numpy()
+            self.kg.test_set = polars_dataframe_indexer(self.kg.raw_test_set, self.kg.entity_to_idx, 
+                                                         self.kg.relation_to_idx).to_numpy()
 
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
-        """
-        self.kg.entity_to_idx=dict(zip(self.kg.entity_to_idx["entity"].to_list(), self.kg.entity_to_idx["index"].to_list()))
-        self.kg.relation_to_idx=dict(zip(self.kg.relation_to_idx["relation"].to_list(), self.kg.relation_to_idx["index"].to_list()))
-        """
         print(f'*** Preprocessing Train Data:{self.kg.train_set.shape} with Polars DONE ***')
 
     def sequential_vocabulary_construction(self) -> None:
@@ -432,30 +364,23 @@ class PreprocessKG:
                     => a single column is string (e.g. URI)
         """
         assert isinstance(self.kg.raw_train_set, pd.DataFrame)
-        assert isinstance(self.kg.raw_valid_set, pd.DataFrame) or self.kg.raw_valid_set is None
-        assert isinstance(self.kg.raw_test_set, pd.DataFrame) or self.kg.raw_test_set is None
+        assert self.kg.raw_valid_set is None or isinstance(self.kg.raw_valid_set, pd.DataFrame)
+        assert self.kg.raw_test_set is None or isinstance(self.kg.raw_test_set, pd.DataFrame)
 
-        # Concatenate dataframes.
-        print('Concatenating data to obtain index...')
-        x = [self.kg.raw_train_set]
+        # Concatenate all data splits
+        print('Concatenating data to build vocabulary...')
+        splits = [self.kg.raw_train_set]
         if self.kg.raw_valid_set is not None:
-            x.append(self.kg.raw_valid_set)
+            splits.append(self.kg.raw_valid_set)
         if self.kg.raw_test_set is not None:
-            x.append(self.kg.raw_test_set)
-        df_str_kg = pd.concat(x, ignore_index=True)
-        del x
+            splits.append(self.kg.raw_test_set)
+        df_str_kg = pd.concat(splits, ignore_index=True)
         print('Creating a mapping from entities to integer indexes...')
         # (5) Create a bijection mapping from entities of (2) to integer indexes.
-        # ravel('K') => Return a contiguous flattened array.
-        # ‘K’ means to read the elements in the order they occur in memory,
-        # except for reversing the data when strides are negative.
-        # ordered_list = pd.unique(df_str_kg[['subject', 'object']].values.ravel('K')).tolist()
-        # self.kg.entity_to_idx = {k: i for i, k in enumerate(ordered_list)}
-        # Instead of dict, storing it in a pandas dataframe
-        self.kg.entity_to_idx=pd.concat((df_str_kg['subject'],df_str_kg['object'])).to_frame("entity").drop_duplicates(keep="first",ignore_index=True)
-        # 5. Create a bijection mapping  from relations to integer indexes.
-        # ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K')).tolist()
-        # self.kg.relation_to_idx = {k: i for i, k in enumerate(ordered_list)}
-        self.kg.relation_to_idx = df_str_kg['relation'].to_frame("relation").drop_duplicates(keep="first", ignore_index=True)
+        # Build entity vocabulary (sorted alphabetically for deterministic indexing)
+        # This ensures the same entity always gets the same index regardless of input order
+        self.kg.entity_to_idx = pd.concat((df_str_kg['subject'],df_str_kg['object'])).drop_duplicates().sort_values().reset_index(drop=True).to_frame("entity")
+        # Build relation vocabulary (sorted alphabetically for deterministic indexing)
+        self.kg.relation_to_idx = df_str_kg['relation'].drop_duplicates().sort_values().reset_index(drop=True).to_frame("relation")
 
         # del ordered_list

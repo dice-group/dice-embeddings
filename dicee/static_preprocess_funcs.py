@@ -3,7 +3,7 @@ import numpy as np
 from typing import Tuple
 import time
 from collections import defaultdict
-from .sanity_checkers import sanity_checking_with_arguments
+from .sanity_checkers import sanity_checking_with_arguments, sanity_check_callback_args
 
 enable_log = False
 def timeit(func):
@@ -51,7 +51,7 @@ def preprocesses_input_args(args):
     # reciprocal checking
     if args.scoring_technique in ["AllvsAll", "1vsSample", "KvsAll", "1vsAll", "KvsSample"]:
         args.apply_reciprical_or_noise = True
-    elif args.scoring_technique in ["NegSample", "Sentence"]:
+    elif args.scoring_technique in ["FixedNegSample","NegSample", "Sentence"]:
         args.apply_reciprical_or_noise = False
     else:
         raise KeyError(f'Unexpected input for scoring_technique \t{args.scoring_technique}')
@@ -59,6 +59,7 @@ def preprocesses_input_args(args):
         assert 1.0 >= args.sample_triples_ratio >= 0.0
     assert args.backend in ["pandas", "polars", "rdflib"]
     sanity_checking_with_arguments(args)
+    sanity_check_callback_args(args)
     if args.model == 'Shallom':
         args.scoring_technique = 'KvsAll'
 
@@ -136,4 +137,7 @@ def mapping_from_first_two_cols_to_third(train_set_idx):
     store = dict()
     for s_idx, p_idx, o_idx in train_set_idx:
         store.setdefault((s_idx, p_idx), list()).append(o_idx)
-    return store
+    # Sort keys to ensure order-independent training
+    # This prevents different input orderings from affecting optimization
+    sorted_store = dict(sorted(store.items()))
+    return sorted_store
