@@ -1,12 +1,16 @@
 from dicee.executer import Execute
 import pytest
 from dicee.config import Namespace
+
 import os
 import torch
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"] = "1"
 torch.set_num_threads(1)
 torch.set_num_interop_threads(1)
+# AllvsAll tests fail with "MKL_NUM_THREADS" = 2 ( or some other values) 
+# due to numerical drift in multi-threaded CPU execution.
+# Setting to 1 stabilizes the runs and ensures consistent metrics.
 
 class TestRegressionCoKE:
     @pytest.mark.filterwarnings('ignore::UserWarning')
