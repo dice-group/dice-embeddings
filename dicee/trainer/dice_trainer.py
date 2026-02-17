@@ -262,9 +262,7 @@ class DICE_Trainer:
         # https://github.com/pytorch/pytorch/issues/13246#issuecomment-905703662
         return torch.utils.data.DataLoader(dataset=dataset, batch_size=self.args.batch_size,
                                            shuffle=True, collate_fn=dataset.collate_fn,
-                                           num_workers=self.args.num_core, persistent_workers=False,
-                                           sampler=torch.utils.data.distributed.DistributedSampler(
-                                              dataset))
+                                           num_workers=self.args.num_core, persistent_workers=False,)
 
     @timeit
     def init_dataset(self) -> torch.utils.data.Dataset:
