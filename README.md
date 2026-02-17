@@ -87,23 +87,42 @@ A KGE model can be trained with a state-of-the-art training technique ```--train
 dicee --dataset_dir "KGs/UMLS" --trainer "torchCPUTrainer" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism
 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
-dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique "FixedNegSample" --model "Keci" --eval_model "train_val_test" --neg_ratio 1
-dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique "NegSample" --model "Keci" --eval_model "train_val_test" --neg_ratio 100
 # Tensor Parallelism
 dicee --dataset_dir "KGs/UMLS" --trainer "TP" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism in native torch
 OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" --trainer "torchDDP" --scoring_technique KvsAll --path_to_store_single_run "UMLS_torchDDP"
+
 ```
+
 A KGE model model can also be trained in multi-node multi-gpu DDP setting. 
 ```bash
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_torchDDP"
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_torchDDP"
 ```
 On large knowledge graphs, this configurations should be used.
-
 Note: When training with multi-GPU or Distributed Data Parallel (DDP) settings, you must provide the `--path_to_store_single_run` argument to specify where to store the results of a single training run. This ensures that all processes write to the correct directory and prevents conflicts.
 
-where the data is in the following form
+Here is an example of an iterative training of a a KGE model can be resumed.
+```bash
+# No training.
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique "FixedNegSample" --trainer "torchDDP" --scoring_technique FixedNegSample --path_to_store_single_run "UMLS_torchDDP" --num_epochs 0
+# Train 10 epochs on fixed negative samples.
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique "FixedNegSample" --trainer "torchDDP" --scoring_technique FixedNegSample --num_epochs 10 --continual_learning "UMLS_torchDDP" --random_seed 1
+# Train 10 epochs on fixed negative samples.
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique "FixedNegSample" --trainer "torchDDP" --scoring_technique FixedNegSample --num_epochs 10 --continual_learning "UMLS_torchDDP" --random_seed 2
+# Train 10 epochs on fixed negative samples.
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique "FixedNegSample" --trainer "torchDDP" --scoring_technique FixedNegSample --num_epochs 10 --continual_learning "UMLS_torchDDP" --random_seed 3
+```
+When using a multi-GPU setup, `PL` Trainer  automatically utilizes all available CUDA devices. To perform training on a single device, set the environment variable `CUDA_VISIBLE_DEVICES=0` before running your command. For example:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test" --num_epochs 100
+``` 
+The `CUDA_VISIBLE_DEVICES=0` setting limits the program to access only the specified GPU(s), making all others invisible.  
+Multiple GPUs can be selected by providing a comma-separated list, for example: `CUDA_VISIBLE_DEVICES=0,1`.
+
+
+The data is in the following form
 ```bash
 $ head -3 KGs/UMLS/train.txt 
 acquired_abnormality    location_of     experimental_model_of_disease
@@ -177,10 +196,15 @@ _:1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07
 <http://www.benchmark.org/family#hasParent> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
 ```
 
-**Continual Training:** the training phase of a pretrained model can be resumed. The model will saved in the same directory ``` --continual_learning "KeciFamilyRun"```.
+**Continual Training:** the training phase of a pretrained model can be resumed.
+The run reuses configuration and serialized artifacts from the existing experiment folder and stores updated outputs in the same directory using `--continual_learning "KeciFamilyRun"`.
 ```bash
 dicee --continual_learning "KeciFamilyRun" --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --backend rdflib --eval_model None
 ```
+The continual directory should contain the stored configuration and serialized training data (for example `configuration.json`, `memory_map_train_set.npy`, and mapping files `entity_to_idx`/`relation_to_idx` in `.csv` or legacy `.p` format).
+If `--eval_model` is set, evaluation runs after training using stored indexed artifacts. If `--eval_model None`, no evaluation is executed.
+Periodic evaluation and weight-averaging callbacks are also supported in continual training.
+
 #### Ensemble Learning with Knowledge Graph Embeddings
 
 The KGE models in our **dice-embedding** framework now support a range of state-of-the-art weight averaging techniques, including:
@@ -226,18 +250,6 @@ dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_ep
       --eval_every_n_epochs 50 --save_every_n_epochs --n_epochs_eval_model val_test --swa
 ```
 For more details on periodic evaluations, please refer to the periodic evaluation section below in this file.
-
----
-
-#### Single device training on Multi-Device setup
-
-When using a multi-GPU setup, `PL` Trainer  automatically utilizes all available CUDA devices. To perform training on a single device, set the environment variable `CUDA_VISIBLE_DEVICES=0` before running your command. For example:
-
-```bash
-CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test" --num_epochs 100
-``` 
-The `CUDA_VISIBLE_DEVICES=0` setting limits the program to access only the specified GPU(s), making all others invisible.  
-Multiple GPUs can be selected by providing a comma-separated list, for example: `CUDA_VISIBLE_DEVICES=0,1`.
 
 #### Periodic Evaluation during training
 
@@ -1153,4 +1165,3 @@ url={https://openreview.net/forum?id=6T45-4TFqaX}}
   organization={IEEE}
 ```
 For any questions or wishes, please contact:  ```caglar.demir@upb.de```
-

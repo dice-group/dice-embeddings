@@ -317,7 +317,8 @@ class DICE_Trainer:
                                               neg_ratio=self.args.neg_ratio,
                                               label_smoothing_rate=self.args.label_smoothing_rate,
                                               byte_pair_encoding=self.args.byte_pair_encoding,
-                                              block_size=self.args.block_size)
+                                              block_size=self.args.block_size,
+                                              seed=self.args.random_seed)
 
 
         return train_dataset
