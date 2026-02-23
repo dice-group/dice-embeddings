@@ -110,7 +110,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--read_only_few", type=int, default=None,
                         help='READ only first N triples. If 0, read all.')
     parser.add_argument("--add_noise_rate", type=float, default=0.0,
-                        help='Add x%% of noisy triples into training dataset.')
+                        help='Add x% of noisy triples into training dataset.')
     # WIP
 
     parser.add_argument('--r', type=int, default=0,
