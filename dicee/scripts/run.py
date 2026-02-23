@@ -27,7 +27,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--backend", type=str, default="pandas",
                         choices=["pandas", "polars", "rdflib"],
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
-    parser.add_argument("--separator", type=str, default="\s+",
+    parser.add_argument("--separator", type=str, default="\\s+",
                         help='Pandas \s+, t for \t polars works with the last two.')
     parser.add_argument("--reuse_existing_run_dir", action="store_true",
                         help="If set, reuse the existing path_to_store_single_run directory if it exists. "
@@ -110,7 +110,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--read_only_few", type=int, default=None,
                         help='READ only first N triples. If 0, read all.')
     parser.add_argument("--add_noise_rate", type=float, default=0.0,
-                        help='Add x % of noisy triples into training dataset.')
+                        help='Add x%% of noisy triples into training dataset.')
     # WIP
 
     parser.add_argument('--r', type=int, default=0,
