@@ -722,6 +722,47 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
         assert len(self.entity_to_idx) >= k >= 0
 
+        inv_entity_to_idx = {v: k for k, v in self.entity_to_idx.items()}
+        inv_relation_to_idx = {v: k for k, v in self.relation_to_idx.items()}
+        inv_attr_to_idx = {v: k for k, v in self.data_property_to_idx.items()} if hasattr(self, "data_property_to_idx") else {}
+
+        def _resolve_entity(x):
+            return inv_entity_to_idx[x] if isinstance(x, int) else x
+
+        def _resolve_relation(x):
+            return inv_relation_to_idx[x] if isinstance(x, int) else x
+
+        def _resolve_attr(x):
+            return inv_attr_to_idx[x] if isinstance(x, int) else x
+
+        def _literal_filter_scores(attribute, op, threshold):
+            if not hasattr(self, "literal_model") or self.literal_model is None:
+                raise RuntimeError("Literal model is not trained or loaded.")
+            if not hasattr(self, "data_property_to_idx"):
+                raise RuntimeError("data_property_to_idx is required for literal queries.")
+            attribute = _resolve_attr(attribute)
+            entities = list(self.entity_to_idx.keys())
+            attrs = [attribute] * len(entities)
+            preds = np.asarray(self.predict_literals(entity=entities, attribute=attrs)).reshape(-1)
+            if op == "=":
+                try:
+                    thr = float(threshold)
+                    mask = np.isclose(preds.astype(np.float64), thr, atol=1e-3)
+                except (TypeError, ValueError):
+                    mask = np.array([str(v) == str(threshold) for v in preds], dtype=bool)
+            elif op == "<":
+                mask = preds.astype(np.float64) < float(threshold)
+            elif op == ">":
+                mask = preds.astype(np.float64) > float(threshold)
+            else:
+                raise RuntimeError(f"Unknown literal filter op: {op}")
+            return torch.FloatTensor(mask.astype(np.float32))
+
+        def _as_2d_row_tensor(x: torch.Tensor) -> torch.Tensor:
+            if x.ndim == 1:
+                return x.unsqueeze(0)
+            return x
+
         query_name_dict = {
             ("e", ("r",)): "1p",
             ("e", ("r", "r")): "2p",
@@ -740,6 +781,15 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             # union
             (("e", ("r",)), ("e", ("r",)), ("u",)): "2u",
             ((("e", ("r",)), ("e", ("r",)), ("u",)), ("r",)): "up",
+            # literals
+            ("e", ("a", "f")): "ai",
+            (("e", ("a", "f")), ("e", ("a", "f"))): "2ai",
+            (("e", ("r",)), ("a", "f")): "pai",
+            (("e", ("a", "f")), ("r",)): "aip",
+            (("e", ("a", "f")), ("e", ("a", "f")), ("u",)): "au",
+            ("e", ("a",)): "1ap",
+            ("e", ("r", "a")): "2ap",
+            ("e", ("r", "r", "a")): "3ap",
 
         }
 
@@ -752,9 +802,133 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         else:
             raise ValueError(f"Invalid query type: {query_type}")
 
+        literal_query_types = {"ai", "2ai", "pai", "aip", "au", "1ap", "2ap", "3ap"}
+        if query_type in literal_query_types:
+            if not hasattr(self, "literal_model") or self.literal_model is None:
+                raise RuntimeError(
+                    "Literal query answering requires a trained/loaded literal model. "
+                    "Call train_literals(...) before answering literal query types."
+                )
+            if not hasattr(self, "data_property_to_idx"):
+                raise RuntimeError(
+                    "Literal query answering requires attribute mappings (data_property_to_idx). "
+                    "Call train_literals(...) to initialize literal components."
+                )
+
         # 1p
         if query_structure == ("e", ("r",)):
-            return self.single_hop_query_answering(query, only_scores, k, use_logits=use_logits)
+            return self.single_hop_query_answering(query, only_scores, k)
+        # ai
+        elif query_structure == ("e", ("a", "f")):
+            _, (attribute, (op, threshold)) = query
+            scores = _literal_filter_scores(attribute, op, threshold)
+            if only_scores:
+                return scores
+            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), scores)]
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
+        # 2ai
+        elif query_structure == (("e", ("a", "f")), ("e", ("a", "f"))):
+            _, (attribute1, (op1, threshold1)) = query[0]
+            _, (attribute2, (op2, threshold2)) = query[1]
+            atom1_scores = _literal_filter_scores(attribute1, op1, threshold1)
+            atom2_scores = _literal_filter_scores(attribute2, op2, threshold2)
+            combined_scores = self.t_norm(atom1_scores, atom2_scores, tnorm)
+            if only_scores:
+                return combined_scores
+            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
+        # au
+        elif query_structure == (("e", ("a", "f")), ("e", ("a", "f")), ("u",)):
+            _, (attribute1, (op1, threshold1)) = query[0]
+            _, (attribute2, (op2, threshold2)) = query[1]
+            atom1_scores = _literal_filter_scores(attribute1, op1, threshold1)
+            atom2_scores = _literal_filter_scores(attribute2, op2, threshold2)
+            combined_scores = self.t_conorm(atom1_scores, atom2_scores, tnorm)
+            if only_scores:
+                return combined_scores
+            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
+        # pai
+        elif query_structure == (("e", ("r",)), ("a", "f")):
+            head1, relation1 = query[0]
+            attribute, (op, threshold) = query[1]
+            head1 = _resolve_entity(head1)
+            relation1 = (_resolve_relation(relation1[0]),)
+            atom1_scores = self.predict(h=[head1], r=[relation1[0]]).squeeze()
+            atom2_scores = _literal_filter_scores(attribute, op, threshold).to(atom1_scores.device)
+            combined_scores = self.t_norm(atom1_scores, atom2_scores, tnorm)
+            if only_scores:
+                return combined_scores
+            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
+        # aip
+        elif query_structure == (("e", ("a", "f")), ("r",)):
+            _, (attribute, (op, threshold)) = query[0]
+            (relation_1p,) = query[1]
+            relation_1p = _resolve_relation(relation_1p)
+            atom1_scores = _literal_filter_scores(attribute, op, threshold)
+            top_k_scores1, top_k_indices = torch.topk(atom1_scores, k)
+            entity_to_idx_keys = list(self.entity_to_idx.keys())
+            top_k_heads = [entity_to_idx_keys[idx.item()] for idx in top_k_indices]
+            atom2_scores = torch.empty(0, len(self.entity_to_idx)).to(atom1_scores.device)
+            for head3 in top_k_heads:
+                atom3_score = self.predict(h=[head3], r=[relation_1p]).unsqueeze(0)
+                atom2_scores = torch.cat([atom2_scores, atom3_score], dim=0)
+            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(1, atom2_scores.shape[1])
+            combined_scores = self.t_norm(topk_scores1_expanded, atom2_scores, tnorm)
+            res, _ = torch.max(combined_scores, dim=0)
+            if only_scores:
+                return res
+            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), res)]
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
+        # 1ap
+        elif query_structure == ("e", ("a",)):
+            head1, (attribute,) = query
+            head1 = _resolve_entity(head1)
+            attribute = _resolve_attr(attribute)
+            literal_pred = float(self.predict_literals(entity=head1, attribute=attribute)[0])
+            if only_scores:
+                return torch.FloatTensor([literal_pred]).squeeze()
+            return literal_pred
+        # 2ap
+        elif query_structure == ("e", ("r", "a")):
+            head1, (relation1, attribute) = query
+            head1 = _resolve_entity(head1)
+            relation1 = _resolve_relation(relation1)
+            attribute = _resolve_attr(attribute)
+            top_entity_scores = self.answer_multi_hop_query(
+                query_type="1p", query=(head1, (relation1,)), tnorm=tnorm, k=k, only_scores=False)
+            entities = [ent for ent, _ in top_entity_scores]
+            weights = np.array([float(score) for _, score in top_entity_scores], dtype=np.float32)
+            values = np.asarray(self.predict_literals(entity=entities, attribute=[attribute] * len(entities)),
+                                dtype=np.float32).reshape(-1)
+            if np.sum(weights) > 0:
+                literal_pred = float(np.sum(values * weights) / np.sum(weights))
+            else:
+                literal_pred = float(np.mean(values))
+            if only_scores:
+                return torch.FloatTensor([literal_pred]).squeeze()
+            return literal_pred
+        # 3ap
+        elif query_structure == ("e", ("r", "r", "a")):
+            head1, (relation1, relation2, attribute) = query
+            head1 = _resolve_entity(head1)
+            relation1 = _resolve_relation(relation1)
+            relation2 = _resolve_relation(relation2)
+            attribute = _resolve_attr(attribute)
+            top_entity_scores = self.answer_multi_hop_query(
+                query_type="2p", query=(head1, (relation1, relation2)), tnorm=tnorm, k=k, only_scores=False)
+            entities = [ent for ent, _ in top_entity_scores]
+            weights = np.array([float(score) for _, score in top_entity_scores], dtype=np.float32)
+            values = np.asarray(self.predict_literals(entity=entities, attribute=[attribute] * len(entities)),
+                                dtype=np.float32).reshape(-1)
+            if np.sum(weights) > 0:
+                literal_pred = float(np.sum(values * weights) / np.sum(weights))
+            else:
+                literal_pred = float(np.mean(values))
+            if only_scores:
+                return torch.FloatTensor([literal_pred]).squeeze()
+            return literal_pred
         # 2p
         elif query_structure == ("e", ("r", "r",)):
             # ?M : \exist A. r1(e,A) \land r2(A,M)
@@ -882,6 +1056,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
                 # The score tensor for the current head2
                 atom2_score = self.predict(h=[head2], r=[relation2], logits=use_logits)
                 neg_atom2_score = self.negnorm(atom2_score, lambda_, neg_norm)
+                neg_atom2_score = _as_2d_row_tensor(neg_atom2_score)
                 # Concatenate the score tensor for the current head2 with the previous scores
                 atom2_scores = torch.cat([atom2_scores, neg_atom2_score], dim=0)
 
@@ -921,7 +1096,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             # Get scores for the second atom
             for head2 in top_k_heads:
                 # The score tensor for the current head2
-                atom2_score = self.predict(h=[head2], r=[relation2], logits=use_logits)
+                atom2_score = self.predict(h=[head2], r=[relation2])
+                atom2_score = _as_2d_row_tensor(atom2_score)
                 # Concatenate the score tensor for the current head2 with the previous scores
                 atom2_scores = torch.cat([atom2_scores, atom2_score], dim=0)
 
@@ -972,7 +1148,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             # Get scores for the second atom
             for head3 in top_k_heads:
                 # The score tensor for the current head2
-                atom3_score = self.predict(h=[head3], r=[relation_1p[0]], logits=use_logits)
+                atom3_score = self.predict(h=[head3], r=[relation_1p[0]])
+                atom3_score = _as_2d_row_tensor(atom3_score)
                 # Concatenate the score tensor for the current head2 with the previous scores
                 atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)
 

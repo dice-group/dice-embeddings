@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Union, Dict, List, Tuple
+from typing import Union, Dict, List, Tuple, Optional
 import numpy as np
 import random
 import os
@@ -10,9 +10,9 @@ from .static_funcs import save_pickle, load_pickle
 
 class QueryGenerator:
     def __init__(self, train_path, val_path: str, test_path: str, ent2id: Dict = None, rel2id: Dict = None,
-                 seed: int = 1,
-                 gen_valid: bool = False,
-                 gen_test: bool = True):
+                 seed: int = 1, gen_valid: bool = False, gen_test: bool = True, attr2id: Dict = None,
+                 train_attr_path: Optional[str] = None, val_attr_path: Optional[str] = None,
+                 test_attr_path: Optional[str] = None):
 
         self.train_path = train_path
         self.val_path = val_path
@@ -27,6 +27,10 @@ class QueryGenerator:
         self.mode = str
         self.ent2id = ent2id
         self.rel2id: Dict = rel2id
+        self.attr2id: Dict = attr2id
+        self.train_attr_path = train_attr_path
+        self.val_attr_path = val_attr_path
+        self.test_attr_path = test_attr_path
         self.ent_in: Dict = {}
         self.ent_out: Dict = {}
         self.query_name_to_struct = {"1p": ['e', ['r']],
@@ -43,12 +47,22 @@ class QueryGenerator:
                                      "inp": [[['e', ['r']], ['e', ['r', 'n']]], ['r']],
                                      # union
                                      "2u": [['e', ['r']], ['e', ['r']], ['u']],
-                                     "up": [[['e', ['r']], ['e', ['r']], ['u']], ['r']]}
+                                     "up": [[['e', ['r']], ['e', ['r']], ['u']], ['r']],
+                                     # literals
+                                     "ai": ['e', ['a', 'f']],
+                                     "2ai": [['e', ['a', 'f']], ['e', ['a', 'f']]],
+                                     "pai": [['e', ['r']], ['a', 'f']],
+                                     "aip": [['e', ['a', 'f']], ['r']],
+                                     "au": [['e', ['a', 'f']], ['e', ['a', 'f']], ['u']],
+                                     "1ap": ['e', ['a']],
+                                     "2ap": ['e', ['r', 'a']],
+                                     "3ap": ['e', ['r', 'r', 'a']]}
         self.set_global_seed(seed)
 
         # Sanity checking
         assert isinstance(self.ent2id, dict) or self.ent2id is None
         assert isinstance(self.rel2id, dict) or self.rel2id is None
+        assert isinstance(self.attr2id, dict) or self.attr2id is None
 
     def list2tuple(self, list_data):
         # @TODO: add description
@@ -68,7 +82,7 @@ class QueryGenerator:
         np.random.seed(seed)
         random.seed(seed)
 
-    def construct_graph(self, paths: List[str]) -> Tuple[Dict, Dict]:
+    def construct_graph(self, paths: List[str], attr_paths: Optional[List[str]] = None) -> Tuple[Dict, Dict, Dict, Dict]:
         """
         Construct graph from triples
         Returns dicts with incoming and outgoing edges
@@ -85,21 +99,40 @@ class QueryGenerator:
                     tail_relation_to_heads[self.ent2id[t]][self.rel2id[r]].add(self.ent2id[h])
                     head_relation_to_tails[self.ent2id[h]][self.rel2id[r]].add(self.ent2id[t])
 
+        ent_attr_out = defaultdict(lambda: defaultdict(set))
+        attr_to_ents = defaultdict(lambda: defaultdict(set))
+        if attr_paths is not None and self.attr2id is not None:
+            for path in attr_paths:
+                if path is None:
+                    continue
+                with open(path, "r") as f:
+                    for line in f:
+                        e, a, v = map(str, line.strip().split("\t"))
+                        e_id, a_id = self.ent2id[e], self.attr2id[a]
+                        ent_attr_out[e_id][a_id].add(v)
+                        attr_to_ents[a_id][v].add(e_id)
+
         self.ent_in = tail_relation_to_heads
         self.ent_out = head_relation_to_tails
 
-        return tail_relation_to_heads, head_relation_to_tails
+        return tail_relation_to_heads, head_relation_to_tails, ent_attr_out, attr_to_ents
 
     def fill_query(self, query_structure: List[Union[str, List]],
                    ent_in: Dict, ent_out: Dict,
+                   ent_attr_out: Dict, attr_to_ents: Dict,
                    answer: int) -> bool:
         """
         Private method for fill_query logic.
         """
-        assert isinstance(query_structure[-1], list)
+        if not isinstance(query_structure[-1], list):
+            # Support operator-only leaves such as ['a', 'f'].
+            if isinstance(query_structure, list):
+                wrapped_query = ['e', query_structure]
+                return self.fill_query(wrapped_query, ent_in, ent_out, ent_attr_out, attr_to_ents, answer)
+            return True
         all_relation_flag = True
         for ele in query_structure[-1]:
-            if ele not in ['r', 'n']:
+            if isinstance(ele, str) and ele not in ['r', 'n', 'a', 'f']:
                 all_relation_flag = False
                 break
         if all_relation_flag:
@@ -108,11 +141,50 @@ class QueryGenerator:
                 if query_structure[-1][i] == 'n':
                     query_structure[-1][i] = -2
                     continue
+                if query_structure[-1][i] == 'a':
+                    if ent_attr_out is None or len(ent_attr_out[answer].keys()) < 1:
+                        return True
+                    a_tmp = random.sample(sorted(ent_attr_out[answer].keys()), 1)[0]
+                    query_structure[-1][i] = a_tmp
+                    continue
+                if query_structure[-1][i] == 'f':
+                    if ent_attr_out is None or len(ent_attr_out[answer].keys()) < 1:
+                        return True
+                    if i > 0 and isinstance(query_structure[-1][i - 1], int):
+                        a_tmp = query_structure[-1][i - 1]
+                    else:
+                        a_tmp = random.sample(sorted(ent_attr_out[answer].keys()), 1)[0]
+                        if i > 0 and query_structure[-1][i - 1] == 'a':
+                            query_structure[-1][i - 1] = a_tmp
+
+                    if len(ent_attr_out[answer][a_tmp]) < 1:
+                        return True
+                    ops = ['=', '<', '>']
+                    op = random.sample(ops, 1)[0]
+                    if op == '=':
+                        f_val = random.sample(sorted(ent_attr_out[answer][a_tmp]), 1)[0]
+                    else:
+                        numeric_vals = []
+                        candidate_vals = attr_to_ents[a_tmp].keys() if attr_to_ents is not None else ent_attr_out[answer][a_tmp]
+                        for lit in candidate_vals:
+                            try:
+                                numeric_vals.append(float(lit))
+                            except (TypeError, ValueError):
+                                continue
+                        if len(numeric_vals) < 1:
+                            op = '='
+                            f_val = random.sample(sorted(ent_attr_out[answer][a_tmp]), 1)[0]
+                        else:
+                            f_val = float(np.mean(numeric_vals))
+                    query_structure[-1][i] = (op, f_val)
+                    continue
+                if query_structure[-1][i] != 'r':
+                    continue
                 found = False
                 for j in range(40):
                     if len(ent_in[answer].keys()) < 1:
                         return True  # not enough relations, return True to indicate broken flag
-                    r_tmp = random.sample(list(ent_in[answer].keys()), 1)[0]
+                    r_tmp = random.sample(sorted(ent_in[answer].keys()), 1)[0]
                     if r_tmp // 2 != r // 2 or r_tmp == r:
                         r = r_tmp
                         found = True
@@ -120,11 +192,11 @@ class QueryGenerator:
                 if not found:
                     return True
                 query_structure[-1][i] = r
-                answer = random.sample(list(ent_in[answer][r]), 1)[0]
+                answer = random.sample(sorted(ent_in[answer][r]), 1)[0]
             if query_structure[0] == 'e':
                 query_structure[0] = answer
             else:
-                return self.fill_query(query_structure[0], ent_in, ent_out, answer)
+                return self.fill_query(query_structure[0], ent_in, ent_out, ent_attr_out, attr_to_ents, answer)
         else:
             same_structure = defaultdict(list)
             for i in range(len(query_structure)):
@@ -134,7 +206,7 @@ class QueryGenerator:
                     assert i == len(query_structure) - 1
                     query_structure[i][0] = -1
                     continue
-                broken_flag = self.fill_query(query_structure[i], ent_in, ent_out, answer)
+                broken_flag = self.fill_query(query_structure[i], ent_in, ent_out, ent_attr_out, attr_to_ents, answer)
                 if broken_flag:
                     return True
             for structure in same_structure:
@@ -146,14 +218,72 @@ class QueryGenerator:
                         return True
 
     def achieve_answer(self, query: List[Union[str, List]],
-                       ent_in: Dict, ent_out: Dict) -> set:
+                       ent_in: Dict, ent_out: Dict,
+                       ent_attr_out: Dict = None, attr_to_ents: Dict = None,
+                       query_name: str = None) -> set:
         """
         Private method for achieve_answer logic.
         @TODO: Document the code
         """
         assert isinstance(query[-1], list)
+        path_ops = query[-1]
+
+        # literal filter pattern: [..., [attr_id, (op, value)]]
+        if len(path_ops) >= 2 and isinstance(path_ops[-1], tuple) and isinstance(path_ops[-2], int):
+            attr_id = path_ops[-2]
+            op, threshold = path_ops[-1]
+            prefix_ops = path_ops[:-2]
+
+            if isinstance(query[0], int):
+                ent_set = set([query[0]])
+            else:
+                ent_set = self.achieve_answer(query[0], ent_in, ent_out, ent_attr_out, attr_to_ents, query_name)
+
+            for rel_or_neg in prefix_ops:
+                if rel_or_neg == -2:
+                    ent_set = set(range(len(ent_in))) - ent_set
+                else:
+                    ent_set_traverse = set()
+                    for ent in ent_set:
+                        ent_set_traverse = ent_set_traverse.union(ent_out[ent][rel_or_neg])
+                    ent_set = ent_set_traverse
+
+            filtered_entities = set()
+            if attr_to_ents is not None:
+                for lit, ents in attr_to_ents[attr_id].items():
+                    if op == "=":
+                        threshold_num = None
+                        lit_num = None
+                        try:
+                            threshold_num = float(threshold)
+                        except (TypeError, ValueError):
+                            threshold_num = None
+                        try:
+                            lit_num = float(lit)
+                        except (TypeError, ValueError):
+                            lit_num = None
+
+                        if threshold_num is not None and lit_num is not None:
+                            if lit_num == threshold_num:
+                                filtered_entities = filtered_entities.union(ents)
+                        elif str(lit) == str(threshold):
+                            filtered_entities = filtered_entities.union(ents)
+                        continue
+
+                    try:
+                        lit_val = float(lit)
+                        threshold_val = float(threshold)
+                    except (TypeError, ValueError):
+                        continue
+                    if (op == "<" and lit_val < threshold_val) or (op == ">" and lit_val > threshold_val):
+                        filtered_entities = filtered_entities.union(ents)
+
+            if len(prefix_ops) == 0:
+                return filtered_entities
+            return ent_set.intersection(filtered_entities)
+
         all_relation_flag = True
-        for ele in query[-1]:
+        for ele in path_ops:
             # @TODO: unclear
             if not isinstance(ele, int) or (ele == -1):
                 all_relation_flag = False
@@ -163,27 +293,36 @@ class QueryGenerator:
                 # @TODO: unclear
                 ent_set = set([query[0]])
             else:
-                ent_set = self.achieve_answer(query[0], ent_in, ent_out)
-            for i in range(len(query[-1])):
-                if query[-1][i] == -2:
+                ent_set = self.achieve_answer(query[0], ent_in, ent_out, ent_attr_out, attr_to_ents, query_name)
+            for i in range(len(path_ops)):
+                if path_ops[i] == -2:
                     ent_set = set(range(len(ent_in))) - ent_set
                 else:
+                    if query_name in {"1ap", "2ap", "3ap"} and i == len(path_ops) - 1:
+                        lit_set = set()
+                        if ent_attr_out is not None:
+                            for ent in ent_set:
+                                lit_set = lit_set.union(ent_attr_out[ent][path_ops[i]])
+                        ent_set = lit_set
+                        continue
                     ent_set_traverse = set()
                     for ent in ent_set:
-                        ent_set_traverse = ent_set_traverse.union(ent_out[ent][query[-1][i]])
+                        ent_set_traverse = ent_set_traverse.union(ent_out[ent][path_ops[i]])
                     ent_set = ent_set_traverse
         else:
-            ent_set = self.achieve_answer(query[0], ent_in, ent_out)
+            ent_set = self.achieve_answer(query[0], ent_in, ent_out, ent_attr_out, attr_to_ents, query_name)
             union_flag = False
             if len(query[-1]) == 1 and query[-1][0] == -1:
                 union_flag = True
             for i in range(1, len(query)):
                 if not union_flag:
-                    ent_set = ent_set.intersection(self.achieve_answer(query[i], ent_in, ent_out))
+                    ent_set = ent_set.intersection(
+                        self.achieve_answer(query[i], ent_in, ent_out, ent_attr_out, attr_to_ents, query_name))
                 else:
                     if i == len(query) - 1:
                         continue
-                    ent_set = ent_set.union(self.achieve_answer(query[i], ent_in, ent_out))
+                    ent_set = ent_set.union(
+                        self.achieve_answer(query[i], ent_in, ent_out, ent_attr_out, attr_to_ents, query_name))
         return ent_set
 
     def write_links(self, ent_out, small_ent_out):
@@ -206,7 +345,9 @@ class QueryGenerator:
 
     def ground_queries(self, query_structure: List[Union[str, List]],
                        ent_in: Dict, ent_out: Dict, small_ent_in: Dict, small_ent_out: Dict,
-                       gen_num: int, query_name: str):
+                       gen_num: int, query_name: str,
+                       ent_attr_out: Dict = None, attr_to_ents: Dict = None,
+                       small_ent_attr_out: Dict = None, small_attr_to_ents: Dict = None):
         """Generating queries and achieving answers"""
         (num_sampled, num_try, num_repeat, num_more_answer, num_broken, num_no_extra_answer,
          num_no_extra_negative, num_empty) = 0, 0, 0, 0, 0, 0, 0, 0
@@ -215,6 +356,12 @@ class QueryGenerator:
         tp_answers = defaultdict(set)
         fp_answers = defaultdict(set)
         fn_answers = defaultdict(set)
+        if 'a' in query_name and ent_attr_out is not None:
+            answer_population = sorted(set(ent_in.keys()).union(set(ent_attr_out.keys())))
+        else:
+            answer_population = sorted(ent_in.keys())
+        if len(answer_population) == 0:
+            return queries, tp_answers, fp_answers, fn_answers
 
         # @TODO: Incorrect reasoning: It can enter an infinite loop
         while num_sampled < gen_num:
@@ -223,15 +370,16 @@ class QueryGenerator:
             num_try += 1
             # @TODO: Why do we need a deep copy here ?
             query = deepcopy(query_structure)
-            answer = random.sample(list(ent_in.keys()), 1)[0]
-            broken_flag = self.fill_query(query, ent_in, ent_out, answer)
+            answer = random.sample(answer_population, 1)[0]
+            broken_flag = self.fill_query(query, ent_in, ent_out, ent_attr_out, attr_to_ents, answer)
 
             if broken_flag:
                 num_broken += 1
                 continue
 
-            answer_set = self.achieve_answer(query, ent_in, ent_out)
-            small_answer_set = self.achieve_answer(query, small_ent_in, small_ent_out)
+            answer_set = self.achieve_answer(query, ent_in, ent_out, ent_attr_out, attr_to_ents, query_name)
+            small_answer_set = self.achieve_answer(
+                query, small_ent_in, small_ent_out, small_ent_attr_out, small_attr_to_ents, query_name)
 
             if len(answer_set) == 0:
                 num_empty += 1
@@ -255,10 +403,18 @@ class QueryGenerator:
                 num_repeat += 1
                 continue
 
+            easy = small_answer_set
+            false_pos = small_answer_set - answer_set
+            hard = answer_set - small_answer_set
+            # easy and false_pos intentionally overlap by definition (false_pos ⊆ easy).
+            # Keep only the meaningful consistency checks.
+            if (easy & hard) or (false_pos & hard):
+                continue
+
             queries[self.list2tuple(query_structure)].add(self.list2tuple(query))
-            tp_answers[self.list2tuple(query)] = small_answer_set
-            fp_answers[self.list2tuple(query)] = small_answer_set - answer_set
-            fn_answers[self.list2tuple(query)] = answer_set - small_answer_set
+            tp_answers[self.list2tuple(query)] = easy
+            fp_answers[self.list2tuple(query)] = false_pos
+            fn_answers[self.list2tuple(query)] = hard
 
             num_sampled += 1
             tp_ans_num.append(len(tp_answers[self.list2tuple(query)]))
@@ -272,36 +428,43 @@ class QueryGenerator:
         # Create id2ent dictionary
         id2ent = {v: k for k, v in self.ent2id.items()}
         id2rel = {v: k for k, v in self.rel2id.items()}
+        id2attr = {v: k for k, v in self.attr2id.items()} if self.attr2id else {}
 
         # Unmap queries and create a mapping from ID-based queries to text-based queries
         unmapped_queries_dict = defaultdict(set)
         query_id_to_text = {}
         for query_structure_tuple, query_set in queries.items():
             for query in query_set:
-                unmapped_query = self.unmap_query(query_structure_tuple, query, id2ent, id2rel)
+                unmapped_query = self.unmap_query(query_structure_tuple, query, id2ent, id2rel, id2attr)
                 unmapped_queries_dict[query_structure_tuple].add(unmapped_query)
                 query_id_to_text[query] = unmapped_query
 
         easy_answers = defaultdict(set)
         false_positives = defaultdict(set)
         hard_answers = defaultdict(set)
+
+        def _unmap_answer(answer):
+            if isinstance(answer, int):
+                return id2ent.get(answer, answer)
+            return answer
+
         for query, answer_set in tp_answers.items():
-            unmapped_answer_set = {id2ent[answer] for answer in answer_set}
+            unmapped_answer_set = {_unmap_answer(answer) for answer in answer_set}
             easy_answers[query_id_to_text[query]] = unmapped_answer_set
 
             # Unmap fp_answers and update to false_positives
         for query, answer_set in fp_answers.items():
-            unmapped_answer_set = {id2ent[answer] for answer in answer_set}
+            unmapped_answer_set = {_unmap_answer(answer) for answer in answer_set}
             false_positives[query_id_to_text[query]] = unmapped_answer_set
 
             # Unmap fn_answers and update to hard_answers
         for query, answer_set in fn_answers.items():
-            unmapped_answer_set = {id2ent[answer] for answer in answer_set}
+            unmapped_answer_set = {_unmap_answer(answer) for answer in answer_set}
             hard_answers[query_id_to_text[query]] = unmapped_answer_set
 
         return unmapped_queries_dict, easy_answers, false_positives, hard_answers
 
-    def unmap_query(self, query_structure, query, id2ent, id2rel):
+    def unmap_query(self, query_structure, query, id2ent, id2rel, id2attr):
         # 2i
         if query_structure == (("e", ("r",)), ("e", ("r",))):
             ent1, (rel1_id,) = query[0]
@@ -440,6 +603,61 @@ class QueryGenerator:
             rel2 = id2rel[rel2_id]
             rel3 = id2rel[rel3_id]
             return (((ent1, (rel1,)), (ent2, (rel2,)), ("union",)), (rel3,))
+        # literals
+        elif query_structure == ("e", ("a", "f")):
+            ent1, (attr_id, filter_spec) = query
+            ent1 = id2ent[ent1]
+            attr = id2attr.get(attr_id, attr_id)
+            return (ent1, (attr, filter_spec))
+        elif query_structure == (("e", ("a", "f")), ("e", ("a", "f"))):
+            ent1, (attr1_id, filter_spec1) = query[0]
+            ent2, (attr2_id, filter_spec2) = query[1]
+            ent1 = id2ent[ent1]
+            ent2 = id2ent[ent2]
+            attr1 = id2attr.get(attr1_id, attr1_id)
+            attr2 = id2attr.get(attr2_id, attr2_id)
+            return ((ent1, (attr1, filter_spec1)), (ent2, (attr2, filter_spec2)))
+        elif query_structure == (("e", ("a", "f")), ("e", ("a", "f")), ("u",)):
+            ent1, (attr1_id, filter_spec1) = query[0]
+            ent2, (attr2_id, filter_spec2) = query[1]
+            ent1 = id2ent[ent1]
+            ent2 = id2ent[ent2]
+            attr1 = id2attr.get(attr1_id, attr1_id)
+            attr2 = id2attr.get(attr2_id, attr2_id)
+            return ((ent1, (attr1, filter_spec1)), (ent2, (attr2, filter_spec2)), ("union",))
+        elif query_structure == ("e", ("a",)):
+            ent1, (attr_id,) = query
+            ent1 = id2ent[ent1]
+            attr = id2attr.get(attr_id, attr_id)
+            return (ent1, (attr,))
+        elif query_structure == ("e", ("r", "a")):
+            ent1, (rel1_id, attr_id) = query
+            ent1 = id2ent[ent1]
+            rel1 = id2rel[rel1_id]
+            attr = id2attr.get(attr_id, attr_id)
+            return (ent1, (rel1, attr))
+        elif query_structure == ("e", ("r", "r", "a")):
+            ent1, (rel1_id, rel2_id, attr_id) = query
+            ent1 = id2ent[ent1]
+            rel1 = id2rel[rel1_id]
+            rel2 = id2rel[rel2_id]
+            attr = id2attr.get(attr_id, attr_id)
+            return (ent1, (rel1, rel2, attr))
+        elif query_structure == (("e", ("r",)), ("a", "f")):
+            ent1, (rel1_id,) = query[0]
+            attr_id, filter_spec = query[1]
+            ent1 = id2ent[ent1]
+            rel1 = id2rel[rel1_id]
+            attr = id2attr.get(attr_id, attr_id)
+            return ((ent1, (rel1,)), (attr, filter_spec))
+        elif query_structure == (("e", ("a", "f")), ("r",)):
+            ent1, (attr_id, filter_spec) = query[0]
+            (rel1_id,) = query[1]
+            ent1 = id2ent[ent1]
+            attr = id2attr.get(attr_id, attr_id)
+            rel1 = id2rel[rel1_id]
+            return ((ent1, (attr, filter_spec)), (rel1,))
+        return query
 
     def generate_queries(self, query_struct:List, gen_num: int, query_type: str):
         """
@@ -449,20 +667,35 @@ class QueryGenerator:
         """
 
 
-        train_tail_relation_to_heads, train_head_relation_to_tails = self.construct_graph(paths=[self.train_path])
-        val_tail_relation_to_heads, val_head_relation_to_tails = self.construct_graph(
-            paths=[self.train_path, self.val_path])
+        train_tail_relation_to_heads, train_head_relation_to_tails, train_ent_attr_out, train_attr_to_ents = self.construct_graph(
+            paths=[self.train_path],
+            attr_paths=[self.train_attr_path] if self.train_attr_path else None,
+        )
+        val_tail_relation_to_heads, val_head_relation_to_tails, val_ent_attr_out, val_attr_to_ents = self.construct_graph(
+            paths=[self.train_path, self.val_path],
+            attr_paths=[self.train_attr_path, self.val_attr_path] if self.train_attr_path else None,
+        )
         # ?!
-        valid_only_ent_in, valid_only_ent_out = self.construct_graph(paths=[self.val_path, self.test_path])
+        valid_only_ent_in, valid_only_ent_out, valid_only_ent_attr_out, valid_only_attr_to_ents = self.construct_graph(
+            paths=[self.val_path, self.test_path],
+            attr_paths=[self.val_attr_path, self.test_attr_path] if self.val_attr_path else None,
+        )
 
-        test_tail_relation_to_heads, test_head_relation_to_tails = self.construct_graph(
-            paths=[self.train_path, self.val_path, self.test_path])
+        test_tail_relation_to_heads, test_head_relation_to_tails, test_ent_attr_out, test_attr_to_ents = self.construct_graph(
+            paths=[self.train_path, self.val_path, self.test_path],
+            attr_paths=[self.train_attr_path, self.val_attr_path, self.test_attr_path] if self.train_attr_path else None,
+        )
         # ?!
-        test_only_ent_in, test_only_ent_out = self.construct_graph(paths=[self.test_path])
+        test_only_ent_in, test_only_ent_out, test_only_ent_attr_out, test_only_attr_to_ents = self.construct_graph(
+            paths=[self.test_path],
+            attr_paths=[self.test_attr_path] if self.test_attr_path else None,
+        )
         self.mode = 'test'
         test_queries, test_tp_answers, test_fp_answers, test_fn_answers = self.ground_queries(
             query_struct, test_tail_relation_to_heads, test_head_relation_to_tails, val_tail_relation_to_heads,
-            val_head_relation_to_tails, gen_num, query_type)
+            val_head_relation_to_tails, gen_num, query_type,
+            ent_attr_out=test_ent_attr_out, attr_to_ents=test_attr_to_ents,
+            small_ent_attr_out=val_ent_attr_out, small_attr_to_ents=val_attr_to_ents)
         # @TODO: test_queries has keys that are tuple ,e.g. ('e', ('r',))
         # Yet, query structure defined as a list ['e', ['r']].
         # Fix this inconsistency
@@ -474,14 +707,10 @@ class QueryGenerator:
         """
 
         """
-
-        # Find the index of query_type in query_names
-        try:
-            gen_id = self.query_names.index(query_type)
-        except ValueError:
+        if query_type not in self.query_name_to_struct:
             print(f"Invalid query_type: {query_type}")
             return []
-        queries, tp_answers, fp_answers, fn_answers = self.generate_queries(self.query_structures[gen_id:gen_id + 1],
+        queries, tp_answers, fp_answers, fn_answers = self.generate_queries(self.query_name_to_struct[query_type],
                                                                             gen_num, query_type)
         unmapped_queries, easy_answers, false_positives, hard_answers = self.unmap(query_type, queries, tp_answers,
                                                                                    fp_answers, fn_answers)
