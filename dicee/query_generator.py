@@ -164,8 +164,8 @@ class QueryGenerator:
                     if op == '=':
                         f_val = random.sample(sorted(ent_attr_out[answer][a_tmp]), 1)[0]
                     else:
-                        numeric_vals = []
                         candidate_vals = attr_to_ents[a_tmp].keys() if attr_to_ents is not None else ent_attr_out[answer][a_tmp]
+                        numeric_vals = []
                         for lit in candidate_vals:
                             try:
                                 numeric_vals.append(float(lit))
@@ -665,8 +665,6 @@ class QueryGenerator:
         and getting queries and answers in return
         @ TODO: create a class for each single query struct
         """
-
-
         train_tail_relation_to_heads, train_head_relation_to_tails, train_ent_attr_out, train_attr_to_ents = self.construct_graph(
             paths=[self.train_path],
             attr_paths=[self.train_attr_path] if self.train_attr_path else None,
