@@ -460,12 +460,9 @@ class RoBoSS(nn.Module):
         return pred
 
     def forward(self, pred, target, current_epoch = None):
+        pred_dtype = pred.dtype
         target = target.float()
-        print(type(target))
-        pred = pred.float()
-        print(type(pred))
-    
-        pred = self._normalize_scores(pred)
+        pred = self._normalize_scores(pred.float())
         
         # Convert [0, 1] to [-1, 1]
         if target.min() >= 0 and target.max() <= 1:
@@ -474,16 +471,17 @@ class RoBoSS(nn.Module):
         u = self.margin - (target * pred)
         
         term1 = (self.a_roboss * u) + 1.0
-        
-        term2 = torch.exp(-self.a_roboss * u)
+        # Clamp exponent to avoid inf/NaN gradients in mixed precision.
+        exp_arg = torch.clamp(-self.a_roboss * u, min=-50.0, max=50.0)
+        term2 = torch.exp(exp_arg)
 
         loss_values = self.lambda_roboss * (1.0 - (term1 * term2))
         
         # Apply condition: Loss is 0 if u <= 0 (Correctly classified)
         # assign a fixed loss of 0 for all samples with u < 0
         loss = torch.where(u > 0, loss_values, torch.zeros_like(loss_values))
-        
-        return loss.mean()
+
+        return loss.mean().to(pred_dtype)
 
 
 class AGCELoss(nn.Module):
@@ -502,20 +500,24 @@ class AGCELoss(nn.Module):
             print(f"Warning: q={agce_q} (<=1). Ensure 'a' is tuned high enough for noise robustness.")
 
     def forward(self, pred, labels, current_epoch = None):
-        y = labels
-        
+        pred_dtype = pred.dtype
+        pred = pred.float()
+        y = labels.float()
         y_hat = torch.sigmoid(pred)
-        
         u = y * y_hat + (1 - y) * (1 - y_hat)
-        
         u = torch.clamp(u, min=self.eps, max=1.0 - self.eps)
 
-        term1 = (self.agce_a + 1) ** self.agce_q
-        term2 = (self.agce_a + u) **  self.agce_q
-        
-        loss = (term1 - term2) / self.agce_q
-        
-        return loss.mean() * self.scale
+        q = float(self.agce_q)
+        if abs(q) < 1e-4:
+            # Numerically stable q -> 0 limit:
+            # ((a+1)^q - (a+u)^q) / q -> log((a+1)/(a+u))
+            loss = torch.log((self.agce_a + 1.0) / (self.agce_a + u))
+        else:
+            term1 = (self.agce_a + 1.0) ** q
+            term2 = (self.agce_a + u) ** q
+            loss = (term1 - term2) / q
+
+        return (loss.mean() * self.scale).to(pred_dtype)
 
 
 class AULoss(nn.Module):
@@ -529,6 +531,7 @@ class AULoss(nn.Module):
         # assert self.aul_a > 1.0, "Parameter 'aul_a' must be > 1.0 for AUL."
 
     def forward(self, pred, labels, current_epoch = None):
+        pred_dtype = pred.dtype
         y = labels
         #Map scores/logits to probabilities [0, 1]
         y_hat = torch.sigmoid(pred)
@@ -546,7 +549,7 @@ class AULoss(nn.Module):
         
         loss = (term1 - term2) / self.aul_p
         
-        return loss.mean()
+        return (loss.mean() * self.scale).to(pred_dtype)
 
 
 class AELoss(nn.Module):
@@ -560,15 +563,16 @@ class AELoss(nn.Module):
         assert self.a_ael > 0, "Parameter 'a' must be > 0."
 
     def forward(self, pred, labels, current_epoch=None):
-
-        pred = torch.sigmoid(pred)
+        pred_dtype = pred.dtype
+        pred = torch.sigmoid(pred.float())
+        labels = labels.float()
         p_target = labels * pred + (1 - labels) * (1 - pred)
 
         p_target = torch.clamp(p_target, min=self.eps, max=1.0)
         
         loss = torch.exp(-p_target / self.a_ael)
         
-        return loss.mean() * self.scale
+        return (loss.mean() * self.scale).to(pred_dtype)
 
 
 class EwLoss(nn.Module):
@@ -796,6 +800,7 @@ class WaveLoss(nn.Module):
         self.eps = eps
 
     def forward(self, pred: torch.Tensor, target: torch.Tensor, current_epoch = None):
+        pred_dtype = pred.dtype
         target = target.float()
         pred = pred.float()
 
@@ -805,13 +810,15 @@ class WaveLoss(nn.Module):
         u = 1.0 - (target * pred)
 
         u_sqr = u * u
-        exp_term = torch.exp(self.wave_a * u)
+        # Clamp exponent to avoid inf/NaN gradients in mixed precision.
+        exp_arg = torch.clamp(self.wave_a * u, min=-50.0, max=50.0)
+        exp_term = torch.exp(exp_arg)
         
         denom = 1.0 + self.lambda_param * u_sqr * exp_term + self.eps
 
         wave_loss = (1.0 / self.lambda_param) * (1.0 - 1.0 / denom)
 
-        return wave_loss.mean()
+        return wave_loss.mean().to(pred_dtype)
 
 class NSSALoss(nn.Module):
     """
@@ -926,29 +933,22 @@ class LocalTripleLoss(nn.Module):
         score_is_distance = False
     ):
         super().__init__()
-        self.margin = float(margin)
-        self.alpha = float(alpha)
-        self.beta = float(beta)
-        self.min_conf = float(min_conf)
-        self.max_conf = float(max_conf)
-        self.positive_threshold = float(positive_threshold)
-        self.use_max_negative = bool(use_max_negative)
-        self.score_is_distance = bool(score_is_distance)
+        self.margin = margin
+        self.alpha = alpha
+        self.beta = beta
+        self.min_conf = min_conf
+        self.max_conf = max_conf
+        self.positive_threshold = positive_threshold
+        self.use_max_negative = use_max_negative
+        self.score_is_distance = score_is_distance
         self._confidence = {}
 
 
     def forward(self, pred, target, current_epoch = None, x_batch = None):
-        if x_batch is None:
-            raise RuntimeError("LocalTripleLoss requires x_batch to track per-triple confidence.")
+
         if pred.dim() > 1:
             pred = pred.reshape(-1)
             target = target.reshape(-1)
-        if pred.shape[0] != target.shape[0]:
-            raise RuntimeError("LocalTripleLoss expects pred and target to have matching shapes.")
-        if x_batch.dim() != 2 or x_batch.shape[1] != 3:
-            raise RuntimeError("LocalTripleLoss expects x_batch to be a [N, 3] tensor of triples.")
-        if x_batch.shape[0] != pred.shape[0]:
-            raise RuntimeError("LocalTripleLoss expects x_batch and pred to align on the first dimension.")
 
         pos_mask = target > self.positive_threshold
         pos_scores = pred[pos_mask]
@@ -1077,17 +1077,11 @@ class LocalTripleWithPriorPathLoss(nn.Module):
                         target = tensors[-1]
             if target is None:
                 raise RuntimeError("LocalTripleWithPriorPathLoss expects target to be a torch.Tensor.")
-        if x_batch is None:
-            raise RuntimeError("LocalTripleWithPriorPathLoss requires x_batch to track per-triple confidence.")
+
         if pred.dim() > 1:
             pred = pred.reshape(-1)
             target = target.reshape(-1)
-        if pred.shape[0] != target.shape[0]:
-            raise RuntimeError("LocalTripleWithPriorPathLoss expects pred and target to have matching shapes.")
-        if x_batch.dim() != 2 or x_batch.shape[1] != 3:
-            raise RuntimeError("LocalTripleWithPriorPathLoss expects x_batch to be a [N, 3] tensor of triples.")
-        if x_batch.shape[0] != pred.shape[0]:
-            raise RuntimeError("LocalTripleWithPriorPathLoss expects x_batch and pred to align on the first dimension.")
+
 
         pos_mask = target > self.local_loss.positive_threshold
         pos_scores = pred[pos_mask]
@@ -1173,10 +1167,10 @@ class LocalTripleWithPriorAndAdaptivePathLoss(nn.Module):
             use_max_negative = use_max_negative,
             score_is_distance = score_is_distance,
         )
-        self.lambda_1_lt = float(lambda_1_lt)
-        self.lambda_2_pp = float(lambda_2_pp)
-        self.lambda_3_ap = float(lambda_3_ap)
-        self.adaptive_use_l1 = bool(adaptive_use_l1)
+        self.lambda_1_lt = lambda_1_lt
+        self.lambda_2_pp = lambda_2_pp
+        self.lambda_3_ap = lambda_3_ap
+        self.adaptive_use_l1 = adaptive_use_l1
         self._prior_confidence = prior_confidence_map or {}
         self._path_data = {}
 
@@ -1225,33 +1219,9 @@ class LocalTripleWithPriorAndAdaptivePathLoss(nn.Module):
         return torch.tensor(values, device = device, dtype = dtype)
 
     def forward(self, pred, target, current_epoch = None, x_batch = None, model = None):
-        if not torch.is_tensor(target):
-            if isinstance(target, (list, tuple)):
-                tensors = [item for item in target if torch.is_tensor(item)]
-                if tensors:
-                    target = None
-                    if pred is not None:
-                        for item in tensors:
-                            if item.numel() == pred.numel():
-                                target = item
-                                break
-                    if target is None:
-                        target = tensors[-1]
-            if target is None:
-                raise RuntimeError("LocalTripleWithPriorAndAdaptivePathLoss expects target to be a torch.Tensor.")
-        if x_batch is None:
-            raise RuntimeError("LocalTripleWithPriorAndAdaptivePathLoss requires x_batch to track per-triple confidence.")
-        if model is None:
-            raise RuntimeError("LocalTripleWithPriorAndAdaptivePathLoss requires model to compute adaptive path confidence.")
         if pred.dim() > 1:
             pred = pred.reshape(-1)
             target = target.reshape(-1)
-        if pred.shape[0] != target.shape[0]:
-            raise RuntimeError("LocalTripleWithPriorAndAdaptivePathLoss expects pred and target to have matching shapes.")
-        if x_batch.dim() != 2 or x_batch.shape[1] != 3:
-            raise RuntimeError("LocalTripleWithPriorAndAdaptivePathLoss expects x_batch to be a [N, 3] tensor of triples.")
-        if x_batch.shape[0] != pred.shape[0]:
-            raise RuntimeError("LocalTripleWithPriorAndAdaptivePathLoss expects x_batch and pred to align on the first dimension.")
 
         pos_mask = target > self.local_loss.positive_threshold
         pos_scores = pred[pos_mask]
@@ -1305,3 +1275,130 @@ class LocalTripleWithPriorAndAdaptivePathLoss(nn.Module):
             self.local_loss._confidence[tuple(triple)] = new_conf
 
         return loss
+
+class general_robust_loss(nn.Module):
+
+    def __init__(self, alpha_grl, scale_grl, eps_grl = 1e-6):
+        super().__init__()
+
+        self.alpha_grl = alpha_grl
+        self.scale_grl = scale_grl
+        self.eps_grl = eps_grl 
+    
+    @staticmethod
+    def log1p_safe(x):
+        """The same as torch.log1p(x), but clamps the input to prevent NaNs."""
+        x = torch.as_tensor(x)
+        return torch.log1p(torch.min(x, torch.tensor(33e37).to(x)))
+
+    @staticmethod
+    def expm1_safe(x):
+        """The same as tf.math.expm1(x), but clamps the input to prevent NaNs."""
+        x = torch.as_tensor(x)
+        return torch.expm1(torch.min(x, torch.tensor(87.5).to(x)))   
+
+    def forward(self, pred, target, current_epoch = None):
+
+        pred = torch.sigmoid(pred) 
+
+        x = pred - target.float()
+        alpha_grl = torch.as_tensor(self.alpha_grl, device=x.device, dtype=x.dtype)
+
+        square_scaled_x = (x / self.scale_grl) ** 2 
+
+        loss_two = 0.5 * square_scaled_x 
+
+        loss_zero = self.log1p_safe(0.5 * square_scaled_x) 
+
+        loss_neginf = -torch.expm1(-0.5 * square_scaled_x) 
+
+        loss_posinf = self.expm1_safe(0.5 * square_scaled_x) 
+
+        machine_epsilon = torch.tensor(np.finfo(np.float32).eps).to(x) 
+
+        beta_safe = torch.max(machine_epsilon, torch.abs(alpha_grl - 2.0)) 
+
+        alpha_safe = torch.where(alpha_grl >= 0, torch.ones_like(alpha_grl), -torch.ones_like(alpha_grl)) * torch.max(machine_epsilon, torch.abs(alpha_grl)) 
+
+        loss_otherwise = (beta_safe / alpha_safe)  * (torch.pow(square_scaled_x / beta_safe + 1.0, 0.5 * self.alpha_grl) - 1.0)
+
+        loss = torch.where(alpha_grl == -float('inf'), loss_neginf, 
+            torch.where(alpha_grl == 0, loss_zero, 
+                torch.where(alpha_grl == 2, loss_two, 
+                    torch.where(alpha_grl == float('inf'), loss_posinf, loss_otherwise))))
+        
+        loss = loss.mean() 
+
+        return loss 
+
+"""
+Losses from the paper: Mitigating Label Noise through Data Ambiguation
+"""
+
+eps = 1e-7 
+
+class GCELoss(nn.Module):
+    def __init__(self, q=0.7):
+        super().__init__()
+        self.q = q
+        self.eps = eps
+
+    def forward(self, pred, target, current_epoch = None):
+        p = torch.sigmoid(pred)
+        p_t = target * p + (1.0 - target) * (1.0 - p) 
+        p_t = torch.clamp(p_t, min = eps, max = 1.0)
+        loss = (1.0 - torch.pow(p_t, self.q)) / self.q 
+        return loss.mean()
+
+
+class NCELoss(nn.Module):
+    def __init__(self, scale = 1.0):
+        super().__init__()
+        self.scale = scale 
+
+    def forward(self, pred, target, current_epoch = None):
+        p = torch.sigmoid(pred)
+        p = torch.clamp(p, min = eps, max = 1.0)
+
+        p_t = target * p + (1.0 - target) * (1 - p)
+        p_t = torch.clamp(p_t, min = eps, max = 1.0 - eps)
+
+        numerator = -torch.log(p_t) 
+
+        denom = -torch.log(p) - torch.log(1.0 - p) 
+        denom = torch.clamp(denom, min = eps)
+
+        loss = self.scale * (numerator / denom) 
+
+        return loss.mean() 
+
+class NCEandAGCELoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.nce = NCELoss()
+        self.agce = AGCELoss()
+        
+    def forward(self, pred, target, current_epoch = None):
+        return self.nce(pred, target, current_epoch = None) + self.agce(pred, target, current_epoch = None)
+
+class NCEandAULoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.nce = NCELoss() 
+        self.aul = AULoss() 
+
+    def forward(self, pred, target, current_epoch = None):
+        return self.nce(pred, target, current_epoch = None) + self.aul(pred, target, current_epoch = None)
+
+
+
+
+        
+
+
+
+
+
+
