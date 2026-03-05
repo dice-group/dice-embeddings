@@ -184,6 +184,10 @@ class Namespace(argparse.Namespace):
         self.swa_c_epochs: int = 1
         """Number of epochs to average over for SWA, SWAG, EMA, TWA."""
 
+        self.loss_fn: str = None
+
+        self.label_relaxation_alpha: float = 0.1
+
 
     def __iter__(self):
         # Iterate

@@ -5,6 +5,18 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from .adopt import ADOPT
+from dicee.losses.custom_losses import (
+                                        DefaultBCELoss,
+                                        LabelSmoothingLoss,
+                                        LabelRelaxationLoss,
+                                        AdaptiveLabelSmoothingLoss,
+                                        AdaptiveLabelRelaxationLoss,
+                                        CombinedLSandLR,
+                                        ConfidenceBasedAdaptiveLabelRelaxationLoss,
+                                        CombinedAdaptiveLSandAdaptiveLR,
+                                        AggregatedLSandLR,
+                                        ACLS,
+                                        )
 
 class BaseKGELightning(pl.LightningModule):
     def __init__(self, *args, **kwargs):
@@ -174,6 +186,29 @@ class BaseKGE(BaseKGELightning):
             self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
             self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
             self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+
+        if self.args["loss_fn"] == "LS":
+            self.loss = LabelSmoothingLoss(smoothness_ratio=self.args["label_smoothing_rate"])
+        if self.args["loss_fn"] == "LRLoss":
+            self.loss = LabelRelaxationLoss(alpha=self.args["label_relaxation_alpha"])
+        if self.args["loss_fn"] == "BCELoss":
+            self.loss = DefaultBCELoss()
+        if self.args["loss_fn"] == "CombinedLSandLR":
+            self.loss = CombinedLSandLR(smoothness_ratio=self.args["label_smoothing_rate"], alpha=self.args["label_relaxation_alpha"])
+        if self.args["loss_fn"] == "AdaptiveLabelSmoothingLoss":
+            self.loss = AdaptiveLabelSmoothingLoss()
+        if self.args["loss_fn"] == "AdaptiveLabelRelaxationLoss":
+            self.loss = AdaptiveLabelRelaxationLoss()
+        if self.args["loss_fn"] == "ConfidenceBasedAdaptiveLabelRelaxationLoss":
+            self.loss = ConfidenceBasedAdaptiveLabelRelaxationLoss()
+        if self.args["loss_fn"] == "CombinedAdaptiveLSandAdaptiveLR":
+            self.loss = CombinedAdaptiveLSandAdaptiveLR()
+        if self.args["loss_fn"] == "AggregatedLSandLR":
+            self.loss = AggregatedLSandLR()
+        if self.args["loss_fn"] == "ACLS":
+            self.loss = ACLS()
+
+        
 
     def forward_byte_pair_encoded_k_vs_all(self, x: torch.LongTensor):
         """
