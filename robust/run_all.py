@@ -5,6 +5,9 @@ from pathlib import Path
 import csv
 import random
 
+import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 DATASETS = [ "UMLS", "KINSHIP", "NELL-995-h100", "FB15k-237", "YAGO3-10" ] # , "WN18RR", "YAGO3-10"
 MODELS = [ "Pykeen_TransH", "DistMult", "ComplEx", "Pykeen_RotatE", "Pykeen_MuRE", "DeCaL", "Keci" ] # , "Pykeen_RotatE", "Pykeen_MuRE", "DeCaL", "Keci", "Pykeen_TransH"
