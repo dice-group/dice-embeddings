@@ -1,5 +1,6 @@
 import os
 import copy
+import math
 import json
 import torch
 import torch.nn as nn
@@ -9,6 +10,267 @@ from pytorch_lightning.utilities import rank_zero_only
 from .abstracts import AbstractCallback
 from dicee.models.ensemble import EnsembleKGE
 from .evaluation.ensemble import evaluate_ensemble_link_prediction_performance
+
+class AMWA(AbstractCallback):
+    """Adaptive Momentum Weight Averaging (AMWA).
+
+    Paper: https://www.sciencedirect.com/science/article/pii/S0031320325009586
+    -------------
+    BaseNet is the ordinary model optimized during training, while StableNet is
+    updated once per epoch via weight averaging,
+
+        w_stable <- m * w_stable + (1 - m) * w_base
+
+    where the adaptive momentum is computed from the validation-performance
+    difference between StableNet and BaseNet,
+
+        m(Delta) = 1 / (1 + exp(-max(0, Delta) / beta_n))
+
+    with Delta defined so that Delta > 0 means StableNet performs better than
+    BaseNet. This yields the exact behavior described in the paper: StableNet
+    stays close to its current solution when it already validates better, and it
+    takes a larger step toward BaseNet when BaseNet validates better. The paper
+    sets beta_n to the standard deviation of Delta over the past 10 epochs; this
+    implementation follows that default and also allows a fixed beta for the
+    ablation setting.
+
+    Parameters
+    ----------
+    amwa_start_epoch : int
+        Epoch at which AMWA starts tracking StableNet.
+    amwa_c_epochs : int
+        Update interval in epochs.
+    path : str, optional
+        Directory used to persist ``amwa.pt`` and ``amwa_history.json``.
+    monitor : str
+        Validation metric to monitor, e.g. ``"MRR"``.
+    maximize : bool
+        Whether larger values of ``monitor`` are better.
+    beta : float, optional
+        If provided, use a fixed beta instead of the adaptive beta_n from the
+        paper. This matches the paper's fixed-beta ablation.
+    beta_window : int
+        Number of past Delta values used to estimate beta_n.
+    beta_init : float
+        Beta used before enough Delta history exists.
+    beta_floor : float
+        Numerical floor used when the empirical standard deviation is zero.
+    """
+
+    def __init__(self,
+                 amwa_start_epoch: int = 0,
+                 amwa_c_epochs: int = 1,
+                 path: str = None,
+                 monitor: str = "MRR",
+                 maximize: bool = True,
+                 beta: float = None,
+                 beta_window: int = 10,
+                 beta_init: float = 1.0,
+                 beta_floor: float = 1e-8):
+        super().__init__()
+        self.amwa_start_epoch = amwa_start_epoch
+        self.amwa_c_epochs = amwa_c_epochs
+        self.path = path
+        self.monitor = monitor
+        self.maximize = maximize
+        self.beta = beta
+        self.beta_window = max(1, int(beta_window))
+        self.beta_init = float(beta_init)
+        self.beta_floor = float(beta_floor)
+
+        self.current_epoch = -1
+        self.initial_eval_setting = None
+
+        # StableNet is stored as a CPU state_dict so AMWA does not reserve an
+        # additional full model replica on the training device.
+        self.stable_state_dict = None
+
+        # Diagnostics.
+        self.delta_history = []
+        self.momentum_history = []
+        self.beta_history = []
+        self.base_history = []
+        self.stable_history = []
+        self.history = []
+
+    @staticmethod
+    def _state_dict_to_cpu(state_dict):
+        return {k: v.detach().cpu().clone() for k, v in state_dict.items()}
+
+    def _clone_model_like(self, running_model):
+        if isinstance(running_model, EnsembleKGE):
+            cloned = type(running_model)(running_model.models)
+        else:
+            cloned = type(running_model)(running_model.args)
+        return cloned
+
+    def _build_eval_model(self, running_model, state_dict=None):
+        eval_model = self._clone_model_like(running_model)
+        if state_dict is None:
+            state_dict = running_model.state_dict()
+        eval_model.load_state_dict(state_dict)
+        eval_model.eval()
+        eval_model.to("cpu")
+        return eval_model
+
+    def _evaluate_validation_metric(self, trainer, model) -> float:
+        report = trainer.evaluator.eval(dataset=trainer.dataset,
+                                        trained_model=model,
+                                        form_of_labelling=trainer.form_of_labelling,
+                                        during_training=True)
+        try:
+            return float(report["Val"][self.monitor])
+        except KeyError as exc:
+            available = sorted(report.get("Val", {}).keys())
+            raise KeyError(
+                f"AMWA monitor '{self.monitor}' was not found in validation report. "
+                f"Available validation metrics: {available}"
+            ) from exc
+
+    def _compute_running_score(self, trainer, running_model) -> float:
+        eval_model = self._build_eval_model(running_model)
+        score = self._evaluate_validation_metric(trainer, eval_model)
+        del eval_model
+        return score
+
+    def _compute_stable_score(self, trainer, running_model) -> float:
+        if self.stable_state_dict is None:
+            raise RuntimeError("AMWA StableNet has not been initialized yet.")
+        eval_model = self._build_eval_model(running_model, self.stable_state_dict)
+        score = self._evaluate_validation_metric(trainer, eval_model)
+        del eval_model
+        return score
+
+    def _compute_delta(self, base_score: float, stable_score: float) -> float:
+        # Delta is defined so that Delta > 0 means StableNet is better than
+        # BaseNet, matching the behavior described around Eq. (4).
+        if self.maximize:
+            return stable_score - base_score
+        return base_score - stable_score
+
+    def _compute_beta_n(self) -> float:
+        if self.beta is not None:
+            return max(float(self.beta), self.beta_floor)
+
+        history = self.delta_history[-self.beta_window:]
+        if len(history) < 2:
+            return max(self.beta_init, self.beta_floor)
+
+        delta_tensor = torch.tensor(history, dtype=torch.float32)
+        beta_n = torch.std(delta_tensor, unbiased=False).item()
+        return max(float(beta_n), self.beta_floor)
+
+    def _compute_momentum(self, delta: float, beta_n: float) -> float:
+        # Paper Eq. (4): m(Delta) = 1 / (1 + exp(-max(0, Delta) / beta_n))
+        scaled_gap = max(0.0, float(delta)) / max(float(beta_n), self.beta_floor)
+        return 1.0 / (1.0 + math.exp(-scaled_gap))
+
+    def _initialize_stablenet(self, running_model):
+        self.stable_state_dict = self._state_dict_to_cpu(running_model.state_dict())
+
+    def _update_stablenet(self, running_model, momentum: float):
+        if self.stable_state_dict is None:
+            self._initialize_stablenet(running_model)
+
+        base_state_dict = running_model.state_dict()
+        base_weight = 1.0 - float(momentum)
+
+        with torch.no_grad():
+            for key, base_tensor in base_state_dict.items():
+                base_cpu = base_tensor.detach().cpu()
+                if torch.is_floating_point(base_cpu):
+                    self.stable_state_dict[key].mul_(momentum).add_(base_cpu, alpha=base_weight)
+                else:
+                    # Integer / boolean buffers are copied directly.
+                    self.stable_state_dict[key] = base_cpu.clone()
+
+    def _record_history(self, *, epoch: int, base_score: float, stable_score: float,
+                        delta: float, beta_n: float, momentum: float):
+        self.base_history.append(float(base_score))
+        self.stable_history.append(float(stable_score))
+        self.delta_history.append(float(delta))
+        self.beta_history.append(float(beta_n))
+        self.momentum_history.append(float(momentum))
+        self.history.append({
+            "epoch": int(epoch),
+            "monitor": self.monitor,
+            "maximize": bool(self.maximize),
+            "base_score": float(base_score),
+            "stable_score": float(stable_score),
+            "delta": float(delta),
+            "beta_n": float(beta_n),
+            "momentum": float(momentum),
+            "base_weight": float(1.0 - momentum),
+        })
+
+    def _maybe_export(self):
+        if not self.path:
+            return
+        os.makedirs(self.path, exist_ok=True)
+        if self.stable_state_dict is not None:
+            torch.save(self.stable_state_dict, os.path.join(self.path, "amwa.pt"))
+        history_path = os.path.join(self.path, "amwa_history.json")
+        with open(history_path, "w", encoding="utf-8") as handle:
+            json.dump(self.history, handle, indent=4, ensure_ascii=False)
+
+    @rank_zero_only
+    def on_train_epoch_start(self, trainer, model):
+        if hasattr(trainer, 'current_epoch'):
+            self.current_epoch = trainer.current_epoch
+        else:
+            self.current_epoch += 1
+
+        if self.current_epoch == self.amwa_start_epoch and self.stable_state_dict is None:
+            running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
+            # Algorithm 1 initializes BaseNet and StableNet with the same
+            # parameters before the epoch loop.
+            self._initialize_stablenet(running_model)
+
+    @rank_zero_only
+    def on_train_epoch_end(self, trainer, model):
+        if self.current_epoch < self.amwa_start_epoch:
+            return
+        if (self.current_epoch - self.amwa_start_epoch) % self.amwa_c_epochs != 0:
+            return
+
+        running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
+
+        if self.initial_eval_setting is None:
+            self.initial_eval_setting = trainer.evaluator.args.eval_model
+            trainer.evaluator.args.eval_model = "val"
+
+        if self.stable_state_dict is None:
+            self._initialize_stablenet(running_model)
+
+        base_score = self._compute_running_score(trainer, running_model)
+        stable_score = self._compute_stable_score(trainer, running_model)
+        delta = self._compute_delta(base_score=base_score, stable_score=stable_score)
+        beta_n = self._compute_beta_n()
+        momentum = self._compute_momentum(delta=delta, beta_n=beta_n)
+
+        self._update_stablenet(running_model, momentum)
+        self._record_history(epoch=self.current_epoch,
+                             base_score=base_score,
+                             stable_score=stable_score,
+                             delta=delta,
+                             beta_n=beta_n,
+                             momentum=momentum)
+
+        if running_model.args.get("eval_every_n_epochs", 0) > 0 or running_model.args.get("eval_at_epochs") is not None:
+            trainer.wa_model = self._build_eval_model(running_model, self.stable_state_dict)
+
+        self._maybe_export()
+
+    @rank_zero_only
+    def on_fit_end(self, trainer, model):
+        if self.initial_eval_setting is not None:
+            trainer.evaluator.args.eval_model = self.initial_eval_setting
+
+        if self.stable_state_dict is not None:
+            model.load_state_dict(self.stable_state_dict)
+
+        self._maybe_export()
+
 
 class ASWA(AbstractCallback):
     """ Adaptive stochastic weight averaging

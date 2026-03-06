@@ -461,12 +461,26 @@ class PeriodicEvalCallback(AbstractCallback):
         # Prepare evaluation model
         eval_model = None
 
-        if any(model.args.get(k) for k in ("swa", "ema", "twa")):
-            try:
-                eval_model = copy.deepcopy(trainer.wa_model)
-            except Exception:
-                # If SWA epoch is not reached, trainer has no swa model
-                # fallback to the original model
+        if any(model.args.get(k) for k in ("swa", "ema", "twa", "amwa")):
+            # For in-memory averaging methods, prefer the shadow model exposed by
+            # the averaging callback. This covers SWA/TWA/AMWA and also EMA once
+            # it exposes trainer.wa_model consistently.
+            wa_model = getattr(trainer, "wa_model", None)
+            if wa_model is not None:
+                eval_model = copy.deepcopy(wa_model)
+            elif model.args.get("amwa"):
+                amwa_path = os.path.join(self.experiment_dir, "amwa.pt")
+                if os.path.exists(amwa_path):
+                    amwa_state_dict = torch.load(amwa_path, map_location="cpu")
+                    if isinstance(model, OptimizedModule):
+                        eval_model = type(model._orig_mod)(model.args)
+                    else:
+                        eval_model = type(model)(model.args)
+                    eval_model.load_state_dict(amwa_state_dict)
+                else:
+                    eval_model = copy.deepcopy(model)
+            else:
+                # If averaging has not started yet, fall back to the live model.
                 eval_model = copy.deepcopy(model)
 
         elif model.args.get("adaptive_swa"):

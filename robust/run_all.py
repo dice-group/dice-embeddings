@@ -5,232 +5,17 @@ from pathlib import Path
 import csv
 import random
 
-"""
-HYPER_PARAMETERS = {
-    "KINSHIP": {
 
-        "ComplEx": {
-            "embedding_dim": 32,
-            "batch_size": 256,
-            "learning_rate": 0.05
-        },
+DATASETS = [ "UMLS", "KINSHIP", "NELL-995-h100", "FB15k-237", "YAGO3-10" ] # , "WN18RR", "YAGO3-10"
+MODELS = [ "Pykeen_TransH", "DistMult", "ComplEx", "Pykeen_RotatE", "Pykeen_MuRE", "DeCaL", "Keci" ] # , "Pykeen_RotatE", "Pykeen_MuRE", "DeCaL", "Keci", "Pykeen_TransH"
 
-        "DistMult": {
-            "embedding_dim": 32,
-            "batch_size": 256,
-            "learning_rate": 0.04
-        },
-
-        "DualE": {
-            "embedding_dim": 32,
-            "batch_size": 256,
-            "learning_rate": 0.06
-        },
-
-        "QMult": {
-            "embedding_dim": 32,
-            "batch_size": 256,
-            "learning_rate": 0.06
-        }
-
-    },
-
-    "UMLS": {
-
-        "ComplEx": {
-            "embedding_dim": 32,
-            "batch_size": 512,
-            "learning_rate": 0.05
-        },
-
-        "DistMult": {
-            "embedding_dim": 32,
-            "batch_size": 512,
-            "learning_rate": 0.04
-        },
-
-        "DualE": {
-            "embedding_dim": 32,
-            "batch_size": 256,
-            "learning_rate": 0.04
-        },
-
-        "QMult": {
-            "embedding_dim": 64,
-            "batch_size": 512,
-            "learning_rate": 0.03
-        },
-    },
-
-    "NELL-995-h100": {
-
-        "ComplEx": {
-            "embedding_dim": 32,
-            "batch_size": 256,
-            "learning_rate": 0.01
-        },
-
-        "DistMult": {
-            "embedding_dim": 32,
-            "batch_size": 256,
-            "learning_rate": 0.01
-        },
-
-        "DualE": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.05
-        },
-
-        "QMult": {
-            "embedding_dim": 32,
-            "batch_size": 512,
-            "learning_rate": 0.02
-        }
-
-    },
-
-    "FB15k-237": {
-
-        "ComplEx": {
-            "embedding_dim": 32,
-            "batch_size": 256,
-            "learning_rate": 0.02
-        },
-
-        "DistMult": {
-            "embedding_dim": 32,
-            "batch_size": 512,
-            "learning_rate": 0.02
-        },
-
-        "DualE": {
-            "embedding_dim": 32,
-            "batch_size": 512,
-            "learning_rate": 0.01
-        },
-
-        "QMult": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.02
-        }
-
-    },
-
-}
-"""
-
-HYPER_PARAMETERS = {
-    "KINSHIP": {
-        "ComplEx": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.1
-        },
-        "DistMult": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.1
-        },
-        "DualE": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.1
-        },
-        "QMult": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.1
-        }
-    },
-
-    "UMLS": {
-        "ComplEx": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.1
-        },
-        "DistMult": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.1
-        },
-        "DualE": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.1
-        },
-        "QMult": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.1
-        },
-    },
-
-    "NELL-995-h100": {
-        "ComplEx": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.1
-        },
-        "DistMult": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.1
-        },
-        "DualE": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.1
-        },
-        "QMult": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.1
-        }
-    },
-
-    "FB15k-237": {
-        "ComplEx": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.1
-        },
-        "DistMult": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.1
-        },
-        "DualE": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.1
-        },
-        "QMult": {
-            "embedding_dim": 32,
-            "batch_size": 1024,
-            "learning_rate": 0.1
-        }
-    },
-}
-
-DATASETS = [ "UMLS", "KINSHIP", "NELL-995-h100", "FB15k-237" ] # , "WN18RR", "YAGO3-10"
-MODELS = [ "DistMult", "ComplEx", "DualE", "QMult" ] # , "Pykeen_RotatE", "Pykeen_MuRE", "DeCaL", "Keci", "Pykeen_TransH"
-
-EXP_TYPES = ["BCE", "LS", "LR", "ACLS", "ALR", "ACLS_S",
+EXP_TYPES = ["BCE", "LS", "LR", "ACLS", "ACLS_S", "ALR",
                 "BCE_ASWA", "LS_ASWA", "LR_ASWA", "ACLS_ASWA", "ACLS_S_ASWA", "ALR_ASWA",
                 "BCE_AMWA", "LS_AMWA", "LR_AMWA", "ACLS_AMWA", "ACLS_S_AMWA", "ALR_AMWA"
             ]
 
-"""
-EXP_TYPES = [ "BCE_AMWA"]
-MODELS = [ "DistMult" ]
-DATASETS = [ "UMLS" ]
-"""
 
-
-NUM_EXPERIMENTS = 1
+NUM_EXPERIMENTS = 6
 
 MASTER_SEED = 12345
 seed_src = random.Random(MASTER_SEED)
@@ -412,9 +197,9 @@ with open(OUT_CSV, "a", newline="", encoding="utf-8") as f:
                     args.num_epochs = 100
 
                     
-                    args.embedding_dim = HYPER_PARAMETERS[DB][MODEL]["embedding_dim"]
-                    args.batch_size = HYPER_PARAMETERS[DB][MODEL]["batch_size"]
-                    args.lr = HYPER_PARAMETERS[DB][MODEL]["learning_rate"]
+                    args.embedding_dim = 32
+                    args.batch_size = 1024
+                    args.lr = 0.1
 
                     args.eval_model = "test"
 

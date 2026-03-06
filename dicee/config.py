@@ -188,6 +188,33 @@ class Namespace(argparse.Namespace):
 
         self.label_relaxation_alpha: float = 0.1
 
+        self.amwa: bool = False
+        """Adaptive Momentum Weight Averaging"""
+
+        self.amwa_start_epoch: int = 0
+        """Epoch at which to start applying AMWA."""
+
+        self.amwa_c_epochs: int = 1
+        """Number of epochs between AMWA updates."""
+
+        self.amwa_monitor: str = "MRR"
+        """Validation metric used by AMWA to compare BaseNet and StableNet."""
+
+        self.amwa_maximize: bool = True
+        """Whether larger values of amwa_monitor are better."""
+
+        self.amwa_beta: float = None
+        """Fixed beta for AMWA. If None, use adaptive beta_n."""
+
+        self.amwa_beta_window: int = 10
+        """Number of recent delta values used to estimate beta_n."""
+
+        self.amwa_beta_init: float = 1.0
+        """Initial beta used before enough delta history exists."""
+
+        self.amwa_beta_floor: float = 1e-8
+        """Numerical floor for beta_n."""
+
 
     def __iter__(self):
         # Iterate

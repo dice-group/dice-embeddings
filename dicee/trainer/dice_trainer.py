@@ -26,7 +26,7 @@ from dicee.dataset_classes import construct_dataset
 from dicee.knowledge_graph import KG
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model, timeit
-from dicee.weight_averaging import ASWA, EMA, SWA, SWAG, TWA
+from dicee.weight_averaging import AMWA, ASWA, EMA, SWA, SWAG, TWA
 
 from ..models.ensemble import EnsembleKGE
 from .model_parallelism import TensorParallel
@@ -144,6 +144,21 @@ def get_callbacks(args) -> List:
             max_epochs=args.num_epochs,
             twa_c_epochs=args.swa_c_epochs
         ))
+    
+    elif getattr(args, "amwa", False):
+        print(f"Starting Adaptive Momentum Weight Averaging (AMWA) at Epoch: {getattr(args, 'amwa_start_epoch', 0)}")
+        callbacks.append(AMWA(
+            amwa_start_epoch=getattr(args, "amwa_start_epoch", 0),
+            amwa_c_epochs=getattr(args, "amwa_c_epochs", 1),
+            path=args.full_storage_path,
+            monitor=getattr(args, "amwa_monitor", "MRR"),
+            maximize=getattr(args, "amwa_maximize", True),
+            beta=getattr(args, "amwa_beta", None),
+            beta_window=getattr(args, "amwa_beta_window", 10),
+            beta_init=getattr(args, "amwa_beta_init", 1.0),
+            beta_floor=getattr(args, "amwa_beta_floor", 1e-8),
+        ))
+        
     elif args.adaptive_swa:
         callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
     elif args.adaptive_lr:

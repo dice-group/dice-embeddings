@@ -167,6 +167,31 @@ def get_default_arguments(description=None):
     parser.add_argument('--label_relaxation_alpha', type=float, default=0.1,
                         help='The alpha value for label relaxation')
 
+    parser.add_argument("--amwa",
+                    action="store_true",
+                    help="Adaptive Momentum Weight Averaging")
+
+    parser.add_argument("--amwa_start_epoch", type=int, default=0,
+                        help="Epoch at which to start applying AMWA.")
+    parser.add_argument("--amwa_c_epochs", type=int, default=1,
+                        help="Number of epochs between AMWA updates.")
+    parser.add_argument("--amwa_monitor", type=str, default="MRR",
+                        help="Validation metric used by AMWA to compare BaseNet and StableNet.")
+
+    parser.add_argument("--amwa_maximize", dest="amwa_maximize", action="store_true",
+                        help="Treat larger values of --amwa_monitor as better.")
+    parser.add_argument("--amwa_minimize", dest="amwa_maximize", action="store_false",
+                        help="Treat smaller values of --amwa_monitor as better.")
+    parser.set_defaults(amwa_maximize=True)
+
+    parser.add_argument("--amwa_beta", type=float, default=None,
+                        help="Fixed beta for AMWA. If omitted, beta_n is estimated adaptively.")
+    parser.add_argument("--amwa_beta_window", type=int, default=10,
+                        help="Number of recent delta values used to estimate beta_n.")
+    parser.add_argument("--amwa_beta_init", type=float, default=1.0,
+                        help="Initial beta before enough delta history exists.")
+    parser.add_argument("--amwa_beta_floor", type=float, default=1e-8,
+                        help="Numerical floor for beta_n.")
 
     if description is None:
         return parser.parse_args()
