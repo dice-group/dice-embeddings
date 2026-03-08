@@ -29,7 +29,14 @@ from dicee.losses.custom_losses import (
                                         FocalLoss,
                                         LocalTripleLoss,
                                         LocalTripleWithPriorPathLoss,
-                                        LocalTripleWithPriorAndAdaptivePathLoss
+                                        LocalTripleWithPriorAndAdaptivePathLoss,
+                                        general_robust_loss,
+                                        NCELoss,
+                                        GCELoss,
+                                        NCEandAGCELoss,
+                                        NCEandAULoss,
+                                        RDALoss,
+                                        CORESLoss
                                         )
 
 class BaseKGELightning(pl.LightningModule):
@@ -229,8 +236,8 @@ class BaseKGE(BaseKGELightning):
             )
         if self.args["loss_fn"] == "AULoss":
             self.loss = AULoss(
-                aul_a=self.args.get("aul_a", 1.5),
-                aul_p=self.args.get("aul_p", 0.9),
+                aul_a=self.args.get("aul_a", 2.0),
+                aul_p=self.args.get("aul_p", 1.8),
                 eps=self.args.get("aul_eps", 1e-7),
                 scale=self.args.get("aul_scale", 1.0),
             )
@@ -242,8 +249,8 @@ class BaseKGE(BaseKGELightning):
             )
         if self.args["loss_fn"] == "RoBoSS":
             self.loss = RoBoSS(
-                a_roboss=self.args.get("a_roboss", 3.02),
-                lambda_roboss=self.args.get("lambda_roboss", 1.6),
+                a_roboss=self.args.get("a_roboss", 0.9061851664409328),
+                lambda_roboss=self.args.get("lambda_roboss", 1.4976911999945772),
                 margin=self.args.get("roboss_margin", 1.0),
                 normalize_scores=self.args.get("roboss_normalize_scores", False),
             )
@@ -253,8 +260,8 @@ class BaseKGE(BaseKGELightning):
             self.loss = SynMarginLoss()
         if self.args["loss_fn"] == "WaveLoss":
             self.loss = WaveLoss(
-                wave_a=self.args.get("wave_a", 1.5),
-                lambda_param=self.args.get("lambda_param", 0.5),
+                wave_a=self.args.get("wave_a", 1.3956112362083373),
+                lambda_param=self.args.get("lambda_param", 1.2064918882043802),
                 eps=self.args.get("wave_eps", 1e-8),
             )
         if self.args["loss_fn"] == "NSSALoss":
@@ -302,7 +309,39 @@ class BaseKGE(BaseKGELightning):
                 lambda_2_pp=self.args.get("lambda_2_pp", 0.1),
                 lambda_3_ap=self.args.get("lambda_3_ap", 0.4),
                 adaptive_use_l1=self.args.get("adaptive_use_l1", 1),
-            )       
+            )   
+        if self.args["loss_fn"] == "general_robust_loss":
+            self.loss = general_robust_loss(
+                alpha_grl=2.0, scale_grl=0.1
+            )    
+        if self.args["loss_fn"] == "NCELoss":
+            self.loss = NCELoss()        
+
+        if self.args["loss_fn"] == "GCELoss":
+            self.loss = GCELoss() 
+
+        if self.args["loss_fn"] == "NCEandAGCELoss":
+            self.loss = NCEandAGCELoss() 
+
+        if self.args["loss_fn"] == "NCEandAULoss":
+            self.loss = NCEandAULoss() 
+
+        if self.args["loss_fn"] == "RDALoss":
+            self.loss = RDALoss(
+                alpha_rda=self.args.get("rda_alpha", 0.1),
+                beta_rda=self.args.get("rda_beta", 0.2),
+                adaptive_beta=self.args.get("rda_adaptive_beta", True),
+                epochs=self.args.get("num_epochs", None),
+                warmup=self.args.get("rda_warmup", False),
+                adaptive_start_beta=self.args.get("rda_adaptive_start_beta", 0.75),
+                adaptive_end_beta=self.args.get("rda_adaptive_end_beta", 0.6),
+                adaptive_type=self.args.get("rda_adaptive_type", "cosine"),
+            )
+
+        if self.args["loss_fn"] == "CORESLoss":
+            self.loss = CORESLoss(
+                beta_max = self.args.get("beta_max", 2.0), warmup_epochs = self.args.get("warmup_epochs", 30)
+            ) 
 
         if self.byte_pair_encoding and self.args['model'] != "BytE":
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)

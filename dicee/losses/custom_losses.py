@@ -1,3 +1,4 @@
+from turtle import forward
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -5,6 +6,7 @@ import math
 import numpy as np
 import os
 from torch import tensor
+from typing import Optional
 
 
 class DefaultBCELoss(nn.Module):
@@ -532,6 +534,7 @@ class AULoss(nn.Module):
 
     def forward(self, pred, labels, current_epoch = None):
         pred_dtype = pred.dtype
+        pred = pred.float()
         y = labels
         #Map scores/logits to probabilities [0, 1]
         y_hat = torch.sigmoid(pred)
@@ -1350,7 +1353,6 @@ class GCELoss(nn.Module):
         loss = (1.0 - torch.pow(p_t, self.q)) / self.q 
         return loss.mean()
 
-
 class NCELoss(nn.Module):
     def __init__(self, scale = 1.0):
         super().__init__()
@@ -1393,9 +1395,143 @@ class NCEandAULoss(nn.Module):
         return self.nce(pred, target, current_epoch = None) + self.aul(pred, target, current_epoch = None)
 
 
+"""
+alpha = 0.1
+adaptive_beta = True
+adaptive_start_beta = 0.75
+adaptive_end_beta = 0.6
+adaptive_type = "cosine"
+warmup = False
+"""
 
+class RDALoss(nn.Module):
+    def __init__(
+        self, alpha_rda = 0.1, beta_rda = 0.2, adaptive_beta = True, epochs = None, warmup = True, adaptive_start_beta = None,
+        adaptive_end_beta = None, adaptive_type = "cosine", eps = 1e-8
+    ):
+
+        super().__init__()
+        self.alpha_rda = max(alpha_rda,1e-6) #relaxation parameter
+        self.beta_rda = beta_rda #confidence threshold
+        self.adaptive_beta = adaptive_beta
+        self.epochs = epochs
+        self.warmup = warmup
+        self.start_beta = adaptive_start_beta
+        self.end_beta = adaptive_end_beta
+        self.adaptive_type = adaptive_type
+        self.eps = eps
+
+        if self.adaptive_beta: 
+            assert self.epochs is not None 
+            assert self.start_beta is not None 
+            assert self.end_beta is not None 
+
+    def _get_beta(self, epoch):
+        if not self.adaptive_beta:
+            return self.beta_rda 
+        if epoch is None:
+            return None 
+        if self.adaptive_type == "linear":
+            return (1 - epoch / self.epochs) * self.start_beta + (epoch / self.epochs) * self.end_beta
+        elif self.adaptive_type == "cosine":
+            return self.end_beta + 0.5 * (self.start_beta - self.end_beta) * (1.0 + torch.cos(torch.tensor(torch.pi * epoch / self.epochs))).item() 
+        else:
+            raise ValueError(f"Unknown adaptive beta type: {self.adaptive_type}")
+
+    def forward(self, pred, target, current_epoch = None):
+
+        pred = torch.sigmoid(pred)
+        pred = torch.clamp(pred, min = self.eps, max = 1.0 - self.eps) 
+
+        if self.adaptive_beta:
+            beta = self._get_beta(current_epoch)
+            if beta is None:
+                suspicious_neg = torch.zeros_like(target, dtype = torch.bool)
+            else:
+                suspicious_neg = (target == 0) & (pred > beta) #Flags negatives that look suspiciously high-confidence
+        else:
+            if self.warmup:
+                suspicious_neg = torch.zeros_like(target, dtype=torch.bool)
+            else:
+                suspicious_neg = (target == 0) & (pred > self.beta_rda)
+
+        inside_pos = (target == 1) & (pred >= 1.0 - self.alpha_rda)  #clean positives
+        inside_neg = (target == 0) & (~suspicious_neg) & (pred <= self.alpha_rda) #clean and confidently negative entries
+        inside_amb = suspicious_neg #ambigious ones
+
+        # Loss is zero if sample is:
+        # a confident enough positive
+        # a confident enough negative
+        # or an ambiguous negative
+        inside = inside_pos | inside_neg | inside_amb 
+
+        q_r = torch.where(
+            target == 1,
+            torch.full_like(pred, 1.0 - self.alpha_rda),   #replaces hard labels {1, 0} with softened targets {1-alpha, alpha}
+            torch.full_like(pred, self.alpha_rda)
+        )
+
+        q_r = torch.clamp(q_r, min=self.eps, max=1.0 - self.eps)
+
+        #KL(Bernoulli(q_r) || Bernoulli(pred))
+        kl = (q_r * (torch.log(q_r) - torch.log(pred)) + (1.0 - q_r) * (torch.log(1.0 - q_r) - torch.log(1.0 - pred)))
+
+        loss = torch.where(inside, torch.zeros_like(kl), kl)
+        return loss.mean()
+
+class CORESLoss(nn.Module):
+    def __init__(self, beta_max = 2.0, warmup_epochs = 30, eps = 1e-8):
+        super().__init__()
+        self.beta_max = beta_max
+        self.warmup_epochs = warmup_epochs
+        self.eps = eps 
+
+    def _get_beta(self, epoch):
+        if epoch is None:
+            return float(self.beta_max)
+
+        epoch = int(epoch)
+        if epoch < 10:
+            return 0.0 
+        elif epoch < 40:
+            return float(self.beta_max) * ((epoch - 10) / 29.0)
+        return float(self.beta_max)
+
+    def forward(self, pred, target, current_epoch = None):
+        beta = self._get_beta(current_epoch)
+        ce_loss = F.cross_entropy(pred, target, reduction="none") #one loss value per sample so we can later decide which samples to keep/drop
+        neg_log_probs = -F.log_softmax(pred, dim=1)
+        regularizer = neg_log_probs.mean(dim=1)
+
+        loss_per_sample = ce_loss - beta * regularizer
+        selection_score = ce_loss - regularizer 
+
+        if current_epoch is None or current_epoch <= self.warmup_epochs: #For initial num of epochs, mask all val to 1
+            mask = torch.ones_like(loss_per_sample)
+        else:
+            mask = (selection_score <= 0).float().detach() #mask 1 only for sel <= 0 
+
+        loss = (mask * loss_per_sample).sum() / mask.sum().clamp_min(1.0)
+        return loss 
+        
 
         
+    
+            
+    
+
+
+
+
+
+
+
+
+
+    
+
+
+
 
 
 
