@@ -94,14 +94,18 @@ class Execute:
         """Set up distributed training environment if enabled."""
         if self.distributed:
             if not dist.is_initialized():
-                dist.init_process_group(backend="nccl", init_method="env://")
+                backend = "gloo" if not torch.cuda.is_available() else "nccl"
+                dist.init_process_group(backend=backend, init_method="env://")
             self.rank = dist.get_rank()
             self.world_size = dist.get_world_size()
-            self.local_rank = int(os.environ["LOCAL_RANK"])
-            torch.cuda.set_device(self.local_rank)
+            self.local_rank = int(os.environ.get("LOCAL_RANK", 0))
+            if torch.cuda.is_available():
+                torch.cuda.set_device(self.local_rank)
             print(f"[Rank {self.rank}] mapped to GPU {self.local_rank}", flush=True)
         else:
-            self.rank, self.world_size, self.local_rank = 0, 1, 0
+            self.rank = dist.get_rank() if dist.is_initialized() else 0
+            self.world_size = dist.get_world_size() if dist.is_initialized() else 1
+            self.local_rank = int(os.environ.get("LOCAL_RANK", 0))
 
     def is_rank_zero(self) -> bool:
         return self.rank == 0
