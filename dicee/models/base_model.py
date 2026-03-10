@@ -284,13 +284,13 @@ class BaseKGE(BaseKGELightning):
             self.normalizer_class = torch.nn.LayerNorm
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim)
-            if self.args['scoring_technique'] in ['NegSample', 'KvsSample']:
+            if self.args['scoring_technique'] in ['NegSample', 'FixedNegSample', 'KvsSample']:
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
         elif self.args.get("normalization") == 'BatchNorm1d':
             self.normalizer_class = torch.nn.BatchNorm1d
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
-            if self.args['scoring_technique'] in ['NegSample', 'KvsSample']:
+            if self.args['scoring_technique'] in ['NegSample', 'FixedNegSample', 'KvsSample']:
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
         elif self.args.get("normalization") is None:
             self.normalizer_class = IdentityClass
