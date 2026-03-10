@@ -140,6 +140,9 @@ def get_default_arguments(description=None):
                         help="Find a batch size fitting in GPUs. Only available for TP trainer")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
+    parser.add_argument("--add_literals",
+                        action="store_true",
+                        help="Augment Literals")
     
     # Learning rate scheduling with configuration
     parser.add_argument("--adaptive_lr", type=json.loads, default={},

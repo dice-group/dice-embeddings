@@ -5,6 +5,10 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from .adopt import ADOPT
+from.literal import Litem_lite
+from dicee.dataset_classes import LiteralDataset
+import pandas as pd
+import os
 
 class BaseKGELightning(pl.LightningModule):
     def __init__(self, *args, **kwargs):
@@ -43,6 +47,13 @@ class BaseKGELightning(pl.LightningModule):
                  prog_bar=True,
                  sync_dist=True,
                  logger=False)
+        if self.add_literals:
+            lit_loss = self.literal_step(x_batch)
+            scale = torch.log1p(
+                2 * ((loss_batch * lit_loss) / (loss_batch + lit_loss + 1e-12))
+            ).detach()
+            scale = torch.clamp(scale, min=1e-9, max=0.99999)
+            return (1.0 - scale) * loss_batch + scale * lit_loss
         return loss_batch
 
     def loss_function(self, yhat_batch: torch.FloatTensor, y_batch: torch.FloatTensor):
@@ -141,6 +152,7 @@ class BaseKGE(BaseKGELightning):
         self.normalize_head_entity_embeddings = IdentityClass()
         self.normalize_relation_embeddings = IdentityClass()
         self.normalize_tail_entity_embeddings = IdentityClass()
+        self.normalize_attribute_embeddings = IdentityClass()
         self.hidden_normalizer = IdentityClass()
         self.param_init = IdentityClass
         self.init_params_with_sanity_checking()
@@ -154,6 +166,7 @@ class BaseKGE(BaseKGELightning):
         self.byte_pair_encoding = self.args.get("byte_pair_encoding", False)
         self.max_length_subword_tokens = self.args.get("max_length_subword_tokens", None)
         self.block_size=self.args.get("block_size", None)
+        self.add_literals = args.get("add_literals", False)
         if self.byte_pair_encoding and self.args['model'] != "BytE":
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
             self.param_init(self.token_embeddings.weight.data)
@@ -174,6 +187,16 @@ class BaseKGE(BaseKGELightning):
             self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
             self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
             self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+        
+        if self.add_literals:
+            literal_path = os.path.join(self.args["dataset_dir"], "literals", "train.txt")
+            exp_path = self.args["path_to_store_single_run"]
+            entity_to_idx=pd.read_csv(f"{exp_path}/entity_to_idx.csv",index_col=0)
+            entity_to_idx = {name: idx for idx, name in enumerate(entity_to_idx["entity"].tolist())}
+            self.literal_dataset = LiteralDataset(file_path=literal_path, ent_idx= entity_to_idx)
+            self.num_attributes = self.literal_dataset.num_data_properties
+            self.attribute_embeddings = torch.nn.Embedding(self.num_attributes, self.embedding_dim)
+            self.litem = Litem_lite(dim= self.embedding_dim *2)
 
     def forward_byte_pair_encoded_k_vs_all(self, x: torch.LongTensor):
         """
@@ -284,12 +307,14 @@ class BaseKGE(BaseKGELightning):
             self.normalizer_class = torch.nn.LayerNorm
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim)
+            self.normalize_attribute_embeddings = self.normalizer_class(self.attribute_embeddings)
             if self.args['scoring_technique'] in ['NegSample', 'FixedNegSample', 'KvsSample']:
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
         elif self.args.get("normalization") == 'BatchNorm1d':
             self.normalizer_class = torch.nn.BatchNorm1d
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
+            self.normalize_attribute_embeddings = self.normalizer_class(self.attribute_embeddings, affine=False)
             if self.args['scoring_technique'] in ['NegSample', 'FixedNegSample', 'KvsSample']:
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
         elif self.args.get("normalization") is None:
@@ -382,6 +407,14 @@ class BaseKGE(BaseKGELightning):
             self.input_dp_ent_real(self.entity_embeddings(idx_head_entity)))
         rel_ent_emb = self.normalize_relation_embeddings(self.input_dp_rel_real(self.relation_embeddings(idx_relation)))
         return head_ent_emb, rel_ent_emb
+    
+    def get_entity_attribute_representation(self, idx_head_entity, idx_attr):
+        # (2) Retrieve embeddings & Apply Dropout & Normalization
+        head_ent_emb = self.normalize_head_entity_embeddings(
+            self.input_dp_ent_real(self.entity_embeddings(idx_head_entity)))
+        attr_emb = self.normalize_attribute_embeddings(self.input_dp_rel_real(self.attribute_embeddings(idx_attr)))
+        tuple_emb = torch.cat((head_ent_emb, attr_emb), dim=1)
+        return tuple_emb
 
     def get_sentence_representation(self, x: torch.LongTensor):
         """
@@ -436,6 +469,15 @@ class BaseKGE(BaseKGELightning):
 
         """
         return self.entity_embeddings.weight.data.data.detach(), self.relation_embeddings.weight.data.detach()
+
+    def literal_step(self, x_batch : torch.tensor):
+        "perfrom literal step"
+        batch_head_ent = x_batch[:,0]
+        ent_idx, attr_idx, batch_y = self.literal_dataset.get_batch(batch_head_ent)
+        tuple_emb = self.get_entity_attribute_representation(ent_idx, attr_idx)
+        y_hat =  self.litem(tuple_emb)
+        lit_loss = F.l1_loss(y_hat, batch_y)
+        return lit_loss
 
 
 class IdentityClass(torch.nn.Module):

@@ -88,3 +88,16 @@ class LiteralEmbeddings(nn.Module):
     @property
     def device(self):
         return next(self.parameters()).device
+    
+class Litem_lite(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.block = nn.Sequential(
+            nn.Linear(dim, dim),
+            nn.LayerNorm(dim),
+            nn.ReLU()
+        )
+        self.out = nn.Linear(dim, 1)
+
+    def forward(self, x):
+        return self.out(self.block(x) + x).flatten()

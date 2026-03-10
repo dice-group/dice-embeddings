@@ -53,8 +53,9 @@ class LiteralDataset(Dataset):
             raise ValueError(
                 "entity_to_idx must be provided to initialize LiteralDataset."
             )
-
+        self._entity_literal_cache = {}
         self._load_data()
+        self._build_entity_literal_vocab()
 
     def _load_data(self):
         """Load, filter, index, and normalize the literal data."""
@@ -274,3 +275,75 @@ class LiteralDataset(Dataset):
             raise ValueError(
                 "Unsupported normalization type. Use 'z-norm', 'min-max', or None."
             )
+    
+    def _build_entity_literal_vocab(self):
+        if self.triples.numel() == 0:
+            self.entity_literal_ptr = torch.zeros(self.num_entities + 1, dtype=torch.long)
+            self.entity_literal_attr = torch.empty(0, dtype=torch.long)
+            self.entity_literal_value = torch.empty(0, dtype=torch.float32)
+            return
+
+        sort_order = torch.argsort(self.triples[:, 0])
+        sorted_triples = self.triples.index_select(0, sort_order)
+        self.entity_literal_attr = sorted_triples[:, 1].contiguous()
+        self.entity_literal_value = self.values_norm.index_select(0, sort_order).contiguous()
+
+        counts = torch.bincount(sorted_triples[:, 0], minlength=self.num_entities)
+        self.entity_literal_ptr = torch.zeros(self.num_entities + 1, dtype=torch.long)
+        self.entity_literal_ptr[1:] = torch.cumsum(counts, dim=0)
+
+    def warm_entity_literal_vocab(self, device):
+        cache_key = str(torch.device(device))
+        if cache_key not in self._entity_literal_cache:
+            target_device = torch.device(device)
+            self._entity_literal_cache[cache_key] = {
+                "ptr": self.entity_literal_ptr.to(target_device),
+                "attr": self.entity_literal_attr.to(target_device),
+                "value": self.entity_literal_value.to(target_device),
+            }
+        return self._entity_literal_cache[cache_key]
+
+    def get_batch(self, entity_indices):
+        target_device = entity_indices.device if isinstance(entity_indices, torch.Tensor) else self.triples.device
+        cache = self.warm_entity_literal_vocab(target_device)
+
+        if not isinstance(entity_indices, torch.Tensor):
+            entity_idx = torch.as_tensor(entity_indices, dtype=torch.long, device=target_device)
+        else:
+            entity_idx = entity_indices.to(target_device).long()
+
+        valid_mask = (entity_idx >= 0) & (entity_idx < self.num_entities)
+        if not valid_mask.any():
+            return (
+                torch.empty(0, dtype=torch.long, device=target_device),
+                torch.empty(0, dtype=torch.long, device=target_device),
+                torch.empty(0, dtype=torch.float32, device=target_device),
+            )
+
+        entity_idx = torch.unique(entity_idx[valid_mask], sorted=False)
+        starts = cache["ptr"].index_select(0, entity_idx)
+        ends = cache["ptr"].index_select(0, entity_idx + 1)
+        lengths = ends - starts
+        non_empty_mask = lengths > 0
+        if not non_empty_mask.any():
+            return (
+                torch.empty(0, dtype=torch.long, device=target_device),
+                torch.empty(0, dtype=torch.long, device=target_device),
+                torch.empty(0, dtype=torch.float32, device=target_device),
+            )
+
+        entity_idx = entity_idx[non_empty_mask]
+        starts = starts[non_empty_mask]
+        lengths = lengths[non_empty_mask]
+        ent_ids = torch.repeat_interleave(entity_idx, lengths)
+
+        total = int(lengths.sum().item())
+        batch_offsets = torch.cumsum(lengths, dim=0) - lengths
+        flat_positions = torch.arange(total, device=target_device)
+        flat_starts = torch.repeat_interleave(starts, lengths)
+        flat_offsets = torch.repeat_interleave(batch_offsets, lengths)
+        flat_indices = flat_starts + (flat_positions - flat_offsets)
+
+        rel_ids = cache["attr"].index_select(0, flat_indices)
+        labels = cache["value"].index_select(0, flat_indices)
+        return ent_ids, rel_ids, labels

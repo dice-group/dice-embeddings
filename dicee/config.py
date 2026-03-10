@@ -184,6 +184,8 @@ class Namespace(argparse.Namespace):
         self.swa_c_epochs: int = 1
         """Number of epochs to average over for SWA, SWAG, EMA, TWA."""
 
+        self.add_literals : bool = False
+        "Option to augment KGE with literal values"
 
     def __iter__(self):
         # Iterate
