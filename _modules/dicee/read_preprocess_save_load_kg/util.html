@@ -347,8 +347,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;--backend </span><span class="si">{</span><span class="n">backend</span><span class="si">}</span><span class="s1"> and </span><span class="si">{</span><span class="n">data_path</span><span class="si">}</span><span class="s1"> is not matching&#39;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">data_path</span><span class="si">}</span><span class="s1"> could not found!&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">None</span></div>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;The file &#39;</span><span class="si">{</span><span class="n">data_path</span><span class="si">}</span><span class="s2">&#39; could not be found. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Please check that the path is correct and the file exists.&quot;</span>
+        <span class="p">)</span></div>
 
 
 

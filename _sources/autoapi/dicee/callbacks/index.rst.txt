@@ -287,8 +287,6 @@ Module Contents
 
 
    .. py:attribute:: epoch_ratio
-      :value: None
-
 
 
    .. py:attribute:: epoch_counter

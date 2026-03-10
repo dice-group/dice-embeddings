@@ -205,13 +205,16 @@
         <span class="n">yhat_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">x_batch</span><span class="p">)</span>
         <span class="n">loss_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_function</span><span class="p">(</span><span class="n">yhat_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">training_step_outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss_batch</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;loss&quot;</span><span class="p">,</span>
-                 <span class="n">value</span><span class="o">=</span><span class="n">loss_batch</span><span class="p">,</span>
-                 <span class="n">on_step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                 <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                 <span class="n">prog_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                 <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                 <span class="n">logger</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># Only log when using PyTorch Lightning trainer</span>
+        <span class="c1"># Check private _trainer attribute to avoid RuntimeError from property getter</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_trainer&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trainer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;loss&quot;</span><span class="p">,</span>
+                     <span class="n">value</span><span class="o">=</span><span class="n">loss_batch</span><span class="p">,</span>
+                     <span class="n">on_step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">prog_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">logger</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">loss_batch</span></div>
 </div>
 
