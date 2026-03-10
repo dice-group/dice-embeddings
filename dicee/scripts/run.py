@@ -61,6 +61,9 @@ def get_default_arguments(description=None):
     parser.add_argument("--trainer", type=str, default='PL',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP', "TP"],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only), TP (Model Paralelisim)')
+    parser.add_argument('--devices', type=int, default=1,help='Number of devices for PL trainer. ')
+    parser.add_argument('--strategy', type=str, default="auto",help='Strategy for PL trainer. ')
+    parser.add_argument('--accelerator', type=str, default="gpu",help='Accelerator for PL trainer. ')
     parser.add_argument('--scoring_technique', default="NegSample",
                         help="Training technique for knowledge graph embedding model",
                         choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "FixedNegSample", "1vsSample", "KvsSample"])
