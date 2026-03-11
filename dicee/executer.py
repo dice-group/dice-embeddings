@@ -380,6 +380,7 @@ class ContinuousExecute(Execute):
         #
         previous_args["num_epochs"]=args["num_epochs"]
         previous_args["continual_learning"]=args["continual_learning"]
+        previous_args["path_experiment_folder"]=args["continual_learning"]
         print("Updated configuration:",previous_args)
         try:
             report = load_json(args['continual_learning'] + '/report.json')
@@ -409,21 +410,23 @@ class ContinuousExecute(Execute):
 
         """
         # (1)
+        self.evaluator = Evaluator(args=self.args, is_continual_training=True)
         self.trainer = DICE_Trainer(args=self.args,
                                     is_continual_training=True,
-                                    storage_path=self.args.continual_learning)
+                                    storage_path=self.args.continual_learning, evaluator=self.evaluator)
         # (2)
 
         assert os.path.exists(f"{self.args.continual_learning}/memory_map_train_set.npy")
         # (1) Reload the memory-map of index knowledge graph stored as a numpy ndarray.
-        with open(f"{self.args.continual_learning}/memory_map_details.json", 'r') as file_descriptor:
-            memory_map_details = json.load(file_descriptor)
-        knowledge_graph = np.memmap(f"{self.args.continual_learning}/memory_map_train_set.npy",
-                                         mode='r',
-                                         dtype=memory_map_details["dtype"],
-                                         shape=tuple(memory_map_details["shape"]))
-        self.args.num_entities = memory_map_details["num_entities"]
-        self.args.num_relations = memory_map_details["num_relations"]
+        # with open(f"{self.args.continual_learning}/memory_map_details.json", 'r') as file_descriptor:
+        #     memory_map_details = json.load(file_descriptor)
+        # knowledge_graph = np.memmap(f"{self.args.continual_learning}/memory_map_train_set.npy",
+        #                                  mode='r',
+        #                                  dtype=memory_map_details["dtype"],
+        #                                  shape=tuple(memory_map_details["shape"]))
+        knowledge_graph =  read_or_load_kg(self.args, cls=KG)
+        self.args.num_entities = knowledge_graph.num_entities
+        self.args.num_relations = knowledge_graph.num_relations
         self.args.num_tokens = None
         self.args.max_length_subword_tokens = None
         self.args.ordered_bpe_entities = None
@@ -435,6 +438,5 @@ class ContinuousExecute(Execute):
         if self.args.eval_model is None:
             return self.report
         else:
-            self.evaluator = Evaluator(args=self.args, is_continual_training=True)
             self.evaluator.dummy_eval(self.trained_model, form_of_labelling)
             return {**self.report, **self.evaluator.report}
