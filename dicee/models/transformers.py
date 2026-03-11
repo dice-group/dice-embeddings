@@ -102,13 +102,16 @@ class BytE(BaseKGE):
         yhat_batch = self.forward(x_batch)
         loss_batch = self.loss_function(yhat_batch, y_batch)
         self.training_step_outputs.append(loss_batch.item())
-        self.log("loss",
-                 value=loss_batch,
-                 on_step=True,
-                 on_epoch=True,
-                 prog_bar=True,
-                 sync_dist=True,
-                 logger=False)
+        # Only log when using PyTorch Lightning trainer
+        # Check private _trainer attribute to avoid RuntimeError from property getter
+        if hasattr(self, '_trainer') and self._trainer is not None:
+            self.log("loss",
+                     value=loss_batch,
+                     on_step=True,
+                     on_epoch=True,
+                     prog_bar=True,
+                     sync_dist=True,
+                     logger=False)
         return loss_batch
 
 
