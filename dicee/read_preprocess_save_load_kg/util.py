@@ -250,8 +250,10 @@ def read_from_disk(data_path: str, read_only_few: int = None,
         else:
             raise RuntimeError(f'--backend {backend} and {data_path} is not matching')
     else:
-        print(f'{data_path} could not found!')
-        return None
+        raise FileNotFoundError(
+            f"The file '{data_path}' could not be found. "
+            f"Please check that the path is correct and the file exists."
+        )
 
 
 def count_triples(endpoint: str) -> int:
