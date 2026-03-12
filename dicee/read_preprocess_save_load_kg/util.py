@@ -164,7 +164,16 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
     assert separator is not None, "separator cannot be None"
     print(f'*** Reading {data_path} with Polars ***')
     
-    if ".zst" in data_path:
+    # Get the file extension properly
+    _, ext = os.path.splitext(data_path)
+    ext = ext.lower()
+    
+    if ext == ".parquet":
+        df = polars.read_parquet(data_path)
+        if read_only_few and read_only_few > 0:
+            print(f'Reading only few input data {read_only_few}...')
+            df = df.head(read_only_few)
+    elif ext == ".zst":
         df = polars.read_csv(data_path, n_rows=read_only_few)
     else:
         df = polars.read_csv(data_path,
@@ -190,7 +199,11 @@ def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio:
     assert separator is not None, "separator cannot be None"
     print(f'*** Reading {data_path} with Pandas ***')
     
-    if data_path[-3:] in [".nt", "ttl", 'txt', 'csv', 'zst']:
+    # Get the file extension properly
+    _, ext = os.path.splitext(data_path)
+    ext = ext.lower()
+    
+    if ext in [".nt", ".ttl", '.txt', '.csv', '.zst']:
         df = pd.read_csv(data_path,
                          sep=separator,
                          header=None,
