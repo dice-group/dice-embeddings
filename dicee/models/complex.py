@@ -285,4 +285,48 @@ class ComplEx(BaseKGE):
         imag_real_imag = torch.einsum("bd, bkd -> bk",emb_head_imag * emb_rel_real, emb_tail_imag)
         imag_imag_real = torch.einsum("bd, bkd -> bk",emb_head_imag * emb_rel_imag, emb_tail_real)
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
+    
 
+
+
+
+
+class TrinitE(BaseKGE):
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'TrinitE'
+        fixed_alpha = self.args.get("alpha", None)
+        if fixed_alpha is None:
+            # Learnable alpha initialised at 0.5
+            self.alpha = torch.nn.Parameter(torch.FloatTensor([0.5]), requires_grad=True)
+        else:
+            # Fixed alpha — not a trainable parameter
+            self.register_buffer("alpha", torch.tensor([float(fixed_alpha)]))
+
+    def score(self, head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor):
+        xh, yh, zh = torch.hsplit(head_ent_emb, 3)
+        xr, yr, zr = torch.hsplit(rel_ent_emb, 3)
+        xt, yt, zt = torch.hsplit(tail_ent_emb, 3)
+        # (3) Compute hermitian inner product.
+        score = (xh * xr - yh * yr - zh * zr - 2*(1-self.alpha)*zh*yr) * xt + \
+                (xh * yr + yh * xr) * yt + (xh * zr + zh * xr) * zt - \
+                (1-self.alpha) * ((xh * yr + yh * xr) * zt + (xh * zr + zh * xr) * yt)
+        return score.sum(dim=1)
+
+    def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        # (2) Split head and relation embeddings into 3 parts.
+        xh, yh, zh = torch.hsplit(head_ent_emb, 3)
+        xr, yr, zr = torch.hsplit(rel_ent_emb, 3)
+        # (3) Split all entity embeddings into 3 parts and transpose for mm.
+        xt, yt, zt = torch.hsplit(self.entity_embeddings.weight, 3)
+        xt, yt, zt = xt.transpose(1, 0), yt.transpose(1, 0), zt.transpose(1, 0)
+        # (4) Compute per-component coefficients by grouping tail terms.
+        coeff_x = xh * xr - yh * yr - zh * zr - 2 * (1 - self.alpha) * zh * yr
+        coeff_y = (xh * yr + yh * xr) - (1 - self.alpha) * (xh * zr + zh * xr)
+        coeff_z = (xh * zr + zh * xr) - (1 - self.alpha) * (xh * yr + yh * xr)
+        # (5) Compute scores against all entities via matrix multiplication.
+        return torch.mm(coeff_x, xt) + torch.mm(coeff_y, yt) + torch.mm(coeff_z, zt)
+
+    

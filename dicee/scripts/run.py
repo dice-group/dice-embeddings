@@ -41,7 +41,7 @@ def get_default_arguments(description=None):
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
                                  "Pykeen_TransE", "Pykeen_TransF", "Pykeen_TransH",
-                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx","LFMult", "DeCaL"],
+                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx","LFMult", "DeCaL", "TrinitE"],
                         help="Available knowledge graph embedding models. "
                              "To use other knowledge graph embedding models available in python, e.g.,"
                              "**Pykeen_BoxE** and add this into choices")
@@ -87,7 +87,7 @@ def get_default_arguments(description=None):
                         help='Number of cores to be used. 0 implies using single CPU')
     parser.add_argument("--random_seed", type=int, default=1,
                         help='Seed for all, see pl seed_everything().')
-    parser.add_argument('--p', type=int, default=0,
+    parser.add_argument('--p', type=int, default=1,
                         help='P for Clifford Algebra')
     parser.add_argument('--q', type=int, default=1,
                         help='Q for Clifford Algebra')
@@ -113,7 +113,7 @@ def get_default_arguments(description=None):
                         help='Add x % of noisy triples into training dataset.')
     # WIP
 
-    parser.add_argument('--r', type=int, default=0,
+    parser.add_argument('--r', type=int, default=1,
                         help='R for Clifford Algebra')
     parser.add_argument('--block_size', type=int, default=8,
                         help='Block size for BytE')
@@ -140,7 +140,10 @@ def get_default_arguments(description=None):
                         help="Find a batch size fitting in GPUs. Only available for TP trainer")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
-    
+    parser.add_argument('--alpha', type=float, default=None,
+                        help='Fixed alpha value for TrinitE. '
+                             'If not set, alpha is treated as a learnable parameter during training.')
+
     # Learning rate scheduling with configuration
     parser.add_argument("--adaptive_lr", type=json.loads, default={},
                         help='Enable adaptive learning rate scheduling with configuration. '

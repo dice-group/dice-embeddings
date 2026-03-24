@@ -22,7 +22,7 @@ import torch
 
 from .models import (
     AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ,
-    DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, OMult, Pyke, QMult, Shallom, TransE
+    DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, OMult, Pyke, QMult, Shallom, TransE, TrinitE
 )
 from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
@@ -52,6 +52,7 @@ MODEL_REGISTRY: Dict[str, Tuple[Type, str]] = {
     'DeCaL': (DeCaL, 'EntityPrediction'),
     'DualE': (DualE, 'EntityPrediction'),
     'CoKE': (CoKE, 'EntityPrediction'),
+    'TrinitE': (TrinitE, 'EntityPrediction'),
 }
 
 def create_recipriocal_triples(df: pd.DataFrame) -> pd.DataFrame:
@@ -581,6 +582,9 @@ def _legacy_intialize_model(args: dict, verbose: int = 0) -> Tuple[object, str]:
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'CoKE':
         model = CoKE(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'TrinitE':
+        model = TrinitE(args=args)
         form_of_labelling = 'EntityPrediction'
     else:
         raise ValueError(f"Unknown model: {model_name}. Available models: {list(MODEL_REGISTRY.keys())}")
