@@ -75,8 +75,8 @@ class Execute:
         seed_everything(args.random_seed, workers=True)
         # (3) Set the continual training flag
         self.is_continual_training = continuous_training
-        # (4) Create an experiment folder or use the previous one
-        if self.rank == 0:
+        # (4) Set up the run directory once per node.
+        if self.is_local_rank_zero():
             self.setup_executor()
         # (5) Initialize trainer and model placeholders
         self.trainer: Optional[DICE_Trainer] = None
@@ -93,12 +93,15 @@ class Execute:
     def _setup_distributed_training(self) -> None:
         """Set up distributed training environment if enabled."""
         if self.distributed:
-            if not dist.is_initialized():
-                dist.init_process_group(backend="nccl", init_method="env://")
-            self.rank = dist.get_rank()
-            self.world_size = dist.get_world_size()
             self.local_rank = int(os.environ["LOCAL_RANK"])
             torch.cuda.set_device(self.local_rank)
+            assert torch.cuda.current_device() == self.local_rank, \
+                f"set_device failed! local_rank={self.local_rank} but current={torch.cuda.current_device()}"
+            if not dist.is_initialized():
+                dist.init_process_group(backend="nccl", init_method="env://",
+                                         device_id=torch.device(f"cuda:{self.local_rank}"), world_size=4)
+            self.rank = dist.get_rank()
+            self.world_size = dist.get_world_size()
             print(f"[Rank {self.rank}] mapped to GPU {self.local_rank}", flush=True)
         else:
             self.rank, self.world_size, self.local_rank = 0, 1, 0
@@ -106,11 +109,13 @@ class Execute:
     def is_rank_zero(self) -> bool:
         return self.rank == 0
 
+    def is_local_rank_zero(self) -> bool:
+        return self.local_rank == 0
+
     def cleanup(self):
         if self.distributed and dist.is_initialized():
             dist.destroy_process_group()
     
-    @rank_zero_only
     def setup_executor(self) -> None:
         """Set up storage directories for the experiment.
 
@@ -118,6 +123,9 @@ class Execute:
         Saves the configuration to a JSON file.
         """
         if self.is_continual_training:
+            return
+        
+        if not self.is_local_rank_zero():
             return
 
         # Determine storage path
@@ -155,10 +163,10 @@ class Execute:
     def create_and_store_kg(self) -> None:
         """Create knowledge graph and store as memory-mapped file.
 
-        Only executed on rank 0 in distributed training.
+        Only executed on local rank 0 in distributed training.
         Skips if memmap already exists.
         """
-        if not self.is_rank_zero():
+        if not self.is_local_rank_zero():
             return
 
         memmap_path = os.path.join(
