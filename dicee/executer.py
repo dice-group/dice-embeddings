@@ -99,7 +99,7 @@ class Execute:
                 f"set_device failed! local_rank={self.local_rank} but current={torch.cuda.current_device()}"
             if not dist.is_initialized():
                 dist.init_process_group(backend="nccl", init_method="env://",
-                                         device_id=torch.device(f"cuda:{self.local_rank}"), world_size=4)
+                                         device_id=torch.device(f"cuda:{self.local_rank}"))
             self.rank = dist.get_rank()
             self.world_size = dist.get_world_size()
             print(f"[Rank {self.rank}] mapped to GPU {self.local_rank}", flush=True)
