@@ -67,8 +67,7 @@ class Execute:
         # Check if we need distributed training
         self.distributed = getattr(args, "trainer", None) == "torchDDP"
         # Initialize distributed training if required
-        self._setup_distributed_training()
-
+        self._setup_distributed_training(args)
         # (1) Process arguments and sanity checking
         self.args = preprocesses_input_args(args)
         # (2) Ensure reproducibility
@@ -90,7 +89,7 @@ class Execute:
         # (9) Execution start time
         self.start_time: Optional[float] = None
 
-    def _setup_distributed_training(self) -> None:
+    def _setup_distributed_training(self, args) -> None:
         """Set up distributed training environment if enabled."""
         if self.distributed:
             self.local_rank = int(os.environ["LOCAL_RANK"])
@@ -103,11 +102,13 @@ class Execute:
             self.rank = dist.get_rank()
             self.world_size = dist.get_world_size()
             print(f"[Rank {self.rank}] mapped to GPU {self.local_rank}", flush=True)
+        
+        elif args.trainer == "PL":
+            self.local_rank = int(os.environ.get("LOCAL_RANK", getattr(rank_zero_only, "rank", 0)))
+            self.rank = int(os.environ.get("RANK", self.local_rank))
+            self.world_size = int(os.environ.get("WORLD_SIZE", torch.cuda.device_count()))
         else:
             self.rank, self.world_size, self.local_rank = 0, 1, 0
-
-    def is_rank_zero(self) -> bool:
-        return self.rank == 0
 
     def is_local_rank_zero(self) -> bool:
         return self.local_rank == 0
