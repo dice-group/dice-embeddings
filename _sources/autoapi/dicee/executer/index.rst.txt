@@ -118,7 +118,7 @@ Module Contents
 
 
 
-   .. py:method:: is_rank_zero() -> bool
+   .. py:method:: is_local_rank_zero() -> bool
 
 
    .. py:method:: cleanup()
@@ -137,7 +137,7 @@ Module Contents
 
       Create knowledge graph and store as memory-mapped file.
 
-      Only executed on rank 0 in distributed training.
+      Only executed on local rank 0 in distributed training.
       Skips if memmap already exists.
 
 

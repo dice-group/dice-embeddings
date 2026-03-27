@@ -97,7 +97,7 @@
 <li class="toctree-l6"><a class="reference internal" href="#id5"><code class="docutils literal notranslate"><span class="pre">Execute.report</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#id6"><code class="docutils literal notranslate"><span class="pre">Execute.evaluator</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.start_time"><code class="docutils literal notranslate"><span class="pre">Execute.start_time</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.is_rank_zero"><code class="docutils literal notranslate"><span class="pre">Execute.is_rank_zero()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.is_local_rank_zero"><code class="docutils literal notranslate"><span class="pre">Execute.is_local_rank_zero()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.cleanup"><code class="docutils literal notranslate"><span class="pre">Execute.cleanup()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.setup_executor"><code class="docutils literal notranslate"><span class="pre">Execute.setup_executor()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.create_and_store_kg"><code class="docutils literal notranslate"><span class="pre">Execute.create_and_store_kg()</span></code></a></li>
@@ -296,8 +296,8 @@ the full lifecycle of knowledge graph embedding model training.</p>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.executer.Execute.is_rank_zero">
-<span class="sig-name descname"><span class="pre">is_rank_zero</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.is_rank_zero"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.is_rank_zero" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="dicee.executer.Execute.is_local_rank_zero">
+<span class="sig-name descname"><span class="pre">is_local_rank_zero</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.is_local_rank_zero"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.is_local_rank_zero" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -317,7 +317,7 @@ Saves the configuration to a JSON file.</p>
 <dt class="sig sig-object py" id="dicee.executer.Execute.create_and_store_kg">
 <span class="sig-name descname"><span class="pre">create_and_store_kg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.create_and_store_kg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.create_and_store_kg" title="Link to this definition"></a></dt>
 <dd><p>Create knowledge graph and store as memory-mapped file.</p>
-<p>Only executed on rank 0 in distributed training.
+<p>Only executed on local rank 0 in distributed training.
 Skips if memmap already exists.</p>
 </dd></dl>
 
