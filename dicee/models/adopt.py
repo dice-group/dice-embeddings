@@ -461,7 +461,7 @@ class ADOPT(Optimizer):
             - CUDA graph capture is checked for safety when capturable=True
             - The method is thread-safe for different parameter groups
         """
-        self._cuda_graph_capture_health_check()
+        self._accelerator_graph_capture_health_check()
 
         loss = None
         if closure is not None:
