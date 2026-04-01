@@ -16,6 +16,7 @@ from typing import Dict, Optional
 import numpy as np
 import torch
 import torch.distributed as dist
+import pandas as pd
 from pytorch_lightning import seed_everything
 from pytorch_lightning.utilities.rank_zero import rank_zero_only
 
@@ -120,6 +121,9 @@ class Execute:
     def is_local_rank_zero(self) -> bool:
         return self.local_rank == 0
 
+    def is_global_rank_zero(self) -> bool:
+        return self.rank == 0
+
     def cleanup(self):
         if self.distributed and dist.is_initialized():
             dist.destroy_process_group()
@@ -133,7 +137,7 @@ class Execute:
         if self.is_continual_training:
             return
         
-        if not self.is_local_rank_zero():
+        if not self.is_global_rank_zero():
             return
 
         # Determine storage path
@@ -174,7 +178,7 @@ class Execute:
         Only executed on local rank 0 in distributed training.
         Skips if memmap already exists.
         """
-        if not self.is_local_rank_zero():
+        if not self.is_global_rank_zero():
             return
 
         memmap_path = os.path.join(
@@ -211,11 +215,28 @@ class Execute:
     def _save_kg_memmap(self, memmap_path: str, details_path: str) -> None:
         """Save knowledge graph to memory-mapped file."""
         kg = self.knowledge_graph
+
+        if isinstance(kg.entity_to_idx, dict):
+            entity_to_idx = kg.entity_to_idx
+        elif isinstance(kg.entity_to_idx, pd.DataFrame) and 'entity' in kg.entity_to_idx.columns:
+            entity_to_idx = {str(row['entity']): int(idx) for idx, row in kg.entity_to_idx.iterrows()}
+        else:
+            entity_to_idx = None
+
+        if isinstance(kg.relation_to_idx, dict):
+            relation_to_idx = kg.relation_to_idx
+        elif isinstance(kg.relation_to_idx, pd.DataFrame) and 'relation' in kg.relation_to_idx.columns:
+            relation_to_idx = {str(row['relation']): int(idx) for idx, row in kg.relation_to_idx.iterrows()}
+        else:
+            relation_to_idx = None
+
         data = {
             "shape": tuple(kg.train_set.shape),
             "dtype": kg.train_set.dtype.str,
             "num_entities": kg.num_entities,
             "num_relations": kg.num_relations,
+            "entity_to_idx": entity_to_idx,
+            "relation_to_idx": relation_to_idx,
         }
 
         with open(details_path, 'w') as f:
@@ -230,6 +251,30 @@ class Execute:
         memmap_kg[:] = kg.train_set[:]
         memmap_kg.flush()
         del memmap_kg
+
+    def _wait_for_memmap_files(self, timeout_seconds: int = 1800) -> None:
+        """Wait until rank 0 has created memmap artifacts for all ranks.
+
+        In PL+torchrun multi-node runs, torch.distributed may not be initialized
+        at this point, so a filesystem-based wait avoids rank races.
+        """
+        base_path = self.args.path_to_store_single_run
+        details_path = os.path.join(base_path, 'memory_map_details.json')
+        memmap_path = os.path.join(base_path, 'memory_map_train_set.npy')
+
+        if os.path.exists(details_path) and os.path.exists(memmap_path):
+            return
+
+        start = time.time()
+        while time.time() - start < timeout_seconds:
+            if os.path.exists(details_path) and os.path.exists(memmap_path):
+                return
+            time.sleep(1)
+
+        raise TimeoutError(
+            f"Timed out waiting for memmap artifacts at {base_path}. "
+            f"Missing files: details={os.path.exists(details_path)}, memmap={os.path.exists(memmap_path)}"
+        )
     
     def load_from_memmap(self) -> None:
         """Load knowledge graph from memory-mapped file."""
@@ -247,6 +292,8 @@ class Execute:
                                             shape=tuple(memory_map_details["shape"]))
         self.args.num_entities = memory_map_details["num_entities"]
         self.args.num_relations = memory_map_details["num_relations"]
+        self.args.entity_to_idx = memory_map_details.get("entity_to_idx")
+        self.args.relation_to_idx = memory_map_details.get("relation_to_idx")
         self.args.num_tokens = None
         self.args.max_length_subword_tokens = None
         self.args.ordered_bpe_entities = None
@@ -352,6 +399,7 @@ class Execute:
         print(f"Start time:{datetime.datetime.now()}")
         # (1) Create knowledge graph
         self.create_and_store_kg()
+        self._wait_for_memmap_files()
         # (2) Synchronize processes if distributed training is used
         if self.distributed and dist.is_initialized():
             dist.barrier()

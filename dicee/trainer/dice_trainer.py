@@ -304,14 +304,20 @@ class DICE_Trainer:
             else:
                 path = self.args.path_to_store_single_run
 
+            entity_to_idx = getattr(self.args, "entity_to_idx", None)
+            relation_to_idx = getattr(self.args, "relation_to_idx", None)
+            if entity_to_idx is None or relation_to_idx is None:
+                entity_to_idx = pd.read_csv(f"{path}/entity_to_idx.csv", index_col=0)
+                relation_to_idx = pd.read_csv(f"{path}/relation_to_idx.csv", index_col=0)
+
             train_dataset = construct_dataset(train_set=self.trainer.dataset,
                                               valid_set=None,
                                               test_set=None,
                                               train_target_indices=None,
                                               target_dim=None,
                                               ordered_bpe_entities=None,
-                                              entity_to_idx=pd.read_csv(f"{path}/entity_to_idx.csv",index_col=0),
-                                              relation_to_idx=pd.read_csv(f"{path}/relation_to_idx.csv",index_col=0),
+                                              entity_to_idx=entity_to_idx,
+                                              relation_to_idx=relation_to_idx,
                                               form_of_labelling=self.trainer.form_of_labelling,
                                               scoring_technique=self.args.scoring_technique,
                                               neg_ratio=self.args.neg_ratio,

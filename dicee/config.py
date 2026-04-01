@@ -57,6 +57,9 @@ class Namespace(argparse.Namespace):
         self.gpus = None
         """Number GPUs to be used during training"""
 
+        self.num_nodes: int = 1
+        """Number of nodes to be used during training with PL."""
+
         self.callbacks = dict()
         """Callbacks, e.g., {"PPE":{ "last_percent_to_consider": 10}}"""
 
