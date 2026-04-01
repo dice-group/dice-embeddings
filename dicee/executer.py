@@ -124,6 +124,23 @@ class Execute:
     def is_global_rank_zero(self) -> bool:
         return self.rank == 0
 
+    def _uses_node_local_storage(self) -> bool:
+        """Return True when output path is node-local (not shared across nodes)."""
+        path = getattr(self.args, "path_to_store_single_run", None)
+        if not path:
+            return False
+        return path.startswith("/dev/shm") or path.startswith("/tmp") or path.startswith("/var/tmp")
+
+    def is_storage_owner(self) -> bool:
+        """Determine which rank is responsible for creating shared artifacts.
+
+        - For node-local paths, local rank 0 per node owns setup.
+        - For shared paths, global rank 0 owns setup to avoid multi-node races.
+        """
+        if self._uses_node_local_storage():
+            return self.is_local_rank_zero()
+        return self.is_global_rank_zero()
+
     def cleanup(self):
         if self.distributed and dist.is_initialized():
             dist.destroy_process_group()
@@ -137,7 +154,7 @@ class Execute:
         if self.is_continual_training:
             return
         
-        if not self.is_global_rank_zero():
+        if not self.is_storage_owner():
             return
 
         # Determine storage path
@@ -178,7 +195,7 @@ class Execute:
         Only executed on local rank 0 in distributed training.
         Skips if memmap already exists.
         """
-        if not self.is_global_rank_zero():
+        if not self.is_storage_owner():
             return
 
         memmap_path = os.path.join(
