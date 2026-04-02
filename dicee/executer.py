@@ -25,6 +25,7 @@ from .static_funcs import (
     create_experiment_folder,
     load_json,
     read_or_load_kg,
+    setup_distributed_training,
     store,
     timeit,
 )
@@ -64,10 +65,16 @@ class Execute:
             args: Configuration arguments (Namespace or similar).
             continuous_training: Whether this is continual training.
         """
-        # Check if we need distributed training
-        self.distributed = getattr(args, "trainer", None) == "torchDDP"
-        # Initialize distributed training if required
-        self._setup_distributed_training(args)
+        # Setup distributed and device ranks before training
+        distributed_setup = setup_distributed_training(args)
+        # Checks if the current training setup is distributed
+        self.distributed = distributed_setup["distributed"]
+        # Rank of the current process/GPU globally
+        self.rank = distributed_setup["rank"]
+        # Total number of nodes in the training
+        self.world_size = distributed_setup["world_size"]
+        # Rank of the current process/GPU within the node
+        self.local_rank = distributed_setup["local_rank"]
         # (1) Process arguments and sanity checking
         self.args = preprocesses_input_args(args)
         # (2) Ensure reproducibility
@@ -88,27 +95,6 @@ class Execute:
         self.evaluator: Optional[Evaluator] = None
         # (9) Execution start time
         self.start_time: Optional[float] = None
-
-    def _setup_distributed_training(self, args) -> None:
-        """Set up distributed training environment if enabled."""
-        if self.distributed:
-            self.local_rank = int(os.environ["LOCAL_RANK"])
-            torch.cuda.set_device(self.local_rank)
-            assert torch.cuda.current_device() == self.local_rank, \
-                f"set_device failed! local_rank={self.local_rank} but current={torch.cuda.current_device()}"
-            if not dist.is_initialized():
-                dist.init_process_group(backend="nccl", init_method="env://",
-                                         device_id=torch.device(f"cuda:{self.local_rank}"))
-            self.rank = dist.get_rank()
-            self.world_size = dist.get_world_size()
-            print(f"[Rank {self.rank}] mapped to GPU {self.local_rank}", flush=True)
-        
-        elif args.trainer == "PL":
-            self.local_rank = int(os.environ.get("LOCAL_RANK", getattr(rank_zero_only, "rank", 0)))
-            self.rank = int(os.environ.get("RANK", self.local_rank))
-            self.world_size = int(os.environ.get("WORLD_SIZE", torch.cuda.device_count()))
-        else:
-            self.rank, self.world_size, self.local_rank = 0, 1, 0
 
     def is_local_rank_zero(self) -> bool:
         return self.local_rank == 0
