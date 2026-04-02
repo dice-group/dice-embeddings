@@ -74,7 +74,7 @@ def initialize_trainer(
         trainer = TorchDDPTrainer(args, callbacks=callbacks)
     elif args.trainer == 'PL':
         print('Initializing Pytorch-lightning Trainer', end='\t')
-        kwargs = vars(args)
+        kwargs = {**vars(args), **(getattr(args, "pl_trainer_kwargs", {}) or {})}
         # NOTE: PyTorch Lightning Trainer has many optional parameters
         # See: https://lightning.ai/docs/pytorch/stable/common/trainer.html
         trainer = pl.Trainer(accelerator=kwargs.get("accelerator", "auto"),

@@ -14,7 +14,6 @@ from types import SimpleNamespace
 from typing import Dict, Optional
 
 import numpy as np
-import torch
 import torch.distributed as dist
 from pytorch_lightning import seed_everything
 from pytorch_lightning.utilities.rank_zero import rank_zero_only
@@ -327,30 +326,33 @@ class Execute:
         A dict containing information about the training and/or evaluation
 
         """
-        self.start_time = time.time()
-        print(f"Start time:{datetime.datetime.now()}")
-        # (1) Create knowledge graph
-        self.create_and_store_kg()
-        # (2) Synchronize processes if distributed training is used
-        if self.distributed and dist.is_initialized():
-            dist.barrier()
+        try:
+            self.start_time = time.time()
+            print(f"Start time:{datetime.datetime.now()}")
+            # (1) Create knowledge graph
+            self.create_and_store_kg()
+            # (2) Synchronize processes if distributed training is used
+            if self.distributed and dist.is_initialized():
+                dist.barrier()
 
-        # (3) Reload the memory-map of index knowledge graph stored as a numpy ndarray
-        if self.knowledge_graph is None:
-            self.load_from_memmap()
+            # (3) Reload the memory-map of index knowledge graph stored as a numpy ndarray
+            if self.knowledge_graph is None:
+                self.load_from_memmap()
 
-        # (4) Create an evaluator object.
-        self.evaluator = Evaluator(args=self.args)
-        # (5) Create a trainer object.
-        if not getattr(self.args, "full_storage_path", None):
-            self.args.full_storage_path = self.args.path_to_store_single_run
-        self.trainer = DICE_Trainer(args=self.args,
-                                    is_continual_training=self.is_continual_training,
-                                    storage_path=self.args.full_storage_path,
-                                    evaluator=self.evaluator)
-        # (6) Start the training
-        self.trained_model, form_of_labelling = self.trainer.start(knowledge_graph=self.knowledge_graph)
-        return self.end(form_of_labelling)
+            # (4) Create an evaluator object.
+            self.evaluator = Evaluator(args=self.args)
+            # (5) Create a trainer object.
+            if not getattr(self.args, "full_storage_path", None):
+                self.args.full_storage_path = self.args.path_to_store_single_run
+            self.trainer = DICE_Trainer(args=self.args,
+                                        is_continual_training=self.is_continual_training,
+                                        storage_path=self.args.full_storage_path,
+                                        evaluator=self.evaluator)
+            # (6) Start the training
+            self.trained_model, form_of_labelling = self.trainer.start(knowledge_graph=self.knowledge_graph)
+            return self.end(form_of_labelling)
+        finally:
+            self.cleanup()
 
 
 class ContinuousExecute(Execute):
