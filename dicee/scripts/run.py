@@ -3,7 +3,7 @@ from dicee.executer import Execute, ContinuousExecute
 import argparse
 
 def get_default_arguments(description=None):
-    """ Extends pytorch_lightning Trainer's arguments with ours """
+    """ Extends lightning Trainer's arguments with ours """
     parser = argparse.ArgumentParser(add_help=False)
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Knowledge graph related arguments

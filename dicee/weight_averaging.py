@@ -4,7 +4,7 @@ import json
 import torch
 import torch.nn as nn
 from torch._dynamo.eval_frame import OptimizedModule
-from pytorch_lightning.utilities import rank_zero_only
+from  lightning.pytorch.utilities import rank_zero_only
 
 from .abstracts import AbstractCallback
 from dicee.models.ensemble import EnsembleKGE

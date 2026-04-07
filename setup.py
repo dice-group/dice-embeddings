@@ -19,7 +19,6 @@ _core_deps = [
     "pandas<=2.3.3",
     "requests>=2.32.3",
     "polars>=0.16.14",
-    "pytorch_lightning>=2.5.1",
     "tiktoken>=0.5.1",
     "psutil>=5.9.4",
 ]

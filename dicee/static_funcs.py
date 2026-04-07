@@ -20,7 +20,7 @@ import polars as pl
 import requests
 import torch
 import torch.distributed as dist
-from pytorch_lightning.utilities.rank_zero import rank_zero_only
+from lightning.pytorch.utilities.rank_zero import rank_zero_only
 
 from .models import (
     AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ,

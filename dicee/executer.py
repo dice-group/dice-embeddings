@@ -15,8 +15,8 @@ from typing import Dict, Optional
 
 import numpy as np
 import torch.distributed as dist
-from pytorch_lightning import seed_everything
-from pytorch_lightning.utilities.rank_zero import rank_zero_only
+from lightning import seed_everything
+from lightning.pytorch.utilities.rank_zero import rank_zero_only
 
 from .evaluator import Evaluator
 from .knowledge_graph import KG
@@ -32,7 +32,7 @@ from .static_preprocess_funcs import preprocesses_input_args
 from .trainer import DICE_Trainer
 
 # Configure logging
-logging.getLogger('pytorch_lightning').setLevel(logging.WARNING)
+logging.getLogger('lightning').setLevel(logging.WARNING)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "INFO"
 
