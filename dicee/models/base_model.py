@@ -98,7 +98,7 @@ class BaseKGELightning(pl.LightningModule):
 
         elif self.optimizer_name == 'Adam':
             self.selected_optimizer = torch.optim.Adam(parameters, lr=self.learning_rate,
-                                                       weight_decay=self.weight_decay)
+                                                       weight_decay=self.weight_decay, fused=True)
         elif self.optimizer_name == 'Adopt':
             self.selected_optimizer = ADOPT(parameters, lr=self.learning_rate)
         elif self.optimizer_name == 'AdamW':

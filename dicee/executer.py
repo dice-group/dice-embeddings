@@ -66,7 +66,7 @@ class Execute:
             continuous_training: Whether this is continual training.
         """
         # Check if we need distributed training
-        self.distributed = getattr(args, "trainer", None) == "torchDDP"
+        self.distributed = getattr(args, "trainer", None) == "torchDDP" or getattr(args, "trainer", None) == "PL"
         # Initialize distributed training if required
         self._setup_distributed_training(args)
         # (1) Process arguments and sanity checking
@@ -90,29 +90,50 @@ class Execute:
         # (9) Execution start time
         self.start_time: Optional[float] = None
 
+    def _resolve_distributed_backend(self, args) -> str:
+        """Resolve torch.distributed backend from the configured accelerator."""
+        accelerator = str(getattr(args, "accelerator", "auto")).lower()
+        if accelerator in {"gpu", "cuda"}:
+            if not torch.cuda.is_available():
+                raise RuntimeError("accelerator='gpu' requested, but CUDA is not available on this node.")
+            return "nccl"
+        return "gloo"
+
     def _setup_distributed_training(self, args) -> None:
         """Set up distributed training environment if enabled."""
-        if self.distributed:
+        if args.trainer == "torchDDP":
             self.local_rank = int(os.environ["LOCAL_RANK"])
-            torch.cuda.set_device(self.local_rank)
-            assert torch.cuda.current_device() == self.local_rank, \
-                f"set_device failed! local_rank={self.local_rank} but current={torch.cuda.current_device()}"
+            backend = self._resolve_distributed_backend(args)
+            if backend == "nccl":
+                torch.cuda.set_device(self.local_rank)
+                assert torch.cuda.current_device() == self.local_rank, \
+                    f"set_device failed! local_rank={self.local_rank} but current={torch.cuda.current_device()}"
             if not dist.is_initialized():
-                dist.init_process_group(backend="nccl", init_method="env://",
-                                         device_id=torch.device(f"cuda:{self.local_rank}"))
-                backend = "gloo" if not torch.cuda.is_available() else "nccl"
                 dist.init_process_group(backend=backend, init_method="env://")
             self.rank = dist.get_rank()
             self.world_size = dist.get_world_size()
             self.local_rank = int(os.environ.get("LOCAL_RANK", 0))
-            if torch.cuda.is_available():
+            if backend == "nccl":
                 torch.cuda.set_device(self.local_rank)
             print(f"[Rank {self.rank}] mapped to GPU {self.local_rank}", flush=True)
         
         elif args.trainer == "PL":
             self.local_rank = int(os.environ.get("LOCAL_RANK", getattr(rank_zero_only, "rank", 0)))
-            self.rank = int(os.environ.get("RANK", self.local_rank))
-            self.world_size = int(os.environ.get("WORLD_SIZE", torch.cuda.device_count()))
+            world_size_env = int(os.environ.get("WORLD_SIZE", 1))
+            backend = self._resolve_distributed_backend(args)
+
+            if backend == "nccl":
+                torch.cuda.set_device(self.local_rank)
+
+            if world_size_env > 1 and not dist.is_initialized():
+                dist.init_process_group(backend=backend, init_method="env://")
+
+            if dist.is_initialized():
+                self.rank = dist.get_rank()
+                self.world_size = dist.get_world_size()
+            else:
+                self.rank = int(os.environ.get("RANK", self.local_rank))
+                self.world_size = world_size_env
         else:
             self.rank = dist.get_rank() if dist.is_initialized() else 0
             self.world_size = dist.get_world_size() if dist.is_initialized() else 1

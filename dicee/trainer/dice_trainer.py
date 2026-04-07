@@ -77,9 +77,15 @@ def initialize_trainer(
         kwargs = vars(args)
         # NOTE: PyTorch Lightning Trainer has many optional parameters
         # See: https://lightning.ai/docs/pytorch/stable/common/trainer.html
+        print("strategy",kwargs.get("strategy", "auto"))
+        print("accelerator",kwargs.get("accelerator", "auto"))
+        print("devices",kwargs.get("devices", "auto"))
+        print("num_nodes",kwargs.get("num_nodes", "auto"))
+         
         trainer = pl.Trainer(accelerator=kwargs.get("accelerator", "auto"),
                           strategy=kwargs.get("strategy", "auto"),
                           num_nodes=kwargs.get("num_nodes", 1),
+                          devices=kwargs.get("devices", 1),
                           precision=kwargs.get("precision", None),
                           logger=kwargs.get("logger", None),
                           callbacks=callbacks,
@@ -90,7 +96,7 @@ def initialize_trainer(
                           min_steps=kwargs.get("min_steps", None),
                           detect_anomaly=False,
                           barebones=False,
-                          enable_checkpointing=not kwargs.get('disable_checkpointing', False))
+                          enable_checkpointing=False)
     else:
         print('Initializing TorchTrainer CPU Trainer...', end='\t')
         trainer = TorchTrainer(args, callbacks=callbacks)
