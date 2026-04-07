@@ -233,7 +233,7 @@ class DICE_Trainer:
         """
 
         self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
-        model, form_of_labelling = self._initialize_model_for_current_trainer()
+        model, form_of_labelling = self.initialize_or_load_model()
         # TODO: Here we need to load memory pag
         self.trainer.evaluator = self.evaluator
         self.trainer.dataset = knowledge_graph
@@ -253,27 +253,6 @@ class DICE_Trainer:
         self.report['form_of_labelling'] = form_of_labelling
         assert form_of_labelling in ['EntityPrediction', 'RelationPrediction']
         return model, form_of_labelling
-
-    def _initialize_model_for_current_trainer(self):
-        """Initialize the model with FSDP-aware empty init only for Lightning FSDP."""
-        pl_kwargs = getattr(self.args, "pl_trainer_kwargs", {}) or {}
-        strategy = pl_kwargs.get("strategy", "auto")
-
-        if isinstance(self.trainer, pl.Trainer) and strategy == "fsdp":
-            with self.trainer.init_module(empty_init=True):
-                model, form_of_labelling = self.initialize_or_load_model()
-            first_parameter = next(model.parameters())
-            allocated_mb = torch.cuda.memory_allocated() / (1024 ** 2) if torch.cuda.is_available() else 0.0
-            print(
-                "Temporary FSDP init verification:",
-                f"device={first_parameter.device}",
-                f"is_meta={first_parameter.is_meta}",
-                f"cuda_memory_allocated_mb={allocated_mb:.2f}",
-                flush=True,
-            )
-            return model, form_of_labelling
-
-        return self.initialize_or_load_model()
 
     @timeit
     def init_dataloader(self, dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader:
@@ -359,7 +338,7 @@ class DICE_Trainer:
         if self.args.num_folds_for_cv == 0:
             self.trainer: Union[TensorParallel, TorchTrainer, TorchDDPTrainer, pl.Trainer]
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
-            model, form_of_labelling = self._initialize_model_for_current_trainer()
+            model, form_of_labelling = self.initialize_or_load_model()
             self.trainer.evaluator = self.evaluator
             self.trainer.dataset = knowledge_graph
             self.trainer.form_of_labelling = form_of_labelling
