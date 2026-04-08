@@ -99,6 +99,12 @@ A KGE model model can also be trained in multi-node multi-gpu DDP setting.
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_torchDDP"
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_torchDDP"
 ```
+Multi-node training is also possible with the `PL` trainer 
+```bash
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "PL" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_PL"
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "PL" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_PL"
+```
+
 On large knowledge graphs, this configurations should be used.
 Note: When training with multi-GPU or Distributed Data Parallel (DDP) settings, you must provide the `--path_to_store_single_run` argument to specify where to store the results of a single training run. This ensures that all processes write to the correct directory and prevents conflicts.
 
@@ -120,6 +126,7 @@ CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_t
 ``` 
 The `CUDA_VISIBLE_DEVICES=0` setting limits the program to access only the specified GPU(s), making all others invisible.  
 Multiple GPUs can be selected by providing a comma-separated list, for example: `CUDA_VISIBLE_DEVICES=0,1`.
+Additional PyTorch Lightning trainer options can be passed with `--pl_trainer_kwargs`, e.g. `--pl_trainer_kwargs '{"precision":"16-mixed","strategy":"ddp"}'`. PyTorch Lightning Trainer has many optional parameters; see: https://lightning.ai/docs/pytorch/stable/common/trainer.html
 
 
 The data is in the following form
