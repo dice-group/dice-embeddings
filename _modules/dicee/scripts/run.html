@@ -95,7 +95,7 @@
 <div class="viewcode-block" id="get_default_arguments">
 <a class="viewcode-back" href="../../../autoapi/dicee/scripts/run/index.html#dicee.scripts.run.get_default_arguments">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_default_arguments</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Extends pytorch_lightning Trainer&#39;s arguments with ours &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Extends lightning Trainer&#39;s arguments with ours &quot;&quot;&quot;</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">add_help</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="c1"># Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods</span>
     <span class="c1"># Knowledge graph related arguments</span>
@@ -184,6 +184,10 @@
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--q&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                         <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Q for Clifford Algebra&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--pykeen_model_kwargs&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">{})</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--pl_trainer_kwargs&quot;</span><span class="p">,</span><span class="nb">type</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Additional PyTorch Lightning Trainer keyword arguments as JSON. &#39;</span>
+             <span class="s1">&#39;Example: {&quot;accelerator&quot;: &quot;gpu&quot;, &quot;strategy&quot;: &quot;ddp&quot;, &quot;precision&quot;: &quot;16-mixed&quot;}&#39;</span>
+    <span class="p">)</span>
 
     <span class="c1"># Evaluation Related</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--num_folds_for_cv&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>

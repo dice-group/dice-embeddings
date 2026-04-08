@@ -18,7 +18,7 @@ Module Contents
 
 .. py:function:: get_default_arguments(description=None)
 
-   Extends pytorch_lightning Trainer's arguments with ours
+   Extends lightning Trainer's arguments with ours
 
 
 .. py:function:: main()

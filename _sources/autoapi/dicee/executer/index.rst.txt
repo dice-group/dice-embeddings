@@ -77,6 +77,15 @@ Module Contents
    .. py:attribute:: distributed
 
 
+   .. py:attribute:: rank
+
+
+   .. py:attribute:: world_size
+
+
+   .. py:attribute:: local_rank
+
+
    .. py:attribute:: args
 
 

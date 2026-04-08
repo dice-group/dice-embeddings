@@ -30,6 +30,7 @@ Functions
    dicee.static_funcs.get_re_vocab
    dicee.static_funcs.get_ee_vocab
    dicee.static_funcs.timeit
+   dicee.static_funcs.setup_distributed_training
    dicee.static_funcs.save_pickle
    dicee.static_funcs.load_pickle
    dicee.static_funcs.load_term_mapping
@@ -112,6 +113,11 @@ Module Contents
    :param func: Function to be timed.
 
    :returns: Wrapped function that prints timing information.
+
+
+.. py:function:: setup_distributed_training(args) -> Dict[str, Union[bool, int]]
+
+   Resolve distributed-training state and initialize custom DDP when needed.
 
 
 .. py:function:: save_pickle(*, data: Optional[object] = None, file_path: str) -> None

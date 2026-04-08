@@ -92,6 +92,7 @@
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.get_re_vocab"><code class="docutils literal notranslate"><span class="pre">get_re_vocab()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.get_ee_vocab"><code class="docutils literal notranslate"><span class="pre">get_ee_vocab()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.timeit"><code class="docutils literal notranslate"><span class="pre">timeit()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.setup_distributed_training"><code class="docutils literal notranslate"><span class="pre">setup_distributed_training()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.save_pickle"><code class="docutils literal notranslate"><span class="pre">save_pickle()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.load_pickle"><code class="docutils literal notranslate"><span class="pre">load_pickle()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs.load_term_mapping"><code class="docutils literal notranslate"><span class="pre">load_term_mapping()</span></code></a></li>
@@ -194,82 +195,85 @@ serialization, and various helper operations.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.timeit" title="dicee.static_funcs.timeit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">timeit</span></code></a>(→ Callable)</p></td>
 <td><p>Decorator to measure and print execution time and memory usage.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.save_pickle" title="dicee.static_funcs.save_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_pickle</span></code></a>(→ None)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.setup_distributed_training" title="dicee.static_funcs.setup_distributed_training"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup_distributed_training</span></code></a>(→ Dict[str, Union[bool, int]])</p></td>
+<td><p>Resolve distributed-training state and initialize custom DDP when needed.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.save_pickle" title="dicee.static_funcs.save_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_pickle</span></code></a>(→ None)</p></td>
 <td><p>Save data to a pickle file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.load_pickle" title="dicee.static_funcs.load_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_pickle</span></code></a>(→ object)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.load_pickle" title="dicee.static_funcs.load_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_pickle</span></code></a>(→ object)</p></td>
 <td><p>Load data from a pickle file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.load_term_mapping" title="dicee.static_funcs.load_term_mapping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_term_mapping</span></code></a>(→ Union[dict, polars.DataFrame])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.load_term_mapping" title="dicee.static_funcs.load_term_mapping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_term_mapping</span></code></a>(→ Union[dict, polars.DataFrame])</p></td>
 <td><p>Load term-to-index mapping from pickle or CSV file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.select_model" title="dicee.static_funcs.select_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">select_model</span></code></a>(args[, is_continual_training, storage_path])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.select_model" title="dicee.static_funcs.select_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">select_model</span></code></a>(args[, is_continual_training, storage_path])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.load_model" title="dicee.static_funcs.load_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_model</span></code></a>(→ Tuple[object, Tuple[dict, dict]])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.load_model" title="dicee.static_funcs.load_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_model</span></code></a>(→ Tuple[object, Tuple[dict, dict]])</p></td>
 <td><p>Load weights and initialize pytorch module from namespace arguments</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.load_model_ensemble" title="dicee.static_funcs.load_model_ensemble"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_model_ensemble</span></code></a>(...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.load_model_ensemble" title="dicee.static_funcs.load_model_ensemble"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_model_ensemble</span></code></a>(...)</p></td>
 <td><p>Construct Ensemble Of weights and initialize pytorch module from namespace arguments</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.save_numpy_ndarray" title="dicee.static_funcs.save_numpy_ndarray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_numpy_ndarray</span></code></a>(*, data, file_path)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.save_numpy_ndarray" title="dicee.static_funcs.save_numpy_ndarray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_numpy_ndarray</span></code></a>(*, data, file_path)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.numpy_data_type_changer" title="dicee.static_funcs.numpy_data_type_changer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy_data_type_changer</span></code></a>(→ numpy.ndarray)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.numpy_data_type_changer" title="dicee.static_funcs.numpy_data_type_changer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy_data_type_changer</span></code></a>(→ numpy.ndarray)</p></td>
 <td><p>Detect most efficient data type for a given triples</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.save_checkpoint_model" title="dicee.static_funcs.save_checkpoint_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_checkpoint_model</span></code></a>(→ None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.save_checkpoint_model" title="dicee.static_funcs.save_checkpoint_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_checkpoint_model</span></code></a>(→ None)</p></td>
 <td><p>Store Pytorch model into disk</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.store" title="dicee.static_funcs.store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store</span></code></a>(→ None)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.store" title="dicee.static_funcs.store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store</span></code></a>(→ None)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.add_noisy_triples" title="dicee.static_funcs.add_noisy_triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_noisy_triples</span></code></a>(→ pandas.DataFrame)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.add_noisy_triples" title="dicee.static_funcs.add_noisy_triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_noisy_triples</span></code></a>(→ pandas.DataFrame)</p></td>
 <td><p>Add randomly constructed triples</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.read_or_load_kg" title="dicee.static_funcs.read_or_load_kg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_or_load_kg</span></code></a>(args, cls)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.read_or_load_kg" title="dicee.static_funcs.read_or_load_kg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_or_load_kg</span></code></a>(args, cls)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.intialize_model" title="dicee.static_funcs.intialize_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">intialize_model</span></code></a>(...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.intialize_model" title="dicee.static_funcs.intialize_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">intialize_model</span></code></a>(...)</p></td>
 <td><p>Initialize a knowledge graph embedding model.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.load_json" title="dicee.static_funcs.load_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_json</span></code></a>(→ Dict)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.load_json" title="dicee.static_funcs.load_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_json</span></code></a>(→ Dict)</p></td>
 <td><p>Load JSON file into a dictionary.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.save_embeddings" title="dicee.static_funcs.save_embeddings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_embeddings</span></code></a>(→ None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.save_embeddings" title="dicee.static_funcs.save_embeddings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_embeddings</span></code></a>(→ None)</p></td>
 <td><p>Save embeddings to a CSV file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.vocab_to_parquet" title="dicee.static_funcs.vocab_to_parquet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vocab_to_parquet</span></code></a>(vocab_to_idx, name, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.vocab_to_parquet" title="dicee.static_funcs.vocab_to_parquet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vocab_to_parquet</span></code></a>(vocab_to_idx, name, ...)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.create_experiment_folder" title="dicee.static_funcs.create_experiment_folder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_experiment_folder</span></code></a>(→ str)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.create_experiment_folder" title="dicee.static_funcs.create_experiment_folder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_experiment_folder</span></code></a>(→ str)</p></td>
 <td><p>Create a timestamped experiment folder.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.continual_training_setup_executor" title="dicee.static_funcs.continual_training_setup_executor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">continual_training_setup_executor</span></code></a>(→ None)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.continual_training_setup_executor" title="dicee.static_funcs.continual_training_setup_executor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">continual_training_setup_executor</span></code></a>(→ None)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.exponential_function" title="dicee.static_funcs.exponential_function"><code class="xref py py-obj docutils literal notranslate"><span class="pre">exponential_function</span></code></a>(→ torch.FloatTensor)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.exponential_function" title="dicee.static_funcs.exponential_function"><code class="xref py py-obj docutils literal notranslate"><span class="pre">exponential_function</span></code></a>(→ torch.FloatTensor)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.load_numpy" title="dicee.static_funcs.load_numpy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_numpy</span></code></a>(→ numpy.ndarray)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.load_numpy" title="dicee.static_funcs.load_numpy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_numpy</span></code></a>(→ numpy.ndarray)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.evaluate" title="dicee.static_funcs.evaluate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate</span></code></a>(entity_to_idx, scores, easy_answers, hard_answers)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.evaluate" title="dicee.static_funcs.evaluate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate</span></code></a>(entity_to_idx, scores, easy_answers, hard_answers)</p></td>
 <td><p># &#64;TODO: CD: Renamed this function</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.download_file" title="dicee.static_funcs.download_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_file</span></code></a>(url[, destination_folder])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.download_file" title="dicee.static_funcs.download_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_file</span></code></a>(url[, destination_folder])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.download_files_from_url" title="dicee.static_funcs.download_files_from_url"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_files_from_url</span></code></a>(→ None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.download_files_from_url" title="dicee.static_funcs.download_files_from_url"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_files_from_url</span></code></a>(→ None)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.download_pretrained_model" title="dicee.static_funcs.download_pretrained_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_pretrained_model</span></code></a>(→ str)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.download_pretrained_model" title="dicee.static_funcs.download_pretrained_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_pretrained_model</span></code></a>(→ str)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.write_csv_from_model_parallel" title="dicee.static_funcs.write_csv_from_model_parallel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_csv_from_model_parallel</span></code></a>(path)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.write_csv_from_model_parallel" title="dicee.static_funcs.write_csv_from_model_parallel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_csv_from_model_parallel</span></code></a>(path)</p></td>
 <td><p>Create</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs.from_pretrained_model_write_embeddings_into_csv" title="dicee.static_funcs.from_pretrained_model_write_embeddings_into_csv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_pretrained_model_write_embeddings_into_csv</span></code></a>(→ None)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs.from_pretrained_model_write_embeddings_into_csv" title="dicee.static_funcs.from_pretrained_model_write_embeddings_into_csv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">from_pretrained_model_write_embeddings_into_csv</span></code></a>(→ None)</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -360,6 +364,12 @@ serialization, and various helper operations.</p>
 <dd class="field-even"><p>Wrapped function that prints timing information.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.static_funcs.setup_distributed_training">
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs.</span></span><span class="sig-name descname"><span class="pre">setup_distributed_training</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#setup_distributed_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.static_funcs.setup_distributed_training" title="Link to this definition"></a></dt>
+<dd><p>Resolve distributed-training state and initialize custom DDP when needed.</p>
 </dd></dl>
 
 <dl class="py function">

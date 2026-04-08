@@ -294,6 +294,11 @@ Module Contents
       Additional keyword arguments for pykeen models
 
 
+   .. py:attribute:: pl_trainer_kwargs
+
+      Additional keyword arguments for the PyTorch Lightning Trainer
+
+
    .. py:attribute:: kernel_size
       :type:  int
       :value: 3

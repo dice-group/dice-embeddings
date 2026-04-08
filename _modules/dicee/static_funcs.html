@@ -109,6 +109,8 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">polars</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pl</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.distributed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dist</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lightning.pytorch.utilities.rank_zero</span><span class="w"> </span><span class="kn">import</span> <span class="n">rank_zero_only</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">AConEx</span><span class="p">,</span> <span class="n">AConvO</span><span class="p">,</span> <span class="n">AConvQ</span><span class="p">,</span> <span class="n">CKeci</span><span class="p">,</span> <span class="n">CoKE</span><span class="p">,</span> <span class="n">ComplEx</span><span class="p">,</span> <span class="n">ConEx</span><span class="p">,</span> <span class="n">ConvO</span><span class="p">,</span> <span class="n">ConvQ</span><span class="p">,</span>
@@ -249,6 +251,56 @@
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Took </span><span class="si">{</span><span class="n">total_time</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1"> secs | Current Memory Usage </span><span class="si">{</span><span class="n">memory_mb</span><span class="si">:</span><span class="s1">.5f</span><span class="si">}</span><span class="s1"> MB&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span>
     <span class="k">return</span> <span class="n">timeit_wrapper</span></div>
+
+
+
+<div class="viewcode-block" id="setup_distributed_training">
+<a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.static_funcs.setup_distributed_training">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_distributed_training</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve distributed-training state and initialize custom DDP when needed.&quot;&quot;&quot;</span>
+    <span class="n">trainer_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">required_env_vars</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;LOCAL_RANK&quot;</span><span class="p">,</span> <span class="s2">&quot;RANK&quot;</span><span class="p">,</span> <span class="s2">&quot;WORLD_SIZE&quot;</span><span class="p">)</span>
+    <span class="n">torchrun_launched</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span><span class="n">env_var</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span> <span class="k">for</span> <span class="n">env_var</span> <span class="ow">in</span> <span class="n">required_env_vars</span><span class="p">)</span>
+    <span class="n">distributed</span> <span class="o">=</span> <span class="n">trainer_name</span> <span class="o">==</span> <span class="s2">&quot;torchDDP&quot;</span> <span class="ow">or</span> <span class="p">(</span>
+        <span class="n">trainer_name</span> <span class="o">==</span> <span class="s2">&quot;PL&quot;</span> <span class="ow">and</span> <span class="n">torchrun_launched</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">trainer_name</span> <span class="o">==</span> <span class="s2">&quot;torchDDP&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torchrun_launched</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;torchDDP trainer must be launched with torchrun.&quot;</span>
+            <span class="s2">&quot;Please use appropriate commands for torchDDP trainer.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">distributed</span> <span class="ow">or</span> <span class="n">trainer_name</span> <span class="o">==</span> <span class="s2">&quot;PL&quot;</span><span class="p">:</span>
+        <span class="n">local_rank</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;LOCAL_RANK&quot;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">rank_zero_only</span><span class="p">,</span> <span class="s2">&quot;rank&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)))</span>
+        <span class="n">rank</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;RANK&quot;</span><span class="p">,</span> <span class="n">local_rank</span><span class="p">))</span>
+        <span class="n">world_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;WORLD_SIZE&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()))</span>
+
+        <span class="k">if</span> <span class="n">distributed</span><span class="p">:</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">local_rank</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">current_device</span><span class="p">()</span> <span class="o">==</span> <span class="n">local_rank</span><span class="p">,</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;set_device failed! local_rank=</span><span class="si">{</span><span class="n">local_rank</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;but current=</span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">current_device</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">dist</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
+                <span class="n">dist</span><span class="o">.</span><span class="n">init_process_group</span><span class="p">(</span>
+                    <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;nccl&quot;</span><span class="p">,</span>
+                    <span class="n">init_method</span><span class="o">=</span><span class="s2">&quot;env://&quot;</span><span class="p">,</span>
+                    <span class="n">device_id</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">local_rank</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="n">rank</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">get_rank</span><span class="p">()</span>
+            <span class="n">world_size</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">get_world_size</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Rank </span><span class="si">{</span><span class="n">rank</span><span class="si">}</span><span class="s2">] mapped to GPU </span><span class="si">{</span><span class="n">local_rank</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">distributed</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">rank</span><span class="p">,</span> <span class="n">world_size</span><span class="p">,</span> <span class="n">local_rank</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;distributed&quot;</span><span class="p">:</span> <span class="n">distributed</span><span class="p">,</span>
+        <span class="s2">&quot;rank&quot;</span><span class="p">:</span> <span class="n">rank</span><span class="p">,</span>
+        <span class="s2">&quot;world_size&quot;</span><span class="p">:</span> <span class="n">world_size</span><span class="p">,</span>
+        <span class="s2">&quot;local_rank&quot;</span><span class="p">:</span> <span class="n">local_rank</span><span class="p">,</span>
+    <span class="p">}</span></div>
 
 
 <div class="viewcode-block" id="save_pickle">
