@@ -113,6 +113,9 @@ class Namespace(argparse.Namespace):
         self.pykeen_model_kwargs = dict()
         """Additional keyword arguments for pykeen models"""
 
+        self.pl_trainer_kwargs = dict()
+        """Additional keyword arguments for the PyTorch Lightning Trainer"""
+
         # Below attributes can be given as model_kwargs argument
 
         self.kernel_size: int = 3

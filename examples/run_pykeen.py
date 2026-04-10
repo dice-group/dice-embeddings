@@ -6,7 +6,7 @@ import time
 from pykeen.training import LCWATrainingLoop, SLCWATrainingLoop
 from pykeen.evaluation import RankBasedEvaluator
 
-import pytorch_lightning as pl
+import lightning as pl
 import argparse
 import warnings
 
@@ -15,7 +15,7 @@ warnings.filterwarnings(action="ignore", category=UserWarning)
 
 
 def get_default_arguments():
-    """ Extends pytorch_lightning Trainer's arguments with ours """
+    """ Extends lightning Trainer's arguments with ours """
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     parser.add_argument("--dataset", type=str, default='UMLS')
     parser.add_argument("--model", type=str,

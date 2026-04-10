@@ -14,7 +14,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 import torch
-from pytorch_lightning.utilities import rank_zero_only
+from lightning.pytorch.utilities import rank_zero_only
 from torch._dynamo.eval_frame import OptimizedModule
 from torch.optim.lr_scheduler import LambdaLR
 

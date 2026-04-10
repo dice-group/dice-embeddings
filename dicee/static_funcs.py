@@ -19,6 +19,8 @@ import pandas as pd
 import polars as pl
 import requests
 import torch
+import torch.distributed as dist
+from lightning.pytorch.utilities.rank_zero import rank_zero_only
 
 from .models import (
     AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ,
@@ -145,6 +147,53 @@ def timeit(func: Callable) -> Callable:
         print(f'Took {total_time:.4f} secs | Current Memory Usage {memory_mb:.5f} MB')
         return result
     return timeit_wrapper
+
+
+def setup_distributed_training(args) -> Dict[str, Union[bool, int]]:
+    """Resolve distributed-training state and initialize custom DDP when needed."""
+    trainer_name = getattr(args, "trainer", None)
+    required_env_vars = ("LOCAL_RANK", "RANK", "WORLD_SIZE")
+    torchrun_launched = all(env_var in os.environ for env_var in required_env_vars)
+    distributed = trainer_name == "torchDDP" or (
+        trainer_name == "PL" and torchrun_launched
+    )
+
+    if trainer_name == "torchDDP" and not torchrun_launched:
+        raise RuntimeError(
+            "torchDDP trainer must be launched with torchrun."
+            "Please use appropriate commands for torchDDP trainer."
+        )
+
+    if distributed or trainer_name == "PL":
+        local_rank = int(os.environ.get("LOCAL_RANK", getattr(rank_zero_only, "rank", 0)))
+        rank = int(os.environ.get("RANK", local_rank))
+        world_size = int(os.environ.get("WORLD_SIZE", torch.cuda.device_count()))
+
+        if distributed:
+            torch.cuda.set_device(local_rank)
+            assert torch.cuda.current_device() == local_rank, (
+                f"set_device failed! local_rank={local_rank} "
+                f"but current={torch.cuda.current_device()}"
+            )
+            if not dist.is_initialized():
+                dist.init_process_group(
+                    backend="nccl",
+                    init_method="env://",
+                    device_id=torch.device(f"cuda:{local_rank}"),
+                )
+            rank = dist.get_rank()
+            world_size = dist.get_world_size()
+            print(f"[Rank {rank}] mapped to GPU {local_rank}", flush=True)
+    else:
+        distributed = False
+        rank, world_size, local_rank = 0, 1, 0
+
+    return {
+        "distributed": distributed,
+        "rank": rank,
+        "world_size": world_size,
+        "local_rank": local_rank,
+    }
 
 def save_pickle(*, data: Optional[object] = None, file_path: str) -> None:
     """Save data to a pickle file.

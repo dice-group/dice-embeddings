@@ -3,7 +3,7 @@ from dicee.executer import Execute, ContinuousExecute
 import argparse
 
 def get_default_arguments(description=None):
-    """ Extends pytorch_lightning Trainer's arguments with ours """
+    """ Extends lightning Trainer's arguments with ours """
     parser = argparse.ArgumentParser(add_help=False)
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Knowledge graph related arguments
@@ -92,6 +92,10 @@ def get_default_arguments(description=None):
     parser.add_argument('--q', type=int, default=1,
                         help='Q for Clifford Algebra')
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
+    parser.add_argument("--pl_trainer_kwargs",type=json.loads, default={},
+        help='Additional PyTorch Lightning Trainer keyword arguments as JSON. '
+             'Example: {"accelerator": "gpu", "strategy": "ddp", "precision": "16-mixed"}'
+    )
 
     # Evaluation Related
     parser.add_argument('--num_folds_for_cv', type=int, default=0,
