@@ -1,4 +1,4 @@
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, roc_auc_score
@@ -14,7 +14,7 @@ class TabularTrainer:
     def __init__(
         self,
         device: str = "cpu",
-        max_train_samples: int = 1000,
+        max_train_samples: Optional[int] = None,
         n_estimators: int = 8,
         random_seed: int = 0,
         n_preprocessing_jobs: int = 1,
@@ -44,7 +44,7 @@ class TabularTrainer:
         )
         classifier = self._create_classifier()
 
-        if x_train.shape[0] > self.max_train_samples:
+        if self.max_train_samples is not None and x_train.shape[0] > self.max_train_samples:
             # TabPFN is most reliable on smaller training sets.
             print(f"Subsampling training data to {self.max_train_samples} samples...")
             rng = np.random.default_rng(self.random_seed)

@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 
 
-class EntityCentricConverter:
-    """Convert a KG into an entity-centric tabular representation."""
+class EntityCentricDataset:
+    """Represent a KG as an entity-centric tabular dataset."""
 
     def __init__(self, separator="\t", not_applicable="NotApplicable"):
         self.separator = separator
@@ -16,10 +16,13 @@ class EntityCentricConverter:
 
     def read_triples(self, file_path: str) -> List[Tuple[str, str, str]]:
         """Read triples from a TSV or CSV file."""
-        if self.separator not in {"\t", ","}:
-            raise ValueError("Triple reader expects a TSV or CSV separator.")
+        if self.separator in {r"\s+", "\\s+", None}:
+            triples = pd.read_csv(file_path, sep=r"\s+", engine="python", header=None)
+        elif self.separator in {"\t", ","}:
+            triples = pd.read_csv(file_path, sep=self.separator, header=None)
+        else:
+            raise ValueError("Triple reader expects a whitespace, TSV, or CSV separator.")
 
-        triples = pd.read_csv(file_path, sep=self.separator)
         if triples.shape[1] < 3:
             raise ValueError(f"Expected at least 3 columns in {file_path}.")
 
@@ -137,8 +140,8 @@ class EntityCentricConverter:
         return result
 
 
-class KGToTabularConverter:
-    """Convert KG triples into tabular features suitable for a classifier."""
+class TripleCentricDataset:
+    """Represent KG triples as a triple-centric tabular dataset."""
 
     def __init__(self, separator="\t"):
         self.separator = separator
@@ -151,10 +154,13 @@ class KGToTabularConverter:
 
     def read_triples(self, file_path: str) -> List[Tuple[str, str, str]]:
         """Read triples from a TSV or CSV file."""
-        if self.separator not in {"\t", ","}:
-            raise ValueError("Triple reader expects a TSV or CSV separator.")
+        if self.separator in {r"\s+", "\\s+", None}:
+            triples = pd.read_csv(file_path, sep=r"\s+", engine="python", header=None)
+        elif self.separator in {"\t", ","}:
+            triples = pd.read_csv(file_path, sep=self.separator, header=None)
+        else:
+            raise ValueError("Triple reader expects a whitespace, TSV, or CSV separator.")
 
-        triples = pd.read_csv(file_path, sep=self.separator)
         if triples.shape[1] < 3:
             raise ValueError(f"Expected at least 3 columns in {file_path}.")
 

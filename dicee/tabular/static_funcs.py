@@ -6,14 +6,14 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 
 from ..static_funcs import timeit
-from .tabular_dataset import EntityCentricConverter, KGToTabularConverter
+from .tabular_dataset import EntityCentricDataset, TripleCentricDataset
 
 
 def get_tabpfn_config(args: object) -> Dict:
     """Normalize optional TabPFN kwargs into a complete config dict."""
     config = dict(args.tabpfn_kwargs)
     config.setdefault("device", "cpu")
-    config.setdefault("max_train_samples", 1000)
+    config.setdefault("max_train_samples", None)
     config.setdefault("n_estimators", 8)
     config.setdefault("entity_centric", False)
     return config
@@ -42,16 +42,16 @@ def load_kg_for_tabpfn(
         raise FileNotFoundError(f"Training file not found: {train_file}")
 
     if entity_centric:
-        converter = EntityCentricConverter(separator=separator)
-        return converter.generate_entity_centric_dataset(
+        dataset = EntityCentricDataset(separator=separator)
+        return dataset.generate_entity_centric_dataset(
             train_file=files_to_use["train"],
             valid_file=files_to_use["valid"],
             test_file=files_to_use["test"],
             negative_ratio=negative_ratio,
         )
 
-    converter = KGToTabularConverter(separator=separator)
-    return converter.load_and_convert(
+    dataset = TripleCentricDataset(separator=separator)
+    return dataset.load_and_convert(
         train_file=files_to_use["train"],
         valid_file=files_to_use["valid"],
         test_file=files_to_use["test"],
@@ -109,23 +109,22 @@ def prepare_tabpfn_splits(data: Dict, entity_centric: bool = False) -> Tuple[np.
 
 def print_tabpfn_dataset_overview(
     data: Dict,
-    max_train_samples: int,
+    max_train_samples: int | None,
     entity_centric: bool = False,
 ) -> None:
     """Print split sizes after the tabular dataset is fully prepared."""
     x_train, _, x_valid, _, x_test, _ = prepare_tabpfn_splits(
         data, entity_centric=entity_centric
     )
-    fitted_train_samples = min(int(x_train.shape[0]), int(max_train_samples))
     num_features = int(x_train.shape[1])
 
     print("\nDataset Summary")
-    print(
-        "Train set: "
-        f"samples={int(x_train.shape[0])} "
-        f"fitted_samples={fitted_train_samples} "
-        f"features={num_features}"
-    )
+    train_line = f"Train set: samples={int(x_train.shape[0])}"
+    if max_train_samples is not None:
+        fitted_train_samples = min(int(x_train.shape[0]), int(max_train_samples))
+        train_line += f" fitted_samples={fitted_train_samples}"
+    train_line += f" features={num_features}"
+    print(train_line)
     print(
         "Valid set: "
         f"samples={int(x_valid.shape[0])} "
@@ -180,9 +179,9 @@ def demo_entity_centric() -> pd.DataFrame:
         ("CaglarDemir", "isA", "Person"),
         ("Germany", "isA", "Country"),
     ]
-    converter = EntityCentricConverter()
+    dataset = EntityCentricDataset()
     labels = [1] * len(triples)
-    return converter.triples_to_entity_centric_tabular(triples, labels)
+    return dataset.triples_to_entity_centric_tabular(triples, labels)
 
 
 def summarize_converted_data(data: Dict, entity_centric: bool = False) -> Dict:

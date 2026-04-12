@@ -8,12 +8,12 @@ from .static_funcs import (
     summarize_converted_data,
     summarize_training_inputs,
 )
-from .tabular_dataset import EntityCentricConverter, KGToTabularConverter
+from .tabular_dataset import EntityCentricDataset, TripleCentricDataset
 from .trainer import TabularTrainer
 
 __all__ = [
-    "EntityCentricConverter",
-    "KGToTabularConverter",
+    "EntityCentricDataset",
+    "TripleCentricDataset",
     "TabularTrainer",
     "prepare_tabpfn_splits",
     "convert_only",
