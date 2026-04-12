@@ -29,6 +29,14 @@ from .static_funcs import (
     timeit,
 )
 from .static_preprocess_funcs import preprocesses_input_args
+from .tabular.static_funcs import (
+    get_tabpfn_config,
+    load_kg_for_tabpfn,
+    print_tabpfn_dataset_overview,
+    print_tabpfn_results,
+    update_report_with_data_statistics,
+)
+from .tabular.trainer import TabularTrainer
 from .trainer import DICE_Trainer
 
 # Configure logging
@@ -437,3 +445,106 @@ class ContinuousExecute(Execute):
         else:
             self.evaluator.dummy_eval(self.trained_model, form_of_labelling)
             return {**self.report, **self.evaluator.report}
+
+
+class TabularExecute(Execute):
+    """Executor for the TabPFN-based tabular pipeline."""
+
+    def __init__(self, args, continuous_training: bool = False) -> None:
+        """Initialize a single-process executor for the tabular TabPFN branch."""
+        # The TabPFN path is kept single-process for now.
+        self.distributed = False
+        self.rank = 0
+        self.world_size = 1
+        self.local_rank = 0
+        self.args = preprocesses_input_args(args)
+        seed_everything(args.random_seed, workers=True)
+        self.is_continual_training = continuous_training
+        self.setup_executor()
+        self.trainer = None
+        self.trained_model = None
+        self.knowledge_graph = None
+        self.report = {}
+        self.evaluator = None
+        self.start_time = None
+        self.tabular_data: Optional[Dict] = None
+
+    def _update_report_with_data_statistics(self, tabular_data: Dict) -> None:
+        """Attach split sizes, class counts, and loading time to the report."""
+        update_report_with_data_statistics(
+            self.report,
+            tabular_data,
+            self.start_time,
+            runtime_key="runtime_tabular_data_loading",
+        )
+
+    @timeit
+    def load_tabular_data(self) -> Dict:
+        """Load the KG splits and convert them into the tabular representation."""
+        print('*** Read or Load Tabular Data ***')
+        tabpfn_config = get_tabpfn_config(self.args)
+        tabular_data = load_kg_for_tabpfn(
+            dataset_dir=self.args.dataset_dir,
+            negative_ratio=float(self.args.neg_ratio),
+            entity_centric=tabpfn_config["entity_centric"],
+            separator=self.args.separator,
+        )
+        self._update_report_with_data_statistics(tabular_data)
+        self.tabular_data = tabular_data
+        return tabular_data
+
+    @timeit
+    def build_trainer(self) -> TabularTrainer:
+        """Create the TabPFN trainer object from the current run config."""
+        print('Initializing Trainer...', end='\t')
+        tabpfn_config = get_tabpfn_config(self.args)
+        self.trainer = TabularTrainer(
+            device=tabpfn_config["device"],
+            max_train_samples=tabpfn_config["max_train_samples"],
+            n_estimators=tabpfn_config["n_estimators"],
+            random_seed=self.args.random_seed,
+            n_preprocessing_jobs=max(1, self.args.num_core),
+        )
+        print_tabpfn_dataset_overview(
+            self.tabular_data,
+            max_train_samples=tabpfn_config["max_train_samples"],
+            entity_centric=tabpfn_config["entity_centric"],
+        )
+        return self.trainer
+
+    def _store_run_metadata(self, metrics: Dict) -> None:
+        """Store final metrics and run metadata in the report."""
+        self.report.update(metrics)
+        self.report["tabpfn_config"] = get_tabpfn_config(self.args)
+        self.report["tabpfn_negative_ratio"] = float(self.args.neg_ratio)
+        self.report["path_experiment_folder"] = self.args.full_storage_path
+
+    def _run_training(self) -> Dict:
+        """Fit the trainer on the prepared tabular data and return the metrics."""
+        tabpfn_config = get_tabpfn_config(self.args)
+        self.trained_model, metrics = self.trainer.fit_and_evaluate(
+            self.tabular_data,
+            entity_centric=tabpfn_config["entity_centric"],
+        )
+        return metrics
+
+    def end(self) -> dict:
+        """Finalize the run by writing the report and returning it."""
+        self.write_report()
+        return {**self.report}
+
+    def start(self) -> dict:
+        """Execute the full TabPFN pipeline from data loading to reporting."""
+        try:
+            self.start_time = time.time()
+            print(f"Start time:{datetime.datetime.now()}")
+            print("------------------- Tabular Pipeline -------------------")
+            # Keep the same high-level phases as the KGE executor.
+            self.load_tabular_data()
+            self.build_trainer()
+            metrics = self._run_training()
+            print_tabpfn_results(metrics)
+            self._store_run_metadata(metrics)
+            return self.end()
+        finally:
+            self.cleanup()

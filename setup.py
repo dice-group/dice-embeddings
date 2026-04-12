@@ -21,6 +21,8 @@ _core_deps = [
     "polars>=0.16.14",
     "tiktoken>=0.5.1",
     "psutil>=5.9.4",
+    "scikit-learn>=1.2.2",
+    "tabpfn>=0.1.10",
 ]
 
 # Optional dependencies for various features
@@ -32,14 +34,12 @@ _optional_deps = [
     "matplotlib>=3.8.2",
     "zstandard>=0.21.0",
     "requests>=2.32.3",
-    "scikit-learn>=1.2.2",
 ]
 
 # Development dependencies
 _dev_deps = [
     "pytest>=7.2.2",
     "ruff>=0.0.284",
-    "scikit-learn>=1.2.2",
 ]
 
 # Documentation dependencies

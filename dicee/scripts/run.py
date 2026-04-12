@@ -1,5 +1,5 @@
 import json
-from dicee.executer import Execute, ContinuousExecute
+from dicee.executer import Execute, ContinuousExecute, TabularExecute
 import argparse
 
 def get_default_arguments(description=None):
@@ -114,7 +114,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--read_only_few", type=int, default=None,
                         help='READ only first N triples. If 0, read all.')
     parser.add_argument("--add_noise_rate", type=float, default=0.0,
-                        help='Add x % of noisy triples into training dataset.')
+                        help='Add x percent of noisy triples into training dataset.')
     # WIP
 
     parser.add_argument('--r', type=int, default=0,
@@ -165,6 +165,14 @@ def get_default_arguments(description=None):
                         choices=["None", "train", "train_val", "train_val_test", "val_test", "val", "train_test","test"],
                         help='Evaluating link prediction performance on data splits while performing periodic evaluation.')
 
+    # TabPFN configuration
+    parser.add_argument("--use_tabpfn", action="store_true",
+                        help="If set, use the TabPFN-based tabular pipeline instead of the default KGE training path.")
+    parser.add_argument("--tabpfn_kwargs", type=json.loads, default={},
+                        help='Additional TabPFN configuration as JSON. '
+                             'Example: {"device": "cpu", "max_train_samples": 1000, '
+                             '"n_estimators": 8, "entity_centric": false}')
+
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)
@@ -172,7 +180,9 @@ def get_default_arguments(description=None):
 def main():
 
     args = get_default_arguments()
-    if args.continual_learning:
+    if args.use_tabpfn:
+        TabularExecute(args).start()
+    elif args.continual_learning:
         ContinuousExecute(args).continual_start()
     else:
         Execute(get_default_arguments()).start()

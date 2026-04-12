@@ -11,6 +11,7 @@ Submodules:
 """
 from .dataset_classes import *  # noqa
 from .executer import Execute  # noqa
+from .executer import TabularExecute  # noqa
 from .knowledge_graph_embeddings import KGE  # noqa
 from .query_generator import QueryGenerator  # noqa
 from .static_funcs import *  # noqa
@@ -21,6 +22,7 @@ __version__ = '0.3.3'
 
 __all__ = [
     'Execute',
+    'TabularExecute',
     'KGE',
     'QueryGenerator',
     'DICE_Trainer',
