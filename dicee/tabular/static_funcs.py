@@ -83,8 +83,21 @@ def prepare_tabpfn_splits(data: Dict, entity_centric: bool = False) -> Tuple[np.
         train_df = data["train"].copy()
         valid_df = data["valid"].copy()
         test_df = data["test"].copy()
-        for column in train_df.columns:
-            if column == "Label" or train_df[column].dtype != "object":
+
+        # Different splits can expose different relation columns, so align them first.
+        feature_columns = list(train_df.columns)
+        for dataframe in (valid_df, test_df):
+            for column in dataframe.columns:
+                if column not in feature_columns:
+                    feature_columns.append(column)
+        feature_columns = [column for column in feature_columns if column != "Label"]
+
+        train_df = train_df.reindex(columns=feature_columns + ["Label"], fill_value="NotApplicable")
+        valid_df = valid_df.reindex(columns=feature_columns + ["Label"], fill_value="NotApplicable")
+        test_df = test_df.reindex(columns=feature_columns + ["Label"], fill_value="NotApplicable")
+
+        for column in feature_columns:
+            if train_df[column].dtype != "object":
                 continue
             label_encoder = LabelEncoder()
             all_values = pd.concat([train_df[column], valid_df[column], test_df[column]]).unique()
