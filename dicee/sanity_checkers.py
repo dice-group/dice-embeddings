@@ -133,5 +133,5 @@ def sanity_check_callback_args(args):
         assert args.swa_start_epoch > 0, "SWA Start Epoch must be greater than 0"
 
     # TWA/SWAG trainer compatibility
-    if any([args.twa, args.swag]) and args.trainer in {"TP", "torchDDP"}:
-        raise NotImplementedError("TWA and SWAG are not supported with TP or torchDDP trainers.")
+    if any([args.twa, args.swag]) and args.trainer in {"TP", "torchDDP", "torchFSDP"}:
+        raise NotImplementedError("TWA and SWAG are not supported with TP, torchDDP, or torchFSDP trainers.")

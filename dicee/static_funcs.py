@@ -152,14 +152,14 @@ def setup_distributed_training(args) -> Dict[str, Union[bool, int]]:
     trainer_name = getattr(args, "trainer", None)
     required_env_vars = ("LOCAL_RANK", "RANK", "WORLD_SIZE")
     torchrun_launched = all(env_var in os.environ for env_var in required_env_vars)
-    distributed = trainer_name == "torchDDP" or (
+    distributed = trainer_name in {"torchDDP", "torchFSDP"} or (
         trainer_name == "PL" and torchrun_launched
     )
 
-    if trainer_name == "torchDDP" and not torchrun_launched:
+    if trainer_name in {"torchDDP", "torchFSDP"} and not torchrun_launched:
         raise RuntimeError(
-            "torchDDP trainer must be launched with torchrun."
-            "Please use appropriate commands for torchDDP trainer."
+            f"{trainer_name} trainer must be launched with torchrun."
+            f"Please use appropriate commands for {trainer_name} trainer."
         )
 
     if distributed or trainer_name == "PL":
