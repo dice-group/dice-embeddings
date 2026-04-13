@@ -1,4 +1,5 @@
 import os
+import time
 from typing import Iterable
 
 import torch
@@ -35,9 +36,24 @@ class TorchFSDPTrainer(AbstractTrainer):
         self.optimizer = None
         self.cpu_sparse_embedding = None
         self.cpu_sparse_optimizer = None
+        self.pending_cpu_sparse_grad = None
         self.loss_func = None
         self.train_dataset_loader = None
         self.loss_history = []
+        self.profile_every = 25
+        self.sparse_step_interval = max(1, int(getattr(args, "fsdp_sparse_step_interval", 4)))
+        self.manual_step_profile = {
+            "data": 0.0,
+            "forward": 0.0,
+            "backward": 0.0,
+            "grad_sync": 0.0,
+            "dense_step": 0.0,
+            "sparse_step": 0.0,
+            "lookup_seconds": 0.0,
+            "lookup_calls": 0,
+            "lookup_unique_rows": 0,
+            "batches": 0,
+        }
         ptdtype = {'float32': torch.float32, 'bfloat16': torch.bfloat16, 'float16': torch.float16}["float16"]
         self.ctx = torch.amp.autocast(device_type="cuda", dtype=ptdtype)
         self.scaler = torch.amp.GradScaler("cuda", enabled=True)
@@ -87,9 +103,14 @@ class TorchFSDPTrainer(AbstractTrainer):
             self.train_dataset_loader.sampler.set_epoch(epoch)
             epoch_loss = 0.0
             for i, z in enumerate(self.train_dataset_loader):
+                data_start = time.perf_counter()
                 source, targets = self.extract_input_outputs(z)
-                batch_loss = self._run_batch(source, targets)
+                data_time = time.perf_counter() - data_start
+                batch_loss = self._run_batch(source, targets, batch_idx=i + 1)
                 epoch_loss += batch_loss
+                if getattr(self.raw_model, "manual_sharded_entity_training", False):
+                    self.manual_step_profile["data"] += data_time
+                    self.manual_step_profile["batches"] += 1
                 if hasattr(tqdm_bar, 'set_description_str'):
                     tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
                     if i > 0:
@@ -101,6 +122,9 @@ class TorchFSDPTrainer(AbstractTrainer):
                         tqdm_bar.set_postfix_str(
                             f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}"
                         )
+
+            if getattr(self.raw_model, "manual_sharded_entity_training", False):
+                self._flush_cpu_sparse_optimizer()
 
             avg_epoch_loss = epoch_loss / num_of_batches
             self.loss_history.append(avg_epoch_loss)
@@ -120,17 +144,32 @@ class TorchFSDPTrainer(AbstractTrainer):
         if callable(init_fn):
             init_fn(module, self.device)
 
-    def _run_batch(self, source: torch.LongTensor, targets: torch.FloatTensor) -> float:
+    def _run_batch(self, source: torch.LongTensor, targets: torch.FloatTensor, batch_idx: int) -> float:
         if getattr(self.raw_model, "manual_sharded_entity_training", False):
             self.optimizer.zero_grad(set_to_none=True)
-            self.cpu_sparse_optimizer.zero_grad(set_to_none=True)
+            start_time = time.perf_counter()
             output = self.model(source)
+            self.manual_step_profile["forward"] += time.perf_counter() - start_time
             loss = self.loss_func(output, targets)
             batch_loss = loss.item()
+            start_time = time.perf_counter()
             loss.backward()
+            self.manual_step_profile["backward"] += time.perf_counter() - start_time
+            start_time = time.perf_counter()
             self._sync_replicated_gradients()
+            self.manual_step_profile["grad_sync"] += time.perf_counter() - start_time
+            start_time = time.perf_counter()
             self.optimizer.step()
-            self._step_cpu_sparse_optimizer()
+            self.manual_step_profile["dense_step"] += time.perf_counter() - start_time
+            start_time = time.perf_counter()
+            self._accumulate_cpu_sparse_grad()
+            if batch_idx % self.sparse_step_interval == 0:
+                self._flush_cpu_sparse_optimizer()
+            self.manual_step_profile["sparse_step"] += time.perf_counter() - start_time
+            lookup_profile = self.raw_model.consume_lookup_profile()
+            self.manual_step_profile["lookup_seconds"] += lookup_profile["lookup_seconds"]
+            self.manual_step_profile["lookup_calls"] += lookup_profile["lookup_calls"]
+            self.manual_step_profile["lookup_unique_rows"] += lookup_profile["lookup_unique_rows"]
             self.raw_model.local_entity_embeddings.weight.grad = None
             return batch_loss
 
@@ -147,7 +186,7 @@ class TorchFSDPTrainer(AbstractTrainer):
         return batch_loss
 
     def _init_cpu_sparse_optimizer(self) -> None:
-        local_weight = self.raw_model.local_entity_embeddings.weight.detach().cpu()
+        local_weight = self.raw_model.local_entity_embeddings.weight.detach().cpu().pin_memory()
         self.cpu_sparse_embedding = torch.nn.Embedding(
             local_weight.shape[0],
             local_weight.shape[1],
@@ -160,29 +199,48 @@ class TorchFSDPTrainer(AbstractTrainer):
             lr=self.raw_model.learning_rate,
         )
 
-    def _step_cpu_sparse_optimizer(self) -> None:
+    def _accumulate_cpu_sparse_grad(self) -> None:
         sparse_grad = self.raw_model.local_entity_embeddings.weight.grad
         if sparse_grad is None:
             return
 
         sparse_grad = sparse_grad.coalesce()
+        if sparse_grad._nnz() == 0:
+            return
         cpu_grad = torch.sparse_coo_tensor(
             sparse_grad.indices().cpu(),
             sparse_grad.values().cpu(),
             sparse_grad.size(),
             device="cpu",
         ).coalesce()
-        self.cpu_sparse_embedding.weight.grad = cpu_grad
+        if self.pending_cpu_sparse_grad is None:
+            self.pending_cpu_sparse_grad = cpu_grad
+            return
+
+        self.pending_cpu_sparse_grad = torch.sparse_coo_tensor(
+            torch.cat((self.pending_cpu_sparse_grad.indices(), cpu_grad.indices()), dim=1),
+            torch.cat((self.pending_cpu_sparse_grad.values(), cpu_grad.values()), dim=0),
+            cpu_grad.size(),
+            device="cpu",
+        ).coalesce()
+
+    def _flush_cpu_sparse_optimizer(self) -> None:
+        if self.pending_cpu_sparse_grad is None:
+            return
+
+        self.cpu_sparse_optimizer.zero_grad(set_to_none=True)
+        self.cpu_sparse_embedding.weight.grad = self.pending_cpu_sparse_grad
         self.cpu_sparse_optimizer.step()
 
-        updated_rows = cpu_grad.indices()[0].unique(sorted=True)
+        updated_rows = self.pending_cpu_sparse_grad.indices()[0].unique(sorted=True)
         updated_values = self.cpu_sparse_embedding.weight.data.index_select(0, updated_rows)
         self.raw_model.local_entity_embeddings.weight.data.index_copy_(
             0,
             updated_rows.to(self.device),
-            updated_values.to(self.device),
+            updated_values.to(self.device, non_blocking=True),
         )
         self.cpu_sparse_embedding.weight.grad = None
+        self.pending_cpu_sparse_grad = None
 
     def extract_input_outputs(self, z: list):
         if len(z) == 2:

@@ -239,7 +239,7 @@ class BaseKGE(BaseKGELightning):
         self.block_size=self.args.get("block_size", None)
         self.defer_large_embeddings = (
             self.args.get("trainer") == "torchFSDP"
-            and self.args.get("model") == "DistMult"
+            and self.args.get("model") in {"DistMult", "ComplEx"}
             and self.args.get("scoring_technique") == "NegSample"
             and not self.byte_pair_encoding
         )
