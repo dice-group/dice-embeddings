@@ -8,7 +8,7 @@ from dicee.executer import TabularExecute
 
 # Configure a minimal TabPFN experiment on the UMLS example dataset.
 args = Namespace()
-args.use_tabpfn = True
+args.tabpfn = True
 args.dataset_dir = "KGs/UMLS"
 args.path_to_store_single_run = "Experiments/TabPFN_UMLS"
 args.random_seed = 1

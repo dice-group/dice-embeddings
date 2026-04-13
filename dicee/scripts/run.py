@@ -166,7 +166,7 @@ def get_default_arguments(description=None):
                         help='Evaluating link prediction performance on data splits while performing periodic evaluation.')
 
     # TabPFN configuration
-    parser.add_argument("--use_tabpfn", action="store_true",
+    parser.add_argument("--tabpfn", action="store_true",
                         help="If set, use the TabPFN-based tabular pipeline instead of the default KGE training path.")
     parser.add_argument("--tabpfn_kwargs", type=json.loads, default={},
                         help='Additional TabPFN configuration as JSON. '
@@ -180,7 +180,7 @@ def get_default_arguments(description=None):
 def main():
 
     args = get_default_arguments()
-    if args.use_tabpfn:
+    if args.tabpfn:
         TabularExecute(args).start()
     elif args.continual_learning:
         ContinuousExecute(args).continual_start()

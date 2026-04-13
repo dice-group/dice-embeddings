@@ -187,7 +187,7 @@ class Namespace(argparse.Namespace):
         self.swa_c_epochs: int = 1
         """Number of epochs to average over for SWA, SWAG, EMA, TWA."""
 
-        self.use_tabpfn: bool = False
+        self.tabpfn: bool = False
         "Enable the alternative TabPFN-based tabular training path."
 
         self.tabpfn_kwargs = dict()
