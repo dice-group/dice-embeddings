@@ -3,22 +3,8 @@ from .base_model import BaseKGE
 from typing import Tuple
 import torch
 import numpy as np
-import os
-import torch.distributed as dist
 from dicee.models.transformers import Block
 from torch import nn
-
-
-class _AllReduceSum(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, tensor):
-        if dist.is_initialized():
-            dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
-        return tensor
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        return grad_output
 
 
 class DistMult(BaseKGE):
@@ -29,64 +15,6 @@ class DistMult(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'DistMult'
-        self.manual_sharded_entity_training = self.defer_large_embeddings
-        self.local_entity_embeddings = None
-        self.local_entity_start = 0
-        self.local_entity_end = self.num_entities
-        self.local_entity_count = self.num_entities
-        if self.manual_sharded_entity_training:
-            world_size = int(os.environ.get("WORLD_SIZE", "1"))
-            rank = int(os.environ.get("RANK", "0"))
-            shard_size = (self.num_entities + world_size - 1) // world_size
-            self.local_entity_start = rank * shard_size
-            self.local_entity_end = min(self.local_entity_start + shard_size, self.num_entities)
-            self.local_entity_count = max(0, self.local_entity_end - self.local_entity_start)
-            self.local_entity_embeddings = torch.nn.Embedding(self.local_entity_count, self.embedding_dim, sparse=True)
-            self.param_init(self.local_entity_embeddings.weight.data)
-
-    def configure_optimizers(self, parameters=None):
-        if not self.manual_sharded_entity_training:
-            return super().configure_optimizers(parameters=parameters)
-
-        dense_parameters = [param for name, param in self.named_parameters() if name != "local_entity_embeddings.weight"]
-        return super().configure_optimizers(parameters=dense_parameters)
-
-    def _entity_lookup(self, entity_ids: torch.LongTensor) -> torch.FloatTensor:
-        if not self.manual_sharded_entity_training:
-            return self.entity_embeddings(entity_ids)
-
-        outputs = torch.zeros(
-            entity_ids.shape[0],
-            self.embedding_dim,
-            device=entity_ids.device,
-            dtype=self.local_entity_embeddings.weight.dtype,
-        )
-        mask = (entity_ids >= self.local_entity_start) & (entity_ids < self.local_entity_end)
-        if mask.any():
-            local_ids = entity_ids[mask] - self.local_entity_start
-            outputs[mask] = self.local_entity_embeddings(local_ids)
-        return _AllReduceSum.apply(outputs)
-
-    def get_triple_representation(self, idx_hrt):
-        if not self.manual_sharded_entity_training:
-            return super().get_triple_representation(idx_hrt)
-        idx_head_entity, idx_relation, idx_tail_entity = idx_hrt[:, 0], idx_hrt[:, 1], idx_hrt[:, 2]
-        head_ent_emb = self.normalize_head_entity_embeddings(
-            self.input_dp_ent_real(self._entity_lookup(idx_head_entity))
-        )
-        rel_ent_emb = self.normalize_relation_embeddings(self.input_dp_rel_real(self.relation_embeddings(idx_relation)))
-        tail_ent_emb = self.normalize_tail_entity_embeddings(self._entity_lookup(idx_tail_entity))
-        return head_ent_emb, rel_ent_emb, tail_ent_emb
-
-    def get_head_relation_representation(self, indexed_triple):
-        if not self.manual_sharded_entity_training:
-            return super().get_head_relation_representation(indexed_triple)
-        idx_head_entity, idx_relation = indexed_triple[:, 0], indexed_triple[:, 1]
-        head_ent_emb = self.normalize_head_entity_embeddings(
-            self.input_dp_ent_real(self._entity_lookup(idx_head_entity))
-        )
-        rel_ent_emb = self.normalize_relation_embeddings(self.input_dp_rel_real(self.relation_embeddings(idx_relation)))
-        return head_ent_emb, rel_ent_emb
 
     def k_vs_all_score(self, emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor):
         """
@@ -104,17 +32,10 @@ class DistMult(BaseKGE):
         return torch.mm(self.hidden_dropout(self.hidden_normalizer(emb_h * emb_r)), emb_E.transpose(1, 0))
 
     def forward_k_vs_all(self, x: torch.LongTensor):
-        if self.manual_sharded_entity_training:
-            raise NotImplementedError("Sharded DistMult currently supports only NegSample training.")
         emb_head, emb_rel = self.get_head_relation_representation(x)
         return self.k_vs_all_score(emb_h=emb_head, emb_r=emb_rel, emb_E=self.entity_embeddings.weight)
 
     def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor):
-        if self.manual_sharded_entity_training:
-            t = self._entity_lookup(target_entity_idx.reshape(-1)).reshape(target_entity_idx.shape[0], target_entity_idx.shape[1], -1)
-            emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
-            hr = torch.einsum('bd, bd -> bd', emb_head_real, emb_rel_real)
-            return torch.einsum('bd, bkd -> bk', hr, t)
         # (b,d),     (b,d)
         emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
         # (b, d)
@@ -126,11 +47,6 @@ class DistMult(BaseKGE):
 
     def score(self, h, r, t):
         return (self.hidden_dropout(self.hidden_normalizer(h * r)) * t).sum(dim=1)
-
-    def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
-        if not self.manual_sharded_entity_training:
-            return super().get_embeddings()
-        raise RuntimeError("Full entity embeddings are materialized by the trainer on rank 0 after training.")
 
 
 class TransE(BaseKGE):

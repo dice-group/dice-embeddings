@@ -28,6 +28,7 @@ from .models import (
 )
 from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
+from .models.fsdp_models import FSDPComplEx, FSDPDistMult
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
 
@@ -180,6 +181,7 @@ def setup_distributed_training(args) -> Dict[str, Union[bool, int]]:
                     backend="nccl",
                     init_method="env://",
                     device_id=torch.device(f"cuda:{local_rank}"),
+                    timeout=datetime.timedelta(hours=1),
                 )
             rank = dist.get_rank()
             world_size = dist.get_world_size()
@@ -546,6 +548,14 @@ def intialize_model(args: Dict, verbose: int = 0) -> Tuple[BaseKGE, str]:
     if verbose > 0:
         print(f"Initializing {args['model']}...")
     model_name = args['model']
+
+    if (
+        args.get("trainer") == "torchFSDP"
+        and args.get("scoring_technique") == "NegSample"
+        and model_name in {"DistMult", "ComplEx"}
+    ):
+        fsdp_model_class = FSDPDistMult if model_name == "DistMult" else FSDPComplEx
+        return fsdp_model_class(args=args), "EntityPrediction"
 
     # Handle PyKEEN models
     if "pykeen" in model_name.lower():
