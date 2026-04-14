@@ -14,9 +14,9 @@ class TestExperimentReuse:
             args1.q = 1
             args1.optim = 'Adam'
             args1.scoring_technique = "KvsAll"
-            args1.path_single_kg = "KGs/Family/family-benchmark_rich_background.owl"
-            args1.backend = "rdflib"
-            args1.num_epochs = 0
+            args1.path_single_kg = "KGs/UMLS"
+            args1.backend = "pandas"
+            args1.num_epochs = 10
             args1.batch_size = 1024
             args1.lr = 0.1
             args1.embedding_dim = 32
@@ -40,9 +40,9 @@ class TestExperimentReuse:
             args2.q = 1
             args2.optim = 'Adam'
             args2.scoring_technique = "KvsAll"
-            args2.path_single_kg = "KGs/Family/family-benchmark_rich_background.owl"
-            args2.backend = "rdflib"
-            args2.num_epochs = 0
+            args2.path_single_kg = "KGs/UMLS"
+            args2.backend = "pandas"
+            args2.num_epochs = 10
             args2.batch_size = 1024
             args2.lr = 0.1
             args2.embedding_dim = 32
