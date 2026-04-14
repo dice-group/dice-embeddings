@@ -74,9 +74,8 @@ class TestExperimentReuse:
             args1.batch_size = 1024
             args1.lr = 0.1
             args1.embedding_dim = 32
-            args1.path_to_store_single_run =   tmpdir_single_kg
+            args1.path_to_store_single_run = tmpdir_single_kg
             args1.random_seed = 42
-            args1.save_embeddings_as_csv = False
             args1.eval_model = "train"
             args1.storage_path = tmpdir_single_kg
 
@@ -99,10 +98,9 @@ class TestExperimentReuse:
             args2.batch_size = 1024
             args2.lr = 0.1
             args2.embedding_dim = 32
-            args2.path_to_store_single_run =   tmpdir_single_kg
+            args2.path_to_store_single_run = tmpdir_single_kg
             args2.reuse_existing_run_dir = True
             args2.random_seed = 42
-            args2.save_embeddings_as_csv = False
             args2.eval_model = "train"
             args2.storage_path = tmpdir_single_kg
 
