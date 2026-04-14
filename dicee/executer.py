@@ -338,14 +338,15 @@ class Execute:
                 dist.barrier()
 
             # (3) Reload the memory-map of index knowledge graph stored as a numpy ndarray
+            if not getattr(self.args, "full_storage_path", None):
+                self.args.full_storage_path = self.args.path_to_store_single_run
             if self.knowledge_graph is None:
                 self.load_from_memmap()
 
             # (4) Create an evaluator object.
             self.evaluator = Evaluator(args=self.args)
             # (5) Create a trainer object.
-            if not getattr(self.args, "full_storage_path", None):
-                self.args.full_storage_path = self.args.path_to_store_single_run
+            
             self.trainer = DICE_Trainer(args=self.args,
                                         is_continual_training=self.is_continual_training,
                                         storage_path=self.args.full_storage_path,
