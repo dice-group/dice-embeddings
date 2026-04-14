@@ -163,7 +163,7 @@ class Execute:
         )
 
         if os.path.exists(memmap_path) and os.path.exists(details_path):
-            print("KG memmap already exists, skipping.")
+            print("KG already exists, skipping creation.")
             return
 
         print("Creating knowledge graph...")
