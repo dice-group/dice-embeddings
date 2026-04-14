@@ -1,5 +1,4 @@
 import os
-import time
 from typing import Tuple
 
 import numpy as np
@@ -29,9 +28,6 @@ class _FSDPShardedEntityModel(BaseKGE):
         self.local_entity_start = 0
         self.local_entity_end = self.num_entities
         self.local_entity_count = self.num_entities
-        self._lookup_profile_total = 0.0
-        self._lookup_profile_calls = 0
-        self._lookup_profile_unique = 0
         self._batch_lookup_ids = None
         self._batch_lookup_embeddings = None
         if self.manual_sharded_entity_training:
@@ -62,6 +58,7 @@ class _FSDPShardedEntityModel(BaseKGE):
             return self.entity_embeddings(entity_ids)
 
         if self._batch_lookup_ids is not None and self._batch_lookup_embeddings is not None:
+            entity_ids = entity_ids.contiguous()
             positions = torch.searchsorted(self._batch_lookup_ids, entity_ids)
             if torch.equal(self._batch_lookup_ids.index_select(0, positions), entity_ids):
                 return self._batch_lookup_embeddings.index_select(0, positions)
@@ -69,7 +66,6 @@ class _FSDPShardedEntityModel(BaseKGE):
         return self._distributed_entity_lookup(entity_ids)
 
     def _distributed_entity_lookup(self, entity_ids: torch.LongTensor) -> torch.FloatTensor:
-        start_time = time.perf_counter()
         unique_entity_ids, inverse_indices = torch.unique(entity_ids, sorted=False, return_inverse=True)
         outputs = torch.zeros(
             unique_entity_ids.shape[0],
@@ -82,9 +78,6 @@ class _FSDPShardedEntityModel(BaseKGE):
             local_ids = unique_entity_ids[mask] - self.local_entity_start
             outputs[mask] = self.local_entity_embeddings(local_ids)
         outputs = _AllReduceSum.apply(outputs)
-        self._lookup_profile_total += time.perf_counter() - start_time
-        self._lookup_profile_calls += 1
-        self._lookup_profile_unique += int(unique_entity_ids.numel())
         return outputs.index_select(0, inverse_indices)
 
     def _prime_batch_lookup_cache(self, entity_ids: torch.LongTensor) -> None:
@@ -95,17 +88,6 @@ class _FSDPShardedEntityModel(BaseKGE):
     def _clear_batch_lookup_cache(self) -> None:
         self._batch_lookup_ids = None
         self._batch_lookup_embeddings = None
-
-    def consume_lookup_profile(self):
-        profile = {
-            "lookup_seconds": self._lookup_profile_total,
-            "lookup_calls": self._lookup_profile_calls,
-            "lookup_unique_rows": self._lookup_profile_unique,
-        }
-        self._lookup_profile_total = 0.0
-        self._lookup_profile_calls = 0
-        self._lookup_profile_unique = 0
-        return profile
 
     def get_triple_representation(self, idx_hrt):
         if not self.manual_sharded_entity_training:

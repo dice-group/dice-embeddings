@@ -551,11 +551,13 @@ def intialize_model(args: Dict, verbose: int = 0) -> Tuple[BaseKGE, str]:
 
     if (
         args.get("trainer") == "torchFSDP"
-        and args.get("scoring_technique") == "NegSample"
+        and args.get("scoring_technique") in {"NegSample", "FixedNegSample"}
         and model_name in {"DistMult", "ComplEx"}
     ):
         fsdp_model_class = FSDPDistMult if model_name == "DistMult" else FSDPComplEx
-        return fsdp_model_class(args=args), "EntityPrediction"
+        fsdp_args = dict(args)
+        fsdp_args["fsdp_sharded_entity"] = True
+        return fsdp_model_class(args=fsdp_args), "EntityPrediction"
 
     # Handle PyKEEN models
     if "pykeen" in model_name.lower():

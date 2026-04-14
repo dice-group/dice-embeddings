@@ -157,12 +157,7 @@ class BaseKGE(BaseKGELightning):
         self.byte_pair_encoding = self.args.get("byte_pair_encoding", False)
         self.max_length_subword_tokens = self.args.get("max_length_subword_tokens", None)
         self.block_size=self.args.get("block_size", None)
-        self.defer_large_embeddings = (
-            self.args.get("trainer") == "torchFSDP"
-            and self.args.get("model") in {"DistMult", "ComplEx"}
-            and self.args.get("scoring_technique") == "NegSample"
-            and not self.byte_pair_encoding
-        )
+        self.defer_large_embeddings = bool(self.args.get("fsdp_sharded_entity", False))
         if self.byte_pair_encoding and self.args['model'] != "BytE":
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
             self.param_init(self.token_embeddings.weight.data)
