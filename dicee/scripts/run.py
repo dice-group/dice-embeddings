@@ -65,6 +65,9 @@ def get_default_arguments(description=None):
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchFSDP (custom fsdp), torchCPUTrainer (custom cpu only), TP (Model Paralelisim)')
     parser.add_argument("--fsdp_sparse_step_interval", type=int, default=4,
                         help="For torchFSDP sharded sparse embedding updates, apply the CPU sparse optimizer every N batches.")
+    parser.add_argument("--fsdp_sparse_optimizer_device", type=str, default="cpu",
+                        choices=["cpu", "gpu"],
+                        help="For torchFSDP sharded sparse embedding updates, run the sparse optimizer on CPU or GPU.")
     parser.add_argument('--scoring_technique', default="NegSample",
                         help="Training technique for knowledge graph embedding model",
                         choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "FixedNegSample", "1vsSample", "KvsSample"])
