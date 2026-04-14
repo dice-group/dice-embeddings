@@ -14,8 +14,7 @@ class TestExperimentReuse:
             args1.q = 1
             args1.optim = 'Adam'
             args1.scoring_technique = "KvsAll"
-            args1.path_single_kg = "KGs/UMLS"
-            args1.backend = "pandas"
+            args1.dataset_dir = "KGs/UMLS"
             args1.num_epochs = 10
             args1.batch_size = 1024
             args1.lr = 0.1
@@ -24,7 +23,7 @@ class TestExperimentReuse:
             args1.reuse_existing_run_dir = False
             args1.random_seed = 42
             args1.save_embeddings_as_csv = False
-            args1.eval_model = None
+            args1.eval_model = "train"
             args1.storage_path = tmpdir
 
             result1 = Execute(args1).start()
@@ -40,8 +39,7 @@ class TestExperimentReuse:
             args2.q = 1
             args2.optim = 'Adam'
             args2.scoring_technique = "KvsAll"
-            args2.path_single_kg = "KGs/UMLS"
-            args2.backend = "pandas"
+            args2.dataset_dir = "KGs/UMLS"
             args2.num_epochs = 10
             args2.batch_size = 1024
             args2.lr = 0.1
