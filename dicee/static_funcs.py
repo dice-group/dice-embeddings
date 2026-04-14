@@ -28,7 +28,7 @@ from .models import (
 )
 from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
-from .models.fsdp_models import FSDPComplEx, FSDPDistMult
+from .models.fsdp_models import FSDPComplEx, FSDPDistMult, FSDPTransE
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
 
@@ -552,9 +552,13 @@ def intialize_model(args: Dict, verbose: int = 0) -> Tuple[BaseKGE, str]:
     if (
         args.get("trainer") == "torchFSDP"
         and args.get("scoring_technique") in {"NegSample", "FixedNegSample"}
-        and model_name in {"DistMult", "ComplEx"}
+        and model_name in {"DistMult", "ComplEx", "TransE"}
     ):
-        fsdp_model_class = FSDPDistMult if model_name == "DistMult" else FSDPComplEx
+        fsdp_model_class = {
+            "DistMult": FSDPDistMult,
+            "ComplEx": FSDPComplEx,
+            "TransE": FSDPTransE,
+        }[model_name]
         fsdp_args = dict(args)
         fsdp_args["fsdp_sharded_entity"] = True
         return fsdp_model_class(args=fsdp_args), "EntityPrediction"
