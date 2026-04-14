@@ -213,11 +213,11 @@ class Execute:
         """Load knowledge graph from memory-mapped file."""
         base_path = self.args.path_to_store_single_run
         details_path = os.path.join(base_path, 'memory_map_details.json')
-        memmap_path = os.path.join(base_path, 'memory_map_train_set.npy')
-
+        
         with open(details_path, 'r') as f:
             memory_map_details = json.load(f)
 
+        # memmap_path = os.path.join(base_path, 'memory_map_train_set.npy')
         # self.knowledge_graph = np.memmap(
         #     memmap_path,
         #     mode='r',
