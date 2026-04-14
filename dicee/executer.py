@@ -218,11 +218,13 @@ class Execute:
         with open(details_path, 'r') as f:
             memory_map_details = json.load(f)
 
-        self.knowledge_graph = np.memmap(
-            memmap_path,
-            mode='r',
-            dtype=memory_map_details["dtype"],
-                                            shape=tuple(memory_map_details["shape"]))
+        # self.knowledge_graph = np.memmap(
+        #     memmap_path,
+        #     mode='r',
+        #     dtype=memory_map_details["dtype"],
+        #                                     shape=tuple(memory_map_details["shape"]))
+        self.args.path_experiment_folder = self.args.path_to_store_single_run
+        self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
         self.args.num_entities = memory_map_details["num_entities"]
         self.args.num_relations = memory_map_details["num_relations"]
         self.args.num_tokens = None
