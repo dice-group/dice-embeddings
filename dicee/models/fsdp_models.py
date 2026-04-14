@@ -200,3 +200,29 @@ class FSDPComplEx(_FSDPShardedEntityModel):
         imag_real_imag = torch.einsum("bd, bkd -> bk", emb_head_imag * emb_rel_real, emb_tail_imag)
         imag_imag_real = torch.einsum("bd, bkd -> bk", emb_head_imag * emb_rel_imag, emb_tail_real)
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
+
+
+class FSDPTransE(_FSDPShardedEntityModel):
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = "TransE"
+        self._norm = 2
+        self.margin = 4
+
+    def score(self, head_ent_emb, rel_ent_emb, tail_ent_emb):
+        return self.margin - torch.nn.functional.pairwise_distance(
+            head_ent_emb + rel_ent_emb,
+            tail_ent_emb,
+            p=self._norm,
+        )
+
+    def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
+        if self.manual_sharded_entity_training:
+            raise NotImplementedError("Sharded TransE currently supports only NegSample/FixedNegSample training.")
+        emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
+        distance = torch.nn.functional.pairwise_distance(
+            torch.unsqueeze(emb_head_real + emb_rel_real, 1),
+            self.entity_embeddings.weight,
+            p=self._norm,
+        )
+        return self.margin - distance

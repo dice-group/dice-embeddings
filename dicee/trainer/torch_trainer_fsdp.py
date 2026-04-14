@@ -422,28 +422,14 @@ class TorchFSDPTrainer(AbstractTrainer):
                 param.grad.div_(world_size)
 
     def _materialize_sharded_distmult_on_rank_zero(self) -> torch.nn.Module:
-        """Gather sharded entity embeddings to rank 0."""
-        local_weight = self.raw_model.local_entity_embeddings.weight.detach()
-        local_rows = torch.tensor([local_weight.shape[0]], device=self.device, dtype=torch.long)
-        
-        # Gather row counts from all ranks
-        row_sizes = [torch.zeros_like(local_rows) for _ in range(dist.get_world_size())]
-        dist.all_gather(row_sizes, local_rows)
-        
-        max_rows = max(int(x.item()) for x in row_sizes)
-        
-        # Pad to max size for all_gather
-        padded = torch.zeros(max_rows, local_weight.shape[1], device=self.device, dtype=local_weight.dtype)
-        padded[: local_weight.shape[0]] = local_weight
-        
-        # Gather all shards
-        gathered = [torch.zeros_like(padded) for _ in range(dist.get_world_size())]
-        dist.all_gather(gathered, padded)
-        
-        # Reconstruct full embedding matrix on rank 0
+        """Gather sharded entity embeddings to rank 0 using CPU objects."""
+        local_weight = self.raw_model.local_entity_embeddings.weight.detach().cpu()
+        gathered = [None for _ in range(dist.get_world_size())] if self.local_rank == self.global_rank == 0 else None
+        dist.gather_object(local_weight, object_gather_list=gathered, dst=self.global_rank)
+
         if self.local_rank == self.global_rank == 0:
             full_entity_weight = torch.cat(
-                [tensor[: int(size.item())].cpu() for tensor, size in zip(gathered, row_sizes)],
+                gathered,
                 dim=0,
             )[: self.raw_model.num_entities]
             
