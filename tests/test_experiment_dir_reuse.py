@@ -50,7 +50,7 @@ class TestExperimentReuse:
             args2.reuse_existing_run_dir = True
             args2.random_seed = 42
             args2.save_embeddings_as_csv = False
-            args2.eval_model = None
+            args2.eval_model = "train"
             args2.storage_path = tmpdir
 
             result2 = Execute(args2).start()
