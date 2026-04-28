@@ -115,6 +115,9 @@ class BaseKGELightning(pl.LightningModule):
             self.selected_optimizer = torch.optim.ASGD(parameters,
                                                        lr=self.learning_rate, lambd=0.0001, alpha=0.75,
                                                        weight_decay=self.weight_decay)
+        elif self.optimizer_name == 'Muon':
+            self.selected_optimizer = torch.optim.Muon(parameters, lr=self.learning_rate,
+                                                       weight_decay=self.weight_decay)
         else:
             raise KeyError(f"{self.optimizer_name} is not found!")
         print(self.selected_optimizer)
