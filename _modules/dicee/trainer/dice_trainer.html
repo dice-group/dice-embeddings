@@ -138,6 +138,42 @@
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_cuda_is_usable</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return True only when CUDA can be fully initialised.</span>
+
+<span class="sd">    ``torch.cuda.device_count()`` does not trigger full CUDA runtime init,</span>
+<span class="sd">    so it may return &gt;0 even when the runtime is in a broken/corrupted state</span>
+<span class="sd">    (e.g. after a kernel crash in a previous test).  Calling</span>
+<span class="sd">    ``get_device_name`` forces the actual init and lets us detect the bad</span>
+<span class="sd">    state before handing control to PyTorch Lightning.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">get_device_name</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_disable_cuda_in_process</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Patch ``torch.cuda.is_available`` to return ``False`` for this process.</span>
+
+<span class="sd">    Lightning&#39;s ``_collect_rng_states`` (called from ``isolate_rng``) checks</span>
+<span class="sd">    ``torch.cuda.is_available()`` and, when it returns ``True``, calls</span>
+<span class="sd">    ``torch.cuda.get_rng_state_all()``.  That triggers a full CUDA runtime</span>
+<span class="sd">    init which crashes if the runtime is already in a broken state.  Setting</span>
+<span class="sd">    ``accelerator=&quot;cpu&quot;`` alone is not sufficient because Lightning still</span>
+<span class="sd">    collects CUDA RNG state regardless of the chosen accelerator.</span>
+
+<span class="sd">    This function is only called after ``_cuda_is_usable()`` has already</span>
+<span class="sd">    confirmed that the CUDA runtime cannot be initialised, so permanently</span>
+<span class="sd">    returning ``False`` from ``is_available`` is both safe and correct for</span>
+<span class="sd">    the lifetime of the current process.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="kc">False</span>  <span class="c1"># type: ignore[assignment]</span>
+
+
 <div class="viewcode-block" id="initialize_trainer">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.initialize_trainer">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">initialize_trainer</span><span class="p">(</span>
@@ -172,7 +208,16 @@
         <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="nb">vars</span><span class="p">(</span><span class="n">args</span><span class="p">),</span> <span class="o">**</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;pl_trainer_kwargs&quot;</span><span class="p">,</span> <span class="p">{})</span> <span class="ow">or</span> <span class="p">{})}</span>
         <span class="c1"># NOTE: PyTorch Lightning Trainer has many optional parameters</span>
         <span class="c1"># See: https://lightning.ai/docs/pytorch/stable/common/trainer.html</span>
-        <span class="n">trainer</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><span class="n">accelerator</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;accelerator&quot;</span><span class="p">,</span> <span class="s2">&quot;auto&quot;</span><span class="p">),</span>
+        <span class="c1"># Fall back to CPU when CUDA is unavailable or its context is broken</span>
+        <span class="c1"># (e.g. after a kernel crash in a previous test in the same process).</span>
+        <span class="c1"># _disable_cuda_in_process() patches torch.cuda.is_available → False so</span>
+        <span class="c1"># Lightning&#39;s isolate_rng does not attempt to collect CUDA RNG state,</span>
+        <span class="c1"># which would re-trigger the failed init and crash before training starts.</span>
+        <span class="n">_default_accelerator</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_cuda_is_usable</span><span class="p">():</span>
+            <span class="n">_disable_cuda_in_process</span><span class="p">()</span>
+            <span class="n">_default_accelerator</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span>
+        <span class="n">trainer</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><span class="n">accelerator</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;accelerator&quot;</span><span class="p">,</span> <span class="n">_default_accelerator</span><span class="p">),</span>
                           <span class="n">strategy</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;strategy&quot;</span><span class="p">,</span> <span class="s2">&quot;auto&quot;</span><span class="p">),</span>
                           <span class="n">num_nodes</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;num_nodes&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
                           <span class="n">precision</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;precision&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
@@ -315,7 +360,10 @@
               <span class="sa">f</span><span class="s1">&#39; # of GPUs:</span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()</span><span class="si">}</span><span class="s1"> |&#39;</span>
               <span class="sa">f</span><span class="s1">&#39; # of CPUs for dataloader:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_core</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()):</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">get_device_name</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">get_device_name</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;GPU </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">: &lt;unable to query name — </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s1">&gt;&#39;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DICE_Trainer.continual_start">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.DICE_Trainer.continual_start">[docs]</a>
