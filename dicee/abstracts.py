@@ -16,17 +16,20 @@ import pandas as pd
 
 
 class AbstractTrainer:
-    """
-    Abstract class for Trainer class for knowledge graph embedding models
+    """Abstract base class for KGE model trainers.
 
+    Provides the callback dispatch mechanism shared by all concrete trainer
+    implementations (TorchTrainer, TorchDDPTrainer, etc.).  Sub-classes call
+    the ``on_*`` hooks at the appropriate points in the training loop so that
+    any registered :class:`AbstractCallback` can react.
 
-    Parameter
-    ---------
-    args : str
-        ?
-
-    callbacks: list
-            ?
+    Parameters
+    ----------
+    args : argparse.Namespace or similar
+        Processed configuration object.  Must expose at least
+        ``random_seed`` (int).
+    callbacks : list of AbstractCallback
+        Ordered list of callback instances to invoke at each lifecycle hook.
     """
 
     def __init__(self, args, callbacks):
@@ -42,129 +45,85 @@ class AbstractTrainer:
         self.strategy=None
 
     def on_fit_start(self, *args, **kwargs):
-        """
-        A function to call callbacks before the training starts.
+        """Dispatch ``on_fit_start`` to all registered callbacks.
 
-        Parameter
-        ---------
-        args
-
-        kwargs
-
-
-        Returns
-        -------
-        None
+        Called once before the first training epoch begins.
         """
         for c in self.callbacks:
             c.on_fit_start(*args, **kwargs)
 
     def on_fit_end(self, *args, **kwargs):
-        """
-        A function to call callbacks at the ned of the training.
+        """Dispatch ``on_fit_end`` to all registered callbacks.
 
-        Parameter
-        ---------
-        args
-
-        kwargs
-
-
-        Returns
-        -------
-        None
+        Called once after the last training epoch completes.
         """
         for c in self.callbacks:
             c.on_fit_end(*args, **kwargs)
 
     def on_train_epoch_start(self, *args, **kwargs):
-        """
-        A function to call callbacks at the start of an epoch.
+        """Dispatch ``on_train_epoch_start`` to all registered callbacks.
 
-        Parameter
-        ---------
-        args
-
-        kwargs
-
-
-        Returns
-        -------
-        None
+        Called at the beginning of every epoch.
         """
         for c in self.callbacks:
             c.on_train_epoch_start(*args, **kwargs)
 
     def on_train_epoch_end(self, *args, **kwargs):
-        """
-        A function to call callbacks at the end of an epoch.
+        """Dispatch ``on_train_epoch_end`` to all registered callbacks.
 
-        Parameter
-        ---------
-        args
-
-        kwargs
-
-
-        Returns
-        -------
-        None
+        Called at the end of every epoch after the loss has been accumulated.
         """
         for c in self.callbacks:
             c.on_train_epoch_end(*args, **kwargs)
 
     def on_train_batch_end(self, *args, **kwargs):
-        """
-        A function to call callbacks at the end of each mini-batch during training.
+        """Dispatch ``on_train_batch_end`` to all registered callbacks.
 
-        Parameter
-        ---------
-        args
-
-        kwargs
-
-
-        Returns
-        -------
-        None
+        Called after each mini-batch gradient update.
         """
         for c in self.callbacks:
             c.on_train_batch_end(*args, **kwargs)
 
     @staticmethod
     def save_checkpoint(full_path: str, model) -> None:
-        """
-        A static function to save a model into disk
+        """Persist model weights to disk.
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         full_path : str
-
-        model:
-
-
-        Returns
-        -------
-        None
+            Absolute or relative file path (including filename) where the
+            ``state_dict`` will be written, e.g.
+            ``'Experiments/run1/model.pt'``.
+        model : torch.nn.Module
+            The model whose ``state_dict`` is to be saved.
         """
         torch.save(model.state_dict(), full_path)
 
 
 class BaseInteractiveKGE:
-    """
-    Abstract/base class for using knowledge graph embedding models interactively.
+    """Base class for interactive, post-training use of KGE models.
 
+    Loads a pre-trained model from disk (or a remote URL) together with its
+    entity/relation index mappings and exposes the prediction API used by
+    :class:`~dicee.knowledge_graph_embeddings.KGE`.
 
-    Parameter
-    ---------
-    path_of_pretrained_model_dir : str
-        ?
-
-    construct_ensemble: boolean
-            ?
-
-    model_name: str
-    apply_semantic_constraint : boolean
+    Parameters
+    ----------
+    path : str, optional
+        Path to the experiment directory produced by :class:`Execute`.
+        Must contain ``model.pt``, ``configuration.json``,
+        ``entity_to_idx.csv`` and ``relation_to_idx.csv``.
+    url : str, optional
+        Remote URL of a pre-trained model to download.  Mutually exclusive
+        with *path*.
+    construct_ensemble : bool, optional
+        When ``True``, load all checkpoint files in *path* and average their
+        weights to form an ensemble model.  Defaults to ``False``.
+    model_name : str, optional
+        Filename (without extension) of the checkpoint to load when multiple
+        ``.pt`` files exist in *path*.
+    apply_semantic_constraint : bool, optional
+        Reserved for future use.  Defaults to ``False``.
     """
 
     def __init__(self, path: str = None, url: str = None, construct_ensemble: bool = False, model_name: str = None,
@@ -274,32 +233,23 @@ class BaseInteractiveKGE:
 
 
     def set_model_train_mode(self) -> None:
-        """
-        Setting the model into training mode
+        """Switch the underlying model to training mode.
 
-
-        Parameter
-        ---------
-
-        Returns
-        ---------
+        Calls ``model.train()`` and re-enables gradient computation for all
+        parameters so that subsequent calls to optimisation steps work
+        correctly after a period of inference.
         """
         self.model.train()
         for parameter in self.model.parameters():
             parameter.requires_grad = True
 
     def set_model_eval_mode(self) -> None:
+        """Switch the underlying model to evaluation mode.
+
+        Calls ``model.eval()`` and freezes all parameters (``requires_grad =
+        False``) so that dropout and batch-norm layers behave deterministically
+        during inference.
         """
-        Setting the model into eval mode
-
-
-        Parameter
-        ---------
-
-        Returns
-        ---------
-        """
-
         self.model.eval()
         for parameter in self.model.parameters():
             parameter.requires_grad = False
@@ -309,57 +259,125 @@ class BaseInteractiveKGE:
         return self.model.name
 
     def sample_entity(self, n: int) -> List[str]:
+        """Return *n* random entity strings without replacement.
+
+        Parameters
+        ----------
+        n : int
+            Number of entities to sample.  Must be non-negative and at most
+            ``num_entities``.
+
+        Returns
+        -------
+        List[str]
+            Randomly selected entity string labels.
+        """
         assert isinstance(n, int)
         assert n >= 0
         return random.sample([i for i in self.entity_to_idx.keys()], n)
 
     def sample_relation(self, n: int) -> List[str]:
+        """Return *n* random relation strings without replacement.
+
+        Parameters
+        ----------
+        n : int
+            Number of relations to sample.  Must be non-negative and at most
+            ``num_relations``.
+
+        Returns
+        -------
+        List[str]
+            Randomly selected relation string labels.
+        """
         assert isinstance(n, int)
         assert n >= 0
         return random.sample([i for i in self.relation_to_idx.keys()], n)
 
     def is_seen(self, entity: str = None, relation: str = None) -> bool:
+        """Check whether an entity or relation was present in the training set.
+
+        Exactly one of *entity* or *relation* should be provided.
+
+        Parameters
+        ----------
+        entity : str, optional
+            Entity string label to look up.
+        relation : str, optional
+            Relation string label to look up.
+
+        Returns
+        -------
+        bool
+            ``True`` if the given string is in the respective index mapping,
+            ``False`` otherwise.
+        """
         if entity is not None:
             return True if self.entity_to_idx.get(entity) else False
         if relation is not None:
             return True if self.relation_to_idx.get(relation) else False
 
     def save(self) -> None:
+        """Persist the current model weights to the experiment directory.
+
+        The checkpoint filename encodes the current timestamp so successive
+        calls do not overwrite each other.  Ensemble models are saved with an
+        ``_ensemble_`` infix in the filename.
+        """
         t = str(datetime.datetime.now())
         if self.construct_ensemble:
             save_checkpoint_model(self.model, path=self.path + f'/model_ensemble_interactive_{str(t)}.pt')
         else:
             save_checkpoint_model(self.model, path=self.path + f'/model_interactive_{str(t)}.pt')
 
-    def get_entity_index(self, x: str):
+    def get_entity_index(self, x: str) -> int:
+        """Return the integer index for a given entity string.
+
+        Parameters
+        ----------
+        x : str
+            Entity string label (must have been seen during training).
+
+        Returns
+        -------
+        int
+            Corresponding row index in the entity embedding matrix.
+        """
         return self.entity_to_idx[x]
 
-    def get_relation_index(self, x: str):
+    def get_relation_index(self, x: str) -> int:
+        """Return the integer index for a given relation string.
+
+        Parameters
+        ----------
+        x : str
+            Relation string label (must have been seen during training).
+
+        Returns
+        -------
+        int
+            Corresponding row index in the relation embedding matrix.
+        """
         return self.relation_to_idx[x]
 
     def index_triple(self, head_entity: List[str], relation: List[str], tail_entity: List[str]) -> Tuple[
         torch.LongTensor, torch.LongTensor, torch.LongTensor]:
-        """
-        Index Triple
+        """Convert string triple lists to integer index tensors.
 
-        Parameter
-        ---------
-        head_entity: List[str]
+        Parameters
+        ----------
+        head_entity : List[str]
+            Head entity string labels.
+        relation : List[str]
+            Relation string labels.
+        tail_entity : List[str]
+            Tail entity string labels.
 
-        String representation of selected entities.
-
-        relation: List[str]
-
-        String representation of selected relations.
-
-        tail_entity: List[str]
-
-        String representation of selected entities.
-
-        Returns: Tuple
-        ---------
-
-        pytorch tensor of triple score
+        Returns
+        -------
+        idx_head_entity, idx_relation, idx_tail_entity : torch.LongTensor
+            Each has shape ``(n, 1)`` containing the integer indices for the
+            corresponding strings.
         """
         n = len(head_entity)
         assert n == len(relation) == len(tail_entity)
@@ -368,7 +386,22 @@ class BaseInteractiveKGE:
         idx_tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity]).reshape(n, 1)
         return idx_head_entity, idx_relation, idx_tail_entity
 
-    def add_new_entity_embeddings(self, entity_name: str = None, embeddings: torch.FloatTensor = None):
+    def add_new_entity_embeddings(self, entity_name: str = None, embeddings: torch.FloatTensor = None) -> None:
+        """Extend the entity embedding table with a new entity at inference time.
+
+        The new entity is appended to both ``entity_to_idx`` / ``idx_to_entity``
+        mappings and the ``entity_embeddings`` weight tensor so that subsequent
+        calls to prediction methods can reference it by name.
+
+        Parameters
+        ----------
+        entity_name : str
+            String label for the new entity.  If the entity already exists in
+            the index no modification is made.
+        embeddings : torch.FloatTensor
+            1-D float tensor of length ``embedding_dim`` containing the
+            pre-computed embedding for the new entity.
+        """
         assert isinstance(entity_name, str) and isinstance(embeddings, torch.FloatTensor)
 
         if entity_name in self.entity_to_idx:
@@ -382,18 +415,23 @@ class BaseInteractiveKGE:
                 (self.model.entity_embeddings.weight.data.detach(), embeddings.unsqueeze(0)), dim=0)
             self.model.entity_embeddings.num_embeddings += 1
 
-    def get_entity_embeddings(self, items: List[str]):
-        """
-        Return embedding of an entity given its string representation
+    def get_entity_embeddings(self, items: List[str]) -> torch.FloatTensor:
+        """Return the embedding vectors for the given entity strings.
 
+        For standard (non-BPE) models the method looks up each string in
+        ``entity_to_idx`` and returns the corresponding rows of the entity
+        embedding matrix.  For BPE models subword token embeddings are
+        fetched and flattened into a single vector per entity.
 
-        Parameter
-        ---------
-        items:
-            entities
+        Parameters
+        ----------
+        items : List[str]
+            Entity string labels to retrieve.
 
         Returns
-        ---------
+        -------
+        torch.FloatTensor
+            Shape ``(len(items), embedding_dim)``.
         """
         if self.configs["byte_pair_encoding"]:
             t_encode = self.enc.encode_batch(items)
@@ -405,29 +443,42 @@ class BaseInteractiveKGE:
         else:
             return self.model.entity_embeddings(torch.LongTensor([self.entity_to_idx[i] for i in items]))
 
-    def get_relation_embeddings(self, items: List[str]):
-        """
-        Return embedding of a relation given its string representation
+    def get_relation_embeddings(self, items: List[str]) -> torch.FloatTensor:
+        """Return the embedding vectors for the given relation strings.
 
-
-        Parameter
-        ---------
-        items:
-            relations
+        Parameters
+        ----------
+        items : List[str]
+            Relation string labels to retrieve.
 
         Returns
-        ---------
+        -------
+        torch.FloatTensor
+            Shape ``(len(items), embedding_dim)``.
         """
         return self.model.relation_embeddings(torch.LongTensor([self.relation_to_idx[i] for i in items]))
 
-    def construct_input_and_output(self, head_entity: List[str], relation: List[str], tail_entity: List[str], labels):
-        """
-        Construct a data point
-        :param head_entity:
-        :param relation:
-        :param tail_entity:
-        :param labels:
-        :return:
+    def construct_input_and_output(self, head_entity: List[str], relation: List[str], tail_entity: List[str],
+                                    labels) -> Tuple[torch.LongTensor, torch.FloatTensor]:
+        """Build an indexed triple tensor and a label tensor from string inputs.
+
+        Parameters
+        ----------
+        head_entity : List[str]
+            Head entity string labels.
+        relation : List[str]
+            Relation string labels.
+        tail_entity : List[str]
+            Tail entity string labels.
+        labels : list or array-like
+            Binary or soft labels (one per triple) used as training targets.
+
+        Returns
+        -------
+        x : torch.LongTensor
+            Shape ``(n, 3)`` integer-indexed triples.
+        labels : torch.FloatTensor
+            Shape ``(n,)`` float label tensor.
         """
         idx_head_entity, idx_relation, idx_tail_entity = self.index_triple(head_entity, relation, tail_entity)
         x = torch.hstack((idx_head_entity, idx_relation, idx_tail_entity))
@@ -439,8 +490,29 @@ class BaseInteractiveKGE:
         return self.model.parameters()
 
 class InteractiveQueryDecomposition:
+    """Mixin that provides fuzzy-logic operators for multi-hop EPFO query answering.
+
+    The three families of operators — T-norm, T-conorm, and negation norm — are
+    applied element-wise over entity score tensors to compose complex queries
+    from atomic link-prediction results (e.g. 2p, 3p, 2i, ip, up).
+    """
 
     def t_norm(self, tens_1: torch.Tensor, tens_2: torch.Tensor, tnorm: str = 'min') -> torch.Tensor:
+        """Apply a T-norm to combine two entity score distributions.
+
+        Parameters
+        ----------
+        tens_1, tens_2 : torch.Tensor
+            Score tensors of identical shape, values in ``[0, 1]``.
+        tnorm : str
+            Operator to use.  ``'min'`` applies the Gödel (min) T-norm;
+            ``'prod'`` applies the product T-norm.
+
+        Returns
+        -------
+        torch.Tensor
+            Element-wise combined scores of the same shape as the inputs.
+        """
         if 'min' in tnorm:
             return torch.min(tens_1, tens_2)
         elif 'prod' in tnorm:
@@ -458,12 +530,45 @@ class InteractiveQueryDecomposition:
             raise NotImplementedError(f"{tnorm} is not implemented")
 
     def t_conorm(self, tens_1: torch.Tensor, tens_2: torch.Tensor, tconorm: str = 'min') -> torch.Tensor:
+        """Apply a T-conorm (S-norm) to combine two score distributions (union).
+
+        Parameters
+        ----------
+        tens_1, tens_2 : torch.Tensor
+            Score tensors of identical shape, values in ``[0, 1]``.
+        tconorm : str
+            Operator to use.  ``'min'`` applies the Gödel (max) T-conorm;
+            ``'prod'`` applies the probabilistic sum T-conorm.
+
+        Returns
+        -------
+        torch.Tensor
+            Element-wise combined scores of the same shape as the inputs.
+        """
         if 'min' in tconorm:
             return torch.max(tens_1, tens_2)
         elif 'prod' in tconorm:
             return (tens_1 + tens_2) - (tens_1 * tens_2)
 
     def negnorm(self, tens_1: torch.Tensor, lambda_: float, neg_norm: str = 'standard') -> torch.Tensor:
+        """Apply a negation norm (complement) to an entity score distribution.
+
+        Parameters
+        ----------
+        tens_1 : torch.Tensor
+            Input score tensor, values in ``[0, 1]``.
+        lambda_ : float
+            Shape parameter used by the Sugeno and Yager negation norms.
+            Ignored for the standard complement.
+        neg_norm : str
+            Which negation to apply: ``'standard'`` (``1 - x``),
+            ``'sugeno'``, or ``'yager'``.
+
+        Returns
+        -------
+        torch.Tensor
+            Complemented score tensor of the same shape as *tens_1*.
+        """
         if 'standard' in neg_norm:
             return 1 - tens_1
         elif 'sugeno' in neg_norm:
@@ -472,123 +577,98 @@ class InteractiveQueryDecomposition:
             return (1 - torch.pow(tens_1, lambda_)) ** (1 / lambda_)
 
 class AbstractCallback(ABC, lightning.pytorch.callbacks.Callback):
-    """
-    Abstract class for Callback class for knowledge graph embedding models
+    """Abstract base class for KGE training lifecycle callbacks.
 
+    Concrete sub-classes override one or more hook methods to perform
+    custom actions at specific points during training (e.g. weight
+    averaging, periodic evaluation, model checkpointing).  All hooks have
+    empty default implementations so sub-classes only need to override the
+    hooks they care about.
 
-    Parameter
-    ---------
-
+    Callbacks are registered by passing them to the trainer's *callbacks*
+    list.  They are also compatible with PyTorch Lightning trainers because
+    this class extends ``lightning.pytorch.callbacks.Callback``.
     """
 
     def __init__(self):
         pass
 
     def on_init_start(self, *args, **kwargs):
-        """
+        """Called when the trainer is about to be constructed.
 
-        Parameter
-        ---------
-        trainer:
-
-        model:
-
-        Returns
-        ---------
-        None
+        Override to perform setup that must happen before any trainer
+        state is initialised.
         """
         pass
 
     def on_init_end(self, *args, **kwargs):
-        """
-        Call at the beginning of the training.
+        """Called immediately after the trainer has been constructed.
 
-        Parameter
-        ---------
-        trainer:
-
-        model:
-
-        Returns
-        ---------
-        None
+        Override to perform setup that requires a fully initialised trainer.
         """
         pass
 
     def on_fit_start(self, trainer, model):
-        """
-        Call at the beginning of the training.
+        """Called once before the first training epoch.
 
-        Parameter
-        ---------
-        trainer:
-
-        model:
-
-        Returns
-        ---------
-        None
+        Parameters
+        ----------
+        trainer : AbstractTrainer or pl.Trainer
+            The active trainer instance.
+        model : BaseKGE
+            The model about to be trained.
         """
         return
 
     def on_train_epoch_end(self, trainer, model):
-        """
-        Call at the end of each epoch during training.
+        """Called at the end of each training epoch.
 
-        Parameter
-        ---------
-        trainer:
-
-        model:
-
-        Returns
-        ---------
-        None
+        Parameters
+        ----------
+        trainer : AbstractTrainer or pl.Trainer
+            The active trainer instance.
+        model : BaseKGE
+            The model being trained.  ``model.loss_history`` contains the
+            per-epoch average losses accumulated so far.
         """
         pass
 
     def on_train_batch_end(self, *args, **kwargs):
-        """
-        Call at the end of each mini-batch during the training.
+        """Called after each mini-batch gradient update.
 
-
-        Parameter
-        ---------
-        trainer:
-
-        model:
-
-        Returns
-        ---------
-        None
+        Override to inspect or modify the model at a finer granularity than
+        epoch-level hooks.
         """
         pass
 
     def on_fit_end(self, *args, **kwargs):
-        """
-        Call at the end of the training.
+        """Called once after the final training epoch completes.
 
-        Parameter
-        ---------
-        trainer:
-
-        model:
-
-        Returns
-        ---------
-        None
+        Override to perform post-training actions such as saving the final
+        model state, computing evaluation metrics, or cleaning up resources.
         """
         pass
 
 
 class AbstractPPECallback(AbstractCallback):
-    """
-    Abstract class for Callback class for knowledge graph embedding models
+    """Abstract base class for Post-training Parameter Ensembling (PPE) callbacks.
 
+    Sub-classes implement weight-averaging strategies (SWA, EMA, SWAG, …) by
+    overriding :meth:`on_train_epoch_end` and :meth:`on_fit_end`.  Common
+    book-keeping (epoch counter, sample counter, alpha weights) is managed
+    here.
 
-    Parameter
-    ---------
-
+    Parameters
+    ----------
+    num_epochs : int
+        Total number of training epochs.
+    path : str
+        Experiment directory where averaged checkpoints will be written.
+    epoch_to_start : int
+        First epoch at which the averaging procedure should begin.
+    last_percent_to_consider : float
+        Fraction of the total training epochs (counted from the end) whose
+        checkpoints are included in the ensemble.
     """
 
     def __init__(self, num_epochs, path, epoch_to_start, last_percent_to_consider):
