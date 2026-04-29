@@ -339,9 +339,11 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
         if verbose>0:
             print('Loading entity and relation indexes...', end=' ')
     
-        entity_to_idx = { v["entity"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv",index_col=0,dtype=str).to_dict(orient='index').items()}
+        # Use per-column dtype to avoid pandas>=3.0.0 applying dtype=str to the index column
+        # (which would make index values strings instead of ints, breaking downstream assertions)
+        entity_to_idx = { v["entity"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv",index_col=0,dtype={'entity': str}).to_dict(orient='index').items()}
 
-        relation_to_idx = { v["relation"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv",index_col=0,dtype=str).to_dict(orient='index').items()}
+        relation_to_idx = { v["relation"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv",index_col=0,dtype={'relation': str}).to_dict(orient='index').items()}
 
 
         if verbose > 0:
