@@ -89,9 +89,11 @@ class TestPandas3Compat:
 
             major = int(pd.__version__.split(".")[0])
             if major >= 3:
-                # In pandas >= 3, dtype=str makes the integer index into object/string
-                assert idx_dtype == object, (
-                    f"Expected object index dtype with dtype=str in pandas {pd.__version__}, "
+                # In pandas >= 3, dtype=str makes the integer index into a string-like
+                # dtype (StringDtype in 3.0+, object in earlier 3.x builds).
+                # Either way it must NOT be an integer dtype.
+                assert not str(idx_dtype).startswith("int"), (
+                    f"Expected non-integer index dtype with dtype=str in pandas {pd.__version__}, "
                     f"got {idx_dtype}"
                 )
             else:
