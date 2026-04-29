@@ -1,6 +1,31 @@
 from .base_model import BaseKGE
 import torch
 class Keci(BaseKGE):
+    """Keci: Knowledge Graph Embedding via Clifford Algebra.
+
+    Embeds entities and relations as multi-vectors in the Clifford algebra
+    Cl_{p,q}(R^d) and scores triples via the Clifford product.  The algebra
+    is parameterised by two non-negative integers *p* and *q*:
+
+    * ``p = 0, q = 0`` — reduces to a standard bilinear (DistMult-like) model.
+    * ``p = 0, q = 1`` — equivalent to ComplEx.
+    * Larger ``p`` and ``q`` capture higher-order geometric interactions.
+
+    The embedding dimension must satisfy ``embedding_dim % (p + q + 1) == 0``;
+    the resulting quotient is stored as ``self.r``.
+
+    Parameters
+    ----------
+    args : dict
+        Configuration dictionary.  Recognised keys (beyond those in
+        :class:`BaseKGE`): ``p`` (int, default 0) and ``q`` (int, default 0).
+
+    References
+    ----------
+    Demir et al., *Clifford Embeddings — A Generalized Approach for Embedding
+    in Normed Algebras*, ECML 2023.
+    """
+
     def __init__(self, args):
         super().__init__(args)
         self.name = 'Keci'
@@ -161,20 +186,31 @@ class Keci(BaseKGE):
 
     def construct_cl_multivector(self, x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[
         torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
-        """
+        """Split a flat embedding vector into the three Clifford components.
 
-        Construct a batch of multivectors Cl_{p,q}(\mathbb{R}^d)
+        Given an embedding ``x`` of dimension ``d = r + r*p + r*q``, returns
+        the scalar part ``a0``, the *p*-blade part ``ap``, and the *q*-blade
+        part ``aq``.
 
-        Parameter
-        ---------
-        x: torch.FloatTensor with (n,d) shape
+        Parameters
+        ----------
+        x : torch.FloatTensor
+            Shape ``(batch_size, d)``.
+        r : int
+            Scalar block size (``embedding_dim // (p + q + 1)``).
+        p : int
+            Number of positive-signature basis elements.
+        q : int
+            Number of negative-signature basis elements.
 
         Returns
         -------
-        a0: torch.FloatTensor with (n,r) shape
-        ap: torch.FloatTensor with (n,r,p) shape
-        aq: torch.FloatTensor with (n,r,q) shape
-
+        a0 : torch.FloatTensor
+            Shape ``(batch_size, r)`` — scalar (grade-0) part.
+        ap : torch.FloatTensor
+            Shape ``(batch_size, r, p)`` — positive-blade part.
+        aq : torch.FloatTensor
+            Shape ``(batch_size, r, q)`` — negative-blade part.
         """
         batch_size, d = x.shape
         # (1) A_{n \times k}: take the first k columns
@@ -191,7 +227,24 @@ class Keci(BaseKGE):
             aq = torch.zeros((batch_size, r, q), device=self.device)
         return a0, ap, aq
 
-    def forward_k_vs_with_explicit(self, x: torch.Tensor):
+    def forward_k_vs_with_explicit(self, x: torch.Tensor) -> torch.FloatTensor:
+        """KvsAll scoring using an explicit loop over sigma_pp/qq/pq terms.
+
+        Functionally equivalent to :meth:`forward_k_vs_all` but computes the
+        higher-order interaction terms (sigma_pp, sigma_qq, sigma_pq) with
+        explicit nested loops rather than einsum contractions.  Kept for
+        reference and correctness verification.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Shape ``(batch_size, num_entities)`` score matrix.
+        """
         n = len(x)
         # (1) Retrieve real-valued embedding vectors.
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
@@ -255,7 +308,29 @@ class Keci(BaseKGE):
 
         return score_sigma_0 + score_sigma_p + score_sigma_q + sigma_pp + sigma_qq + sigma_pq
 
-    def k_vs_all_score(self, bpe_head_ent_emb, bpe_rel_ent_emb, E):
+    def k_vs_all_score(self, bpe_head_ent_emb: torch.FloatTensor,
+                       bpe_rel_ent_emb: torch.FloatTensor,
+                       E: torch.FloatTensor) -> torch.FloatTensor:
+        """Compute Clifford-product scores for a head/relation batch vs. all entities.
+
+        Decomposes the head-entity and relation embeddings into Clifford
+        multi-vectors, performs the Cl_{p,q} product, and inner-products the
+        result against the entity embedding matrix *E*.
+
+        Parameters
+        ----------
+        bpe_head_ent_emb : torch.FloatTensor
+            Head-entity embeddings, shape ``(batch_size, embedding_dim)``.
+        bpe_rel_ent_emb : torch.FloatTensor
+            Relation embeddings, shape ``(batch_size, embedding_dim)``.
+        E : torch.FloatTensor
+            All entity embeddings, shape ``(num_entities, embedding_dim)``.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Shape ``(batch_size, num_entities)`` score matrix.
+        """
         # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
         h0, hp, hq = self.construct_cl_multivector(bpe_head_ent_emb, r=self.r, p=self.p, q=self.q)
         r0, rp, rq = self.construct_cl_multivector(bpe_rel_ent_emb, r=self.r, p=self.p, q=self.q)
@@ -330,18 +405,30 @@ class Keci(BaseKGE):
 
     def construct_batch_selected_cl_multivector(self, x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[
         torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
-        """
-        Construct a batch of batchs multivectors Cl_{p,q}(\mathbb{R}^d)
+        """Split a batched, *k*-selected embedding tensor into Clifford components.
 
-        Parameter
-        ---------
-        x: torch.FloatTensor with (n,k, d) shape
+        A variant of :meth:`construct_cl_multivector` for tensors that have an
+        extra *k* dimension (e.g. when scoring against *k* sampled targets).
+
+        Parameters
+        ----------
+        x : torch.FloatTensor
+            Shape ``(batch_size, k, d)``.
+        r : int
+            Scalar block size.
+        p : int
+            Number of positive-signature basis elements.
+        q : int
+            Number of negative-signature basis elements.
 
         Returns
         -------
-        a0: torch.FloatTensor with (n,k, m) shape
-        ap: torch.FloatTensor with (n,k, m, p) shape
-        aq: torch.FloatTensor with (n,k, m, q) shape
+        a0 : torch.FloatTensor
+            Shape ``(batch_size, k, r)``.
+        ap : torch.FloatTensor
+            Shape ``(batch_size, k, r, p)``.
+        aq : torch.FloatTensor
+            Shape ``(batch_size, k, r, q)``.
         """
         batch_size, k, d = x.shape
 

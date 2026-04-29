@@ -120,6 +120,7 @@ class TestPandas3Compat:
         args.lr = 0.1
         args.embedding_dim = 32
         args.eval_model = "None"
+        args.trainer = "torchCPUTrainer"
 
         result = Execute(args).start()
         path = result["path_experiment_folder"]

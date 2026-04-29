@@ -47,6 +47,8 @@ class AccumulateEpochLossCallback(AbstractCallback):
 
 
 class PrintCallback(AbstractCallback):
+    """Callback that prints training start/end times and total runtime."""
+
     def __init__(self):
         super().__init__()
         self.start_time = time.time()
@@ -77,6 +79,20 @@ class PrintCallback(AbstractCallback):
 
 
 class KGESaveCallback(AbstractCallback):
+    """Callback that periodically saves model checkpoints during training.
+
+    Parameters
+    ----------
+    every_x_epoch : int or None
+        Save a checkpoint every *every_x_epoch* epochs.  When ``None``, the
+        interval defaults to ``max(max_epochs // 2, 1)``.
+    max_epochs : int
+        Total number of training epochs (used to compute the default
+        interval when *every_x_epoch* is ``None``).
+    path : str
+        Directory where checkpoint files will be written.
+    """
+
     def __init__(self, every_x_epoch: int, max_epochs: int, path: str):
         super().__init__()
         self.every_x_epoch = every_x_epoch
@@ -108,6 +124,24 @@ class KGESaveCallback(AbstractCallback):
 
 
 class PseudoLabellingCallback(AbstractCallback):
+    """Callback that augments the training set with pseudo-labelled triples.
+
+    At the end of each epoch the current model scores a batch of unlabelled
+    triples and those with a predicted probability >= 0.90 are appended to
+    the training dataset (semi-supervised self-training).
+
+    Parameters
+    ----------
+    data_module : object
+        Dataset module exposing a ``train_set_idx`` attribute and a
+        ``train_dataloader()`` method.
+    kg : KG
+        The knowledge graph, providing ``num_entities``, ``num_relations``,
+        and ``unlabelled_set``.
+    batch_size : int
+        Number of unlabelled triples to sample and score each epoch.
+    """
+
     def __init__(self, data_module, kg, batch_size):
         super().__init__()
         self.data_module = data_module
