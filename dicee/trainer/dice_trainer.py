@@ -98,6 +98,11 @@ def initialize_trainer(
         AssertionError: If trainer is None after initialization.
     """
     trainer: Optional[Union[TorchTrainer, TensorParallel, TorchDDPTrainer, pl.Trainer]] = None
+    # Disable broken CUDA runtime early so that optimizer.step() (Adam, SGD, …)
+    # does not call _cuda_graph_capture_health_check() → is_current_stream_capturing()
+    # → graphs.py:54 and crash even when using a CPU-only trainer.
+    if not _cuda_is_usable():
+        _disable_cuda_in_process()
     if args.trainer == 'torchCPUTrainer':
         print('Initializing TorchTrainer CPU Trainer...', end='\t')
         trainer = TorchTrainer(args, callbacks=callbacks)
@@ -113,15 +118,9 @@ def initialize_trainer(
         kwargs = {**vars(args), **(getattr(args, "pl_trainer_kwargs", {}) or {})}
         # NOTE: PyTorch Lightning Trainer has many optional parameters
         # See: https://lightning.ai/docs/pytorch/stable/common/trainer.html
-        # Fall back to CPU when CUDA is unavailable or its context is broken
-        # (e.g. after a kernel crash in a previous test in the same process).
-        # _disable_cuda_in_process() patches torch.cuda.is_available → False so
-        # Lightning's isolate_rng does not attempt to collect CUDA RNG state,
-        # which would re-trigger the failed init and crash before training starts.
-        _default_accelerator = "auto"
-        if not _cuda_is_usable():
-            _disable_cuda_in_process()
-            _default_accelerator = "cpu"
+        # Fall back to CPU when CUDA is unavailable or its context is broken.
+        # _disable_cuda_in_process() was already called above when needed.
+        _default_accelerator = "cpu" if not torch.cuda.is_available() else "auto"
         trainer = pl.Trainer(accelerator=kwargs.get("accelerator", _default_accelerator),
                           strategy=kwargs.get("strategy", "auto"),
                           num_nodes=kwargs.get("num_nodes", 1),
