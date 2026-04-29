@@ -558,7 +558,13 @@
 <span class="sd">            - CUDA graph capture is checked for safety when capturable=True</span>
 <span class="sd">            - The method is thread-safe for different parameter groups</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_accelerator_graph_capture_health_check</span><span class="p">()</span>
+        <span class="c1"># _accelerator_graph_capture_health_check was renamed to</span>
+        <span class="c1"># _cuda_graph_capture_health_check in older PyTorch builds;</span>
+        <span class="c1"># fall back gracefully so the optimizer works across versions.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_accelerator_graph_capture_health_check&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_accelerator_graph_capture_health_check</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_cuda_graph_capture_health_check&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cuda_graph_capture_health_check</span><span class="p">()</span>
 
         <span class="n">loss</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">closure</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
