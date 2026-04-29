@@ -1,55 +1,56 @@
+[![Downloads](https://static.pepy.tech/badge/dicee)](https://pepy.tech/project/dicee)
 [![Downloads](https://img.shields.io/pypi/dm/dicee)](https://pypi.org/project/dicee/)
 [![Coverage](https://img.shields.io/badge/coverage-54%25-green)](https://dice-group.github.io/dice-embeddings/usage/main.html#coverage-report)
-[![Pypi](https://img.shields.io/badge/pypi-0.1.4-blue)](https://pypi.org/project/dicee/0.1.4/)
-[![Docs](https://img.shields.io/badge/documentation-0.1.4-yellow)](https://dice-group.github.io/dice-embeddings/index.html)
+[![Pypi](https://img.shields.io/badge/pypi-0.3.2-blue)](https://pypi.org/project/dicee/0.3.2/)
+[![Docs](https://img.shields.io/badge/documentation-0.3.2-yellow)](https://dice-group.github.io/dice-embeddings/index.html)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dice-group/dice-embeddings)
 
 ![dicee_logo](docs/_static/images/dicee_logo.png)
 
 # DICE Embeddings: Hardware-agnostic Framework for Large-scale Knowledge Graph Embeddings
+
+## Quick Reference
+
+| Feature | Command/Code |
+|---------|-------------|
+| **Install (CPU)** | `pip install dicee --extra-index-url https://download.pytorch.org/whl/cpu` |
+| **Install (GPU)** | `pip install dicee` |
+| **Train model** | `dicee --dataset_dir "KGs/UMLS" --model Keci` |
+| **Load pretrained** | `from dicee import KGE; model = KGE(path='...')` |
+| **Predict links** | `model.predict_topk(h=["entity"], r=["relation"], topk=10)` |
 
 Knowledge graph embedding research has mainly focused on learning continuous representations of knowledge graphs towards the link prediction problem. 
 Recently developed frameworks can be effectively applied in a wide range of research-related applications.
 Yet, using these frameworks in real-world applications becomes more challenging as the size of the knowledge graph grows.
 
 We developed the DICE Embeddings framework (dicee) to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
-To achieve this goal, we rely on
-1. **[Pandas](https://pandas.pydata.org/) & Co.** to use parallelism at preprocessing a large knowledge graph,
-2. **[PyTorch](https://pytorch.org/) & Co.** to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and
-3. **[Huggingface](https://huggingface.co/)** to ease the deployment of pre-trained models.
-
-**Why [Pandas](https://pandas.pydata.org/) & Co. ?**
-A large knowledge graph can be read and preprocessed (e.g. removing literals) by pandas, modin, or polars in parallel.
-Through polars, a knowledge graph having more than 1 billion triples can be read in parallel fashion. 
-Importantly, using these frameworks allow us to perform all necessary computations on a single CPU as well as a cluster of computers.
-
-**Why [PyTorch](https://pytorch.org/) & Co. ?**
-PyTorch is one of the most popular machine learning frameworks available at the time of writing. 
-PytorchLightning facilitates scaling the training procedure of PyTorch without boilerplate.
-In our framework, we combine [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/).
-Users can choose the trainer class (e.g., DDP by Pytorch) to train large knowledge graph embedding models with billions of parameters.
-PytorchLightning allows us to use state-of-the-art model parallelism techniques (e.g. Fully Sharded Training, FairScale, or DeepSpeed)
-without extra effort.
-With our framework, practitioners can directly use PytorchLightning for model parallelism to train gigantic embedding models.
-
-**Why [Hugging-face Gradio](https://huggingface.co/gradio)?**
-Deploy a pre-trained embedding model without writing a single line of code.
-
 ## For more please visit [dice-embeddings](https://dice-group.github.io/dice-embeddings/)!
 
 ## Installation
 <details><summary> Click me! </summary>
 
-### Installation from Source
-``` bash
-git clone https://github.com/dice-group/dice-embeddings.git
-conda create -n dice python=3.10.13 --no-default-packages && conda activate dice && pip3 install -e .
-# or
-pip3 install -e .["dev"]
+### Installation from PyPI
+
+**CPU-only installation (recommended for most users):**
+```bash
+pip install dicee --extra-index-url https://download.pytorch.org/whl/cpu
 ```
-or
+
+**GPU/CUDA installation (for NVIDIA GPU users):**
 ```bash
 pip install dicee
 ```
+
+> **Note:** Installing without `--extra-index-url https://download.pytorch.org/whl/cpu` will include ~2GB of NVIDIA CUDA dependencies. For CPU-only usage, always include this flag.
+
+### Installation from Source
+``` bash
+git clone https://github.com/dice-group/dice-embeddings.git
+cd dice-embeddings && conda create -n dice python=3.11.14 --no-default-packages && conda activate dice && pip install -e . --extra-index-url https://download.pytorch.org/whl/cpu
+# or for development with all dependencies
+pip install -e '.[dev]' --extra-index-url https://download.pytorch.org/whl/cpu
+```
+
 ## Download Knowledge Graphs
 ```bash
 wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate && unzip KGs.zip
@@ -71,7 +72,7 @@ python -m pytest -p no:warnings --ff # to run the failures first and then the re
 
 Training and scoring techniques
 * ```--trainer torchCPUTrainer | PL | MP | torchDDP ```
-* ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample ```
+* ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample | FixedNegSample```
 
 </details>
 
@@ -86,19 +87,49 @@ A KGE model can be trained with a state-of-the-art training technique ```--train
 dicee --dataset_dir "KGs/UMLS" --trainer "torchCPUTrainer" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism
 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
-# Model Parallelism
-dicee --dataset_dir "KGs/UMLS" --trainer "MP" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
+# Tensor Parallelism
+dicee --dataset_dir "KGs/UMLS" --trainer "TP" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism in native torch
-OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" --trainer "torchDDP" --scoring_technique KvsAll
+OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" --trainer "torchDDP" --scoring_technique KvsAll --path_to_store_single_run "UMLS_torchDDP"
+
 ```
+
 A KGE model model can also be trained in multi-node multi-gpu DDP setting. 
 ```bash
-torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10"
-torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10"
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_torchDDP"
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_torchDDP"
 ```
-On large knowledge graphs, this configurations should be used.
+Multi-node training is also possible with the `PL` trainer 
+```bash
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "PL" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_PL"
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "PL" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_PL"
+```
 
-where the data is in the following form
+On large knowledge graphs, this configurations should be used.
+Note: When training with multi-GPU or Distributed Data Parallel (DDP) settings, you must provide the `--path_to_store_single_run` argument to specify where to store the results of a single training run. This ensures that all processes write to the correct directory and prevents conflicts.
+
+Here is an example of an iterative training of a a KGE model can be resumed.
+```bash
+# No training.
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique "FixedNegSample" --trainer "torchDDP" --scoring_technique FixedNegSample --path_to_store_single_run "UMLS_torchDDP" --num_epochs 0
+# Train 10 epochs on fixed negative samples.
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique "FixedNegSample" --trainer "torchDDP" --scoring_technique FixedNegSample --num_epochs 10 --continual_learning "UMLS_torchDDP" --random_seed 1
+# Train 10 epochs on fixed negative samples.
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique "FixedNegSample" --trainer "torchDDP" --scoring_technique FixedNegSample --num_epochs 10 --continual_learning "UMLS_torchDDP" --random_seed 2
+# Train 10 epochs on fixed negative samples.
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique "FixedNegSample" --trainer "torchDDP" --scoring_technique FixedNegSample --num_epochs 10 --continual_learning "UMLS_torchDDP" --random_seed 3
+```
+When using a multi-GPU setup, `PL` Trainer  automatically utilizes all available CUDA devices. To perform training on a single device, set the environment variable `CUDA_VISIBLE_DEVICES=0` before running your command. For example:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test" --num_epochs 100
+``` 
+The `CUDA_VISIBLE_DEVICES=0` setting limits the program to access only the specified GPU(s), making all others invisible.  
+Multiple GPUs can be selected by providing a comma-separated list, for example: `CUDA_VISIBLE_DEVICES=0,1`.
+Additional PyTorch Lightning trainer options can be passed with `--pl_trainer_kwargs`, e.g. `--pl_trainer_kwargs '{"precision":"16-mixed","strategy":"ddp"}'`. PyTorch Lightning Trainer has many optional parameters; see: https://lightning.ai/docs/pytorch/stable/common/trainer.html
+
+
+The data is in the following form
 ```bash
 $ head -3 KGs/UMLS/train.txt 
 acquired_abnormality    location_of     experimental_model_of_disease
@@ -122,7 +153,7 @@ dicee --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Keci
 
 #### Scoring Techniques
 
-We have implemented state-of-the-art scoring techniques to train a KGE model ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample ```.
+We have implemented state-of-the-art scoring techniques to train a KGE model ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample | FixedNegSample```.
 ```bash
 dicee --dataset_dir "KGs/YAGO3-10" --model Keci --trainer "torchCPUTrainer" --scoring_technique "NegSample" --neg_ratio 10 --num_epochs 10 --batch_size 10_000 --num_core 0 --eval_model None
 # Epoch:10: 100%|███████████| 10/10 [01:31<00:00,  9.11s/it, loss_step=0.09423, loss_epoch=0.07897]
@@ -172,51 +203,101 @@ _:1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07
 <http://www.benchmark.org/family#hasParent> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
 ```
 
-**Continual Training:** the training phase of a pretrained model can be resumed. The model will saved in the same directory ``` --continual_learning "KeciFamilyRun"```.
+**Continual Training:** the training phase of a pretrained model can be resumed.
+The run reuses configuration and serialized artifacts from the existing experiment folder and stores updated outputs in the same directory using `--continual_learning "KeciFamilyRun"`.
 ```bash
 dicee --continual_learning "KeciFamilyRun" --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --backend rdflib --eval_model None
 ```
+The continual directory should contain the stored configuration and serialized training data (for example `configuration.json`, `memory_map_train_set.npy`, and mapping files `entity_to_idx`/`relation_to_idx` in `.csv` or legacy `.p` format).
+If `--eval_model` is set, evaluation runs after training using stored indexed artifacts. If `--eval_model None`, no evaluation is executed.
+Periodic evaluation and weight-averaging callbacks are also supported in continual training.
 
+#### Ensemble Learning with Knowledge Graph Embeddings
 
+The KGE models in our **dice-embedding** framework now support a range of state-of-the-art weight averaging techniques, including:
+
+- **Stochastic Weight Averaging (SWA)**
+- **Adaptive Stochastic Weight Averaging (ASWA)**
+- **Stochastic Weight Averaging–Gaussian (SWAG)**
+- **Exponential Moving Average (EMA)**
+- **Trainable Weight Averaging (TWA)**
+
+To enable any of these methods, use the corresponding command-line options as shown below.
+
+**SWA**
+```bash
+dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test" --num_epochs 100 --swa
+``` 
+**ASWA**
+```bash
+dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test" --num_epochs 100 --aswa
+``` 
+**Weight Averaging Start Epoch**
+
+Weight averaging begins at **epoch 0** by default. To start averaging from a later epoch, set `--swa_start_epoch`. This applies to all methods **except ASWA**.
+
+**EMA**
+```bash
+dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test" \
+ --num_epochs 100 --ema --swa_start_epoch 50
+```  
+**Interval Averaging and Multi-device training**
+
+Weight Averaging can also be performed by aggregating weights of running model at certain interval. Use the command *--swa_c_epochs* to do so. For example,  to average the weights at every 2 epochs along with SWA starting at 50 epochs, use the command: 
+
+```bash
+dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test" \
+ --num_epochs 100 --swa --swa_start_epoch 50 --swa_c_epochs 2
+``` 
+The weight averaging methods can also be used in multi-device settings using the `PL` trainer. However, some of the approaches are not currently supported for TP and torchDDP trainers.
+
+The weight averaging methods can also be evaluated at certain epochs during training or at certain intervals.
+```bash
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_every_n_epochs 50 --save_every_n_epochs --n_epochs_eval_model val_test --swa
+```
+For more details on periodic evaluations, please refer to the periodic evaluation section below in this file.
+
+#### Periodic Evaluation during training
+
+The Periodic evaluation method automates periodic model evaluation and checkpointing during training. It allows evaluations at fixed intervals or specific epochs. Results and model states are stored systematically for efficient hyperparameter search.
+
+Configure automatic evaluation by setting `eval_every_n_epochs` to run evaluations every N epochs, or `eval_at_epochs` for specific epochs—these options can be combined. Use `save_model_every_n_epoch` to save a checkpoint at each evaluation, and specify evaluation splits (`val`, `test`, or `val_test`) with `n_epochs_eval_model`. If the last training epoch matches a scheduled evaluation and the default trainer evaluates all specified splits, evaluation with `n_epochs` is skipped to prevent duplicate results.
+
+``` bash
+# Evaluate every 50 epochs on validation and test sets, saving a model checkpoint at each evaluation
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_every_n_epochs 50 --save_every_n_epochs --n_epochs_eval_model val_test
+
+# Evaluate only at epochs 128 and 256 on the validation set, saving the model each time
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_at_epochs 128 256 --save_every_n_epochs --n_epochs_eval_model val
+
+# Evaluate every 100 epochs on the test set only; model checkpoints are not saved
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_every_n_epochs 100 --n_epochs_eval_model test
+
+# Evaluate only at epochs 50 and 150 on both validation and test sets; no checkpoint is saved
+dicee  --dataset_dir "KGs/UMLS" --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_at_epochs 50 150 --n_epochs_eval_model val_test
+
+# Evaluate every 100 epochs and additionally at epochs 45 and 275 on validation; models are saved at each evaluation point
+dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_every_n_epochs 100 --eval_at_epochs 45 275 --save_every_n_epochs --n_epochs_eval_model val
+```
+#### Periodic Evaluation during training with Weight Averaging (Ensemble) Methods
+The periodic evaluation function also allows evaluating the underlying ensemble model at particular epochs when using ensemble learning. The features can be paired simply by combining the arguments.
+```bash
+# Evaluate SWA ensemble model at epochs 128 and 256 on the validation set, saving the model each time
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_at_epochs 128 256 --save_every_n_epochs --n_epochs_eval_model val --swa
+
+# Evaluate ASWA checkpoints at every 100 epochs on the test set only; save model checkpoints
+dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
+      --eval_every_n_epochs 100 --n_epochs_eval_model test --save_every_n_epochs --adaptive_swa
+```
+Currently, Periodic Evaluations as well as Ensemble Models can only be used in combination with `torchCPUTrainer` or `PL` trainer with a single CUDA-capable device.
 </details>
-
-## Creating an Embedding Vector Database 
-<details> <summary> To see a code snippet </summary>
-
-##### Learning Embeddings
-```bash
-# Train an embedding model
-dicee --dataset_dir KGs/Countries-S1 --path_to_store_single_run CountryEmbeddings --model Keci --p 0 --q 1 --embedding_dim 32 --adaptive_swa
-```
-#### Loading Embeddings into Qdrant Vector Database
-```bash
-# Ensure that Qdrant available
-# docker pull qdrant/qdrant && docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant
-diceeindex --path_model "CountryEmbeddings" --collection_name "dummy" --location "localhost"
-```
-#### Launching Webservice
-```bash
-diceeserve --path_model "CountryEmbeddings" --collection_name "dummy" --collection_location "localhost"
-```
-##### Retrieve and Search 
-
-Get embedding of germany
-```bash
-curl -X 'GET' 'http://0.0.0.0:8000/api/get?q=germany' -H 'accept: application/json'
-```
-
-Get most similar things to europe
-```bash
-curl -X 'GET' 'http://0.0.0.0:8000/api/search?q=europe' -H 'accept: application/json'
-{"result":[{"hit":"europe","score":1.0},
-{"hit":"northern_europe","score":0.67126536},
-{"hit":"western_europe","score":0.6010134},
-{"hit":"puerto_rico","score":0.5051694},
-{"hit":"southern_europe","score":0.4829831}]}
-```
-
-</details>
-
 
 ## Answering Complex Queries 
 <details> <summary> To see a code snippet </summary>
@@ -303,6 +384,23 @@ pre_trained_kge.predict_topk(r=[".."],t=[".."],topk=10)
 
 </details>
 
+## Literal Prediction using Pre-trained KGE
+<details> <summary> To see a code snippet</summary>
+
+```python
+from dicee import KGE
+# (1) Train a knowledge graph embedding model..
+# (2) Load a pretrained model
+pre_trained_kge = KGE(path='..')
+# (3) Train a literal Emebedding Model using interactive KGE
+pre_trained_kge.train_literals(train_file_path = "")
+# (4) Predict Literal value for Entity-Attribute pair
+pre_trained_kge.predict_literals(entity=[".."],attribute=[".."])
+```
+A detailed illustration and explanation of literal prediction is provided in `examples/KGE_literal_prediction.py`.
+
+</details>
+
 ## Downloading Pretrained Models 
 
 We provide plenty pretrained knowledge graph embedding models at [dice-research.org/projects/DiceEmbeddings/](https://files.dice-research.org/projects/DiceEmbeddings/).
@@ -322,21 +420,6 @@ mure.predict_topk(h=["Mongolia"],r=["isLocatedIn"],topk=3)
 ```
 
 </details>
-
-## How to Deploy
-<details> <summary> To see a single line of code</summary>
-
-```python
-from dicee import KGE
-KGE(path='...').deploy(share=True,top_k=10)
-```
-
-</details>
-
-<details> <summary> To see the interface of the webservice</summary>
-<img src="dicee/lp.png" alt="Italian Trulli">
-</details>
-
 
 ## Link Prediction Benchmarks
 
@@ -563,6 +646,417 @@ CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --model "Keci" --p 0 --q 1
 
 </details>
 
+#### Countries-S1 ####
+
+<details> <summary> To see the results </summary>
+
+|                        |       |   MRR | Hits@1 | Hits@3 | Hits@10 |
+|------------------------|-------|------:|-------:|-------:|--------:|
+| ComplEx-KvsAll         | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll         | val   | 0.218 |  0.104 |  0.250 |   0.479 |
+| ComplEx-KvsAll         | test  | 0.184 |  0.104 |  0.167 |   0.375 |
+| ComplEx-AllvsAll       | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-AllvsAll       | val   | 0.160 |  0.083 |  0.167 |   0.271 |
+| ComplEx-AllvsAll       | test  | 0.131 |  0.042 |  0.146 |   0.312 |
+| ComplEx-KvsAll-SWA     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll-SWA     | val   | 0.228 |  0.125 |  0.229 |   0.479 |
+| ComplEx-KvsAll-SWA     | test  | 0.184 |  0.104 |  0.188 |   0.375 |
+| ComplEx-AllvsAll-SWA   | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-AllvsAll-SWA   | val   | 0.143 |  0.062 |  0.125 |   0.292 |
+| ComplEx-AllvsAll-SWA   | test  | 0.109 |  0.021 |  0.125 |   0.292 |
+| ComplEx-KvsAll-ASWA    | train | 0.127 |  0.055 |  0.131 |   0.261 |
+| ComplEx-KvsAll-ASWA    | val   | 0.217 |  0.083 |  0.271 |   0.458 |
+| ComplEx-KvsAll-ASWA    | test  | 0.249 |  0.104 |  0.396 |   0.542 |
+| ComplEx-AllvsAll-ASWA  | train | 0.068 |  0.029 |  0.060 |   0.115 |
+| ComplEx-AllvsAll-ASWA  | val   | 0.232 |  0.167 |  0.250 |   0.312 |
+| ComplEx-AllvsAll-ASWA  | test  | 0.210 |  0.125 |  0.250 |   0.354 |
+| Keci-KvsAll            | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll            | val   | 0.095 |  0.021 |  0.104 |   0.188 |
+| Keci-KvsAll            | test  | 0.162 |  0.062 |  0.229 |   0.292 |
+| Keci-AllvsAll          | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-AllvsAll          | val   | 0.206 |  0.125 |  0.208 |   0.333 |
+| Keci-AllvsAll          | test  | 0.118 |  0.021 |  0.083 |   0.354 |
+| Keci-KvsAll-SWA        | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll-SWA        | val   | 0.143 |  0.083 |  0.104 |   0.271 |
+| Keci-KvsAll-SWA        | test  | 0.198 |  0.104 |  0.271 |   0.354 |
+| Keci-AllvsAll-SWA      | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-AllvsAll-SWA      | val   | 0.220 |  0.146 |  0.208 |   0.396 |
+| Keci-AllvsAll-SWA      | test  | 0.163 |  0.062 |  0.188 |   0.375 |
+| Keci-KvsAll-ASWA       | train | 0.991 |  0.984 |  1.000 |   1.000 |
+| Keci-KvsAll-ASWA       | val   | 0.286 |  0.167 |  0.333 |   0.562 |
+| Keci-KvsAll-ASWA       | test  | 0.370 |  0.271 |  0.396 |   0.688 |
+| Keci-AllvsAll-ASWA     | train | 1.000 |  0.999 |  1.000 |   1.000 |
+| Keci-AllvsAll-ASWA     | val   | 0.258 |  0.188 |  0.250 |   0.438 |
+| Keci-AllvsAll-ASWA     | test  | 0.264 |  0.167 |  0.292 |   0.396 |
+| QMult-KvsAll           | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| QMult-KvsAll           | val   | 0.144 |  0.104 |  0.104 |   0.167 |
+| QMult-KvsAll           | test  | 0.161 |  0.062 |  0.146 |   0.375 |
+| QMult-AllvsAll         | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| QMult-AllvsAll         | val   | 0.111 |  0.062 |  0.104 |   0.229 |
+| QMult-AllvsAll         | test  | 0.146 |  0.062 |  0.146 |   0.250 |
+| QMult-KvsAll-SWA       | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| QMult-KvsAll-SWA       | val   | 0.106 |  0.042 |  0.104 |   0.146 |
+| QMult-KvsAll-SWA       | test  | 0.148 |  0.062 |  0.146 |   0.292 |
+| QMult-AllvsAll-SWA     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| QMult-AllvsAll-SWA     | val   | 0.117 |  0.062 |  0.125 |   0.229 |
+| QMult-AllvsAll-SWA     | test  | 0.105 |  0.021 |  0.104 |   0.271 |
+| QMult-KvsAll-ASWA      | train | 0.190 |  0.105 |  0.199 |   0.356 |
+| QMult-KvsAll-ASWA      | val   | 0.294 |  0.167 |  0.396 |   0.542 |
+| QMult-KvsAll-ASWA      | test  | 0.198 |  0.062 |  0.250 |   0.500 |
+| QMult-AllvsAll-ASWA    | train | 0.256 |  0.150 |  0.284 |   0.455 |
+| QMult-AllvsAll-ASWA    | val   | 0.169 |  0.062 |  0.188 |   0.396 |
+| QMult-AllvsAll-ASWA    | test  | 0.111 |  0.021 |  0.083 |   0.333 |
+| OMult-KvsAll           | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| OMult-KvsAll           | val   | 0.041 |  0.000 |  0.021 |   0.104 |
+| OMult-KvsAll           | test  | 0.033 |  0.000 |  0.000 |   0.042 |
+| OMult-AllvsAll         | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| OMult-AllvsAll         | val   | 0.029 |  0.000 |  0.000 |   0.104 |
+| OMult-AllvsAll         | test  | 0.025 |  0.000 |  0.000 |   0.062 |
+| OMult-KvsAll-SWA       | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| OMult-KvsAll-SWA       | val   | 0.031 |  0.000 |  0.000 |   0.083 |
+| OMult-KvsAll-SWA       | test  | 0.031 |  0.000 |  0.000 |   0.042 |
+| OMult-AllvsAll-SWA     | train | 0.999 |  0.999 |  1.000 |   1.000 |
+| OMult-AllvsAll-SWA     | val   | 0.027 |  0.000 |  0.000 |   0.042 |
+| OMult-AllvsAll-SWA     | test  | 0.023 |  0.000 |  0.000 |   0.062 |
+| OMult-KvsAll-ASWA      | train | 0.146 |  0.069 |  0.158 |   0.280 |
+| OMult-KvsAll-ASWA      | val   | 0.232 |  0.146 |  0.250 |   0.438 |
+| OMult-KvsAll-ASWA      | test  | 0.209 |  0.083 |  0.312 |   0.417 |
+| OMult-AllvsAll-ASWA    | train | 0.390 |  0.265 |  0.433 |   0.636 |
+| OMult-AllvsAll-ASWA    | val   | 0.109 |  0.062 |  0.083 |   0.208 |
+| OMult-AllvsAll-ASWA    | test  | 0.075 |  0.000 |  0.062 |   0.208 |
+| DistMult-KvsAll        | train | 0.998 |  0.996 |  1.000 |   1.000 |
+| DistMult-KvsAll        | val   | 0.168 |  0.104 |  0.146 |   0.312 |
+| DistMult-KvsAll        | test  | 0.107 |  0.062 |  0.104 |   0.188 |
+| DistMult-AllvsAll      | train | 0.977 |  0.961 |  0.991 |   0.997 |
+| DistMult-AllvsAll      | val   | 0.090 |  0.021 |  0.083 |   0.250 |
+| DistMult-AllvsAll      | test  | 0.067 |  0.000 |  0.062 |   0.229 |
+| DistMult-KvsAll-SWA    | train | 0.999 |  0.999 |  1.000 |   1.000 |
+| DistMult-KvsAll-SWA    | val   | 0.092 |  0.021 |  0.083 |   0.250 |
+| DistMult-KvsAll-SWA    | test  | 0.062 |  0.000 |  0.042 |   0.208 |
+| DistMult-AllvsAll-SWA  | train | 0.958 |  0.923 |  0.991 |   0.996 |
+| DistMult-AllvsAll-SWA  | val   | 0.128 |  0.042 |  0.146 |   0.354 |
+| DistMult-AllvsAll-SWA  | test  | 0.129 |  0.062 |  0.083 |   0.354 |
+| DistMult-KvsAll-ASWA   | train | 0.959 |  0.930 |  0.984 |   0.997 |
+| DistMult-KvsAll-ASWA   | val   | 0.222 |  0.125 |  0.229 |   0.417 |
+| DistMult-KvsAll-ASWA   | test  | 0.140 |  0.062 |  0.104 |   0.292 |
+| DistMult-AllvsAll-ASWA | train | 0.933 |  0.887 |  0.983 |   0.999 |
+| DistMult-AllvsAll-ASWA | val   | 0.299 |  0.208 |  0.354 |   0.438 |
+| DistMult-AllvsAll-ASWA | test  | 0.195 |  0.083 |  0.250 |   0.375 |
+| TransE-KvsAll          | train | 0.505 |  0.233 |  0.738 |   0.923 |
+| TransE-KvsAll          | val   | 0.636 |  0.375 |  0.896 |   0.979 |
+| TransE-KvsAll          | test  | 0.686 |  0.438 |  0.979 |   1.000 |
+| TransE-AllvsAll        | train | 0.497 |  0.314 |  0.599 |   0.850 |
+| TransE-AllvsAll        | val   | 0.798 |  0.646 |  0.958 |   1.000 |
+| TransE-AllvsAll        | test  | 0.843 |  0.729 |  0.938 |   1.000 |
+| TransE-KvsAll-SWA      | train | 0.653 |  0.381 |  0.918 |   0.992 |
+| TransE-KvsAll-SWA      | val   | 0.844 |  0.688 |  1.000 |   1.000 |
+| TransE-KvsAll-SWA      | test  | 0.872 |  0.750 |  1.000 |   1.000 |
+| TransE-AllvsAll-SWA    | train | 0.622 |  0.372 |  0.859 |   0.976 |
+| TransE-AllvsAll-SWA    | val   | 0.819 |  0.646 |  1.000 |   1.000 |
+| TransE-AllvsAll-SWA    | test  | 0.868 |  0.750 |  1.000 |   1.000 |
+| TransE-KvsAll-ASWA     | train | 0.651 |  0.367 |  0.934 |   0.982 |
+| TransE-KvsAll-ASWA     | val   | 0.885 |  0.771 |  1.000 |   1.000 |
+| TransE-KvsAll-ASWA     | test  | 0.858 |  0.729 |  0.979 |   1.000 |
+| TransE-AllvsAll-ASWA   | train | 0.603 |  0.360 |  0.817 |   0.972 |
+| TransE-AllvsAll-ASWA   | val   | 0.927 |  0.854 |  1.000 |   1.000 |
+| TransE-AllvsAll-ASWA   | test  | 0.938 |  0.875 |  1.000 |   1.000 |
+| DeCaL-KvsAll           | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| DeCaL-KvsAll           | val   | 0.137 |  0.062 |  0.125 |   0.250 |
+| DeCaL-KvsAll           | test  | 0.224 |  0.125 |  0.229 |   0.396 |
+| DeCaL-AllvsAll         | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| DeCaL-AllvsAll         | val   | 0.129 |  0.042 |  0.146 |   0.250 |
+| DeCaL-AllvsAll         | test  | 0.144 |  0.062 |  0.146 |   0.292 |
+| DeCaL-KvsAll-SWA       | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| DeCaL-KvsAll-SWA       | val   | 0.152 |  0.083 |  0.146 |   0.333 |
+| DeCaL-KvsAll-SWA       | test  | 0.216 |  0.083 |  0.292 |   0.354 |
+| DeCaL-AllvsAll-SWA     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| DeCaL-AllvsAll-SWA     | val   | 0.112 |  0.021 |  0.125 |   0.229 |
+| DeCaL-AllvsAll-SWA     | test  | 0.134 |  0.042 |  0.125 |   0.312 |
+| DeCaL-KvsAll-ASWA      | train | 0.995 |  0.993 |  0.996 |   0.998 |
+| DeCaL-KvsAll-ASWA      | val   | 0.263 |  0.146 |  0.333 |   0.500 |
+| DeCaL-KvsAll-ASWA      | test  | 0.251 |  0.104 |  0.312 |   0.521 |
+| DeCaL-AllvsAll-ASWA    | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| DeCaL-AllvsAll-ASWA    | val   | 0.320 |  0.229 |  0.333 |   0.562 |
+| DeCaL-AllvsAll-ASWA    | test  | 0.286 |  0.208 |  0.292 |   0.458 |
+
+`--embedding_dim 256 --num_epochs 100 --batch_size 32`
+
+</details>
+
+#### Countries-S2 ####
+
+<details> <summary> To see the results </summary>
+
+|                        |       |   MRR | Hits@1 | Hits@3 | Hits@10 |
+|------------------------|-------|------:|-------:|-------:|--------:|
+| ComplEx-KvsAll         | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll         | val   | 0.195 |  0.104 |  0.229 |   0.354 |
+| ComplEx-KvsAll         | test  | 0.137 |  0.062 |  0.146 |   0.312 |
+| ComplEx-AllvsAll       | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-AllvsAll       | val   | 0.148 |  0.062 |  0.167 |   0.312 |
+| ComplEx-AllvsAll       | test  | 0.153 |  0.083 |  0.167 |   0.271 |
+| ComplEx-KvsAll-SWA     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll-SWA     | val   | 0.176 |  0.083 |  0.188 |   0.354 |
+| ComplEx-KvsAll-SWA     | test  | 0.138 |  0.062 |  0.146 |   0.312 |
+| ComplEx-AllvsAll-SWA   | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-AllvsAll-SWA   | val   | 0.146 |  0.083 |  0.125 |   0.312 |
+| ComplEx-AllvsAll-SWA   | test  | 0.152 |  0.083 |  0.167 |   0.271 |
+| ComplEx-KvsAll-ASWA    | train | 0.113 |  0.042 |  0.117 |   0.255 |
+| ComplEx-KvsAll-ASWA    | val   | 0.237 |  0.125 |  0.271 |   0.479 |
+| ComplEx-KvsAll-ASWA    | test  | 0.296 |  0.188 |  0.375 |   0.521 |
+| ComplEx-AllvsAll-ASWA  | train | 0.997 |  0.996 |  0.997 |   0.999 |
+| ComplEx-AllvsAll-ASWA  | val   | 0.186 |  0.083 |  0.250 |   0.354 |
+| ComplEx-AllvsAll-ASWA  | test  | 0.178 |  0.083 |  0.188 |   0.375 |
+| Keci-KvsAll            | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll            | val   | 0.209 |  0.146 |  0.188 |   0.375 |
+| Keci-KvsAll            | test  | 0.204 |  0.104 |  0.188 |   0.458 |
+| Keci-AllvsAll          | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-AllvsAll          | val   | 0.124 |  0.083 |  0.083 |   0.188 |
+| Keci-AllvsAll          | test  | 0.076 |  0.000 |  0.042 |   0.229 |
+| Keci-KvsAll-SWA        | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll-SWA        | val   | 0.194 |  0.125 |  0.167 |   0.354 |
+| Keci-KvsAll-SWA        | test  | 0.200 |  0.104 |  0.188 |   0.396 |
+| Keci-AllvsAll-SWA      | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-AllvsAll-SWA      | val   | 0.121 |  0.062 |  0.104 |   0.208 |
+| Keci-AllvsAll-SWA      | test  | 0.108 |  0.021 |  0.104 |   0.292 |
+| Keci-KvsAll-ASWA       | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll-ASWA       | val   | 0.294 |  0.229 |  0.271 |   0.417 |
+| Keci-KvsAll-ASWA       | test  | 0.253 |  0.146 |  0.271 |   0.479 |
+| Keci-AllvsAll-ASWA     | train | 0.927 |  0.895 |  0.952 |   0.977 |
+| Keci-AllvsAll-ASWA     | val   | 0.246 |  0.125 |  0.292 |   0.500 |
+| Keci-AllvsAll-ASWA     | test  | 0.197 |  0.104 |  0.208 |   0.438 |
+| QMult-KvsAll           | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| QMult-KvsAll           | val   | 0.054 |  0.000 |  0.042 |   0.146 |
+| QMult-KvsAll           | test  | 0.109 |  0.042 |  0.104 |   0.229 |
+| QMult-AllvsAll         | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| QMult-AllvsAll         | val   | 0.146 |  0.104 |  0.125 |   0.208 |
+| QMult-AllvsAll         | test  | 0.076 |  0.021 |  0.083 |   0.125 |
+| QMult-KvsAll-SWA       | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| QMult-KvsAll-SWA       | val   | 0.051 |  0.000 |  0.021 |   0.125 |
+| QMult-KvsAll-SWA       | test  | 0.120 |  0.062 |  0.125 |   0.229 |
+| QMult-AllvsAll-SWA     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| QMult-AllvsAll-SWA     | val   | 0.141 |  0.104 |  0.125 |   0.167 |
+| QMult-AllvsAll-SWA     | test  | 0.066 |  0.021 |  0.042 |   0.125 |
+| QMult-KvsAll-ASWA      | train | 0.157 |  0.083 |  0.161 |   0.290 |
+| QMult-KvsAll-ASWA      | val   | 0.185 |  0.062 |  0.250 |   0.417 |
+| QMult-KvsAll-ASWA      | test  | 0.282 |  0.208 |  0.292 |   0.479 |
+| QMult-AllvsAll-ASWA    | train | 0.169 |  0.083 |  0.186 |   0.328 |
+| QMult-AllvsAll-ASWA    | val   | 0.138 |  0.062 |  0.146 |   0.312 |
+| QMult-AllvsAll-ASWA    | test  | 0.168 |  0.062 |  0.208 |   0.375 |
+| OMult-KvsAll           | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| OMult-KvsAll           | val   | 0.068 |  0.021 |  0.083 |   0.146 |
+| OMult-KvsAll           | test  | 0.037 |  0.000 |  0.042 |   0.062 |
+| OMult-AllvsAll         | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| OMult-AllvsAll         | val   | 0.024 |  0.000 |  0.000 |   0.042 |
+| OMult-AllvsAll         | test  | 0.036 |  0.000 |  0.021 |   0.083 |
+| OMult-KvsAll-SWA       | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| OMult-KvsAll-SWA       | val   | 0.066 |  0.021 |  0.062 |   0.125 |
+| OMult-KvsAll-SWA       | test  | 0.038 |  0.000 |  0.042 |   0.083 |
+| OMult-AllvsAll-SWA     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| OMult-AllvsAll-SWA     | val   | 0.024 |  0.000 |  0.000 |   0.062 |
+| OMult-AllvsAll-SWA     | test  | 0.035 |  0.000 |  0.021 |   0.104 |
+| OMult-KvsAll-ASWA      | train | 0.117 |  0.051 |  0.113 |   0.228 |
+| OMult-KvsAll-ASWA      | val   | 0.150 |  0.062 |  0.167 |   0.292 |
+| OMult-KvsAll-ASWA      | test  | 0.165 |  0.083 |  0.208 |   0.354 |
+| OMult-AllvsAll-ASWA    | train | 0.264 |  0.154 |  0.286 |   0.490 |
+| OMult-AllvsAll-ASWA    | val   | 0.097 |  0.042 |  0.062 |   0.250 |
+| OMult-AllvsAll-ASWA    | test  | 0.099 |  0.042 |  0.083 |   0.208 |
+| DistMult-KvsAll        | train | 0.999 |  0.999 |  1.000 |   1.000 |
+| DistMult-KvsAll        | val   | 0.101 |  0.021 |  0.125 |   0.229 |
+| DistMult-KvsAll        | test  | 0.148 |  0.083 |  0.188 |   0.271 |
+| DistMult-AllvsAll      | train | 0.963 |  0.930 |  0.993 |   1.000 |
+| DistMult-AllvsAll      | val   | 0.231 |  0.146 |  0.292 |   0.375 |
+| DistMult-AllvsAll      | test  | 0.202 |  0.083 |  0.271 |   0.417 |
+| DistMult-KvsAll-SWA    | train | 0.999 |  0.998 |  1.000 |   1.000 |
+| DistMult-KvsAll-SWA    | val   | 0.121 |  0.042 |  0.167 |   0.271 |
+| DistMult-KvsAll-SWA    | test  | 0.162 |  0.062 |  0.208 |   0.375 |
+| DistMult-AllvsAll-SWA  | train | 0.969 |  0.944 |  0.992 |   0.998 |
+| DistMult-AllvsAll-SWA  | val   | 0.116 |  0.021 |  0.167 |   0.271 |
+| DistMult-AllvsAll-SWA  | test  | 0.122 |  0.062 |  0.125 |   0.229 |
+| DistMult-KvsAll-ASWA   | train | 0.184 |  0.092 |  0.193 |   0.379 |
+| DistMult-KvsAll-ASWA   | val   | 0.244 |  0.083 |  0.333 |   0.542 |
+| DistMult-KvsAll-ASWA   | test  | 0.238 |  0.104 |  0.312 |   0.500 |
+| DistMult-AllvsAll-ASWA | train | 0.961 |  0.927 |  0.993 |   0.998 |
+| DistMult-AllvsAll-ASWA | val   | 0.264 |  0.208 |  0.292 |   0.354 |
+| DistMult-AllvsAll-ASWA | test  | 0.214 |  0.083 |  0.292 |   0.396 |
+| TransE-KvsAll          | train | 0.544 |  0.238 |  0.827 |   0.950 |
+| TransE-KvsAll          | val   | 0.549 |  0.250 |  0.854 |   0.979 |
+| TransE-KvsAll          | test  | 0.561 |  0.250 |  0.854 |   1.000 |
+| TransE-AllvsAll        | train | 0.465 |  0.233 |  0.629 |   0.880 |
+| TransE-AllvsAll        | val   | 0.515 |  0.250 |  0.792 |   0.979 |
+| TransE-AllvsAll        | test  | 0.510 |  0.229 |  0.708 |   0.979 |
+| TransE-KvsAll-SWA      | train | 0.638 |  0.347 |  0.925 |   0.991 |
+| TransE-KvsAll-SWA      | val   | 0.684 |  0.458 |  0.979 |   1.000 |
+| TransE-KvsAll-SWA      | test  | 0.653 |  0.396 |  0.979 |   1.000 |
+| TransE-AllvsAll-SWA    | train | 0.599 |  0.330 |  0.857 |   0.984 |
+| TransE-AllvsAll-SWA    | val   | 0.677 |  0.458 |  0.917 |   1.000 |
+| TransE-AllvsAll-SWA    | test  | 0.660 |  0.417 |  0.938 |   1.000 |
+| TransE-KvsAll-ASWA     | train | 0.643 |  0.344 |  0.940 |   0.994 |
+| TransE-KvsAll-ASWA     | val   | 0.688 |  0.458 |  1.000 |   1.000 |
+| TransE-KvsAll-ASWA     | test  | 0.658 |  0.375 |  0.979 |   1.000 |
+| TransE-AllvsAll-ASWA   | train | 0.415 |  0.179 |  0.579 |   0.840 |
+| TransE-AllvsAll-ASWA   | val   | 0.756 |  0.583 |  0.958 |   0.979 |
+| TransE-AllvsAll-ASWA   | test  | 0.720 |  0.500 |  0.958 |   1.000 |
+| DeCaL-KvsAll           | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| DeCaL-KvsAll           | val   | 0.193 |  0.125 |  0.188 |   0.354 |
+| DeCaL-KvsAll           | test  | 0.188 |  0.083 |  0.208 |   0.396 |
+| DeCaL-AllvsAll         | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| DeCaL-AllvsAll         | val   | 0.148 |  0.104 |  0.104 |   0.292 |
+| DeCaL-AllvsAll         | test  | 0.243 |  0.146 |  0.271 |   0.417 |
+| DeCaL-KvsAll-SWA       | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| DeCaL-KvsAll-SWA       | val   | 0.184 |  0.104 |  0.208 |   0.333 |
+| DeCaL-KvsAll-SWA       | test  | 0.216 |  0.125 |  0.229 |   0.396 |
+| DeCaL-AllvsAll-SWA     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| DeCaL-AllvsAll-SWA     | val   | 0.125 |  0.042 |  0.146 |   0.312 |
+| DeCaL-AllvsAll-SWA     | test  | 0.227 |  0.146 |  0.271 |   0.438 |
+| DeCaL-KvsAll-ASWA      | train | 0.997 |  0.996 |  0.999 |   1.000 |
+| DeCaL-KvsAll-ASWA      | val   | 0.297 |  0.229 |  0.312 |   0.396 |
+| DeCaL-KvsAll-ASWA      | test  | 0.183 |  0.083 |  0.208 |   0.354 |
+| DeCaL-AllvsAll-ASWA    | train | 0.978 |  0.967 |  0.986 |   0.997 |
+| DeCaL-AllvsAll-ASWA    | val   | 0.246 |  0.167 |  0.271 |   0.417 |
+| DeCaL-AllvsAll-ASWA    | test  | 0.215 |  0.125 |  0.229 |   0.396 |
+
+`--embedding_dim 256 --num_epochs 100 --batch_size 32`
+
+</details> 
+
+#### Countries-S3 ####
+
+<details> <summary> To see the results </summary>
+
+|                        |       |   MRR | Hits@1 | Hits@3 | Hits@10 |
+|------------------------|-------|------:|-------:|-------:|--------:|
+| ComplEx-KvsAll         | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll         | val   | 0.144 |  0.083 |  0.146 |   0.229 |
+| ComplEx-KvsAll         | test  | 0.061 |  0.021 |  0.042 |   0.125 |
+| ComplEx-AllvsAll       | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-AllvsAll       | val   | 0.121 |  0.062 |  0.146 |   0.188 |
+| ComplEx-AllvsAll       | test  | 0.058 |  0.021 |  0.062 |   0.125 |
+| ComplEx-KvsAll-SWA     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll-SWA     | val   | 0.153 |  0.104 |  0.146 |   0.250 |
+| ComplEx-KvsAll-SWA     | test  | 0.058 |  0.021 |  0.042 |   0.104 |
+| ComplEx-AllvsAll-SWA   | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-AllvsAll-SWA   | val   | 0.116 |  0.062 |  0.125 |   0.208 |
+| ComplEx-AllvsAll-SWA   | test  | 0.060 |  0.021 |  0.062 |   0.146 |
+| ComplEx-KvsAll-ASWA    | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| ComplEx-KvsAll-ASWA    | val   | 0.151 |  0.083 |  0.167 |   0.271 |
+| ComplEx-KvsAll-ASWA    | test  | 0.048 |  0.000 |  0.021 |   0.146 |
+| ComplEx-AllvsAll-ASWA  | train | 0.999 |  0.999 |  0.999 |   0.999 |
+| ComplEx-AllvsAll-ASWA  | val   | 0.120 |  0.083 |  0.083 |   0.229 |
+| ComplEx-AllvsAll-ASWA  | test  | 0.076 |  0.042 |  0.042 |   0.167 |
+| Keci-KvsAll            | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll            | val   | 0.079 |  0.042 |  0.062 |   0.104 |
+| Keci-KvsAll            | test  | 0.068 |  0.021 |  0.042 |   0.188 |
+| Keci-AllvsAll          | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-AllvsAll          | val   | 0.048 |  0.021 |  0.042 |   0.062 |
+| Keci-AllvsAll          | test  | 0.094 |  0.042 |  0.062 |   0.188 |
+| Keci-KvsAll-SWA        | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-KvsAll-SWA        | val   | 0.081 |  0.042 |  0.062 |   0.146 |
+| Keci-KvsAll-SWA        | test  | 0.074 |  0.021 |  0.042 |   0.208 |
+| Keci-AllvsAll-SWA      | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| Keci-AllvsAll-SWA      | val   | 0.050 |  0.021 |  0.042 |   0.062 |
+| Keci-AllvsAll-SWA      | test  | 0.101 |  0.042 |  0.104 |   0.229 |
+| Keci-KvsAll-ASWA       | train | 0.910 |  0.873 |  0.937 |   0.973 |
+| Keci-KvsAll-ASWA       | val   | 0.200 |  0.104 |  0.229 |   0.396 |
+| Keci-KvsAll-ASWA       | test  | 0.207 |  0.104 |  0.229 |   0.417 |
+| Keci-AllvsAll-ASWA     | train | 0.487 |  0.383 |  0.530 |   0.697 |
+| Keci-AllvsAll-ASWA     | val   | 0.117 |  0.062 |  0.083 |   0.229 |
+| Keci-AllvsAll-ASWA     | test  | 0.180 |  0.125 |  0.167 |   0.292 |
+| QMult-KvsAll           | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| QMult-KvsAll           | val   | 0.088 |  0.042 |  0.083 |   0.125 |
+| QMult-KvsAll           | test  | 0.092 |  0.021 |  0.042 |   0.312 |
+| QMult-AllvsAll         | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| QMult-AllvsAll         | val   | 0.099 |  0.042 |  0.062 |   0.208 |
+| QMult-AllvsAll         | test  | 0.094 |  0.062 |  0.062 |   0.146 |
+| QMult-KvsAll-SWA       | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| QMult-KvsAll-SWA       | val   | 0.085 |  0.042 |  0.062 |   0.125 |
+| QMult-KvsAll-SWA       | test  | 0.091 |  0.021 |  0.062 |   0.292 |
+| QMult-AllvsAll-SWA     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| QMult-AllvsAll-SWA     | val   | 0.096 |  0.042 |  0.062 |   0.208 |
+| QMult-AllvsAll-SWA     | test  | 0.084 |  0.042 |  0.062 |   0.125 |
+| QMult-KvsAll-ASWA      | train | 0.138 |  0.071 |  0.136 |   0.263 |
+| QMult-KvsAll-ASWA      | val   | 0.149 |  0.062 |  0.188 |   0.250 |
+| QMult-KvsAll-ASWA      | test  | 0.152 |  0.083 |  0.125 |   0.312 |
+| QMult-AllvsAll-ASWA    | train | 0.379 |  0.269 |  0.413 |   0.606 |
+| QMult-AllvsAll-ASWA    | val   | 0.123 |  0.083 |  0.104 |   0.188 |
+| QMult-AllvsAll-ASWA    | test  | 0.124 |  0.062 |  0.104 |   0.208 |
+| OMult-KvsAll           | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| OMult-KvsAll           | val   | 0.054 |  0.021 |  0.021 |   0.125 |
+| OMult-KvsAll           | test  | 0.041 |  0.000 |  0.021 |   0.104 |
+| OMult-AllvsAll         | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| OMult-AllvsAll         | val   | 0.043 |  0.000 |  0.021 |   0.104 |
+| OMult-AllvsAll         | test  | 0.089 |  0.021 |  0.104 |   0.229 |
+| OMult-KvsAll-SWA       | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| OMult-KvsAll-SWA       | val   | 0.054 |  0.021 |  0.021 |   0.125 |
+| OMult-KvsAll-SWA       | test  | 0.040 |  0.000 |  0.021 |   0.104 |
+| OMult-AllvsAll-SWA     | train | 0.999 |  0.999 |  0.999 |   0.999 |
+| OMult-AllvsAll-SWA     | val   | 0.044 |  0.000 |  0.042 |   0.104 |
+| OMult-AllvsAll-SWA     | test  | 0.097 |  0.042 |  0.104 |   0.229 |
+| OMult-KvsAll-ASWA      | train | 0.321 |  0.224 |  0.346 |   0.516 |
+| OMult-KvsAll-ASWA      | val   | 0.139 |  0.083 |  0.146 |   0.229 |
+| OMult-KvsAll-ASWA      | test  | 0.089 |  0.000 |  0.104 |   0.271 |
+| OMult-AllvsAll-ASWA    | train | 0.234 |  0.139 |  0.256 |   0.421 |
+| OMult-AllvsAll-ASWA    | val   | 0.105 |  0.000 |  0.146 |   0.312 |
+| OMult-AllvsAll-ASWA    | test  | 0.058 |  0.000 |  0.042 |   0.188 |
+| DistMult-KvsAll        | train | 0.999 |  0.999 |  1.000 |   1.000 |
+| DistMult-KvsAll        | val   | 0.170 |  0.083 |  0.208 |   0.292 |
+| DistMult-KvsAll        | test  | 0.207 |  0.146 |  0.229 |   0.292 |
+| DistMult-AllvsAll      | train | 0.969 |  0.943 |  0.995 |   0.999 |
+| DistMult-AllvsAll      | val   | 0.200 |  0.125 |  0.188 |   0.354 |
+| DistMult-AllvsAll      | test  | 0.188 |  0.104 |  0.208 |   0.375 |
+| DistMult-KvsAll-SWA    | train | 1.000 |  0.999 |  1.000 |   1.000 |
+| DistMult-KvsAll-SWA    | val   | 0.142 |  0.062 |  0.167 |   0.271 |
+| DistMult-KvsAll-SWA    | test  | 0.227 |  0.167 |  0.250 |   0.312 |
+| DistMult-AllvsAll-SWA  | train | 0.963 |  0.930 |  0.994 |   0.998 |
+| DistMult-AllvsAll-SWA  | val   | 0.120 |  0.042 |  0.167 |   0.250 |
+| DistMult-AllvsAll-SWA  | test  | 0.101 |  0.042 |  0.062 |   0.250 |
+| DistMult-KvsAll-ASWA   | train | 0.985 |  0.973 |  0.996 |   0.998 |
+| DistMult-KvsAll-ASWA   | val   | 0.215 |  0.125 |  0.229 |   0.417 |
+| DistMult-KvsAll-ASWA   | test  | 0.248 |  0.188 |  0.250 |   0.396 |
+| DistMult-AllvsAll-ASWA | train | 0.958 |  0.920 |  0.994 |   0.998 |
+| DistMult-AllvsAll-ASWA | val   | 0.238 |  0.188 |  0.229 |   0.312 |
+| DistMult-AllvsAll-ASWA | test  | 0.165 |  0.104 |  0.208 |   0.271 |
+| TransE-KvsAll          | train | 0.505 |  0.188 |  0.792 |   0.942 |
+| TransE-KvsAll          | val   | 0.120 |  0.021 |  0.083 |   0.354 |
+| TransE-KvsAll          | test  | 0.123 |  0.000 |  0.125 |   0.417 |
+| TransE-AllvsAll        | train | 0.424 |  0.169 |  0.592 |   0.906 |
+| TransE-AllvsAll        | val   | 0.115 |  0.000 |  0.104 |   0.354 |
+| TransE-AllvsAll        | test  | 0.116 |  0.000 |  0.083 |   0.375 |
+| TransE-KvsAll-SWA      | train | 0.606 |  0.286 |  0.920 |   0.991 |
+| TransE-KvsAll-SWA      | val   | 0.130 |  0.000 |  0.125 |   0.375 |
+| TransE-KvsAll-SWA      | test  | 0.151 |  0.000 |  0.208 |   0.479 |
+| TransE-AllvsAll-SWA    | train | 0.579 |  0.280 |  0.870 |   0.983 |
+| TransE-AllvsAll-SWA    | val   | 0.161 |  0.000 |  0.104 |   0.646 |
+| TransE-AllvsAll-SWA    | test  | 0.178 |  0.000 |  0.229 |   0.688 |
+| TransE-KvsAll-ASWA     | train | 0.508 |  0.203 |  0.779 |   0.951 |
+| TransE-KvsAll-ASWA     | val   | 0.169 |  0.021 |  0.146 |   0.500 |
+| TransE-KvsAll-ASWA     | test  | 0.155 |  0.000 |  0.146 |   0.542 |
+| TransE-AllvsAll-ASWA   | train | 0.400 |  0.155 |  0.562 |   0.849 |
+| TransE-AllvsAll-ASWA   | val   | 0.255 |  0.083 |  0.333 |   0.604 |
+| TransE-AllvsAll-ASWA   | test  | 0.245 |  0.042 |  0.375 |   0.625 |
+| DeCaL-KvsAll           | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| DeCaL-KvsAll           | val   | 0.062 |  0.021 |  0.042 |   0.125 |
+| DeCaL-KvsAll           | test  | 0.038 |  0.000 |  0.021 |   0.125 |
+| DeCaL-AllvsAll         | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| DeCaL-AllvsAll         | val   | 0.047 |  0.000 |  0.000 |   0.146 |
+| DeCaL-AllvsAll         | test  | 0.055 |  0.000 |  0.062 |   0.125 |
+| DeCaL-KvsAll-SWA       | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| DeCaL-KvsAll-SWA       | val   | 0.076 |  0.042 |  0.042 |   0.167 |
+| DeCaL-KvsAll-SWA       | test  | 0.045 |  0.000 |  0.021 |   0.125 |
+| DeCaL-AllvsAll-SWA     | train | 1.000 |  1.000 |  1.000 |   1.000 |
+| DeCaL-AllvsAll-SWA     | val   | 0.051 |  0.000 |  0.021 |   0.125 |
+| DeCaL-AllvsAll-SWA     | test  | 0.053 |  0.000 |  0.021 |   0.125 |
+| DeCaL-KvsAll-ASWA      | train | 0.689 |  0.604 |  0.740 |   0.846 |
+| DeCaL-KvsAll-ASWA      | val   | 0.143 |  0.062 |  0.146 |   0.354 |
+| DeCaL-KvsAll-ASWA      | test  | 0.137 |  0.062 |  0.146 |   0.271 |
+| DeCaL-AllvsAll-ASWA    | train | 0.998 |  0.997 |  0.999 |   0.999 |
+| DeCaL-AllvsAll-ASWA    | val   | 0.136 |  0.083 |  0.125 |   0.229 |
+| DeCaL-AllvsAll-ASWA    | test  | 0.090 |  0.021 |  0.083 |   0.208 |
+
+`--embedding_dim 256 --num_epochs 100 --batch_size 32`
+
+</details>
+
 ## Docker
 <details> <summary> Details</summary>
 To build the Docker image:
@@ -578,8 +1072,40 @@ docker run --rm -v ~/.local/share/dicee/KGs:/dicee/KGs dice-embeddings ./main.py
 
 ## How to cite
 Currently, we are working on our manuscript describing our framework. 
-If you really like our work and want to cite it now, feel free to chose one :) 
+If you really like our work and want to cite it now, feel free to choose one :) 
 ```
+#ASWA
+@inproceedings{sapkota2025parameter,
+  author    = {Sapkota, Rupesh and Demir, Caglar and Sharma, Arnab and Ngonga Ngomo, Axel-Cyrille},
+  title     = {Parameter Averaging in Link Prediction},
+  booktitle = {Proceedings of the Knowledge Capture Conference 2025 (K-CAP '25)},
+  year      = {2025},
+  address   = {Dayton, OH, USA},
+  publisher = {ACM},
+  organization = {K-CAP},
+  pages     = {1--8},
+  doi       = {10.1145/3731443.3771365},
+  url       = {https://papers.dice-research.org/2025/KCAP_ASWA/public.pdf},
+  keywords  = {dice sailproject kiowl enexa sapkota demir ngonga sharma}
+}
+
+# DeCaL
+@incollection{kamdem2024embedding,
+  title={Embedding Knowledge Graphs in Degenerate Clifford Algebras},
+  author={Kamdem Teyou, Louis Mozart and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+  booktitle={ECAI 2024},
+  pages={1293--1300},
+  year={2024},
+  publisher={IOS Press}
+}
+# LFMult
+@inproceedings{kamdem2024embedding,
+  title={Embedding Knowledge Graphs in Function Spaces},
+  author={Kamdem Teyou, Louis Mozart and Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+  booktitle={Proceedings of the 33rd ACM International Conference on Information and Knowledge Management},
+  pages={1070--1079},
+  year={2024}
+}
 # Keci
 @inproceedings{demir2023clifford,
   title={Clifford Embeddings--A Generalized Approach for Embedding in Normed Algebras},
@@ -646,4 +1172,3 @@ url={https://openreview.net/forum?id=6T45-4TFqaX}}
   organization={IEEE}
 ```
 For any questions or wishes, please contact:  ```caglar.demir@upb.de```
-

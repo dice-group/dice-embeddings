@@ -1,99 +1,247 @@
-import numpy as np
-import torch
+"""Static utility functions for DICE embeddings.
+
+This module provides utility functions for model initialization, data loading,
+serialization, and various helper operations.
+"""
+import csv
 import datetime
-from typing import Tuple, List
-from .models import Pyke, DistMult, KeciBase, Keci, TransE, DeCaL, DualE,\
-    ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom, LFMult
-from .models.pykeen_models import PykeenKGE
-from .models.transformers import BytE
-import time
-import pandas as pd
-import json
-import glob
 import functools
+import glob
+import json
 import os
-import psutil
-from .models.base_model import BaseKGE
 import pickle
+import time
 from collections import defaultdict
+from typing import Callable, Dict, List, Optional, Tuple, Type, Union
+import psutil
+import numpy as np
+import pandas as pd
 import polars as pl
 import requests
-import csv
+import torch
+import torch.distributed as dist
+from lightning.pytorch.utilities.rank_zero import rank_zero_only
+
+from .models import (
+    AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ,
+    DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, OMult, Pyke, QMult, Shallom, TransE
+)
+from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
+from .models.pykeen_models import PykeenKGE
+from .models.transformers import BytE
 
-def create_recipriocal_triples(x):
+# Model registry mapping model names to their classes and labelling types
+MODEL_REGISTRY: Dict[str, Tuple[Type, str]] = {
+    'Shallom': (Shallom, 'RelationPrediction'),
+    'ConEx': (ConEx, 'EntityPrediction'),
+    'AConEx': (AConEx, 'EntityPrediction'),
+    'QMult': (QMult, 'EntityPrediction'),
+    'OMult': (OMult, 'EntityPrediction'),
+    'ConvQ': (ConvQ, 'EntityPrediction'),
+    'AConvQ': (AConvQ, 'EntityPrediction'),
+    'ConvO': (ConvO, 'EntityPrediction'),
+    'AConvO': (AConvO, 'EntityPrediction'),
+    'ComplEx': (ComplEx, 'EntityPrediction'),
+    'DistMult': (DistMult, 'EntityPrediction'),
+    'TransE': (TransE, 'EntityPrediction'),
+    'Pyke': (Pyke, 'EntityPrediction'),
+    'Keci': (Keci, 'EntityPrediction'),
+    'KeciTransformer': (KeciTransformer, 'EntityPrediction'),
+    'CKeci': (CKeci, 'EntityPrediction'),
+    'BytE': (BytE, 'EntityPrediction'),
+    'LFMult': (LFMult, 'EntityPrediction'),
+    'DeCaL': (DeCaL, 'EntityPrediction'),
+    'DualE': (DualE, 'EntityPrediction'),
+    'CoKE': (CoKE, 'EntityPrediction'),
+}
+
+def create_recipriocal_triples(df: pd.DataFrame) -> pd.DataFrame:
+    """Add inverse triples to a DataFrame.
+
+    For each triple (s, p, o), creates an inverse triple (o, p_inverse, s).
+
+    Args:
+        df: DataFrame with 'subject', 'relation', and 'object' columns.
+
+    Returns:
+        DataFrame with original and inverse triples concatenated.
     """
-    Add inverse triples into dask dataframe
-    :param x:
-    :return:
+    inverse_df = pd.DataFrame({
+        'subject': df['object'],
+        'relation': df['relation'] + '_inverse',
+        'object': df['subject']
+    })
+    return pd.concat([df, inverse_df], ignore_index=True)
+
+
+def get_er_vocab(data: np.ndarray, file_path: Optional[str] = None) -> Dict[Tuple[int, int], List[int]]:
+    """Build entity-relation to tail vocabulary.
+
+    Args:
+        data: Array of triples with shape (n, 3) where columns are (head, relation, tail).
+        file_path: Optional path to save the vocabulary as pickle.
+
+    Returns:
+        Dictionary mapping (head, relation) pairs to list of tail entities.
     """
-    return pd.concat([x, x['object'].to_frame(name='subject').join(
-        x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
-        x['subject'].to_frame(name='object'))], ignore_index=True)
-
-
-def get_er_vocab(data, file_path: str = None):
-    # head entity and relation
-    er_vocab = defaultdict(list)
-    for triple in data:
-        h, r, t = triple
+    er_vocab: Dict[Tuple[int, int], List[int]] = defaultdict(list)
+    for h, r, t in data:
         er_vocab[(h, r)].append(t)
     if file_path:
         save_pickle(data=er_vocab, file_path=file_path)
     return er_vocab
 
 
-def get_re_vocab(data, file_path: str = None):
-    # head entity and relation
-    re_vocab = defaultdict(list)
-    for triple in data:
-        re_vocab[(triple[1], triple[2])].append(triple[0])
+def get_re_vocab(data: np.ndarray, file_path: Optional[str] = None) -> Dict[Tuple[int, int], List[int]]:
+    """Build relation-entity (tail) to head vocabulary.
+
+    Args:
+        data: Array of triples with shape (n, 3) where columns are (head, relation, tail).
+        file_path: Optional path to save the vocabulary as pickle.
+
+    Returns:
+        Dictionary mapping (relation, tail) pairs to list of head entities.
+    """
+    re_vocab: Dict[Tuple[int, int], List[int]] = defaultdict(list)
+    for h, r, t in data:
+        re_vocab[(r, t)].append(h)
     if file_path:
         save_pickle(data=re_vocab, file_path=file_path)
     return re_vocab
 
 
-def get_ee_vocab(data, file_path: str = None):
-    # head entity and relation
-    ee_vocab = defaultdict(list)
-    for triple in data:
-        ee_vocab[(triple[0], triple[2])].append(triple[1])
+def get_ee_vocab(data: np.ndarray, file_path: Optional[str] = None) -> Dict[Tuple[int, int], List[int]]:
+    """Build entity-entity to relation vocabulary.
+
+    Args:
+        data: Array of triples with shape (n, 3) where columns are (head, relation, tail).
+        file_path: Optional path to save the vocabulary as pickle.
+
+    Returns:
+        Dictionary mapping (head, tail) pairs to list of relations.
+    """
+    ee_vocab: Dict[Tuple[int, int], List[int]] = defaultdict(list)
+    for h, r, t in data:
+        ee_vocab[(h, t)].append(r)
     if file_path:
         save_pickle(data=ee_vocab, file_path=file_path)
     return ee_vocab
 
 
-def timeit(func):
+def timeit(func: Callable) -> Callable:
+    """Decorator to measure and print execution time and memory usage.
+
+    Args:
+        func: Function to be timed.
+
+    Returns:
+        Wrapped function that prints timing information.
+    """
     @functools.wraps(func)
     def timeit_wrapper(*args, **kwargs):
         start_time = time.perf_counter()
         result = func(*args, **kwargs)
-        end_time = time.perf_counter()
-        total_time = end_time - start_time
-        print(
-            f'Took {total_time:.4f} secs '
-            f'| Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
+        total_time = time.perf_counter() - start_time
+        memory_mb = psutil.Process(os.getpid()).memory_info().rss / 1_000_000
+        print(f'Took {total_time:.4f} secs | Current Memory Usage {memory_mb:.5f} MB')
         return result
-
     return timeit_wrapper
 
-# TODO:CD: Deprecate the pickle usage for data serialization.
-def save_pickle(*, data: object=None, file_path=str):
-    if data:
-        pickle.dump(data, open(file_path, "wb"))
+
+def setup_distributed_training(args) -> Dict[str, Union[bool, int]]:
+    """Resolve distributed-training state and initialize custom DDP when needed."""
+    trainer_name = getattr(args, "trainer", None)
+    required_env_vars = ("LOCAL_RANK", "RANK", "WORLD_SIZE")
+    torchrun_launched = all(env_var in os.environ for env_var in required_env_vars)
+    distributed = trainer_name == "torchDDP" or (
+        trainer_name == "PL" and torchrun_launched
+    )
+
+    if trainer_name == "torchDDP" and not torchrun_launched:
+        raise RuntimeError(
+            "torchDDP trainer must be launched with torchrun."
+            "Please use appropriate commands for torchDDP trainer."
+        )
+
+    if distributed or trainer_name == "PL":
+        local_rank = int(os.environ.get("LOCAL_RANK", getattr(rank_zero_only, "rank", 0)))
+        rank = int(os.environ.get("RANK", local_rank))
+        world_size = int(os.environ.get("WORLD_SIZE", torch.cuda.device_count()))
+
+        if distributed:
+            torch.cuda.set_device(local_rank)
+            assert torch.cuda.current_device() == local_rank, (
+                f"set_device failed! local_rank={local_rank} "
+                f"but current={torch.cuda.current_device()}"
+            )
+            if not dist.is_initialized():
+                dist.init_process_group(
+                    backend="nccl",
+                    init_method="env://",
+                    device_id=torch.device(f"cuda:{local_rank}"),
+                )
+            rank = dist.get_rank()
+            world_size = dist.get_world_size()
+            print(f"[Rank {rank}] mapped to GPU {local_rank}", flush=True)
+    else:
+        distributed = False
+        rank, world_size, local_rank = 0, 1, 0
+
+    return {
+        "distributed": distributed,
+        "rank": rank,
+        "world_size": world_size,
+        "local_rank": local_rank,
+    }
+
+def save_pickle(*, data: Optional[object] = None, file_path: str) -> None:
+    """Save data to a pickle file.
+
+    Note: Consider using more portable formats (JSON, Parquet) for new code.
+
+    Args:
+        data: Object to serialize. If None, nothing is saved.
+        file_path: Path where the pickle file will be saved.
+    """
+    if data is not None:
+        with open(file_path, 'wb') as f:
+            pickle.dump(data, f)
     else:
         print("Input data is None. Nothing to save.")
-# TODO:CD: Deprecate the pickle usage for data serialization.
-def load_pickle(file_path=str):
+
+
+def load_pickle(file_path: str) -> object:
+    """Load data from a pickle file.
+
+    Note: Consider using more portable formats (JSON, Parquet) for new code.
+
+    Args:
+        file_path: Path to the pickle file.
+
+    Returns:
+        Deserialized object from the pickle file.
+    """
     with open(file_path, 'rb') as f:
         return pickle.load(f)
 
-def load_term_mapping(file_path=str):
+def load_term_mapping(file_path: str) -> Union[dict, pl.DataFrame]:
+    """Load term-to-index mapping from pickle or CSV file.
+
+    Attempts to load from pickle first, falls back to CSV if not found.
+
+    Args:
+        file_path: Base path without extension.
+
+    Returns:
+        Dictionary or Polars DataFrame containing the mapping.
+    """
+    pickle_path = f"{file_path}.p"
     try:
-        return load_pickle(file_path=file_path+".p")
+        return load_pickle(file_path=pickle_path)
     except FileNotFoundError:
-        print(f"python file not found\t{file_path} with .p extension")
-    return pl.read_csv(file_path + ".csv")
+        print(f"Pickle file not found: {pickle_path}, loading from CSV")
+        return pl.read_csv(f"{file_path}.csv")
 
 # @TODO: Could these funcs can be merged?
 def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None):
@@ -102,20 +250,48 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
     assert isinstance(is_continual_training, bool)
     assert isinstance(storage_path, str)
     if is_continual_training:
-        print('Loading pre-trained model...')
-        model, _ = intialize_model(args)
-        try:
-            weights = torch.load(storage_path + '/model.pt', torch.device('cpu'))
-            model.load_state_dict(weights)
-            for parameter in model.parameters():
-                parameter.requires_grad = True
-            model.train()
-        except FileNotFoundError:
-            print(f"{storage_path}/model.pt is not found. The model will be trained with random weights")
-        return model, _
+        # Check whether we have tensor parallelized KGE.
+        files_under_storage_path = [f for f in os.listdir(storage_path) if os.path.isfile(os.path.join(storage_path, f))]
+        num_of_partial_models_for_tensor_parallel= len([ i for i in files_under_storage_path if "partial" in i ])
+        if num_of_partial_models_for_tensor_parallel >= 1:
+            models=[]
+            labelling_flag=None
+            for i in range(num_of_partial_models_for_tensor_parallel):
+                model, labelling_flag = intialize_model(args)
+                weights = torch.load(storage_path + f'/model_partial_{i}.pt', torch.device('cpu'),weights_only=False)
+                model.load_state_dict(weights)
+                for parameter in model.parameters():
+                    parameter.requires_grad = True
+                model.train()
+                models.append(model)
+            return EnsembleKGE(pretrained_models=models), labelling_flag
+        else:
+            print('Loading pre-trained model...')
+            model, labelling_flag = intialize_model(args)
+            try:
+                weights = torch.load(storage_path + '/model.pt', torch.device('cpu'))
+                model.load_state_dict(weights)
+                for parameter in model.parameters():
+                    parameter.requires_grad = True
+                model.train()
+            except FileNotFoundError as e:
+                print(f"{storage_path}/model.pt is not found. The model will be trained with random weights")
+                raise e
+            return model, labelling_flag
     else:
-        return intialize_model(args)
+        if args["trainer"]=="TP":
+            # If it is tensor parallelized KGE, then we need to create ensemble of models.
+            models = []
+            labelling_flag = None
+            for i in range(torch.cuda.device_count()):
+                args["random_seed"] = i
+                model, labelling_flag = intialize_model(args)
+                models.append(model)
+            model = EnsembleKGE(models=models)
+        else:
+            model, labelling_flag = intialize_model(args)
 
+    return model, labelling_flag
 
 def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) -> Tuple[object, Tuple[dict, dict]]:
     """ Load weights and initialize pytorch module from namespace arguments"""
@@ -162,22 +338,12 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
     else:
         if verbose>0:
             print('Loading entity and relation indexes...', end=' ')
-        try:
-            # Maybe ? https://docs.python.org/3/library/mmap.html
-            # TODO:CD: Deprecate the pickle usage for data serialization.
-            # TODO: CD: We do not need to keep the mapping in memory
-            with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
-                entity_to_idx = pickle.load(f)
-        except FileNotFoundError:
-            entity_to_idx = { v["entity"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv",index_col=0).to_dict(orient='index').items()}
+    
+        entity_to_idx = { v["entity"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv",index_col=0,dtype=str).to_dict(orient='index').items()}
 
-        try:
-            # TODO:CD: Deprecate the pickle usage for data serialization.
-            # TODO: CD: We do not need to keep the mapping in memory
-            with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
-                relation_to_idx = pickle.load(f)
-        except FileNotFoundError:
-            relation_to_idx = { v["relation"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv",index_col=0).to_dict(orient='index').items()}
+        relation_to_idx = { v["relation"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv",index_col=0,dtype=str).to_dict(orient='index').items()}
+
+
         if verbose > 0:
             print(f'Done! It took {time.time() - start_time:.4f}')
         return model, (entity_to_idx, relation_to_idx)
@@ -279,13 +445,9 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
 def save_checkpoint_model(model, path: str) -> None:
     """ Store Pytorch model into disk"""
     if isinstance(model, BaseKGE):
-        try:
-            torch.save(model.state_dict(), path)
-        except ReferenceError as e:
-            print(e)
-            print(model.name)
-            print('Could not save the model correctly')
+        torch.save(model.state_dict(), path)
     elif isinstance(model, EnsembleKGE):
+        # path comes with ../model_...
         for i, partial_model in enumerate(model):
             new_path=path.replace("model.pt",f"model_partial_{i}.pt")
             torch.save(partial_model.state_dict(), new_path)
@@ -293,18 +455,8 @@ def save_checkpoint_model(model, path: str) -> None:
         torch.save(model.model.state_dict(), path)
 
 
-def store(trainer,
-          trained_model, model_name: str = 'model', full_storage_path: str = None,
+def store(trained_model, model_name: str = 'model', full_storage_path: str = None,
           save_embeddings_as_csv=False) -> None:
-    """
-    Store trained_model model and save embeddings into csv file.
-    :param trainer: an instance of trainer class
-    :param full_storage_path: path to save parameters.
-    :param model_name: string representation of the name of the model.
-    :param trained_model: an instance of BaseKGE see core.models.base_model .
-    :param save_embeddings_as_csv: for easy access of embeddings.
-    :return:
-    """
     assert full_storage_path is not None
     assert isinstance(model_name, str)
     assert len(model_name) > 1
@@ -378,8 +530,39 @@ def read_or_load_kg(args, cls):
     return kg
 
 
-def intialize_model(args: dict,verbose=0) -> Tuple[object, str]:
-    if verbose>0:
+def intialize_model(args: Dict, verbose: int = 0) -> Tuple[BaseKGE, str]:
+    """Initialize a knowledge graph embedding model.
+
+    Args:
+        args: Dictionary containing model configuration including 'model' key.
+        verbose: Verbosity level. If > 0, prints initialization message.
+
+    Returns:
+        Tuple of (initialized model, form of labelling string).
+
+    Raises:
+        ValueError: If the model name is not recognized.
+    """
+    if verbose > 0:
+        print(f"Initializing {args['model']}...")
+    model_name = args['model']
+
+    # Handle PyKEEN models
+    if "pykeen" in model_name.lower():
+        return PykeenKGE(args=args), "EntityPrediction"
+
+    # Use model registry for standard models
+    if model_name in MODEL_REGISTRY:
+        model_class, form_of_labelling = MODEL_REGISTRY[model_name]
+        return model_class(args=args), form_of_labelling
+
+    raise ValueError(f"Unknown model: {model_name}. Available models: {list(MODEL_REGISTRY.keys())}")
+
+
+# Keep backward compatibility - this is now handled by the registry
+def _legacy_intialize_model(args: dict, verbose: int = 0) -> Tuple[object, str]:
+    """Legacy model initialization (deprecated, use intialize_model instead)."""
+    if verbose > 0:
         print(f"Initializing {args['model']}...")
     model_name = args['model']
     if "pykeen" in model_name.lower():
@@ -427,8 +610,11 @@ def intialize_model(args: dict,verbose=0) -> Tuple[object, str]:
     elif model_name == 'Keci':
         model = Keci(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif model_name == 'KeciBase':
-        model = KeciBase(args=args)
+    elif model_name == 'KeciTransformer':
+        model = KeciTransformer(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'CKeci':
+        model = CKeci(args=args)
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'BytE':
         model = BytE(args=args)
@@ -442,72 +628,44 @@ def intialize_model(args: dict,verbose=0) -> Tuple[object, str]:
     elif model_name == 'DualE':
         model =DualE(args=args)
         form_of_labelling = 'EntityPrediction'
+    elif model_name == 'CoKE':
+        model = CoKE(args=args)
+        form_of_labelling = 'EntityPrediction'
     else:
-        raise ValueError(f"--model_name: {model_name} is not found.")
+        raise ValueError(f"Unknown model: {model_name}. Available models: {list(MODEL_REGISTRY.keys())}")
     return model, form_of_labelling
 
 
-def load_json(p: str) -> dict:
-    with open(p, 'r') as r:
-        args = json.load(r)
-    return args
+def load_json(path: str) -> Dict:
+    """Load JSON file into a dictionary.
 
+    Args:
+        path: Path to the JSON file.
 
-def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
+    Returns:
+        Dictionary containing the JSON data.
+
+    Raises:
+        FileNotFoundError: If the file does not exist.
+        json.JSONDecodeError: If the file contains invalid JSON.
     """
-    Save it as CSV if memory allows.
-    :param embeddings:
-    :param indexes:
-    :param path:
-    :return:
+    with open(path, 'r') as f:
+        return json.load(f)
+
+
+def save_embeddings(embeddings: np.ndarray, indexes: List, path: str) -> None:
+    """Save embeddings to a CSV file.
+
+    Args:
+        embeddings: NumPy array of embeddings with shape (n_items, embedding_dim).
+        indexes: List of index labels (entity/relation names).
+        path: Output file path.
     """
     try:
         pd.DataFrame(embeddings, index=indexes).to_csv(path)
-    except KeyError or AttributeError as e:
-        print('Exception occurred at saving entity embeddings. Computation will continue')
-        print(e)
-
-
-def random_prediction(pre_trained_kge):
-    head_entity: List[str]
-    relation: List[str]
-    tail_entity: List[str]
-    head_entity = pre_trained_kge.sample_entity(1)
-    relation = pre_trained_kge.sample_relation(1)
-    tail_entity = pre_trained_kge.sample_entity(1)
-    triple_score = pre_trained_kge.triple_score(h=head_entity,
-                                                r=relation,
-                                                t=tail_entity)
-    return f'( {head_entity[0]},{relation[0]}, {tail_entity[0]} )', pd.DataFrame({'Score': triple_score})
-
-
-def deploy_triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object):
-    triple_score = pre_trained_kge.triple_score(h=[str_subject],
-                                                r=[str_predicate],
-                                                t=[str_object])
-    return f'( {str_subject}, {str_predicate}, {str_object} )', pd.DataFrame({'Score': triple_score})
-
-
-def deploy_tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, top_k):
-    if pre_trained_kge.model.name == 'Shallom':
-        print('Tail entity prediction is not available for Shallom')
-        raise NotImplementedError
-    str_entity_scores = pre_trained_kge.predict_topk(h=[str_subject], r=[str_predicate], topk=top_k)
-
-    return f'(  {str_subject},  {str_predicate}, ? )', pd.DataFrame(str_entity_scores,columns=["entity","score"])
-
-
-def deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, top_k):
-    if pre_trained_kge.model.name == 'Shallom':
-        print('Head entity prediction is not available for Shallom')
-        raise NotImplementedError
-    str_entity_scores = pre_trained_kge.predict_topk(t=[str_object], r=[str_predicate], topk=top_k)
-    return f'(  ?,  {str_predicate}, {str_object} )', pd.DataFrame(str_entity_scores,columns=["entity","score"])
-
-
-def deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
-    str_relation_scores = pre_trained_kge.predict_topk(h=[str_subject], t=[str_object], topk=top_k)
-    return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame(str_relation_scores,columns=["relation","score"])
+    except (KeyError, AttributeError) as e:
+        print(f'Exception occurred while saving embeddings: {e}')
+        print('Computation will continue.')
 
 
 @timeit
@@ -518,12 +676,18 @@ def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     print('Done !\n')
 
 
-def create_experiment_folder(folder_name='Experiments'):
-    directory = os.getcwd() + "/" + folder_name + "/"
-    # folder_name = str(datetime.datetime.now())
-    folder_name = str(datetime.datetime.now()).replace(":", "-")
-    # path_of_folder = directory + folder_name
-    path_of_folder = os.path.join(directory, folder_name)
+def create_experiment_folder(folder_name: str = 'Experiments') -> str:
+    """Create a timestamped experiment folder.
+
+    Args:
+        folder_name: Base directory name for experiments.
+
+    Returns:
+        Full path to the created experiment folder.
+    """
+    directory = os.path.join(os.getcwd(), folder_name)
+    timestamp = str(datetime.datetime.now()).replace(":", "-")
+    path_of_folder = os.path.join(directory, timestamp)
     os.makedirs(path_of_folder)
     return path_of_folder
 
@@ -684,16 +848,15 @@ def download_pretrained_model(url: str) -> str:
         download_files_from_url(url_to_download_from, destination_folder=dir_name)
     return dir_name
 
-def write_csv_from_model_parallel(path: str) -> None:
+def write_csv_from_model_parallel(path: str) :
     """Create"""
     assert os.path.exists(path), "Path does not exist"
-
     # Detect files that start with model_ and end with .pt
     model_files = [f for f in os.listdir(path) if f.startswith("model_") and f.endswith(".pt")]
     model_files.sort()  # Sort to maintain order if necessary (e.g., model_0.pt, model_1.pt)
 
-    entity_csv_path = os.path.join(path, "entity_embeddings.csv")
-    relation_csv_path = os.path.join(path, "relation_embeddings.csv")
+    entity_embeddings=[]
+    relation_embeddings=[]
 
     # Process each model file
     for model_file in model_files:
@@ -702,65 +865,50 @@ def write_csv_from_model_parallel(path: str) -> None:
         model = torch.load(model_path)
         # Assuming model has a get_embeddings method
         entity_emb, relation_emb = model["_orig_mod.entity_embeddings.weight"], model["_orig_mod.relation_embeddings.weight"]
-        # Convert to numpy
-        entity_emb = entity_emb.numpy()
-        relation_emb = relation_emb.numpy()
+        entity_embeddings.append(entity_emb)
+        relation_embeddings.append(relation_emb)
 
-        # Write or append to CSV
-        if not os.path.exists(entity_csv_path) or not os.path.exists(relation_csv_path):
-            # If CSV files do not exist, create them
-            pd.DataFrame(entity_emb).to_csv(entity_csv_path, index=True, header=False)
-            pd.DataFrame(relation_emb).to_csv(relation_csv_path, index=True, header=False)
-        else:
-            # If CSV files exist, concatenate to the existing rows
-            existing_entity_df = pd.read_csv(entity_csv_path, header=None)
-            existing_relation_df = pd.read_csv(relation_csv_path, header=None)
+    return torch.cat(entity_embeddings, dim=1), torch.cat(relation_embeddings, dim=1)
 
-            # Concatenate along the columns (axis=1)
-            new_entity_df = pd.concat([existing_entity_df, pd.DataFrame(entity_emb)], axis=1)
-            new_relation_df = pd.concat([existing_relation_df, pd.DataFrame(relation_emb)], axis=1)
-
-            # Write the updated data back to the CSV files
-            new_entity_df.to_csv(entity_csv_path, index=False, header=False)
-            new_relation_df.to_csv(relation_csv_path, index=False, header=False)
 
 def from_pretrained_model_write_embeddings_into_csv(path: str) -> None:
     """ """
     assert os.path.exists(path), "Path does not exist"
     config = load_json(path + '/configuration.json')
-    if config["trainer"]=="MP":
-        write_csv_from_model_parallel(path)
+    entity_csv_path = os.path.join(path, f"{config['model']}_entity_embeddings.csv")
+    relation_csv_path = os.path.join(path, f"{config['model']}_relation_embeddings.csv")
+
+    if config["trainer"]=="TP":
+        entity_emb, relation_emb = write_csv_from_model_parallel(path)
     else:
-        entity_csv_path = os.path.join(path, f"{config['model']}_entity_embeddings.csv")
-        relation_csv_path = os.path.join(path, f"{config['model']}_relation_embeddings.csv")
         # Load model
         model = torch.load(os.path.join(path, "model.pt"))
         # Assuming model has a get_embeddings method
         entity_emb, relation_emb = model["entity_embeddings.weight"], model["relation_embeddings.weight"]
-        str_entity = pd.read_csv(f"{path}/entity_to_idx.csv", index_col=0)["entity"]
-        assert str_entity.index.is_monotonic_increasing
-        str_entity=str_entity.to_list()
-        # Write entity embeddings with headers and indices
-        with open(entity_csv_path, "w", newline="") as f:
-            writer = csv.writer(f)
-            # Add header (e.g., "", "0", "1", ..., "N")
-            headers = [""] + [f"{i}" for i in range(entity_emb.size(1))]
-            writer.writerow(headers)
-            # Add rows with index
-            for i_row, (name,row) in enumerate(zip(str_entity,entity_emb)):
-                writer.writerow([name] + row.tolist())
-        str_relations = pd.read_csv(f"{path}/relation_to_idx.csv", index_col=0)["relation"]
-        assert str_relations.index.is_monotonic_increasing
+    str_entity = pd.read_csv(f"{path}/entity_to_idx.csv", index_col=0)["entity"]
+    assert str_entity.index.is_monotonic_increasing
+    str_entity=str_entity.to_list()
+    # Write entity embeddings with headers and indices
+    with open(entity_csv_path, "w", newline="") as f:
+        writer = csv.writer(f)
+        # Add header (e.g., "", "0", "1", ..., "N")
+        headers = [""] + [f"{i}" for i in range(entity_emb.size(1))]
+        writer.writerow(headers)
+        # Add rows with index
+        for i_row, (name,row) in enumerate(zip(str_entity,entity_emb)):
+            writer.writerow([name] + row.tolist())
+    str_relations = pd.read_csv(f"{path}/relation_to_idx.csv", index_col=0)["relation"]
+    assert str_relations.index.is_monotonic_increasing
 
-        # Write relation embeddings with headers and indices
-        with open(relation_csv_path, "w", newline="") as f:
-            writer = csv.writer(f)
-            # Add header (e.g., "", "0", "1", ..., "N")
-            headers = [""] + [f"{i}" for i in range(relation_emb.size(1))]
-            writer.writerow(headers)
-            # Add rows with index
-            for i_row, (name, row) in enumerate(zip(str_relations,relation_emb)):
-                writer.writerow([name]+ row.tolist())
+    # Write relation embeddings with headers and indices
+    with open(relation_csv_path, "w", newline="") as f:
+        writer = csv.writer(f)
+        # Add header (e.g., "", "0", "1", ..., "N")
+        headers = [""] + [f"{i}" for i in range(relation_emb.size(1))]
+        writer.writerow(headers)
+        # Add rows with index
+        for i_row, (name, row) in enumerate(zip(str_relations,relation_emb)):
+            writer.writerow([name]+ row.tolist())
 
     """
     

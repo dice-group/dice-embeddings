@@ -49,7 +49,7 @@ class TorchDDPTrainer(AbstractTrainer):
         # (1) Run the fit the start callback.
         self.on_fit_start(self, model)
         # (2) Setup DDP.
-        torch.distributed.init_process_group(backend="nccl")
+        # torch.distributed.init_process_group(backend="nccl")
         train_dataset_loader = kwargs['train_dataloaders']
         # (1) Create DATA LOADER.
         train_dataset_loader = DataLoader(train_dataset_loader.dataset,

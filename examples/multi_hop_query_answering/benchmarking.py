@@ -31,7 +31,7 @@ for kge_name in ["DistMult", "ComplEx", "Keci", "Pykeen_QuatE", "Pykeen_MuRE"]:
     args = Namespace()
     args.model = kge_name
     args.scoring_technique = "KvsAll"
-    args.path_dataset_folder = "KGs/UMLS"
+    args.dataset_dir = "KGs/UMLS"
     args.num_epochs = 20
     args.batch_size = 1024
     args.lr = 0.1

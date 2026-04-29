@@ -1,27 +1,33 @@
 import torch
-import copy
-
-import torch._dynamo
-
-torch._dynamo.config.suppress_errors = True
-
-
+import torch.nn as nn
+from typing import List
 class EnsembleKGE:
-    def __init__(self, seed_model):
-        self.models = []
-        self.optimizers = []
-        self.loss_history = []
-        for i in range(torch.cuda.device_count()):
-            i_model=copy.deepcopy(seed_model)
-            i_model.to(torch.device(f"cuda:{i}"))
-            # TODO: Why we cant send the compile model to cpu ?
-            # i_model = torch.compile(i_model)
-            self.optimizers.append(i_model.configure_optimizers())
-            self.models.append(i_model)
-        # Maybe use the original model's name ?
-        self.name="TP_"+self.models[0].name
-        self.train_mode=True
+    def __init__(self, models : list=None, seed_model=None, pretrained_models:List=None):
 
+        if models is not None:
+            self.models = nn.ModuleList()
+            self.optimizers = []
+            self.loss_history = []
+            for i in range(len(models)):
+                i_model = models[i]
+                # TODO: Why we cant send the compile model to cpu ?
+                #i_model = torch.compile(i_model)
+                i_model.to(torch.device(f"cuda:{i}"))
+                self.optimizers.append(i_model.configure_optimizers())
+                self.models.append(i_model)
+        else:
+            assert pretrained_models is not None
+            self.models = pretrained_models
+            self.optimizers = []
+            self.loss_history = []
+
+            for i in range(torch.cuda.device_count()):
+                self.models[i].to(torch.device(f"cuda:{i}"))
+                self.optimizers.append(self.models[i].configure_optimizers())
+            # Maybe use the original model's name ?
+        self.name=self.models[0].name
+        self.train_mode=True
+        self.args = self.models[0].args
     def named_children(self):
         return self.models[0].named_children()
     @property
@@ -53,6 +59,14 @@ class EnsembleKGE:
                 self.models[i].cpu()
             else:
                 raise NotImplementedError
+            
+    def state_dict(self):
+        """Return the state dict of the ensemble."""
+        return self.models.state_dict()
+
+    def load_state_dict(self, state_dict, strict=True):
+        """Load the state dict into the ensemble."""
+        return self.models.load_state_dict(state_dict, strict=strict)  
 
 
     def mem_of_model(self):
@@ -87,7 +101,26 @@ class EnsembleKGE:
     def step(self):
         for opt in self.optimizers:
             opt.step()
-    
+
+    def get_embeddings(self):
+        entity_embeddings = []
+        relation_embeddings = []
+        # Iterate
+        for trained_model in self.models:
+            entity_emb, relation_emb = trained_model.get_embeddings()
+            entity_embeddings.append(entity_emb.cpu())
+            if relation_emb is not None:
+                relation_embeddings.append(relation_emb.cpu())
+        # Concat the embedding vectors horizontally.
+        entity_embeddings = torch.cat(entity_embeddings, dim=1)
+        if relation_embeddings:
+            relation_embeddings = torch.cat(relation_embeddings, dim=1)
+        else:
+            relation_embeddings = None
+
+
+        return entity_embeddings, relation_embeddings
+
     """
     def __getattr__(self, name):
         # Create a function that will call the same attribute/method on each model

@@ -1,4 +1,7 @@
-""" This script should be moved to dicee/scripts"""
+""" This script should be moved to dicee/scripts
+Example:
+python dicee/analyse_experiments.py --dir Experiments --features "model" "trainMRR" "testMRR"
+"""
 import os
 import json
 import pandas as pd
@@ -120,19 +123,13 @@ def analyse(args):
         if os.path.isdir(full_path) is False:
             continue
 
-        
         with open(f'{full_path}/configuration.json', 'r') as f:
             config = json.load(f)
-            
-        try:
-            with open(f'{full_path}/report.json', 'r') as f:
-                report = json.load(f)
-                report = {i: report[i] for i in ['Runtime', 'NumParam']}
-            with open(f'{full_path}/eval_report.json', 'r') as f:
-                eval_report = json.load(f)
-        except FileNotFoundError:
-            print("NOT found")
-            continue
+        with open(f'{full_path}/report.json', 'r') as f:
+            report = json.load(f)
+            report = {i: report[i] for i in ['Runtime', 'NumParam']}
+        with open(f'{full_path}/eval_report.json', 'r') as f:
+            eval_report = json.load(f)
         config.update(eval_report)
         config.update(report)
         if "Train" in config:

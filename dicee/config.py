@@ -1,5 +1,18 @@
+"""Configuration module for DICE embeddings.
+
+Provides the Namespace class with default configuration values
+for training knowledge graph embedding models.
+"""
 import argparse
+
+
 class Namespace(argparse.Namespace):
+    """Extended Namespace with default KGE training configuration.
+
+    Provides sensible defaults for all training parameters while
+    allowing easy customization through command-line arguments
+    or direct assignment.
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.dataset_dir: str = None
@@ -85,7 +98,6 @@ class Namespace(argparse.Namespace):
 
         self.label_smoothing_rate: float = 0.0
 
-
         self.num_core: int = 0
         """Number of CPUs to be used in the mini-batch loading process"""
 
@@ -100,6 +112,9 @@ class Namespace(argparse.Namespace):
 
         self.pykeen_model_kwargs = dict()
         """Additional keyword arguments for pykeen models"""
+
+        self.pl_trainer_kwargs = dict()
+        """Additional keyword arguments for the PyTorch Lightning Trainer"""
 
         # Below attributes can be given as model_kwargs argument
 
@@ -133,11 +148,45 @@ class Namespace(argparse.Namespace):
         self.swa: bool = False
         "Stochastic weight averaging"
 
+        self.swag: bool = False
+        """Stochastic weight averaging - Gaussian"""
+
+        self.ema: bool = False
+        """Exponential Moving Average"""
+
+        self.twa: bool = False
+        """Trainable weight averaging"""
+
         self.block_size: int = None
         "block size of LLM"
 
         self.continual_learning=None
         "Path of a pretrained model size of LLM"
+
+        self.auto_batch_finding=False
+        "A flag for using auto batch finding"
+
+        self.eval_every_n_epochs: int = 0
+        """Evaluate model every n epochs. If 0, no evaluation is applied."""
+
+        self.save_every_n_epochs: bool = False
+        """Save model every n epochs. If True, save model at every epoch."""
+
+        self.eval_at_epochs: list = None
+        """List of epoch numbers at which to evaluate the model (e.g., 1 5 10)."""
+
+        self.n_epochs_eval_model: str = "val_test"
+        """Evaluating link prediction performance on data splits while performing periodic evaluation."""
+        
+        self.adaptive_lr = dict()
+        """Adaptive learning rate parameters, e.g., '{"scheduler_name": "cca"}'"""
+
+        self.swa_start_epoch: int = None
+        """Epoch at which to start applying stochastic weight averaging."""
+
+        self.swa_c_epochs: int = 1
+        """Number of epochs to average over for SWA, SWAG, EMA, TWA."""
+
 
     def __iter__(self):
         # Iterate

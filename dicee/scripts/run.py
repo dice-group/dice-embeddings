@@ -3,7 +3,7 @@ from dicee.executer import Execute, ContinuousExecute
 import argparse
 
 def get_default_arguments(description=None):
-    """ Extends pytorch_lightning Trainer's arguments with ours """
+    """ Extends lightning Trainer's arguments with ours """
     parser = argparse.ArgumentParser(add_help=False)
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Knowledge graph related arguments
@@ -29,12 +29,15 @@ def get_default_arguments(description=None):
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
     parser.add_argument("--separator", type=str, default="\s+",
                         help='Pandas \s+, t for \t polars works with the last two.')
+    parser.add_argument("--reuse_existing_run_dir", action="store_true",
+                        help="If set, reuse the existing path_to_store_single_run directory if it exists. "
+                             "If not set, the directory will be deleted and recreated if it exists.")
     # Model related arguments
     parser.add_argument("--model", type=str,
                         default="Keci",
-                        choices=["ComplEx", "Keci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
+                        choices=["ComplEx", "Keci", "KeciTransformer", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "DualE",
-                                 "BytE",
+                                 "BytE", "CoKE",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
                                  "Pykeen_TransE", "Pykeen_TransF", "Pykeen_TransH",
@@ -44,7 +47,7 @@ def get_default_arguments(description=None):
                              "**Pykeen_BoxE** and add this into choices")
     parser.add_argument('--optim', type=str, default='Adopt',
                         help='An optimizer',
-                        choices=['Adam', 'AdamW', 'SGD',"NAdam", "Adagrad", "ASGD", "Adopt"])
+                        choices=['Adam', 'AdamW', 'SGD', "NAdam", "Adagrad", "ASGD", "Adopt", "Muon"])
     parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
@@ -55,13 +58,13 @@ def get_default_arguments(description=None):
                         default={},
                         help='{"PPE":{ "last_percent_to_consider": 10}}'
                              '"Perturb": {"level": "out", "ratio": 0.2, "method": "RN", "scaler": 0.3}')
-    parser.add_argument("--trainer", type=str, default='TP',
+    parser.add_argument("--trainer", type=str, default='PL',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP', "TP"],
-                        help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only), MP (Model Paralelisim)')
-    parser.add_argument('--scoring_technique', default="KvsSample",
+                        help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only), TP (Model Paralelisim)')
+    parser.add_argument('--scoring_technique', default="NegSample",
                         help="Training technique for knowledge graph embedding model",
-                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "1vsSample", "KvsSample"])
-    parser.add_argument('--neg_ratio', type=int, default=10,
+                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "FixedNegSample", "1vsSample", "KvsSample"])
+    parser.add_argument('--neg_ratio', type=int, default=2,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
     parser.add_argument('--input_dropout_rate', type=float, default=0.0)
@@ -89,13 +92,17 @@ def get_default_arguments(description=None):
     parser.add_argument('--q', type=int, default=1,
                         help='Q for Clifford Algebra')
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
+    parser.add_argument("--pl_trainer_kwargs",type=json.loads, default={},
+        help='Additional PyTorch Lightning Trainer keyword arguments as JSON. '
+             'Example: {"accelerator": "gpu", "strategy": "ddp", "precision": "16-mixed"}'
+    )
 
     # Evaluation Related
     parser.add_argument('--num_folds_for_cv', type=int, default=0,
                         help='Number of folds in k-fold cross validation.'
                              'If >2 ,no evaluation scenario is applied implies no evaluation.')
     parser.add_argument("--eval_model", type=str, default="train_val_test",
-                        choices=["None", "train", "train_val", "train_val_test", "test"],
+                        choices=["None", "train", "train_val", "train_val_test", "test", "val_test", "val", "train_test"],
                         help='Evaluating link prediction performance on data splits. ')
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
                         help='At every X number of epochs model will be saved. If None, we save 4 times.')
@@ -123,9 +130,40 @@ def get_default_arguments(description=None):
     parser.add_argument("--swa",
                         action="store_true",
                         help="Stochastic weight averaging")
+    parser.add_argument("--swag",
+                        action="store_true",
+                        help="Stochastic weight averaging - Gaussian")
+    parser.add_argument("--ema",
+                        action="store_true",
+                        help="Exponential Moving Average")
+    parser.add_argument("--twa",
+                        action="store_true",
+                        help="Trainable Weight Averaging")
+    parser.add_argument("--auto_batch_finding",
+                        action="store_true",
+                        help="Find a batch size fitting in GPUs. Only available for TP trainer")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
-    parser.add_argument('--disable_checkpointing', action='store_true', help='Disable creation of checkpoints during training')
+    
+    # Learning rate scheduling with configuration
+    parser.add_argument("--adaptive_lr", type=json.loads, default={},
+                        help='Enable adaptive learning rate scheduling with configuration. '
+                             'Example: {"scheduler_name": "cca", "lr_min": 0.01, "num_cycles": 10, '
+                             '"weighted_ensemble": true, "n_snapshots": 5}. '
+                             'Available schedulers: cca, mmcclr, deferred_cca, deferred_mmcclr')
+    parser.add_argument("--swa_start_epoch", type=int, default=None,
+                        help='Epoch at which to start applying stochastic weight averaging.')
+    parser.add_argument("--swa_c_epochs", type=int, default=1,
+                        help='Number of epochs to average over for SWA, SWAG, EMA, TWA.')
+    parser.add_argument('--eval_every_n_epochs', type=int, default=0,
+                        help='Evaluate model every n epochs. If 0, no evaluation is applied.')
+    parser.add_argument('--save_every_n_epochs', action='store_true',
+                        help='Save model every n epochs. If True, save model at every epoch.')
+    parser.add_argument('--eval_at_epochs',type=int,nargs='+', default=None,
+        help="List of epoch numbers at which to evaluate the model (e.g., 1 5 10).")
+    parser.add_argument("--n_epochs_eval_model", type=str, default="val_test",
+                        choices=["None", "train", "train_val", "train_val_test", "val_test", "val", "train_test","test"],
+                        help='Evaluating link prediction performance on data splits while performing periodic evaluation.')
 
     if description is None:
         return parser.parse_args()

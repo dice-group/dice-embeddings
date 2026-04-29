@@ -36,13 +36,16 @@ class BaseKGELightning(pl.LightningModule):
 
         loss_batch = self.loss_function(yhat_batch, y_batch)
         self.training_step_outputs.append(loss_batch.item())
-        self.log("loss",
-                 value=loss_batch,
-                 on_step=True,
-                 on_epoch=True,
-                 prog_bar=True,
-                 sync_dist=True,
-                 logger=False)
+        # Only log when using PyTorch Lightning trainer
+        # Check private _trainer attribute to avoid RuntimeError from property getter
+        if hasattr(self, '_trainer') and self._trainer is not None:
+            self.log("loss",
+                     value=loss_batch,
+                     on_step=True,
+                     on_epoch=True,
+                     prog_bar=True,
+                     sync_dist=True,
+                     logger=False)
         return loss_batch
 
     def loss_function(self, yhat_batch: torch.FloatTensor, y_batch: torch.FloatTensor):
@@ -111,6 +114,9 @@ class BaseKGELightning(pl.LightningModule):
         elif self.optimizer_name == 'ASGD':
             self.selected_optimizer = torch.optim.ASGD(parameters,
                                                        lr=self.learning_rate, lambd=0.0001, alpha=0.75,
+                                                       weight_decay=self.weight_decay)
+        elif self.optimizer_name == 'Muon':
+            self.selected_optimizer = torch.optim.Muon(parameters, lr=self.learning_rate,
                                                        weight_decay=self.weight_decay)
         else:
             raise KeyError(f"{self.optimizer_name} is not found!")
@@ -284,20 +290,20 @@ class BaseKGE(BaseKGELightning):
             self.normalizer_class = torch.nn.LayerNorm
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim)
-            if self.args['scoring_technique'] in ['NegSample', 'KvsSample']:
+            if self.args['scoring_technique'] in ['NegSample', 'FixedNegSample', 'KvsSample']:
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
         elif self.args.get("normalization") == 'BatchNorm1d':
             self.normalizer_class = torch.nn.BatchNorm1d
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
-            if self.args['scoring_technique'] in ['NegSample', 'KvsSample']:
+            if self.args['scoring_technique'] in ['NegSample', 'FixedNegSample', 'KvsSample']:
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
         elif self.args.get("normalization") is None:
             self.normalizer_class = IdentityClass
         else:
             raise NotImplementedError()
 
-        self.optimizer_name = self.args['optim']
+        self.optimizer_name = self.args.get('optim',None)
 
         if self.args.get("init_param") is None:
             self.param_init = IdentityClass

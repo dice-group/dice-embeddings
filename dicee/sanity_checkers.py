@@ -1,6 +1,7 @@
 import os
 import glob
 import requests
+import torch
 
 
 def is_sparql_endpoint_alive(sparql_endpoint: str = None):
@@ -32,11 +33,11 @@ def validate_knowledge_graph(args):
 
     elif args.path_single_kg is not None:
         if args.sparql_endpoint is not None or args.path_single_kg is not None:
-            print(f'The dataset_dir and sparql_endpoint arguments '
-                  f'must be None if path_single_kg is given.'
-                  f'***{args.dataset_dir}***\n'
-                  f'***{args.sparql_endpoint}***\n'
-                  f'These two parameters are set to None.')
+            #print(f'The dataset_dir and sparql_endpoint arguments '
+            #      f'must be None if path_single_kg is given.'
+            #      f'***{args.dataset_dir}***\n'
+            #      f'***{args.sparql_endpoint}***\n'
+            #      f'These two parameters are set to None.')
             args.dataset_dir = None
             args.sparql_endpoint = None
 
@@ -61,11 +62,11 @@ def validate_knowledge_graph(args):
                 f"Use --path_single_kg **folder/dataset.format**, if you have a single file.")
 
         if args.sparql_endpoint is not None or args.path_single_kg is not None:
-            print(f'The sparql_endpoint and path_single_kg arguments '
-                  f'must be None if dataset_dir is given.'
-                  f'***{args.sparql_endpoint}***\n'
-                  f'***{args.path_single_kg}***\n'
-                  f'These two parameters are set to None.')
+            #print(f'The sparql_endpoint and path_single_kg arguments '
+            #      f'must be None if dataset_dir is given.'
+            #      f'***{args.sparql_endpoint}***\n'
+            #      f'***{args.path_single_kg}***\n'
+            #      f'These two parameters are set to None.')
             args.sparql_endpoint = None
             args.path_single_kg = None
 
@@ -81,10 +82,35 @@ def validate_knowledge_graph(args):
 
 def sanity_checking_with_arguments(args):
     assert args.embedding_dim > 0,f"embedding_dim must be strictly positive. Currently:{args.embedding_dim}"
-    assert args.scoring_technique in ["AllvsAll", "1vsSample", "KvsSample","KvsAll", "NegSample", "1vsAll","Pyke", "Sentence"], f"Invalid training strategy => {args.scoring_technique}."
+    assert args.scoring_technique in ["AllvsAll", "1vsSample", "KvsSample","KvsAll", "FixedNegSample", "NegSample", "1vsAll","Pyke", "Sentence"], f"Invalid training strategy => {args.scoring_technique}."
     assert args.learning_rate > 0, f"Learning rate must be greater than 0. Currently:{args.learning_rate}"
     if args.num_folds_for_cv is None:
         args.num_folds_for_cv = 0
     assert args.num_folds_for_cv >= 0,f"num_folds_for_cv can not be negative. Currently:{args.num_folds_for_cv}"
     validate_knowledge_graph(args)
 
+def sanity_check_callback_args(args):
+    """
+    Perform sanity checks on callback-related arguments.
+    """
+    gpu_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
+    # Check if any callbacks are requested
+    
+    if (args.trainer == "PL" and gpu_count >= 2) or args.trainer == "torchDDP":
+        if args.path_to_store_single_run is None:
+            raise NotImplementedError("Path to store experiments must be provided for Multi-GPU training.")
+        if args.adaptive_lr:
+            raise NotImplementedError("Adaptive learning rate is not supported with Multi-GPU training.")
+    has_callbacks = any([args.swa, args.swag, args.ema, args.adaptive_swa, args.twa, args.adaptive_lr, args.eval_every_n_epochs > 0,
+                          args.eval_at_epochs is not None])
+    if not has_callbacks:
+        return  # No callbacks, no checks needed
+
+    # SWA-related checks
+    if any([args.swa, args.swag, args.ema, args.twa]):
+        args.swa_start_epoch = args.swa_start_epoch or 1
+        assert args.swa_start_epoch > 0, "SWA Start Epoch must be greater than 0"
+
+    # TWA/SWAG trainer compatibility
+    if any([args.twa, args.swag]) and args.trainer in {"TP", "torchDDP"}:
+        raise NotImplementedError("TWA and SWAG are not supported with TP or torchDDP trainers.")
