@@ -273,17 +273,9 @@ ASWE keeps track of the validation performance and update s the ensemble model a
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.weight_averaging.ASWA.on_fit_end">
 <span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/weight_averaging.html#ASWA.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.weight_averaging.ASWA.on_fit_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of the training.</p>
-<section id="parameter">
-<h3>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h3>
-<p>trainer:</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
+<dd><p>Called once after the final training epoch completes.</p>
+<p>Override to perform post-training actions such as saving the final
+model state, computing evaluation metrics, or cleaning up resources.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -315,17 +307,16 @@ ASWE keeps track of the validation performance and update s the ensemble model a
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.weight_averaging.ASWA.on_train_epoch_end">
 <span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/weight_averaging.html#ASWA.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.weight_averaging.ASWA.on_train_epoch_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of each epoch during training.</p>
-<section id="id1">
-<h3>Parameter<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
-<p>trainer:</p>
-<p>model:</p>
+<dd><p>Called at the end of each training epoch.</p>
 <dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trainer</strong> (<a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractTrainer" title="dicee.abstracts.AbstractTrainer"><em>AbstractTrainer</em></a><em> or </em><em>pl.Trainer</em>) – The active trainer instance.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><em>BaseKGE</em></a>) – The model being trained.  <code class="docutils literal notranslate"><span class="pre">model.loss_history</span></code> contains the
+per-epoch average losses accumulated so far.</p></li>
+</ul>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 </dd></dl>

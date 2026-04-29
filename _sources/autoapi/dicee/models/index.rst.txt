@@ -285,37 +285,12 @@ Package Contents
    Bases: :py:obj:`lightning.LightningModule`
 
 
-   Base class for all neural network modules.
+   Thin PyTorch Lightning wrapper shared by all KGE models.
 
-   Your models should also subclass this class.
-
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
-
-       import torch.nn as nn
-       import torch.nn.functional as F
-
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   Provides the standard Lightning training loop hooks (``training_step``,
+   ``on_train_epoch_end``, ``configure_optimizers``) as well as a helper
+   for reporting model size.  All concrete KGE models should extend
+   :class:`BaseKGE` rather than this class directly.
 
 
    .. py:attribute:: training_step_outputs
@@ -331,65 +306,38 @@ Package Contents
 
    .. py:method:: training_step(batch, batch_idx=None)
 
-      Here you compute and return the training loss and some additional metrics for e.g. the progress bar or
-      logger.
+      Execute one optimisation step for the given mini-batch.
 
-      :param batch: The output of your data iterable, normally a :class:`~torch.utils.data.DataLoader`.
-      :param batch_idx: The index of this batch.
-      :param dataloader_idx: The index of the dataloader that produced this batch.
-                             (only if multiple dataloaders used)
+      Handles two- and three-element batches produced by the different
+      dataset classes (``KvsAll`` / ``NegSample`` vs. ``KvsSample``).
 
-      :returns:
+      :param batch: ``(x, y)`` for standard scoring, or ``(x, y_select, y)`` for
+                    sample-based labelling.
+      :type batch: tuple
+      :param batch_idx: Index of the current batch (unused, kept for Lightning API compat).
+      :type batch_idx: int, optional
 
-                - :class:`~torch.Tensor` - The loss tensor
-                - ``dict`` - A dictionary which can include any keys, but must include the key ``'loss'`` in the case of
-                  automatic optimization.
-                - ``None`` - In automatic optimization, this will skip to the next batch (but is not supported for
-                  multi-GPU, TPU, or DeepSpeed). For manual optimization, this has no special meaning, as returning
-                  the loss is not required.
-
-      In this step you'd normally do the forward pass and calculate the loss for a batch.
-      You can also do fancier things like multiple forward passes or something model specific.
-
-      Example::
-
-          def training_step(self, batch, batch_idx):
-              x, y, z = batch
-              out = self.encoder(x)
-              loss = self.loss(out, x)
-              return loss
-
-      To use multiple optimizers, you can switch to 'manual optimization' and control their stepping:
-
-      .. code-block:: python
-
-          def __init__(self):
-              super().__init__()
-              self.automatic_optimization = False
-
-
-          # Multiple optimizers (e.g.: GANs)
-          def training_step(self, batch, batch_idx):
-              opt1, opt2 = self.optimizers()
-
-              # do training_step with encoder
-              ...
-              opt1.step()
-              # do training_step with decoder
-              ...
-              opt2.step()
-
-      .. note::
-
-         When ``accumulate_grad_batches`` > 1, the loss returned here will be automatically
-         normalized by ``accumulate_grad_batches`` internally.
+      :returns: Scalar loss value for this batch.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: loss_function(yhat_batch: torch.FloatTensor, y_batch: torch.FloatTensor)
+   .. py:method:: loss_function(yhat_batch: torch.FloatTensor, y_batch: torch.FloatTensor) -> torch.FloatTensor
 
-      :param yhat_batch:
-      :param y_batch:
+      Compute the loss between model predictions and targets.
+
+      Delegates to ``self.loss`` which is configured in
+      :class:`BaseKGE.__init__` based on the scoring technique
+      (``BCEWithLogitsLoss`` for entity/relation prediction,
+      ``CrossEntropyLoss`` for classification).
+
+      :param yhat_batch: Model output scores, shape ``(batch_size, *)``.
+      :type yhat_batch: torch.FloatTensor
+      :param y_batch: Ground-truth labels of the same shape as *yhat_batch*.
+      :type y_batch: torch.FloatTensor
+
+      :returns: Scalar loss value.
+      :rtype: torch.FloatTensor
 
 
 
@@ -539,103 +487,20 @@ Package Contents
 
    .. py:method:: configure_optimizers(parameters=None)
 
-      Choose what optimizers and learning-rate schedulers to use in your optimization. Normally you'd need one.
-      But in the case of GANs or similar you might have multiple. Optimization with multiple optimizers only works in
-      the manual optimization mode.
+      Instantiate and return the optimiser for training.
 
-      :returns: Any of these 6 options.
+      The optimiser type is taken from ``self.optimizer_name`` which is set
+      in :meth:`BaseKGE.init_params_with_sanity_checking` from the
+      ``--optim`` argument.  Supported values: ``'SGD'``, ``'Adam'``,
+      ``'Adopt'``, ``'AdamW'``, ``'NAdam'``, ``'Adagrad'``, ``'ASGD'``,
+      ``'Muon'``.
 
-                - **Single optimizer**.
-                - **List or Tuple** of optimizers.
-                - **Two lists** - The first list has multiple optimizers, and the second has multiple LR schedulers
-                  (or multiple ``lr_scheduler_config``).
-                - **Dictionary**, with an ``"optimizer"`` key, and (optionally) a ``"lr_scheduler"``
-                  key whose value is a single LR scheduler or ``lr_scheduler_config``.
-                - **None** - Fit will run without any optimizer.
+      :param parameters: Model parameters to optimise.  Defaults to
+                         ``self.parameters()`` when ``None``.
+      :type parameters: iterable, optional
 
-      The ``lr_scheduler_config`` is a dictionary which contains the scheduler and its associated configuration.
-      The default configuration is shown below.
-
-      .. code-block:: python
-
-          lr_scheduler_config = {
-              # REQUIRED: The scheduler instance
-              "scheduler": lr_scheduler,
-              # The unit of the scheduler's step size, could also be 'step'.
-              # 'epoch' updates the scheduler on epoch end whereas 'step'
-              # updates it after a optimizer update.
-              "interval": "epoch",
-              # How many epochs/steps should pass between calls to
-              # `scheduler.step()`. 1 corresponds to updating the learning
-              # rate after every epoch/step.
-              "frequency": 1,
-              # Metric to monitor for schedulers like `ReduceLROnPlateau`
-              "monitor": "val_loss",
-              # If set to `True`, will enforce that the value specified 'monitor'
-              # is available when the scheduler is updated, thus stopping
-              # training if not found. If set to `False`, it will only produce a warning
-              "strict": True,
-              # If using the `LearningRateMonitor` callback to monitor the
-              # learning rate progress, this keyword can be used to specify
-              # a custom logged name
-              "name": None,
-          }
-
-      When there are schedulers in which the ``.step()`` method is conditioned on a value, such as the
-      :class:`torch.optim.lr_scheduler.ReduceLROnPlateau` scheduler, Lightning requires that the
-      ``lr_scheduler_config`` contains the keyword ``"monitor"`` set to the metric name that the scheduler
-      should be conditioned on.
-
-      .. testcode::
-
-          # The ReduceLROnPlateau scheduler requires a monitor
-          def configure_optimizers(self):
-              optimizer = Adam(...)
-              return {
-                  "optimizer": optimizer,
-                  "lr_scheduler": {
-                      "scheduler": ReduceLROnPlateau(optimizer, ...),
-                      "monitor": "metric_to_track",
-                      "frequency": "indicates how often the metric is updated",
-                      # If "monitor" references validation metrics, then "frequency" should be set to a
-                      # multiple of "trainer.check_val_every_n_epoch".
-                  },
-              }
-
-
-          # In the case of two optimizers, only one using the ReduceLROnPlateau scheduler
-          def configure_optimizers(self):
-              optimizer1 = Adam(...)
-              optimizer2 = SGD(...)
-              scheduler1 = ReduceLROnPlateau(optimizer1, ...)
-              scheduler2 = LambdaLR(optimizer2, ...)
-              return (
-                  {
-                      "optimizer": optimizer1,
-                      "lr_scheduler": {
-                          "scheduler": scheduler1,
-                          "monitor": "metric_to_track",
-                      },
-                  },
-                  {"optimizer": optimizer2, "lr_scheduler": scheduler2},
-              )
-
-      Metrics can be made available to monitor by simply logging it using
-      ``self.log('metric_to_track', metric_val)`` in your :class:`~lightning.pytorch.core.LightningModule`.
-
-      .. note::
-
-         Some things to know:
-         
-         - Lightning calls ``.backward()`` and ``.step()`` automatically in case of automatic optimization.
-         - If a learning rate scheduler is specified in ``configure_optimizers()`` with key
-           ``"interval"`` (default "epoch") in the scheduler configuration, Lightning will call
-           the scheduler's ``.step()`` method automatically in case of automatic optimization.
-         - If you use 16-bit precision (``precision=16``), Lightning will automatically handle the optimizer.
-         - If you use :class:`torch.optim.LBFGS`, Lightning handles the closure function automatically for you.
-         - If you use multiple optimizers, you will have to switch to 'manual optimization' mode and step them
-           yourself.
-         - If you need to control how often the optimizer steps, override the :meth:`optimizer_step` hook.
+      :returns: The configured optimiser instance.
+      :rtype: torch.optim.Optimizer
 
 
 
@@ -644,37 +509,23 @@ Package Contents
    Bases: :py:obj:`BaseKGELightning`
 
 
-   Base class for all neural network modules.
+   Base class for all Knowledge Graph Embedding models.
 
-   Your models should also subclass this class.
+   Inherits the Lightning training loop from :class:`BaseKGELightning` and
+   adds the embedding tables, normalisation / dropout layers, and the
+   routing logic that dispatches ``forward()`` calls to the appropriate
+   scoring method.
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   Sub-classes must implement at minimum:
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.
+   * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.
 
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   :param args: Flat configuration dictionary produced by
+                ``vars(argparse.Namespace)``.
+                Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,
+                ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.
+   :type args: dict
 
 
    .. py:attribute:: args
@@ -796,66 +647,181 @@ Package Contents
    .. py:attribute:: block_size
 
 
-   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
+   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
 
-      :param x:
-      :type x: B x 2 x T
+      KvsAll scoring for BPE-encoded head entities and relations.
+
+      Retrieves subword-unit embeddings for the head entity and relation,
+      reduces them to fixed-size vectors via a linear projection, then
+      scores against all BPE entity embeddings.
+
+      :param x: Shape ``(batch_size, 2, T)`` BPE token indices where dim 1
+                indexes ``[head, relation]`` and *T* is
+                ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size, num_bpe_entities)`` score matrix.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
+   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor]) -> torch.FloatTensor
 
-      byte pair encoded neural link predictors
+      NegSample scoring for BPE-encoded ``(head, relation, tail)`` triples.
 
-      :param -------:
+      Retrieves subword-unit embeddings for all three elements and reduces
+      them to fixed-size vectors via a linear projection before computing
+      the triple score.
+
+      :param x: Shape ``(batch_size, 3, T)`` BPE token indices.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: init_params_with_sanity_checking()
+   .. py:method:: init_params_with_sanity_checking() -> None
+
+      Populate model hyper-parameters from ``self.args`` with safe defaults.
+
+      Reads embedding dimension, learning rate, dropout rates, normalisation
+      strategy, optimizer name, and parameter initialisation scheme from the
+      ``args`` dict.  Falls back to sensible defaults for any missing key so
+      that minimal ``args`` dicts (e.g. for unit tests) are still valid.
 
 
-   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      :param x:
-      :param y_idx:
-      :param ordered_bpe_entities:
+   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None) -> torch.FloatTensor
+
+      Route the forward pass to the appropriate scoring method.
+
+      Inspects the shape and type of *x* to decide which low-level scorer
+      to call:
+
+      * Tuple ``(x, y_idx)``   → :meth:`forward_k_vs_sample`
+      * ``(batch, 3)`` tensor  → :meth:`forward_triples`
+      * ``(batch, 2)`` tensor  → :meth:`forward_k_vs_all`
+      * BPE triple tensor      → :meth:`forward_byte_pair_encoded_triple`
+      * BPE pair tensor        → :meth:`forward_byte_pair_encoded_k_vs_all`
+
+      :param x: Either a plain index tensor or a ``(triple_idx, target_idx)``
+                tuple for sample-based labelling.
+      :type x: torch.LongTensor or Tuple[torch.LongTensor, torch.LongTensor]
+      :param y_idx: Target entity indices used by :meth:`forward_k_vs_sample`.
+                    Ignored when *x* is a plain tensor.
+      :type y_idx: torch.LongTensor, optional
+
+      :returns: Score tensor whose shape depends on the selected scorer.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
 
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
 
    .. py:method:: forward_k_vs_sample(*args, **kwargs)
 
+      Score a ``(head, relation)`` batch against a sampled subset of entities.
 
-   .. py:method:: get_triple_representation(idx_hrt)
+      Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that
+      support sample-based labelling must override this method.
+
+      :returns: Shape ``(batch_size, k)`` score matrix where *k* is the number
+                of sampled target entities.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: get_head_relation_representation(indexed_triple)
+
+   .. py:method:: get_triple_representation(idx_hrt) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve and normalise embedding vectors for a triple index batch.
+
+      :param idx_hrt: Shape ``(batch_size, 3)`` integer tensor with columns
+                      ``[head_idx, relation_idx, tail_idx]``.
+      :type idx_hrt: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_ent_emb, tail_ent_emb** -- Each has shape ``(batch_size, embedding_dim)`` after applying the
+                configured dropout and normalisation.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      :param x shape (b:
-      :param 3:
-      :param t):
+   .. py:method:: get_head_relation_representation(indexed_triple) -> Tuple[torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve and normalise embedding vectors for head entities and relations.
+
+      :param indexed_triple: Shape ``(batch_size, 2)`` integer tensor with columns
+                             ``[head_idx, relation_idx]``.
+      :type indexed_triple: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_ent_emb** -- Each has shape ``(batch_size, embedding_dim)`` after applying the
+                configured dropout and normalisation.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: get_sentence_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve BPE subword-unit embeddings for a batch of triples.
+
+      :param x: Shape ``(batch_size, 3, T)`` where *T* is
+                ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_emb, tail_emb** -- Each has shape ``(batch_size, T, embedding_dim)``.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      :param x:
-      :type x: B x 2 x T
+      Retrieve unit-normalised BPE embeddings for head entities and relations.
+
+      Each entity/relation is represented as a sequence of *T* subword
+      tokens.  Their token embeddings are L2-normalised across the
+      sequence dimension so that the resulting matrix has unit Frobenius
+      norm.
+
+      :param x: Shape ``(batch_size, 2, T)`` where dim 1 indexes
+                ``[head, relation]`` and *T* is ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_emb** -- Each has shape ``(batch_size, T, embedding_dim)``, L2-normalised
+                over the ``(T, D)`` dimensions.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
+
+      Return the entity and relation embedding matrices as numpy arrays.
+
+      :returns: * **entity_embeddings** (*numpy.ndarray*) -- Shape ``(num_entities, embedding_dim)``.
+                * **relation_embeddings** (*numpy.ndarray*) -- Shape ``(num_relations, embedding_dim)``.
+
 
 
 .. py:class:: IdentityClass(args=None)
@@ -863,37 +829,11 @@ Package Contents
    Bases: :py:obj:`torch.nn.Module`
 
 
-   Base class for all neural network modules.
+   No-op normalisation / dropout placeholder.
 
-   Your models should also subclass this class.
-
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
-
-       import torch.nn as nn
-       import torch.nn.functional as F
-
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   Used whenever no normalisation layer is requested (``--normalization None``).
+   All inputs are returned unchanged so that the rest of the model code does
+   not need conditional checks around normalisation calls.
 
 
    .. py:attribute:: args
@@ -914,37 +854,23 @@ Package Contents
    Bases: :py:obj:`BaseKGELightning`
 
 
-   Base class for all neural network modules.
+   Base class for all Knowledge Graph Embedding models.
 
-   Your models should also subclass this class.
+   Inherits the Lightning training loop from :class:`BaseKGELightning` and
+   adds the embedding tables, normalisation / dropout layers, and the
+   routing logic that dispatches ``forward()`` calls to the appropriate
+   scoring method.
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   Sub-classes must implement at minimum:
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.
+   * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.
 
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   :param args: Flat configuration dictionary produced by
+                ``vars(argparse.Namespace)``.
+                Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,
+                ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.
+   :type args: dict
 
 
    .. py:attribute:: args
@@ -1066,66 +992,181 @@ Package Contents
    .. py:attribute:: block_size
 
 
-   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
+   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
 
-      :param x:
-      :type x: B x 2 x T
+      KvsAll scoring for BPE-encoded head entities and relations.
+
+      Retrieves subword-unit embeddings for the head entity and relation,
+      reduces them to fixed-size vectors via a linear projection, then
+      scores against all BPE entity embeddings.
+
+      :param x: Shape ``(batch_size, 2, T)`` BPE token indices where dim 1
+                indexes ``[head, relation]`` and *T* is
+                ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size, num_bpe_entities)`` score matrix.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
+   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor]) -> torch.FloatTensor
 
-      byte pair encoded neural link predictors
+      NegSample scoring for BPE-encoded ``(head, relation, tail)`` triples.
 
-      :param -------:
+      Retrieves subword-unit embeddings for all three elements and reduces
+      them to fixed-size vectors via a linear projection before computing
+      the triple score.
+
+      :param x: Shape ``(batch_size, 3, T)`` BPE token indices.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: init_params_with_sanity_checking()
+   .. py:method:: init_params_with_sanity_checking() -> None
+
+      Populate model hyper-parameters from ``self.args`` with safe defaults.
+
+      Reads embedding dimension, learning rate, dropout rates, normalisation
+      strategy, optimizer name, and parameter initialisation scheme from the
+      ``args`` dict.  Falls back to sensible defaults for any missing key so
+      that minimal ``args`` dicts (e.g. for unit tests) are still valid.
 
 
-   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      :param x:
-      :param y_idx:
-      :param ordered_bpe_entities:
+   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None) -> torch.FloatTensor
+
+      Route the forward pass to the appropriate scoring method.
+
+      Inspects the shape and type of *x* to decide which low-level scorer
+      to call:
+
+      * Tuple ``(x, y_idx)``   → :meth:`forward_k_vs_sample`
+      * ``(batch, 3)`` tensor  → :meth:`forward_triples`
+      * ``(batch, 2)`` tensor  → :meth:`forward_k_vs_all`
+      * BPE triple tensor      → :meth:`forward_byte_pair_encoded_triple`
+      * BPE pair tensor        → :meth:`forward_byte_pair_encoded_k_vs_all`
+
+      :param x: Either a plain index tensor or a ``(triple_idx, target_idx)``
+                tuple for sample-based labelling.
+      :type x: torch.LongTensor or Tuple[torch.LongTensor, torch.LongTensor]
+      :param y_idx: Target entity indices used by :meth:`forward_k_vs_sample`.
+                    Ignored when *x* is a plain tensor.
+      :type y_idx: torch.LongTensor, optional
+
+      :returns: Score tensor whose shape depends on the selected scorer.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
 
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
 
    .. py:method:: forward_k_vs_sample(*args, **kwargs)
 
+      Score a ``(head, relation)`` batch against a sampled subset of entities.
 
-   .. py:method:: get_triple_representation(idx_hrt)
+      Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that
+      support sample-based labelling must override this method.
+
+      :returns: Shape ``(batch_size, k)`` score matrix where *k* is the number
+                of sampled target entities.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: get_head_relation_representation(indexed_triple)
+
+   .. py:method:: get_triple_representation(idx_hrt) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve and normalise embedding vectors for a triple index batch.
+
+      :param idx_hrt: Shape ``(batch_size, 3)`` integer tensor with columns
+                      ``[head_idx, relation_idx, tail_idx]``.
+      :type idx_hrt: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_ent_emb, tail_ent_emb** -- Each has shape ``(batch_size, embedding_dim)`` after applying the
+                configured dropout and normalisation.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      :param x shape (b:
-      :param 3:
-      :param t):
+   .. py:method:: get_head_relation_representation(indexed_triple) -> Tuple[torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve and normalise embedding vectors for head entities and relations.
+
+      :param indexed_triple: Shape ``(batch_size, 2)`` integer tensor with columns
+                             ``[head_idx, relation_idx]``.
+      :type indexed_triple: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_ent_emb** -- Each has shape ``(batch_size, embedding_dim)`` after applying the
+                configured dropout and normalisation.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: get_sentence_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve BPE subword-unit embeddings for a batch of triples.
+
+      :param x: Shape ``(batch_size, 3, T)`` where *T* is
+                ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_emb, tail_emb** -- Each has shape ``(batch_size, T, embedding_dim)``.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      :param x:
-      :type x: B x 2 x T
+      Retrieve unit-normalised BPE embeddings for head entities and relations.
+
+      Each entity/relation is represented as a sequence of *T* subword
+      tokens.  Their token embeddings are L2-normalised across the
+      sequence dimension so that the resulting matrix has unit Frobenius
+      norm.
+
+      :param x: Shape ``(batch_size, 2, T)`` where dim 1 indexes
+                ``[head, relation]`` and *T* is ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_emb** -- Each has shape ``(batch_size, T, embedding_dim)``, L2-normalised
+                over the ``(T, D)`` dimensions.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
+
+      Return the entity and relation embedding matrices as numpy arrays.
+
+      :returns: * **entity_embeddings** (*numpy.ndarray*) -- Shape ``(num_entities, embedding_dim)``.
+                * **relation_embeddings** (*numpy.ndarray*) -- Shape ``(num_relations, embedding_dim)``.
+
 
 
 .. py:class:: Block(config)
@@ -1186,7 +1227,20 @@ Package Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   Embedding Entities and Relations for Learning and Inference in Knowledge Bases
+   DistMult: bilinear diagonal knowledge graph embedding.
+
+   Scores a triple ``(h, r, t)`` as the element-wise product of the head,
+   relation, and tail embeddings summed over the embedding dimension::
+
+       f(h, r, t) = \sum_i  h_i  \cdot  r_i  \cdot  t_i
+
+   Simple yet effective baseline; incapable of modelling asymmetric
+   relations.
+
+   .. rubric:: References
+
+   Yang et al., *Embedding Entities and Relations for Learning and Inference
+   in Knowledge Bases*, ICLR 2015.
    https://arxiv.org/abs/1412.6575
 
 
@@ -1195,21 +1249,66 @@ Package Contents
 
 
 
-   .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
+   .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor) -> torch.FloatTensor
 
-      :param emb_h:
-      :param emb_r:
-      :param emb_E:
+      Score a head/relation batch against all entity embeddings.
+
+      Computes ``(h * r) @ E^T`` after applying hidden dropout and
+      normalisation to the element-wise product.
+
+      :param emb_h: Head entity embeddings, shape ``(batch_size, embedding_dim)``.
+      :type emb_h: torch.FloatTensor
+      :param emb_r: Relation embeddings, shape ``(batch_size, embedding_dim)``.
+      :type emb_r: torch.FloatTensor
+      :param emb_E: All entity embeddings, shape ``(num_entities, embedding_dim)``.
+      :type emb_E: torch.FloatTensor
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: forward_k_vs_all(x: torch.LongTensor)
+   .. py:method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
+
+      KvsAll forward pass: score head/relation against all entities.
+
+      :param x: Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor)
+
+   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor
+
+      KvsSample forward pass: score head/relation against a sampled entity subset.
+
+      :param x: Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+      :type x: torch.LongTensor
+      :param target_entity_idx: Shape ``(batch_size, k)`` indices of the *k* target entities per
+                                sample.
+      :type target_entity_idx: torch.LongTensor
+
+      :returns: Shape ``(batch_size, k)`` score matrix.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: score(h, r, t)
+
+   .. py:method:: score(h: torch.FloatTensor, r: torch.FloatTensor, t: torch.FloatTensor) -> torch.FloatTensor
+
+      Score a batch of ``(head, relation, tail)`` embedding triples.
+
+      :param h: Each has shape ``(batch_size, embedding_dim)``.
+      :type h: torch.FloatTensor
+      :param r: Each has shape ``(batch_size, embedding_dim)``.
+      :type r: torch.FloatTensor
+      :param t: Each has shape ``(batch_size, embedding_dim)``.
+      :type t: torch.FloatTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
+
 
 
 .. py:class:: TransE(args)
@@ -1217,8 +1316,21 @@ Package Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   Translating Embeddings for Modeling
-   Multi-relational Data
+   TransE: translation-based knowledge graph embedding.
+
+   Models a relation *r* as a translation in embedding space such that
+   ``h + r ≈ t`` for a true triple ``(h, r, t)``.  The score function is
+   defined as::
+
+       f(h, r, t) = margin - ||h + r - t||_2
+
+   TransE is effective for 1-to-1 relations but struggles with reflexive,
+   one-to-many, and many-to-one patterns.
+
+   .. rubric:: References
+
+   Bordes et al., *Translating Embeddings for Modeling Multi-relational
+   Data*, NeurIPS 2013.
    https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf
 
 
@@ -1232,10 +1344,35 @@ Package Contents
 
 
 
-   .. py:method:: score(head_ent_emb, rel_ent_emb, tail_ent_emb)
+   .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor) -> torch.FloatTensor
+
+      Score a batch of triples using the TransE margin-distance formula.
+
+      :param head_ent_emb: Each has shape ``(batch_size, embedding_dim)``.
+      :type head_ent_emb: torch.FloatTensor
+      :param rel_ent_emb: Each has shape ``(batch_size, embedding_dim)``.
+      :type rel_ent_emb: torch.FloatTensor
+      :param tail_ent_emb: Each has shape ``(batch_size, embedding_dim)``.
+      :type tail_ent_emb: torch.FloatTensor
+
+      :returns: Shape ``(batch_size,)`` scores equal to
+                ``margin - ||h + r - t||_2``.
+      :rtype: torch.FloatTensor
+
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+
+      KvsAll forward pass: score head/relation against all entities.
+
+      Computes ``margin - ||h + r - e||_2`` for every entity embedding *e*.
+
+      :param x: Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+      :type x: torch.Tensor
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
 
 
 .. py:class:: Shallom(args)
@@ -1243,7 +1380,16 @@ Package Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090)
+   Shallom: shallow neural model for relation prediction.
+
+   Represents each triple as the concatenation of head and tail entity
+   embeddings and feeds it through a two-layer MLP to predict the
+   relation.  Designed for the ``RelationPrediction`` labelling form.
+
+   .. rubric:: References
+
+   Demir et al., *A Shallow Neural Model for Relation Prediction*,
+   ISWC 2021.  https://arxiv.org/abs/2101.09090
 
 
    .. py:attribute:: name
@@ -1256,14 +1402,35 @@ Package Contents
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, None]
 
+      Return the entity and relation embedding matrices as numpy arrays.
+
+      :returns: * **entity_embeddings** (*numpy.ndarray*) -- Shape ``(num_entities, embedding_dim)``.
+                * **relation_embeddings** (*numpy.ndarray*) -- Shape ``(num_relations, embedding_dim)``.
+
+
 
    .. py:method:: forward_k_vs_all(x) -> torch.FloatTensor
+
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
 
 
    .. py:method:: forward_triples(x) -> torch.FloatTensor
 
-      :param x:
-      :return:
+      Score a batch of triples by looking up relation scores from ``forward_k_vs_all``.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -1272,7 +1439,15 @@ Package Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   A Physical Embedding Model for Knowledge Graphs
+   Pyke: Physical Embedding Model for Knowledge Graphs.
+
+   Scores a triple ``(h, r, t)`` based on the average pairwise distance
+   between head-to-relation and relation-to-tail in embedding space::
+
+       f(h, r, t) = margin - (||h - r||_2 + ||r - t||_2) / 2
+
+   The model encodes geometric proximity between entities and the
+   relations that connect them.
 
 
    .. py:attribute:: name
@@ -1288,9 +1463,16 @@ Package Contents
 
 
 
-   .. py:method:: forward_triples(x: torch.LongTensor)
+   .. py:method:: forward_triples(x: torch.LongTensor) -> torch.FloatTensor
 
-      :param x:
+      Score a batch of triples using the Pyke distance formula.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -1420,11 +1602,30 @@ Package Contents
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor)
 
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
 
    .. py:method:: score(emb_h, emb_r, emb_t)
 
 
    .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor)
+
+      Score a ``(head, relation)`` batch against a sampled subset of entities.
+
+      Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that
+      support sample-based labelling must override this method.
+
+      :returns: Shape ``(batch_size, k)`` score matrix where *k* is the number
+                of sampled target entities.
+      :rtype: torch.FloatTensor
+
 
 
 .. py:class:: BaseKGE(args: dict)
@@ -1432,37 +1633,23 @@ Package Contents
    Bases: :py:obj:`BaseKGELightning`
 
 
-   Base class for all neural network modules.
+   Base class for all Knowledge Graph Embedding models.
 
-   Your models should also subclass this class.
+   Inherits the Lightning training loop from :class:`BaseKGELightning` and
+   adds the embedding tables, normalisation / dropout layers, and the
+   routing logic that dispatches ``forward()`` calls to the appropriate
+   scoring method.
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   Sub-classes must implement at minimum:
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.
+   * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.
 
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   :param args: Flat configuration dictionary produced by
+                ``vars(argparse.Namespace)``.
+                Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,
+                ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.
+   :type args: dict
 
 
    .. py:attribute:: args
@@ -1584,66 +1771,181 @@ Package Contents
    .. py:attribute:: block_size
 
 
-   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
+   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
 
-      :param x:
-      :type x: B x 2 x T
+      KvsAll scoring for BPE-encoded head entities and relations.
+
+      Retrieves subword-unit embeddings for the head entity and relation,
+      reduces them to fixed-size vectors via a linear projection, then
+      scores against all BPE entity embeddings.
+
+      :param x: Shape ``(batch_size, 2, T)`` BPE token indices where dim 1
+                indexes ``[head, relation]`` and *T* is
+                ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size, num_bpe_entities)`` score matrix.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
+   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor]) -> torch.FloatTensor
 
-      byte pair encoded neural link predictors
+      NegSample scoring for BPE-encoded ``(head, relation, tail)`` triples.
 
-      :param -------:
+      Retrieves subword-unit embeddings for all three elements and reduces
+      them to fixed-size vectors via a linear projection before computing
+      the triple score.
+
+      :param x: Shape ``(batch_size, 3, T)`` BPE token indices.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: init_params_with_sanity_checking()
+   .. py:method:: init_params_with_sanity_checking() -> None
+
+      Populate model hyper-parameters from ``self.args`` with safe defaults.
+
+      Reads embedding dimension, learning rate, dropout rates, normalisation
+      strategy, optimizer name, and parameter initialisation scheme from the
+      ``args`` dict.  Falls back to sensible defaults for any missing key so
+      that minimal ``args`` dicts (e.g. for unit tests) are still valid.
 
 
-   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      :param x:
-      :param y_idx:
-      :param ordered_bpe_entities:
+   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None) -> torch.FloatTensor
+
+      Route the forward pass to the appropriate scoring method.
+
+      Inspects the shape and type of *x* to decide which low-level scorer
+      to call:
+
+      * Tuple ``(x, y_idx)``   → :meth:`forward_k_vs_sample`
+      * ``(batch, 3)`` tensor  → :meth:`forward_triples`
+      * ``(batch, 2)`` tensor  → :meth:`forward_k_vs_all`
+      * BPE triple tensor      → :meth:`forward_byte_pair_encoded_triple`
+      * BPE pair tensor        → :meth:`forward_byte_pair_encoded_k_vs_all`
+
+      :param x: Either a plain index tensor or a ``(triple_idx, target_idx)``
+                tuple for sample-based labelling.
+      :type x: torch.LongTensor or Tuple[torch.LongTensor, torch.LongTensor]
+      :param y_idx: Target entity indices used by :meth:`forward_k_vs_sample`.
+                    Ignored when *x* is a plain tensor.
+      :type y_idx: torch.LongTensor, optional
+
+      :returns: Score tensor whose shape depends on the selected scorer.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
 
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
 
    .. py:method:: forward_k_vs_sample(*args, **kwargs)
 
+      Score a ``(head, relation)`` batch against a sampled subset of entities.
 
-   .. py:method:: get_triple_representation(idx_hrt)
+      Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that
+      support sample-based labelling must override this method.
+
+      :returns: Shape ``(batch_size, k)`` score matrix where *k* is the number
+                of sampled target entities.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: get_head_relation_representation(indexed_triple)
+
+   .. py:method:: get_triple_representation(idx_hrt) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve and normalise embedding vectors for a triple index batch.
+
+      :param idx_hrt: Shape ``(batch_size, 3)`` integer tensor with columns
+                      ``[head_idx, relation_idx, tail_idx]``.
+      :type idx_hrt: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_ent_emb, tail_ent_emb** -- Each has shape ``(batch_size, embedding_dim)`` after applying the
+                configured dropout and normalisation.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      :param x shape (b:
-      :param 3:
-      :param t):
+   .. py:method:: get_head_relation_representation(indexed_triple) -> Tuple[torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve and normalise embedding vectors for head entities and relations.
+
+      :param indexed_triple: Shape ``(batch_size, 2)`` integer tensor with columns
+                             ``[head_idx, relation_idx]``.
+      :type indexed_triple: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_ent_emb** -- Each has shape ``(batch_size, embedding_dim)`` after applying the
+                configured dropout and normalisation.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: get_sentence_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve BPE subword-unit embeddings for a batch of triples.
+
+      :param x: Shape ``(batch_size, 3, T)`` where *T* is
+                ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_emb, tail_emb** -- Each has shape ``(batch_size, T, embedding_dim)``.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      :param x:
-      :type x: B x 2 x T
+      Retrieve unit-normalised BPE embeddings for head entities and relations.
+
+      Each entity/relation is represented as a sequence of *T* subword
+      tokens.  Their token embeddings are L2-normalised across the
+      sequence dimension so that the resulting matrix has unit Frobenius
+      norm.
+
+      :param x: Shape ``(batch_size, 2, T)`` where dim 1 indexes
+                ``[head, relation]`` and *T* is ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_emb** -- Each has shape ``(batch_size, T, embedding_dim)``, L2-normalised
+                over the ``(T, D)`` dimensions.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
+
+      Return the entity and relation embedding matrices as numpy arrays.
+
+      :returns: * **entity_embeddings** (*numpy.ndarray*) -- Shape ``(num_entities, embedding_dim)``.
+                * **relation_embeddings** (*numpy.ndarray*) -- Shape ``(num_relations, embedding_dim)``.
+
 
 
 .. py:class:: ConEx(args)
@@ -1688,14 +1990,40 @@ Package Contents
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
 
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
+
+      Score a ``(head, relation)`` batch against a sampled subset of entities.
+
+      Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that
+      support sample-based labelling must override this method.
+
+      :returns: Shape ``(batch_size, k)`` score matrix where *k* is the number
+                of sampled target entities.
+      :rtype: torch.FloatTensor
+
 
 
 .. py:class:: AConEx(args)
@@ -1740,14 +2068,40 @@ Package Contents
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
 
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
+
+      Score a ``(head, relation)`` batch against a sampled subset of entities.
+
+      Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that
+      support sample-based labelling must override this method.
+
+      :returns: Shape ``(batch_size, k)`` score matrix where *k* is the number
+                of sampled target entities.
+      :rtype: torch.FloatTensor
+
 
 
 .. py:class:: ComplEx(args)
@@ -1755,37 +2109,23 @@ Package Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   Base class for all neural network modules.
+   Base class for all Knowledge Graph Embedding models.
 
-   Your models should also subclass this class.
+   Inherits the Lightning training loop from :class:`BaseKGELightning` and
+   adds the embedding tables, normalisation / dropout layers, and the
+   routing logic that dispatches ``forward()`` calls to the appropriate
+   scoring method.
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   Sub-classes must implement at minimum:
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.
+   * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.
 
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   :param args: Flat configuration dictionary produced by
+                ``vars(argparse.Namespace)``.
+                Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,
+                ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.
+   :type args: dict
 
 
    .. py:attribute:: name
@@ -1810,8 +2150,27 @@ Package Contents
 
    .. py:method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
 
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
 
    .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor)
+
+      Score a ``(head, relation)`` batch against a sampled subset of entities.
+
+      Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that
+      support sample-based labelling must override this method.
+
+      :returns: Shape ``(batch_size, k)`` score matrix where *k* is the number
+                of sampled target entities.
+      :rtype: torch.FloatTensor
+
 
 
 .. py:function:: quaternion_mul(*, Q_1, Q_2) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
@@ -1827,37 +2186,23 @@ Package Contents
    Bases: :py:obj:`BaseKGELightning`
 
 
-   Base class for all neural network modules.
+   Base class for all Knowledge Graph Embedding models.
 
-   Your models should also subclass this class.
+   Inherits the Lightning training loop from :class:`BaseKGELightning` and
+   adds the embedding tables, normalisation / dropout layers, and the
+   routing logic that dispatches ``forward()`` calls to the appropriate
+   scoring method.
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   Sub-classes must implement at minimum:
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.
+   * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.
 
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   :param args: Flat configuration dictionary produced by
+                ``vars(argparse.Namespace)``.
+                Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,
+                ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.
+   :type args: dict
 
 
    .. py:attribute:: args
@@ -1979,66 +2324,181 @@ Package Contents
    .. py:attribute:: block_size
 
 
-   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
+   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
 
-      :param x:
-      :type x: B x 2 x T
+      KvsAll scoring for BPE-encoded head entities and relations.
+
+      Retrieves subword-unit embeddings for the head entity and relation,
+      reduces them to fixed-size vectors via a linear projection, then
+      scores against all BPE entity embeddings.
+
+      :param x: Shape ``(batch_size, 2, T)`` BPE token indices where dim 1
+                indexes ``[head, relation]`` and *T* is
+                ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size, num_bpe_entities)`` score matrix.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
+   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor]) -> torch.FloatTensor
 
-      byte pair encoded neural link predictors
+      NegSample scoring for BPE-encoded ``(head, relation, tail)`` triples.
 
-      :param -------:
+      Retrieves subword-unit embeddings for all three elements and reduces
+      them to fixed-size vectors via a linear projection before computing
+      the triple score.
+
+      :param x: Shape ``(batch_size, 3, T)`` BPE token indices.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: init_params_with_sanity_checking()
+   .. py:method:: init_params_with_sanity_checking() -> None
+
+      Populate model hyper-parameters from ``self.args`` with safe defaults.
+
+      Reads embedding dimension, learning rate, dropout rates, normalisation
+      strategy, optimizer name, and parameter initialisation scheme from the
+      ``args`` dict.  Falls back to sensible defaults for any missing key so
+      that minimal ``args`` dicts (e.g. for unit tests) are still valid.
 
 
-   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      :param x:
-      :param y_idx:
-      :param ordered_bpe_entities:
+   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None) -> torch.FloatTensor
+
+      Route the forward pass to the appropriate scoring method.
+
+      Inspects the shape and type of *x* to decide which low-level scorer
+      to call:
+
+      * Tuple ``(x, y_idx)``   → :meth:`forward_k_vs_sample`
+      * ``(batch, 3)`` tensor  → :meth:`forward_triples`
+      * ``(batch, 2)`` tensor  → :meth:`forward_k_vs_all`
+      * BPE triple tensor      → :meth:`forward_byte_pair_encoded_triple`
+      * BPE pair tensor        → :meth:`forward_byte_pair_encoded_k_vs_all`
+
+      :param x: Either a plain index tensor or a ``(triple_idx, target_idx)``
+                tuple for sample-based labelling.
+      :type x: torch.LongTensor or Tuple[torch.LongTensor, torch.LongTensor]
+      :param y_idx: Target entity indices used by :meth:`forward_k_vs_sample`.
+                    Ignored when *x* is a plain tensor.
+      :type y_idx: torch.LongTensor, optional
+
+      :returns: Score tensor whose shape depends on the selected scorer.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
 
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
 
    .. py:method:: forward_k_vs_sample(*args, **kwargs)
 
+      Score a ``(head, relation)`` batch against a sampled subset of entities.
 
-   .. py:method:: get_triple_representation(idx_hrt)
+      Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that
+      support sample-based labelling must override this method.
+
+      :returns: Shape ``(batch_size, k)`` score matrix where *k* is the number
+                of sampled target entities.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: get_head_relation_representation(indexed_triple)
+
+   .. py:method:: get_triple_representation(idx_hrt) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve and normalise embedding vectors for a triple index batch.
+
+      :param idx_hrt: Shape ``(batch_size, 3)`` integer tensor with columns
+                      ``[head_idx, relation_idx, tail_idx]``.
+      :type idx_hrt: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_ent_emb, tail_ent_emb** -- Each has shape ``(batch_size, embedding_dim)`` after applying the
+                configured dropout and normalisation.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      :param x shape (b:
-      :param 3:
-      :param t):
+   .. py:method:: get_head_relation_representation(indexed_triple) -> Tuple[torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve and normalise embedding vectors for head entities and relations.
+
+      :param indexed_triple: Shape ``(batch_size, 2)`` integer tensor with columns
+                             ``[head_idx, relation_idx]``.
+      :type indexed_triple: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_ent_emb** -- Each has shape ``(batch_size, embedding_dim)`` after applying the
+                configured dropout and normalisation.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: get_sentence_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve BPE subword-unit embeddings for a batch of triples.
+
+      :param x: Shape ``(batch_size, 3, T)`` where *T* is
+                ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_emb, tail_emb** -- Each has shape ``(batch_size, T, embedding_dim)``.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      :param x:
-      :type x: B x 2 x T
+      Retrieve unit-normalised BPE embeddings for head entities and relations.
+
+      Each entity/relation is represented as a sequence of *T* subword
+      tokens.  Their token embeddings are L2-normalised across the
+      sequence dimension so that the resulting matrix has unit Frobenius
+      norm.
+
+      :param x: Shape ``(batch_size, 2, T)`` where dim 1 indexes
+                ``[head, relation]`` and *T* is ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_emb** -- Each has shape ``(batch_size, T, embedding_dim)``, L2-normalised
+                over the ``(T, D)`` dimensions.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
+
+      Return the entity and relation embedding matrices as numpy arrays.
+
+      :returns: * **entity_embeddings** (*numpy.ndarray*) -- Shape ``(num_entities, embedding_dim)``.
+                * **relation_embeddings** (*numpy.ndarray*) -- Shape ``(num_relations, embedding_dim)``.
+
 
 
 .. py:class:: IdentityClass(args=None)
@@ -2046,37 +2506,11 @@ Package Contents
    Bases: :py:obj:`torch.nn.Module`
 
 
-   Base class for all neural network modules.
+   No-op normalisation / dropout placeholder.
 
-   Your models should also subclass this class.
-
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
-
-       import torch.nn as nn
-       import torch.nn.functional as F
-
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   Used whenever no normalisation layer is requested (``--normalization None``).
+   All inputs are returned unchanged so that the rest of the model code does
+   not need conditional checks around normalisation calls.
 
 
    .. py:attribute:: args
@@ -2099,37 +2533,23 @@ Package Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   Base class for all neural network modules.
+   Base class for all Knowledge Graph Embedding models.
 
-   Your models should also subclass this class.
+   Inherits the Lightning training loop from :class:`BaseKGELightning` and
+   adds the embedding tables, normalisation / dropout layers, and the
+   routing logic that dispatches ``forward()`` calls to the appropriate
+   scoring method.
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   Sub-classes must implement at minimum:
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.
+   * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.
 
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   :param args: Flat configuration dictionary produced by
+                ``vars(argparse.Namespace)``.
+                Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,
+                ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.
+   :type args: dict
 
 
    .. py:attribute:: name
@@ -2250,7 +2670,14 @@ Package Contents
 
    .. py:method:: forward_triples(indexed_triple: torch.Tensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -2304,7 +2731,14 @@ Package Contents
 
    .. py:method:: forward_triples(indexed_triple: torch.Tensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -2321,37 +2755,23 @@ Package Contents
    Bases: :py:obj:`BaseKGELightning`
 
 
-   Base class for all neural network modules.
+   Base class for all Knowledge Graph Embedding models.
 
-   Your models should also subclass this class.
+   Inherits the Lightning training loop from :class:`BaseKGELightning` and
+   adds the embedding tables, normalisation / dropout layers, and the
+   routing logic that dispatches ``forward()`` calls to the appropriate
+   scoring method.
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   Sub-classes must implement at minimum:
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.
+   * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.
 
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   :param args: Flat configuration dictionary produced by
+                ``vars(argparse.Namespace)``.
+                Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,
+                ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.
+   :type args: dict
 
 
    .. py:attribute:: args
@@ -2473,66 +2893,181 @@ Package Contents
    .. py:attribute:: block_size
 
 
-   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
+   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
 
-      :param x:
-      :type x: B x 2 x T
+      KvsAll scoring for BPE-encoded head entities and relations.
+
+      Retrieves subword-unit embeddings for the head entity and relation,
+      reduces them to fixed-size vectors via a linear projection, then
+      scores against all BPE entity embeddings.
+
+      :param x: Shape ``(batch_size, 2, T)`` BPE token indices where dim 1
+                indexes ``[head, relation]`` and *T* is
+                ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size, num_bpe_entities)`` score matrix.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
+   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor]) -> torch.FloatTensor
 
-      byte pair encoded neural link predictors
+      NegSample scoring for BPE-encoded ``(head, relation, tail)`` triples.
 
-      :param -------:
+      Retrieves subword-unit embeddings for all three elements and reduces
+      them to fixed-size vectors via a linear projection before computing
+      the triple score.
+
+      :param x: Shape ``(batch_size, 3, T)`` BPE token indices.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: init_params_with_sanity_checking()
+   .. py:method:: init_params_with_sanity_checking() -> None
+
+      Populate model hyper-parameters from ``self.args`` with safe defaults.
+
+      Reads embedding dimension, learning rate, dropout rates, normalisation
+      strategy, optimizer name, and parameter initialisation scheme from the
+      ``args`` dict.  Falls back to sensible defaults for any missing key so
+      that minimal ``args`` dicts (e.g. for unit tests) are still valid.
 
 
-   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      :param x:
-      :param y_idx:
-      :param ordered_bpe_entities:
+   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None) -> torch.FloatTensor
+
+      Route the forward pass to the appropriate scoring method.
+
+      Inspects the shape and type of *x* to decide which low-level scorer
+      to call:
+
+      * Tuple ``(x, y_idx)``   → :meth:`forward_k_vs_sample`
+      * ``(batch, 3)`` tensor  → :meth:`forward_triples`
+      * ``(batch, 2)`` tensor  → :meth:`forward_k_vs_all`
+      * BPE triple tensor      → :meth:`forward_byte_pair_encoded_triple`
+      * BPE pair tensor        → :meth:`forward_byte_pair_encoded_k_vs_all`
+
+      :param x: Either a plain index tensor or a ``(triple_idx, target_idx)``
+                tuple for sample-based labelling.
+      :type x: torch.LongTensor or Tuple[torch.LongTensor, torch.LongTensor]
+      :param y_idx: Target entity indices used by :meth:`forward_k_vs_sample`.
+                    Ignored when *x* is a plain tensor.
+      :type y_idx: torch.LongTensor, optional
+
+      :returns: Score tensor whose shape depends on the selected scorer.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
 
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
 
    .. py:method:: forward_k_vs_sample(*args, **kwargs)
 
+      Score a ``(head, relation)`` batch against a sampled subset of entities.
 
-   .. py:method:: get_triple_representation(idx_hrt)
+      Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that
+      support sample-based labelling must override this method.
+
+      :returns: Shape ``(batch_size, k)`` score matrix where *k* is the number
+                of sampled target entities.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: get_head_relation_representation(indexed_triple)
+
+   .. py:method:: get_triple_representation(idx_hrt) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve and normalise embedding vectors for a triple index batch.
+
+      :param idx_hrt: Shape ``(batch_size, 3)`` integer tensor with columns
+                      ``[head_idx, relation_idx, tail_idx]``.
+      :type idx_hrt: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_ent_emb, tail_ent_emb** -- Each has shape ``(batch_size, embedding_dim)`` after applying the
+                configured dropout and normalisation.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      :param x shape (b:
-      :param 3:
-      :param t):
+   .. py:method:: get_head_relation_representation(indexed_triple) -> Tuple[torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve and normalise embedding vectors for head entities and relations.
+
+      :param indexed_triple: Shape ``(batch_size, 2)`` integer tensor with columns
+                             ``[head_idx, relation_idx]``.
+      :type indexed_triple: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_ent_emb** -- Each has shape ``(batch_size, embedding_dim)`` after applying the
+                configured dropout and normalisation.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: get_sentence_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve BPE subword-unit embeddings for a batch of triples.
+
+      :param x: Shape ``(batch_size, 3, T)`` where *T* is
+                ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_emb, tail_emb** -- Each has shape ``(batch_size, T, embedding_dim)``.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      :param x:
-      :type x: B x 2 x T
+      Retrieve unit-normalised BPE embeddings for head entities and relations.
+
+      Each entity/relation is represented as a sequence of *T* subword
+      tokens.  Their token embeddings are L2-normalised across the
+      sequence dimension so that the resulting matrix has unit Frobenius
+      norm.
+
+      :param x: Shape ``(batch_size, 2, T)`` where dim 1 indexes
+                ``[head, relation]`` and *T* is ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_emb** -- Each has shape ``(batch_size, T, embedding_dim)``, L2-normalised
+                over the ``(T, D)`` dimensions.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
+
+      Return the entity and relation embedding matrices as numpy arrays.
+
+      :returns: * **entity_embeddings** (*numpy.ndarray*) -- Shape ``(num_entities, embedding_dim)``.
+                * **relation_embeddings** (*numpy.ndarray*) -- Shape ``(num_relations, embedding_dim)``.
+
 
 
 .. py:class:: IdentityClass(args=None)
@@ -2540,37 +3075,11 @@ Package Contents
    Bases: :py:obj:`torch.nn.Module`
 
 
-   Base class for all neural network modules.
+   No-op normalisation / dropout placeholder.
 
-   Your models should also subclass this class.
-
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
-
-       import torch.nn as nn
-       import torch.nn.functional as F
-
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   Used whenever no normalisation layer is requested (``--normalization None``).
+   All inputs are returned unchanged so that the rest of the model code does
+   not need conditional checks around normalisation calls.
 
 
    .. py:attribute:: args
@@ -2595,37 +3104,23 @@ Package Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   Base class for all neural network modules.
+   Base class for all Knowledge Graph Embedding models.
 
-   Your models should also subclass this class.
+   Inherits the Lightning training loop from :class:`BaseKGELightning` and
+   adds the embedding tables, normalisation / dropout layers, and the
+   routing logic that dispatches ``forward()`` calls to the appropriate
+   scoring method.
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   Sub-classes must implement at minimum:
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.
+   * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.
 
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   :param args: Flat configuration dictionary produced by
+                ``vars(argparse.Namespace)``.
+                Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,
+                ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.
+   :type args: dict
 
 
    .. py:attribute:: name
@@ -2658,37 +3153,23 @@ Package Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   Base class for all neural network modules.
+   Base class for all Knowledge Graph Embedding models.
 
-   Your models should also subclass this class.
+   Inherits the Lightning training loop from :class:`BaseKGELightning` and
+   adds the embedding tables, normalisation / dropout layers, and the
+   routing logic that dispatches ``forward()`` calls to the appropriate
+   scoring method.
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   Sub-classes must implement at minimum:
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.
+   * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.
 
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   :param args: Flat configuration dictionary produced by
+                ``vars(argparse.Namespace)``.
+                Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,
+                ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.
+   :type args: dict
 
 
    .. py:attribute:: name
@@ -2724,7 +3205,14 @@ Package Contents
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -2777,7 +3265,14 @@ Package Contents
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -2794,37 +3289,27 @@ Package Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   Base class for all neural network modules.
+   Keci: Knowledge Graph Embedding via Clifford Algebra.
 
-   Your models should also subclass this class.
+   Embeds entities and relations as multi-vectors in the Clifford algebra
+   Cl_{p,q}(R^d) and scores triples via the Clifford product.  The algebra
+   is parameterised by two non-negative integers *p* and *q*:
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   * ``p = 0, q = 0`` — reduces to a standard bilinear (DistMult-like) model.
+   * ``p = 0, q = 1`` — equivalent to ComplEx.
+   * Larger ``p`` and ``q`` capture higher-order geometric interactions.
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   The embedding dimension must satisfy ``embedding_dim % (p + q + 1) == 0``;
+   the resulting quotient is stored as ``self.r``.
 
+   :param args: Configuration dictionary.  Recognised keys (beyond those in
+                :class:`BaseKGE`): ``p`` (int, default 0) and ``q`` (int, default 0).
+   :type args: dict
 
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
+   .. rubric:: References
 
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   Demir et al., *Clifford Embeddings — A Generalized Approach for Embedding
+   in Normed Algebras*, ECML 2023.
 
 
    .. py:attribute:: name
@@ -2943,22 +3428,62 @@ Package Contents
 
    .. py:method:: construct_cl_multivector(x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
 
-      Construct a batch of multivectors Cl_{p,q}(\mathbb{R}^d)
+      Split a flat embedding vector into the three Clifford components.
 
-      Parameter
-      ---------
-      x: torch.FloatTensor with (n,d) shape
+      Given an embedding ``x`` of dimension ``d = r + r*p + r*q``, returns
+      the scalar part ``a0``, the *p*-blade part ``ap``, and the *q*-blade
+      part ``aq``.
 
-      :returns: * **a0** (*torch.FloatTensor with (n,r) shape*)
-                * **ap** (*torch.FloatTensor with (n,r,p) shape*)
-                * **aq** (*torch.FloatTensor with (n,r,q) shape*)
+      :param x: Shape ``(batch_size, d)``.
+      :type x: torch.FloatTensor
+      :param r: Scalar block size (``embedding_dim // (p + q + 1)``).
+      :type r: int
+      :param p: Number of positive-signature basis elements.
+      :type p: int
+      :param q: Number of negative-signature basis elements.
+      :type q: int
+
+      :returns: * **a0** (*torch.FloatTensor*) -- Shape ``(batch_size, r)`` — scalar (grade-0) part.
+                * **ap** (*torch.FloatTensor*) -- Shape ``(batch_size, r, p)`` — positive-blade part.
+                * **aq** (*torch.FloatTensor*) -- Shape ``(batch_size, r, q)`` — negative-blade part.
 
 
 
-   .. py:method:: forward_k_vs_with_explicit(x: torch.Tensor)
+   .. py:method:: forward_k_vs_with_explicit(x: torch.Tensor) -> torch.FloatTensor
+
+      KvsAll scoring using an explicit loop over sigma_pp/qq/pq terms.
+
+      Functionally equivalent to :meth:`forward_k_vs_all` but computes the
+      higher-order interaction terms (sigma_pp, sigma_qq, sigma_pq) with
+      explicit nested loops rather than einsum contractions.  Kept for
+      reference and correctness verification.
+
+      :param x: Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+      :type x: torch.Tensor
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
+
+   .. py:method:: k_vs_all_score(bpe_head_ent_emb: torch.FloatTensor, bpe_rel_ent_emb: torch.FloatTensor, E: torch.FloatTensor) -> torch.FloatTensor
+
+      Compute Clifford-product scores for a head/relation batch vs. all entities.
+
+      Decomposes the head-entity and relation embeddings into Clifford
+      multi-vectors, performs the Cl_{p,q} product, and inner-products the
+      result against the entity embedding matrix *E*.
+
+      :param bpe_head_ent_emb: Head-entity embeddings, shape ``(batch_size, embedding_dim)``.
+      :type bpe_head_ent_emb: torch.FloatTensor
+      :param bpe_rel_ent_emb: Relation embeddings, shape ``(batch_size, embedding_dim)``.
+      :type bpe_rel_ent_emb: torch.FloatTensor
+      :param E: All entity embeddings, shape ``(num_entities, embedding_dim)``.
+      :type E: torch.FloatTensor
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
@@ -2980,15 +3505,23 @@ Package Contents
 
    .. py:method:: construct_batch_selected_cl_multivector(x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
 
-      Construct a batch of batchs multivectors Cl_{p,q}(\mathbb{R}^d)
+      Split a batched, *k*-selected embedding tensor into Clifford components.
 
-      Parameter
-      ---------
-      x: torch.FloatTensor with (n,k, d) shape
+      A variant of :meth:`construct_cl_multivector` for tensors that have an
+      extra *k* dimension (e.g. when scoring against *k* sampled targets).
 
-      :returns: * **a0** (*torch.FloatTensor with (n,k, m) shape*)
-                * **ap** (*torch.FloatTensor with (n,k, m, p) shape*)
-                * **aq** (*torch.FloatTensor with (n,k, m, q) shape*)
+      :param x: Shape ``(batch_size, k, d)``.
+      :type x: torch.FloatTensor
+      :param r: Scalar block size.
+      :type r: int
+      :param p: Number of positive-signature basis elements.
+      :type p: int
+      :param q: Number of negative-signature basis elements.
+      :type q: int
+
+      :returns: * **a0** (*torch.FloatTensor*) -- Shape ``(batch_size, k, r)``.
+                * **ap** (*torch.FloatTensor*) -- Shape ``(batch_size, k, r, p)``.
+                * **aq** (*torch.FloatTensor*) -- Shape ``(batch_size, k, r, q)``.
 
 
 
@@ -3040,37 +3573,23 @@ Package Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   Base class for all neural network modules.
+   Base class for all Knowledge Graph Embedding models.
 
-   Your models should also subclass this class.
+   Inherits the Lightning training loop from :class:`BaseKGELightning` and
+   adds the embedding tables, normalisation / dropout layers, and the
+   routing logic that dispatches ``forward()`` calls to the appropriate
+   scoring method.
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   Sub-classes must implement at minimum:
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.
+   * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.
 
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   :param args: Flat configuration dictionary produced by
+                ``vars(argparse.Namespace)``.
+                Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,
+                ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.
+   :type args: dict
 
 
    .. py:attribute:: name
@@ -3361,37 +3880,23 @@ Package Contents
    Bases: :py:obj:`BaseKGELightning`
 
 
-   Base class for all neural network modules.
+   Base class for all Knowledge Graph Embedding models.
 
-   Your models should also subclass this class.
+   Inherits the Lightning training loop from :class:`BaseKGELightning` and
+   adds the embedding tables, normalisation / dropout layers, and the
+   routing logic that dispatches ``forward()`` calls to the appropriate
+   scoring method.
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   Sub-classes must implement at minimum:
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.
+   * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.
 
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   :param args: Flat configuration dictionary produced by
+                ``vars(argparse.Namespace)``.
+                Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,
+                ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.
+   :type args: dict
 
 
    .. py:attribute:: args
@@ -3513,66 +4018,181 @@ Package Contents
    .. py:attribute:: block_size
 
 
-   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
+   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
 
-      :param x:
-      :type x: B x 2 x T
+      KvsAll scoring for BPE-encoded head entities and relations.
+
+      Retrieves subword-unit embeddings for the head entity and relation,
+      reduces them to fixed-size vectors via a linear projection, then
+      scores against all BPE entity embeddings.
+
+      :param x: Shape ``(batch_size, 2, T)`` BPE token indices where dim 1
+                indexes ``[head, relation]`` and *T* is
+                ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size, num_bpe_entities)`` score matrix.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
+   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor]) -> torch.FloatTensor
 
-      byte pair encoded neural link predictors
+      NegSample scoring for BPE-encoded ``(head, relation, tail)`` triples.
 
-      :param -------:
+      Retrieves subword-unit embeddings for all three elements and reduces
+      them to fixed-size vectors via a linear projection before computing
+      the triple score.
+
+      :param x: Shape ``(batch_size, 3, T)`` BPE token indices.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: init_params_with_sanity_checking()
+   .. py:method:: init_params_with_sanity_checking() -> None
+
+      Populate model hyper-parameters from ``self.args`` with safe defaults.
+
+      Reads embedding dimension, learning rate, dropout rates, normalisation
+      strategy, optimizer name, and parameter initialisation scheme from the
+      ``args`` dict.  Falls back to sensible defaults for any missing key so
+      that minimal ``args`` dicts (e.g. for unit tests) are still valid.
 
 
-   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      :param x:
-      :param y_idx:
-      :param ordered_bpe_entities:
+   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None) -> torch.FloatTensor
+
+      Route the forward pass to the appropriate scoring method.
+
+      Inspects the shape and type of *x* to decide which low-level scorer
+      to call:
+
+      * Tuple ``(x, y_idx)``   → :meth:`forward_k_vs_sample`
+      * ``(batch, 3)`` tensor  → :meth:`forward_triples`
+      * ``(batch, 2)`` tensor  → :meth:`forward_k_vs_all`
+      * BPE triple tensor      → :meth:`forward_byte_pair_encoded_triple`
+      * BPE pair tensor        → :meth:`forward_byte_pair_encoded_k_vs_all`
+
+      :param x: Either a plain index tensor or a ``(triple_idx, target_idx)``
+                tuple for sample-based labelling.
+      :type x: torch.LongTensor or Tuple[torch.LongTensor, torch.LongTensor]
+      :param y_idx: Target entity indices used by :meth:`forward_k_vs_sample`.
+                    Ignored when *x* is a plain tensor.
+      :type y_idx: torch.LongTensor, optional
+
+      :returns: Score tensor whose shape depends on the selected scorer.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
 
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
 
    .. py:method:: forward_k_vs_sample(*args, **kwargs)
 
+      Score a ``(head, relation)`` batch against a sampled subset of entities.
 
-   .. py:method:: get_triple_representation(idx_hrt)
+      Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that
+      support sample-based labelling must override this method.
+
+      :returns: Shape ``(batch_size, k)`` score matrix where *k* is the number
+                of sampled target entities.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: get_head_relation_representation(indexed_triple)
+
+   .. py:method:: get_triple_representation(idx_hrt) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve and normalise embedding vectors for a triple index batch.
+
+      :param idx_hrt: Shape ``(batch_size, 3)`` integer tensor with columns
+                      ``[head_idx, relation_idx, tail_idx]``.
+      :type idx_hrt: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_ent_emb, tail_ent_emb** -- Each has shape ``(batch_size, embedding_dim)`` after applying the
+                configured dropout and normalisation.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      :param x shape (b:
-      :param 3:
-      :param t):
+   .. py:method:: get_head_relation_representation(indexed_triple) -> Tuple[torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve and normalise embedding vectors for head entities and relations.
+
+      :param indexed_triple: Shape ``(batch_size, 2)`` integer tensor with columns
+                             ``[head_idx, relation_idx]``.
+      :type indexed_triple: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_ent_emb** -- Each has shape ``(batch_size, embedding_dim)`` after applying the
+                configured dropout and normalisation.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: get_sentence_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve BPE subword-unit embeddings for a batch of triples.
+
+      :param x: Shape ``(batch_size, 3, T)`` where *T* is
+                ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_emb, tail_emb** -- Each has shape ``(batch_size, T, embedding_dim)``.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      :param x:
-      :type x: B x 2 x T
+      Retrieve unit-normalised BPE embeddings for head entities and relations.
+
+      Each entity/relation is represented as a sequence of *T* subword
+      tokens.  Their token embeddings are L2-normalised across the
+      sequence dimension so that the resulting matrix has unit Frobenius
+      norm.
+
+      :param x: Shape ``(batch_size, 2, T)`` where dim 1 indexes
+                ``[head, relation]`` and *T* is ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_emb** -- Each has shape ``(batch_size, T, embedding_dim)``, L2-normalised
+                over the ``(T, D)`` dimensions.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
+
+      Return the entity and relation embedding matrices as numpy arrays.
+
+      :returns: * **entity_embeddings** (*numpy.ndarray*) -- Shape ``(num_entities, embedding_dim)``.
+                * **relation_embeddings** (*numpy.ndarray*) -- Shape ``(num_relations, embedding_dim)``.
+
 
 
 .. py:class:: PykeenKGE(args: dict)
@@ -3665,43 +4285,39 @@ Package Contents
       :abstractmethod:
 
 
+      Score a ``(head, relation)`` batch against a sampled subset of entities.
+
+      Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that
+      support sample-based labelling must override this method.
+
+      :returns: Shape ``(batch_size, k)`` score matrix where *k* is the number
+                of sampled target entities.
+      :rtype: torch.FloatTensor
+
+
 
 .. py:class:: BaseKGE(args: dict)
 
    Bases: :py:obj:`BaseKGELightning`
 
 
-   Base class for all neural network modules.
+   Base class for all Knowledge Graph Embedding models.
 
-   Your models should also subclass this class.
+   Inherits the Lightning training loop from :class:`BaseKGELightning` and
+   adds the embedding tables, normalisation / dropout layers, and the
+   routing logic that dispatches ``forward()`` calls to the appropriate
+   scoring method.
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   Sub-classes must implement at minimum:
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.
+   * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.
 
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   :param args: Flat configuration dictionary produced by
+                ``vars(argparse.Namespace)``.
+                Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,
+                ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.
+   :type args: dict
 
 
    .. py:attribute:: args
@@ -3823,66 +4439,181 @@ Package Contents
    .. py:attribute:: block_size
 
 
-   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
+   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
 
-      :param x:
-      :type x: B x 2 x T
+      KvsAll scoring for BPE-encoded head entities and relations.
+
+      Retrieves subword-unit embeddings for the head entity and relation,
+      reduces them to fixed-size vectors via a linear projection, then
+      scores against all BPE entity embeddings.
+
+      :param x: Shape ``(batch_size, 2, T)`` BPE token indices where dim 1
+                indexes ``[head, relation]`` and *T* is
+                ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size, num_bpe_entities)`` score matrix.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
+   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor]) -> torch.FloatTensor
 
-      byte pair encoded neural link predictors
+      NegSample scoring for BPE-encoded ``(head, relation, tail)`` triples.
 
-      :param -------:
+      Retrieves subword-unit embeddings for all three elements and reduces
+      them to fixed-size vectors via a linear projection before computing
+      the triple score.
+
+      :param x: Shape ``(batch_size, 3, T)`` BPE token indices.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: init_params_with_sanity_checking()
+   .. py:method:: init_params_with_sanity_checking() -> None
+
+      Populate model hyper-parameters from ``self.args`` with safe defaults.
+
+      Reads embedding dimension, learning rate, dropout rates, normalisation
+      strategy, optimizer name, and parameter initialisation scheme from the
+      ``args`` dict.  Falls back to sensible defaults for any missing key so
+      that minimal ``args`` dicts (e.g. for unit tests) are still valid.
 
 
-   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      :param x:
-      :param y_idx:
-      :param ordered_bpe_entities:
+   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None) -> torch.FloatTensor
+
+      Route the forward pass to the appropriate scoring method.
+
+      Inspects the shape and type of *x* to decide which low-level scorer
+      to call:
+
+      * Tuple ``(x, y_idx)``   → :meth:`forward_k_vs_sample`
+      * ``(batch, 3)`` tensor  → :meth:`forward_triples`
+      * ``(batch, 2)`` tensor  → :meth:`forward_k_vs_all`
+      * BPE triple tensor      → :meth:`forward_byte_pair_encoded_triple`
+      * BPE pair tensor        → :meth:`forward_byte_pair_encoded_k_vs_all`
+
+      :param x: Either a plain index tensor or a ``(triple_idx, target_idx)``
+                tuple for sample-based labelling.
+      :type x: torch.LongTensor or Tuple[torch.LongTensor, torch.LongTensor]
+      :param y_idx: Target entity indices used by :meth:`forward_k_vs_sample`.
+                    Ignored when *x* is a plain tensor.
+      :type y_idx: torch.LongTensor, optional
+
+      :returns: Score tensor whose shape depends on the selected scorer.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
 
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
 
    .. py:method:: forward_k_vs_sample(*args, **kwargs)
 
+      Score a ``(head, relation)`` batch against a sampled subset of entities.
 
-   .. py:method:: get_triple_representation(idx_hrt)
+      Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that
+      support sample-based labelling must override this method.
+
+      :returns: Shape ``(batch_size, k)`` score matrix where *k* is the number
+                of sampled target entities.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: get_head_relation_representation(indexed_triple)
+
+   .. py:method:: get_triple_representation(idx_hrt) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve and normalise embedding vectors for a triple index batch.
+
+      :param idx_hrt: Shape ``(batch_size, 3)`` integer tensor with columns
+                      ``[head_idx, relation_idx, tail_idx]``.
+      :type idx_hrt: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_ent_emb, tail_ent_emb** -- Each has shape ``(batch_size, embedding_dim)`` after applying the
+                configured dropout and normalisation.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      :param x shape (b:
-      :param 3:
-      :param t):
+   .. py:method:: get_head_relation_representation(indexed_triple) -> Tuple[torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve and normalise embedding vectors for head entities and relations.
+
+      :param indexed_triple: Shape ``(batch_size, 2)`` integer tensor with columns
+                             ``[head_idx, relation_idx]``.
+      :type indexed_triple: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_ent_emb** -- Each has shape ``(batch_size, embedding_dim)`` after applying the
+                configured dropout and normalisation.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: get_sentence_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Retrieve BPE subword-unit embeddings for a batch of triples.
+
+      :param x: Shape ``(batch_size, 3, T)`` where *T* is
+                ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_emb, tail_emb** -- Each has shape ``(batch_size, T, embedding_dim)``.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      :param x:
-      :type x: B x 2 x T
+      Retrieve unit-normalised BPE embeddings for head entities and relations.
+
+      Each entity/relation is represented as a sequence of *T* subword
+      tokens.  Their token embeddings are L2-normalised across the
+      sequence dimension so that the resulting matrix has unit Frobenius
+      norm.
+
+      :param x: Shape ``(batch_size, 2, T)`` where dim 1 indexes
+                ``[head, relation]`` and *T* is ``max_length_subword_tokens``.
+      :type x: torch.LongTensor
+
+      :returns: **head_ent_emb, rel_emb** -- Each has shape ``(batch_size, T, embedding_dim)``, L2-normalised
+                over the ``(T, D)`` dimensions.
+      :rtype: torch.FloatTensor
 
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
+
+      Return the entity and relation embedding matrices as numpy arrays.
+
+      :returns: * **entity_embeddings** (*numpy.ndarray*) -- Shape ``(num_entities, embedding_dim)``.
+                * **relation_embeddings** (*numpy.ndarray*) -- Shape ``(num_relations, embedding_dim)``.
+
 
 
 .. py:class:: FMult(args)
@@ -3929,7 +4660,14 @@ Package Contents
 
    .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -3974,7 +4712,14 @@ Package Contents
 
    .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -4035,7 +4780,14 @@ Package Contents
 
    .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -4061,7 +4813,14 @@ Package Contents
 
    .. py:method:: forward_triples(idx_triple)
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -4103,7 +4862,14 @@ Package Contents
 
    .. py:method:: forward_triples(idx_triple)
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 

@@ -235,19 +235,19 @@ epoch end, model saving, weight averaging, and evaluation.</p>
 <td><p>Callback to store epoch losses to a CSV file.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.PrintCallback" title="dicee.callbacks.PrintCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrintCallback</span></code></a></p></td>
-<td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
+<td><p>Callback that prints training start/end times and total runtime.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.KGESaveCallback" title="dicee.callbacks.KGESaveCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KGESaveCallback</span></code></a></p></td>
-<td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
+<td><p>Callback that periodically saves model checkpoints during training.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.PseudoLabellingCallback" title="dicee.callbacks.PseudoLabellingCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PseudoLabellingCallback</span></code></a></p></td>
-<td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
+<td><p>Callback that augments the training set with pseudo-labelled triples.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.Eval" title="dicee.callbacks.Eval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Eval</span></code></a></p></td>
-<td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
+<td><p>Abstract base class for KGE training lifecycle callbacks.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.KronE" title="dicee.callbacks.KronE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KronE</span></code></a></p></td>
-<td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
+<td><p>Abstract base class for KGE training lifecycle callbacks.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.Perturb" title="dicee.callbacks.Perturb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Perturb</span></code></a></p></td>
 <td><p>A callback for a three-Level Perturbation</p></td>
@@ -311,9 +311,7 @@ epoch end, model saving, weight averaging, and evaluation.</p>
 <dt class="sig sig-object py" id="dicee.callbacks.PrintCallback">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">PrintCallback</span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PrintCallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PrintCallback" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
-<p>Abstract class for Callback class for knowledge graph embedding models</p>
-<section id="parameter">
-<h3>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h3>
+<p>Callback that prints training start/end times and total runtime.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.callbacks.PrintCallback.start_time">
 <span class="sig-name descname"><span class="pre">start_time</span></span><a class="headerlink" href="#dicee.callbacks.PrintCallback.start_time" title="Link to this definition"></a></dt>
@@ -322,77 +320,66 @@ epoch end, model saving, weight averaging, and evaluation.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.PrintCallback.on_fit_start">
 <span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PrintCallback.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PrintCallback.on_fit_start" title="Link to this definition"></a></dt>
-<dd><p>Call at the beginning of the training.</p>
-<section id="id1">
-<h4>Parameter<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
+<dd><p>Called once before the first training epoch.</p>
 <dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trainer</strong> (<a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractTrainer" title="dicee.abstracts.AbstractTrainer"><em>AbstractTrainer</em></a><em> or </em><em>pl.Trainer</em>) – The active trainer instance.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><em>BaseKGE</em></a>) – The model about to be trained.</p></li>
+</ul>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.PrintCallback.on_fit_end">
 <span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PrintCallback.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PrintCallback.on_fit_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of the training.</p>
-<section id="id2">
-<h4>Parameter<a class="headerlink" href="#id2" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
+<dd><p>Called once after the final training epoch completes.</p>
+<p>Override to perform post-training actions such as saving the final
+model state, computing evaluation metrics, or cleaning up resources.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.PrintCallback.on_train_batch_end">
 <span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PrintCallback.on_train_batch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PrintCallback.on_train_batch_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of each mini-batch during the training.</p>
-<section id="id3">
-<h4>Parameter<a class="headerlink" href="#id3" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
+<dd><p>Called after each mini-batch gradient update.</p>
+<p>Override to inspect or modify the model at a finer granularity than
+epoch-level hooks.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.PrintCallback.on_train_epoch_end">
 <span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PrintCallback.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PrintCallback.on_train_epoch_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of each epoch during training.</p>
-<section id="id4">
-<h4>Parameter<a class="headerlink" href="#id4" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
+<dd><p>Called at the end of each training epoch.</p>
 <dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trainer</strong> (<a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractTrainer" title="dicee.abstracts.AbstractTrainer"><em>AbstractTrainer</em></a><em> or </em><em>pl.Trainer</em>) – The active trainer instance.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><em>BaseKGE</em></a>) – The model being trained.  <code class="docutils literal notranslate"><span class="pre">model.loss_history</span></code> contains the
+per-epoch average losses accumulated so far.</p></li>
+</ul>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
-</section>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.callbacks.KGESaveCallback">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">KGESaveCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">every_x_epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
-<p>Abstract class for Callback class for knowledge graph embedding models</p>
-<section id="id5">
-<h3>Parameter<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
+<p>Callback that periodically saves model checkpoints during training.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>every_x_epoch</strong> (<em>int</em><em> or </em><em>None</em>) – Save a checkpoint every <em>every_x_epoch</em> epochs.  When <code class="docutils literal notranslate"><span class="pre">None</span></code>, the
+interval defaults to <code class="docutils literal notranslate"><span class="pre">max(max_epochs</span> <span class="pre">//</span> <span class="pre">2,</span> <span class="pre">1)</span></code>.</p></li>
+<li><p><strong>max_epochs</strong> (<em>int</em>) – Total number of training epochs (used to compute the default
+interval when <em>every_x_epoch</em> is <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p></li>
+<li><p><strong>path</strong> (<em>str</em>) – Directory where checkpoint files will be written.</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.callbacks.KGESaveCallback.every_x_epoch">
 <span class="sig-name descname"><span class="pre">every_x_epoch</span></span><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.every_x_epoch" title="Link to this definition"></a></dt>
@@ -416,65 +403,46 @@ epoch end, model saving, weight averaging, and evaluation.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.KGESaveCallback.on_train_batch_end">
 <span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback.on_train_batch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_train_batch_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of each mini-batch during the training.</p>
-<section id="id6">
-<h4>Parameter<a class="headerlink" href="#id6" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
+<dd><p>Called after each mini-batch gradient update.</p>
+<p>Override to inspect or modify the model at a finer granularity than
+epoch-level hooks.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.KGESaveCallback.on_fit_start">
 <span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_fit_start" title="Link to this definition"></a></dt>
-<dd><p>Call at the beginning of the training.</p>
-<section id="id7">
-<h4>Parameter<a class="headerlink" href="#id7" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
+<dd><p>Called once before the first training epoch.</p>
 <dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trainer</strong> (<a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractTrainer" title="dicee.abstracts.AbstractTrainer"><em>AbstractTrainer</em></a><em> or </em><em>pl.Trainer</em>) – The active trainer instance.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><em>BaseKGE</em></a>) – The model about to be trained.</p></li>
+</ul>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.KGESaveCallback.on_train_epoch_end">
 <span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_train_epoch_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of each epoch during training.</p>
-<section id="id8">
-<h4>Parameter<a class="headerlink" href="#id8" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
+<dd><p>Called at the end of each training epoch.</p>
 <dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trainer</strong> (<a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractTrainer" title="dicee.abstracts.AbstractTrainer"><em>AbstractTrainer</em></a><em> or </em><em>pl.Trainer</em>) – The active trainer instance.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><em>BaseKGE</em></a>) – The model being trained.  <code class="docutils literal notranslate"><span class="pre">model.loss_history</span></code> contains the
+per-epoch average losses accumulated so far.</p></li>
+</ul>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.KGESaveCallback.on_fit_end">
 <span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_fit_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of the training.</p>
-<section id="id9">
-<h4>Parameter<a class="headerlink" href="#id9" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
+<dd><p>Called once after the final training epoch completes.</p>
+<p>Override to perform post-training actions such as saving the final
+model state, computing evaluation metrics, or cleaning up resources.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -482,16 +450,27 @@ epoch end, model saving, weight averaging, and evaluation.</p>
 <span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback.on_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_epoch_end" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
-</section>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.callbacks.PseudoLabellingCallback">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">PseudoLabellingCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PseudoLabellingCallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PseudoLabellingCallback" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
-<p>Abstract class for Callback class for knowledge graph embedding models</p>
-<section id="id10">
-<h3>Parameter<a class="headerlink" href="#id10" title="Link to this heading"></a></h3>
+<p>Callback that augments the training set with pseudo-labelled triples.</p>
+<p>At the end of each epoch the current model scores a batch of unlabelled
+triples and those with a predicted probability &gt;= 0.90 are appended to
+the training dataset (semi-supervised self-training).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_module</strong> (<em>object</em>) – Dataset module exposing a <code class="docutils literal notranslate"><span class="pre">train_set_idx</span></code> attribute and a
+<code class="docutils literal notranslate"><span class="pre">train_dataloader()</span></code> method.</p></li>
+<li><p><strong>kg</strong> (<a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><em>KG</em></a>) – The knowledge graph, providing <code class="docutils literal notranslate"><span class="pre">num_entities</span></code>, <code class="docutils literal notranslate"><span class="pre">num_relations</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">unlabelled_set</span></code>.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em>) – Number of unlabelled triples to sample and score each epoch.</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.callbacks.PseudoLabellingCallback.data_module">
 <span class="sig-name descname"><span class="pre">data_module</span></span><a class="headerlink" href="#dicee.callbacks.PseudoLabellingCallback.data_module" title="Link to this definition"></a></dt>
@@ -527,7 +506,6 @@ epoch end, model saving, weight averaging, and evaluation.</p>
 <span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PseudoLabellingCallback.on_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PseudoLabellingCallback.on_epoch_end" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
-</section>
 </dd></dl>
 
 <dl class="py function">
@@ -545,9 +523,15 @@ epoch end, model saving, weight averaging, and evaluation.</p>
 <dt class="sig sig-object py" id="dicee.callbacks.Eval">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">Eval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Eval" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
-<p>Abstract class for Callback class for knowledge graph embedding models</p>
-<section id="id11">
-<h3>Parameter<a class="headerlink" href="#id11" title="Link to this heading"></a></h3>
+<p>Abstract base class for KGE training lifecycle callbacks.</p>
+<p>Concrete sub-classes override one or more hook methods to perform
+custom actions at specific points during training (e.g. weight
+averaging, periodic evaluation, model checkpointing).  All hooks have
+empty default implementations so sub-classes only need to override the
+hooks they care about.</p>
+<p>Callbacks are registered by passing them to the trainer’s <em>callbacks</em>
+list.  They are also compatible with PyTorch Lightning trainers because
+this class extends <code class="docutils literal notranslate"><span class="pre">lightning.pytorch.callbacks.Callback</span></code>.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.path">
 <span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#dicee.callbacks.Eval.path" title="Link to this definition"></a></dt>
@@ -571,77 +555,63 @@ epoch end, model saving, weight averaging, and evaluation.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.on_fit_start">
 <span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Eval.on_fit_start" title="Link to this definition"></a></dt>
-<dd><p>Call at the beginning of the training.</p>
-<section id="id12">
-<h4>Parameter<a class="headerlink" href="#id12" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
+<dd><p>Called once before the first training epoch.</p>
 <dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trainer</strong> (<a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractTrainer" title="dicee.abstracts.AbstractTrainer"><em>AbstractTrainer</em></a><em> or </em><em>pl.Trainer</em>) – The active trainer instance.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><em>BaseKGE</em></a>) – The model about to be trained.</p></li>
+</ul>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.on_fit_end">
 <span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Eval.on_fit_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of the training.</p>
-<section id="id13">
-<h4>Parameter<a class="headerlink" href="#id13" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
+<dd><p>Called once after the final training epoch completes.</p>
+<p>Override to perform post-training actions such as saving the final
+model state, computing evaluation metrics, or cleaning up resources.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.on_train_epoch_end">
 <span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Eval.on_train_epoch_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of each epoch during training.</p>
-<section id="id14">
-<h4>Parameter<a class="headerlink" href="#id14" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
+<dd><p>Called at the end of each training epoch.</p>
 <dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trainer</strong> (<a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractTrainer" title="dicee.abstracts.AbstractTrainer"><em>AbstractTrainer</em></a><em> or </em><em>pl.Trainer</em>) – The active trainer instance.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><em>BaseKGE</em></a>) – The model being trained.  <code class="docutils literal notranslate"><span class="pre">model.loss_history</span></code> contains the
+per-epoch average losses accumulated so far.</p></li>
+</ul>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.on_train_batch_end">
 <span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval.on_train_batch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Eval.on_train_batch_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of each mini-batch during the training.</p>
-<section id="id15">
-<h4>Parameter<a class="headerlink" href="#id15" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
+<dd><p>Called after each mini-batch gradient update.</p>
+<p>Override to inspect or modify the model at a finer granularity than
+epoch-level hooks.</p>
 </dd></dl>
 
-</section>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.callbacks.KronE">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">KronE</span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KronE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KronE" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
-<p>Abstract class for Callback class for knowledge graph embedding models</p>
-<section id="id16">
-<h3>Parameter<a class="headerlink" href="#id16" title="Link to this heading"></a></h3>
+<p>Abstract base class for KGE training lifecycle callbacks.</p>
+<p>Concrete sub-classes override one or more hook methods to perform
+custom actions at specific points during training (e.g. weight
+averaging, periodic evaluation, model checkpointing).  All hooks have
+empty default implementations so sub-classes only need to override the
+hooks they care about.</p>
+<p>Callbacks are registered by passing them to the trainer’s <em>callbacks</em>
+list.  They are also compatible with PyTorch Lightning trainers because
+this class extends <code class="docutils literal notranslate"><span class="pre">lightning.pytorch.callbacks.Callback</span></code>.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.callbacks.KronE.f">
 <span class="sig-name descname"><span class="pre">f</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.callbacks.KronE.f" title="Link to this definition"></a></dt>
@@ -666,20 +636,17 @@ Batch dimensions are broadcast. The number of them mush
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.KronE.on_fit_start">
 <span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KronE.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KronE.on_fit_start" title="Link to this definition"></a></dt>
-<dd><p>Call at the beginning of the training.</p>
-<section id="id17">
-<h4>Parameter<a class="headerlink" href="#id17" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
+<dd><p>Called once before the first training epoch.</p>
 <dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trainer</strong> (<a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractTrainer" title="dicee.abstracts.AbstractTrainer"><em>AbstractTrainer</em></a><em> or </em><em>pl.Trainer</em>) – The active trainer instance.</p></li>
+<li><p><strong>model</strong> (<a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><em>BaseKGE</em></a>) – The model about to be trained.</p></li>
+</ul>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
-</section>
 </dd></dl>
 
 <dl class="py class">
@@ -866,17 +833,9 @@ Stores evaluation reports and model checkpoints.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.LRScheduler.on_fit_end">
 <span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#LRScheduler.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.LRScheduler.on_fit_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of the training.</p>
-<section id="id18">
-<h3>Parameter<a class="headerlink" href="#id18" title="Link to this heading"></a></h3>
-<p>trainer:</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
+<dd><p>Called once after the final training epoch completes.</p>
+<p>Override to perform post-training actions such as saving the final
+model state, computing evaluation metrics, or cleaning up resources.</p>
 </dd></dl>
 
 </dd></dl>

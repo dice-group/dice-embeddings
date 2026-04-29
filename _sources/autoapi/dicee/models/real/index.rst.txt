@@ -25,7 +25,20 @@ Module Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   Embedding Entities and Relations for Learning and Inference in Knowledge Bases
+   DistMult: bilinear diagonal knowledge graph embedding.
+
+   Scores a triple ``(h, r, t)`` as the element-wise product of the head,
+   relation, and tail embeddings summed over the embedding dimension::
+
+       f(h, r, t) = \sum_i  h_i  \cdot  r_i  \cdot  t_i
+
+   Simple yet effective baseline; incapable of modelling asymmetric
+   relations.
+
+   .. rubric:: References
+
+   Yang et al., *Embedding Entities and Relations for Learning and Inference
+   in Knowledge Bases*, ICLR 2015.
    https://arxiv.org/abs/1412.6575
 
 
@@ -34,21 +47,66 @@ Module Contents
 
 
 
-   .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
+   .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor) -> torch.FloatTensor
 
-      :param emb_h:
-      :param emb_r:
-      :param emb_E:
+      Score a head/relation batch against all entity embeddings.
+
+      Computes ``(h * r) @ E^T`` after applying hidden dropout and
+      normalisation to the element-wise product.
+
+      :param emb_h: Head entity embeddings, shape ``(batch_size, embedding_dim)``.
+      :type emb_h: torch.FloatTensor
+      :param emb_r: Relation embeddings, shape ``(batch_size, embedding_dim)``.
+      :type emb_r: torch.FloatTensor
+      :param emb_E: All entity embeddings, shape ``(num_entities, embedding_dim)``.
+      :type emb_E: torch.FloatTensor
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
 
 
 
-   .. py:method:: forward_k_vs_all(x: torch.LongTensor)
+   .. py:method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
+
+      KvsAll forward pass: score head/relation against all entities.
+
+      :param x: Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor)
+
+   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor
+
+      KvsSample forward pass: score head/relation against a sampled entity subset.
+
+      :param x: Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+      :type x: torch.LongTensor
+      :param target_entity_idx: Shape ``(batch_size, k)`` indices of the *k* target entities per
+                                sample.
+      :type target_entity_idx: torch.LongTensor
+
+      :returns: Shape ``(batch_size, k)`` score matrix.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: score(h, r, t)
+
+   .. py:method:: score(h: torch.FloatTensor, r: torch.FloatTensor, t: torch.FloatTensor) -> torch.FloatTensor
+
+      Score a batch of ``(head, relation, tail)`` embedding triples.
+
+      :param h: Each has shape ``(batch_size, embedding_dim)``.
+      :type h: torch.FloatTensor
+      :param r: Each has shape ``(batch_size, embedding_dim)``.
+      :type r: torch.FloatTensor
+      :param t: Each has shape ``(batch_size, embedding_dim)``.
+      :type t: torch.FloatTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
+
 
 
 .. py:class:: TransE(args)
@@ -56,8 +114,21 @@ Module Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   Translating Embeddings for Modeling
-   Multi-relational Data
+   TransE: translation-based knowledge graph embedding.
+
+   Models a relation *r* as a translation in embedding space such that
+   ``h + r ≈ t`` for a true triple ``(h, r, t)``.  The score function is
+   defined as::
+
+       f(h, r, t) = margin - ||h + r - t||_2
+
+   TransE is effective for 1-to-1 relations but struggles with reflexive,
+   one-to-many, and many-to-one patterns.
+
+   .. rubric:: References
+
+   Bordes et al., *Translating Embeddings for Modeling Multi-relational
+   Data*, NeurIPS 2013.
    https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf
 
 
@@ -71,10 +142,35 @@ Module Contents
 
 
 
-   .. py:method:: score(head_ent_emb, rel_ent_emb, tail_ent_emb)
+   .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor) -> torch.FloatTensor
+
+      Score a batch of triples using the TransE margin-distance formula.
+
+      :param head_ent_emb: Each has shape ``(batch_size, embedding_dim)``.
+      :type head_ent_emb: torch.FloatTensor
+      :param rel_ent_emb: Each has shape ``(batch_size, embedding_dim)``.
+      :type rel_ent_emb: torch.FloatTensor
+      :param tail_ent_emb: Each has shape ``(batch_size, embedding_dim)``.
+      :type tail_ent_emb: torch.FloatTensor
+
+      :returns: Shape ``(batch_size,)`` scores equal to
+                ``margin - ||h + r - t||_2``.
+      :rtype: torch.FloatTensor
+
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+
+      KvsAll forward pass: score head/relation against all entities.
+
+      Computes ``margin - ||h + r - e||_2`` for every entity embedding *e*.
+
+      :param x: Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+      :type x: torch.Tensor
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
 
 
 .. py:class:: Shallom(args)
@@ -82,7 +178,16 @@ Module Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090)
+   Shallom: shallow neural model for relation prediction.
+
+   Represents each triple as the concatenation of head and tail entity
+   embeddings and feeds it through a two-layer MLP to predict the
+   relation.  Designed for the ``RelationPrediction`` labelling form.
+
+   .. rubric:: References
+
+   Demir et al., *A Shallow Neural Model for Relation Prediction*,
+   ISWC 2021.  https://arxiv.org/abs/2101.09090
 
 
    .. py:attribute:: name
@@ -95,14 +200,35 @@ Module Contents
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, None]
 
+      Return the entity and relation embedding matrices as numpy arrays.
+
+      :returns: * **entity_embeddings** (*numpy.ndarray*) -- Shape ``(num_entities, embedding_dim)``.
+                * **relation_embeddings** (*numpy.ndarray*) -- Shape ``(num_relations, embedding_dim)``.
+
+
 
    .. py:method:: forward_k_vs_all(x) -> torch.FloatTensor
+
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
 
 
    .. py:method:: forward_triples(x) -> torch.FloatTensor
 
-      :param x:
-      :return:
+      Score a batch of triples by looking up relation scores from ``forward_k_vs_all``.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -111,7 +237,15 @@ Module Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   A Physical Embedding Model for Knowledge Graphs
+   Pyke: Physical Embedding Model for Knowledge Graphs.
+
+   Scores a triple ``(h, r, t)`` based on the average pairwise distance
+   between head-to-relation and relation-to-tail in embedding space::
+
+       f(h, r, t) = margin - (||h - r||_2 + ||r - t||_2) / 2
+
+   The model encodes geometric proximity between entities and the
+   relations that connect them.
 
 
    .. py:attribute:: name
@@ -127,9 +261,16 @@ Module Contents
 
 
 
-   .. py:method:: forward_triples(x: torch.LongTensor)
+   .. py:method:: forward_triples(x: torch.LongTensor) -> torch.FloatTensor
 
-      :param x:
+      Score a batch of triples using the Pyke distance formula.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -259,10 +400,29 @@ Module Contents
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor)
 
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
 
    .. py:method:: score(emb_h, emb_r, emb_t)
 
 
    .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor)
+
+      Score a ``(head, relation)`` batch against a sampled subset of entities.
+
+      Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that
+      support sample-based labelling must override this method.
+
+      :returns: Shape ``(batch_size, k)`` score matrix where *k* is the number
+                of sampled target entities.
+      :rtype: torch.FloatTensor
+
 
 

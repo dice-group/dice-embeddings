@@ -63,7 +63,14 @@ Module Contents
 
    .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -108,7 +115,14 @@ Module Contents
 
    .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -169,7 +183,14 @@ Module Contents
 
    .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -195,7 +216,14 @@ Module Contents
 
    .. py:method:: forward_triples(idx_triple)
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -237,7 +265,14 @@ Module Contents
 
    .. py:method:: forward_triples(idx_triple)
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 

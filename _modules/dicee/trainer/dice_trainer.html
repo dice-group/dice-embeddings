@@ -193,6 +193,11 @@
 <span class="sd">        AssertionError: If trainer is None after initialization.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">trainer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">TorchTrainer</span><span class="p">,</span> <span class="n">TensorParallel</span><span class="p">,</span> <span class="n">TorchDDPTrainer</span><span class="p">,</span> <span class="n">pl</span><span class="o">.</span><span class="n">Trainer</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># Disable broken CUDA runtime early so that optimizer.step() (Adam, SGD, …)</span>
+    <span class="c1"># does not call _cuda_graph_capture_health_check() → is_current_stream_capturing()</span>
+    <span class="c1"># → graphs.py:54 and crash even when using a CPU-only trainer.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_cuda_is_usable</span><span class="p">():</span>
+        <span class="n">_disable_cuda_in_process</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s1">&#39;torchCPUTrainer&#39;</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing TorchTrainer CPU Trainer...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="n">trainer</span> <span class="o">=</span> <span class="n">TorchTrainer</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="o">=</span><span class="n">callbacks</span><span class="p">)</span>
@@ -208,15 +213,9 @@
         <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="nb">vars</span><span class="p">(</span><span class="n">args</span><span class="p">),</span> <span class="o">**</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;pl_trainer_kwargs&quot;</span><span class="p">,</span> <span class="p">{})</span> <span class="ow">or</span> <span class="p">{})}</span>
         <span class="c1"># NOTE: PyTorch Lightning Trainer has many optional parameters</span>
         <span class="c1"># See: https://lightning.ai/docs/pytorch/stable/common/trainer.html</span>
-        <span class="c1"># Fall back to CPU when CUDA is unavailable or its context is broken</span>
-        <span class="c1"># (e.g. after a kernel crash in a previous test in the same process).</span>
-        <span class="c1"># _disable_cuda_in_process() patches torch.cuda.is_available → False so</span>
-        <span class="c1"># Lightning&#39;s isolate_rng does not attempt to collect CUDA RNG state,</span>
-        <span class="c1"># which would re-trigger the failed init and crash before training starts.</span>
-        <span class="n">_default_accelerator</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">_cuda_is_usable</span><span class="p">():</span>
-            <span class="n">_disable_cuda_in_process</span><span class="p">()</span>
-            <span class="n">_default_accelerator</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span>
+        <span class="c1"># Fall back to CPU when CUDA is unavailable or its context is broken.</span>
+        <span class="c1"># _disable_cuda_in_process() was already called above when needed.</span>
+        <span class="n">_default_accelerator</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;auto&quot;</span>
         <span class="n">trainer</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">Trainer</span><span class="p">(</span><span class="n">accelerator</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;accelerator&quot;</span><span class="p">,</span> <span class="n">_default_accelerator</span><span class="p">),</span>
                           <span class="n">strategy</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;strategy&quot;</span><span class="p">,</span> <span class="s2">&quot;auto&quot;</span><span class="p">),</span>
                           <span class="n">num_nodes</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;num_nodes&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>

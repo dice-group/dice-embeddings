@@ -32,37 +32,23 @@ Module Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   Base class for all neural network modules.
+   Base class for all Knowledge Graph Embedding models.
 
-   Your models should also subclass this class.
+   Inherits the Lightning training loop from :class:`BaseKGELightning` and
+   adds the embedding tables, normalisation / dropout layers, and the
+   routing logic that dispatches ``forward()`` calls to the appropriate
+   scoring method.
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   Sub-classes must implement at minimum:
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.
+   * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.
 
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   :param args: Flat configuration dictionary produced by
+                ``vars(argparse.Namespace)``.
+                Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,
+                ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.
+   :type args: dict
 
 
    .. py:attribute:: name
@@ -183,7 +169,14 @@ Module Contents
 
    .. py:method:: forward_triples(indexed_triple: torch.Tensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 
@@ -237,7 +230,14 @@ Module Contents
 
    .. py:method:: forward_triples(indexed_triple: torch.Tensor) -> torch.Tensor
 
-      :param x:
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
 
 
 

@@ -36,16 +36,18 @@ Module Contents
    Bases: :py:obj:`dicee.abstracts.AbstractTrainer`
 
 
-   Abstract class for Trainer class for knowledge graph embedding models
+   Abstract base class for KGE model trainers.
 
+   Provides the callback dispatch mechanism shared by all concrete trainer
+   implementations (TorchTrainer, TorchDDPTrainer, etc.).  Sub-classes call
+   the ``on_*`` hooks at the appropriate points in the training loop so that
+   any registered :class:`AbstractCallback` can react.
 
-   Parameter
-   ---------
-   args : str
-       ?
-
-   callbacks: list
-           ?
+   :param args: Processed configuration object.  Must expose at least
+                ``random_seed`` (int).
+   :type args: argparse.Namespace or similar
+   :param callbacks: Ordered list of callback instances to invoke at each lifecycle hook.
+   :type callbacks: list of AbstractCallback
 
 
    .. py:method:: fit(*args, **kwargs)

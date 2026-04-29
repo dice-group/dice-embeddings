@@ -56,15 +56,10 @@ Module Contents
 
    .. py:method:: on_fit_end(trainer, model)
 
-      Call at the end of the training.
+      Called once after the final training epoch completes.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      Override to perform post-training actions such as saving the final
+      model state, computing evaluation metrics, or cleaning up resources.
 
 
 
@@ -89,15 +84,13 @@ Module Contents
 
    .. py:method:: on_train_epoch_end(trainer, model)
 
-      Call at the end of each epoch during training.
+      Called at the end of each training epoch.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The active trainer instance.
+      :type trainer: AbstractTrainer or pl.Trainer
+      :param model: The model being trained.  ``model.loss_history`` contains the
+                    per-epoch average losses accumulated so far.
+      :type model: BaseKGE
 
 
 

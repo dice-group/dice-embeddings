@@ -26,37 +26,27 @@ Module Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   Base class for all neural network modules.
+   Keci: Knowledge Graph Embedding via Clifford Algebra.
 
-   Your models should also subclass this class.
+   Embeds entities and relations as multi-vectors in the Clifford algebra
+   Cl_{p,q}(R^d) and scores triples via the Clifford product.  The algebra
+   is parameterised by two non-negative integers *p* and *q*:
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   * ``p = 0, q = 0`` — reduces to a standard bilinear (DistMult-like) model.
+   * ``p = 0, q = 1`` — equivalent to ComplEx.
+   * Larger ``p`` and ``q`` capture higher-order geometric interactions.
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   The embedding dimension must satisfy ``embedding_dim % (p + q + 1) == 0``;
+   the resulting quotient is stored as ``self.r``.
 
+   :param args: Configuration dictionary.  Recognised keys (beyond those in
+                :class:`BaseKGE`): ``p`` (int, default 0) and ``q`` (int, default 0).
+   :type args: dict
 
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
+   .. rubric:: References
 
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   Demir et al., *Clifford Embeddings — A Generalized Approach for Embedding
+   in Normed Algebras*, ECML 2023.
 
 
    .. py:attribute:: name
@@ -175,22 +165,62 @@ Module Contents
 
    .. py:method:: construct_cl_multivector(x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
 
-      Construct a batch of multivectors Cl_{p,q}(\mathbb{R}^d)
+      Split a flat embedding vector into the three Clifford components.
 
-      Parameter
-      ---------
-      x: torch.FloatTensor with (n,d) shape
+      Given an embedding ``x`` of dimension ``d = r + r*p + r*q``, returns
+      the scalar part ``a0``, the *p*-blade part ``ap``, and the *q*-blade
+      part ``aq``.
 
-      :returns: * **a0** (*torch.FloatTensor with (n,r) shape*)
-                * **ap** (*torch.FloatTensor with (n,r,p) shape*)
-                * **aq** (*torch.FloatTensor with (n,r,q) shape*)
+      :param x: Shape ``(batch_size, d)``.
+      :type x: torch.FloatTensor
+      :param r: Scalar block size (``embedding_dim // (p + q + 1)``).
+      :type r: int
+      :param p: Number of positive-signature basis elements.
+      :type p: int
+      :param q: Number of negative-signature basis elements.
+      :type q: int
+
+      :returns: * **a0** (*torch.FloatTensor*) -- Shape ``(batch_size, r)`` — scalar (grade-0) part.
+                * **ap** (*torch.FloatTensor*) -- Shape ``(batch_size, r, p)`` — positive-blade part.
+                * **aq** (*torch.FloatTensor*) -- Shape ``(batch_size, r, q)`` — negative-blade part.
 
 
 
-   .. py:method:: forward_k_vs_with_explicit(x: torch.Tensor)
+   .. py:method:: forward_k_vs_with_explicit(x: torch.Tensor) -> torch.FloatTensor
+
+      KvsAll scoring using an explicit loop over sigma_pp/qq/pq terms.
+
+      Functionally equivalent to :meth:`forward_k_vs_all` but computes the
+      higher-order interaction terms (sigma_pp, sigma_qq, sigma_pq) with
+      explicit nested loops rather than einsum contractions.  Kept for
+      reference and correctness verification.
+
+      :param x: Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+      :type x: torch.Tensor
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
+
+   .. py:method:: k_vs_all_score(bpe_head_ent_emb: torch.FloatTensor, bpe_rel_ent_emb: torch.FloatTensor, E: torch.FloatTensor) -> torch.FloatTensor
+
+      Compute Clifford-product scores for a head/relation batch vs. all entities.
+
+      Decomposes the head-entity and relation embeddings into Clifford
+      multi-vectors, performs the Cl_{p,q} product, and inner-products the
+      result against the entity embedding matrix *E*.
+
+      :param bpe_head_ent_emb: Head-entity embeddings, shape ``(batch_size, embedding_dim)``.
+      :type bpe_head_ent_emb: torch.FloatTensor
+      :param bpe_rel_ent_emb: Relation embeddings, shape ``(batch_size, embedding_dim)``.
+      :type bpe_rel_ent_emb: torch.FloatTensor
+      :param E: All entity embeddings, shape ``(num_entities, embedding_dim)``.
+      :type E: torch.FloatTensor
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
@@ -212,15 +242,23 @@ Module Contents
 
    .. py:method:: construct_batch_selected_cl_multivector(x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
 
-      Construct a batch of batchs multivectors Cl_{p,q}(\mathbb{R}^d)
+      Split a batched, *k*-selected embedding tensor into Clifford components.
 
-      Parameter
-      ---------
-      x: torch.FloatTensor with (n,k, d) shape
+      A variant of :meth:`construct_cl_multivector` for tensors that have an
+      extra *k* dimension (e.g. when scoring against *k* sampled targets).
 
-      :returns: * **a0** (*torch.FloatTensor with (n,k, m) shape*)
-                * **ap** (*torch.FloatTensor with (n,k, m, p) shape*)
-                * **aq** (*torch.FloatTensor with (n,k, m, q) shape*)
+      :param x: Shape ``(batch_size, k, d)``.
+      :type x: torch.FloatTensor
+      :param r: Scalar block size.
+      :type r: int
+      :param p: Number of positive-signature basis elements.
+      :type p: int
+      :param q: Number of negative-signature basis elements.
+      :type q: int
+
+      :returns: * **a0** (*torch.FloatTensor*) -- Shape ``(batch_size, k, r)``.
+                * **ap** (*torch.FloatTensor*) -- Shape ``(batch_size, k, r, p)``.
+                * **aq** (*torch.FloatTensor*) -- Shape ``(batch_size, k, r, q)``.
 
 
 
@@ -393,37 +431,23 @@ Module Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   Base class for all neural network modules.
+   Base class for all Knowledge Graph Embedding models.
 
-   Your models should also subclass this class.
+   Inherits the Lightning training loop from :class:`BaseKGELightning` and
+   adds the embedding tables, normalisation / dropout layers, and the
+   routing logic that dispatches ``forward()`` calls to the appropriate
+   scoring method.
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   Sub-classes must implement at minimum:
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.
+   * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.
 
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   :param args: Flat configuration dictionary produced by
+                ``vars(argparse.Namespace)``.
+                Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,
+                ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.
+   :type args: dict
 
 
    .. py:attribute:: name

@@ -145,6 +145,8 @@
 <div class="viewcode-block" id="PrintCallback">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PrintCallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Callback that prints training start/end times and total runtime.&quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -190,6 +192,20 @@
 <div class="viewcode-block" id="KGESaveCallback">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KGESaveCallback">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">KGESaveCallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Callback that periodically saves model checkpoints during training.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    every_x_epoch : int or None</span>
+<span class="sd">        Save a checkpoint every *every_x_epoch* epochs.  When ``None``, the</span>
+<span class="sd">        interval defaults to ``max(max_epochs // 2, 1)``.</span>
+<span class="sd">    max_epochs : int</span>
+<span class="sd">        Total number of training epochs (used to compute the default</span>
+<span class="sd">        interval when *every_x_epoch* is ``None``).</span>
+<span class="sd">    path : str</span>
+<span class="sd">        Directory where checkpoint files will be written.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">every_x_epoch</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_epochs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">every_x_epoch</span> <span class="o">=</span> <span class="n">every_x_epoch</span>
@@ -239,6 +255,24 @@
 <div class="viewcode-block" id="PseudoLabellingCallback">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PseudoLabellingCallback">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PseudoLabellingCallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Callback that augments the training set with pseudo-labelled triples.</span>
+
+<span class="sd">    At the end of each epoch the current model scores a batch of unlabelled</span>
+<span class="sd">    triples and those with a predicted probability &gt;= 0.90 are appended to</span>
+<span class="sd">    the training dataset (semi-supervised self-training).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_module : object</span>
+<span class="sd">        Dataset module exposing a ``train_set_idx`` attribute and a</span>
+<span class="sd">        ``train_dataloader()`` method.</span>
+<span class="sd">    kg : KG</span>
+<span class="sd">        The knowledge graph, providing ``num_entities``, ``num_relations``,</span>
+<span class="sd">        and ``unlabelled_set``.</span>
+<span class="sd">    batch_size : int</span>
+<span class="sd">        Number of unlabelled triples to sample and score each epoch.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_module</span><span class="p">,</span> <span class="n">kg</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_module</span> <span class="o">=</span> <span class="n">data_module</span>

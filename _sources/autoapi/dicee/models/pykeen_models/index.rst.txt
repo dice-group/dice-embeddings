@@ -105,4 +105,14 @@ Module Contents
       :abstractmethod:
 
 
+      Score a ``(head, relation)`` batch against a sampled subset of entities.
+
+      Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that
+      support sample-based labelling must override this method.
+
+      :returns: Shape ``(batch_size, k)`` score matrix where *k* is the number
+                of sampled target entities.
+      :rtype: torch.FloatTensor
+
+
 

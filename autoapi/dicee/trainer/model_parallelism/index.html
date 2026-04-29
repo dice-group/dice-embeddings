@@ -145,7 +145,7 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.model_parallelism.TensorParallel" title="dicee.trainer.model_parallelism.TensorParallel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TensorParallel</span></code></a></p></td>
-<td><p>Abstract class for Trainer class for knowledge graph embedding models</p></td>
+<td><p>Abstract base class for KGE model trainers.</p></td>
 </tr>
 </tbody>
 </table>
@@ -187,13 +187,18 @@
 <dt class="sig sig-object py" id="dicee.trainer.model_parallelism.TensorParallel">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.trainer.model_parallelism.</span></span><span class="sig-name descname"><span class="pre">TensorParallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#TensorParallel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.TensorParallel" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../../abstracts/index.html#dicee.abstracts.AbstractTrainer" title="dicee.abstracts.AbstractTrainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractTrainer</span></code></a></p>
-<p>Abstract class for Trainer class for knowledge graph embedding models</p>
-<section id="parameter">
-<h3>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h3>
-<dl class="simple">
-<dt>args<span class="classifier">str</span></dt><dd><p>?</p>
-</dd>
-<dt>callbacks: list</dt><dd><p>?</p>
+<p>Abstract base class for KGE model trainers.</p>
+<p>Provides the callback dispatch mechanism shared by all concrete trainer
+implementations (TorchTrainer, TorchDDPTrainer, etc.).  Sub-classes call
+the <code class="docutils literal notranslate"><span class="pre">on_*</span></code> hooks at the appropriate points in the training loop so that
+any registered <code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractCallback</span></code> can react.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<em>argparse.Namespace</em><em> or </em><em>similar</em>) – Processed configuration object.  Must expose at least
+<code class="docutils literal notranslate"><span class="pre">random_seed</span></code> (int).</p></li>
+<li><p><strong>callbacks</strong> (<em>list</em><em> of </em><a class="reference internal" href="../../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><em>AbstractCallback</em></a>) – Ordered list of callback instances to invoke at each lifecycle hook.</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py method">
@@ -202,7 +207,6 @@
 <dd><p>Train model</p>
 </dd></dl>
 
-</section>
 </dd></dl>
 
 </section>

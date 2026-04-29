@@ -161,7 +161,7 @@ References:
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.transformers.BytE" title="dicee.models.transformers.BytE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BytE</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
+<td><p>Base class for all Knowledge Graph Embedding models.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.transformers.LayerNorm" title="dicee.models.transformers.LayerNorm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LayerNorm</span></code></a></p></td>
 <td><p>LayerNorm but with an optional bias. PyTorch doesn't support simply bias=False</p></td>
@@ -190,36 +190,22 @@ References:
 <dt class="sig sig-object py" id="dicee.models.transformers.BytE">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.transformers.</span></span><span class="sig-name descname"><span class="pre">BytE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/transformers.html#BytE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.transformers.BytE" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing them to be nested in
-a tree structure. You can assign the submodules as regular attributes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>Submodules assigned in this way will be registered, and will also have their
-parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
+<p>Base class for all Knowledge Graph Embedding models.</p>
+<p>Inherits the Lightning training loop from <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseKGELightning</span></code> and
+adds the embedding tables, normalisation / dropout layers, and the
+routing logic that dispatches <code class="docutils literal notranslate"><span class="pre">forward()</span></code> calls to the appropriate
+scoring method.</p>
+<p>Sub-classes must implement at minimum:</p>
+<ul class="simple">
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code> — score a batch of <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> triples.</p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code> — score a <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r)</span></code> batch against every entity.</p></li>
+</ul>
 <dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
-evaluation mode.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>dict</em>) – Flat configuration dictionary produced by
+<code class="docutils literal notranslate"><span class="pre">vars(argparse.Namespace)</span></code>.
+Required keys: <code class="docutils literal notranslate"><span class="pre">embedding_dim</span></code>, <code class="docutils literal notranslate"><span class="pre">num_entities</span></code>, <code class="docutils literal notranslate"><span class="pre">num_relations</span></code>,
+<code class="docutils literal notranslate"><span class="pre">learning_rate</span></code> (or <code class="docutils literal notranslate"><span class="pre">lr</span></code>), <code class="docutils literal notranslate"><span class="pre">optim</span></code>, <code class="docutils literal notranslate"><span class="pre">scoring_technique</span></code>.</p>
 </dd>
 </dl>
 <dl class="py attribute">
@@ -255,12 +241,23 @@ evaluation mode.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.transformers.BytE.loss_function">
 <span class="sig-name descname"><span class="pre">loss_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yhat_batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_batch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/transformers.html#BytE.loss_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.transformers.BytE.loss_function" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Compute the loss between model predictions and targets.</p>
+<p>Delegates to <code class="docutils literal notranslate"><span class="pre">self.loss</span></code> which is configured in
+<code class="xref py py-class docutils literal notranslate"><span class="pre">BaseKGE.__init__</span></code> based on the scoring technique
+(<code class="docutils literal notranslate"><span class="pre">BCEWithLogitsLoss</span></code> for entity/relation prediction,
+<code class="docutils literal notranslate"><span class="pre">CrossEntropyLoss</span></code> for classification).</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>yhat_batch</strong></p></li>
-<li><p><strong>y_batch</strong></p></li>
+<li><p><strong>yhat_batch</strong> (<em>torch.FloatTensor</em>) – Model output scores, shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">*)</span></code>.</p></li>
+<li><p><strong>y_batch</strong> (<em>torch.FloatTensor</em>) – Ground-truth labels of the same shape as <em>yhat_batch</em>.</p></li>
 </ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Scalar loss value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
 </dd>
 </dl>
 </dd></dl>
@@ -286,62 +283,24 @@ Most likely you’ll want to make sure to be in model.eval() mode of operation f
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.transformers.BytE.training_step">
 <span class="sig-name descname"><span class="pre">training_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/transformers.html#BytE.training_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.transformers.BytE.training_step" title="Link to this definition"></a></dt>
-<dd><p>Here you compute and return the training loss and some additional metrics for e.g. the progress bar or
-logger.</p>
+<dd><p>Execute one optimisation step for the given mini-batch.</p>
+<p>Handles two- and three-element batches produced by the different
+dataset classes (<code class="docutils literal notranslate"><span class="pre">KvsAll</span></code> / <code class="docutils literal notranslate"><span class="pre">NegSample</span></code> vs. <code class="docutils literal notranslate"><span class="pre">KvsSample</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>batch</strong> – The output of your data iterable, normally a <code class="xref py py-class docutils literal notranslate"><span class="pre">DataLoader</span></code>.</p></li>
-<li><p><strong>batch_idx</strong> – The index of this batch.</p></li>
-<li><p><strong>dataloader_idx</strong> – The index of the dataloader that produced this batch.
-(only if multiple dataloaders used)</p></li>
+<li><p><strong>batch</strong> (<em>tuple</em>) – <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> for standard scoring, or <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y_select,</span> <span class="pre">y)</span></code> for
+sample-based labelling.</p></li>
+<li><p><strong>batch_idx</strong> (<em>int</em><em>, </em><em>optional</em>) – Index of the current batch (unused, kept for Lightning API compat).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code> - The loss tensor</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">dict</span></code> - A dictionary which can include any keys, but must include the key <code class="docutils literal notranslate"><span class="pre">'loss'</span></code> in the case of
-automatic optimization.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">None</span></code> - In automatic optimization, this will skip to the next batch (but is not supported for
-multi-GPU, TPU, or DeepSpeed). For manual optimization, this has no special meaning, as returning
-the loss is not required.</p></li>
-</ul>
-</p>
+<dd class="field-even"><p>Scalar loss value for this batch.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
 </dd>
 </dl>
-<p>In this step you’d normally do the forward pass and calculate the loss for a batch.
-You can also do fancier things like multiple forward passes or something model specific.</p>
-<p>Example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">batch</span>
-    <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-    <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">loss</span>
-</pre></div>
-</div>
-<p>To use multiple optimizers, you can switch to ‘manual optimization’ and control their stepping:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">automatic_optimization</span> <span class="o">=</span> <span class="kc">False</span>
-
-
-<span class="c1"># Multiple optimizers (e.g.: GANs)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">):</span>
-    <span class="n">opt1</span><span class="p">,</span> <span class="n">opt2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="p">()</span>
-
-    <span class="c1"># do training_step with encoder</span>
-    <span class="o">...</span>
-    <span class="n">opt1</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
-    <span class="c1"># do training_step with decoder</span>
-    <span class="o">...</span>
-    <span class="n">opt2</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
-</pre></div>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>When <code class="docutils literal notranslate"><span class="pre">accumulate_grad_batches</span></code> &gt; 1, the loss returned here will be automatically
-normalized by <code class="docutils literal notranslate"><span class="pre">accumulate_grad_batches</span></code> internally.</p>
-</div>
 </dd></dl>
 
 </dd></dl>

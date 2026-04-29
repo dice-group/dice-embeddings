@@ -261,7 +261,19 @@ return self.interaction.score(h=h, r=r, t=t, slice_size=None, slice_dim=0)</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.forward_k_vs_sample">
 <span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.forward_k_vs_sample" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Score a <code class="docutils literal notranslate"><span class="pre">(head,</span> <span class="pre">relation)</span></code> batch against a sampled subset of entities.</p>
+<p>Used by <code class="docutils literal notranslate"><span class="pre">KvsSample</span></code> and <code class="docutils literal notranslate"><span class="pre">1vsSample</span></code> datasets.  Sub-classes that
+support sample-based labelling must override this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">k)</span></code> score matrix where <em>k</em> is the number
+of sampled target entities.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>torch.FloatTensor</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 

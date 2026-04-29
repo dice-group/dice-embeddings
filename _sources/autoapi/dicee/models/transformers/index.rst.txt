@@ -36,37 +36,23 @@ Module Contents
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
 
-   Base class for all neural network modules.
+   Base class for all Knowledge Graph Embedding models.
 
-   Your models should also subclass this class.
+   Inherits the Lightning training loop from :class:`BaseKGELightning` and
+   adds the embedding tables, normalisation / dropout layers, and the
+   routing logic that dispatches ``forward()`` calls to the appropriate
+   scoring method.
 
-   Modules can also contain other Modules, allowing them to be nested in
-   a tree structure. You can assign the submodules as regular attributes::
+   Sub-classes must implement at minimum:
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+   * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.
+   * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.
 
-
-       class Model(nn.Module):
-           def __init__(self) -> None:
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will also have their
-   parameters converted when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   :param args: Flat configuration dictionary produced by
+                ``vars(argparse.Namespace)``.
+                Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,
+                ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.
+   :type args: dict
 
 
    .. py:attribute:: name
@@ -95,8 +81,20 @@ Module Contents
 
    .. py:method:: loss_function(yhat_batch, y_batch)
 
-      :param yhat_batch:
-      :param y_batch:
+      Compute the loss between model predictions and targets.
+
+      Delegates to ``self.loss`` which is configured in
+      :class:`BaseKGE.__init__` based on the scoring technique
+      (``BCEWithLogitsLoss`` for entity/relation prediction,
+      ``CrossEntropyLoss`` for classification).
+
+      :param yhat_batch: Model output scores, shape ``(batch_size, *)``.
+      :type yhat_batch: torch.FloatTensor
+      :param y_batch: Ground-truth labels of the same shape as *yhat_batch*.
+      :type y_batch: torch.FloatTensor
+
+      :returns: Scalar loss value.
+      :rtype: torch.FloatTensor
 
 
 
@@ -117,58 +115,19 @@ Module Contents
 
    .. py:method:: training_step(batch, batch_idx=None)
 
-      Here you compute and return the training loss and some additional metrics for e.g. the progress bar or
-      logger.
+      Execute one optimisation step for the given mini-batch.
 
-      :param batch: The output of your data iterable, normally a :class:`~torch.utils.data.DataLoader`.
-      :param batch_idx: The index of this batch.
-      :param dataloader_idx: The index of the dataloader that produced this batch.
-                             (only if multiple dataloaders used)
+      Handles two- and three-element batches produced by the different
+      dataset classes (``KvsAll`` / ``NegSample`` vs. ``KvsSample``).
 
-      :returns:
+      :param batch: ``(x, y)`` for standard scoring, or ``(x, y_select, y)`` for
+                    sample-based labelling.
+      :type batch: tuple
+      :param batch_idx: Index of the current batch (unused, kept for Lightning API compat).
+      :type batch_idx: int, optional
 
-                - :class:`~torch.Tensor` - The loss tensor
-                - ``dict`` - A dictionary which can include any keys, but must include the key ``'loss'`` in the case of
-                  automatic optimization.
-                - ``None`` - In automatic optimization, this will skip to the next batch (but is not supported for
-                  multi-GPU, TPU, or DeepSpeed). For manual optimization, this has no special meaning, as returning
-                  the loss is not required.
-
-      In this step you'd normally do the forward pass and calculate the loss for a batch.
-      You can also do fancier things like multiple forward passes or something model specific.
-
-      Example::
-
-          def training_step(self, batch, batch_idx):
-              x, y, z = batch
-              out = self.encoder(x)
-              loss = self.loss(out, x)
-              return loss
-
-      To use multiple optimizers, you can switch to 'manual optimization' and control their stepping:
-
-      .. code-block:: python
-
-          def __init__(self):
-              super().__init__()
-              self.automatic_optimization = False
-
-
-          # Multiple optimizers (e.g.: GANs)
-          def training_step(self, batch, batch_idx):
-              opt1, opt2 = self.optimizers()
-
-              # do training_step with encoder
-              ...
-              opt1.step()
-              # do training_step with decoder
-              ...
-              opt2.step()
-
-      .. note::
-
-         When ``accumulate_grad_batches`` > 1, the loss returned here will be automatically
-         normalized by ``accumulate_grad_batches`` internally.
+      :returns: Scalar loss value for this batch.
+      :rtype: torch.FloatTensor
 
 
 

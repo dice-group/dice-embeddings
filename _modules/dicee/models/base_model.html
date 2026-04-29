@@ -99,6 +99,14 @@
 <div class="viewcode-block" id="BaseKGELightning">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGELightning">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseKGELightning</span><span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">LightningModule</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Thin PyTorch Lightning wrapper shared by all KGE models.</span>
+
+<span class="sd">    Provides the standard Lightning training loop hooks (``training_step``,</span>
+<span class="sd">    ``on_train_epoch_end``, ``configure_optimizers``) as well as a helper</span>
+<span class="sd">    for reporting model size.  All concrete KGE models should extend</span>
+<span class="sd">    :class:`BaseKGE` rather than this class directly.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">training_step_outputs</span> <span class="o">=</span> <span class="p">[]</span>
@@ -120,6 +128,24 @@
 <div class="viewcode-block" id="BaseKGELightning.training_step">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGELightning.training_step">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute one optimisation step for the given mini-batch.</span>
+
+<span class="sd">        Handles two- and three-element batches produced by the different</span>
+<span class="sd">        dataset classes (``KvsAll`` / ``NegSample`` vs. ``KvsSample``).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        batch : tuple</span>
+<span class="sd">            ``(x, y)`` for standard scoring, or ``(x, y_select, y)`` for</span>
+<span class="sd">            sample-based labelling.</span>
+<span class="sd">        batch_idx : int, optional</span>
+<span class="sd">            Index of the current batch (unused, kept for Lightning API compat).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            Scalar loss value for this batch.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span><span class="o">==</span><span class="mi">2</span><span class="p">:</span>
             <span class="c1"># Default</span>
             <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">batch</span>
@@ -148,17 +174,25 @@
 
 <div class="viewcode-block" id="BaseKGELightning.loss_function">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGELightning.loss_function">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">loss_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yhat_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">loss_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yhat_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the loss between model predictions and targets.</span>
+
+<span class="sd">        Delegates to ``self.loss`` which is configured in</span>
+<span class="sd">        :class:`BaseKGE.__init__` based on the scoring technique</span>
+<span class="sd">        (``BCEWithLogitsLoss`` for entity/relation prediction,</span>
+<span class="sd">        ``CrossEntropyLoss`` for classification).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        yhat_batch</span>
-<span class="sd">        y_batch</span>
+<span class="sd">        yhat_batch : torch.FloatTensor</span>
+<span class="sd">            Model output scores, shape ``(batch_size, *)``.</span>
+<span class="sd">        y_batch : torch.FloatTensor</span>
+<span class="sd">            Ground-truth labels of the same shape as *yhat_batch*.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            Scalar loss value.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">yhat_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span></div>
 
@@ -208,6 +242,25 @@
 <div class="viewcode-block" id="BaseKGELightning.configure_optimizers">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGELightning.configure_optimizers">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">configure_optimizers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiate and return the optimiser for training.</span>
+
+<span class="sd">        The optimiser type is taken from ``self.optimizer_name`` which is set</span>
+<span class="sd">        in :meth:`BaseKGE.init_params_with_sanity_checking` from the</span>
+<span class="sd">        ``--optim`` argument.  Supported values: ``&#39;SGD&#39;``, ``&#39;Adam&#39;``,</span>
+<span class="sd">        ``&#39;Adopt&#39;``, ``&#39;AdamW&#39;``, ``&#39;NAdam&#39;``, ``&#39;Adagrad&#39;``, ``&#39;ASGD&#39;``,</span>
+<span class="sd">        ``&#39;Muon&#39;``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        parameters : iterable, optional</span>
+<span class="sd">            Model parameters to optimise.  Defaults to</span>
+<span class="sd">            ``self.parameters()`` when ``None``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.optim.Optimizer</span>
+<span class="sd">            The configured optimiser instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span>
 
@@ -250,6 +303,27 @@
 <div class="viewcode-block" id="BaseKGE">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGE">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseKGE</span><span class="p">(</span><span class="n">BaseKGELightning</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for all Knowledge Graph Embedding models.</span>
+
+<span class="sd">    Inherits the Lightning training loop from :class:`BaseKGELightning` and</span>
+<span class="sd">    adds the embedding tables, normalisation / dropout layers, and the</span>
+<span class="sd">    routing logic that dispatches ``forward()`` calls to the appropriate</span>
+<span class="sd">    scoring method.</span>
+
+<span class="sd">    Sub-classes must implement at minimum:</span>
+
+<span class="sd">    * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.</span>
+<span class="sd">    * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    args : dict</span>
+<span class="sd">        Flat configuration dictionary produced by</span>
+<span class="sd">        ``vars(argparse.Namespace)``.</span>
+<span class="sd">        Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,</span>
+<span class="sd">        ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
@@ -308,18 +382,24 @@
 
 <div class="viewcode-block" id="BaseKGE.forward_byte_pair_encoded_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGE.forward_byte_pair_encoded_k_vs_all">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward_byte_pair_encoded_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_byte_pair_encoded_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;KvsAll scoring for BPE-encoded head entities and relations.</span>
+
+<span class="sd">        Retrieves subword-unit embeddings for the head entity and relation,</span>
+<span class="sd">        reduces them to fixed-size vectors via a linear projection, then</span>
+<span class="sd">        scores against all BPE entity embeddings.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        x : B x 2 x T</span>
-
-
+<span class="sd">        x : torch.LongTensor</span>
+<span class="sd">            Shape ``(batch_size, 2, T)`` BPE token indices where dim 1</span>
+<span class="sd">            indexes ``[head, relation]`` and *T* is</span>
+<span class="sd">            ``max_length_subword_tokens``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, num_bpe_entities)`` score matrix.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (1) Get unit normalized subword units embedding matrices: (B, T, D)</span>
         <span class="n">bpe_head_ent_emb</span><span class="p">,</span> <span class="n">bpe_rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_bpe_head_and_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -356,17 +436,23 @@
 
 <div class="viewcode-block" id="BaseKGE.forward_byte_pair_encoded_triple">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGE.forward_byte_pair_encoded_triple">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward_byte_pair_encoded_triple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">]):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        byte pair encoded neural link predictors</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_byte_pair_encoded_triple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;NegSample scoring for BPE-encoded ``(head, relation, tail)`` triples.</span>
+
+<span class="sd">        Retrieves subword-unit embeddings for all three elements and reduces</span>
+<span class="sd">        them to fixed-size vectors via a linear projection before computing</span>
+<span class="sd">        the triple score.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
+<span class="sd">        x : torch.LongTensor</span>
+<span class="sd">            Shape ``(batch_size, 3, T)`` BPE token indices.</span>
 
+<span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size,)`` triple scores.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="n">bpe_head_ent_emb</span><span class="p">,</span> <span class="n">bpe_rel_ent_emb</span><span class="p">,</span> <span class="n">bpe_tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sentence_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">B</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="n">bpe_head_ent_emb</span><span class="o">.</span><span class="n">shape</span>
         <span class="n">bpe_head_ent_emb</span> <span class="o">=</span> <span class="n">bpe_head_ent_emb</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">T</span> <span class="o">*</span> <span class="n">C</span><span class="p">)</span>
@@ -378,7 +464,14 @@
 
 <div class="viewcode-block" id="BaseKGE.init_params_with_sanity_checking">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGE.init_params_with_sanity_checking">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">init_params_with_sanity_checking</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_params_with_sanity_checking</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Populate model hyper-parameters from ``self.args`` with safe defaults.</span>
+
+<span class="sd">        Reads embedding dimension, learning rate, dropout rates, normalisation</span>
+<span class="sd">        strategy, optimizer name, and parameter initialisation scheme from the</span>
+<span class="sd">        ``args`` dict.  Falls back to sensible defaults for any missing key so</span>
+<span class="sd">        that minimal ``args`` dicts (e.g. for unit tests) are still valid.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;weight_decay&#39;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">weight_decay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;weight_decay&#39;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
@@ -450,18 +543,31 @@
 <div class="viewcode-block" id="BaseKGE.forward">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGE.forward">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">]],</span>
-                <span class="n">y_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+                <span class="n">y_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Route the forward pass to the appropriate scoring method.</span>
+
+<span class="sd">        Inspects the shape and type of *x* to decide which low-level scorer</span>
+<span class="sd">        to call:</span>
+
+<span class="sd">        * Tuple ``(x, y_idx)``   → :meth:`forward_k_vs_sample`</span>
+<span class="sd">        * ``(batch, 3)`` tensor  → :meth:`forward_triples`</span>
+<span class="sd">        * ``(batch, 2)`` tensor  → :meth:`forward_k_vs_all`</span>
+<span class="sd">        * BPE triple tensor      → :meth:`forward_byte_pair_encoded_triple`</span>
+<span class="sd">        * BPE pair tensor        → :meth:`forward_byte_pair_encoded_k_vs_all`</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        x</span>
-<span class="sd">        y_idx</span>
-<span class="sd">        ordered_bpe_entities</span>
+<span class="sd">        x : torch.LongTensor or Tuple[torch.LongTensor, torch.LongTensor]</span>
+<span class="sd">            Either a plain index tensor or a ``(triple_idx, target_idx)``</span>
+<span class="sd">            tuple for sample-based labelling.</span>
+<span class="sd">        y_idx : torch.LongTensor, optional</span>
+<span class="sd">            Target entity indices used by :meth:`forward_k_vs_sample`.</span>
+<span class="sd">            Ignored when *x* is a plain tensor.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            Score tensor whose shape depends on the selected scorer.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
             <span class="n">x</span><span class="p">,</span> <span class="n">y_idx</span> <span class="o">=</span> <span class="n">x</span>
@@ -489,15 +595,18 @@
 <div class="viewcode-block" id="BaseKGE.forward_triples">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGE.forward_triples">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Score a batch of ``(head, relation, tail)`` index triples.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        x</span>
+<span class="sd">        x : torch.LongTensor</span>
+<span class="sd">            Shape ``(batch_size, 3)`` integer tensor where each row is</span>
+<span class="sd">            ``[head_idx, relation_idx, tail_idx]``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size,)`` triple scores.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">h_emb</span><span class="p">,</span> <span class="n">r_emb</span><span class="p">,</span> <span class="n">t_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -507,18 +616,53 @@
 <div class="viewcode-block" id="BaseKGE.forward_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGE.forward_k_vs_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Score a ``(head, relation)`` batch against every entity.</span>
+
+<span class="sd">        Sub-classes must override this method.  The default implementation</span>
+<span class="sd">        raises ``ValueError`` to make missing overrides obvious at runtime.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, num_entities)`` score matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;MODEL:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> does not have forward_k_vs_all function&#39;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseKGE.forward_k_vs_sample">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGE.forward_k_vs_sample">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Score a ``(head, relation)`` batch against a sampled subset of entities.</span>
+
+<span class="sd">        Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that</span>
+<span class="sd">        support sample-based labelling must override this method.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, k)`` score matrix where *k* is the number</span>
+<span class="sd">            of sampled target entities.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;MODEL:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> does not have forward_k_vs_sample function&#39;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseKGE.get_triple_representation">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGE.get_triple_representation">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_triple_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx_hrt</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_triple_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx_hrt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve and normalise embedding vectors for a triple index batch.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        idx_hrt : torch.LongTensor</span>
+<span class="sd">            Shape ``(batch_size, 3)`` integer tensor with columns</span>
+<span class="sd">            ``[head_idx, relation_idx, tail_idx]``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        head_ent_emb, rel_ent_emb, tail_ent_emb : torch.FloatTensor</span>
+<span class="sd">            Each has shape ``(batch_size, embedding_dim)`` after applying the</span>
+<span class="sd">            configured dropout and normalisation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (1) Split input into indexes.</span>
         <span class="n">idx_head_entity</span><span class="p">,</span> <span class="n">idx_relation</span><span class="p">,</span> <span class="n">idx_tail_entity</span> <span class="o">=</span> <span class="n">idx_hrt</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">idx_hrt</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">idx_hrt</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
         <span class="c1"># (2) Retrieve embeddings &amp; Apply Dropout &amp; Normalization</span>
@@ -531,7 +675,21 @@
 
 <div class="viewcode-block" id="BaseKGE.get_head_relation_representation">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGE.get_head_relation_representation">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_head_relation_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexed_triple</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_head_relation_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexed_triple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve and normalise embedding vectors for head entities and relations.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        indexed_triple : torch.LongTensor</span>
+<span class="sd">            Shape ``(batch_size, 2)`` integer tensor with columns</span>
+<span class="sd">            ``[head_idx, relation_idx]``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        head_ent_emb, rel_ent_emb : torch.FloatTensor</span>
+<span class="sd">            Each has shape ``(batch_size, embedding_dim)`` after applying the</span>
+<span class="sd">            configured dropout and normalisation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (1) Split input into indexes.</span>
         <span class="n">idx_head_entity</span><span class="p">,</span> <span class="n">idx_relation</span> <span class="o">=</span> <span class="n">indexed_triple</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">indexed_triple</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="c1"># (2) Retrieve embeddings &amp; Apply Dropout &amp; Normalization</span>
@@ -543,16 +701,20 @@
 
 <div class="viewcode-block" id="BaseKGE.get_sentence_representation">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGE.get_sentence_representation">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_sentence_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_sentence_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve BPE subword-unit embeddings for a batch of triples.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        x shape (b,3,t)</span>
+<span class="sd">        x : torch.LongTensor</span>
+<span class="sd">            Shape ``(batch_size, 3, T)`` where *T* is</span>
+<span class="sd">            ``max_length_subword_tokens``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-
+<span class="sd">        head_ent_emb, rel_emb, tail_emb : torch.FloatTensor</span>
+<span class="sd">            Each has shape ``(batch_size, T, embedding_dim)``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:],</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:],</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:]</span>
         <span class="n">head_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_embeddings</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
@@ -564,16 +726,25 @@
 <div class="viewcode-block" id="BaseKGE.get_bpe_head_and_relation_representation">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGE.get_bpe_head_and_relation_representation">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_bpe_head_and_relation_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve unit-normalised BPE embeddings for head entities and relations.</span>
+
+<span class="sd">        Each entity/relation is represented as a sequence of *T* subword</span>
+<span class="sd">        tokens.  Their token embeddings are L2-normalised across the</span>
+<span class="sd">        sequence dimension so that the resulting matrix has unit Frobenius</span>
+<span class="sd">        norm.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        x : B x 2 x T</span>
+<span class="sd">        x : torch.LongTensor</span>
+<span class="sd">            Shape ``(batch_size, 2, T)`` where dim 1 indexes</span>
+<span class="sd">            ``[head, relation]`` and *T* is ``max_length_subword_tokens``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-
+<span class="sd">        head_ent_emb, rel_emb : torch.FloatTensor</span>
+<span class="sd">            Each has shape ``(batch_size, T, embedding_dim)``, L2-normalised</span>
+<span class="sd">            over the ``(T, D)`` dimensions.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># h: batchsize, T where T represents the maximum shaped token size</span>
         <span class="c1"># h: B x T, r: B x T</span>
@@ -595,11 +766,14 @@
 <div class="viewcode-block" id="BaseKGE.get_embeddings">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGE.get_embeddings">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the entity and relation embedding matrices as numpy arrays.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-
+<span class="sd">        entity_embeddings : numpy.ndarray</span>
+<span class="sd">            Shape ``(num_entities, embedding_dim)``.</span>
+<span class="sd">        relation_embeddings : numpy.ndarray</span>
+<span class="sd">            Shape ``(num_relations, embedding_dim)``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span></div>
 </div>
@@ -609,9 +783,17 @@
 <div class="viewcode-block" id="IdentityClass">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.IdentityClass">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">IdentityClass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;No-op normalisation / dropout placeholder.</span>
+
+<span class="sd">    Used whenever no normalisation layer is requested (``--normalization None``).</span>
+<span class="sd">    All inputs are returned unchanged so that the rest of the model code does</span>
+<span class="sd">    not need conditional checks around normalisation calls.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+
 <div class="viewcode-block" id="IdentityClass.__call__">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.IdentityClass.__call__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>

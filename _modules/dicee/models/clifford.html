@@ -93,6 +93,31 @@
 <div class="viewcode-block" id="Keci">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.Keci">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Keci</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Keci: Knowledge Graph Embedding via Clifford Algebra.</span>
+
+<span class="sd">    Embeds entities and relations as multi-vectors in the Clifford algebra</span>
+<span class="sd">    Cl_{p,q}(R^d) and scores triples via the Clifford product.  The algebra</span>
+<span class="sd">    is parameterised by two non-negative integers *p* and *q*:</span>
+
+<span class="sd">    * ``p = 0, q = 0`` — reduces to a standard bilinear (DistMult-like) model.</span>
+<span class="sd">    * ``p = 0, q = 1`` — equivalent to ComplEx.</span>
+<span class="sd">    * Larger ``p`` and ``q`` capture higher-order geometric interactions.</span>
+
+<span class="sd">    The embedding dimension must satisfy ``embedding_dim % (p + q + 1) == 0``;</span>
+<span class="sd">    the resulting quotient is stored as ``self.r``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    args : dict</span>
+<span class="sd">        Configuration dictionary.  Recognised keys (beyond those in</span>
+<span class="sd">        :class:`BaseKGE`): ``p`` (int, default 0) and ``q`` (int, default 0).</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Demir et al., *Clifford Embeddings — A Generalized Approach for Embedding</span>
+<span class="sd">    in Normed Algebras*, ECML 2023.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Keci&#39;</span>
@@ -270,20 +295,31 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.Keci.construct_cl_multivector">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">construct_cl_multivector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Split a flat embedding vector into the three Clifford components.</span>
 
-<span class="sd">        Construct a batch of multivectors Cl_{p,q}(\mathbb{R}^d)</span>
+<span class="sd">        Given an embedding ``x`` of dimension ``d = r + r*p + r*q``, returns</span>
+<span class="sd">        the scalar part ``a0``, the *p*-blade part ``ap``, and the *q*-blade</span>
+<span class="sd">        part ``aq``.</span>
 
-<span class="sd">        Parameter</span>
-<span class="sd">        ---------</span>
-<span class="sd">        x: torch.FloatTensor with (n,d) shape</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, d)``.</span>
+<span class="sd">        r : int</span>
+<span class="sd">            Scalar block size (``embedding_dim // (p + q + 1)``).</span>
+<span class="sd">        p : int</span>
+<span class="sd">            Number of positive-signature basis elements.</span>
+<span class="sd">        q : int</span>
+<span class="sd">            Number of negative-signature basis elements.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        a0: torch.FloatTensor with (n,r) shape</span>
-<span class="sd">        ap: torch.FloatTensor with (n,r,p) shape</span>
-<span class="sd">        aq: torch.FloatTensor with (n,r,q) shape</span>
-
+<span class="sd">        a0 : torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, r)`` — scalar (grade-0) part.</span>
+<span class="sd">        ap : torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, r, p)`` — positive-blade part.</span>
+<span class="sd">        aq : torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, r, q)`` — negative-blade part.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">batch_size</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
         <span class="c1"># (1) A_{n \times k}: take the first k columns</span>
@@ -303,7 +339,24 @@
 
 <div class="viewcode-block" id="Keci.forward_k_vs_with_explicit">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.Keci.forward_k_vs_with_explicit">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_with_explicit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_with_explicit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;KvsAll scoring using an explicit loop over sigma_pp/qq/pq terms.</span>
+
+<span class="sd">        Functionally equivalent to :meth:`forward_k_vs_all` but computes the</span>
+<span class="sd">        higher-order interaction terms (sigma_pp, sigma_qq, sigma_pq) with</span>
+<span class="sd">        explicit nested loops rather than einsum contractions.  Kept for</span>
+<span class="sd">        reference and correctness verification.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : torch.Tensor</span>
+<span class="sd">            Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, num_entities)`` score matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1"># (1) Retrieve real-valued embedding vectors.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -370,7 +423,29 @@
 
 <div class="viewcode-block" id="Keci.k_vs_all_score">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.Keci.k_vs_all_score">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">k_vs_all_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bpe_head_ent_emb</span><span class="p">,</span> <span class="n">bpe_rel_ent_emb</span><span class="p">,</span> <span class="n">E</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">k_vs_all_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bpe_head_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
+                       <span class="n">bpe_rel_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
+                       <span class="n">E</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute Clifford-product scores for a head/relation batch vs. all entities.</span>
+
+<span class="sd">        Decomposes the head-entity and relation embeddings into Clifford</span>
+<span class="sd">        multi-vectors, performs the Cl_{p,q} product, and inner-products the</span>
+<span class="sd">        result against the entity embedding matrix *E*.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        bpe_head_ent_emb : torch.FloatTensor</span>
+<span class="sd">            Head-entity embeddings, shape ``(batch_size, embedding_dim)``.</span>
+<span class="sd">        bpe_rel_ent_emb : torch.FloatTensor</span>
+<span class="sd">            Relation embeddings, shape ``(batch_size, embedding_dim)``.</span>
+<span class="sd">        E : torch.FloatTensor</span>
+<span class="sd">            All entity embeddings, shape ``(num_entities, embedding_dim)``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, num_entities)`` score matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations</span>
         <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_cl_multivector</span><span class="p">(</span><span class="n">bpe_head_ent_emb</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
         <span class="n">r0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_cl_multivector</span><span class="p">(</span><span class="n">bpe_rel_ent_emb</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
@@ -451,18 +526,30 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.Keci.construct_batch_selected_cl_multivector">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">construct_batch_selected_cl_multivector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Construct a batch of batchs multivectors Cl_{p,q}(\mathbb{R}^d)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Split a batched, *k*-selected embedding tensor into Clifford components.</span>
 
-<span class="sd">        Parameter</span>
-<span class="sd">        ---------</span>
-<span class="sd">        x: torch.FloatTensor with (n,k, d) shape</span>
+<span class="sd">        A variant of :meth:`construct_cl_multivector` for tensors that have an</span>
+<span class="sd">        extra *k* dimension (e.g. when scoring against *k* sampled targets).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, k, d)``.</span>
+<span class="sd">        r : int</span>
+<span class="sd">            Scalar block size.</span>
+<span class="sd">        p : int</span>
+<span class="sd">            Number of positive-signature basis elements.</span>
+<span class="sd">        q : int</span>
+<span class="sd">            Number of negative-signature basis elements.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        a0: torch.FloatTensor with (n,k, m) shape</span>
-<span class="sd">        ap: torch.FloatTensor with (n,k, m, p) shape</span>
-<span class="sd">        aq: torch.FloatTensor with (n,k, m, q) shape</span>
+<span class="sd">        a0 : torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, k, r)``.</span>
+<span class="sd">        ap : torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, k, r, p)``.</span>
+<span class="sd">        aq : torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, k, r, q)``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">batch_size</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
 

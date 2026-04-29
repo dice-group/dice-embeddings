@@ -67,12 +67,7 @@ Module Contents
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
 
-   Abstract class for Callback class for knowledge graph embedding models
-
-
-   Parameter
-   ---------
-
+   Callback that prints training start/end times and total runtime.
 
 
    .. py:attribute:: start_time
@@ -80,58 +75,42 @@ Module Contents
 
    .. py:method:: on_fit_start(trainer, pl_module)
 
-      Call at the beginning of the training.
+      Called once before the first training epoch.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The active trainer instance.
+      :type trainer: AbstractTrainer or pl.Trainer
+      :param model: The model about to be trained.
+      :type model: BaseKGE
 
 
 
    .. py:method:: on_fit_end(trainer, pl_module)
 
-      Call at the end of the training.
+      Called once after the final training epoch completes.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      Override to perform post-training actions such as saving the final
+      model state, computing evaluation metrics, or cleaning up resources.
 
 
 
    .. py:method:: on_train_batch_end(*args, **kwargs)
 
-      Call at the end of each mini-batch during the training.
+      Called after each mini-batch gradient update.
 
-
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      Override to inspect or modify the model at a finer granularity than
+      epoch-level hooks.
 
 
 
    .. py:method:: on_train_epoch_end(*args, **kwargs)
 
-      Call at the end of each epoch during training.
+      Called at the end of each training epoch.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The active trainer instance.
+      :type trainer: AbstractTrainer or pl.Trainer
+      :param model: The model being trained.  ``model.loss_history`` contains the
+                    per-epoch average losses accumulated so far.
+      :type model: BaseKGE
 
 
 
@@ -140,12 +119,16 @@ Module Contents
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
 
-   Abstract class for Callback class for knowledge graph embedding models
+   Callback that periodically saves model checkpoints during training.
 
-
-   Parameter
-   ---------
-
+   :param every_x_epoch: Save a checkpoint every *every_x_epoch* epochs.  When ``None``, the
+                         interval defaults to ``max(max_epochs // 2, 1)``.
+   :type every_x_epoch: int or None
+   :param max_epochs: Total number of training epochs (used to compute the default
+                      interval when *every_x_epoch* is ``None``).
+   :type max_epochs: int
+   :param path: Directory where checkpoint files will be written.
+   :type path: str
 
 
    .. py:attribute:: every_x_epoch
@@ -164,58 +147,42 @@ Module Contents
 
    .. py:method:: on_train_batch_end(*args, **kwargs)
 
-      Call at the end of each mini-batch during the training.
+      Called after each mini-batch gradient update.
 
-
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      Override to inspect or modify the model at a finer granularity than
+      epoch-level hooks.
 
 
 
    .. py:method:: on_fit_start(trainer, pl_module)
 
-      Call at the beginning of the training.
+      Called once before the first training epoch.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The active trainer instance.
+      :type trainer: AbstractTrainer or pl.Trainer
+      :param model: The model about to be trained.
+      :type model: BaseKGE
 
 
 
    .. py:method:: on_train_epoch_end(*args, **kwargs)
 
-      Call at the end of each epoch during training.
+      Called at the end of each training epoch.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The active trainer instance.
+      :type trainer: AbstractTrainer or pl.Trainer
+      :param model: The model being trained.  ``model.loss_history`` contains the
+                    per-epoch average losses accumulated so far.
+      :type model: BaseKGE
 
 
 
    .. py:method:: on_fit_end(*args, **kwargs)
 
-      Call at the end of the training.
+      Called once after the final training epoch completes.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      Override to perform post-training actions such as saving the final
+      model state, computing evaluation metrics, or cleaning up resources.
 
 
 
@@ -227,12 +194,20 @@ Module Contents
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
 
-   Abstract class for Callback class for knowledge graph embedding models
+   Callback that augments the training set with pseudo-labelled triples.
 
+   At the end of each epoch the current model scores a batch of unlabelled
+   triples and those with a predicted probability >= 0.90 are appended to
+   the training dataset (semi-supervised self-training).
 
-   Parameter
-   ---------
-
+   :param data_module: Dataset module exposing a ``train_set_idx`` attribute and a
+                       ``train_dataloader()`` method.
+   :type data_module: object
+   :param kg: The knowledge graph, providing ``num_entities``, ``num_relations``,
+              and ``unlabelled_set``.
+   :type kg: KG
+   :param batch_size: Number of unlabelled triples to sample and score each epoch.
+   :type batch_size: int
 
 
    .. py:attribute:: data_module
@@ -270,12 +245,17 @@ Module Contents
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
 
-   Abstract class for Callback class for knowledge graph embedding models
+   Abstract base class for KGE training lifecycle callbacks.
 
+   Concrete sub-classes override one or more hook methods to perform
+   custom actions at specific points during training (e.g. weight
+   averaging, periodic evaluation, model checkpointing).  All hooks have
+   empty default implementations so sub-classes only need to override the
+   hooks they care about.
 
-   Parameter
-   ---------
-
+   Callbacks are registered by passing them to the trainer's *callbacks*
+   list.  They are also compatible with PyTorch Lightning trainers because
+   this class extends ``lightning.pytorch.callbacks.Callback``.
 
 
    .. py:attribute:: path
@@ -296,58 +276,42 @@ Module Contents
 
    .. py:method:: on_fit_start(trainer, model)
 
-      Call at the beginning of the training.
+      Called once before the first training epoch.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The active trainer instance.
+      :type trainer: AbstractTrainer or pl.Trainer
+      :param model: The model about to be trained.
+      :type model: BaseKGE
 
 
 
    .. py:method:: on_fit_end(trainer, model)
 
-      Call at the end of the training.
+      Called once after the final training epoch completes.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      Override to perform post-training actions such as saving the final
+      model state, computing evaluation metrics, or cleaning up resources.
 
 
 
    .. py:method:: on_train_epoch_end(trainer, model)
 
-      Call at the end of each epoch during training.
+      Called at the end of each training epoch.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The active trainer instance.
+      :type trainer: AbstractTrainer or pl.Trainer
+      :param model: The model being trained.  ``model.loss_history`` contains the
+                    per-epoch average losses accumulated so far.
+      :type model: BaseKGE
 
 
 
    .. py:method:: on_train_batch_end(*args, **kwargs)
 
-      Call at the end of each mini-batch during the training.
+      Called after each mini-batch gradient update.
 
-
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      Override to inspect or modify the model at a finer granularity than
+      epoch-level hooks.
 
 
 
@@ -356,12 +320,17 @@ Module Contents
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
 
-   Abstract class for Callback class for knowledge graph embedding models
+   Abstract base class for KGE training lifecycle callbacks.
 
+   Concrete sub-classes override one or more hook methods to perform
+   custom actions at specific points during training (e.g. weight
+   averaging, periodic evaluation, model checkpointing).  All hooks have
+   empty default implementations so sub-classes only need to override the
+   hooks they care about.
 
-   Parameter
-   ---------
-
+   Callbacks are registered by passing them to the trainer's *callbacks*
+   list.  They are also compatible with PyTorch Lightning trainers because
+   this class extends ``lightning.pytorch.callbacks.Callback``.
 
 
    .. py:attribute:: f
@@ -389,15 +358,12 @@ Module Contents
 
    .. py:method:: on_fit_start(trainer, model)
 
-      Call at the beginning of the training.
+      Called once before the first training epoch.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The active trainer instance.
+      :type trainer: AbstractTrainer or pl.Trainer
+      :param model: The model about to be trained.
+      :type model: BaseKGE
 
 
 
@@ -579,15 +545,10 @@ Module Contents
 
    .. py:method:: on_fit_end(trainer, model)
 
-      Call at the end of the training.
+      Called once after the final training epoch completes.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      Override to perform post-training actions such as saving the final
+      model state, computing evaluation metrics, or cleaning up resources.
 
 
 
