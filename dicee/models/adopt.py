@@ -461,7 +461,13 @@ class ADOPT(Optimizer):
             - CUDA graph capture is checked for safety when capturable=True
             - The method is thread-safe for different parameter groups
         """
-        self._accelerator_graph_capture_health_check()
+        # _accelerator_graph_capture_health_check was renamed to
+        # _cuda_graph_capture_health_check in older PyTorch builds;
+        # fall back gracefully so the optimizer works across versions.
+        if hasattr(self, "_accelerator_graph_capture_health_check"):
+            self._accelerator_graph_capture_health_check()
+        elif hasattr(self, "_cuda_graph_capture_health_check"):
+            self._cuda_graph_capture_health_check()
 
         loss = None
         if closure is not None:
