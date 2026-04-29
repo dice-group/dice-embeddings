@@ -45,6 +45,42 @@ def load_term_mapping(file_path: str) -> polars.DataFrame:
     return polars.read_csv(f"{file_path}.csv")
 
 
+def _cuda_is_usable() -> bool:
+    """Return True only when CUDA can be fully initialised.
+
+    ``torch.cuda.device_count()`` does not trigger full CUDA runtime init,
+    so it may return >0 even when the runtime is in a broken/corrupted state
+    (e.g. after a kernel crash in a previous test).  Calling
+    ``get_device_name`` forces the actual init and lets us detect the bad
+    state before handing control to PyTorch Lightning.
+    """
+    try:
+        if torch.cuda.device_count() > 0:
+            torch.cuda.get_device_name(0)
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _disable_cuda_in_process() -> None:
+    """Patch ``torch.cuda.is_available`` to return ``False`` for this process.
+
+    Lightning's ``_collect_rng_states`` (called from ``isolate_rng``) checks
+    ``torch.cuda.is_available()`` and, when it returns ``True``, calls
+    ``torch.cuda.get_rng_state_all()``.  That triggers a full CUDA runtime
+    init which crashes if the runtime is already in a broken state.  Setting
+    ``accelerator="cpu"`` alone is not sufficient because Lightning still
+    collects CUDA RNG state regardless of the chosen accelerator.
+
+    This function is only called after ``_cuda_is_usable()`` has already
+    confirmed that the CUDA runtime cannot be initialised, so permanently
+    returning ``False`` from ``is_available`` is both safe and correct for
+    the lifetime of the current process.
+    """
+    torch.cuda.is_available = lambda: False  # type: ignore[assignment]
+
+
 def initialize_trainer(
     args,
     callbacks: List
@@ -77,7 +113,16 @@ def initialize_trainer(
         kwargs = {**vars(args), **(getattr(args, "pl_trainer_kwargs", {}) or {})}
         # NOTE: PyTorch Lightning Trainer has many optional parameters
         # See: https://lightning.ai/docs/pytorch/stable/common/trainer.html
-        trainer = pl.Trainer(accelerator=kwargs.get("accelerator", "auto"),
+        # Fall back to CPU when CUDA is unavailable or its context is broken
+        # (e.g. after a kernel crash in a previous test in the same process).
+        # _disable_cuda_in_process() patches torch.cuda.is_available → False so
+        # Lightning's isolate_rng does not attempt to collect CUDA RNG state,
+        # which would re-trigger the failed init and crash before training starts.
+        _default_accelerator = "auto"
+        if not _cuda_is_usable():
+            _disable_cuda_in_process()
+            _default_accelerator = "cpu"
+        trainer = pl.Trainer(accelerator=kwargs.get("accelerator", _default_accelerator),
                           strategy=kwargs.get("strategy", "auto"),
                           num_nodes=kwargs.get("num_nodes", 1),
                           precision=kwargs.get("precision", None),
@@ -214,7 +259,10 @@ class DICE_Trainer:
               f' # of GPUs:{torch.cuda.device_count()} |'
               f' # of CPUs for dataloader:{self.args.num_core}')
         for i in range(torch.cuda.device_count()):
-            print(torch.cuda.get_device_name(i))
+            try:
+                print(torch.cuda.get_device_name(i))
+            except Exception as exc:
+                print(f'GPU {i}: <unable to query name — {exc}>')
 
     def continual_start(self,knowledge_graph):
         """
