@@ -90,16 +90,16 @@ def find_good_batch_size(train_loader,tp_ensemble_model):
             # Provide helpful suggestions for OOM errors
             gpu_mem = torch.cuda.get_device_properties(0).total_memory / (1024**3)  # Convert to GB
             allocated = torch.cuda.memory_allocated(0) / (1024**3)
-            print(f"\\n⚠️  CUDA Out of Memory Error\\n")
+            print("\\n⚠️  CUDA Out of Memory Error\\n")
             print(f"GPU Memory: {gpu_mem:.2f} GB total, {allocated:.2f} GB allocated\\n")
             print(f"Attempted batch size: {batch_size}\\n")
-            print(f"Suggestions to reduce memory usage:\\n")
+            print("Suggestions to reduce memory usage:\\n")
             print(f"  1. Reduce --batch_size (current: {batch_size}, try: {batch_size//2})\\n")
-            print(f"  2. Reduce --embedding_dim\\n")
-            print(f"  3. Use --scoring_technique NegSample with --neg_ratio 10\\n")
-            print(f"  4. Enable mixed precision: --trainer PL --pl_trainer_kwargs '{{\\"precision\\":\\"16-mixed\\"}}'\\n")
-            print(f"  5. Use --trainer torchCPUTrainer to train on CPU\\n")
-            print(f"\\nSee docs/guides/troubleshooting.md for more solutions\\n")
+            print("  2. Reduce --embedding_dim\\n")
+            print("  3. Use --scoring_technique NegSample with --neg_ratio 10\\n")
+            print("  4. Enable mixed precision: --trainer PL --pl_trainer_kwargs '{\\\"precision\\\":\\\"16-mixed\\\"}\'\\n")
+            print("  5. Use --trainer torchCPUTrainer to train on CPU\\n")
+            print("\\nSee docs/guides/troubleshooting.md for more solutions\\n")
             return batch_sizes_and_mem_usages, False
 
     history_batch_sizes_and_mem_usages=[]
