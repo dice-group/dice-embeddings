@@ -17,6 +17,12 @@ from .utils import (
     create_hits_dict,
     ALL_HITS_RANGE,
 )
+from ._filtering import (
+    compute_filtered_rank,
+    compute_filtered_rank_batch,
+    accumulate_bidirectional_hits,
+    build_bpe_entity_index,
+)
 
 
 @torch.no_grad()
@@ -73,37 +79,18 @@ def evaluate_link_prediction_performance(
         predictions_heads = model.model.forward_triples(x)
         del x
 
-        # Filtered tail ranking
+        # Compute filtered ranks
         filt_tails = [model.entity_to_idx[i] for i in er_vocab[(str_h, str_r)]]
-        target_value = predictions_tails[t].item()
-        predictions_tails[filt_tails] = -np.Inf
-        predictions_tails[t] = target_value
-        _, sort_idxs = torch.sort(predictions_tails, descending=True)
-        sort_idxs = sort_idxs.detach()
-        filt_tail_entity_rank = np.where(sort_idxs == t)[0][0]
-
-        # Filtered head ranking
         filt_heads = [model.entity_to_idx[i] for i in re_vocab[(str_r, str_t)]]
-        target_value = predictions_heads[h].item()
-        predictions_heads[filt_heads] = -np.Inf
-        predictions_heads[h] = target_value
-        _, sort_idxs = torch.sort(predictions_heads, descending=True)
-        sort_idxs = sort_idxs.detach()
-        filt_head_entity_rank = np.where(sort_idxs == h)[0][0]
-
-        # Add 1 as numpy arrays are 0-indexed
-        filt_head_entity_rank += 1
-        filt_tail_entity_rank += 1
+        
+        filt_tail_entity_rank = compute_filtered_rank(predictions_tails, t, filt_tails)
+        filt_head_entity_rank = compute_filtered_rank(predictions_heads, h, filt_heads)
 
         rr = 1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
         reciprocal_ranks.append(rr)
 
         # Compute Hit@N
-        for hits_level in range(1, 11):
-            res = 1 if filt_head_entity_rank <= hits_level else 0
-            res += 1 if filt_tail_entity_rank <= hits_level else 0
-            if res > 0:
-                hits.setdefault(hits_level, []).append(res)
+        accumulate_bidirectional_hits(hits, filt_head_entity_rank, filt_tail_entity_rank)
 
     return compute_metrics_from_ranks(
         ranks=[],  # Not used directly
@@ -156,17 +143,10 @@ def evaluate_link_prediction_performance_with_reciprocals(
 
         for j in range(data_batch.shape[0]):
             str_h, str_r, str_t = str_data_batch[j]
-            id_e, id_r, id_e_target = data_batch[j]
-
+            id_e_target = data_batch[j, 2]
             filt = [entity_to_idx[_] for _ in er_vocab[(str_h, str_r)]]
-            target_value = predictions[j, id_e_target].item()
-            predictions[j, filt] = -np.Inf
-            predictions[j, id_e_target] = target_value
-
-        _, sort_idxs = torch.sort(predictions, dim=1, descending=True)
-
-        for j in range(data_batch.shape[0]):
-            rank = torch.where(sort_idxs[j] == e2_idx[j])[0].item() + 1
+            
+            rank = compute_filtered_rank(predictions[j], id_e_target, filt)
             ranks.append(rank)
             update_hits(hits, rank, hits_range)
 
@@ -222,14 +202,8 @@ def evaluate_link_prediction_performance_with_bpe_reciprocals(
         for j, (str_h, str_r, str_t) in enumerate(str_data_batch):
             id_e_target = entity_to_idx[str_t]
             filt = [entity_to_idx[_] for _ in er_vocab[(str_h, str_r)]]
-            target_value = predictions[j, id_e_target].item()
-            predictions[j, filt] = -np.Inf
-            predictions[j, id_e_target] = target_value
-
-        _, sort_idxs = torch.sort(predictions, dim=1, descending=True)
-
-        for j, (_, __, str_t) in enumerate(str_data_batch):
-            rank = torch.where(sort_idxs[j] == entity_to_idx[str_t])[0].item() + 1
+            
+            rank = compute_filtered_rank(predictions[j], id_e_target, filt)
             ranks.append(rank)
             update_hits(hits, rank, hits_range)
 
@@ -263,14 +237,13 @@ def evaluate_link_prediction_performance_with_bpe(
     reciprocal_ranks = []
 
     num_entities = len(within_entities)
-    bpe_entity_to_idx = {}
-    all_bpe_entities = []
-
-    for idx, str_entity in tqdm(enumerate(within_entities)):
-        shaped_bpe_entity = model.get_bpe_token_representation(str_entity)
-        bpe_entity_to_idx[shaped_bpe_entity] = idx
-        all_bpe_entities.append(shaped_bpe_entity)
-    all_bpe_entities = torch.LongTensor(all_bpe_entities)
+    
+    # Build BPE entity index
+    all_bpe_shaped_entities = [
+        model.get_bpe_token_representation(str_entity)
+        for str_entity in tqdm(within_entities, desc="Encoding entities")
+    ]
+    bpe_entity_to_idx, all_bpe_entities = build_bpe_entity_index(all_bpe_shaped_entities)
 
     for str_h, str_r, str_t in tqdm(triples):
         idx_bpe_h = bpe_entity_to_idx[model.get_bpe_token_representation(str_h)]
@@ -304,41 +277,23 @@ def evaluate_link_prediction_performance_with_bpe(
         with torch.no_grad():
             predictions_heads = model.model(x)
 
-        # Filter tails
+        # Compute filtered ranks
         filt_tails = [
             bpe_entity_to_idx[model.get_bpe_token_representation(i)]
             for i in er_vocab[(str_h, str_r)]
         ]
-        target_value = predictions_tails[idx_bpe_t].item()
-        predictions_tails[filt_tails] = -np.Inf
-        predictions_tails[idx_bpe_t] = target_value
-        _, sort_idxs = torch.sort(predictions_tails, descending=True)
-        sort_idxs = sort_idxs.detach()
-        filt_tail_entity_rank = np.where(sort_idxs == idx_bpe_t)[0][0]
-
-        # Filter heads
         filt_heads = [
             bpe_entity_to_idx[model.get_bpe_token_representation(i)]
             for i in re_vocab[(str_r, str_t)]
         ]
-        target_value = predictions_heads[idx_bpe_h].item()
-        predictions_heads[filt_heads] = -np.Inf
-        predictions_heads[idx_bpe_h] = target_value
-        _, sort_idxs = torch.sort(predictions_heads, descending=True)
-        sort_idxs = sort_idxs.detach()
-        filt_head_entity_rank = np.where(sort_idxs == idx_bpe_h)[0][0]
-
-        filt_head_entity_rank += 1
-        filt_tail_entity_rank += 1
+        
+        filt_tail_entity_rank = compute_filtered_rank(predictions_tails, idx_bpe_t, filt_tails)
+        filt_head_entity_rank = compute_filtered_rank(predictions_heads, idx_bpe_h, filt_heads)
 
         rr = 1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
         reciprocal_ranks.append(rr)
 
-        for hits_level in range(1, 11):
-            res = 1 if filt_head_entity_rank <= hits_level else 0
-            res += 1 if filt_tail_entity_rank <= hits_level else 0
-            if res > 0:
-                hits.setdefault(hits_level, []).append(res)
+        accumulate_bidirectional_hits(hits, filt_head_entity_rank, filt_tail_entity_rank)
 
     return compute_metrics_from_ranks(
         ranks=[],
@@ -434,33 +389,17 @@ def evaluate_lp(
             r = r_batch[i].item()
             t = t_batch[i].item()
 
-            # Tail filtering
-            filt_tails = set(er_vocab[(h, r)]) - {t}
-            target_value = predictions_tails[i, t].item()
-            predictions_tails[i, list(filt_tails)] = -np.Inf
-            predictions_tails[i, t] = target_value
-            _, sort_idxs = torch.sort(predictions_tails[i], descending=True)
-            filt_tail_entity_rank = np.where(sort_idxs.detach() == t)[0][0]
-
-            # Head filtering
-            filt_heads = set(re_vocab[(r, t)]) - {h}
-            target_value = predictions_heads[i, h].item()
-            predictions_heads[i, list(filt_heads)] = -np.Inf
-            predictions_heads[i, h] = target_value
-            _, sort_idxs = torch.sort(predictions_heads[i], descending=True)
-            filt_head_entity_rank = np.where(sort_idxs.detach() == h)[0][0]
-
-            filt_head_entity_rank += 1
-            filt_tail_entity_rank += 1
+            # Compute filtered ranks using helper
+            filt_tails = list(set(er_vocab[(h, r)]) - {t})
+            filt_heads = list(set(re_vocab[(r, t)]) - {h})
+            
+            filt_tail_entity_rank = compute_filtered_rank(predictions_tails[i], t, filt_tails)
+            filt_head_entity_rank = compute_filtered_rank(predictions_heads[i], h, filt_heads)
 
             rr = 1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
             reciprocal_ranks.append(rr)
 
-            for hits_level in range(1, 11):
-                res = 1 if filt_head_entity_rank <= hits_level else 0
-                res += 1 if filt_tail_entity_rank <= hits_level else 0
-                if res > 0:
-                    hits.setdefault(hits_level, []).append(res)
+            accumulate_bidirectional_hits(hits, filt_head_entity_rank, filt_tail_entity_rank)
 
     results = compute_metrics_from_ranks(
         ranks=[],
@@ -505,15 +444,10 @@ def evaluate_bpe_lp(
 
     hits = {}
     reciprocal_ranks = []
-    num_entities = len(all_bpe_shaped_entities)
-
-    bpe_entity_to_idx = {}
-    all_bpe_entities = []
-
-    for idx, (str_entity, bpe_entity, shaped_bpe_entity) in tqdm(enumerate(all_bpe_shaped_entities)):
-        bpe_entity_to_idx[shaped_bpe_entity] = idx
-        all_bpe_entities.append(shaped_bpe_entity)
-    all_bpe_entities = torch.LongTensor(all_bpe_entities)
+    
+    # Build BPE entity index
+    bpe_entity_to_idx, all_bpe_entities = build_bpe_entity_index(all_bpe_shaped_entities)
+    num_entities = len(all_bpe_entities)
 
     for (bpe_h, bpe_r, bpe_t) in tqdm(triple_idx):
         idx_bpe_h = bpe_entity_to_idx[bpe_h]
@@ -539,33 +473,17 @@ def evaluate_bpe_lp(
         ), dim=1)
         predictions_heads = model(x)
 
-        # Filter tails
+        # Compute filtered ranks
         filt_tails = [bpe_entity_to_idx[i] for i in er_vocab[(bpe_h, bpe_r)]]
-        target_value = predictions_tails[idx_bpe_t].item()
-        predictions_tails[filt_tails] = -np.Inf
-        predictions_tails[idx_bpe_t] = target_value
-        _, sort_idxs = torch.sort(predictions_tails, descending=True)
-        filt_tail_entity_rank = np.where(sort_idxs.detach() == idx_bpe_t)[0][0]
-
-        # Filter heads
         filt_heads = [bpe_entity_to_idx[i] for i in re_vocab[(bpe_r, bpe_t)]]
-        target_value = predictions_heads[idx_bpe_h].item()
-        predictions_heads[filt_heads] = -np.Inf
-        predictions_heads[idx_bpe_h] = target_value
-        _, sort_idxs = torch.sort(predictions_heads, descending=True)
-        filt_head_entity_rank = np.where(sort_idxs.detach() == idx_bpe_h)[0][0]
-
-        filt_head_entity_rank += 1
-        filt_tail_entity_rank += 1
+        
+        filt_tail_entity_rank = compute_filtered_rank(predictions_tails, idx_bpe_t, filt_tails)
+        filt_head_entity_rank = compute_filtered_rank(predictions_heads, idx_bpe_h, filt_heads)
 
         rr = 1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
         reciprocal_ranks.append(rr)
 
-        for hits_level in range(1, 11):
-            res = 1 if filt_head_entity_rank <= hits_level else 0
-            res += 1 if filt_tail_entity_rank <= hits_level else 0
-            if res > 0:
-                hits.setdefault(hits_level, []).append(res)
+        accumulate_bidirectional_hits(hits, filt_head_entity_rank, filt_tail_entity_rank)
 
     results = compute_metrics_from_ranks(
         ranks=[],
@@ -625,16 +543,8 @@ def evaluate_lp_bpe_k_vs_all(
             h, r, t = str_data_batch[j]
             id_e_target = str_to_bpe_entity_to_idx[t]
             filt_idx_entities = [str_to_bpe_entity_to_idx[_] for _ in er_vocab[(h, r)]]
-
-            target_value = predictions[j, id_e_target].item()
-            predictions[j, filt_idx_entities] = -np.Inf
-            predictions[j, id_e_target] = target_value
-
-        _, sort_idxs = torch.sort(predictions, dim=1, descending=True)
-
-        for j in range(len(predictions)):
-            t = str_data_batch[j][2]
-            rank = torch.where(sort_idxs[j] == str_to_bpe_entity_to_idx[t])[0].item() + 1
+            
+            rank = compute_filtered_rank(predictions[j], id_e_target, filt_idx_entities)
             ranks.append(rank)
             update_hits(hits, rank, hits_range)
 
