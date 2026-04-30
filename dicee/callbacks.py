@@ -19,6 +19,7 @@ from torch._dynamo.eval_frame import OptimizedModule
 from torch.optim.lr_scheduler import LambdaLR
 
 import dicee.models.base_model
+
 from .abstracts import AbstractCallback
 from .evaluation.ensemble import evaluate_ensemble_link_prediction_performance
 from .static_funcs import save_checkpoint_model, save_pickle
@@ -507,7 +508,7 @@ class PeriodicEvalCallback(AbstractCallback):
             # Load ASWA weights and apply to a deepcopy of the model
             aswa_path = os.path.join(self.experiment_dir, "aswa.pt")
             aswa_ensemble_params = torch.load(aswa_path, map_location="cpu")
-            
+
             # Clone model and apply ASWA weights
             if isinstance(model, OptimizedModule):
                 eval_model = type(model._orig_mod)(model.args)
@@ -520,7 +521,7 @@ class PeriodicEvalCallback(AbstractCallback):
 
         eval_model.to('cpu')
         eval_model.eval()
-        
+
         report = trainer.evaluator.eval(dataset=trainer.dataset,
                 trained_model=eval_model,
                 form_of_labelling=trainer.form_of_labelling,
@@ -575,7 +576,7 @@ class LRScheduler(AbstractCallback):
         """
         # Validate and set defaults for configuration
         self._validate_and_set_config(adaptive_lr_config, eta_max)
-        
+
         self.total_epochs = total_epochs
         self.experiment_dir = experiment_dir
         self.snapshot_dir = os.path.join(experiment_dir, snapshot_dir)
@@ -616,18 +617,18 @@ class LRScheduler(AbstractCallback):
             "weighted_ensemble": True,
             "n_snapshots": 5
         }
-        
+
         # Validate config is a dictionary
         if not isinstance(config, dict):
             raise ValueError("adaptive_lr_config must be a dictionary")
-        
+
         # Validate scheduler_name
         if "scheduler_name" in config:
             valid_schedulers = ["cca", "mmcclr", "deferred_cca", "deferred_mmcclr"]
             if config["scheduler_name"] not in valid_schedulers:
                 raise ValueError(f"Invalid scheduler_name '{config['scheduler_name']}'. "
                                f"Must be one of: {valid_schedulers}")
-        
+
         # Validate lr_min
         if "lr_min" in config:
             lr_min = config["lr_min"]
@@ -635,25 +636,25 @@ class LRScheduler(AbstractCallback):
                 raise ValueError(f"lr_min must be a positive number, got: {lr_min}")
             if lr_min >= eta_max:
                 raise ValueError(f"lr_min ({lr_min}) must be less than eta_max ({eta_max})")
-        
+
         # Validate num_cycles
         if "num_cycles" in config:
             num_cycles = config["num_cycles"]
             if not isinstance(num_cycles, (int, float)) or num_cycles <= 0:
                 raise ValueError(f"num_cycles must be a positive number, got: {num_cycles}")
-        
+
         # Validate n_snapshots
         if "n_snapshots" in config:
             n_snapshots = config["n_snapshots"]
             if not isinstance(n_snapshots, int) or n_snapshots <= 0:
                 raise ValueError(f"n_snapshots must be a positive integer, got: {n_snapshots}")
-        
+
         # Validate weighted_ensemble
         if "weighted_ensemble" in config:
             weighted_ensemble = config["weighted_ensemble"]
             if not isinstance(weighted_ensemble, bool):
                 raise ValueError(f"weighted_ensemble must be a boolean, got: {weighted_ensemble}")
-        
+
         # Set attributes with defaults for missing values
         self.scheduler_name = config.get("scheduler_name", defaults["scheduler_name"]).lower()
         self.eta_min = config.get("lr_min", defaults["lr_min"])
@@ -664,7 +665,7 @@ class LRScheduler(AbstractCallback):
 
         assert self.n_snapshots <= self.n_cycles, \
             f"n_snapshots ({self.n_snapshots}) must be less than or equal to num_cycles ({self.n_cycles})"
-        
+
         print(f"LRScheduler initialized with config: {config}")
         print(f"Using: scheduler_name={self.scheduler_name}, eta_min={self.eta_min}, "
               f"n_cycles={self.n_cycles}, weighted_ensemble={self.weighted_ensemble}, "
@@ -682,7 +683,7 @@ class LRScheduler(AbstractCallback):
                              f"Total steps: {self.total_steps}, n_cycles: {self.n_cycles}")
         assert self.total_steps > self.n_cycles, \
             f"Total steps ({self.total_steps}) must be greater than Total Cycles ({self.n_cycles})."
-        
+
         # Calculate warmup steps based on warmup epochs
         if self.warmup_epochs > 0:
             self.warmup_steps = int(self.warmup_epochs * self.batches_per_epoch)
@@ -691,7 +692,7 @@ class LRScheduler(AbstractCallback):
 
 
     def _get_lr_schedule(self):
-        
+
         def cosine_annealing(step):
             cycle_length = math.ceil(self.total_steps / self.n_cycles)
             cycle_step = step % cycle_length
@@ -727,7 +728,7 @@ class LRScheduler(AbstractCallback):
             raise ValueError(f"Unknown scheduler name: {self.scheduler_name}")
 
         return sched_map[self.scheduler_name]
-    
+
     def _calculate_snap_weights(self):
         """
         Calculate weights for model snapshots based on their loss values.
@@ -751,7 +752,7 @@ class LRScheduler(AbstractCallback):
             weights = raw_weights / raw_weights.sum()
         else:
             weights = np.ones_like(raw_weights) / len(raw_weights)
-        
+
         self.snapshot_weights = dict(zip(model_names, weights))
 
     def on_train_start(self, trainer, model):
@@ -789,12 +790,12 @@ class LRScheduler(AbstractCallback):
             # Skip snapshots during warmup
             if step < self.warmup_steps:
                 return False
-            
+
             # Take n_snapshots evenly distributed in the remaining steps after warmup
             remaining_steps = self.total_steps - self.warmup_steps
             snapshot_interval = remaining_steps // self.n_snapshots
             steps_after_warmup = step - self.warmup_steps
-            
+
             # Check if we're at a snapshot interval boundary
             return (steps_after_warmup + 1) % snapshot_interval == 0
         else:
@@ -819,8 +820,8 @@ class LRScheduler(AbstractCallback):
             self._calculate_snap_weights()
             # 2. Build the weight list aligned to snapshot_files order:
             self.ensemble_weights = [self.snapshot_weights[fname] for fname in snapshot_files]
-        
-        
+
+
         ensemble_eval_report = evaluate_ensemble_link_prediction_performance(
             models=self.model_snapshots,
             triples=trainer.dataset.test_set,

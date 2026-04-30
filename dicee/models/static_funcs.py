@@ -1,5 +1,7 @@
 from typing import Tuple
+
 import torch
+
 
 def quaternion_mul(*, Q_1, Q_2) -> Tuple[torch.Tensor,torch.Tensor,torch.Tensor,torch.Tensor]:
     """

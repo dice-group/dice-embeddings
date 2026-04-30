@@ -10,8 +10,7 @@ from typing import Union
 import numpy as np
 import torch
 
-from ..static_funcs import timeit, load_term_mapping
-
+from ..static_funcs import load_term_mapping, timeit
 from ._bpe import (
     BPE_NegativeSamplingDataset,
     MultiClassClassificationDataset,

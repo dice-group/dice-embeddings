@@ -1,5 +1,6 @@
-import os
 import glob
+import os
+
 import requests
 import torch
 
@@ -115,7 +116,7 @@ def sanity_check_callback_args(args):
     """
     gpu_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
     # Check if any callbacks are requested
-    
+
     if (args.trainer == "PL" and gpu_count >= 2) or args.trainer == "torchDDP":
         if args.path_to_store_single_run is None:
             raise NotImplementedError("Path to store experiments must be provided for Multi-GPU training.")

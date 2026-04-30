@@ -13,19 +13,17 @@ import pickle
 import time
 from collections import defaultdict
 from typing import Callable, Dict, List, Optional, Tuple, Type, Union
-import psutil
+
 import numpy as np
 import pandas as pd
 import polars as pl
+import psutil
 import requests
 import torch
 import torch.distributed as dist
 from lightning.pytorch.utilities.rank_zero import rank_zero_only
 
-from .models import (
-    AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ,
-    DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, OMult, Pyke, QMult, Shallom, TransE
-)
+from .models import AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ, DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, OMult, Pyke, QMult, Shallom, TransE
 from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
 from .models.pykeen_models import PykeenKGE
@@ -338,7 +336,7 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
     else:
         if verbose>0:
             print('Loading entity and relation indexes...', end=' ')
-    
+
         # Use per-column dtype to avoid pandas>=3.0.0 applying dtype=str to the index column
         # (which would make index values strings instead of ints, breaking downstream assertions)
         entity_to_idx = { v["entity"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv",index_col=0,dtype={'entity': str}).to_dict(orient='index').items()}
@@ -922,7 +920,7 @@ def from_pretrained_model_write_embeddings_into_csv(path: str) -> None:
             writer.writerow([name]+ row.tolist())
 
     """
-    
+
     # Write entity embeddings directly to CSV
     with open(entity_csv_path, "w") as f:
         for row in entity_emb:

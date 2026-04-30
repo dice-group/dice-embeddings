@@ -11,6 +11,8 @@ import polars as pl
 import tiktoken
 
 from .read_preprocess_save_load_kg import LoadSaveToDisk, PreprocessKG, ReadFromDisk
+
+
 class KG:
     """Knowledge Graph container and processor.
 

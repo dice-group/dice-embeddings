@@ -2,10 +2,11 @@
 Example:
 python dicee/analyse_experiments.py --dir Experiments --features "model" "trainMRR" "testMRR"
 """
-import os
-import json
-import pandas as pd
 import argparse
+import json
+import os
+
+import pandas as pd
 
 
 def get_default_arguments():
@@ -152,7 +153,7 @@ def analyse(args):
     df = pd.DataFrame(experiments)
     df.sort_values(by=['testMRR'], ascending=False, inplace=True)
     pd.set_option("display.precision", 3)
-    
+
     #features=["model","testMRR"]
     # print(df.columns)
     try:

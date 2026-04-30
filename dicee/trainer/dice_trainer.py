@@ -33,6 +33,7 @@ from .model_parallelism import TensorParallel
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
 
+
 def load_term_mapping(file_path: str) -> polars.DataFrame:
     """Load term-to-index mapping from CSV file.
 

@@ -10,7 +10,6 @@ from typing import Optional
 import pandas as pd
 
 
-
 def evaluate_literal_prediction(
     kge_model,
     eval_file_path: str = None,

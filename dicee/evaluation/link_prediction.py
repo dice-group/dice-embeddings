@@ -10,17 +10,17 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from .utils import (
-    compute_metrics_from_ranks,
-    compute_metrics_from_ranks_simple,
-    update_hits,
-    create_hits_dict,
-    ALL_HITS_RANGE,
-)
 from ._filtering import (
-    compute_filtered_rank,
     accumulate_bidirectional_hits,
     build_bpe_entity_index,
+    compute_filtered_rank,
+)
+from .utils import (
+    ALL_HITS_RANGE,
+    compute_metrics_from_ranks,
+    compute_metrics_from_ranks_simple,
+    create_hits_dict,
+    update_hits,
 )
 
 
@@ -81,7 +81,7 @@ def evaluate_link_prediction_performance(
         # Compute filtered ranks
         filt_tails = [model.entity_to_idx[i] for i in er_vocab[(str_h, str_r)]]
         filt_heads = [model.entity_to_idx[i] for i in re_vocab[(str_r, str_t)]]
-        
+
         filt_tail_entity_rank = compute_filtered_rank(predictions_tails, t, filt_tails)
         filt_head_entity_rank = compute_filtered_rank(predictions_heads, h, filt_heads)
 
@@ -143,7 +143,7 @@ def evaluate_link_prediction_performance_with_reciprocals(
             str_h, str_r, str_t = str_data_batch[j]
             id_e_target = data_batch[j, 2]
             filt = [entity_to_idx[_] for _ in er_vocab[(str_h, str_r)]]
-            
+
             rank = compute_filtered_rank(predictions[j], id_e_target, filt)
             ranks.append(rank)
             update_hits(hits, rank, hits_range)
@@ -200,7 +200,7 @@ def evaluate_link_prediction_performance_with_bpe_reciprocals(
         for j, (str_h, str_r, str_t) in enumerate(str_data_batch):
             id_e_target = entity_to_idx[str_t]
             filt = [entity_to_idx[_] for _ in er_vocab[(str_h, str_r)]]
-            
+
             rank = compute_filtered_rank(predictions[j], id_e_target, filt)
             ranks.append(rank)
             update_hits(hits, rank, hits_range)
@@ -235,7 +235,7 @@ def evaluate_link_prediction_performance_with_bpe(
     reciprocal_ranks = []
 
     num_entities = len(within_entities)
-    
+
     # Build BPE entity index
     all_bpe_shaped_entities = [
         model.get_bpe_token_representation(str_entity)
@@ -284,7 +284,7 @@ def evaluate_link_prediction_performance_with_bpe(
             bpe_entity_to_idx[model.get_bpe_token_representation(i)]
             for i in re_vocab[(str_r, str_t)]
         ]
-        
+
         filt_tail_entity_rank = compute_filtered_rank(predictions_tails, idx_bpe_t, filt_tails)
         filt_head_entity_rank = compute_filtered_rank(predictions_heads, idx_bpe_h, filt_heads)
 
@@ -390,7 +390,7 @@ def evaluate_lp(
             # Compute filtered ranks using helper
             filt_tails = list(set(er_vocab[(h, r)]) - {t})
             filt_heads = list(set(re_vocab[(r, t)]) - {h})
-            
+
             filt_tail_entity_rank = compute_filtered_rank(predictions_tails[i], t, filt_tails)
             filt_head_entity_rank = compute_filtered_rank(predictions_heads[i], h, filt_heads)
 
@@ -442,7 +442,7 @@ def evaluate_bpe_lp(
 
     hits = {}
     reciprocal_ranks = []
-    
+
     # Build BPE entity index
     bpe_entity_to_idx, all_bpe_entities = build_bpe_entity_index(all_bpe_shaped_entities)
     num_entities = len(all_bpe_entities)
@@ -474,7 +474,7 @@ def evaluate_bpe_lp(
         # Compute filtered ranks
         filt_tails = [bpe_entity_to_idx[i] for i in er_vocab[(bpe_h, bpe_r)]]
         filt_heads = [bpe_entity_to_idx[i] for i in re_vocab[(bpe_r, bpe_t)]]
-        
+
         filt_tail_entity_rank = compute_filtered_rank(predictions_tails, idx_bpe_t, filt_tails)
         filt_head_entity_rank = compute_filtered_rank(predictions_heads, idx_bpe_h, filt_heads)
 
@@ -541,7 +541,7 @@ def evaluate_lp_bpe_k_vs_all(
             h, r, t = str_data_batch[j]
             id_e_target = str_to_bpe_entity_to_idx[t]
             filt_idx_entities = [str_to_bpe_entity_to_idx[_] for _ in er_vocab[(h, r)]]
-            
+
             rank = compute_filtered_rank(predictions[j], id_e_target, filt_idx_entities)
             ranks.append(rank)
             update_hits(hits, rank, hits_range)

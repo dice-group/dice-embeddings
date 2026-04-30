@@ -1,9 +1,12 @@
-import torch
-from ..abstracts import AbstractTrainer
-from ..static_funcs_training import make_iterable_verbose
-from ..models.ensemble import EnsembleKGE
-from typing import Tuple
 import time
+from typing import Tuple
+
+import torch
+
+from ..abstracts import AbstractTrainer
+from ..models.ensemble import EnsembleKGE
+from ..static_funcs_training import make_iterable_verbose
+
 
 def extract_input_outputs(z: list, device=None):
     # pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)
@@ -58,12 +61,12 @@ def find_good_batch_size(train_loader,tp_ensemble_model):
                                                                 timeout=0,
                                                                 worker_init_fn=None,
                                                                 persistent_workers=False)
-                
+
                 batch_loss = None
                 for i, batch_of_training_data in enumerate(train_dataloaders):
                     batch_loss = forward_backward_update_loss(batch_of_training_data, ensemble_model)
                     break
-                
+
                 global_free_memory, total_memory = torch.cuda.mem_get_info(device="cuda:0")
                 percentage_used_gpu_memory = (total_memory - global_free_memory) / total_memory
                 rt=time.time()-start_time
@@ -72,7 +75,7 @@ def find_good_batch_size(train_loader,tp_ensemble_model):
 
                 # Store the batch size and the runtime
                 batch_sizes_and_mem_usages.append((batch_size, rt))
-                
+
                 # ()
                 # https://github.com/pytorch/pytorch/issues/21819
                 # CD: as we reach close to 1.0 GPU memory usage, we observe RuntimeError: CUDA error: an illegal memory access was encountered.
@@ -85,8 +88,8 @@ def find_good_batch_size(train_loader,tp_ensemble_model):
                     batch_size += int(batch_size / delta)
                 else:
                     return batch_sizes_and_mem_usages,True
-                        
-        except torch.OutOfMemoryError as e:
+
+        except torch.OutOfMemoryError:
             # Provide helpful suggestions for OOM errors
             gpu_mem = torch.cuda.get_device_properties(0).total_memory / (1024**3)  # Convert to GB
             allocated = torch.cuda.memory_allocated(0) / (1024**3)
@@ -107,14 +110,14 @@ def find_good_batch_size(train_loader,tp_ensemble_model):
 
     for delta in range(1,5,1):
         result,flag= increase_batch_size_until_cuda_out_of_memory(tp_ensemble_model, train_loader, batch_size,delta=delta)
-        
+
         history_batch_sizes_and_mem_usages.extend(result)
 
         if flag:
             batch_size, batch_rt = history_batch_sizes_and_mem_usages[-1]
         else:
             assert len(history_batch_sizes_and_mem_usages)>2, "GPU memory errorin the first try"
-            # CUDA ERROR Observed 
+            # CUDA ERROR Observed
             batch_size, batch_rt=history_batch_sizes_and_mem_usages[-2]
             # https://github.com/pytorch/pytorch/issues/21819
             break
@@ -211,9 +214,9 @@ class TensorParallel(AbstractTrainer):
         #create_and_evaluate_combined_model(self, ensemble_model) # Experimental
         # TODO: Later, maybe we should write a callback to save the models in disk
         return ensemble_model
-    
+
     """
-    
+
     def batchwisefit(self, *args, **kwargs):
         assert len(args) == 1
         model, = args
@@ -270,7 +273,7 @@ class TensorParallel(AbstractTrainer):
         world_size = dist.get_world_size()
         # () Reinitialize Rank based on manuel seed rank.
         torch.manual_seed(rank)
-        model.param_init(model.entity_embeddings.weight.data) 
+        model.param_init(model.entity_embeddings.weight.data)
         model.param_init(model.relation_embeddings.weight.data)
         # () .
         device = torch.device(f'cuda:{rank}')
@@ -288,7 +291,7 @@ class TensorParallel(AbstractTrainer):
                 # () Get batch and move it on GPUs .
                 inputs,targets = extract_input_outputs(z,device)
                 # () Predict .
-                yhats = model(inputs)   
+                yhats = model(inputs)
                 # () TODO: Pytorch Bug https://github.com/pytorch/pytorch/issues/58005 .
                 dist.all_reduce(yhats,op=dist.ReduceOp.SUM)
                 # () Compute loss .

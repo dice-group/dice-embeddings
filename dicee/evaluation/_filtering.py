@@ -37,25 +37,25 @@ def compute_filtered_rank(
     """
     # Clone to avoid modifying input
     filtered_preds = predictions.clone()
-    
+
     # Apply filtering
     if exclude_target:
         filter_set = set(filter_indices) - {target_idx}
     else:
         filter_set = set(filter_indices)
-    
+
     if filter_set:
         filtered_preds[list(filter_set)] = -np.Inf
-    
+
     # Restore target value only if it wasn't intentionally filtered
     if exclude_target or target_idx not in filter_indices:
         target_value = predictions[target_idx].item()
         filtered_preds[target_idx] = target_value
-    
+
     # Sort and find rank
     _, sort_idxs = torch.sort(filtered_preds, descending=True)
     rank = np.where(sort_idxs.detach().cpu().numpy() == target_idx)[0][0]
-    
+
     return rank + 1  # 1-indexed
 
 
@@ -83,7 +83,7 @@ def compute_filtered_rank_batch(
     """
     batch_size = predictions.shape[0]
     ranks = []
-    
+
     for i in range(batch_size):
         rank = compute_filtered_rank(
             predictions[i],
@@ -92,7 +92,7 @@ def compute_filtered_rank_batch(
             exclude_target=True
         )
         ranks.append(rank)
-    
+
     return ranks
 
 
@@ -122,7 +122,7 @@ def accumulate_bidirectional_hits(
     """
     if hits_range is None:
         hits_range = list(range(1, 11))
-    
+
     for k in hits_range:
         count = 0
         if head_rank <= k:
@@ -162,7 +162,7 @@ def build_bpe_entity_index(
     """
     bpe_entity_to_idx = {}
     all_bpe_entities = []
-    
+
     for idx, item in enumerate(bpe_entities):
         if shaped_key_fn is not None:
             shaped_entity = shaped_key_fn(item)
@@ -172,8 +172,8 @@ def build_bpe_entity_index(
         else:
             # Assume item is shaped entity directly
             shaped_entity = item
-        
+
         bpe_entity_to_idx[shaped_entity] = idx
         all_bpe_entities.append(shaped_entity)
-    
+
     return bpe_entity_to_idx, torch.LongTensor(all_bpe_entities)

@@ -1,9 +1,12 @@
-import numpy as np
-import polars
-import pandas
-from .util import load_pickle, load_numpy_ndarray
 import os
-from dicee.static_funcs import save_pickle, save_numpy_ndarray
+
+import numpy as np
+import pandas
+import polars
+
+from dicee.static_funcs import save_numpy_ndarray, save_pickle
+
+from .util import load_numpy_ndarray, load_pickle
 
 
 class LoadSaveToDisk:
@@ -48,18 +51,18 @@ class LoadSaveToDisk:
         assert self.kg.path_for_serialization == self.kg.path_for_deserialization
 
         # Backward compatible loading: prefer CSV, fallback to legacy pickle format.
-        if (os.path.isfile(self.kg.path_for_deserialization + '/entity_to_idx.csv') 
+        if (os.path.isfile(self.kg.path_for_deserialization + '/entity_to_idx.csv')
             and os.path.isfile(self.kg.path_for_deserialization + '/relation_to_idx.csv')):
             self.kg.entity_to_idx = pandas.read_csv(self.kg.path_for_deserialization + '/entity_to_idx.csv', index_col=0)
             self.kg.relation_to_idx = pandas.read_csv(self.kg.path_for_deserialization + '/relation_to_idx.csv', index_col=0)
-        elif (os.path.isfile(self.kg.path_for_deserialization + '/entity_to_idx.p') 
+        elif (os.path.isfile(self.kg.path_for_deserialization + '/entity_to_idx.p')
             and os.path.isfile(self.kg.path_for_deserialization + '/relation_to_idx.p')):
             self.kg.entity_to_idx = load_pickle(file_path=self.kg.path_for_deserialization + '/entity_to_idx.p')
             self.kg.relation_to_idx = load_pickle(file_path=self.kg.path_for_deserialization + '/relation_to_idx.p')
         else:
             raise FileNotFoundError(f"Could not find mapping files in {self.kg.path_for_deserialization}. "
                 "Expected entity_to_idx/relation_to_idx as either .csv or .p")
-        
+
         self.kg.num_entities = len(self.kg.entity_to_idx)
         self.kg.num_relations = len(self.kg.relation_to_idx)
 
