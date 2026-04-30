@@ -14,12 +14,12 @@ import numpy as np
 import pandas as pd
 import torch
 
-from .link_prediction import evaluate_lp, evaluate_bpe_lp
+from .link_prediction import evaluate_bpe_lp, evaluate_lp
 from .utils import (
-    compute_metrics_from_ranks_simple,
-    update_hits,
-    create_hits_dict,
     ALL_HITS_RANGE,
+    compute_metrics_from_ranks_simple,
+    create_hits_dict,
+    update_hits,
 )
 
 # Valid scoring techniques

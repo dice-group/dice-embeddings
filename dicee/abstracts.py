@@ -1,18 +1,20 @@
-import os
 import datetime
-from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model, load_json, download_pretrained_model
-import torch
-from typing import List, Tuple, Union
+import os
 import random
 from abc import ABC
+from typing import List, Tuple, Union
+
 import lightning
-from .models.literal import LiteralEmbeddings
-from .dataset_classes import TriplePredictionDataset, LiteralDataset
-from torch.utils.data import DataLoader
-import torch.optim as optim
-import torch.nn.functional as F
-from tqdm import tqdm
 import pandas as pd
+import torch
+import torch.nn.functional as F
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+
+from .dataset_classes import LiteralDataset, TriplePredictionDataset
+from .models.literal import LiteralEmbeddings
+from .static_funcs import download_pretrained_model, load_json, load_model, load_model_ensemble, save_checkpoint_model
 
 
 class AbstractTrainer:
@@ -886,7 +888,7 @@ class BaseInteractiveTrainKGE:
             device = torch.device(device)
         except Exception:
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-                    
+
         # Prepare the dataset and DataLoader
         literal_dataset = LiteralDataset(
             file_path=train_file_path,

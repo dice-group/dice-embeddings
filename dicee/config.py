@@ -63,7 +63,7 @@ class Namespace(argparse.Namespace):
         self.backend: str = "pandas"
         """Backend to read, process, and index input knowledge graph. pandas, polars and rdflib available"""
 
-        self.separator: str = "\s+"
+        self.separator: str = r"\s+"
         """separator for extracting head, relation and tail from a triple"""
 
         self.trainer: str = 'torchCPUTrainer'
@@ -177,7 +177,7 @@ class Namespace(argparse.Namespace):
 
         self.n_epochs_eval_model: str = "val_test"
         """Evaluating link prediction performance on data splits while performing periodic evaluation."""
-        
+
         self.adaptive_lr = dict()
         """Adaptive learning rate parameters, e.g., '{"scheduler_name": "cca"}'"""
 

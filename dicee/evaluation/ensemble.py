@@ -10,10 +10,10 @@ import numpy as np
 import torch
 
 from .utils import (
-    compute_metrics_from_ranks_simple,
-    update_hits,
-    create_hits_dict,
     ALL_HITS_RANGE,
+    compute_metrics_from_ranks_simple,
+    create_hits_dict,
+    update_hits,
 )
 
 

@@ -19,9 +19,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e .["dev"] --extra-index-url https://download.pytorch.org/whl/cpu
+          pip install mypy
+      
       - name: Lint with ruff
         run: |
-          ruff  check dicee/ --line-length=200
+          ruff check dicee/ --line-length=200
+      
+      - name: Type check with mypy (non-blocking)
+        run: |
+          mypy dicee/ --config-file=pyproject.toml || echo "⚠️  Type checking found issues (non-blocking)"
+          echo "Type checking complete. Fix issues over time."
+        continue-on-error: true
 
       - name: Testing and coverage report
         run: |

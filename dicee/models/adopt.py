@@ -69,53 +69,51 @@ with the PyTorch optimizer interface and the dicee framework.
 # CD: copy pasted from https://raw.githubusercontent.com/iShohei220/adopt/refs/heads/main/adopt.py
 # mypy: allow-untyped-decorators
 # mypy: allow-untyped-defs
-from typing import cast, Callable, List, Optional, Tuple, Union
+from typing import Callable, List, Optional, Tuple, Union, cast
 
 import torch
 from torch import Tensor
-
 from torch.optim.optimizer import (
-    _capturable_doc, # noqa: F401
-    _default_to_fused_or_foreach,
-    _device_dtype_check_for_fused,
-    _differentiable_doc, # noqa: F401
-    _disable_dynamo_if_unsupported,
-    _foreach_doc, # noqa: F401
-    _fused_doc, # noqa: F401
-    _get_capturable_supported_devices,
-    _get_scalar_dtype,
-    _get_value, # noqa: F401
-    _maximize_doc, # noqa: F401
-    _stack_if_compiling, # noqa: F401
-    _use_grad_for_differentiable,
-    _view_as_real,
-    DeviceDict, # noqa: F401
+    DeviceDict,  # noqa: F401
     Optimizer,
     ParamsT,
+    _capturable_doc,  # noqa: F401
+    _default_to_fused_or_foreach,
+    _device_dtype_check_for_fused,
+    _differentiable_doc,  # noqa: F401
+    _disable_dynamo_if_unsupported,
+    _foreach_doc,  # noqa: F401
+    _fused_doc,  # noqa: F401
+    _get_capturable_supported_devices,
+    _get_scalar_dtype,
+    _get_value,  # noqa: F401
+    _maximize_doc,  # noqa: F401
+    _stack_if_compiling,  # noqa: F401
+    _use_grad_for_differentiable,
+    _view_as_real,
 )
-
 
 __all__ = ["ADOPT", "adopt"]
 
 
 class ADOPT(Optimizer):
     """ADOPT  Optimizer.
-    
+
     ADOPT is an adaptive learning rate optimization algorithm that combines momentum-based
     updates with adaptive per-parameter learning rates. It uses exponential moving averages
     of gradients and squared gradients, with gradient clipping for stability.
-    
+
     The algorithm performs the following key operations:
     1. Normalizes gradients by the square root of the second moment estimate
     2. Applies optional gradient clipping based on the training step
     3. Updates parameters using momentum-smoothed normalized gradients
     4. Supports decoupled weight decay (AdamW-style) or L2 regularization
-    
+
     Mathematical formulation:
         m_t = β₁ * m_{t-1} + (1 - β₁) * clip(g_t / √(v_t))
         v_t = β₂ * v_{t-1} + (1 - β₂) * g_t²
         θ_t = θ_{t-1} - α * m_t
-    
+
     where:
         - θ_t: parameter at step t
         - g_t: gradient at step t
@@ -124,20 +122,20 @@ class ADOPT(Optimizer):
         - α: learning rate
         - β₁, β₂: exponential decay rates
         - clip(): optional gradient clipping function
-    
+
     Reference:
         Original implementation: https://github.com/iShohei220/adopt
-    
+
     Args:
         params (ParamsT): Iterable of parameters to optimize or dicts defining parameter groups.
-        lr (float or Tensor, optional): Learning rate. Can be a float or 1-element Tensor. 
+        lr (float or Tensor, optional): Learning rate. Can be a float or 1-element Tensor.
             Default: 1e-3
-        betas (Tuple[float, float], optional): Coefficients (β₁, β₂) for computing running 
+        betas (Tuple[float, float], optional): Coefficients (β₁, β₂) for computing running
             averages of gradient and its square. β₁ controls momentum, β₂ controls variance.
             Default: (0.9, 0.9999)
         eps (float, optional): Term added to denominator to improve numerical stability.
             Default: 1e-6
-        clip_lambda (Callable[[int], float], optional): Function that takes the step number 
+        clip_lambda (Callable[[int], float], optional): Function that takes the step number
             and returns the gradient clipping threshold. Common choices:
             - lambda step: step**0.25 (default, gradually increases clipping threshold)
             - lambda step: 1.0 (constant clipping)
@@ -152,37 +150,37 @@ class ADOPT(Optimizer):
             multi-tensor operations. Default: None (auto-select)
         maximize (bool, optional): If True, maximizes parameters instead of minimizing.
             Useful for reinforcement learning. Default: False
-        capturable (bool, optional): If True, the optimizer is safe to capture in a 
+        capturable (bool, optional): If True, the optimizer is safe to capture in a
             CUDA graph. Requires learning rate as Tensor. Default: False
-        differentiable (bool, optional): If True, the optimization step can be 
+        differentiable (bool, optional): If True, the optimization step can be
             differentiated. Useful for meta-learning. Default: False
-        fused (bool, optional): If True, uses fused kernel implementation (currently 
+        fused (bool, optional): If True, uses fused kernel implementation (currently
             not supported). Default: None
-    
+
     Raises:
         ValueError: If learning rate, epsilon, betas, or weight_decay are invalid.
         RuntimeError: If fused is enabled (not currently supported).
         RuntimeError: If lr is a Tensor with foreach=True and capturable=False.
-    
+
     Example:
         >>> # Basic usage
         >>> optimizer = ADOPT(model.parameters(), lr=0.001)
         >>> optimizer.zero_grad()
         >>> loss.backward()
         >>> optimizer.step()
-        
+
         >>> # With decoupled weight decay
         >>> optimizer = ADOPT(model.parameters(), lr=0.001, weight_decay=0.01, decouple=True)
-        
+
         >>> # Custom gradient clipping
         >>> optimizer = ADOPT(model.parameters(), clip_lambda=lambda step: max(1.0, step**0.5))
-    
+
     Note:
         - For most use cases, the default hyperparameters work well
         - Consider using decouple=True for better generalization (similar to AdamW)
         - The clip_lambda function helps stabilize training in early steps
     """
-    
+
     def __init__(
         self,
         params: ParamsT,
@@ -249,26 +247,26 @@ class ADOPT(Optimizer):
 
     def __setstate__(self, state):
         """Restore optimizer state from a checkpoint.
-        
+
         This method handles backward compatibility when loading optimizer state from
         older versions. It ensures all required fields are present with default values
         and properly converts step counters to tensors if needed.
-        
+
         Key responsibilities:
         1. Set default values for newly added hyperparameters
         2. Convert old-style scalar step counters to tensor format
         3. Place step tensors on appropriate devices based on capturable/fused modes
-        
+
         Args:
             state (dict): Optimizer state dictionary (typically from torch.load()).
-        
+
         Note:
             - This enables loading checkpoints saved with older ADOPT versions
             - Step counters are converted to appropriate device/dtype for compatibility
             - Capturable and fused modes require step tensors on parameter devices
         """
         super().__setstate__(state)
-        
+
         # Set defaults for parameters that may not exist in older checkpoints
         for group in self.param_groups:
             group.setdefault("maximize", False)
@@ -276,7 +274,7 @@ class ADOPT(Optimizer):
             group.setdefault("capturable", False)
             group.setdefault("differentiable", False)
             fused = group.setdefault("fused", None)
-            
+
             # Convert old scalar step counters to tensor format
             for p in group["params"]:
                 p_state = self.state.get(p, [])
@@ -303,24 +301,24 @@ class ADOPT(Optimizer):
         state_steps,
     ):
         """Initialize optimizer state for a parameter group.
-        
+
         This method performs lazy state initialization for parameters that have gradients.
         It sets up the exponential moving averages and step counters needed for the ADOPT
         algorithm. State is only initialized when a parameter receives its first gradient.
-        
+
         The method handles several important tasks:
         1. Identifies parameters with gradients (active parameters)
         2. Validates that gradients are dense (sparse gradients not supported)
         3. Initializes first moment (exp_avg) and second moment (exp_avg_sq) estimates
         4. Sets up step counters with appropriate device placement for performance
         5. Detects complex-valued parameters for special handling
-        
+
         State initialization strategy:
         - exp_avg (m_t): Initialized to zeros, tracks momentum of normalized gradients
         - exp_avg_sq (v_t): Initialized to zeros, tracks variance of raw gradients
         - step: Initialized to 0, placed on CPU for non-capturable/non-fused mode
           to reduce CUDA kernel launch overhead
-        
+
         Args:
             group (dict): Parameter group containing optimization settings and parameters.
             params_with_grad (List[Tensor]): Output list to collect parameters with gradients.
@@ -328,15 +326,15 @@ class ADOPT(Optimizer):
             exp_avgs (List[Tensor]): Output list to collect first moment estimates.
             exp_avg_sqs (List[Tensor]): Output list to collect second moment estimates.
             state_steps (List[Tensor]): Output list to collect step counters.
-        
+
         Returns:
             bool: True if any complex parameters are present, False otherwise.
-        
+
         Raises:
             RuntimeError: If sparse gradients are encountered (not supported).
             RuntimeError: If foreach is True with Tensor lr and capturable is False.
             RuntimeError: If step requires_grad in differentiable mode.
-        
+
         Note:
             - Step counters are deliberately placed on CPU when both capturable and
               fused are False to avoid expensive CUDA kernel launches
@@ -404,10 +402,10 @@ class ADOPT(Optimizer):
     @_use_grad_for_differentiable
     def step(self, closure=None):
         """Perform a single optimization step.
-        
+
         This method executes one iteration of the ADOPT optimization algorithm across
         all parameter groups. It orchestrates the following workflow:
-        
+
         1. Optionally evaluates a closure to recompute the loss (useful for algorithms
            like LBFGS or when loss needs multiple evaluations)
         2. For each parameter group:
@@ -415,19 +413,19 @@ class ADOPT(Optimizer):
            - Extracts hyperparameters (betas, learning rate, etc.)
            - Calls the functional adopt() API to perform the actual update
         3. Returns the loss value if a closure was provided
-        
+
         The functional API (adopt()) handles three execution modes:
         - Single-tensor: Updates one parameter at a time (default, JIT-compatible)
         - Multi-tensor (foreach): Batches operations for better performance
         - Fused: Uses fused CUDA kernels (not yet implemented)
-        
+
         Gradient scaling support:
         This method is compatible with automatic mixed precision (AMP) training.
         It can access grad_scale and found_inf attributes for gradient unscaling
         and inf/nan detection when used with GradScaler.
-        
+
         Args:
-            closure (Callable, optional): A callable that reevaluates the model and 
+            closure (Callable, optional): A callable that reevaluates the model and
                 returns the loss. The closure should:
                 - Enable gradients (torch.enable_grad())
                 - Compute forward pass
@@ -436,17 +434,17 @@ class ADOPT(Optimizer):
                 - Return the loss value
                 Example: lambda: (loss := model(x), loss.backward(), loss)[-1]
                 Default: None
-        
+
         Returns:
-            Optional[Tensor]: The loss value returned by the closure, or None if no 
+            Optional[Tensor]: The loss value returned by the closure, or None if no
                 closure was provided.
-        
+
         Example:
             >>> # Standard usage
             >>> loss = criterion(model(input), target)
             >>> loss.backward()
             >>> optimizer.step()
-            
+
             >>> # With closure (e.g., for line search)
             >>> def closure():
             ...     optimizer.zero_grad()
@@ -455,7 +453,7 @@ class ADOPT(Optimizer):
             ...     loss.backward()
             ...     return loss
             >>> loss = optimizer.step(closure)
-        
+
         Note:
             - Call zero_grad() before computing gradients for the next step
             - CUDA graph capture is checked for safety when capturable=True
@@ -539,11 +537,11 @@ def _single_tensor_adopt(
     differentiable: bool,
 ):
     """Single-tensor implementation of ADOPT optimization algorithm.
-    
+
     This function updates parameters one at a time using the ADOPT algorithm. It's the
     default implementation used when foreach=False, and is compatible with TorchScript
     compilation (torch.jit.script).
-    
+
     Algorithm steps for each parameter:
     1. Apply weight decay (L2 regularization) to gradient if not decoupled
     2. Handle complex parameters by viewing them as real tensors
@@ -556,12 +554,12 @@ def _single_tensor_adopt(
        e. Update parameters: θ = θ - lr*m
        f. Update second moment: v = β₂*v + (1-β₂)*g²
     5. Increment step counter
-    
+
     Key differences from Adam:
     - Normalizes gradients BEFORE applying momentum (not after)
     - Uses gradient clipping on normalized gradients for stability
     - First moment tracks normalized gradients, not raw gradients
-    
+
     Args:
         params (List[Tensor]): List of parameters to update.
         grads (List[Tensor]): List of gradients corresponding to parameters.
@@ -581,7 +579,7 @@ def _single_tensor_adopt(
         maximize (bool): If True, maximize parameters instead of minimize.
         capturable (bool): If True, safe for CUDA graph capture.
         differentiable (bool): If True, optimization step is differentiable.
-    
+
     Note:
         - This implementation is slower than multi-tensor but more flexible
         - Compatible with torch.jit.script for potential speedups
@@ -644,7 +642,7 @@ def _single_tensor_adopt(
         # denom = √(v + ε) to avoid division by zero
         denom = torch.clamp(exp_avg_sq.sqrt(), eps)
         normed_grad = grad.div(denom)
-        
+
         # Apply gradient clipping for training stability
         # Threshold increases with training steps (default: step^0.25)
         if clip_lambda is not None:
@@ -659,7 +657,7 @@ def _single_tensor_adopt(
         # Update parameters using momentum term
         # θ_t = θ_{t-1} - α * m_t
         param.add_(exp_avg, alpha=-lr)
-        
+
         # Update second moment with exponential moving average of squared gradients
         # v_t = β₂ * v_{t-1} + (1 - β₂) * g_t²
         exp_avg_sq.mul_(beta2).addcmul_(grad, grad.conj(), value=1 - beta2)
@@ -690,17 +688,17 @@ def _multi_tensor_adopt(
     differentiable: bool,
 ):
     """Multi-tensor (foreach) implementation of ADOPT optimization algorithm.
-    
+
     This function implements the ADOPT algorithm using PyTorch's foreach operations,
     which batch multiple tensor operations together for better performance. This is
     typically 2-3x faster than the single-tensor implementation on GPU.
-    
+
     Performance optimizations:
     1. Groups tensors by device and dtype to minimize kernel launches
     2. Uses torch._foreach_* operations for vectorized updates
     3. Fuses elementwise operations when possible
     4. Handles CPU step counters efficiently to avoid repeated CPU-GPU transfers
-    
+
     Algorithm (same as single-tensor but batched):
     For each device/dtype group:
     1. Handle complex parameters by viewing as real
@@ -715,13 +713,13 @@ def _multi_tensor_adopt(
        e. Update parameters: θ = θ - lr*m
        f. Update variance: v = β₂*v + (1-β₂)*g²
     6. Increment all step counters
-    
+
     Device grouping strategy:
     Parameters are automatically grouped by (device, dtype) to ensure:
     - Operations stay on the same device (no cross-device transfers)
     - Consistent numeric precision within each group
     - Minimal kernel launch overhead
-    
+
     Args:
         params (List[Tensor]): List of parameters to update.
         grads (List[Tensor]): List of gradients corresponding to parameters.
@@ -741,11 +739,11 @@ def _multi_tensor_adopt(
         maximize (bool): If True, maximize parameters instead of minimize.
         capturable (bool): If True, safe for CUDA graph capture.
         differentiable (bool): If True, optimization step is differentiable.
-    
+
     Raises:
         RuntimeError: If lr is a Tensor with capturable=False.
         AssertionError: If differentiable=True (foreach ops don't support autograd).
-    
+
     Note:
         - Significantly faster than single-tensor on GPU (2-3x speedup typical)
         - Not compatible with torch.jit.script
@@ -884,46 +882,46 @@ def adopt(
     maximize: bool,
 ):
     r"""Functional API that performs ADOPT algorithm computation.
-    
+
     This is the main functional interface for the ADOPT optimization algorithm. It
     dispatches to one of three implementations based on the execution mode:
-    
+
     1. **Single-tensor mode** (default): Updates parameters one at a time
        - Compatible with torch.jit.script
        - More flexible but slower
        - Used when foreach=False or automatically for small models
-    
+
     2. **Multi-tensor (foreach) mode**: Batches operations across tensors
        - 2-3x faster on GPU through vectorization
        - Groups tensors by device/dtype automatically
        - Used when foreach=True
-    
+
     3. **Fused mode**: Uses specialized fused kernels (not yet implemented)
        - Would provide maximum performance
        - Currently raises RuntimeError if enabled
-    
+
     Algorithm overview (ADOPT):
     -------------------------
     ADOPT adapts learning rates per-parameter while using momentum on normalized
     gradients. The key innovation is normalizing gradients before momentum, which
     provides more stable training than standard Adam.
-    
+
     Mathematical formulation:
         # Normalize gradient by its historical variance
         normed_g_t = g_t / √(v_t + ε)
-        
+
         # Optional gradient clipping for stability
         normed_g_t = clip(normed_g_t, threshold(t))
-        
+
         # Momentum on normalized gradients (key difference from Adam)
         m_t = β₁ * m_{t-1} + (1 - β₁) * normed_g_t
-        
+
         # Parameter update
         θ_t = θ_{t-1} - α * m_t
-        
+
         # Update variance estimate
         v_t = β₂ * v_{t-1} + (1 - β₂) * g_t²
-    
+
     where:
         - θ: parameters
         - g: gradients
@@ -933,7 +931,7 @@ def adopt(
         - β₁, β₂: exponential decay rates
         - ε: numerical stability constant
         - clip(): gradient clipping function based on step
-    
+
     Automatic mode selection:
     ------------------------
     When foreach and fused are both None (default), the function automatically
@@ -942,7 +940,7 @@ def adopt(
     - Whether differentiable mode is enabled
     - Learning rate type (float vs Tensor)
     - Capturable mode requirements
-    
+
     Args:
         params (List[Tensor]): Parameters to optimize.
         grads (List[Tensor]): Gradients for each parameter.
@@ -970,13 +968,13 @@ def adopt(
             Recommended for better generalization.
         eps (float): Small constant for numerical stability in normalization.
         maximize (bool): If True, maximize objective instead of minimize.
-    
+
     Raises:
         RuntimeError: If torch.jit.script is used with foreach or fused.
         RuntimeError: If state_steps contains non-tensor elements.
         RuntimeError: If fused=True (not yet implemented).
         RuntimeError: If lr is Tensor with foreach=True and capturable=False.
-    
+
     Example:
         >>> # Typically called by ADOPT optimizer, not directly
         >>> adopt(
@@ -994,13 +992,13 @@ def adopt(
         ...     eps=1e-6,
         ...     maximize=False,
         ... )
-    
+
     Note:
         - For distributed training, this API is compatible with torch/distributed/optim
         - The foreach mode is generally preferred for GPU training
         - Complex parameters are handled transparently by viewing as real
         - First optimization step only initializes variance, doesn't update parameters
-    
+
     See Also:
         - ADOPT class: High-level optimizer interface
         - _single_tensor_adopt: Single-tensor implementation details

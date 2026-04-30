@@ -1,6 +1,8 @@
-import json
-from dicee.executer import Execute, ContinuousExecute
 import argparse
+import json
+
+from dicee.executer import ContinuousExecute, Execute
+
 
 def get_default_arguments(description=None):
     """ Extends lightning Trainer's arguments with ours """
@@ -27,8 +29,8 @@ def get_default_arguments(description=None):
     parser.add_argument("--backend", type=str, default="pandas",
                         choices=["pandas", "polars", "rdflib"],
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
-    parser.add_argument("--separator", type=str, default="\s+",
-                        help='Pandas \s+, t for \t polars works with the last two.')
+    parser.add_argument("--separator", type=str, default=r"\s+",
+                        help='Pandas \\s+, t for \t polars works with the last two.')
     parser.add_argument("--reuse_existing_run_dir", action="store_true",
                         help="If set, reuse the existing path_to_store_single_run directory if it exists. "
                              "If not set, the directory will be deleted and recreated if it exists.")
@@ -144,7 +146,7 @@ def get_default_arguments(description=None):
                         help="Find a batch size fitting in GPUs. Only available for TP trainer")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
-    
+
     # Learning rate scheduling with configuration
     parser.add_argument("--adaptive_lr", type=json.loads, default={},
                         help='Enable adaptive learning rate scheduling with configuration. '

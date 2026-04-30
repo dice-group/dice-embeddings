@@ -1,10 +1,13 @@
-from typing import List, Any, Tuple, Union, Dict
+from typing import Any, Dict, List, Tuple, Union
+
 import lightning as pl
 import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
+
 from .adopt import ADOPT
+
 
 class BaseKGELightning(pl.LightningModule):
     """Thin PyTorch Lightning wrapper shared by all KGE models.
