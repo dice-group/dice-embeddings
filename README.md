@@ -68,7 +68,7 @@ python -m pytest -p no:warnings --ff # to run the failures first and then the re
 <details> <summary> To see available Models</summary>
 
 * ```--model Decal | Keci | DualE | ComplEx | QMult | OMult | ConvQ | ConvO | ConEx | TransE | DistMult | Shallom```
-* ```--model Pykeen_QuatE | Pykeen_Mure ``` all embedding models available in https://github.com/pykeen/pykeen#models can be selected.
+* ```--model Pykeen_QuatE | Pykeen_Mure ``` all embedding models available in https://github.com/pykeen/pykeen#models can be selected. **📖 [PyKEEN integration →](docs/guides/pykeen_integration.md)** | **📖 [Examples →](tests/test_pykeen.py)**
 
 Training and scoring techniques
 * ```--trainer torchCPUTrainer | PL | MP | torchDDP ```
@@ -128,6 +128,8 @@ The `CUDA_VISIBLE_DEVICES=0` setting limits the program to access only the speci
 Multiple GPUs can be selected by providing a comma-separated list, for example: `CUDA_VISIBLE_DEVICES=0,1`.
 Additional PyTorch Lightning trainer options can be passed with `--pl_trainer_kwargs`, e.g. `--pl_trainer_kwargs '{"precision":"16-mixed","strategy":"ddp"}'`. PyTorch Lightning Trainer has many optional parameters; see: https://lightning.ai/docs/pytorch/stable/common/trainer.html
 
+**📖 [See trainer examples →](tests/test_trainers.py)** | **📖 [Custom trainer →](tests/test_custom_trainer.py)**
+
 
 The data is in the following form
 ```bash
@@ -151,6 +153,8 @@ Moreover, a KGE model can be also trained  by providing **an endpoint of a tripl
 dicee --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Keci
 ```
 
+**📖 [See dataset format details →](docs/guides/datasets.md)** | **📖 [Different backend examples →](tests/test_different_backends.py)**
+
 #### Scoring Techniques
 
 We have implemented state-of-the-art scoring techniques to train a KGE model ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample | FixedNegSample```.
@@ -170,6 +174,8 @@ dicee --dataset_dir "KGs/YAGO3-10" --model Keci --trainer "torchCPUTrainer" --sc
 ```
 Increasing the number of cores often (but not always) helps to decrease the runtimes on large knowledge graphs ```--num_core 4 --scoring_technique KvsSample | NegSample --neg_ratio 1``` 
 
+**📖 [See scoring technique examples →](tests/test_k_fold_cv_*.py)** | **📖 [KvsSample →](tests/test_onevssample.py)** 
+
 A KGE model can be also trained in a python script
 ```python
 from dicee.executer import Execute
@@ -178,6 +184,16 @@ args = Namespace()
 args.model = 'Keci'
 args.scoring_technique = "KvsAll"  # 1vsAll, or AllvsAll, or NegSample
 args.dataset_dir = "KGs/UMLS"
+args.path_to_store_single_run = "Keci_UMLS"
+args.num_epochs = 100
+args.embedding_dim = 32
+args.batch_size = 1024
+reports = Execute(args).start()
+print(reports["Train"]["MRR"]) # => 0.9912
+print(reports["Test"]["MRR"]) # => 0.8155
+```
+
+**📖 [See more training examples →](tests/test_execute_start.py)** | **📖 [Model-specific tests →](tests/test_regression_*.py)**
 args.path_to_store_single_run = "Keci_UMLS"
 args.num_epochs = 100
 args.embedding_dim = 32
@@ -211,6 +227,8 @@ dicee --continual_learning "KeciFamilyRun" --path_single_kg "KGs/Family/family-b
 The continual directory should contain the stored configuration and serialized training data (for example `configuration.json`, `memory_map_train_set.npy`, and mapping files `entity_to_idx`/`relation_to_idx` in `.csv` or legacy `.p` format).
 If `--eval_model` is set, evaluation runs after training using stored indexed artifacts. If `--eval_model None`, no evaluation is executed.
 Periodic evaluation and weight-averaging callbacks are also supported in continual training.
+
+**📖 [See continual learning examples →](tests/test_continual_training.py)** | **📖 [Online learning →](tests/test_online_learning.py)**
 
 #### Ensemble Learning with Knowledge Graph Embeddings
 
@@ -258,6 +276,8 @@ dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_ep
 ```
 For more details on periodic evaluations, please refer to the periodic evaluation section below in this file.
 
+**📖 [See SWA examples →](tests/test_swa.py)** | **📖 [Adaptive SWA →](tests/test_adaptive_swa.py)** | **📖 [Ensemble construction →](tests/test_ensemble_construction.py)**
+
 #### Periodic Evaluation during training
 
 The Periodic evaluation method automates periodic model evaluation and checkpointing during training. It allows evaluations at fixed intervals or specific epochs. Results and model states are stored systematically for efficient hyperparameter search.
@@ -296,128 +316,148 @@ dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_ep
 dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
       --eval_every_n_epochs 100 --n_epochs_eval_model test --save_every_n_epochs --adaptive_swa
 ```
+
+**📖 [See periodic evaluation examples →](tests/test_periodic_eval_callback.py)** | **📖 [Periodic eval with weight averaging →](tests/test_periodic_eval_weight_averaging.py)**
+
 Currently, Periodic Evaluations as well as Ensemble Models can only be used in combination with `torchCPUTrainer` or `PL` trainer with a single CUDA-capable device.
 </details>
 
-## Answering Complex Queries 
-<details> <summary> To see a code snippet </summary>
+## Link Prediction & Inference
+<details> <summary> Using Pre-trained Models </summary>
 
-```python
-# pip install dicee
-# wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate & unzip KGs.zip
-from dicee.executer import Execute
-from dicee.config import Namespace
-from dicee.knowledge_graph_embeddings import KGE
-# (1) Train a KGE model
-args = Namespace()
-args.model = 'Keci'
-args.p=0
-args.q=1
-args.optim = 'Adam'
-args.scoring_technique = "AllvsAll"
-args.path_single_kg = "KGs/Family/family-benchmark_rich_background.owl"
-args.backend = "rdflib"
-args.num_epochs = 200
-args.batch_size = 1024
-args.lr = 0.1
-args.embedding_dim = 512
-result = Execute(args).start()
-# (2) Load the pre-trained model
-pre_trained_kge = KGE(path=result['path_experiment_folder'])
-# (3) Single-hop query answering
-# Query: ?E : \exist E.hasSibling(E, F9M167)
-# Question: Who are the siblings of F9M167?
-# Answer: [F9M157, F9F141], as (F9M167, hasSibling, F9M157) and (F9M167, hasSibling, F9F141)
-predictions = pre_trained_kge.answer_multi_hop_query(query_type="1p",
-                                                     query=('http://www.benchmark.org/family#F9M167',
-                                                            ('http://www.benchmark.org/family#hasSibling',)),
-                                                     tnorm="min", k=3)
-top_entities = [topk_entity for topk_entity, query_score in predictions]
-assert "http://www.benchmark.org/family#F9F141" in top_entities
-assert "http://www.benchmark.org/family#F9M157" in top_entities
-# (2) Two-hop query answering
-# Query: ?D : \exist E.Married(D, E) \land hasSibling(E, F9M167)
-# Question: To whom a sibling of F9M167 is married to?
-# Answer: [F9F158, F9M142] as (F9M157 #married F9F158) and (F9F141 #married F9M142)
-predictions = pre_trained_kge.answer_multi_hop_query(query_type="2p",
-                                                     query=("http://www.benchmark.org/family#F9M167",
-                                                            ("http://www.benchmark.org/family#hasSibling",
-                                                             "http://www.benchmark.org/family#married")),
-                                                     tnorm="min", k=3)
-top_entities = [topk_entity for topk_entity, query_score in predictions]
-assert "http://www.benchmark.org/family#F9M142" in top_entities
-assert "http://www.benchmark.org/family#F9F158" in top_entities
-# (3) Three-hop query answering
-# Query: ?T : \exist D.type(D,T) \land Married(D,E) \land hasSibling(E, F9M167)
-# Question: What are the type of people who are married to a sibling of F9M167?
-# (3) Answer: [Person, Male, Father] since  F9M157 is [Brother Father Grandfather Male] and F9M142 is [Male Grandfather Father]
-
-predictions = pre_trained_kge.answer_multi_hop_query(query_type="3p", query=("http://www.benchmark.org/family#F9M167",
-                                                                             ("http://www.benchmark.org/family#hasSibling",
-                                                                             "http://www.benchmark.org/family#married",
-                                                                             "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")),
-                                                     tnorm="min", k=5)
-top_entities = [topk_entity for topk_entity, query_score in predictions]
-print(top_entities)
-assert "http://www.benchmark.org/family#Person" in top_entities
-assert "http://www.benchmark.org/family#Father" in top_entities
-assert "http://www.benchmark.org/family#Male" in top_entities
-```
-For more, please refer to `examples/multi_hop_query_answering`.
-</details>
-
-## Predicting Missing Links
-<details> <summary> To see a code snippet</summary>
+### Download & Use Pretrained Models
 
 ```python
 from dicee import KGE
-# (1) Train a knowledge graph embedding model..
-# (2) Load a pretrained model
-pre_trained_kge = KGE(path='..')
-# (3) Predict missing links through head entity rankings
-pre_trained_kge.predict_topk(h=[".."],r=[".."],topk=10)
-# (4) Predict missing links through relation rankings
-pre_trained_kge.predict_topk(h=[".."],t=[".."],topk=10)
-# (5) Predict missing links through tail entity rankings
-pre_trained_kge.predict_topk(r=[".."],t=[".."],topk=10)
+
+# Download from URL
+model = KGE(url="https://files.dice-research.org/projects/DiceEmbeddings/KINSHIP-Keci-dim128-epoch256-KvsAll")
+
+# Or load local model
+model = KGE(path="Experiments/2024-01-15...")
+
+# Make a prediction
+model.predict(h="person49", r="term12", t="person39", logits=False)
 ```
 
-</details>
+**📖 [See download & evaluation examples →](tests/test_download_and_eval.py)**
 
-## Literal Prediction using Pre-trained KGE
-<details> <summary> To see a code snippet</summary>
+### Predict Missing Links
 
 ```python
 from dicee import KGE
-# (1) Train a knowledge graph embedding model..
-# (2) Load a pretrained model
-pre_trained_kge = KGE(path='..')
-# (3) Train a literal Emebedding Model using interactive KGE
-pre_trained_kge.train_literals(train_file_path = "")
-# (4) Predict Literal value for Entity-Attribute pair
-pre_trained_kge.predict_literals(entity=[".."],attribute=[".."])
+
+model = KGE(path="...")
+
+# Predict missing tail entities
+predictions = model.predict_topk(h=["Mongolia"], r=["isLocatedIn"], topk=3)
+# [('Asia', 0.65), ('Airport', 0.37), ...]
+
+# Predict missing head entities  
+predictions = model.predict_topk(r=["isLocatedIn"], t=["Asia"], topk=10)
+
+# Predict missing relations
+predictions = model.predict_topk(h=["Mongolia"], t=["Asia"], topk=5)
 ```
-A detailed illustration and explanation of literal prediction is provided in `examples/KGE_literal_prediction.py`.
+
+**📖 [See complete link prediction examples →](tests/test_predict_kge.py)**
 
 </details>
 
-## Downloading Pretrained Models 
-
-We provide plenty pretrained knowledge graph embedding models at [dice-research.org/projects/DiceEmbeddings/](https://files.dice-research.org/projects/DiceEmbeddings/).
-<details> <summary> To see a code snippet </summary>
+## Multi-Hop Query Answering
+<details> <summary> EPFO Queries (1p, 2p, 3p, 2i, 3i, ip, pi, 2u, up) </summary>
 
 ```python
 from dicee import KGE
+
+# Load pre-trained model
+model = KGE(path="...")
+
+# 1-hop: Who are the siblings of F9M167?
+# Query: ?E : ∃E.hasSibling(E, F9M167)
+predictions = model.answer_multi_hop_query(
+    query_type="1p",
+    query=('http://www.benchmark.org/family#F9M167',
+           ('http://www.benchmark.org/family#hasSibling',)),
+    tnorm="min", k=3
+)
+# => [('F9F141', 0.99), ('F9M157', 0.98), ...]
+
+# 2-hop: To whom is a sibling of F9M167 married?
+# Query: ?D : ∃E.Married(D,E) ∧ hasSibling(E, F9M167)
+predictions = model.answer_multi_hop_query(
+    query_type="2p",
+    query=("http://www.benchmark.org/family#F9M167",
+           ("http://www.benchmark.org/family#hasSibling",
+            "http://www.benchmark.org/family#married")),
+    tnorm="min", k=3
+)
+# => [('F9F158', 0.95), ('F9M142', 0.93), ...]
+
+# 3-hop: What type of people are married to a sibling of F9M167?
+# Query: ?T : ∃D.type(D,T) ∧ Married(D,E) ∧ hasSibling(E, F9M167)
+predictions = model.answer_multi_hop_query(
+    query_type="3p",
+    query=("http://www.benchmark.org/family#F9M167",
+           ("http://www.benchmark.org/family#hasSibling",
+            "http://www.benchmark.org/family#married",
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")),
+    tnorm="min", k=5
+)
+# => [('Person', 0.99), ('Male', 0.99), ('Father', 0.98), ...]
+```
+
+**📖 [See multi-hop query examples →](tests/test_answer_multi_hop_query.py)**  
+**Supported query types:** `1p` (1-hop projection), `2p` (2-hop), `3p` (3-hop), `2i` (2-way intersection), `3i` (3-way intersection), `ip` (intersection-projection), `pi` (projection-intersection), `2u` (2-way union), `up` (union-projection)
+
+</details>
+
+## Literal Prediction
+<details> <summary> Predicting Numeric/Literal Values </summary>
+
+```python
+from dicee import KGE
+
+# Load pre-trained model
+model = KGE(path="...")
+
+# Train literal prediction module on top of KGE
+model.train_literals(train_file_path="literals_train.csv")
+
+# Predict literal values
+predictions = model.predict_literals(entity=["Person1"], attribute=["hasAge"])
+# => [(42.5, 0.89), (43.2, 0.85), ...]
+```
+
+**📖 [See literal prediction examples →](tests/test_predict_kge_literals.py)**
+
+</details>
+
+## Pre-trained Models
+
+We provide pre-trained knowledge graph embedding models at [dice-research.org/projects/DiceEmbeddings/](https://files.dice-research.org/projects/DiceEmbeddings/).
+<details> <summary> Download & Compare Models </summary>
+
+```python
+from dicee import KGE
+
+# Download different models
 mure = KGE(url="https://files.dice-research.org/projects/DiceEmbeddings/YAGO3-10-Pykeen_MuRE-dim128-epoch256-KvsAll")
 quate = KGE(url="https://files.dice-research.org/projects/DiceEmbeddings/YAGO3-10-Pykeen_QuatE-dim128-epoch256-KvsAll")
 keci = KGE(url="https://files.dice-research.org/projects/DiceEmbeddings/YAGO3-10-Keci-dim128-epoch256-KvsAll")
-quate.predict_topk(h=["Mongolia"],r=["isLocatedIn"],topk=3)
-# [('Asia', 0.9894362688064575), ('Europe', 0.01575559377670288), ('Tadanari_Lee', 0.012544365599751472)]
-keci.predict_topk(h=["Mongolia"],r=["isLocatedIn"],topk=3)
-# [('Asia', 0.6522021293640137), ('Chinggis_Khaan_International_Airport', 0.36563414335250854), ('Democratic_Party_(Mongolia)', 0.19600993394851685)]
-mure.predict_topk(h=["Mongolia"],r=["isLocatedIn"],topk=3)
-# [('Asia', 0.9996906518936157), ('Ulan_Bator', 0.0009907372295856476), ('Philippines', 0.0003116439620498568)]
+
+# Compare predictions
+mure.predict_topk(h=["Mongolia"], r=["isLocatedIn"], topk=3)
+# [('Asia', 0.9997), ('Ulan_Bator', 0.0010), ('Philippines', 0.0003)]
+
+quate.predict_topk(h=["Mongolia"], r=["isLocatedIn"], topk=3)
+# [('Asia', 0.9894), ('Europe', 0.0158), ('Tadanari_Lee', 0.0125)]
+
+keci.predict_topk(h=["Mongolia"], r=["isLocatedIn"], topk=3)
+# [('Asia', 0.6522), ('Airport', 0.3656), ('Democratic_Party', 0.1960)]
 ```
+
+**📖 [See download & evaluation examples →](tests/test_download_and_eval.py)**
 
 </details>
 
