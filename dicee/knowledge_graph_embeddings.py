@@ -657,9 +657,10 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         return sorted([(ei, s) for ei, s in zip(self.entity_to_idx.keys(), aggregated_query_for_all_entities)],
                       key=lambda x: x[1], reverse=True)[:k]
 
-    def single_hop_query_answering(self, query: tuple, only_scores: bool = True, k: int = None):
+    def single_hop_query_answering(self, query: tuple, only_scores: bool = True, k: int = None,
+                                   use_logits: bool = True):
         h, r = query
-        result = self.predict(h=h, r=r[0]).squeeze()
+        result = self.predict(h=h, r=r[0], logits=use_logits).squeeze()
         if only_scores:
             """ do nothing"""
         else:
@@ -669,7 +670,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
     def answer_multi_hop_query(self, query_type: str = None, query: Tuple[Union[str, Tuple[str, str]], ...] = None,
                                queries: List[Tuple[Union[str, Tuple[str, str]], ...]] = None, tnorm: str = "prod",
-                               neg_norm: str = "standard", lambda_: float = 0.0, k: int = 10, only_scores=False) -> \
+                               neg_norm: str = "standard", lambda_: float = 0.0, k: int = 10, only_scores=False,
+                               use_logits: bool = True) -> \
             List[Tuple[str, torch.Tensor]]:
         """
         # @TODO: Refactoring is needed
@@ -699,6 +701,9 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         k: int
         The top-k substitutions for intermediate variables.
 
+        use_logits: bool
+        Whether to compose raw model logits or sigmoid probabilities.
+
         Returns
         -------
         List[Tuple[str, torch.Tensor]]
@@ -711,7 +716,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
                 assert query is None
                 results.append(
                     self.answer_multi_hop_query(query_type=query_type, query=i, tnorm=tnorm, neg_norm=neg_norm,
-                                                lambda_=lambda_, k=k, only_scores=only_scores))
+                                                lambda_=lambda_, k=k, only_scores=only_scores,
+                                                use_logits=use_logits))
             return results
 
         assert len(self.entity_to_idx) >= k >= 0
@@ -748,7 +754,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
         # 1p
         if query_structure == ("e", ("r",)):
-            return self.single_hop_query_answering(query, only_scores, k)
+            return self.single_hop_query_answering(query, only_scores, k, use_logits=use_logits)
         # 2p
         elif query_structure == ("e", ("r", "r",)):
             # ?M : \exist A. r1(e,A) \land r2(A,M)
@@ -757,11 +763,12 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             atom2_scores = []
             # (1) Iterate over top k substitutes of A in the first hop query: r1(e,A) s.t. A<-a
             for top_k_entity, score_of_e_r1_a in self.answer_multi_hop_query(query_type="1p", query=(e, (r1,)),
-                                                                             only_scores=False, tnorm=tnorm, k=k):
+                                                                             only_scores=False, tnorm=tnorm, k=k,
+                                                                             use_logits=use_logits):
                 # (1.1) Store scores of (e, r1, a) s.t. a is a substitute of A and a is a top ranked entity.
                 top_k_scores1.append(score_of_e_r1_a)
                 # (1.2) Compute scores for (a, r2, M): Replace predict with answer_multi_hop_query.
-                atom2_scores.append(self.predict(h=top_k_entity, r=r2))
+                atom2_scores.append(self.predict(h=top_k_entity, r=r2, logits=use_logits))
             # (2) k by E tensor
             atom2_scores = torch.vstack(atom2_scores)
             kk, E = atom2_scores.shape
@@ -783,10 +790,11 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             for top_k_entity, score_of_e_r1_a in self.answer_multi_hop_query(query_type="2p",
                                                                              query=(head1, (relation1, relation2)),
                                                                              tnorm=tnorm,
-                                                                             k=k):
+                                                                             k=k,
+                                                                             use_logits=use_logits):
                 top_k_scores1.append(score_of_e_r1_a)
                 # () Scores for all entities E
-                atom_scores.append(self.predict(h=[top_k_entity], r=[relation3]))
+                atom_scores.append(self.predict(h=[top_k_entity], r=[relation3], logits=use_logits))
 
             # (2) k by E tensor
             atom_scores = torch.vstack(atom_scores)
@@ -809,10 +817,10 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
             # Calculate entity scores for each query
             # Get scores for the first atom (positive)
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]]).squeeze()
+            atom1_scores = self.predict(h=[head1], r=[relation1[0]], logits=use_logits).squeeze()
             # Get scores for the second atom (negative)
             # if neg_norm == "standard":
-            predictions = self.predict(h=[head2], r=[relation2[0]]).squeeze()
+            predictions = self.predict(h=[head2], r=[relation2[0]], logits=use_logits).squeeze()
             atom2_scores = self.negnorm(predictions, lambda_, neg_norm)
 
             assert len(atom1_scores) == len(self.entity_to_idx)
@@ -831,13 +839,13 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
             # Calculate entity scores for each query
             # Get scores for the first atom (positive)
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]]).squeeze()
+            atom1_scores = self.predict(h=[head1], r=[relation1[0]], logits=use_logits).squeeze()
             # Get scores for the second atom (negative)
             # modelling standard negation (1-x)
-            atom2_scores = self.predict(h=[head2], r=[relation2[0]]).squeeze()
+            atom2_scores = self.predict(h=[head2], r=[relation2[0]], logits=use_logits).squeeze()
             # Get scores for the third atom
             # if neg_norm == "standard":
-            predictions = self.predict(h=[head3], r=[relation3[0]]).squeeze()
+            predictions = self.predict(h=[head3], r=[relation3[0]], logits=use_logits).squeeze()
             atom3_scores = self.negnorm(predictions, lambda_, neg_norm)
 
             assert len(atom1_scores) == len(self.entity_to_idx)
@@ -855,7 +863,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             head3, relation3 = query[1]
             # Calculate entity scores for each query
             # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1]).squeeze()
+            atom1_scores = self.predict(h=[head1], r=[relation1], logits=use_logits).squeeze()
 
             assert len(atom1_scores) == len(self.entity_to_idx)
             # sort atom1_scores in descending order and get the top k entities indices
@@ -872,7 +880,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             # Get scores for the second atom
             for head2 in top_k_heads:
                 # The score tensor for the current head2
-                atom2_score = self.predict(h=[head2], r=[relation2])
+                atom2_score = self.predict(h=[head2], r=[relation2], logits=use_logits)
                 neg_atom2_score = self.negnorm(atom2_score, lambda_, neg_norm)
                 # Concatenate the score tensor for the current head2 with the previous scores
                 atom2_scores = torch.cat([atom2_scores, neg_atom2_score], dim=0)
@@ -882,7 +890,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             inter_scores = self.t_norm(topk_scores1_expanded, atom2_scores, tnorm)
 
             scores_2pn_query, _ = torch.max(inter_scores, dim=0)
-            scores_1p_query = self.predict(h=[head3], r=[relation3[0]]).squeeze()
+            scores_1p_query = self.predict(h=[head3], r=[relation3[0]], logits=use_logits).squeeze()
 
             combined_scores = self.t_norm(scores_2pn_query, scores_1p_query, tnorm)
             if only_scores:
@@ -896,7 +904,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             head3, relation3 = query[1]
             # Calculate entity scores for each query
             # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1]).squeeze()
+            atom1_scores = self.predict(h=[head1], r=[relation1], logits=use_logits).squeeze()
 
             assert len(atom1_scores) == len(self.entity_to_idx)
 
@@ -913,7 +921,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             # Get scores for the second atom
             for head2 in top_k_heads:
                 # The score tensor for the current head2
-                atom2_score = self.predict(h=[head2], r=[relation2])
+                atom2_score = self.predict(h=[head2], r=[relation2], logits=use_logits)
                 # Concatenate the score tensor for the current head2 with the previous scores
                 atom2_scores = torch.cat([atom2_scores, atom2_score], dim=0)
 
@@ -923,7 +931,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
             scores_2p_query, _ = torch.max(inter_scores, dim=0)
 
-            scores_1p_query = self.predict(h=[head3], r=[relation3[0]]).squeeze()
+            scores_1p_query = self.predict(h=[head3], r=[relation3[0]], logits=use_logits).squeeze()
             # taking negation for the e,(r,n) part of query
             neg_scores_1p_query = self.negnorm(scores_1p_query, lambda_, neg_norm)
             combined_scores = self.t_norm(scores_2p_query, neg_scores_1p_query, tnorm)
@@ -940,10 +948,10 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
             # Calculate entity scores for each query
             # Get scores for the first atom (positive)
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]]).squeeze()
+            atom1_scores = self.predict(h=[head1], r=[relation1[0]], logits=use_logits).squeeze()
             # Get scores for the second atom (negative)
             # if neg_norm == "standard":
-            predictions = self.predict(h=[head2], r=[relation2[0]]).squeeze()
+            predictions = self.predict(h=[head2], r=[relation2[0]], logits=use_logits).squeeze()
             atom2_scores = self.negnorm(predictions, lambda_, neg_norm)
 
             assert len(atom1_scores) == len(self.entity_to_idx)
@@ -964,7 +972,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             # Get scores for the second atom
             for head3 in top_k_heads:
                 # The score tensor for the current head2
-                atom3_score = self.predict(h=[head3], r=[relation_1p[0]])
+                atom3_score = self.predict(h=[head3], r=[relation_1p[0]], logits=use_logits)
                 # Concatenate the score tensor for the current head2 with the previous scores
                 atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)
 
@@ -985,9 +993,9 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
             # Calculate entity scores for each query
             # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]]).squeeze()
+            atom1_scores = self.predict(h=[head1], r=[relation1[0]], logits=use_logits).squeeze()
             # Get scores for the second atom
-            atom2_scores = self.predict(h=[head2], r=[relation2[0]]).squeeze()
+            atom2_scores = self.predict(h=[head2], r=[relation2[0]], logits=use_logits).squeeze()
 
             assert len(atom1_scores) == len(self.entity_to_idx)
 
@@ -1004,11 +1012,11 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             head3, relation3 = query[2]
             # Calculate entity scores for each query
             # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]]).squeeze()
+            atom1_scores = self.predict(h=[head1], r=[relation1[0]], logits=use_logits).squeeze()
             # Get scores for the second atom
-            atom2_scores = self.predict(h=[head2], r=[relation2[0]]).squeeze()
+            atom2_scores = self.predict(h=[head2], r=[relation2[0]], logits=use_logits).squeeze()
             # Get scores for the third atom
-            atom3_scores = self.predict(h=[head3], r=[relation3[0]]).squeeze()
+            atom3_scores = self.predict(h=[head3], r=[relation3[0]], logits=use_logits).squeeze()
 
             assert len(atom1_scores) == len(self.entity_to_idx)
 
@@ -1025,7 +1033,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             head3, relation3 = query[1]
             # Calculate entity scores for each query
             # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1]).squeeze()
+            atom1_scores = self.predict(h=[head1], r=[relation1], logits=use_logits).squeeze()
 
             assert len(atom1_scores) == len(self.entity_to_idx)
             # sort atom1_scores in descending order and get the top k entities indices
@@ -1041,7 +1049,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             # Get scores for the second atom
             for head2 in top_k_heads:
                 # The score tensor for the current head2
-                atom2_score = self.predict(h=[head2], r=[relation2]).unsqueeze(0)
+                atom2_score = self.predict(h=[head2], r=[relation2], logits=use_logits).unsqueeze(0)
                 # Concatenate the score tensor for the current head2 with the previous scores
                 atom2_scores = torch.cat([atom2_scores, atom2_score], dim=0)
 
@@ -1051,7 +1059,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
             scores_2p_query, _ = torch.max(inter_scores, dim=0)
 
-            scores_1p_query = self.predict(h=[head3], r=[relation3[0]]).squeeze()
+            scores_1p_query = self.predict(h=[head3], r=[relation3[0]], logits=use_logits).squeeze()
 
             combined_scores = self.t_norm(scores_2p_query, scores_1p_query, tnorm)
             if only_scores:
@@ -1066,9 +1074,9 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             relation_1p = query[1]
             # Calculate entity scores for each query
             # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]]).squeeze()
+            atom1_scores = self.predict(h=[head1], r=[relation1[0]], logits=use_logits).squeeze()
             # Get scores for the second atom
-            atom2_scores = self.predict(h=[head2], r=[relation2[0]]).squeeze()
+            atom2_scores = self.predict(h=[head2], r=[relation2[0]], logits=use_logits).squeeze()
 
             assert len(atom1_scores) == len(self.entity_to_idx)
 
@@ -1089,7 +1097,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             # Get scores for the second atom
             for head3 in top_k_heads:
                 # The score tensor for the current head2
-                atom3_score = self.predict(h=[head3], r=[relation_1p[0]]).unsqueeze(0)
+                atom3_score = self.predict(h=[head3], r=[relation_1p[0]], logits=use_logits).unsqueeze(0)
 
                 # Concatenate the score tensor for the current head2 with the previous scores
                 atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)
@@ -1111,9 +1119,9 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
             # Calculate entity scores for each query
             # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]]).squeeze()
+            atom1_scores = self.predict(h=[head1], r=[relation1[0]], logits=use_logits).squeeze()
             # Get scores for the second atom
-            atom2_scores = self.predict(h=[head2], r=[relation2[0]]).squeeze()
+            atom2_scores = self.predict(h=[head2], r=[relation2[0]], logits=use_logits).squeeze()
 
             assert len(atom1_scores) == len(self.entity_to_idx)
 
@@ -1133,10 +1141,10 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             relation_1p = query[1]
 
             # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]]).squeeze()
+            atom1_scores = self.predict(h=[head1], r=[relation1[0]], logits=use_logits).squeeze()
 
             # Get scores for the second atom
-            atom2_scores = self.predict(h=[head2], r=[relation2[0]]).squeeze()
+            atom2_scores = self.predict(h=[head2], r=[relation2[0]], logits=use_logits).squeeze()
 
             assert len(atom1_scores) == len(self.entity_to_idx)
 
@@ -1154,7 +1162,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
             for head3 in top_k_heads:
                 # The score tensor for the current head3
-                atom3_score = self.predict(h=[head3], r=[relation_1p[0]]).unsqueeze(0)
+                atom3_score = self.predict(h=[head3], r=[relation_1p[0]], logits=use_logits).unsqueeze(0)
 
                 # Concatenate the score tensor for the current head3 with the previous scores
                 atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)

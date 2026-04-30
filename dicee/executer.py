@@ -171,7 +171,7 @@ class Execute:
         )
 
         if os.path.exists(memmap_path) and os.path.exists(details_path):
-            print("KG memmap already exists, skipping.")
+            print("KG already exists, skipping creation.")
             return
 
         print("Creating knowledge graph...")
@@ -221,16 +221,18 @@ class Execute:
         """Load knowledge graph from memory-mapped file."""
         base_path = self.args.path_to_store_single_run
         details_path = os.path.join(base_path, 'memory_map_details.json')
-        memmap_path = os.path.join(base_path, 'memory_map_train_set.npy')
-
+        
         with open(details_path, 'r') as f:
             memory_map_details = json.load(f)
 
-        self.knowledge_graph = np.memmap(
-            memmap_path,
-            mode='r',
-            dtype=memory_map_details["dtype"],
-                                            shape=tuple(memory_map_details["shape"]))
+        # memmap_path = os.path.join(base_path, 'memory_map_train_set.npy')
+        # self.knowledge_graph = np.memmap(
+        #     memmap_path,
+        #     mode='r',
+        #     dtype=memory_map_details["dtype"],
+        #                                     shape=tuple(memory_map_details["shape"]))
+        self.args.path_experiment_folder = self.args.path_to_store_single_run
+        self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
         self.args.num_entities = memory_map_details["num_entities"]
         self.args.num_relations = memory_map_details["num_relations"]
         self.args.num_tokens = None
@@ -344,14 +346,15 @@ class Execute:
                 dist.barrier()
 
             # (3) Reload the memory-map of index knowledge graph stored as a numpy ndarray
+            if not getattr(self.args, "full_storage_path", None):
+                self.args.full_storage_path = self.args.path_to_store_single_run
             if self.knowledge_graph is None:
                 self.load_from_memmap()
 
             # (4) Create an evaluator object.
             self.evaluator = Evaluator(args=self.args)
             # (5) Create a trainer object.
-            if not getattr(self.args, "full_storage_path", None):
-                self.args.full_storage_path = self.args.path_to_store_single_run
+            
             self.trainer = DICE_Trainer(args=self.args,
                                         is_continual_training=self.is_continual_training,
                                         storage_path=self.args.full_storage_path,
