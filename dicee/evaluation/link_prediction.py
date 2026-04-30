@@ -19,7 +19,6 @@ from .utils import (
 )
 from ._filtering import (
     compute_filtered_rank,
-    compute_filtered_rank_batch,
     accumulate_bidirectional_hits,
     build_bpe_entity_index,
 )
@@ -138,7 +137,6 @@ def evaluate_link_prediction_performance_with_reciprocals(
         ])
 
         e1_idx_r_idx = torch.LongTensor(data_batch[:, [0, 1]])
-        e2_idx = torch.tensor(data_batch[:, 2])
         predictions = model.model(e1_idx_r_idx)
 
         for j in range(data_batch.shape[0]):
