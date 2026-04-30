@@ -39,6 +39,7 @@ _optional_deps = [
 _dev_deps = [
     "pytest>=7.2.2",
     "ruff>=0.0.284",
+    "mypy>=1.0.0",
     "scikit-learn>=1.2.2",
 ]
 
