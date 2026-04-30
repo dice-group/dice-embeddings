@@ -105,7 +105,7 @@
 
 
 <div class="viewcode-block" id="make_iterable_verbose">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs_training/index.html#dicee.evaluation.make_iterable_verbose">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs_training/index.html#dicee.evaluation.utils.make_iterable_verbose">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">make_iterable_verbose</span><span class="p">(</span>
     <span class="n">iterable_object</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">,</span>
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
@@ -132,7 +132,7 @@
 
 
 <div class="viewcode-block" id="compute_metrics_from_ranks">
-<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/utils/index.html#dicee.evaluation.compute_metrics_from_ranks">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/utils/index.html#dicee.evaluation.utils.compute_metrics_from_ranks">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_metrics_from_ranks</span><span class="p">(</span>
     <span class="n">ranks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">num_triples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -167,7 +167,7 @@
 
 
 <div class="viewcode-block" id="compute_metrics_from_ranks_simple">
-<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/utils/index.html#dicee.evaluation.compute_metrics_from_ranks_simple">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/utils/index.html#dicee.evaluation.utils.compute_metrics_from_ranks_simple">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_metrics_from_ranks_simple</span><span class="p">(</span>
     <span class="n">ranks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="n">num_triples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -198,7 +198,7 @@
 
 
 <div class="viewcode-block" id="update_hits">
-<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/utils/index.html#dicee.evaluation.update_hits">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/utils/index.html#dicee.evaluation.utils.update_hits">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">update_hits</span><span class="p">(</span>
     <span class="n">hits</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
     <span class="n">rank</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -221,7 +221,7 @@
 
 
 <div class="viewcode-block" id="create_hits_dict">
-<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/utils/index.html#dicee.evaluation.create_hits_dict">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/evaluation/utils/index.html#dicee.evaluation.utils.create_hits_dict">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">create_hits_dict</span><span class="p">(</span><span class="n">hits_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create an initialized hits dictionary.</span>
 
@@ -238,7 +238,7 @@
 
 
 <div class="viewcode-block" id="efficient_zero_grad">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs_training/index.html#dicee.evaluation.efficient_zero_grad">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs_training/index.html#dicee.evaluation.utils.efficient_zero_grad">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">efficient_zero_grad</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Efficiently zero gradients using parameter.grad = None.</span>
 
