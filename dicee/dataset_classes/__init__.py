@@ -20,6 +20,9 @@ from ._bpe import (  # noqa: F401
     MultiLabelDataset,
 )
 
+# Factory functions
+from ._factory import construct_dataset, reload_dataset  # noqa: F401
+
 # Label-based scoring datasets
 from ._label_based import (  # noqa: F401
     AllvsAll,
@@ -28,18 +31,15 @@ from ._label_based import (  # noqa: F401
     OnevsAllDataset,
 )
 
+# Literal dataset
+from ._literal import LiteralDataset  # noqa: F401
+
 # Negative-sampling datasets
 from ._negative_sampling import (  # noqa: F401
     FixedNegSampleDataset,
     OnevsSample,
     TriplePredictionDataset,
 )
-
-# Literal dataset
-from ._literal import LiteralDataset  # noqa: F401
-
-# Factory functions
-from ._factory import construct_dataset, reload_dataset  # noqa: F401
 
 __all__ = [
     # BPE

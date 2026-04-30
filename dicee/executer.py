@@ -109,7 +109,7 @@ class Execute:
     def cleanup(self):
         if self.distributed and dist.is_initialized():
             dist.destroy_process_group()
-    
+
     def setup_executor(self) -> None:
         """Set up storage directories for the experiment.
 
@@ -118,7 +118,7 @@ class Execute:
         """
         if self.is_continual_training:
             return
-        
+
         if not self.is_local_rank_zero():
             return
 
@@ -216,12 +216,12 @@ class Execute:
         memmap_kg[:] = kg.train_set[:]
         memmap_kg.flush()
         del memmap_kg
-    
+
     def load_from_memmap(self) -> None:
         """Load knowledge graph from memory-mapped file."""
         base_path = self.args.path_to_store_single_run
         details_path = os.path.join(base_path, 'memory_map_details.json')
-        
+
         with open(details_path, 'r') as f:
             memory_map_details = json.load(f)
 
@@ -354,7 +354,7 @@ class Execute:
             # (4) Create an evaluator object.
             self.evaluator = Evaluator(args=self.args)
             # (5) Create a trainer object.
-            
+
             self.trainer = DICE_Trainer(args=self.args,
                                         is_continual_training=self.is_continual_training,
                                         storage_path=self.args.full_storage_path,

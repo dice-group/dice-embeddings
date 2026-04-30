@@ -1,10 +1,13 @@
-import torch
-from typing import Tuple
-from dicee.abstracts import AbstractTrainer
-import time
 import os
-from tqdm import tqdm
+import time
+from typing import Tuple
+
 import psutil
+import torch
+from tqdm import tqdm
+
+from dicee.abstracts import AbstractTrainer
+
 
 class TorchTrainer(AbstractTrainer):
     """

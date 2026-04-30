@@ -9,8 +9,8 @@ functions from the new dicee.evaluation module, along with training utilities.
 """
 
 # Re-export from new evaluation module for backward compatibility
-from .evaluation.link_prediction import evaluate_lp, evaluate_bpe_lp
-from .evaluation.utils import make_iterable_verbose, efficient_zero_grad
+from .evaluation.link_prediction import evaluate_bpe_lp, evaluate_lp
+from .evaluation.utils import efficient_zero_grad, make_iterable_verbose
 
 __all__ = [
     "evaluate_lp",

@@ -1,6 +1,8 @@
-from .base_model import BaseKGE
-import torch
 import numpy as np
+import torch
+
+from .base_model import BaseKGE
+
 
 class FMult(BaseKGE):
     """ Learning Knowledge Neural Graphs"""
@@ -233,13 +235,13 @@ class FMult2(BaseKGE):
             t_W, t_b = self.build_func(tail_ent_emb)
             out = self.trapezoid([h_W, r_W, t_W], [h_b, r_b, t_b])
         return out
-    
 
-class LFMult1(BaseKGE): 
 
-    '''Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:
+class LFMult1(BaseKGE):
+
+    r'''Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:
       f(x) = \sum_{k=0}^{k=d-1}wk e^{kix}. and use the three differents scoring function as in the paper to evaluate the score'''
-    
+
     def __init__(self,args):
         super().__init__(args)
         self.name = 'LFMult1'
@@ -251,7 +253,7 @@ class LFMult1(BaseKGE):
         head_ent_emb, rel_emb, tail_ent_emb = self.get_triple_representation(idx_triple)
 
         score = self.vtp_score(head_ent_emb,rel_emb,tail_ent_emb)
-    
+
         return score
 
     def tri_score(self,h,r,t):
@@ -266,7 +268,7 @@ class LFMult1(BaseKGE):
                                 * h[:, i_range] * r[:, j_range] * t[:, k_range] /(eps+i_range + j_range - k_range)),dim=(-3,-2,-1))# sum on i+j != k
         s = s1 + s2 # combine the two sums.
         return s
-    
+
     def vtp_score(self,h,r,t):
 
         i_range, j_range = torch.meshgrid(torch.arange(self.embedding_dim),torch.arange(self.embedding_dim))
@@ -278,26 +280,26 @@ class LFMult1(BaseKGE):
                                     + torch.sum(h[:, i_range] * t[:, i_range],dim=(-3,-2,-1))# sum on i != j
         i_1 = torch.arange(1,self.embedding_dim)
         p2 = torch.sum(r[:, i_1] * torch.sin(i_1)/(i_1) ,dim=-1) + r[:,0]
-        
+
         s1 = p1*p2
 
         p3 = torch.sum(torch.where(cond, torch.zeros_like(cond), torch.sin(i_range - j_range) \
                                 * r[:, i_range] * t[:, j_range] /(eps+i_range - j_range)),dim=(-3,-2,-1)) \
                                     + torch.sum(r[:, i_range] * t[:, i_range],dim=(-3,-2,-1))# sum on i != j
-        
+
         p4 = torch.sum(h[:, i_1] * torch.sin(i_1)/(i_1) ,dim=-1) + h[:,0]
         s2 = p3*p4
 
 
         s = s1 - s2 # combine the two sums.
         return s
-    
-class LFMult(BaseKGE): 
 
-    '''Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:
+class LFMult(BaseKGE):
+
+    r'''Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:
       f(x) = \sum_{i=0}^{d-1} a_k x^{i%d} and use the three differents scoring function as in the paper to evaluate the score.
       We also consider combining with Neural Networks.'''
-    
+
     def __init__(self,args):
         super().__init__(args)
         self.name = 'LFMult'
@@ -316,30 +318,30 @@ class LFMult(BaseKGE):
         ###### polynomial score with trilinear scoring
 
         # score = self.tri_score(coeff_head,coeff_rel,coeff_tail)
-        
+
         # score = score.reshape(-1,self.m).sum(dim=1)
-    
+
 
         ##### polynomial score with NN
 
         score = torch.trapezoid(self.poly_NN(self.x_values,coeff_head, coeff_rel, coeff_tail),self.x_values)
         # score = integral_value.reshape(1,-1).squeeze(0)
-       
-        
-        return score 
-    
+
+
+        return score
+
     def construct_multi_coeff(self, x):
 
         coeffs = torch.hsplit(x,self.degree + 1)
         coeffs = torch.stack(coeffs,dim=1)
 
         return coeffs.transpose(1,2)
-    
+
 
 
     def poly_NN(self, x, coefh, coefr, coeft):
 
-        ''' Constructing a 2 layers NN to represent the embeddings. 
+        r''' Constructing a 2 layers NN to represent the embeddings.
          h = \sigma(wh^T x + bh ),  r = \sigma(wr^T x + br ),  t = \sigma(wt^T x + bt )'''
 
         wh, bh = coefh[:, :self.m,0], coefh[:, :self.m,1]
@@ -351,13 +353,13 @@ class LFMult(BaseKGE):
         t_emb = self.linear(x,wt,bt).reshape(-1,self.m,x.size(0))
 
         return self.scalar_batch_NN(h_emb, r_emb, t_emb)#(linear(x,wh,bh)*linear(x,wr,br)*linear(x,wt,bt))
-    
+
     def linear(self,x,w,b):
         return torch.tanh((w.reshape(-1,1)*x.unsqueeze(0) + b.reshape(-1,1)))
-    
 
 
-    
+
+
     def scalar_batch_NN(self, a, b, c):
 
         '''element wise multiplication between a,b and c:
@@ -369,7 +371,7 @@ class LFMult(BaseKGE):
         c_reshaped = c.transpose(1, 2).reshape(-1, c.size(-1), c.size(-2))
 
         mul_result = a_reshaped * b_reshaped * c_reshaped
-        
+
         return mul_result.sum(dim=-1)
 
 
@@ -377,9 +379,9 @@ class LFMult(BaseKGE):
 
     def tri_score(self, coeff_h, coeff_r, coeff_t):
 
-        '''this part implement the trilinear scoring techniques: 
+        r'''this part implement the trilinear scoring techniques:
 
-        score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d} 
+        score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d}
 
         1. generate the range for i,j and k from [0 d-1]
 
@@ -401,27 +403,27 @@ class LFMult(BaseKGE):
 
 
         weighted_terms = terms.unsqueeze(0)*coeff_h.reshape(-1, 1, self.degree+1, 1) *coeff_r.reshape(-1, self.degree+1, 1, 1) * coeff_t.reshape(-1, 1, 1,self.degree+1)
-        
+
         result = torch.sum(weighted_terms, dim=[-3,-2,-1])
 
         return result
-    
-    def vtp_score(self, h, r, t):
-            
-        '''this part implement the vector triple product scoring techniques: 
 
-        score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*c_j*b_k - b_i*c_j*a_k}{(1+(i+j)%d)(1+k)} 
+    def vtp_score(self, h, r, t):
+
+        r'''this part implement the vector triple product scoring techniques:
+
+        score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*c_j*b_k - b_i*c_j*a_k}{(1+(i+j)%d)(1+k)}
 
         1. generate the range for i,j and k from [0 d-1]
 
         2. Compute the first and second terms of the sum
 
         3.  Multiply with then denominator and take the sum
-        
+
         4. take the sum over each batch
-        
+
         '''
-            
+
         i_range, j_range, k_range = torch.meshgrid(torch.arange(self.embedding_dim),torch.arange(self.embedding_dim),torch.arange(self.embedding_dim))
 
         # terms = 1 / (1 + (i_range + j_range)%self.embedding_dim) / (1+ k_range) # with modulo
@@ -433,22 +435,22 @@ class LFMult(BaseKGE):
         terms2 = r.view(-1, 1, self.embedding_dim, 1) * t.view(-1, self.embedding_dim, 1, 1) * h.view(-1, 1, 1,self.embedding_dim)
 
         weighted_terms = terms * (terms1-terms2)
-        
+
         result = torch.sum(weighted_terms, dim=[-3,-2,-1])
 
         return result
 
-    def comp_func(self,h,r,t): 
+    def comp_func(self,h,r,t):
         '''this part implement the function composition scoring techniques: i.e. score = <hor, t>'''
 
         degree = torch.arange(self.embedding_dim, dtype=torch.float32)
 
-        r_emb = self.polynomial(r,self.x_values,degree) 
+        r_emb = self.polynomial(r,self.x_values,degree)
 
-        t_emb = self.polynomial(t,self.x_values,degree) 
+        t_emb = self.polynomial(t,self.x_values,degree)
 
-        hor = self.pop(h,r_emb,degree) 
-        
+        hor = self.pop(h,r_emb,degree)
+
         score = torch.trapz(hor*t_emb , self.x_values) #Computing the score with the trapezoid method
 
         return score
@@ -465,9 +467,9 @@ class LFMult(BaseKGE):
 
         return vect
 
-        
+
     def pop(self,coeff,x,degree):
-        '''This function allow us to evaluate the composition of two polynomes without for loops :) 
+        '''This function allow us to evaluate the composition of two polynomes without for loops :)
         it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  and range of integer [0,1,...d]
             and return a tensor (coeff[0][0] + coeff[0][1]x +...+ coeff[0][d]x^d,
                                 coeff[1][0] + coeff[1][1]x +...+ coeff[1][d]x^d)

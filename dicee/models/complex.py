@@ -1,5 +1,7 @@
 from typing import Tuple
+
 import torch
+
 from .base_model import BaseKGE
 
 

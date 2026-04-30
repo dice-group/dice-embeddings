@@ -33,6 +33,7 @@ from .model_parallelism import TensorParallel
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
 
+
 def load_term_mapping(file_path: str) -> polars.DataFrame:
     """Load term-to-index mapping from CSV file.
 
@@ -43,6 +44,42 @@ def load_term_mapping(file_path: str) -> polars.DataFrame:
         Polars DataFrame containing the mapping.
     """
     return polars.read_csv(f"{file_path}.csv")
+
+
+def _cuda_is_usable() -> bool:
+    """Return True only when CUDA can be fully initialised.
+
+    ``torch.cuda.device_count()`` does not trigger full CUDA runtime init,
+    so it may return >0 even when the runtime is in a broken/corrupted state
+    (e.g. after a kernel crash in a previous test).  Calling
+    ``get_device_name`` forces the actual init and lets us detect the bad
+    state before handing control to PyTorch Lightning.
+    """
+    try:
+        if torch.cuda.device_count() > 0:
+            torch.cuda.get_device_name(0)
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _disable_cuda_in_process() -> None:
+    """Patch ``torch.cuda.is_available`` to return ``False`` for this process.
+
+    Lightning's ``_collect_rng_states`` (called from ``isolate_rng``) checks
+    ``torch.cuda.is_available()`` and, when it returns ``True``, calls
+    ``torch.cuda.get_rng_state_all()``.  That triggers a full CUDA runtime
+    init which crashes if the runtime is already in a broken state.  Setting
+    ``accelerator="cpu"`` alone is not sufficient because Lightning still
+    collects CUDA RNG state regardless of the chosen accelerator.
+
+    This function is only called after ``_cuda_is_usable()`` has already
+    confirmed that the CUDA runtime cannot be initialised, so permanently
+    returning ``False`` from ``is_available`` is both safe and correct for
+    the lifetime of the current process.
+    """
+    torch.cuda.is_available = lambda: False  # type: ignore[assignment]
 
 
 def initialize_trainer(
@@ -62,6 +99,11 @@ def initialize_trainer(
         AssertionError: If trainer is None after initialization.
     """
     trainer: Optional[Union[TorchTrainer, TensorParallel, TorchDDPTrainer, pl.Trainer]] = None
+    # Disable broken CUDA runtime early so that optimizer.step() (Adam, SGD, …)
+    # does not call _cuda_graph_capture_health_check() → is_current_stream_capturing()
+    # → graphs.py:54 and crash even when using a CPU-only trainer.
+    if not _cuda_is_usable():
+        _disable_cuda_in_process()
     if args.trainer == 'torchCPUTrainer':
         print('Initializing TorchTrainer CPU Trainer...', end='\t')
         trainer = TorchTrainer(args, callbacks=callbacks)
@@ -77,7 +119,10 @@ def initialize_trainer(
         kwargs = {**vars(args), **(getattr(args, "pl_trainer_kwargs", {}) or {})}
         # NOTE: PyTorch Lightning Trainer has many optional parameters
         # See: https://lightning.ai/docs/pytorch/stable/common/trainer.html
-        trainer = pl.Trainer(accelerator=kwargs.get("accelerator", "auto"),
+        # Fall back to CPU when CUDA is unavailable or its context is broken.
+        # _disable_cuda_in_process() was already called above when needed.
+        _default_accelerator = "cpu" if not torch.cuda.is_available() else "auto"
+        trainer = pl.Trainer(accelerator=kwargs.get("accelerator", _default_accelerator),
                           strategy=kwargs.get("strategy", "auto"),
                           num_nodes=kwargs.get("num_nodes", 1),
                           precision=kwargs.get("precision", None),
@@ -214,7 +259,10 @@ class DICE_Trainer:
               f' # of GPUs:{torch.cuda.device_count()} |'
               f' # of CPUs for dataloader:{self.args.num_core}')
         for i in range(torch.cuda.device_count()):
-            print(torch.cuda.get_device_name(i))
+            try:
+                print(torch.cuda.get_device_name(i))
+            except Exception as exc:
+                print(f'GPU {i}: <unable to query name — {exc}>')
 
     def continual_start(self,knowledge_graph):
         """

@@ -1,14 +1,17 @@
-import os
 import copy
 import json
+import os
+
 import torch
 import torch.nn as nn
+from lightning.pytorch.utilities import rank_zero_only
 from torch._dynamo.eval_frame import OptimizedModule
-from  lightning.pytorch.utilities import rank_zero_only
+
+from dicee.models.ensemble import EnsembleKGE
 
 from .abstracts import AbstractCallback
-from dicee.models.ensemble import EnsembleKGE
 from .evaluation.ensemble import evaluate_ensemble_link_prediction_performance
+
 
 class ASWA(AbstractCallback):
     """ Adaptive stochastic weight averaging
@@ -30,7 +33,7 @@ class ASWA(AbstractCallback):
         if self.initial_eval_setting:
             # ADD this info back
             trainer.evaluator.args.eval_model = self.initial_eval_setting
-        
+
         param_ensemble = torch.load(f"{self.path}/aswa.pt", torch.device("cpu"))
         model.load_state_dict(param_ensemble)
 
@@ -134,7 +137,7 @@ class ASWA(AbstractCallback):
             ensemble.load_state_dict(ensemble_state_dict)
             ensemble.to("cpu")
 
-                
+
             # (7) Evaluate (6) on the validation data, i.e., perform the lookahead operation.
             mrr_updated_ensemble_model = trainer.evaluator.eval(dataset=trainer.dataset,
                                                                 trained_model=ensemble,
@@ -147,7 +150,7 @@ class ASWA(AbstractCallback):
 
 class SWA(AbstractCallback):
     """Stochastic Weight Averaging callback.
-    
+
     Initialize SWA callback.
         Parameters
         ----------
@@ -174,14 +177,14 @@ class SWA(AbstractCallback):
         self.swa_model = None
         self.swa_n = 0
         self.current_epoch = -1
-    
+
     @staticmethod
     def moving_average(swa_model, running_model, alpha):
         """Update SWA model with moving average of current model.
-        Math: 
+        Math:
         # SWA update:
         # θ_swa ← (1 - alpha) * θ_swa + alpha * θ
-        # alpha = 1 / (n + 1), where n = number of models already averaged 
+        # alpha = 1 / (n + 1), where n = number of models already averaged
         # alpha is tracked via self.swa_n in code"""
 
         with torch.no_grad():
@@ -201,7 +204,7 @@ class SWA(AbstractCallback):
         # Calculate learning rate using the schedule
         t = self.current_epoch / self.max_epochs
         lr_ratio = self.swa_lr / self.lr_init
-        
+
         if t <= 0.5:
             factor = 1.0
         elif t <= 0.9:
@@ -232,15 +235,15 @@ class SWA(AbstractCallback):
         # Check if we should apply SWA
         if self.current_epoch >= self.swa_start_epoch and \
         (self.current_epoch - self.swa_start_epoch) % self.swa_c_epochs == 0:
-            
+
             running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
-            
+
             if self.swa_model is None:
                 # Case: EnsembleKGE
                 if isinstance(running_model, EnsembleKGE):
                     self.swa_model = type(running_model)(running_model.models)
                     self.swa_model.load_state_dict(running_model.state_dict())
-                
+
                 else:
                     self.swa_model = type(running_model)(running_model.args)
                     self.swa_model.load_state_dict(running_model.state_dict())
@@ -254,10 +257,10 @@ class SWA(AbstractCallback):
                 self.moving_average(self.swa_model, running_model, 1.0 / (self.swa_n + 1))
 
             self.swa_n += 1
-    
+
         if model.args["eval_every_n_epochs"] > 0 or model.args["eval_at_epochs"] is not None:
             trainer.wa_model = self.swa_model
-    
+
     @rank_zero_only
     def on_fit_end(self, trainer, model):
         """Replace main model with SWA model at the end of training."""
@@ -306,19 +309,19 @@ class SWAG(AbstractCallback):
 
     def _collect_stats(self, model):
         """Collect weights to update mean, sq_mean, and covariance deviations.
-    
+
         Math:
         # Let θ_i be the model parameter vector at collection step i
         # gswa_n = number of models collected so far (0-based)
-        
+
         # Update running mean:
         # μ_{n+1} = (n * μ_n + θ_{n+1}) / (n + 1)
         # This is a cumulative moving average of model weights
-        
+
         # Update running squared mean:
         # μ2_{n+1} = (n * μ2_n + θ_{n+1}^2) / (n + 1)
         # This is used to compute variance: alpha^2 ≈ μ2 - μ^2
-        
+
         # Compute deviation for low-rank covariance approximation:
         # dev_{n+1} = θ_{n+1} - μ_{n+1}
         # We store the last max_num_models deviations to approximate covariance
@@ -351,7 +354,7 @@ class SWAG(AbstractCallback):
 
     def sample(self, base_model, scale=0.5):
         """Sample new model from SWAG posterior distribution.
-        
+
         Math:
         # From SWAG, posterior is approximated as:
         # θ ~ N(mean, Σ)
@@ -393,7 +396,7 @@ class SWAG(AbstractCallback):
             self.current_epoch = trainer.current_epoch
         else:
             self.current_epoch += 1
-        if self.current_epoch < self.swa_start_epoch: 
+        if self.current_epoch < self.swa_start_epoch:
             return
 
         # LR cosine-like schedule
@@ -428,7 +431,7 @@ class SWAG(AbstractCallback):
     @rank_zero_only
     def on_fit_end(self, trainer, model):
         """Set model weights to the collected SWAG mean at the end of training."""
-        
+
         sample_models = []
         for i in range(self.max_num_models):
             model_copy = copy.deepcopy(model)
@@ -441,7 +444,7 @@ class SWAG(AbstractCallback):
             weights=None,
             batch_size=trainer.num_training_batches,
             weighted_averaging=False, normalize_scores= False)
-        
+
         ensemble_eval_report_path = os.path.join(model.args["full_storage_path"], "swag_eval_report.json")
         # Write the dictionary to the JSON file
         with open(ensemble_eval_report_path, 'w', encoding='utf-8') as f:
@@ -450,7 +453,7 @@ class SWAG(AbstractCallback):
         if self.mean is not None:
             nn.utils.vector_to_parameters(self.mean.to(next(model.parameters()).device),
                                           model.parameters())
-        
+
 
 
 class EMA(AbstractCallback):
@@ -481,7 +484,7 @@ class EMA(AbstractCallback):
     @staticmethod
     def ema_update(ema_model, running_model, decay: float):
         """Update EMA model with exponential moving average of current model.
-        Math: 
+        Math:
         # EMA update:
         # θ_ema ← (1 - alpha) * θ_ema + alpha * θ
         # alpha = 1 - decay, where decay is the EMA smoothing factor (typical 0.99 - 0.999)
@@ -611,7 +614,7 @@ class TWA(AbstractCallback):
             self.current_epoch = trainer.current_epoch
         else:
             self.current_epoch += 1
-    
+
     @rank_zero_only
     def on_train_epoch_end(self, trainer, model):
         """Main TWA logic: build subspace and update in β space.
@@ -630,17 +633,17 @@ class TWA(AbstractCallback):
         if self.current_epoch < self.twa_start_epoch:
             self.sample_weights(model)
             return
-        
+
         if self.current_epoch >= self.twa_start_epoch and \
         (self.current_epoch - self.twa_start_epoch) % self.twa_c_epochs == 0:
-                        
+
             running_model = model._orig_mod if isinstance(model, OptimizedModule) else model
             if self.twa_model is None:
                 # Case: EnsembleKGE
                 if isinstance(running_model, EnsembleKGE):
                     self.twa_model = type(running_model)(running_model.models)
                     self.twa_model.load_state_dict(running_model.state_dict())
-                else:       
+                else:
                     self.twa_model = type(running_model)(running_model.args)
                     self.twa_model.load_state_dict(running_model.state_dict())
 
