@@ -1,0 +1,815 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi-Hop Query Answering &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Multi-Hop Query Answering</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guides/multi_hop_queries.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="multi-hop-query-answering">
+<h1>Multi-Hop Query Answering<a class="headerlink" href="#multi-hop-query-answering" title="Link to this heading"></a></h1>
+<p>This guide explains how to use DICE Embeddings for complex multi-hop query answering using EPFO (Existential Positive First-Order) queries.</p>
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="#overview">Overview</a></p></li>
+<li><p><a class="reference internal" href="#query-types">Query Types</a></p></li>
+<li><p><a class="reference internal" href="#usage-examples">Usage Examples</a></p></li>
+<li><p><a class="reference internal" href="#advanced-patterns">Advanced Patterns</a></p></li>
+<li><p><a class="reference internal" href="#performance-tips">Performance Tips</a></p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>Multi-hop query answering allows you to ask complex questions that require reasoning over multiple relationships in a knowledge graph. DICE Embeddings supports <strong>9 query types</strong> covering projections, intersections, and unions.</p>
+<section id="supported-query-types">
+<h3>Supported Query Types<a class="headerlink" href="#supported-query-types" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Query Type</p></th>
+<th class="head"><p>Name</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Complexity</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">1p</span></code></p></td>
+<td><p>1-hop Projection</p></td>
+<td><p>Single relation traversal</p></td>
+<td><p>⭐ Simple</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">2p</span></code></p></td>
+<td><p>2-hop Projection</p></td>
+<td><p>Chain of 2 relations</p></td>
+<td><p>⭐⭐ Medium</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">3p</span></code></p></td>
+<td><p>3-hop Projection</p></td>
+<td><p>Chain of 3 relations</p></td>
+<td><p>⭐⭐ Medium</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">2i</span></code></p></td>
+<td><p>2-way Intersection</p></td>
+<td><p>AND of 2 relations</p></td>
+<td><p>⭐⭐ Medium</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">3i</span></code></p></td>
+<td><p>3-way Intersection</p></td>
+<td><p>AND of 3 relations</p></td>
+<td><p>⭐⭐⭐ Complex</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ip</span></code></p></td>
+<td><p>Intersection-Projection</p></td>
+<td><p>AND then chain</p></td>
+<td><p>⭐⭐⭐ Complex</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pi</span></code></p></td>
+<td><p>Projection-Intersection</p></td>
+<td><p>Chain then AND</p></td>
+<td><p>⭐⭐⭐ Complex</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">2u</span></code></p></td>
+<td><p>2-way Union</p></td>
+<td><p>OR of 2 patterns</p></td>
+<td><p>⭐⭐⭐ Complex</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">up</span></code></p></td>
+<td><p>Union-Projection</p></td>
+<td><p>OR then chain</p></td>
+<td><p>⭐⭐⭐ Complex</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<hr class="docutils" />
+<section id="query-types">
+<h2>Query Types<a class="headerlink" href="#query-types" title="Link to this heading"></a></h2>
+<section id="hop-projection-1p">
+<h3>1-hop Projection (<code class="docutils literal notranslate"><span class="pre">1p</span></code>)<a class="headerlink" href="#hop-projection-1p" title="Link to this heading"></a></h3>
+<p><strong>Logical Form:</strong> <code class="docutils literal notranslate"><span class="pre">?x</span> <span class="pre">:</span> <span class="pre">∃x.</span> <span class="pre">r(anchor,</span> <span class="pre">x)</span></code></p>
+<p><strong>Natural Language:</strong> “What entities are related to the anchor via relation r?”</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dicee</span><span class="w"> </span><span class="kn">import</span> <span class="n">KGE</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">)</span>
+
+<span class="c1"># Question: Who are the siblings of F9M167?</span>
+<span class="c1"># Query: ?x : hasSibling(F9M167, x)</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;1p&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;F9M167&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasSibling&quot;</span><span class="p">,)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+
+<span class="c1"># Returns: [(F9M157, 0.98), (F9F141, 0.96), ...]</span>
+</pre></div>
+</div>
+<p><strong>Diagram:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[Anchor] --relation--&gt; [?]
+F9M167   --hasSibling-&gt; ?
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="hop-projection-2p">
+<h3>2-hop Projection (<code class="docutils literal notranslate"><span class="pre">2p</span></code>)<a class="headerlink" href="#hop-projection-2p" title="Link to this heading"></a></h3>
+<p><strong>Logical Form:</strong> <code class="docutils literal notranslate"><span class="pre">?x</span> <span class="pre">:</span> <span class="pre">∃y.</span> <span class="pre">r1(anchor,</span> <span class="pre">y)</span> <span class="pre">∧</span> <span class="pre">r2(y,</span> <span class="pre">x)</span></code></p>
+<p><strong>Natural Language:</strong> “Follow relation r1, then relation r2”</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Question: Who is married to a sibling of F9M167?</span>
+<span class="c1"># Query: ?x : ∃y. hasSibling(F9M167, y) ∧ married(y, x)</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;F9M167&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasSibling&quot;</span><span class="p">,</span> <span class="s2">&quot;married&quot;</span><span class="p">)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+
+<span class="c1"># Returns: [(F9F158, 0.95), (F9M142, 0.93), ...]</span>
+</pre></div>
+</div>
+<p><strong>Diagram:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[Anchor] --r1--&gt; [Intermediate] --r2--&gt; [?]
+F9M167   --hasSibling-&gt; y --married-&gt; ?
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="hop-projection-3p">
+<h3>3-hop Projection (<code class="docutils literal notranslate"><span class="pre">3p</span></code>)<a class="headerlink" href="#hop-projection-3p" title="Link to this heading"></a></h3>
+<p><strong>Logical Form:</strong> <code class="docutils literal notranslate"><span class="pre">?x</span> <span class="pre">:</span> <span class="pre">∃y,z.</span> <span class="pre">r1(anchor,</span> <span class="pre">y)</span> <span class="pre">∧</span> <span class="pre">r2(y,</span> <span class="pre">z)</span> <span class="pre">∧</span> <span class="pre">r3(z,</span> <span class="pre">x)</span></code></p>
+<p><strong>Natural Language:</strong> “Follow a chain of 3 relations”</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Question: What types are married to a sibling of F9M167?</span>
+<span class="c1"># Query: ?x : ∃y,z. hasSibling(F9M167, y) ∧ married(y, z) ∧ type(z, x)</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;3p&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;F9M167&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasSibling&quot;</span><span class="p">,</span> <span class="s2">&quot;married&quot;</span><span class="p">,</span> <span class="s2">&quot;rdf:type&quot;</span><span class="p">)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+
+<span class="c1"># Returns: [(Person, 0.99), (Male, 0.98), (Father, 0.95), ...]</span>
+</pre></div>
+</div>
+<p><strong>Diagram:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[Anchor] --r1--&gt; [y] --r2--&gt; [z] --r3--&gt; [?]
+F9M167   --hasSibling-&gt; y --married-&gt; z --type-&gt; ?
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="way-intersection-2i">
+<h3>2-way Intersection (<code class="docutils literal notranslate"><span class="pre">2i</span></code>)<a class="headerlink" href="#way-intersection-2i" title="Link to this heading"></a></h3>
+<p><strong>Logical Form:</strong> <code class="docutils literal notranslate"><span class="pre">?x</span> <span class="pre">:</span> <span class="pre">r1(anchor1,</span> <span class="pre">x)</span> <span class="pre">∧</span> <span class="pre">r2(anchor2,</span> <span class="pre">x)</span></code></p>
+<p><strong>Natural Language:</strong> “Entities satisfying both conditions”</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Question: Who is both a child of PersonA AND a spouse of PersonB?</span>
+<span class="c1"># Query: ?x : hasChild(PersonA, x) ∧ married(PersonB, x)</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2i&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;PersonA&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasChild&quot;</span><span class="p">,)),</span> 
+           <span class="p">(</span><span class="s2">&quot;PersonB&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;married&quot;</span><span class="p">,))),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Diagram:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[Anchor1] --r1--&gt; [?] &lt;--r2-- [Anchor2]
+PersonA   --hasChild-&gt; ? &lt;-married- PersonB
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="way-intersection-3i">
+<h3>3-way Intersection (<code class="docutils literal notranslate"><span class="pre">3i</span></code>)<a class="headerlink" href="#way-intersection-3i" title="Link to this heading"></a></h3>
+<p><strong>Logical Form:</strong> <code class="docutils literal notranslate"><span class="pre">?x</span> <span class="pre">:</span> <span class="pre">r1(anchor1,</span> <span class="pre">x)</span> <span class="pre">∧</span> <span class="pre">r2(anchor2,</span> <span class="pre">x)</span> <span class="pre">∧</span> <span class="pre">r3(anchor3,</span> <span class="pre">x)</span></code></p>
+<p><strong>Natural Language:</strong> “Entities satisfying all three conditions”</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Question: Who is a friend of A, colleague of B, and neighbor of C?</span>
+<span class="c1"># Query: ?x : friend(A, x) ∧ colleague(B, x) ∧ neighbor(C, x)</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;3i&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;friend&quot;</span><span class="p">,)),</span> 
+           <span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;colleague&quot;</span><span class="p">,)),</span> 
+           <span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;neighbor&quot;</span><span class="p">,))),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Diagram:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[A] --friend--&gt; [?] &lt;--colleague-- [B]
+                 ^
+                 |
+            neighbor
+                 |
+                [C]
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="intersection-projection-ip">
+<h3>Intersection-Projection (<code class="docutils literal notranslate"><span class="pre">ip</span></code>)<a class="headerlink" href="#intersection-projection-ip" title="Link to this heading"></a></h3>
+<p><strong>Logical Form:</strong> <code class="docutils literal notranslate"><span class="pre">?x</span> <span class="pre">:</span> <span class="pre">∃y.</span> <span class="pre">(r1(anchor1,</span> <span class="pre">y)</span> <span class="pre">∧</span> <span class="pre">r2(anchor2,</span> <span class="pre">y))</span> <span class="pre">∧</span> <span class="pre">r3(y,</span> <span class="pre">x)</span></code></p>
+<p><strong>Natural Language:</strong> “Find intersection, then project”</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Question: What are the parents of people who are both:</span>
+<span class="c1">#           - children of PersonA AND friends of PersonB?</span>
+<span class="c1"># Query: ?x : ∃y. (hasChild(PersonA, y) ∧ friend(PersonB, y)) ∧ hasParent(y, x)</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;ip&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(((</span><span class="s2">&quot;PersonA&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasChild&quot;</span><span class="p">,)),</span> 
+            <span class="p">(</span><span class="s2">&quot;PersonB&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;friend&quot;</span><span class="p">,))),</span> 
+           <span class="p">(</span><span class="s2">&quot;hasParent&quot;</span><span class="p">,)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Diagram:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[Anchor1] --r1--&gt; [y] &lt;--r2-- [Anchor2]
+                  |
+                  r3
+                  ↓
+                 [?]
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="projection-intersection-pi">
+<h3>Projection-Intersection (<code class="docutils literal notranslate"><span class="pre">pi</span></code>)<a class="headerlink" href="#projection-intersection-pi" title="Link to this heading"></a></h3>
+<p><strong>Logical Form:</strong> <code class="docutils literal notranslate"><span class="pre">?x</span> <span class="pre">:</span> <span class="pre">∃y,z.</span> <span class="pre">r1(anchor,</span> <span class="pre">y)</span> <span class="pre">∧</span> <span class="pre">r2(y,</span> <span class="pre">x)</span> <span class="pre">∧</span> <span class="pre">r3(anchor,</span> <span class="pre">z)</span> <span class="pre">∧</span> <span class="pre">r4(z,</span> <span class="pre">x)</span></code></p>
+<p><strong>Natural Language:</strong> “Two paths from anchor that converge”</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Question: Who is reachable from F9M167 via two different paths?</span>
+<span class="c1"># Path 1: F9M167 --hasSibling-&gt; y --hasChild-&gt; ?</span>
+<span class="c1"># Path 2: F9M167 --hasSpouse-&gt; z --hasChild-&gt; ?</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;pi&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;F9M167&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasSibling&quot;</span><span class="p">,</span> <span class="s2">&quot;hasChild&quot;</span><span class="p">)),</span>
+           <span class="p">(</span><span class="s2">&quot;F9M167&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasSpouse&quot;</span><span class="p">,</span> <span class="s2">&quot;hasChild&quot;</span><span class="p">))),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Diagram:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>         --r1--&gt; [y] --r2--&gt; [?]
+        /                    ^
+[Anchor]                     |
+        \                    |
+         --r3--&gt; [z] --r4----+
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="way-union-2u">
+<h3>2-way Union (<code class="docutils literal notranslate"><span class="pre">2u</span></code>)<a class="headerlink" href="#way-union-2u" title="Link to this heading"></a></h3>
+<p><strong>Logical Form:</strong> <code class="docutils literal notranslate"><span class="pre">?x</span> <span class="pre">:</span> <span class="pre">r1(anchor1,</span> <span class="pre">x)</span> <span class="pre">∨</span> <span class="pre">r2(anchor2,</span> <span class="pre">x)</span></code></p>
+<p><strong>Natural Language:</strong> “Entities satisfying either condition”</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Question: Who is either a friend of PersonA OR a colleague of PersonB?</span>
+<span class="c1"># Query: ?x : friend(PersonA, x) ∨ colleague(PersonB, x)</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2u&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;PersonA&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;friend&quot;</span><span class="p">,)),</span> 
+           <span class="p">(</span><span class="s2">&quot;PersonB&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;colleague&quot;</span><span class="p">,))),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">10</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Diagram:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[PersonA] --friend--&gt; [?]
+                      OR
+[PersonB] --colleague-&gt; [?]
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="union-projection-up">
+<h3>Union-Projection (<code class="docutils literal notranslate"><span class="pre">up</span></code>)<a class="headerlink" href="#union-projection-up" title="Link to this heading"></a></h3>
+<p><strong>Logical Form:</strong> <code class="docutils literal notranslate"><span class="pre">?x</span> <span class="pre">:</span> <span class="pre">∃y.</span> <span class="pre">(r1(anchor1,</span> <span class="pre">y)</span> <span class="pre">∨</span> <span class="pre">r2(anchor2,</span> <span class="pre">y))</span> <span class="pre">∧</span> <span class="pre">r3(y,</span> <span class="pre">x)</span></code></p>
+<p><strong>Natural Language:</strong> “Union first, then project”</p>
+<p><strong>Example:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Question: What are the spouses of people who are either:</span>
+<span class="c1">#           - friends of PersonA OR colleagues of PersonB?</span>
+<span class="c1"># Query: ?x : ∃y. (friend(PersonA, y) ∨ colleague(PersonB, y)) ∧ married(y, x)</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;up&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(((</span><span class="s2">&quot;PersonA&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;friend&quot;</span><span class="p">,)),</span> 
+            <span class="p">(</span><span class="s2">&quot;PersonB&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;colleague&quot;</span><span class="p">,))),</span> 
+           <span class="p">(</span><span class="s2">&quot;married&quot;</span><span class="p">,)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Diagram:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>[PersonA] --friend--&gt; [y]
+                      OR  --married--&gt; [?]
+[PersonB] --colleague-&gt; [y]
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="usage-examples">
+<h2>Usage Examples<a class="headerlink" href="#usage-examples" title="Link to this heading"></a></h2>
+<section id="complete-training-query-workflow">
+<h3>Complete Training &amp; Query Workflow<a class="headerlink" href="#complete-training-query-workflow" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dicee.executer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Execute</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dicee.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Namespace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dicee</span><span class="w"> </span><span class="kn">import</span> <span class="n">KGE</span>
+
+<span class="c1"># Step 1: Train a model</span>
+<span class="n">args</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">()</span>
+<span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="s1">&#39;Keci&#39;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">optim</span> <span class="o">=</span> <span class="s1">&#39;Adam&#39;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">=</span> <span class="s2">&quot;AllvsAll&quot;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="o">=</span> <span class="s2">&quot;KGs/Family/family-benchmark_rich_background.owl&quot;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="s2">&quot;rdflib&quot;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="n">args</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">args</span><span class="o">.</span><span class="n">lr</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">args</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">=</span> <span class="mi">512</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">Execute</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+<span class="c1"># Step 2: Load trained model</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;path_experiment_folder&#39;</span><span class="p">])</span>
+
+<span class="c1"># Step 3: Answer queries</span>
+<span class="c1"># 1-hop: Who are the siblings of F9M167?</span>
+<span class="n">q1</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;1p&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#F9M167&quot;</span><span class="p">,</span>
+           <span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#hasSibling&quot;</span><span class="p">,)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Siblings:&quot;</span><span class="p">,</span> <span class="n">q1</span><span class="p">)</span>
+
+<span class="c1"># 2-hop: To whom is a sibling married?</span>
+<span class="n">q2</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#F9M167&quot;</span><span class="p">,</span>
+           <span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#hasSibling&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;http://www.benchmark.org/family#married&quot;</span><span class="p">)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sibling spouses:&quot;</span><span class="p">,</span> <span class="n">q2</span><span class="p">)</span>
+
+<span class="c1"># 3-hop: What types of people are married to siblings?</span>
+<span class="n">q3</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;3p&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#F9M167&quot;</span><span class="p">,</span>
+           <span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#hasSibling&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;http://www.benchmark.org/family#married&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&quot;</span><span class="p">)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Types:&quot;</span><span class="p">,</span> <span class="n">q3</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="batch-query-processing">
+<h3>Batch Query Processing<a class="headerlink" href="#batch-query-processing" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define multiple queries</span>
+<span class="n">queries</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">&quot;1p&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;EntityA&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;relation1&quot;</span><span class="p">,))),</span>
+    <span class="p">(</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;EntityB&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;relation2&quot;</span><span class="p">,</span> <span class="s2">&quot;relation3&quot;</span><span class="p">))),</span>
+    <span class="p">(</span><span class="s2">&quot;2i&quot;</span><span class="p">,</span> <span class="p">((</span><span class="s2">&quot;EntityC&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;relation4&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;EntityD&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;relation5&quot;</span><span class="p">,)))),</span>
+<span class="p">]</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">query_type</span><span class="p">,</span> <span class="n">query</span> <span class="ow">in</span> <span class="n">queries</span><span class="p">:</span>
+    <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+        <span class="n">query_type</span><span class="o">=</span><span class="n">query_type</span><span class="p">,</span>
+        <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
+        <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+        <span class="n">k</span><span class="o">=</span><span class="mi">10</span>
+    <span class="p">)</span>
+    <span class="n">results</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">query_type</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">predictions</span>
+
+<span class="c1"># Analyze results</span>
+<span class="k">for</span> <span class="n">query_id</span><span class="p">,</span> <span class="n">preds</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">query_id</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">entity</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">preds</span><span class="p">[:</span><span class="mi">3</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">entity</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">score</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="advanced-patterns">
+<h2>Advanced Patterns<a class="headerlink" href="#advanced-patterns" title="Link to this heading"></a></h2>
+<section id="t-norm-selection">
+<h3>T-norm Selection<a class="headerlink" href="#t-norm-selection" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">tnorm</span></code> parameter controls how conjunctions are computed:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Minimum t-norm (default, most commonly used)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">)</span>
+
+<span class="c1"># Product t-norm (multiplicative semantics)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;prod&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>When to use:</strong></p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">min</span></code></strong>: Standard choice, preserves highest score in conjunction</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">prod</span></code></strong>: More strict, all conditions must have high scores</p></li>
+</ul>
+</section>
+<section id="filtering-results">
+<h3>Filtering Results<a class="headerlink" href="#filtering-results" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;EntityA&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;relation1&quot;</span><span class="p">,</span> <span class="s2">&quot;relation2&quot;</span><span class="p">)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">k</span><span class="o">=</span><span class="mi">100</span>  <span class="c1"># Get more candidates</span>
+<span class="p">)</span>
+
+<span class="c1"># Filter by score threshold</span>
+<span class="n">high_confidence</span> <span class="o">=</span> <span class="p">[(</span><span class="n">e</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">predictions</span> <span class="k">if</span> <span class="n">s</span> <span class="o">&gt;</span> <span class="mf">0.8</span><span class="p">]</span>
+
+<span class="c1"># Filter by entity type</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_person</span><span class="p">(</span><span class="n">entity</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">entity</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Person&quot;</span><span class="p">)</span>
+
+<span class="n">people_only</span> <span class="o">=</span> <span class="p">[(</span><span class="n">e</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">predictions</span> <span class="k">if</span> <span class="n">is_person</span><span class="p">(</span><span class="n">e</span><span class="p">)]</span>
+</pre></div>
+</div>
+</section>
+<section id="query-composition">
+<h3>Query Composition<a class="headerlink" href="#query-composition" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build complex queries programmatically</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_common_friends</span><span class="p">(</span><span class="n">person1</span><span class="p">,</span> <span class="n">person2</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find people who are friends with both person1 and person2.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+        <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2i&quot;</span><span class="p">,</span>
+        <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="n">person1</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasFriend&quot;</span><span class="p">,)),</span> 
+               <span class="p">(</span><span class="n">person2</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasFriend&quot;</span><span class="p">,))),</span>
+        <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+        <span class="n">k</span><span class="o">=</span><span class="n">k</span>
+    <span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">find_friends_of_friends</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find friends of friends.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+        <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span>
+        <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasFriend&quot;</span><span class="p">,</span> <span class="s2">&quot;hasFriend&quot;</span><span class="p">)),</span>
+        <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+        <span class="n">k</span><span class="o">=</span><span class="n">k</span>
+    <span class="p">)</span>
+
+<span class="c1"># Use the functions</span>
+<span class="n">common</span> <span class="o">=</span> <span class="n">find_common_friends</span><span class="p">(</span><span class="s2">&quot;Alice&quot;</span><span class="p">,</span> <span class="s2">&quot;Bob&quot;</span><span class="p">)</span>
+<span class="n">fof</span> <span class="o">=</span> <span class="n">find_friends_of_friends</span><span class="p">(</span><span class="s2">&quot;Alice&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="performance-tips">
+<h2>Performance Tips<a class="headerlink" href="#performance-tips" title="Link to this heading"></a></h2>
+<section id="model-selection">
+<h3>1. Model Selection<a class="headerlink" href="#model-selection" title="Link to this heading"></a></h3>
+<p><strong>Best models for multi-hop reasoning:</strong></p>
+<ul class="simple">
+<li><p>✅ <code class="docutils literal notranslate"><span class="pre">Keci</span></code> — Clifford algebra, strong reasoning</p></li>
+<li><p>✅ <code class="docutils literal notranslate"><span class="pre">ComplEx</span></code> — Complex embeddings, good for symmetric relations</p></li>
+<li><p>✅ <code class="docutils literal notranslate"><span class="pre">QMult</span></code> / <code class="docutils literal notranslate"><span class="pre">OMult</span></code> — Quaternion/Octonion, high capacity</p></li>
+<li><p>⚠️ <code class="docutils literal notranslate"><span class="pre">TransE</span></code> — Simpler, may struggle with complex patterns</p></li>
+</ul>
+</section>
+<section id="training-configuration">
+<h3>2. Training Configuration<a class="headerlink" href="#training-configuration" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Use AllvsAll for better multi-hop performance</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/Family<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--scoring_technique<span class="w"> </span>AllvsAll
+
+<span class="c1"># Higher embedding dimension for complex reasoning</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/Family<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--embedding_dim<span class="w"> </span><span class="m">512</span>
+
+<span class="c1"># More epochs for convergence</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/Family<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--num_epochs<span class="w"> </span><span class="m">200</span>
+</pre></div>
+</div>
+</section>
+<section id="query-optimization">
+<h3>3. Query Optimization<a class="headerlink" href="#query-optimization" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Start with smaller k, expand if needed</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>  <span class="c1"># Fast</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">enough_results</span><span class="p">(</span><span class="n">predictions</span><span class="p">):</span>
+    <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>  <span class="c1"># Slower</span>
+
+<span class="c1"># Cache intermediate results for repeated queries</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">lru_cache</span>
+
+<span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cached_query</span><span class="p">(</span><span class="n">query_type</span><span class="p">,</span> <span class="n">query_tuple</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+        <span class="n">query_type</span><span class="o">=</span><span class="n">query_type</span><span class="p">,</span>
+        <span class="n">query</span><span class="o">=</span><span class="n">query_tuple</span><span class="p">,</span>
+        <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+        <span class="n">k</span><span class="o">=</span><span class="n">k</span>
+    <span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="benchmarking">
+<h3>4. Benchmarking<a class="headerlink" href="#benchmarking" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">benchmark_query</span><span class="p">(</span><span class="n">query_type</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">n_runs</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Benchmark query performance.&quot;&quot;&quot;</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_runs</span><span class="p">):</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+            <span class="n">query_type</span><span class="o">=</span><span class="n">query_type</span><span class="p">,</span>
+            <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
+            <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+            <span class="n">k</span><span class="o">=</span><span class="n">k</span>
+        <span class="p">)</span>
+        <span class="n">times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+    
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Query type </span><span class="si">{</span><span class="n">query_type</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Mean: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Std:  </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Min:  </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Max:  </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="common-patterns-use-cases">
+<h2>Common Patterns &amp; Use Cases<a class="headerlink" href="#common-patterns-use-cases" title="Link to this heading"></a></h2>
+<section id="social-network-analysis">
+<h3>Social Network Analysis<a class="headerlink" href="#social-network-analysis" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Find mutual friends</span>
+<span class="n">mutual_friends</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2i&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;Alice&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;friend&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;Bob&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;friend&quot;</span><span class="p">,))),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span>
+<span class="p">)</span>
+
+<span class="c1"># Find friend recommendations (friends of friends, excluding direct friends)</span>
+<span class="n">fof</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;Alice&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;friend&quot;</span><span class="p">,</span> <span class="s2">&quot;friend&quot;</span><span class="p">)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">20</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="knowledge-graph-completion">
+<h3>Knowledge Graph Completion<a class="headerlink" href="#knowledge-graph-completion" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Find potential new facts</span>
+<span class="c1"># Question: What companies might PersonX work for?</span>
+<span class="c1"># Based on: PersonX&#39;s colleagues work for CompanyY</span>
+<span class="n">potential_employers</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;PersonX&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;colleague&quot;</span><span class="p">,</span> <span class="s2">&quot;worksFor&quot;</span><span class="p">)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="biomedical-reasoning">
+<h3>Biomedical Reasoning<a class="headerlink" href="#biomedical-reasoning" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Find drugs that treat diseases via protein interactions</span>
+<span class="c1"># Query: ?drug : ∃protein. treats(drug, protein) ∧ causedBy(disease, protein)</span>
+<span class="n">candidate_drugs</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;pi&quot;</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;Drug&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;treats&quot;</span><span class="p">,</span> <span class="s2">&quot;interactsWith&quot;</span><span class="p">)),</span>
+           <span class="p">(</span><span class="s2">&quot;Disease&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;causedBy&quot;</span><span class="p">,</span> <span class="s2">&quot;interactsWith&quot;</span><span class="p">))),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="limitations-considerations">
+<h2>Limitations &amp; Considerations<a class="headerlink" href="#limitations-considerations" title="Link to this heading"></a></h2>
+<section id="limitations">
+<h3>Limitations<a class="headerlink" href="#limitations" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p><strong>Negation not supported</strong> — Cannot express “NOT” queries</p></li>
+<li><p><strong>Numerical constraints not supported</strong> — Cannot express “&gt; 5” or “between X and Y”</p></li>
+<li><p><strong>Recursive queries not supported</strong> — Cannot express “transitive closure”</p></li>
+<li><p><strong>Performance degrades with query complexity</strong> — 3-hop queries slower than 1-hop</p></li>
+</ol>
+</section>
+<section id="quality-considerations">
+<h3>Quality Considerations<a class="headerlink" href="#quality-considerations" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Model quality matters</strong> — Low training MRR → poor query answering</p></li>
+<li><p><strong>Query complexity vs accuracy tradeoff</strong> — More hops = more error propagation</p></li>
+<li><p><strong>Relation coverage</strong> — Rare relations in training → poor query performance</p></li>
+<li><p><strong>Entity frequency</strong> — Rare entities → lower confidence scores</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<section id="low-confidence-scores">
+<h3>Low confidence scores<a class="headerlink" href="#low-confidence-scores" title="Link to this heading"></a></h3>
+<p><strong>Problem:</strong> All predictions have scores &lt; 0.1</p>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic simple">
+<li><p>Train longer or with better hyperparameters</p></li>
+<li><p>Use AllvsAll scoring technique</p></li>
+<li><p>Increase embedding dimension</p></li>
+<li><p>Verify query syntax is correct</p></li>
+</ol>
+</section>
+<section id="no-results-returned">
+<h3>No results returned<a class="headerlink" href="#no-results-returned" title="Link to this heading"></a></h3>
+<p><strong>Problem:</strong> Empty result list</p>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic simple">
+<li><p>Check entity/relation names match training data exactly</p></li>
+<li><p>Verify entities exist in knowledge graph</p></li>
+<li><p>Increase <code class="docutils literal notranslate"><span class="pre">k</span></code> parameter</p></li>
+<li><p>Check model was trained on relevant relations</p></li>
+</ol>
+</section>
+<section id="slow-query-execution">
+<h3>Slow query execution<a class="headerlink" href="#slow-query-execution" title="Link to this heading"></a></h3>
+<p><strong>Problem:</strong> Queries take too long</p>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic simple">
+<li><p>Reduce <code class="docutils literal notranslate"><span class="pre">k</span></code> parameter</p></li>
+<li><p>Use simpler query types when possible</p></li>
+<li><p>Ensure model is on GPU: <code class="docutils literal notranslate"><span class="pre">model.to(&quot;cuda&quot;)</span></code></p></li>
+<li><p>Cache repeated query patterns</p></li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="further-reading">
+<h2>Further Reading<a class="headerlink" href="#further-reading" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>Tests:</strong> <a class="reference download internal" download="" href="../_downloads/ae90449ebbe329b533def2f54c8fbff6/test_answer_multi_hop_query.py"><span class="xref download myst">test_answer_multi_hop_query.py</span></a> — Complete examples</p></li>
+<li><p><strong>Research:</strong> <a class="reference external" href="https://arxiv.org/abs/2002.05969">Query2Box paper</a> — Theoretical foundation</p></li>
+<li><p><strong>Benchmarks:</strong> <a class="reference internal" href="#../../examples/multi_hop_query_answering/"><span class="xref myst">examples/multi_hop_query_answering/</span></a> — Performance evaluation</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+<p><strong>Quick Reference:</strong></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Need</p></th>
+<th class="head"><p>Use Query Type</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Follow one relation</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1p</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Follow chain of relations</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">2p</span></code>, <code class="docutils literal notranslate"><span class="pre">3p</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Find entities satisfying AND conditions</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">2i</span></code>, <code class="docutils literal notranslate"><span class="pre">3i</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Find entities satisfying OR conditions</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">2u</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Complex patterns</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ip</span></code>, <code class="docutils literal notranslate"><span class="pre">pi</span></code>, <code class="docutils literal notranslate"><span class="pre">up</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Best Practices:</strong></p>
+<ul class="simple">
+<li><p>✅ Start with simple queries (1p, 2p)</p></li>
+<li><p>✅ Use <code class="docutils literal notranslate"><span class="pre">tnorm=&quot;min&quot;</span></code> as default</p></li>
+<li><p>✅ Train with <code class="docutils literal notranslate"><span class="pre">AllvsAll</span></code> for best reasoning</p></li>
+<li><p>✅ Use high <code class="docutils literal notranslate"><span class="pre">embedding_dim</span></code> (≥ 256)</p></li>
+<li><p>✅ Validate query syntax carefully</p></li>
+<li><p>✅ Benchmark on known ground truth first</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

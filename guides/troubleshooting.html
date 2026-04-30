@@ -1,0 +1,678 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Troubleshooting Guide &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.ico"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Troubleshooting Guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/guides/troubleshooting.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="troubleshooting-guide">
+<h1>Troubleshooting Guide<a class="headerlink" href="#troubleshooting-guide" title="Link to this heading"></a></h1>
+<p>This guide covers common issues and their solutions when using DICE Embeddings.</p>
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="#installation-issues">Installation Issues</a></p></li>
+<li><p><a class="reference internal" href="#training-issues">Training Issues</a></p></li>
+<li><p><a class="reference internal" href="#memory-issues">Memory Issues</a></p></li>
+<li><p><a class="reference internal" href="#performance-issues">Performance Issues</a></p></li>
+<li><p><a class="reference internal" href="#data-loading-issues">Data Loading Issues</a></p></li>
+<li><p><a class="reference internal" href="#evaluation-issues">Evaluation Issues</a></p></li>
+<li><p><a class="reference internal" href="#multi-gpu-issues">Multi-GPU Issues</a></p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="installation-issues">
+<h2>Installation Issues<a class="headerlink" href="#installation-issues" title="Link to this heading"></a></h2>
+<section id="problem-cuda-version-mismatch">
+<h3>Problem: CUDA version mismatch<a class="headerlink" href="#problem-cuda-version-mismatch" title="Link to this heading"></a></h3>
+<p><strong>Error:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ne">RuntimeError</span><span class="p">:</span> <span class="n">CUDA</span> <span class="n">error</span><span class="p">:</span> <span class="n">no</span> <span class="n">kernel</span> <span class="n">image</span> <span class="ow">is</span> <span class="n">available</span> <span class="k">for</span> <span class="n">execution</span> <span class="n">on</span> <span class="n">the</span> <span class="n">device</span>
+</pre></div>
+</div>
+<p><strong>Solution:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Uninstall current PyTorch</span>
+pip<span class="w"> </span>uninstall<span class="w"> </span>torch<span class="w"> </span>torchvision<span class="w"> </span>torchaudio
+
+<span class="c1"># Reinstall matching your CUDA version</span>
+<span class="c1"># For CUDA 11.8:</span>
+pip<span class="w"> </span>install<span class="w"> </span>torch<span class="w"> </span>--index-url<span class="w"> </span>https://download.pytorch.org/whl/cu118
+
+<span class="c1"># For CPU-only:</span>
+pip<span class="w"> </span>install<span class="w"> </span>torch<span class="w"> </span>--index-url<span class="w"> </span>https://download.pytorch.org/whl/cpu
+</pre></div>
+</div>
+</section>
+<section id="problem-import-errors-after-installation">
+<h3>Problem: Import errors after installation<a class="headerlink" href="#problem-import-errors-after-installation" title="Link to this heading"></a></h3>
+<p><strong>Error:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ne">ModuleNotFoundError</span><span class="p">:</span> <span class="n">No</span> <span class="n">module</span> <span class="n">named</span> <span class="s1">&#39;dicee&#39;</span>
+</pre></div>
+</div>
+<p><strong>Solution:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Ensure you&#39;re in the correct environment</span>
+conda<span class="w"> </span>activate<span class="w"> </span>dice<span class="w">  </span><span class="c1"># or your environment name</span>
+
+<span class="c1"># Reinstall in development mode</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.<span class="w"> </span>--extra-index-url<span class="w"> </span>https://download.pytorch.org/whl/cpu
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="training-issues">
+<h2>Training Issues<a class="headerlink" href="#training-issues" title="Link to this heading"></a></h2>
+<section id="problem-nan-loss-during-training">
+<h3>Problem: NaN loss during training<a class="headerlink" href="#problem-nan-loss-during-training" title="Link to this heading"></a></h3>
+<p><strong>Error:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Epoch</span><span class="p">:</span><span class="mi">10</span><span class="p">:</span> <span class="n">loss_step</span><span class="o">=</span><span class="n">nan</span><span class="p">,</span> <span class="n">loss_epoch</span><span class="o">=</span><span class="n">nan</span>
+</pre></div>
+</div>
+<p><strong>Causes &amp; Solutions:</strong></p>
+<ol class="arabic">
+<li><p><strong>Learning rate too high</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Reduce learning rate</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--lr<span class="w"> </span><span class="m">0</span>.01<span class="w">  </span><span class="c1"># instead of 0.1</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Numerical instability</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Use mixed precision training</span>
+dicee<span class="w"> </span>--trainer<span class="w"> </span>PL<span class="w"> </span>--pl_trainer_kwargs<span class="w"> </span><span class="s1">&#39;{&quot;precision&quot;:&quot;16-mixed&quot;}&#39;</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Bad initialization</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Try different random seed</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--random_seed<span class="w"> </span><span class="m">42</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Gradient explosion</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Enable gradient clipping</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--gradient_clip_value<span class="w"> </span><span class="m">1</span>.0
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="problem-loss-not-decreasing">
+<h3>Problem: Loss not decreasing<a class="headerlink" href="#problem-loss-not-decreasing" title="Link to this heading"></a></h3>
+<p><strong>Symptoms:</strong> Loss stays constant or decreases very slowly</p>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic">
+<li><p><strong>Check learning rate</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Try different learning rates</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--lr<span class="w"> </span><span class="m">0</span>.1<span class="w">  </span><span class="c1"># default</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--lr<span class="w"> </span><span class="m">0</span>.01<span class="w">  </span><span class="c1"># lower</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Check batch size</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Smaller batches for better gradients</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--batch_size<span class="w"> </span><span class="m">256</span><span class="w">  </span><span class="c1"># instead of 1024</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Try different scoring technique</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># KvsAll instead of NegSample</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--scoring_technique<span class="w"> </span>KvsAll
+</pre></div>
+</div>
+</li>
+<li><p><strong>Verify data is loaded correctly</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dicee.executer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Execute</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dicee.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Namespace</span>
+
+<span class="n">args</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">()</span>
+<span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="o">=</span> <span class="s2">&quot;KGs/UMLS&quot;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># No training, just load data</span>
+<span class="n">Execute</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="c1"># Check if no errors occur</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="problem-model-overfitting">
+<h3>Problem: Model overfitting<a class="headerlink" href="#problem-model-overfitting" title="Link to this heading"></a></h3>
+<p><strong>Symptoms:</strong> Train MRR → 1.0, but Val/Test MRR is low</p>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic">
+<li><p><strong>Add regularization</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--weight_decay<span class="w"> </span><span class="m">0</span>.01
+</pre></div>
+</div>
+</li>
+<li><p><strong>Add dropout</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--input_dropout_rate<span class="w"> </span><span class="m">0</span>.1<span class="w"> </span>--hidden_dropout_rate<span class="w"> </span><span class="m">0</span>.2
+</pre></div>
+</div>
+</li>
+<li><p><strong>Use weight averaging</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Adaptive SWA</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--aswa
+</pre></div>
+</div>
+</li>
+<li><p><strong>Reduce model capacity</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--embedding_dim<span class="w"> </span><span class="m">64</span><span class="w">  </span><span class="c1"># instead of 256</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Early stopping</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_every_n_epochs<span class="w"> </span><span class="m">10</span><span class="w"> </span>--n_epochs_eval_model<span class="w"> </span>val
+<span class="c1"># Manually stop when validation performance plateaus</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="memory-issues">
+<h2>Memory Issues<a class="headerlink" href="#memory-issues" title="Link to this heading"></a></h2>
+<section id="problem-cuda-out-of-memory">
+<h3>Problem: CUDA out of memory<a class="headerlink" href="#problem-cuda-out-of-memory" title="Link to this heading"></a></h3>
+<p><strong>Error:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ne">RuntimeError</span><span class="p">:</span> <span class="n">CUDA</span> <span class="n">out</span> <span class="n">of</span> <span class="n">memory</span><span class="o">.</span> <span class="n">Tried</span> <span class="n">to</span> <span class="n">allocate</span> <span class="mf">2.50</span> <span class="n">GiB</span>
+</pre></div>
+</div>
+<p><strong>Solutions (in order of effectiveness):</strong></p>
+<ol class="arabic">
+<li><p><strong>Reduce batch size</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/YAGO3-10<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--batch_size<span class="w"> </span><span class="m">512</span><span class="w">  </span><span class="c1"># instead of 1024</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Reduce embedding dimension</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/YAGO3-10<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--embedding_dim<span class="w"> </span><span class="m">128</span><span class="w">  </span><span class="c1"># instead of 256</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Use negative sampling instead of KvsAll</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/YAGO3-10<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--scoring_technique<span class="w"> </span>NegSample<span class="w"> </span>--neg_ratio<span class="w"> </span><span class="m">10</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Enable gradient accumulation</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/YAGO3-10<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--batch_size<span class="w"> </span><span class="m">256</span><span class="w"> </span>--accumulate_grad_batches<span class="w"> </span><span class="m">4</span>
+<span class="c1"># Effective batch size = 256 * 4 = 1024</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Use mixed precision</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/YAGO3-10<span class="w"> </span>--trainer<span class="w"> </span>PL<span class="w"> </span>--pl_trainer_kwargs<span class="w"> </span><span class="s1">&#39;{&quot;precision&quot;:&quot;16-mixed&quot;}&#39;</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Train on CPU</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="w"> </span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/YAGO3-10<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--trainer<span class="w"> </span>torchCPUTrainer
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="problem-ram-out-of-memory-during-data-loading">
+<h3>Problem: RAM out of memory during data loading<a class="headerlink" href="#problem-ram-out-of-memory-during-data-loading" title="Link to this heading"></a></h3>
+<p><strong>Error:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ne">MemoryError</span><span class="p">:</span> <span class="n">Unable</span> <span class="n">to</span> <span class="n">allocate</span> <span class="n">array</span>
+</pre></div>
+</div>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic">
+<li><p><strong>Use polars backend for large files</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--path_single_kg<span class="w"> </span>large_kg.nt<span class="w"> </span>--backend<span class="w"> </span>polars<span class="w"> </span>--separator<span class="w"> </span><span class="s2">&quot; &quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Use memory-mapped arrays</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Already done automatically with memory_map_train_set.npy</span>
+<span class="c1"># Ensure you have enough disk space</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Reduce number of workers</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/YAGO3-10<span class="w"> </span>--num_core<span class="w"> </span><span class="m">2</span><span class="w">  </span><span class="c1"># instead of 10</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="performance-issues">
+<h2>Performance Issues<a class="headerlink" href="#performance-issues" title="Link to this heading"></a></h2>
+<section id="problem-training-is-very-slow">
+<h3>Problem: Training is very slow<a class="headerlink" href="#problem-training-is-very-slow" title="Link to this heading"></a></h3>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic">
+<li><p><strong>Use GPU instead of CPU</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check CUDA is available</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import torch; print(torch.cuda.is_available())&quot;</span>
+
+<span class="c1"># Use PL trainer for automatic GPU utilization</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--trainer<span class="w"> </span>PL
+</pre></div>
+</div>
+</li>
+<li><p><strong>Optimize number of workers</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Try different values (usually 4-8 is optimal)</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/YAGO3-10<span class="w"> </span>--num_core<span class="w"> </span><span class="m">4</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Use NegSample for large KGs</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/YAGO3-10<span class="w"> </span>--scoring_technique<span class="w"> </span>NegSample<span class="w"> </span>--neg_ratio<span class="w"> </span><span class="m">10</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Enable mixed precision</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--trainer<span class="w"> </span>PL<span class="w"> </span>--pl_trainer_kwargs<span class="w"> </span><span class="s1">&#39;{&quot;precision&quot;:&quot;16-mixed&quot;}&#39;</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Use compiled model (PyTorch 2.x)</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In your training script</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>  <span class="c1"># Currently not exposed in CLI</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="problem-data-loading-is-slow">
+<h3>Problem: Data loading is slow<a class="headerlink" href="#problem-data-loading-is-slow" title="Link to this heading"></a></h3>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic">
+<li><p><strong>Increase workers</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/YAGO3-10<span class="w"> </span>--num_core<span class="w"> </span><span class="m">8</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Use faster backend</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Use polars instead of pandas for large files</span>
+dicee<span class="w"> </span>--path_single_kg<span class="w"> </span>data.nt<span class="w"> </span>--backend<span class="w"> </span>polars
+</pre></div>
+</div>
+</li>
+<li><p><strong>Use persistent workers</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Currently not exposed in CLI, but used internally when num_core &gt; 0</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="data-loading-issues">
+<h2>Data Loading Issues<a class="headerlink" href="#data-loading-issues" title="Link to this heading"></a></h2>
+<section id="problem-cannot-find-dataset">
+<h3>Problem: Cannot find dataset<a class="headerlink" href="#problem-cannot-find-dataset" title="Link to this heading"></a></h3>
+<p><strong>Error:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ne">FileNotFoundError</span><span class="p">:</span> <span class="n">Dataset</span> <span class="n">directory</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span> <span class="n">KGs</span><span class="o">/</span><span class="n">UMLS</span>
+</pre></div>
+</div>
+<p><strong>Solution:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Download datasets</span>
+wget<span class="w"> </span>https://files.dice-research.org/datasets/dice-embeddings/KGs.zip<span class="w"> </span>--no-check-certificate
+unzip<span class="w"> </span>KGs.zip
+
+<span class="c1"># Or specify absolute path</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>/absolute/path/to/KGs/UMLS
+</pre></div>
+</div>
+</section>
+<section id="problem-parsing-errors-in-data-files">
+<h3>Problem: Parsing errors in data files<a class="headerlink" href="#problem-parsing-errors-in-data-files" title="Link to this heading"></a></h3>
+<p><strong>Error:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ParserError</span><span class="p">:</span> <span class="n">Error</span> <span class="n">tokenizing</span> <span class="n">data</span>
+</pre></div>
+</div>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic">
+<li><p><strong>Check separator</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Default is whitespace</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--separator<span class="w"> </span><span class="s2">&quot;\s+&quot;</span>
+
+<span class="c1"># For tab-separated</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/Custom<span class="w"> </span>--separator<span class="w"> </span><span class="s2">&quot;\t&quot;</span>
+
+<span class="c1"># For comma-separated</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/Custom<span class="w"> </span>--separator<span class="w"> </span><span class="s2">&quot;,&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Try different backend</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># rdflib for RDF formats</span>
+dicee<span class="w"> </span>--path_single_kg<span class="w"> </span>data.owl<span class="w"> </span>--backend<span class="w"> </span>rdflib
+
+<span class="c1"># polars for large n-triples</span>
+dicee<span class="w"> </span>--path_single_kg<span class="w"> </span>data.nt<span class="w"> </span>--backend<span class="w"> </span>polars<span class="w"> </span>--separator<span class="w"> </span><span class="s2">&quot; &quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Validate data format</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check first few lines</span>
+head<span class="w"> </span>-5<span class="w"> </span>KGs/UMLS/train.txt
+
+<span class="c1"># Should be: subject relation object (whitespace separated)</span>
+<span class="c1"># Example:</span>
+<span class="c1"># entity1 relation1 entity2</span>
+<span class="c1"># entity2 relation2 entity3</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="problem-blank-nodes-in-rdf-data">
+<h3>Problem: Blank nodes in RDF data<a class="headerlink" href="#problem-blank-nodes-in-rdf-data" title="Link to this heading"></a></h3>
+<p><strong>Error:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ne">ValueError</span><span class="p">:</span> <span class="n">Blank</span> <span class="n">nodes</span> <span class="n">are</span> <span class="ow">not</span> <span class="n">supported</span>
+</pre></div>
+</div>
+<p><strong>Solution:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Remove blank nodes from your RDF file before loading</span>
+<span class="c1"># Or use a triplestore and SPARQL endpoint instead</span>
+dicee<span class="w"> </span>--sparql_endpoint<span class="w"> </span><span class="s2">&quot;http://localhost:3030/mydata/&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="evaluation-issues">
+<h2>Evaluation Issues<a class="headerlink" href="#evaluation-issues" title="Link to this heading"></a></h2>
+<section id="problem-zero-mrr-hits-k-scores">
+<h3>Problem: Zero MRR/Hits&#64;k scores<a class="headerlink" href="#problem-zero-mrr-hits-k-scores" title="Link to this heading"></a></h3>
+<p><strong>Possible Causes:</strong></p>
+<ol class="arabic">
+<li><p><strong>Model not trained</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Ensure num_epochs &gt; 0</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--num_epochs<span class="w"> </span><span class="m">100</span><span class="w">  </span><span class="c1"># not 0</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Wrong evaluation mode</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Enable evaluation</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">&quot;train_val_test&quot;</span><span class="w">  </span><span class="c1"># not &quot;None&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Data mismatch</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Verify entities in test set exist in training</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="n">train</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;KGs/UMLS/train.txt&quot;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;\s+&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">test</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;KGs/UMLS/test.txt&quot;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;\s+&quot;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+<span class="n">train_entities</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">train</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">train</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+<span class="n">test_entities</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">test</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+
+<span class="n">unseen</span> <span class="o">=</span> <span class="n">test_entities</span> <span class="o">-</span> <span class="n">train_entities</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unseen entities in test: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">unseen</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># Should be 0 for transductive</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="problem-inconsistent-results-across-runs">
+<h3>Problem: Inconsistent results across runs<a class="headerlink" href="#problem-inconsistent-results-across-runs" title="Link to this heading"></a></h3>
+<p><strong>Cause:</strong> Different random seeds</p>
+<p><strong>Solution:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Fix random seed</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--random_seed<span class="w"> </span><span class="m">42</span>
+
+<span class="c1"># Run multiple times with different seeds for statistical significance</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--random_seed<span class="w"> </span><span class="m">1</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--random_seed<span class="w"> </span><span class="m">2</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--random_seed<span class="w"> </span><span class="m">3</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="multi-gpu-issues">
+<h2>Multi-GPU Issues<a class="headerlink" href="#multi-gpu-issues" title="Link to this heading"></a></h2>
+<section id="problem-multi-gpu-training-not-working">
+<h3>Problem: Multi-GPU training not working<a class="headerlink" href="#problem-multi-gpu-training-not-working" title="Link to this heading"></a></h3>
+<p><strong>Error:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ne">RuntimeError</span><span class="p">:</span> <span class="n">Default</span> <span class="n">process</span> <span class="n">group</span> <span class="n">has</span> <span class="ow">not</span> <span class="n">been</span> <span class="n">initialized</span>
+</pre></div>
+</div>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic">
+<li><p><strong>Use PL trainer for automatic multi-GPU</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Automatically uses all visible GPUs</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--trainer<span class="w"> </span>PL
+</pre></div>
+</div>
+</li>
+<li><p><strong>For torchDDP, use torchrun</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>torchrun<span class="w"> </span>--standalone<span class="w"> </span>--nnodes<span class="o">=</span><span class="m">1</span><span class="w"> </span>--nproc_per_node<span class="o">=</span>gpu<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>dicee<span class="w"> </span>--trainer<span class="w"> </span>torchDDP<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--path_to_store_single_run<span class="w"> </span>output
+</pre></div>
+</div>
+</li>
+<li><p><strong>Specify visible GPUs</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Use only GPU 0 and 1</span>
+<span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">0</span>,1<span class="w"> </span>dicee<span class="w"> </span>--trainer<span class="w"> </span>PL<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="problem-uneven-gpu-utilization">
+<h3>Problem: Uneven GPU utilization<a class="headerlink" href="#problem-uneven-gpu-utilization" title="Link to this heading"></a></h3>
+<p><strong>Cause:</strong> Model parallelism not balanced</p>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic">
+<li><p><strong>Increase batch size</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--trainer<span class="w"> </span>PL<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--batch_size<span class="w"> </span><span class="m">2048</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Use DDP strategy explicitly</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--trainer<span class="w"> </span>PL<span class="w"> </span>--pl_trainer_kwargs<span class="w"> </span><span class="s1">&#39;{&quot;strategy&quot;:&quot;ddp&quot;}&#39;</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="quick-diagnosis-commands">
+<h2>Quick Diagnosis Commands<a class="headerlink" href="#quick-diagnosis-commands" title="Link to this heading"></a></h2>
+<section id="check-installation">
+<h3>Check Installation<a class="headerlink" href="#check-installation" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import dicee; print(dicee.__version__)&quot;</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import torch; print(f&#39;PyTorch: {torch.__version__}, CUDA: {torch.cuda.is_available()}&#39;)&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="check-gpu">
+<h3>Check GPU<a class="headerlink" href="#check-gpu" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>nvidia-smi<span class="w">  </span><span class="c1"># Check GPU availability and memory</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import torch; print(f&#39;CUDA devices: {torch.cuda.device_count()}&#39;)&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="test-data-loading">
+<h3>Test Data Loading<a class="headerlink" href="#test-data-loading" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load data without training</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span>--num_epochs<span class="w"> </span><span class="m">0</span>
+</pre></div>
+</div>
+</section>
+<section id="check-saved-model">
+<h3>Check Saved Model<a class="headerlink" href="#check-saved-model" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dicee</span><span class="w"> </span><span class="kn">import</span> <span class="n">KGE</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;Experiments/2024-01-15...&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Entities: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Relations: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="getting-help">
+<h2>Getting Help<a class="headerlink" href="#getting-help" title="Link to this heading"></a></h2>
+<p>If you encounter issues not covered here:</p>
+<ol class="arabic">
+<li><p><strong>Check existing issues</strong>: <a class="reference external" href="https://github.com/dice-group/dice-embeddings/issues">GitHub Issues</a></p></li>
+<li><p><strong>Run tests</strong>: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">pytest</span> <span class="pre">-p</span> <span class="pre">no:warnings</span> <span class="pre">-x</span></code> to verify installation</p></li>
+<li><p><strong>Enable verbose logging</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Report bugs</strong>: Include minimal reproducible example, error message, and environment details</p></li>
+</ol>
+<section id="useful-information-to-include-in-bug-reports">
+<h3>Useful Information to Include in Bug Reports<a class="headerlink" href="#useful-information-to-include-in-bug-reports" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># System info</span>
+python<span class="w"> </span>--version
+pip<span class="w"> </span>list<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;torch|dicee|lightning&quot;</span>
+
+<span class="c1"># GPU info</span>
+nvidia-smi
+
+<span class="c1"># Configuration</span>
+cat<span class="w"> </span>path/to/experiment/configuration.json
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="common-pitfalls">
+<h2>Common Pitfalls<a class="headerlink" href="#common-pitfalls" title="Link to this heading"></a></h2>
+<p>❌ <strong>Don’t:</strong></p>
+<ul class="simple">
+<li><p>Mix different PyTorch/CUDA versions</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">--eval_model</span> <span class="pre">None</span></code> and expect evaluation results</p></li>
+<li><p>Forget <code class="docutils literal notranslate"><span class="pre">--path_to_store_single_run</span></code> with torchDDP</p></li>
+<li><p>Use very high learning rates (&gt; 1.0) without tuning</p></li>
+<li><p>Load huge KGs with pandas (use polars)</p></li>
+</ul>
+<p>✅ <strong>Do:</strong></p>
+<ul class="simple">
+<li><p>Start with small datasets for testing</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">--eval_every_n_epochs</span></code> for monitoring</p></li>
+<li><p>Save checkpoints regularly</p></li>
+<li><p>Use version control for configurations</p></li>
+<li><p>Profile before optimizing</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

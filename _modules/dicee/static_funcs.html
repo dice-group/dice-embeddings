@@ -704,7 +704,16 @@
         <span class="n">model_class</span><span class="p">,</span> <span class="n">form_of_labelling</span> <span class="o">=</span> <span class="n">MODEL_REGISTRY</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">model_class</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">),</span> <span class="n">form_of_labelling</span>
 
-    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown model: </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">. Available models: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">MODEL_REGISTRY</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+    <span class="c1"># Provide helpful error message</span>
+    <span class="n">available_models</span> <span class="o">=</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">MODEL_REGISTRY</span><span class="o">.</span><span class="n">keys</span><span class="p">())[:</span><span class="mi">10</span><span class="p">])</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Unknown model: &#39;</span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">&#39;</span><span class="se">\\</span><span class="s2">n&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nAvailable models (showing first 10): </span><span class="si">{</span><span class="n">available_models</span><span class="si">}</span><span class="s2">, ...</span><span class="se">\\</span><span class="s2">n&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nAll models: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">MODEL_REGISTRY</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span><span class="si">}</span><span class="se">\\</span><span class="s2">n&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nFor PyKEEN models, use: --model Pykeen_ModelName</span><span class="se">\\</span><span class="s2">n&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;  Examples: Pykeen_ComplEx, Pykeen_DistMult, Pykeen_QuatE</span><span class="se">\\</span><span class="s2">n&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nSee: docs/guides/ or tests/test_regression_*.py for examples</span><span class="se">\\</span><span class="s2">n&quot;</span>
+    <span class="p">)</span></div>
 
 
 

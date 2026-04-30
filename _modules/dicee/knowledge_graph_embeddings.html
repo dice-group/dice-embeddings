@@ -88,7 +88,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.knowledge_graph_embeddings</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseInteractiveKGE</span><span class="p">,</span> <span class="n">InteractiveQueryDecomposition</span><span class="p">,</span> <span class="n">BaseInteractiveTrainKGE</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_pickle</span>
@@ -533,21 +533,37 @@
 
 <div class="viewcode-block" id="KGE.predict">
 <a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.predict">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                <span class="n">t</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">within</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">logits</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+                <span class="n">r</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">t</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+                <span class="n">within</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+                <span class="n">logits</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Predict scores for triples or missing triple elements.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        logits</span>
-<span class="sd">        h</span>
-<span class="sd">        r</span>
-<span class="sd">        t</span>
-<span class="sd">        within</span>
+<span class="sd">        Args:</span>
+<span class="sd">            h: Head entity/entities. None to predict heads.</span>
+<span class="sd">            r: Relation/relations. None to predict relations.</span>
+<span class="sd">            t: Tail entity/entities. None to predict tails.</span>
+<span class="sd">            within: Optional list of entities to restrict predictions to.</span>
+<span class="sd">            logits: If True, return raw scores. If False, return sigmoid scores (0-1).</span>
 
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-
+<span class="sd">        Returns:</span>
+<span class="sd">            torch.FloatTensor of scores. Shape depends on the query type:</span>
+<span class="sd">            - Single triple (h, r, t): scalar score</span>
+<span class="sd">            - Missing element: vector of all possible scores</span>
+<span class="sd">            </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            AssertionError: If inputs are not strings or lists of strings.</span>
+<span class="sd">            </span>
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; # Score a specific triple</span>
+<span class="sd">            &gt;&gt;&gt; model.predict(h=&quot;Mongolia&quot;, r=&quot;isLocatedIn&quot;, t=&quot;Asia&quot;, logits=False)</span>
+<span class="sd">            tensor(0.9523)</span>
+<span class="sd">            </span>
+<span class="sd">            &gt;&gt;&gt; # Get scores for all possible tail entities</span>
+<span class="sd">            &gt;&gt;&gt; model.predict(h=&quot;Mongolia&quot;, r=&quot;isLocatedIn&quot;, t=None)</span>
+<span class="sd">            tensor([0.21, 0.95, 0.03, ...])  # One score per entity</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (1) Sanity checking.</span>
         <span class="k">if</span> <span class="n">h</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -592,19 +608,38 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">predict_topk</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">h</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">r</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">t</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">h</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">r</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">t</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">topk</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
-        <span class="n">within</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">within</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span>
-    <span class="p">):</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Predict missing item in a given triple.</span>
+<span class="sd">        Predict top-k missing items in a given triple pattern.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            h: Head entity/entities. None to predict heads.</span>
+<span class="sd">            r: Relation/relations. None to predict relations.</span>
+<span class="sd">            t: Tail entity/entities. None to predict tails.</span>
+<span class="sd">            topk: Number of top predictions to return.</span>
+<span class="sd">            within: Optional list of entities to restrict predictions to.</span>
+<span class="sd">            batch_size: Batch size for processing multiple queries.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            - If you query a single (h, r, ?) or (?, r, t) or (h, ?, t), returns List[(item, score)]</span>
-<span class="sd">            - If you query a batch of B, returns List of B such lists.</span>
+<span class="sd">            For single query: List[(item, score), ...] of length topk.</span>
+<span class="sd">            For batch query: List of such lists, one per query.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AssertionError: If more than one of h, r, t is None.</span>
+<span class="sd">            AssertionError: If the required arguments for a query type are None.</span>
+<span class="sd">            </span>
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; model.predict_topk(h=[&quot;Mongolia&quot;], r=[&quot;isLocatedIn&quot;], topk=3)</span>
+<span class="sd">            [(&#39;Asia&#39;, 0.99), (&#39;Europe&#39;, 0.02), ...]</span>
+<span class="sd">            </span>
+<span class="sd">            &gt;&gt;&gt; model.predict_topk(r=[&quot;isLocatedIn&quot;], t=[&quot;Asia&quot;], topk=5)</span>
+<span class="sd">            [(&#39;Mongolia&#39;, 0.85), (&#39;China&#39;, 0.82), ...]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># (1) Sanity checking</span>
@@ -804,46 +839,80 @@
 
 <div class="viewcode-block" id="KGE.answer_multi_hop_query">
 <a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.answer_multi_hop_query">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">answer_multi_hop_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                               <span class="n">queries</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tnorm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;prod&quot;</span><span class="p">,</span>
-                               <span class="n">neg_norm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;standard&quot;</span><span class="p">,</span> <span class="n">lambda_</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">only_scores</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                               <span class="n">use_logits</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> \
-            <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">answer_multi_hop_query</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> 
+        <span class="n">query_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+        <span class="n">query</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">queries</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="o">...</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+        <span class="n">tnorm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;prod&quot;</span><span class="p">,</span>
+        <span class="n">neg_norm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;standard&quot;</span><span class="p">,</span> 
+        <span class="n">lambda_</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> 
+        <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> 
+        <span class="n">only_scores</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">use_logits</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        # @TODO: Refactoring is needed</span>
-<span class="sd">        # @TODO: Score computation for each query type should be done in a static function</span>
+<span class="sd">        Answer multi-hop EPFO (Existential Positive First-Order) queries.</span>
 
-<span class="sd">        Find an answer set for EPFO queries including negation and disjunction</span>
+<span class="sd">        Supports 9 query types: 1p, 2p, 3p, 2i, 3i, ip, pi, 2u, up.</span>
+<span class="sd">        See docs/guides/multi_hop_queries.md for detailed query patterns.</span>
 
-<span class="sd">        Parameter</span>
-<span class="sd">        ----------</span>
-<span class="sd">        query_type: str</span>
-<span class="sd">        The type of the query, e.g., &quot;2p&quot;.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            query_type: Query pattern name. One of:</span>
+<span class="sd">                - 1p: (e, (r,))                    # One-hop</span>
+<span class="sd">                - 2p: (e, (r1, r2))               # Two-hop</span>
+<span class="sd">                - 3p: (e, (r1, r2, r3))           # Three-hop</span>
+<span class="sd">                - 2i: ((e1, (r1,)), (e2, (r2,)))  # Two-way intersection</span>
+<span class="sd">                - 3i: ((e1, (r1,)), (e2, (r2,)), (e3, (r3,)))  # Three-way intersection</span>
+<span class="sd">                - ip: (((e1, (r1,)), (e2, (r2,))), (r3,))  # Intersection + projection</span>
+<span class="sd">                - pi: ((e, (r1, r2)), (r3,))                # Projection + intersection (2i meets 2p)</span>
+<span class="sd">                - 2u: ((e1, (r1,)), (e2, (r2,)))           # Two-way union</span>
+<span class="sd">                - up: ((e, (r1, r2)), (e, (r3,)))          # Union + projection</span>
+<span class="sd">            query: Single query tuple matching the query_type pattern.</span>
+<span class="sd">            queries: Batch of queries. If provided, query must be None.</span>
+<span class="sd">            tnorm: T-norm for intersection/union. Options: &quot;prod&quot;, &quot;min&quot;.</span>
+<span class="sd">            neg_norm: Negation norm. Options: &quot;standard&quot;, &quot;sugeno&quot;, &quot;yager&quot;.</span>
+<span class="sd">            lambda_: Parameter for sugeno and yager negation (0.0-1.0).</span>
+<span class="sd">            k: Number of top answer entities to return.</span>
+<span class="sd">            only_scores: If True, return only scores tensor. If False, return (entity, score) tuples.</span>
+<span class="sd">            use_logits: If True, use raw model logits. If False, use sigmoid probabilities.</span>
 
-<span class="sd">        query: Union[str, Tuple[str, Tuple[str, str]]]</span>
-<span class="sd">        The query itself, either a string or a nested tuple.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            For single query: List[(entity, score), ...] of top-k answers.</span>
+<span class="sd">            For batch queries: List of such lists, one per query.</span>
 
-<span class="sd">        queries: List of Tuple[Union[str, Tuple[str, str]], ...]</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If query_type is not in {1p, 2p, 3p, 2i, 3i, ip, pi, 2u, up}.</span>
+<span class="sd">            AssertionError: If query structure doesn&#39;t match query_type pattern.</span>
 
-<span class="sd">        tnorm: str</span>
-<span class="sd">        The t-norm operator.</span>
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; # 1p: Find entities located in Asia</span>
+<span class="sd">            &gt;&gt;&gt; model.answer_multi_hop_query(</span>
+<span class="sd">            ...     query_type=&quot;1p&quot;,</span>
+<span class="sd">            ...     query=(&quot;Asia&quot;, (&quot;isLocatedIn&quot;,)),</span>
+<span class="sd">            ...     k=5</span>
+<span class="sd">            ... )</span>
+<span class="sd">            [(&quot;Mongolia&quot;, 0.92), (&quot;China&quot;, 0.89), ...]</span>
 
-<span class="sd">        neg_norm: str</span>
-<span class="sd">        The negation norm.</span>
+<span class="sd">            &gt;&gt;&gt; # 2p: Two-hop query (e.g., &quot;capital of countries in Europe&quot;)</span>
+<span class="sd">            &gt;&gt;&gt; model.answer_multi_hop_query(</span>
+<span class="sd">            ...     query_type=&quot;2p&quot;,</span>
+<span class="sd">            ...     query=(&quot;Europe&quot;, (&quot;isLocatedIn&quot;, &quot;hasCapital&quot;)),</span>
+<span class="sd">            ...     k=3</span>
+<span class="sd">            ... )</span>
+<span class="sd">            [(&quot;Paris&quot;, 0.85), (&quot;Berlin&quot;, 0.82), ...]</span>
 
-<span class="sd">        lambda_: float</span>
-<span class="sd">        lambda parameter for sugeno and yager negation norms</span>
+<span class="sd">            &gt;&gt;&gt; # 2i: Intersection query</span>
+<span class="sd">            &gt;&gt;&gt; model.answer_multi_hop_query(</span>
+<span class="sd">            ...     query_type=&quot;2i&quot;,</span>
+<span class="sd">            ...     query=((&quot;Asia&quot;, (&quot;isLocatedIn&quot;,)), (&quot;Mountains&quot;, (&quot;hasGeography&quot;,))),</span>
+<span class="sd">            ...     k=5</span>
+<span class="sd">            ... )</span>
+<span class="sd">            [(&quot;Nepal&quot;, 0.78), (&quot;Tibet&quot;, 0.65), ...]</span>
 
-<span class="sd">        k: int</span>
-<span class="sd">        The top-k substitutions for intermediate variables.</span>
-
-<span class="sd">        use_logits: bool</span>
-<span class="sd">        Whether to compose raw model logits or sigmoid probabilities.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        List[Tuple[str, torch.Tensor]]</span>
-<span class="sd">        Entities and corresponding scores sorted in the descening order of scores</span>
+<span class="sd">        See Also:</span>
+<span class="sd">            - docs/guides/multi_hop_queries.md: Complete guide with all query patterns</span>
+<span class="sd">            - tests/test_answer_multi_hop_query.py: Usage examples</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="n">queries</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -886,7 +955,20 @@
         <span class="k">if</span> <span class="n">query_type</span> <span class="ow">in</span> <span class="n">inverse_query_name_dict</span><span class="p">:</span>
             <span class="n">query_structure</span> <span class="o">=</span> <span class="n">inverse_query_name_dict</span><span class="p">[</span><span class="n">query_type</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid query type: </span><span class="si">{</span><span class="n">query_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">supported_queries</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">inverse_query_name_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="s1">&#39;n&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">k</span><span class="p">])</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Invalid query type: &#39;</span><span class="si">{</span><span class="n">query_type</span><span class="si">}</span><span class="s2">&#39;</span><span class="se">\\</span><span class="s2">n&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nSupported query types:</span><span class="se">\\</span><span class="s2">n&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;  - Basic: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">supported_queries</span><span class="p">[:</span><span class="mi">7</span><span class="p">])</span><span class="si">}</span><span class="se">\\</span><span class="s2">n&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;  - Negation: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">k</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nb">sorted</span><span class="p">(</span><span class="n">inverse_query_name_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="s1">&#39;n&#39;</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">k</span><span class="p">])</span><span class="si">}</span><span class="se">\\</span><span class="s2">n&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nExamples:</span><span class="se">\\</span><span class="s2">n&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;  - 1p: (e, (r,))</span><span class="se">\\</span><span class="s2">n&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;  - 2p: (e, (r1, r2))</span><span class="se">\\</span><span class="s2">n&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;  - 2i: ((e1, (r1,)), (e2, (r2,)))</span><span class="se">\\</span><span class="s2">n&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;  - 2u: ((e1, (r1,)), (e2, (r2,)), (&#39;u&#39;,))</span><span class="se">\\</span><span class="s2">n&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nSee docs/guides/multi_hop_queries.md for complete guide</span><span class="se">\\</span><span class="s2">n&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;See tests/test_answer_multi_hop_query.py for usage examples</span><span class="se">\\</span><span class="s2">n&quot;</span>
+            <span class="p">)</span>
 
         <span class="c1"># 1p</span>
         <span class="k">if</span> <span class="n">query_structure</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)):</span>
