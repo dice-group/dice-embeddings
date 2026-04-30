@@ -2,7 +2,13 @@ from typing import Dict, Optional, Tuple
 
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, roc_auc_score
-from tabpfn import TabPFNClassifier
+
+try:
+    from tabpfn import TabPFNClassifier
+    TABPFN_AVAILABLE = True
+except ImportError:
+    TabPFNClassifier = None
+    TABPFN_AVAILABLE = False
 
 from ..static_funcs import timeit
 from .static_funcs import prepare_tabpfn_splits
@@ -20,6 +26,12 @@ class TabularTrainer:
         n_preprocessing_jobs: int = 1,
     ) -> None:
         """Configure the TabPFN classifier and training-time limits."""
+        if not TABPFN_AVAILABLE:
+            raise ImportError(
+                "TabPFN is required for tabular training but is not installed.\n"
+                "Please install it with: pip install tabpfn\n"
+                "Or reinstall dicee with all dependencies: pip install -e '.[dev]'"
+            )
         self.device = device
         self.max_train_samples = max_train_samples
         self.n_estimators = n_estimators
