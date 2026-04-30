@@ -558,7 +558,16 @@ def intialize_model(args: Dict, verbose: int = 0) -> Tuple[BaseKGE, str]:
         model_class, form_of_labelling = MODEL_REGISTRY[model_name]
         return model_class(args=args), form_of_labelling
 
-    raise ValueError(f"Unknown model: {model_name}. Available models: {list(MODEL_REGISTRY.keys())}")
+    # Provide helpful error message
+    available_models = ', '.join(sorted(MODEL_REGISTRY.keys())[:10])
+    raise ValueError(
+        f"Unknown model: '{model_name}'\\n"
+        f"\\nAvailable models (showing first 10): {available_models}, ...\\n"
+        f"\\nAll models: {', '.join(sorted(MODEL_REGISTRY.keys()))}\\n"
+        f"\\nFor PyKEEN models, use: --model Pykeen_ModelName\\n"
+        f"  Examples: Pykeen_ComplEx, Pykeen_DistMult, Pykeen_QuatE\\n"
+        f"\\nSee: docs/guides/ or tests/test_regression_*.py for examples\\n"
+    )
 
 
 # Keep backward compatibility - this is now handled by the registry

@@ -1,4 +1,4 @@
-from typing import List, Tuple, Set, Iterable, Dict, Union
+from typing import List, Tuple, Set, Iterable, Dict, Union, Optional
 import torch
 from .abstracts import BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrainKGE
 from .static_funcs import load_pickle
@@ -412,21 +412,37 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         else:
             return scores
 
-    def predict(self, *, h: Union[List[str], str] = None, r: Union[List[str], str] = None,
-                t: Union[List[str], str] = None, within=None, logits=True) -> torch.FloatTensor:
+    def predict(self, *, h: Optional[Union[List[str], str]] = None, 
+                r: Optional[Union[List[str], str]] = None,
+                t: Optional[Union[List[str], str]] = None, 
+                within: Optional[List[str]] = None, 
+                logits: bool = True) -> torch.FloatTensor:
         """
+        Predict scores for triples or missing triple elements.
 
-        Parameters
-        ----------
-        logits
-        h
-        r
-        t
-        within
+        Args:
+            h: Head entity/entities. None to predict heads.
+            r: Relation/relations. None to predict relations.
+            t: Tail entity/entities. None to predict tails.
+            within: Optional list of entities to restrict predictions to.
+            logits: If True, return raw scores. If False, return sigmoid scores (0-1).
 
-        Returns
-        -------
-
+        Returns:
+            torch.FloatTensor of scores. Shape depends on the query type:
+            - Single triple (h, r, t): scalar score
+            - Missing element: vector of all possible scores
+            
+        Raises:
+            AssertionError: If inputs are not strings or lists of strings.
+            
+        Examples:
+            >>> # Score a specific triple
+            >>> model.predict(h="Mongolia", r="isLocatedIn", t="Asia", logits=False)
+            tensor(0.9523)
+            
+            >>> # Get scores for all possible tail entities
+            >>> model.predict(h="Mongolia", r="isLocatedIn", t=None)
+            tensor([0.21, 0.95, 0.03, ...])  # One score per entity
         """
         # (1) Sanity checking.
         if h is not None:
@@ -468,19 +484,38 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
     def predict_topk(
         self,
         *,
-        h: Union[str, List[str]] = None,
-        r: Union[str, List[str]] = None,
-        t: Union[str, List[str]] = None,
+        h: Optional[Union[str, List[str]]] = None,
+        r: Optional[Union[str, List[str]]] = None,
+        t: Optional[Union[str, List[str]]] = None,
         topk: int = 10,
-        within: List[str] = None,
+        within: Optional[List[str]] = None,
         batch_size: int = 1024
-    ):
+    ) -> Union[List[Tuple[str, float]], List[List[Tuple[str, float]]]]:
         """
-        Predict missing item in a given triple.
+        Predict top-k missing items in a given triple pattern.
+
+        Args:
+            h: Head entity/entities. None to predict heads.
+            r: Relation/relations. None to predict relations.
+            t: Tail entity/entities. None to predict tails.
+            topk: Number of top predictions to return.
+            within: Optional list of entities to restrict predictions to.
+            batch_size: Batch size for processing multiple queries.
 
         Returns:
-            - If you query a single (h, r, ?) or (?, r, t) or (h, ?, t), returns List[(item, score)]
-            - If you query a batch of B, returns List of B such lists.
+            For single query: List[(item, score), ...] of length topk.
+            For batch query: List of such lists, one per query.
+
+        Raises:
+            AssertionError: If more than one of h, r, t is None.
+            AssertionError: If the required arguments for a query type are None.
+            
+        Examples:
+            >>> model.predict_topk(h=["Mongolia"], r=["isLocatedIn"], topk=3)
+            [('Asia', 0.99), ('Europe', 0.02), ...]
+            
+            >>> model.predict_topk(r=["isLocatedIn"], t=["Asia"], topk=5)
+            [('Mongolia', 0.85), ('China', 0.82), ...]
         """
 
         # (1) Sanity checking
@@ -668,46 +703,80 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             result = sorted(query_score_of_all_entities, key=lambda x: x[1], reverse=True)[:k]
         return result
 
-    def answer_multi_hop_query(self, query_type: str = None, query: Tuple[Union[str, Tuple[str, str]], ...] = None,
-                               queries: List[Tuple[Union[str, Tuple[str, str]], ...]] = None, tnorm: str = "prod",
-                               neg_norm: str = "standard", lambda_: float = 0.0, k: int = 10, only_scores=False,
-                               use_logits: bool = True) -> \
-            List[Tuple[str, torch.Tensor]]:
+    def answer_multi_hop_query(
+        self, 
+        query_type: Optional[str] = None, 
+        query: Optional[Tuple[Union[str, Tuple[str, str]], ...]] = None,
+        queries: Optional[List[Tuple[Union[str, Tuple[str, str]], ...]]] = None, 
+        tnorm: str = "prod",
+        neg_norm: str = "standard", 
+        lambda_: float = 0.0, 
+        k: int = 10, 
+        only_scores: bool = False,
+        use_logits: bool = True
+    ) -> Union[List[Tuple[str, torch.Tensor]], List[List[Tuple[str, torch.Tensor]]]]:
         """
-        # @TODO: Refactoring is needed
-        # @TODO: Score computation for each query type should be done in a static function
+        Answer multi-hop EPFO (Existential Positive First-Order) queries.
 
-        Find an answer set for EPFO queries including negation and disjunction
+        Supports 9 query types: 1p, 2p, 3p, 2i, 3i, ip, pi, 2u, up.
+        See docs/guides/multi_hop_queries.md for detailed query patterns.
 
-        Parameter
-        ----------
-        query_type: str
-        The type of the query, e.g., "2p".
+        Args:
+            query_type: Query pattern name. One of:
+                - 1p: (e, (r,))                    # One-hop
+                - 2p: (e, (r1, r2))               # Two-hop
+                - 3p: (e, (r1, r2, r3))           # Three-hop
+                - 2i: ((e1, (r1,)), (e2, (r2,)))  # Two-way intersection
+                - 3i: ((e1, (r1,)), (e2, (r2,)), (e3, (r3,)))  # Three-way intersection
+                - ip: (((e1, (r1,)), (e2, (r2,))), (r3,))  # Intersection + projection
+                - pi: ((e, (r1, r2)), (r3,))                # Projection + intersection (2i meets 2p)
+                - 2u: ((e1, (r1,)), (e2, (r2,)))           # Two-way union
+                - up: ((e, (r1, r2)), (e, (r3,)))          # Union + projection
+            query: Single query tuple matching the query_type pattern.
+            queries: Batch of queries. If provided, query must be None.
+            tnorm: T-norm for intersection/union. Options: "prod", "min".
+            neg_norm: Negation norm. Options: "standard", "sugeno", "yager".
+            lambda_: Parameter for sugeno and yager negation (0.0-1.0).
+            k: Number of top answer entities to return.
+            only_scores: If True, return only scores tensor. If False, return (entity, score) tuples.
+            use_logits: If True, use raw model logits. If False, use sigmoid probabilities.
 
-        query: Union[str, Tuple[str, Tuple[str, str]]]
-        The query itself, either a string or a nested tuple.
+        Returns:
+            For single query: List[(entity, score), ...] of top-k answers.
+            For batch queries: List of such lists, one per query.
 
-        queries: List of Tuple[Union[str, Tuple[str, str]], ...]
+        Raises:
+            ValueError: If query_type is not in {1p, 2p, 3p, 2i, 3i, ip, pi, 2u, up}.
+            AssertionError: If query structure doesn't match query_type pattern.
 
-        tnorm: str
-        The t-norm operator.
+        Examples:
+            >>> # 1p: Find entities located in Asia
+            >>> model.answer_multi_hop_query(
+            ...     query_type="1p",
+            ...     query=("Asia", ("isLocatedIn",)),
+            ...     k=5
+            ... )
+            [("Mongolia", 0.92), ("China", 0.89), ...]
 
-        neg_norm: str
-        The negation norm.
+            >>> # 2p: Two-hop query (e.g., "capital of countries in Europe")
+            >>> model.answer_multi_hop_query(
+            ...     query_type="2p",
+            ...     query=("Europe", ("isLocatedIn", "hasCapital")),
+            ...     k=3
+            ... )
+            [("Paris", 0.85), ("Berlin", 0.82), ...]
 
-        lambda_: float
-        lambda parameter for sugeno and yager negation norms
+            >>> # 2i: Intersection query
+            >>> model.answer_multi_hop_query(
+            ...     query_type="2i",
+            ...     query=(("Asia", ("isLocatedIn",)), ("Mountains", ("hasGeography",))),
+            ...     k=5
+            ... )
+            [("Nepal", 0.78), ("Tibet", 0.65), ...]
 
-        k: int
-        The top-k substitutions for intermediate variables.
-
-        use_logits: bool
-        Whether to compose raw model logits or sigmoid probabilities.
-
-        Returns
-        -------
-        List[Tuple[str, torch.Tensor]]
-        Entities and corresponding scores sorted in the descening order of scores
+        See Also:
+            - docs/guides/multi_hop_queries.md: Complete guide with all query patterns
+            - tests/test_answer_multi_hop_query.py: Usage examples
         """
 
         if queries is not None:
@@ -750,7 +819,20 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         if query_type in inverse_query_name_dict:
             query_structure = inverse_query_name_dict[query_type]
         else:
-            raise ValueError(f"Invalid query type: {query_type}")
+            supported_queries = sorted([k for k in inverse_query_name_dict.keys() if 'n' not in k])
+            raise ValueError(
+                f"Invalid query type: '{query_type}'\\n"
+                f"\\nSupported query types:\\n"
+                f"  - Basic: {', '.join(supported_queries[:7])}\\n"
+                f"  - Negation: {', '.join([k for k in sorted(inverse_query_name_dict.keys()) if 'n' in k])}\\n"
+                f"\\nExamples:\\n"
+                f"  - 1p: (e, (r,))\\n"
+                f"  - 2p: (e, (r1, r2))\\n"
+                f"  - 2i: ((e1, (r1,)), (e2, (r2,)))\\n"
+                f"  - 2u: ((e1, (r1,)), (e2, (r2,)), ('u',))\\n"
+                f"\\nSee docs/guides/multi_hop_queries.md for complete guide\\n"
+                f"See tests/test_answer_multi_hop_query.py for usage examples\\n"
+            )
 
         # 1p
         if query_structure == ("e", ("r",)):

@@ -50,16 +50,29 @@ def validate_knowledge_graph(args):
         try:
             assert os.path.isdir(args.dataset_dir) or os.path.isfile(args.dataset_dir)
         except AssertionError:
-            raise AssertionError(f'The dataset_dir does not lead to a directory '
-                                 f'***{args.dataset_dir}***')
+            raise FileNotFoundError(
+                f"Dataset directory not found: {args.dataset_dir}\n"
+                f"\nSuggestions:\n"
+                f"  1. Download datasets:\n"
+                f"     wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate\n"
+                f"     unzip KGs.zip\n"
+                f"  2. Use absolute path: --dataset_dir /absolute/path/to/KGs/UMLS\n"
+                f"  3. Check current directory: {os.getcwd()}\n"
+            )
         # Check whether the input parameter leads a standard data format (e.g. FOLDER/train.txt)
         if glob.glob(args.dataset_dir + '/train*'):
             """ all is good we have xxx/train.txt"""
         else:
             raise ValueError(
-                f"---dataset_dir **{args.dataset_dir}** must lead to "
-                f"**folder** containing at least train.txt**. "
-                f"Use --path_single_kg **folder/dataset.format**, if you have a single file.")
+                f"Dataset directory must contain train.txt file: {args.dataset_dir}\n"
+                f"\nExpected structure:\n"
+                f"  {args.dataset_dir}/\n"
+                f"    ├── train.txt (required)\n"
+                f"    ├── valid.txt (optional)\n"
+                f"    └── test.txt (optional)\n"
+                f"\nFor single file datasets, use: --path_single_kg folder/dataset.owl\n"
+                f"For SPARQL endpoints, use: --sparql_endpoint http://localhost:3030/dataset/\n"
+            )
 
         if args.sparql_endpoint is not None or args.path_single_kg is not None:
             #print(f'The sparql_endpoint and path_single_kg arguments '
@@ -72,10 +85,16 @@ def validate_knowledge_graph(args):
 
 
     elif args.dataset_dir is None and args.path_single_kg is None and args.sparql_endpoint is None:
-        raise RuntimeError(f"One of the following arguments must be given: "
-                           f"--dataset_dir:{args.dataset_dir},\t"
-                           f"--path_single_kg:{args.path_single_kg},\t"
-                           f"--sparql_endpoint:{args.sparql_endpoint}.")
+        raise ValueError(
+            "No data source specified. You must provide ONE of the following:\n"
+            "\nOption 1: Standard dataset folder\n"
+            "  --dataset_dir KGs/UMLS\n"
+            "\nOption 2: Single RDF/OWL file\n"
+            "  --path_single_kg KGs/Family/family.owl --backend rdflib\n"
+            "\nOption 3: SPARQL endpoint\n"
+            "  --sparql_endpoint http://localhost:3030/mydata/\n"
+            "\nFor examples, see: tests/test_different_backends.py\n"
+        )
     else:
         raise RuntimeError('Invalid computation flow!')
 
