@@ -109,7 +109,6 @@
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">._filtering</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">compute_filtered_rank</span><span class="p">,</span>
-    <span class="n">compute_filtered_rank_batch</span><span class="p">,</span>
     <span class="n">accumulate_bidirectional_hits</span><span class="p">,</span>
     <span class="n">build_bpe_entity_index</span><span class="p">,</span>
 <span class="p">)</span>
@@ -233,7 +232,6 @@
         <span class="p">])</span>
 
         <span class="n">e1_idx_r_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">data_batch</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span>
-        <span class="n">e2_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data_batch</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span>
         <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">e1_idx_r_idx</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
