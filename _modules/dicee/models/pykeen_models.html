@@ -88,12 +88,14 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.models.pykeen_models</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch.utils.data</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.base_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseKGE</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">traceback</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">namedtuple</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">traceback</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.utils.data</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseKGE</span>
+
 
 <div class="viewcode-block" id="PykeenKGE">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/pykeen_models/index.html#dicee.models.PykeenKGE">[docs]</a>
@@ -148,12 +150,12 @@
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;RotatE&quot;</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;TransD&quot;</span><span class="p">:</span>
-            <span class="c1">#TransD does not support a &#39;regularizer&#39; </span>
+            <span class="c1">#TransD does not support a &#39;regularizer&#39;</span>
             <span class="k">pass</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;TransE&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">[</span><span class="s2">&quot;regularizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;TransF&quot;</span><span class="p">:</span>
-            <span class="c1">#TransF does not support a &#39;regularizer&#39; </span>
+            <span class="c1">#TransF does not support a &#39;regularizer&#39;</span>
             <span class="k">pass</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;TransH&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">[</span><span class="s2">&quot;regularizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>

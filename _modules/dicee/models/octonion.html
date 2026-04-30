@@ -89,6 +89,7 @@
              
   <h1>Source code for dicee.models.octonion</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">.base_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseKGE</span><span class="p">,</span> <span class="n">IdentityClass</span>
 
 
@@ -253,7 +254,7 @@
 <div class="viewcode-block" id="OMult.forward_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.models.OMult.forward_k_vs_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Completed.</span>
 <span class="sd">        Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,</span>
 <span class="sd">        [score(h,r,x)|x \in Entities] =&gt; [0.0,0.1,...,0.8], shape=&gt; (1, |Entities|)</span>
@@ -379,7 +380,7 @@
 <div class="viewcode-block" id="ConvO.forward_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.models.ConvO.forward_k_vs_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Given a head entity and a relation (h,r), we compute scores for all entities.</span>
 <span class="sd">        [score(h,r,x)|x \in Entities] =&gt; [0.0,0.1,...,0.8], shape=&gt; (1, |Entities|)</span>
 <span class="sd">        Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</span>
@@ -555,7 +556,7 @@
 <div class="viewcode-block" id="AConvO.forward_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.models.AConvO.forward_k_vs_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Given a head entity and a relation (h,r), we compute scores for all entities.</span>
 <span class="sd">        [score(h,r,x)|x \in Entities] =&gt; [0.0,0.1,...,0.8], shape=&gt; (1, |Entities|)</span>
 <span class="sd">        Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</span>

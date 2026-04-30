@@ -21,17 +21,54 @@ Functions
 
 .. autoapisummary::
 
+   dicee.eval_static_funcs.evaluate_ensemble_link_prediction_performance
    dicee.eval_static_funcs.evaluate_link_prediction_performance
-   dicee.eval_static_funcs.evaluate_link_prediction_performance_with_reciprocals
    dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe
    dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe_reciprocals
+   dicee.eval_static_funcs.evaluate_link_prediction_performance_with_reciprocals
    dicee.eval_static_funcs.evaluate_lp_bpe_k_vs_all
    dicee.eval_static_funcs.evaluate_literal_prediction
-   dicee.eval_static_funcs.evaluate_ensemble_link_prediction_performance
 
 
 Module Contents
 ---------------
+
+.. py:function:: evaluate_ensemble_link_prediction_performance(models: List, triples, er_vocab: Dict[Tuple, List], weights: Optional[List[float]] = None, batch_size: int = 512, weighted_averaging: bool = True, normalize_scores: bool = True) -> Dict[str, float]
+
+   Evaluate link prediction performance of an ensemble of KGE models.
+
+   Combines predictions from multiple models using weighted or simple
+   averaging, with optional score normalization.
+
+   :param models: List of KGE models (e.g., snapshots from training).
+   :param triples: Test triples as numpy array or list, shape (N, 3),
+                   with integer indices (head, relation, tail).
+   :param er_vocab: Mapping (head_idx, rel_idx) -> list of tail indices
+                    for filtered evaluation.
+   :param weights: Weights for model averaging. Required if weighted_averaging
+                   is True. Must sum to 1 for proper averaging.
+   :param batch_size: Batch size for processing triples.
+   :param weighted_averaging: If True, use weighted averaging of predictions.
+                              If False, use simple mean.
+   :param normalize_scores: If True, normalize scores to [0, 1] range per
+                            sample before averaging.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+   :raises AssertionError: If weighted_averaging is True but weights are not
+       provided or have wrong length.
+
+   .. rubric:: Example
+
+   >>> from dicee.evaluation import evaluate_ensemble_link_prediction_performance
+   >>> models = [model1, model2, model3]
+   >>> weights = [0.5, 0.3, 0.2]
+   >>> results = evaluate_ensemble_link_prediction_performance(
+   ...     models, test_triples, er_vocab,
+   ...     weights=weights, weighted_averaging=True
+   ... )
+   >>> print(f"MRR: {results['MRR']:.4f}")
+
 
 .. py:function:: evaluate_link_prediction_performance(model, triples, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List]) -> Dict[str, float]
 
@@ -44,20 +81,6 @@ Module Contents
    :param triples: Test triples as list of (head, relation, tail) strings.
    :param er_vocab: Mapping (entity, relation) -> list of valid tail entities.
    :param re_vocab: Mapping (relation, entity) -> list of valid head entities.
-
-   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
-
-
-.. py:function:: evaluate_link_prediction_performance_with_reciprocals(model, triples, er_vocab: Dict[Tuple, List]) -> Dict[str, float]
-
-   Evaluate link prediction with reciprocal relations.
-
-   Optimized for models trained with reciprocal triples where only
-   tail prediction is needed.
-
-   :param model: KGE model wrapper.
-   :param triples: Test triples as list of (head, relation, tail) strings.
-   :param er_vocab: Mapping (entity, relation) -> list of valid tail entities.
 
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 
@@ -82,6 +105,20 @@ Module Contents
    :param model: KGE model wrapper with BPE support.
    :param within_entities: List of entities to evaluate within.
    :param triples: Test triples as list of [head, relation, tail] strings.
+   :param er_vocab: Mapping (entity, relation) -> list of valid tail entities.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
+
+.. py:function:: evaluate_link_prediction_performance_with_reciprocals(model, triples, er_vocab: Dict[Tuple, List]) -> Dict[str, float]
+
+   Evaluate link prediction with reciprocal relations.
+
+   Optimized for models trained with reciprocal triples where only
+   tail prediction is needed.
+
+   :param model: KGE model wrapper.
+   :param triples: Test triples as list of (head, relation, tail) strings.
    :param er_vocab: Mapping (entity, relation) -> list of valid tail entities.
 
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
@@ -134,42 +171,5 @@ Module Contents
    ...     return_attr_error_metrics=True
    ... )
    >>> print(metrics)
-
-
-.. py:function:: evaluate_ensemble_link_prediction_performance(models: List, triples, er_vocab: Dict[Tuple, List], weights: Optional[List[float]] = None, batch_size: int = 512, weighted_averaging: bool = True, normalize_scores: bool = True) -> Dict[str, float]
-
-   Evaluate link prediction performance of an ensemble of KGE models.
-
-   Combines predictions from multiple models using weighted or simple
-   averaging, with optional score normalization.
-
-   :param models: List of KGE models (e.g., snapshots from training).
-   :param triples: Test triples as numpy array or list, shape (N, 3),
-                   with integer indices (head, relation, tail).
-   :param er_vocab: Mapping (head_idx, rel_idx) -> list of tail indices
-                    for filtered evaluation.
-   :param weights: Weights for model averaging. Required if weighted_averaging
-                   is True. Must sum to 1 for proper averaging.
-   :param batch_size: Batch size for processing triples.
-   :param weighted_averaging: If True, use weighted averaging of predictions.
-                              If False, use simple mean.
-   :param normalize_scores: If True, normalize scores to [0, 1] range per
-                            sample before averaging.
-
-   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
-
-   :raises AssertionError: If weighted_averaging is True but weights are not
-       provided or have wrong length.
-
-   .. rubric:: Example
-
-   >>> from dicee.evaluation import evaluate_ensemble_link_prediction_performance
-   >>> models = [model1, model2, model3]
-   >>> weights = [0.5, 0.3, 0.2]
-   >>> results = evaluate_ensemble_link_prediction_performance(
-   ...     models, test_triples, er_vocab,
-   ...     weights=weights, weighted_averaging=True
-   ... )
-   >>> print(f"MRR: {results['MRR']:.4f}")
 
 

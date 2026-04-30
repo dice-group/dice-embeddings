@@ -88,13 +88,16 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.trainer.torch_trainer</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dicee.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractTrainer</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">psutil</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dicee.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractTrainer</span>
+
 
 <div class="viewcode-block" id="TorchTrainer">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer">[docs]</a>

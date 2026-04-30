@@ -88,17 +88,20 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.weight_averaging</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">lightning.pytorch.utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">rank_zero_only</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torch._dynamo.eval_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">OptimizedModule</span>
-<span class="kn">from</span><span class="w">  </span><span class="nn">lightning.pytorch.utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">rank_zero_only</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dicee.models.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">EnsembleKGE</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractCallback</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dicee.models.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">EnsembleKGE</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.evaluation.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_ensemble_link_prediction_performance</span>
+
 
 <div class="viewcode-block" id="ASWA">
 <a class="viewcode-back" href="../../autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.ASWA">[docs]</a>
@@ -124,7 +127,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_eval_setting</span><span class="p">:</span>
             <span class="c1"># ADD this info back</span>
             <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_eval_setting</span>
-        
+
         <span class="n">param_ensemble</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/aswa.pt&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">))</span>
         <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">param_ensemble</span><span class="p">)</span></div>
 
@@ -240,7 +243,7 @@
             <span class="n">ensemble</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">ensemble_state_dict</span><span class="p">)</span>
             <span class="n">ensemble</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
 
-                
+
             <span class="c1"># (7) Evaluate (6) on the validation data, i.e., perform the lookahead operation.</span>
             <span class="n">mrr_updated_ensemble_model</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
                                                                 <span class="n">trained_model</span><span class="o">=</span><span class="n">ensemble</span><span class="p">,</span>
@@ -257,7 +260,7 @@
 <a class="viewcode-back" href="../../autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWA">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SWA</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Stochastic Weight Averaging callback.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Initialize SWA callback.</span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -284,16 +287,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">swa_n</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
-    
+
 <div class="viewcode-block" id="SWA.moving_average">
 <a class="viewcode-back" href="../../autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWA.moving_average">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">moving_average</span><span class="p">(</span><span class="n">swa_model</span><span class="p">,</span> <span class="n">running_model</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update SWA model with moving average of current model.</span>
-<span class="sd">        Math: </span>
+<span class="sd">        Math:</span>
 <span class="sd">        # SWA update:</span>
 <span class="sd">        # θ_swa ← (1 - alpha) * θ_swa + alpha * θ</span>
-<span class="sd">        # alpha = 1 / (n + 1), where n = number of models already averaged </span>
+<span class="sd">        # alpha = 1 / (n + 1), where n = number of models already averaged</span>
 <span class="sd">        # alpha is tracked via self.swa_n in code&quot;&quot;&quot;</span>
 
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
@@ -316,7 +319,7 @@
         <span class="c1"># Calculate learning rate using the schedule</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_epochs</span>
         <span class="n">lr_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">swa_lr</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">lr_init</span>
-        
+
         <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;=</span> <span class="mf">0.5</span><span class="p">:</span>
             <span class="n">factor</span> <span class="o">=</span> <span class="mf">1.0</span>
         <span class="k">elif</span> <span class="n">t</span> <span class="o">&lt;=</span> <span class="mf">0.9</span><span class="p">:</span>
@@ -350,15 +353,15 @@
         <span class="c1"># Check if we should apply SWA</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">swa_start_epoch</span> <span class="ow">and</span> \
         <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">swa_start_epoch</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">swa_c_epochs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            
+
             <span class="n">running_model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">_orig_mod</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">OptimizedModule</span><span class="p">)</span> <span class="k">else</span> <span class="n">model</span>
-            
+
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="c1"># Case: EnsembleKGE</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">running_model</span><span class="p">,</span> <span class="n">EnsembleKGE</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">running_model</span><span class="p">)(</span><span class="n">running_model</span><span class="o">.</span><span class="n">models</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">running_model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">())</span>
-                
+
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">running_model</span><span class="p">)(</span><span class="n">running_model</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">running_model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">())</span>
@@ -372,11 +375,11 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">moving_average</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span><span class="p">,</span> <span class="n">running_model</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">swa_n</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">swa_n</span> <span class="o">+=</span> <span class="mi">1</span>
-    
+
         <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;eval_every_n_epochs&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">model</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;eval_at_epochs&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">trainer</span><span class="o">.</span><span class="n">wa_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">swa_model</span></div>
 
-    
+
 <div class="viewcode-block" id="SWA.on_fit_end">
 <a class="viewcode-back" href="../../autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWA.on_fit_end">[docs]</a>
     <span class="nd">@rank_zero_only</span>
@@ -431,19 +434,19 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_collect_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Collect weights to update mean, sq_mean, and covariance deviations.</span>
-<span class="sd">    </span>
+
 <span class="sd">        Math:</span>
 <span class="sd">        # Let θ_i be the model parameter vector at collection step i</span>
 <span class="sd">        # gswa_n = number of models collected so far (0-based)</span>
-<span class="sd">        </span>
+
 <span class="sd">        # Update running mean:</span>
 <span class="sd">        # μ_{n+1} = (n * μ_n + θ_{n+1}) / (n + 1)</span>
 <span class="sd">        # This is a cumulative moving average of model weights</span>
-<span class="sd">        </span>
+
 <span class="sd">        # Update running squared mean:</span>
 <span class="sd">        # μ2_{n+1} = (n * μ2_n + θ_{n+1}^2) / (n + 1)</span>
 <span class="sd">        # This is used to compute variance: alpha^2 ≈ μ2 - μ^2</span>
-<span class="sd">        </span>
+
 <span class="sd">        # Compute deviation for low-rank covariance approximation:</span>
 <span class="sd">        # dev_{n+1} = θ_{n+1} - μ_{n+1}</span>
 <span class="sd">        # We store the last max_num_models deviations to approximate covariance</span>
@@ -481,7 +484,7 @@
 <a class="viewcode-back" href="../../autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.SWAG.sample">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_model</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Sample new model from SWAG posterior distribution.</span>
-<span class="sd">        </span>
+
 <span class="sd">        Math:</span>
 <span class="sd">        # From SWAG, posterior is approximated as:</span>
 <span class="sd">        # θ ~ N(mean, Σ)</span>
@@ -526,7 +529,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">current_epoch</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">swa_start_epoch</span><span class="p">:</span> 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">swa_start_epoch</span><span class="p">:</span>
             <span class="k">return</span>
 
         <span class="c1"># LR cosine-like schedule</span>
@@ -567,7 +570,7 @@
     <span class="nd">@rank_zero_only</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set model weights to the collected SWAG mean at the end of training.&quot;&quot;&quot;</span>
-        
+
         <span class="n">sample_models</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_num_models</span><span class="p">):</span>
             <span class="n">model_copy</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
@@ -580,7 +583,7 @@
             <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">batch_size</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">num_training_batches</span><span class="p">,</span>
             <span class="n">weighted_averaging</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">normalize_scores</span><span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
-        
+
         <span class="n">ensemble_eval_report_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;full_storage_path&quot;</span><span class="p">],</span> <span class="s2">&quot;swag_eval_report.json&quot;</span><span class="p">)</span>
         <span class="c1"># Write the dictionary to the JSON file</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">ensemble_eval_report_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
@@ -591,7 +594,7 @@
                                           <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span></div>
 </div>
 
-        
+
 
 
 <div class="viewcode-block" id="EMA">
@@ -626,7 +629,7 @@
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">ema_update</span><span class="p">(</span><span class="n">ema_model</span><span class="p">,</span> <span class="n">running_model</span><span class="p">,</span> <span class="n">decay</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Update EMA model with exponential moving average of current model.</span>
-<span class="sd">        Math: </span>
+<span class="sd">        Math:</span>
 <span class="sd">        # EMA update:</span>
 <span class="sd">        # θ_ema ← (1 - alpha) * θ_ema + alpha * θ</span>
 <span class="sd">        # alpha = 1 - decay, where decay is the EMA smoothing factor (typical 0.99 - 0.999)</span>
@@ -778,7 +781,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">+=</span> <span class="mi">1</span></div>
 
-    
+
 <div class="viewcode-block" id="TWA.on_train_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/weight_averaging/index.html#dicee.weight_averaging.TWA.on_train_epoch_end">[docs]</a>
     <span class="nd">@rank_zero_only</span>
@@ -799,17 +802,17 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">twa_start_epoch</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sample_weights</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
             <span class="k">return</span>
-        
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">twa_start_epoch</span> <span class="ow">and</span> \
         <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">twa_start_epoch</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">twa_c_epochs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                        
+
             <span class="n">running_model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">_orig_mod</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">OptimizedModule</span><span class="p">)</span> <span class="k">else</span> <span class="n">model</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">twa_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="c1"># Case: EnsembleKGE</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">running_model</span><span class="p">,</span> <span class="n">EnsembleKGE</span><span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">twa_model</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">running_model</span><span class="p">)(</span><span class="n">running_model</span><span class="o">.</span><span class="n">models</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">twa_model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">running_model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">())</span>
-                <span class="k">else</span><span class="p">:</span>       
+                <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">twa_model</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">running_model</span><span class="p">)(</span><span class="n">running_model</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">twa_model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">running_model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">())</span>
 

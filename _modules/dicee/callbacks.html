@@ -109,6 +109,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">torch.optim.lr_scheduler</span><span class="w"> </span><span class="kn">import</span> <span class="n">LambdaLR</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">dicee.models.base_model</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractCallback</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.evaluation.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_ensemble_link_prediction_performance</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_checkpoint_model</span><span class="p">,</span> <span class="n">save_pickle</span>
@@ -691,7 +692,7 @@
             <span class="c1"># Load ASWA weights and apply to a deepcopy of the model</span>
             <span class="n">aswa_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experiment_dir</span><span class="p">,</span> <span class="s2">&quot;aswa.pt&quot;</span><span class="p">)</span>
             <span class="n">aswa_ensemble_params</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">aswa_path</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
-            
+
             <span class="c1"># Clone model and apply ASWA weights</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">OptimizedModule</span><span class="p">):</span>
                 <span class="n">eval_model</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">_orig_mod</span><span class="p">)(</span><span class="n">model</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
@@ -704,7 +705,7 @@
 
         <span class="n">eval_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
         <span class="n">eval_model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
-        
+
         <span class="n">report</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
                 <span class="n">trained_model</span><span class="o">=</span><span class="n">eval_model</span><span class="p">,</span>
                 <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">form_of_labelling</span><span class="p">,</span>
@@ -763,7 +764,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Validate and set defaults for configuration</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_validate_and_set_config</span><span class="p">(</span><span class="n">adaptive_lr_config</span><span class="p">,</span> <span class="n">eta_max</span><span class="p">)</span>
-        
+
         <span class="bp">self</span><span class="o">.</span><span class="n">total_epochs</span> <span class="o">=</span> <span class="n">total_epochs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">experiment_dir</span> <span class="o">=</span> <span class="n">experiment_dir</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">snapshot_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">experiment_dir</span><span class="p">,</span> <span class="n">snapshot_dir</span><span class="p">)</span>
@@ -804,18 +805,18 @@
             <span class="s2">&quot;weighted_ensemble&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
             <span class="s2">&quot;n_snapshots&quot;</span><span class="p">:</span> <span class="mi">5</span>
         <span class="p">}</span>
-        
+
         <span class="c1"># Validate config is a dictionary</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;adaptive_lr_config must be a dictionary&quot;</span><span class="p">)</span>
-        
+
         <span class="c1"># Validate scheduler_name</span>
         <span class="k">if</span> <span class="s2">&quot;scheduler_name&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
             <span class="n">valid_schedulers</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;cca&quot;</span><span class="p">,</span> <span class="s2">&quot;mmcclr&quot;</span><span class="p">,</span> <span class="s2">&quot;deferred_cca&quot;</span><span class="p">,</span> <span class="s2">&quot;deferred_mmcclr&quot;</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;scheduler_name&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_schedulers</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid scheduler_name &#39;</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;scheduler_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
                                <span class="sa">f</span><span class="s2">&quot;Must be one of: </span><span class="si">{</span><span class="n">valid_schedulers</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        
+
         <span class="c1"># Validate lr_min</span>
         <span class="k">if</span> <span class="s2">&quot;lr_min&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
             <span class="n">lr_min</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;lr_min&quot;</span><span class="p">]</span>
@@ -823,25 +824,25 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;lr_min must be a positive number, got: </span><span class="si">{</span><span class="n">lr_min</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">lr_min</span> <span class="o">&gt;=</span> <span class="n">eta_max</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;lr_min (</span><span class="si">{</span><span class="n">lr_min</span><span class="si">}</span><span class="s2">) must be less than eta_max (</span><span class="si">{</span><span class="n">eta_max</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
-        
+
         <span class="c1"># Validate num_cycles</span>
         <span class="k">if</span> <span class="s2">&quot;num_cycles&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
             <span class="n">num_cycles</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;num_cycles&quot;</span><span class="p">]</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">num_cycles</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span> <span class="ow">or</span> <span class="n">num_cycles</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;num_cycles must be a positive number, got: </span><span class="si">{</span><span class="n">num_cycles</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        
+
         <span class="c1"># Validate n_snapshots</span>
         <span class="k">if</span> <span class="s2">&quot;n_snapshots&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
             <span class="n">n_snapshots</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;n_snapshots&quot;</span><span class="p">]</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_snapshots</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">n_snapshots</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;n_snapshots must be a positive integer, got: </span><span class="si">{</span><span class="n">n_snapshots</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        
+
         <span class="c1"># Validate weighted_ensemble</span>
         <span class="k">if</span> <span class="s2">&quot;weighted_ensemble&quot;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">:</span>
             <span class="n">weighted_ensemble</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;weighted_ensemble&quot;</span><span class="p">]</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weighted_ensemble</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;weighted_ensemble must be a boolean, got: </span><span class="si">{</span><span class="n">weighted_ensemble</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        
+
         <span class="c1"># Set attributes with defaults for missing values</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scheduler_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scheduler_name&quot;</span><span class="p">,</span> <span class="n">defaults</span><span class="p">[</span><span class="s2">&quot;scheduler_name&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">eta_min</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lr_min&quot;</span><span class="p">,</span> <span class="n">defaults</span><span class="p">[</span><span class="s2">&quot;lr_min&quot;</span><span class="p">])</span>
@@ -852,7 +853,7 @@
 
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_snapshots</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cycles</span><span class="p">,</span> \
             <span class="sa">f</span><span class="s2">&quot;n_snapshots (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_snapshots</span><span class="si">}</span><span class="s2">) must be less than or equal to num_cycles (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cycles</span><span class="si">}</span><span class="s2">)&quot;</span>
-        
+
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;LRScheduler initialized with config: </span><span class="si">{</span><span class="n">config</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using: scheduler_name=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scheduler_name</span><span class="si">}</span><span class="s2">, eta_min=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">eta_min</span><span class="si">}</span><span class="s2">, &quot;</span>
               <span class="sa">f</span><span class="s2">&quot;n_cycles=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cycles</span><span class="si">}</span><span class="s2">, weighted_ensemble=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">weighted_ensemble</span><span class="si">}</span><span class="s2">, &quot;</span>
@@ -870,7 +871,7 @@
                              <span class="sa">f</span><span class="s2">&quot;Total steps: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">total_steps</span><span class="si">}</span><span class="s2">, n_cycles: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cycles</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_steps</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cycles</span><span class="p">,</span> \
             <span class="sa">f</span><span class="s2">&quot;Total steps (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">total_steps</span><span class="si">}</span><span class="s2">) must be greater than Total Cycles (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">n_cycles</span><span class="si">}</span><span class="s2">).&quot;</span>
-        
+
         <span class="c1"># Calculate warmup steps based on warmup epochs</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">warmup_epochs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">warmup_steps</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">warmup_epochs</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">batches_per_epoch</span><span class="p">)</span>
@@ -879,7 +880,7 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_lr_schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        
+
         <span class="k">def</span><span class="w"> </span><span class="nf">cosine_annealing</span><span class="p">(</span><span class="n">step</span><span class="p">):</span>
             <span class="n">cycle_length</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_steps</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_cycles</span><span class="p">)</span>
             <span class="n">cycle_step</span> <span class="o">=</span> <span class="n">step</span> <span class="o">%</span> <span class="n">cycle_length</span>
@@ -915,7 +916,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown scheduler name: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scheduler_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">sched_map</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">scheduler_name</span><span class="p">]</span>
-    
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_calculate_snap_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Calculate weights for model snapshots based on their loss values.</span>
@@ -939,7 +940,7 @@
             <span class="n">weights</span> <span class="o">=</span> <span class="n">raw_weights</span> <span class="o">/</span> <span class="n">raw_weights</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">raw_weights</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">raw_weights</span><span class="p">)</span>
-        
+
         <span class="bp">self</span><span class="o">.</span><span class="n">snapshot_weights</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">model_names</span><span class="p">,</span> <span class="n">weights</span><span class="p">))</span>
 
 <div class="viewcode-block" id="LRScheduler.on_train_start">
@@ -983,12 +984,12 @@
             <span class="c1"># Skip snapshots during warmup</span>
             <span class="k">if</span> <span class="n">step</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">warmup_steps</span><span class="p">:</span>
                 <span class="k">return</span> <span class="kc">False</span>
-            
+
             <span class="c1"># Take n_snapshots evenly distributed in the remaining steps after warmup</span>
             <span class="n">remaining_steps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_steps</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">warmup_steps</span>
             <span class="n">snapshot_interval</span> <span class="o">=</span> <span class="n">remaining_steps</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_snapshots</span>
             <span class="n">steps_after_warmup</span> <span class="o">=</span> <span class="n">step</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">warmup_steps</span>
-            
+
             <span class="c1"># Check if we&#39;re at a snapshot interval boundary</span>
             <span class="k">return</span> <span class="p">(</span><span class="n">steps_after_warmup</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">snapshot_interval</span> <span class="o">==</span> <span class="mi">0</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1015,8 +1016,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_snap_weights</span><span class="p">()</span>
             <span class="c1"># 2. Build the weight list aligned to snapshot_files order:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ensemble_weights</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">snapshot_weights</span><span class="p">[</span><span class="n">fname</span><span class="p">]</span> <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">snapshot_files</span><span class="p">]</span>
-        
-        
+
+
         <span class="n">ensemble_eval_report</span> <span class="o">=</span> <span class="n">evaluate_ensemble_link_prediction_performance</span><span class="p">(</span>
             <span class="n">models</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_snapshots</span><span class="p">,</span>
             <span class="n">triples</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">test_set</span><span class="p">,</span>

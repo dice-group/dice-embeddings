@@ -169,6 +169,14 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.IdentityClass.forward"><code class="docutils literal notranslate"><span class="pre">IdentityClass.forward()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.models.Block"><code class="docutils literal notranslate"><span class="pre">Block</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Block.ln_1"><code class="docutils literal notranslate"><span class="pre">Block.ln_1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Block.attn"><code class="docutils literal notranslate"><span class="pre">Block.attn</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Block.ln_2"><code class="docutils literal notranslate"><span class="pre">Block.ln_2</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Block.mlp"><code class="docutils literal notranslate"><span class="pre">Block.mlp</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Block.forward"><code class="docutils literal notranslate"><span class="pre">Block.forward()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l5"><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">BaseKGE</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#id5"><code class="docutils literal notranslate"><span class="pre">BaseKGE.args</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#id6"><code class="docutils literal notranslate"><span class="pre">BaseKGE.embedding_dim</span></code></a></li>
@@ -211,14 +219,6 @@
 <li class="toctree-l6"><a class="reference internal" href="#id43"><code class="docutils literal notranslate"><span class="pre">BaseKGE.get_sentence_representation()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#id44"><code class="docutils literal notranslate"><span class="pre">BaseKGE.get_bpe_head_and_relation_representation()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#id45"><code class="docutils literal notranslate"><span class="pre">BaseKGE.get_embeddings()</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.models.Block"><code class="docutils literal notranslate"><span class="pre">Block</span></code></a><ul>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Block.ln_1"><code class="docutils literal notranslate"><span class="pre">Block.ln_1</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Block.attn"><code class="docutils literal notranslate"><span class="pre">Block.attn</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Block.ln_2"><code class="docutils literal notranslate"><span class="pre">Block.ln_2</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Block.mlp"><code class="docutils literal notranslate"><span class="pre">Block.mlp</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Block.forward"><code class="docutils literal notranslate"><span class="pre">Block.forward()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.models.DistMult"><code class="docutils literal notranslate"><span class="pre">DistMult</span></code></a><ul>
@@ -363,7 +363,6 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.ComplEx.forward_k_vs_sample"><code class="docutils literal notranslate"><span class="pre">ComplEx.forward_k_vs_sample()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.models.quaternion_mul"><code class="docutils literal notranslate"><span class="pre">quaternion_mul()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#id96"><code class="docutils literal notranslate"><span class="pre">BaseKGE</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#id97"><code class="docutils literal notranslate"><span class="pre">BaseKGE.args</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#id98"><code class="docutils literal notranslate"><span class="pre">BaseKGE.embedding_dim</span></code></a></li>
@@ -414,6 +413,7 @@
 <li class="toctree-l6"><a class="reference internal" href="#id141"><code class="docutils literal notranslate"><span class="pre">IdentityClass.forward()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.models.quaternion_mul"><code class="docutils literal notranslate"><span class="pre">quaternion_mul()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.models.quaternion_mul_with_unit_norm"><code class="docutils literal notranslate"><span class="pre">quaternion_mul_with_unit_norm()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.models.QMult"><code class="docutils literal notranslate"><span class="pre">QMult</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.QMult.name"><code class="docutils literal notranslate"><span class="pre">QMult.name</span></code></a></li>
@@ -872,11 +872,11 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#id184" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
 <td><p>No-op normalisation / dropout placeholder.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id234" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
-<td><p>Base class for all Knowledge Graph Embedding models.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.Block" title="dicee.models.Block"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Block</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.Block" title="dicee.models.Block"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Block</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id234" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<td><p>Base class for all Knowledge Graph Embedding models.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.DistMult" title="dicee.models.DistMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DistMult</span></code></a></p></td>
 <td><p>DistMult: bilinear diagonal knowledge graph embedding.</p></td>
@@ -1866,6 +1866,69 @@ not need conditional checks around normalisation calls.</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.Block">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">Block</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/transformers.html#Block"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.Block" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
+evaluation mode.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.Block.ln_1">
+<span class="sig-name descname"><span class="pre">ln_1</span></span><a class="headerlink" href="#dicee.models.Block.ln_1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.Block.attn">
+<span class="sig-name descname"><span class="pre">attn</span></span><a class="headerlink" href="#dicee.models.Block.attn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.Block.ln_2">
+<span class="sig-name descname"><span class="pre">ln_2</span></span><a class="headerlink" href="#dicee.models.Block.ln_2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.Block.mlp">
+<span class="sig-name descname"><span class="pre">mlp</span></span><a class="headerlink" href="#dicee.models.Block.mlp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.Block.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/transformers.html#Block.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.Block.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="id0">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">BaseKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#dicee.models.BaseKGELightning" title="dicee.models.BaseKGELightning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGELightning</span></code></a></p>
@@ -2259,69 +2322,6 @@ over the <code class="docutils literal notranslate"><span class="pre">(T,</span>
 </dd>
 </dl>
 </dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="dicee.models.Block">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">Block</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/transformers.html#Block"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.Block" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing them to be nested in
-a tree structure. You can assign the submodules as regular attributes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>Submodules assigned in this way will be registered, and will also have their
-parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
-evaluation mode.</p>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.Block.ln_1">
-<span class="sig-name descname"><span class="pre">ln_1</span></span><a class="headerlink" href="#dicee.models.Block.ln_1" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.Block.attn">
-<span class="sig-name descname"><span class="pre">attn</span></span><a class="headerlink" href="#dicee.models.Block.attn" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.Block.ln_2">
-<span class="sig-name descname"><span class="pre">ln_2</span></span><a class="headerlink" href="#dicee.models.Block.ln_2" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.Block.mlp">
-<span class="sig-name descname"><span class="pre">mlp</span></span><a class="headerlink" href="#dicee.models.Block.mlp" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.Block.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/transformers.html#Block.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.Block.forward" title="Link to this definition"></a></dt>
-<dd></dd></dl>
 
 </dd></dl>
 
@@ -3480,15 +3480,6 @@ of sampled target entities.</p>
 
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.models.quaternion_mul">
-<span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">quaternion_mul</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/static_funcs.html#quaternion_mul"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion_mul" title="Link to this definition"></a></dt>
-<dd><p>Perform quaternion multiplication
-:param Q_1:
-:param Q_2:
-:return:</p>
-</dd></dl>
-
 <dl class="py class">
 <dt class="sig sig-object py" id="id96">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">BaseKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id96" title="Link to this definition"></a></dt>
@@ -3909,6 +3900,15 @@ not need conditional checks around normalisation calls.</p>
 <span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#IdentityClass.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id141" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.models.quaternion_mul">
+<span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">quaternion_mul</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/static_funcs.html#quaternion_mul"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion_mul" title="Link to this definition"></a></dt>
+<dd><p>Perform quaternion multiplication
+:param Q_1:
+:param Q_2:
+:return:</p>
 </dd></dl>
 
 <dl class="py function">

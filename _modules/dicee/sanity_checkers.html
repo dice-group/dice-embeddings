@@ -88,8 +88,9 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.sanity_checkers</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
@@ -216,7 +217,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">gpu_count</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="mi">0</span>
     <span class="c1"># Check if any callbacks are requested</span>
-    
+
     <span class="k">if</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s2">&quot;PL&quot;</span> <span class="ow">and</span> <span class="n">gpu_count</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">)</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s2">&quot;torchDDP&quot;</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Path to store experiments must be provided for Multi-GPU training.&quot;</span><span class="p">)</span>

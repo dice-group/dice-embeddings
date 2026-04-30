@@ -88,9 +88,11 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.models.function_space</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">.base_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseKGE</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseKGE</span>
+
 
 <div class="viewcode-block" id="FMult">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.FMult">[docs]</a>
@@ -368,15 +370,15 @@
         <span class="k">return</span> <span class="n">out</span></div>
 </div>
 
-    
+
 
 <div class="viewcode-block" id="LFMult1">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult1">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">LFMult1</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span> 
+<span class="k">class</span><span class="w"> </span><span class="nc">LFMult1</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
 
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:</span>
 <span class="sd">      f(x) = \sum_{k=0}^{k=d-1}wk e^{kix}. and use the three differents scoring function as in the paper to evaluate the score&#39;&#39;&#39;</span>
-    
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;LFMult1&#39;</span>
@@ -390,7 +392,7 @@
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">idx_triple</span><span class="p">)</span>
 
         <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vtp_score</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span><span class="n">rel_emb</span><span class="p">,</span><span class="n">tail_ent_emb</span><span class="p">)</span>
-    
+
         <span class="k">return</span> <span class="n">score</span></div>
 
 
@@ -409,7 +411,7 @@
         <span class="n">s</span> <span class="o">=</span> <span class="n">s1</span> <span class="o">+</span> <span class="n">s2</span> <span class="c1"># combine the two sums.</span>
         <span class="k">return</span> <span class="n">s</span></div>
 
-    
+
 <div class="viewcode-block" id="LFMult1.vtp_score">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult1.vtp_score">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">vtp_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">h</span><span class="p">,</span><span class="n">r</span><span class="p">,</span><span class="n">t</span><span class="p">):</span>
@@ -423,13 +425,13 @@
                                     <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">h</span><span class="p">[:,</span> <span class="n">i_range</span><span class="p">]</span> <span class="o">*</span> <span class="n">t</span><span class="p">[:,</span> <span class="n">i_range</span><span class="p">],</span><span class="n">dim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="c1"># sum on i != j</span>
         <span class="n">i_1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
         <span class="n">p2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r</span><span class="p">[:,</span> <span class="n">i_1</span><span class="p">]</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">i_1</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">i_1</span><span class="p">)</span> <span class="p">,</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">r</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
-        
+
         <span class="n">s1</span> <span class="o">=</span> <span class="n">p1</span><span class="o">*</span><span class="n">p2</span>
 
         <span class="n">p3</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">cond</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">cond</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">i_range</span> <span class="o">-</span> <span class="n">j_range</span><span class="p">)</span> \
                                 <span class="o">*</span> <span class="n">r</span><span class="p">[:,</span> <span class="n">i_range</span><span class="p">]</span> <span class="o">*</span> <span class="n">t</span><span class="p">[:,</span> <span class="n">j_range</span><span class="p">]</span> <span class="o">/</span><span class="p">(</span><span class="n">eps</span><span class="o">+</span><span class="n">i_range</span> <span class="o">-</span> <span class="n">j_range</span><span class="p">)),</span><span class="n">dim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span> \
                                     <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r</span><span class="p">[:,</span> <span class="n">i_range</span><span class="p">]</span> <span class="o">*</span> <span class="n">t</span><span class="p">[:,</span> <span class="n">i_range</span><span class="p">],</span><span class="n">dim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="c1"># sum on i != j</span>
-        
+
         <span class="n">p4</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">h</span><span class="p">[:,</span> <span class="n">i_1</span><span class="p">]</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">i_1</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">i_1</span><span class="p">)</span> <span class="p">,</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">h</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">s2</span> <span class="o">=</span> <span class="n">p3</span><span class="o">*</span><span class="n">p4</span>
 
@@ -438,15 +440,15 @@
         <span class="k">return</span> <span class="n">s</span></div>
 </div>
 
-    
+
 <div class="viewcode-block" id="LFMult">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">LFMult</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span> 
+<span class="k">class</span><span class="w"> </span><span class="nc">LFMult</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
 
-<span class="w">    </span><span class="sd">&#39;&#39;&#39;Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:</span>
 <span class="sd">      f(x) = \sum_{i=0}^{d-1} a_k x^{i%d} and use the three differents scoring function as in the paper to evaluate the score.</span>
 <span class="sd">      We also consider combining with Neural Networks.&#39;&#39;&#39;</span>
-    
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;LFMult&#39;</span>
@@ -467,19 +469,19 @@
         <span class="c1">###### polynomial score with trilinear scoring</span>
 
         <span class="c1"># score = self.tri_score(coeff_head,coeff_rel,coeff_tail)</span>
-        
+
         <span class="c1"># score = score.reshape(-1,self.m).sum(dim=1)</span>
-    
+
 
         <span class="c1">##### polynomial score with NN</span>
 
         <span class="n">score</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">poly_NN</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x_values</span><span class="p">,</span><span class="n">coeff_head</span><span class="p">,</span> <span class="n">coeff_rel</span><span class="p">,</span> <span class="n">coeff_tail</span><span class="p">),</span><span class="bp">self</span><span class="o">.</span><span class="n">x_values</span><span class="p">)</span>
         <span class="c1"># score = integral_value.reshape(1,-1).squeeze(0)</span>
-       
-        
-        <span class="k">return</span> <span class="n">score</span> </div>
 
-    
+
+        <span class="k">return</span> <span class="n">score</span></div>
+
+
 <div class="viewcode-block" id="LFMult.construct_multi_coeff">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.construct_multi_coeff">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">construct_multi_coeff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
@@ -489,14 +491,14 @@
 
         <span class="k">return</span> <span class="n">coeffs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span></div>
 
-    
+
 
 
 <div class="viewcode-block" id="LFMult.poly_NN">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.poly_NN">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">poly_NN</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">coefh</span><span class="p">,</span> <span class="n">coefr</span><span class="p">,</span> <span class="n">coeft</span><span class="p">):</span>
 
-<span class="w">        </span><span class="sd">&#39;&#39;&#39; Constructing a 2 layers NN to represent the embeddings. </span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39; Constructing a 2 layers NN to represent the embeddings.</span>
 <span class="sd">         h = \sigma(wh^T x + bh ),  r = \sigma(wr^T x + br ),  t = \sigma(wt^T x + bt )&#39;&#39;&#39;</span>
 
         <span class="n">wh</span><span class="p">,</span> <span class="n">bh</span> <span class="o">=</span> <span class="n">coefh</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">coefh</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span>
@@ -509,16 +511,16 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scalar_batch_NN</span><span class="p">(</span><span class="n">h_emb</span><span class="p">,</span> <span class="n">r_emb</span><span class="p">,</span> <span class="n">t_emb</span><span class="p">)</span><span class="c1">#(linear(x,wh,bh)*linear(x,wr,br)*linear(x,wt,bt))</span></div>
 
-    
+
 <div class="viewcode-block" id="LFMult.linear">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.linear">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">linear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">w</span><span class="p">,</span><span class="n">b</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tanh</span><span class="p">((</span><span class="n">w</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">x</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)))</span></div>
 
-    
 
 
-    
+
+
 <div class="viewcode-block" id="LFMult.scalar_batch_NN">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.scalar_batch_NN">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">scalar_batch_NN</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
@@ -532,7 +534,7 @@
         <span class="n">c_reshaped</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">c</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">))</span>
 
         <span class="n">mul_result</span> <span class="o">=</span> <span class="n">a_reshaped</span> <span class="o">*</span> <span class="n">b_reshaped</span> <span class="o">*</span> <span class="n">c_reshaped</span>
-        
+
         <span class="k">return</span> <span class="n">mul_result</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
 
 
@@ -543,9 +545,9 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.tri_score">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">tri_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coeff_h</span><span class="p">,</span> <span class="n">coeff_r</span><span class="p">,</span> <span class="n">coeff_t</span><span class="p">):</span>
 
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;this part implement the trilinear scoring techniques: </span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;this part implement the trilinear scoring techniques:</span>
 
-<span class="sd">        score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d} </span>
+<span class="sd">        score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d}</span>
 
 <span class="sd">        1. generate the range for i,j and k from [0 d-1]</span>
 
@@ -567,30 +569,30 @@
 
 
         <span class="n">weighted_terms</span> <span class="o">=</span> <span class="n">terms</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">coeff_h</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span><span class="n">coeff_r</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">coeff_t</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-        
+
         <span class="n">result</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weighted_terms</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 
         <span class="k">return</span> <span class="n">result</span></div>
 
-    
+
 <div class="viewcode-block" id="LFMult.vtp_score">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.vtp_score">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">vtp_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
-<span class="w">            </span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;this part implement the vector triple product scoring techniques: </span>
 
-<span class="sd">        score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*c_j*b_k - b_i*c_j*a_k}{(1+(i+j)%d)(1+k)} </span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;this part implement the vector triple product scoring techniques:</span>
+
+<span class="sd">        score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*c_j*b_k - b_i*c_j*a_k}{(1+(i+j)%d)(1+k)}</span>
 
 <span class="sd">        1. generate the range for i,j and k from [0 d-1]</span>
 
 <span class="sd">        2. Compute the first and second terms of the sum</span>
 
 <span class="sd">        3.  Multiply with then denominator and take the sum</span>
-<span class="sd">        </span>
+
 <span class="sd">        4. take the sum over each batch</span>
-<span class="sd">        </span>
+
 <span class="sd">        &#39;&#39;&#39;</span>
-            
+
         <span class="n">i_range</span><span class="p">,</span> <span class="n">j_range</span><span class="p">,</span> <span class="n">k_range</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">),</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">),</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">))</span>
 
         <span class="c1"># terms = 1 / (1 + (i_range + j_range)%self.embedding_dim) / (1+ k_range) # with modulo</span>
@@ -602,7 +604,7 @@
         <span class="n">terms2</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">t</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">h</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
 
         <span class="n">weighted_terms</span> <span class="o">=</span> <span class="n">terms</span> <span class="o">*</span> <span class="p">(</span><span class="n">terms1</span><span class="o">-</span><span class="n">terms2</span><span class="p">)</span>
-        
+
         <span class="n">result</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weighted_terms</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 
         <span class="k">return</span> <span class="n">result</span></div>
@@ -610,17 +612,17 @@
 
 <div class="viewcode-block" id="LFMult.comp_func">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.comp_func">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">comp_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">h</span><span class="p">,</span><span class="n">r</span><span class="p">,</span><span class="n">t</span><span class="p">):</span> 
+    <span class="k">def</span><span class="w"> </span><span class="nf">comp_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">h</span><span class="p">,</span><span class="n">r</span><span class="p">,</span><span class="n">t</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;this part implement the function composition scoring techniques: i.e. score = &lt;hor, t&gt;&#39;&#39;&#39;</span>
 
         <span class="n">degree</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
-        <span class="n">r_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">polynomial</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">x_values</span><span class="p">,</span><span class="n">degree</span><span class="p">)</span> 
+        <span class="n">r_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">polynomial</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">x_values</span><span class="p">,</span><span class="n">degree</span><span class="p">)</span>
 
-        <span class="n">t_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">polynomial</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">x_values</span><span class="p">,</span><span class="n">degree</span><span class="p">)</span> 
+        <span class="n">t_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">polynomial</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">x_values</span><span class="p">,</span><span class="n">degree</span><span class="p">)</span>
 
-        <span class="n">hor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="n">r_emb</span><span class="p">,</span><span class="n">degree</span><span class="p">)</span> 
-        
+        <span class="n">hor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="n">r_emb</span><span class="p">,</span><span class="n">degree</span><span class="p">)</span>
+
         <span class="n">score</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">trapz</span><span class="p">(</span><span class="n">hor</span><span class="o">*</span><span class="n">t_emb</span> <span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_values</span><span class="p">)</span> <span class="c1">#Computing the score with the trapezoid method</span>
 
         <span class="k">return</span> <span class="n">score</span></div>
@@ -641,11 +643,11 @@
         <span class="k">return</span> <span class="n">vect</span></div>
 
 
-        
+
 <div class="viewcode-block" id="LFMult.pop">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.function_space.LFMult.pop">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">pop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">coeff</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">degree</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;This function allow us to evaluate the composition of two polynomes without for loops :) </span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;This function allow us to evaluate the composition of two polynomes without for loops :)</span>
 <span class="sd">        it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  and range of integer [0,1,...d]</span>
 <span class="sd">            and return a tensor (coeff[0][0] + coeff[0][1]x +...+ coeff[0][d]x^d,</span>
 <span class="sd">                                coeff[1][0] + coeff[1][1]x +...+ coeff[1][d]x^d)</span>

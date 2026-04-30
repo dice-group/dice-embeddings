@@ -21,14 +21,28 @@ Functions
 
 .. autoapisummary::
 
-   dicee.static_funcs_training.evaluate_lp
    dicee.static_funcs_training.evaluate_bpe_lp
-   dicee.static_funcs_training.make_iterable_verbose
+   dicee.static_funcs_training.evaluate_lp
    dicee.static_funcs_training.efficient_zero_grad
+   dicee.static_funcs_training.make_iterable_verbose
 
 
 Module Contents
 ---------------
+
+.. py:function:: evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info: str = 'Eval Starts') -> Dict[str, float]
+
+   Evaluate link prediction with BPE-encoded entities.
+
+   :param model: The KGE model to evaluate.
+   :param triple_idx: List of BPE-encoded triple tuples.
+   :param all_bpe_shaped_entities: All entities with BPE representations.
+   :param er_vocab: Mapping for tail filtering.
+   :param re_vocab: Mapping for head filtering.
+   :param info: Description to print.
+
+   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+
 
 .. py:function:: evaluate_lp(model, triple_idx, num_entities: int, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info: str = 'Eval Starts', batch_size: int = 128, chunk_size: int = 1000) -> Dict[str, float]
 
@@ -48,18 +62,16 @@ Module Contents
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 
 
-.. py:function:: evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info: str = 'Eval Starts') -> Dict[str, float]
+.. py:function:: efficient_zero_grad(model) -> None
 
-   Evaluate link prediction with BPE-encoded entities.
+   Efficiently zero gradients using parameter.grad = None.
 
-   :param model: The KGE model to evaluate.
-   :param triple_idx: List of BPE-encoded triple tuples.
-   :param all_bpe_shaped_entities: All entities with BPE representations.
-   :param er_vocab: Mapping for tail filtering.
-   :param re_vocab: Mapping for head filtering.
-   :param info: Description to print.
+   This is more efficient than optimizer.zero_grad() as it avoids
+   memory operations.
 
-   :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
+   See: https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html
+
+   :param model: PyTorch model to zero gradients for.
 
 
 .. py:function:: make_iterable_verbose(iterable_object: Iterable, verbose: bool, desc: str = 'Default', position: Optional[int] = None, leave: bool = True) -> Iterable
@@ -73,17 +85,5 @@ Module Contents
    :param leave: Whether to leave the progress bar after completion.
 
    :returns: The original iterable or a tqdm-wrapped version.
-
-
-.. py:function:: efficient_zero_grad(model) -> None
-
-   Efficiently zero gradients using parameter.grad = None.
-
-   This is more efficient than optimizer.zero_grad() as it avoids
-   memory operations.
-
-   See: https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html
-
-   :param model: PyTorch model to zero gradients for.
 
 

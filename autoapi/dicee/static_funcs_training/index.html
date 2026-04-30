@@ -86,10 +86,10 @@
 <li class="toctree-l3 current"><a class="current reference internal" href="#">dicee.static_funcs_training</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs_training.evaluate_lp"><code class="docutils literal notranslate"><span class="pre">evaluate_lp()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs_training.evaluate_bpe_lp"><code class="docutils literal notranslate"><span class="pre">evaluate_bpe_lp()</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs_training.make_iterable_verbose"><code class="docutils literal notranslate"><span class="pre">make_iterable_verbose()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs_training.evaluate_lp"><code class="docutils literal notranslate"><span class="pre">evaluate_lp()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs_training.efficient_zero_grad"><code class="docutils literal notranslate"><span class="pre">efficient_zero_grad()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.static_funcs_training.make_iterable_verbose"><code class="docutils literal notranslate"><span class="pre">make_iterable_verbose()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -144,23 +144,44 @@ for new code. This module will continue to export training utilities.</p>
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs_training.evaluate_lp" title="dicee.static_funcs_training.evaluate_lp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_lp</span></code></a>(→ Dict[str, float])</p></td>
-<td><p>Evaluate link prediction with batched processing.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs_training.evaluate_bpe_lp" title="dicee.static_funcs_training.evaluate_bpe_lp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_bpe_lp</span></code></a>(→ Dict[str, float])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs_training.evaluate_bpe_lp" title="dicee.static_funcs_training.evaluate_bpe_lp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_bpe_lp</span></code></a>(→ Dict[str, float])</p></td>
 <td><p>Evaluate link prediction with BPE-encoded entities.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs_training.make_iterable_verbose" title="dicee.static_funcs_training.make_iterable_verbose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_iterable_verbose</span></code></a>(→ Iterable)</p></td>
-<td><p>Wrap an iterable with tqdm progress bar if verbose is True.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs_training.evaluate_lp" title="dicee.static_funcs_training.evaluate_lp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_lp</span></code></a>(→ Dict[str, float])</p></td>
+<td><p>Evaluate link prediction with batched processing.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs_training.efficient_zero_grad" title="dicee.static_funcs_training.efficient_zero_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">efficient_zero_grad</span></code></a>(→ None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs_training.efficient_zero_grad" title="dicee.static_funcs_training.efficient_zero_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">efficient_zero_grad</span></code></a>(→ None)</p></td>
 <td><p>Efficiently zero gradients using parameter.grad = None.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs_training.make_iterable_verbose" title="dicee.static_funcs_training.make_iterable_verbose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_iterable_verbose</span></code></a>(→ Iterable)</p></td>
+<td><p>Wrap an iterable with tqdm progress bar if verbose is True.</p></td>
 </tr>
 </tbody>
 </table>
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.static_funcs_training.evaluate_bpe_lp">
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs_training.</span></span><span class="sig-name descname"><span class="pre">evaluate_bpe_lp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triple_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_bpe_shaped_entities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">er_vocab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">re_vocab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Eval</span> <span class="pre">Starts'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/evaluation/link_prediction.html#evaluate_bpe_lp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.static_funcs_training.evaluate_bpe_lp" title="Link to this definition"></a></dt>
+<dd><p>Evaluate link prediction with BPE-encoded entities.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – The KGE model to evaluate.</p></li>
+<li><p><strong>triple_idx</strong> – List of BPE-encoded triple tuples.</p></li>
+<li><p><strong>all_bpe_shaped_entities</strong> – All entities with BPE representations.</p></li>
+<li><p><strong>er_vocab</strong> – Mapping for tail filtering.</p></li>
+<li><p><strong>re_vocab</strong> – Mapping for head filtering.</p></li>
+<li><p><strong>info</strong> – Description to print.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary with H&#64;1, H&#64;3, <a class="reference external" href="mailto:H&#37;&#52;&#48;10">H<span>&#64;</span>10</a>, and MRR metrics.</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.static_funcs_training.evaluate_lp">
 <span class="sig-prename descclassname"><span class="pre">dicee.static_funcs_training.</span></span><span class="sig-name descname"><span class="pre">evaluate_lp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triple_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_entities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">er_vocab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">re_vocab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Eval</span> <span class="pre">Starts'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/evaluation/link_prediction.html#evaluate_lp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.static_funcs_training.evaluate_lp" title="Link to this definition"></a></dt>
@@ -186,22 +207,15 @@ for new code. This module will continue to export training utilities.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="dicee.static_funcs_training.evaluate_bpe_lp">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs_training.</span></span><span class="sig-name descname"><span class="pre">evaluate_bpe_lp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triple_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_bpe_shaped_entities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">er_vocab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">re_vocab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Eval</span> <span class="pre">Starts'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/evaluation/link_prediction.html#evaluate_bpe_lp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.static_funcs_training.evaluate_bpe_lp" title="Link to this definition"></a></dt>
-<dd><p>Evaluate link prediction with BPE-encoded entities.</p>
+<dt class="sig sig-object py" id="dicee.static_funcs_training.efficient_zero_grad">
+<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs_training.</span></span><span class="sig-name descname"><span class="pre">efficient_zero_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/evaluation/utils.html#efficient_zero_grad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.static_funcs_training.efficient_zero_grad" title="Link to this definition"></a></dt>
+<dd><p>Efficiently zero gradients using parameter.grad = None.</p>
+<p>This is more efficient than optimizer.zero_grad() as it avoids
+memory operations.</p>
+<p>See: <a class="reference external" href="https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html">https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html</a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>model</strong> – The KGE model to evaluate.</p></li>
-<li><p><strong>triple_idx</strong> – List of BPE-encoded triple tuples.</p></li>
-<li><p><strong>all_bpe_shaped_entities</strong> – All entities with BPE representations.</p></li>
-<li><p><strong>er_vocab</strong> – Mapping for tail filtering.</p></li>
-<li><p><strong>re_vocab</strong> – Mapping for head filtering.</p></li>
-<li><p><strong>info</strong> – Description to print.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Dictionary with H&#64;1, H&#64;3, <a class="reference external" href="mailto:H&#37;&#52;&#48;10">H<span>&#64;</span>10</a>, and MRR metrics.</p>
+<dd class="field-odd"><p><strong>model</strong> – PyTorch model to zero gradients for.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -222,20 +236,6 @@ for new code. This module will continue to export training utilities.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The original iterable or a tqdm-wrapped version.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.static_funcs_training.efficient_zero_grad">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_funcs_training.</span></span><span class="sig-name descname"><span class="pre">efficient_zero_grad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/evaluation/utils.html#efficient_zero_grad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.static_funcs_training.efficient_zero_grad" title="Link to this definition"></a></dt>
-<dd><p>Efficiently zero gradients using parameter.grad = None.</p>
-<p>This is more efficient than optimizer.zero_grad() as it avoids
-memory operations.</p>
-<p>See: <a class="reference external" href="https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html">https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html</a></p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>model</strong> – PyTorch model to zero gradients for.</p>
 </dd>
 </dl>
 </dd></dl>

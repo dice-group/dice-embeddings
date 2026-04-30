@@ -33,10 +33,10 @@ Classes
    dicee.dataset_classes.KvsAll
    dicee.dataset_classes.KvsSampleDataset
    dicee.dataset_classes.OnevsAllDataset
+   dicee.dataset_classes.LiteralDataset
    dicee.dataset_classes.FixedNegSampleDataset
    dicee.dataset_classes.OnevsSample
    dicee.dataset_classes.TriplePredictionDataset
-   dicee.dataset_classes.LiteralDataset
 
 
 Functions
@@ -175,6 +175,34 @@ Package Contents
 
 
    .. py:method:: __getitem__(idx)
+
+
+.. py:function:: construct_dataset(*, train_set: Union[numpy.ndarray, list], valid_set=None, test_set=None, ordered_bpe_entities=None, train_target_indices=None, target_dim: int = None, entity_to_idx: dict, relation_to_idx: dict, form_of_labelling: str, scoring_technique: str, neg_ratio: int, label_smoothing_rate: float, byte_pair_encoding=None, block_size: int = None, seed: int = None) -> torch.utils.data.Dataset
+
+   Build the appropriate dataset for the given training configuration.
+
+   :param train_set: Raw integer-indexed triples.
+   :type train_set: numpy.ndarray or list
+   :param entity_to_idx: Name → index mappings.
+   :type entity_to_idx: dict
+   :param relation_to_idx: Name → index mappings.
+   :type relation_to_idx: dict
+   :param form_of_labelling: ``'EntityPrediction'`` or ``'RelationPrediction'``.
+   :type form_of_labelling: str
+   :param scoring_technique: One of ``'NegSample'``, ``'FixedNegSample'``, ``'1vsAll'``, ``'1vsSample'``, ``'KvsAll'``,
+                             ``'AllvsAll'``, ``'KvsSample'``.
+   :type scoring_technique: str
+   :param neg_ratio: Negative sample ratio.
+   :type neg_ratio: int
+   :param label_smoothing_rate: Label smoothing coefficient.
+   :type label_smoothing_rate: float
+
+   :rtype: torch.utils.data.Dataset
+
+
+.. py:function:: reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, label_smoothing_rate)
+
+   Reload training data from disk and construct a Pytorch dataset.
 
 
 .. py:class:: AllvsAll(train_set_idx: numpy.ndarray, entity_idxs, relation_idxs, label_smoothing_rate=0.0)
@@ -365,6 +393,99 @@ Package Contents
    .. py:method:: __getitem__(idx)
 
 
+.. py:class:: LiteralDataset(file_path: str, ent_idx: dict = None, normalization_type: str = 'z-norm', sampling_ratio: float = None, loader_backend: str = 'pandas')
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   Dataset for loading and processing literal data for Literal Embedding models.
+
+   Handles loading, normalization, and preparation of ``(entity, attribute,
+   value)`` triples.  Supports z-score and min-max normalization as well as
+   optional sub-sampling for ablation studies.
+
+   :param file_path: Path to the training data file (CSV / TSV / RDF).
+   :type file_path: str
+   :param ent_idx: Entity-name → index mapping.
+   :type ent_idx: dict
+   :param normalization_type: ``'z-norm'``, ``'min-max'``, or ``None`` (default ``'z-norm'``).
+   :type normalization_type: str, optional
+   :param sampling_ratio: Fraction of the training set to keep (default ``None`` = use all).
+   :type sampling_ratio: float or None, optional
+   :param loader_backend: ``'pandas'`` or ``'rdflib'`` (default ``'pandas'``).
+   :type loader_backend: str, optional
+
+
+   .. py:attribute:: train_file_path
+
+
+   .. py:attribute:: loader_backend
+      :value: 'pandas'
+
+
+
+   .. py:attribute:: normalization_type
+      :value: 'z-norm'
+
+
+
+   .. py:attribute:: normalization_params
+
+
+   .. py:attribute:: sampling_ratio
+      :value: None
+
+
+
+   .. py:attribute:: entity_to_idx
+      :value: None
+
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:method:: __getitem__(index)
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: load_and_validate_literal_data(file_path: str = None, loader_backend: str = 'pandas') -> pandas.DataFrame
+      :staticmethod:
+
+
+      Load and validate a literal data file.
+
+      :param file_path: Path to the data file.
+      :type file_path: str
+      :param loader_backend: ``'pandas'`` or ``'rdflib'``.
+      :type loader_backend: str
+
+      :returns: Three-column DataFrame with columns ``head``, ``attribute``,
+                ``value``.
+      :rtype: pandas.DataFrame
+
+
+
+   .. py:method:: denormalize(preds_norm, attributes, normalization_params) -> numpy.ndarray
+      :staticmethod:
+
+
+      Reverse the normalization applied during training.
+
+      :param preds_norm: Normalized predictions.
+      :type preds_norm: numpy.ndarray
+      :param attributes: Attribute names corresponding to each prediction.
+      :type attributes: list
+      :param normalization_params: Parameters stored during training.
+      :type normalization_params: dict
+
+      :returns: Denormalized predictions.
+      :rtype: numpy.ndarray
+
+
+
 .. py:class:: FixedNegSampleDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0, seed: int = None)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
@@ -533,126 +654,5 @@ Package Contents
 
 
    .. py:method:: collate_fn(batch: List[torch.Tensor])
-
-
-.. py:class:: LiteralDataset(file_path: str, ent_idx: dict = None, normalization_type: str = 'z-norm', sampling_ratio: float = None, loader_backend: str = 'pandas')
-
-   Bases: :py:obj:`torch.utils.data.Dataset`
-
-
-   Dataset for loading and processing literal data for Literal Embedding models.
-
-   Handles loading, normalization, and preparation of ``(entity, attribute,
-   value)`` triples.  Supports z-score and min-max normalization as well as
-   optional sub-sampling for ablation studies.
-
-   :param file_path: Path to the training data file (CSV / TSV / RDF).
-   :type file_path: str
-   :param ent_idx: Entity-name → index mapping.
-   :type ent_idx: dict
-   :param normalization_type: ``'z-norm'``, ``'min-max'``, or ``None`` (default ``'z-norm'``).
-   :type normalization_type: str, optional
-   :param sampling_ratio: Fraction of the training set to keep (default ``None`` = use all).
-   :type sampling_ratio: float or None, optional
-   :param loader_backend: ``'pandas'`` or ``'rdflib'`` (default ``'pandas'``).
-   :type loader_backend: str, optional
-
-
-   .. py:attribute:: train_file_path
-
-
-   .. py:attribute:: loader_backend
-      :value: 'pandas'
-
-
-
-   .. py:attribute:: normalization_type
-      :value: 'z-norm'
-
-
-
-   .. py:attribute:: normalization_params
-
-
-   .. py:attribute:: sampling_ratio
-      :value: None
-
-
-
-   .. py:attribute:: entity_to_idx
-      :value: None
-
-
-
-   .. py:attribute:: num_entities
-
-
-   .. py:method:: __getitem__(index)
-
-
-   .. py:method:: __len__()
-
-
-   .. py:method:: load_and_validate_literal_data(file_path: str = None, loader_backend: str = 'pandas') -> pandas.DataFrame
-      :staticmethod:
-
-
-      Load and validate a literal data file.
-
-      :param file_path: Path to the data file.
-      :type file_path: str
-      :param loader_backend: ``'pandas'`` or ``'rdflib'``.
-      :type loader_backend: str
-
-      :returns: Three-column DataFrame with columns ``head``, ``attribute``,
-                ``value``.
-      :rtype: pandas.DataFrame
-
-
-
-   .. py:method:: denormalize(preds_norm, attributes, normalization_params) -> numpy.ndarray
-      :staticmethod:
-
-
-      Reverse the normalization applied during training.
-
-      :param preds_norm: Normalized predictions.
-      :type preds_norm: numpy.ndarray
-      :param attributes: Attribute names corresponding to each prediction.
-      :type attributes: list
-      :param normalization_params: Parameters stored during training.
-      :type normalization_params: dict
-
-      :returns: Denormalized predictions.
-      :rtype: numpy.ndarray
-
-
-
-.. py:function:: construct_dataset(*, train_set: Union[numpy.ndarray, list], valid_set=None, test_set=None, ordered_bpe_entities=None, train_target_indices=None, target_dim: int = None, entity_to_idx: dict, relation_to_idx: dict, form_of_labelling: str, scoring_technique: str, neg_ratio: int, label_smoothing_rate: float, byte_pair_encoding=None, block_size: int = None, seed: int = None) -> torch.utils.data.Dataset
-
-   Build the appropriate dataset for the given training configuration.
-
-   :param train_set: Raw integer-indexed triples.
-   :type train_set: numpy.ndarray or list
-   :param entity_to_idx: Name → index mappings.
-   :type entity_to_idx: dict
-   :param relation_to_idx: Name → index mappings.
-   :type relation_to_idx: dict
-   :param form_of_labelling: ``'EntityPrediction'`` or ``'RelationPrediction'``.
-   :type form_of_labelling: str
-   :param scoring_technique: One of ``'NegSample'``, ``'FixedNegSample'``, ``'1vsAll'``, ``'1vsSample'``, ``'KvsAll'``,
-                             ``'AllvsAll'``, ``'KvsSample'``.
-   :type scoring_technique: str
-   :param neg_ratio: Negative sample ratio.
-   :type neg_ratio: int
-   :param label_smoothing_rate: Label smoothing coefficient.
-   :type label_smoothing_rate: float
-
-   :rtype: torch.utils.data.Dataset
-
-
-.. py:function:: reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, label_smoothing_rate)
-
-   Reload training data from disk and construct a Pytorch dataset.
 
 

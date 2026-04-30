@@ -103,19 +103,17 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">psutil</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">polars</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pl</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">psutil</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch.distributed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dist</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">lightning.pytorch.utilities.rank_zero</span><span class="w"> </span><span class="kn">import</span> <span class="n">rank_zero_only</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">AConEx</span><span class="p">,</span> <span class="n">AConvO</span><span class="p">,</span> <span class="n">AConvQ</span><span class="p">,</span> <span class="n">CKeci</span><span class="p">,</span> <span class="n">CoKE</span><span class="p">,</span> <span class="n">ComplEx</span><span class="p">,</span> <span class="n">ConEx</span><span class="p">,</span> <span class="n">ConvO</span><span class="p">,</span> <span class="n">ConvQ</span><span class="p">,</span>
-    <span class="n">DeCaL</span><span class="p">,</span> <span class="n">DistMult</span><span class="p">,</span> <span class="n">DualE</span><span class="p">,</span> <span class="n">Keci</span><span class="p">,</span> <span class="n">KeciTransformer</span><span class="p">,</span> <span class="n">LFMult</span><span class="p">,</span> <span class="n">OMult</span><span class="p">,</span> <span class="n">Pyke</span><span class="p">,</span> <span class="n">QMult</span><span class="p">,</span> <span class="n">Shallom</span><span class="p">,</span> <span class="n">TransE</span>
-<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">AConEx</span><span class="p">,</span> <span class="n">AConvO</span><span class="p">,</span> <span class="n">AConvQ</span><span class="p">,</span> <span class="n">CKeci</span><span class="p">,</span> <span class="n">CoKE</span><span class="p">,</span> <span class="n">ComplEx</span><span class="p">,</span> <span class="n">ConEx</span><span class="p">,</span> <span class="n">ConvO</span><span class="p">,</span> <span class="n">ConvQ</span><span class="p">,</span> <span class="n">DeCaL</span><span class="p">,</span> <span class="n">DistMult</span><span class="p">,</span> <span class="n">DualE</span><span class="p">,</span> <span class="n">Keci</span><span class="p">,</span> <span class="n">KeciTransformer</span><span class="p">,</span> <span class="n">LFMult</span><span class="p">,</span> <span class="n">OMult</span><span class="p">,</span> <span class="n">Pyke</span><span class="p">,</span> <span class="n">QMult</span><span class="p">,</span> <span class="n">Shallom</span><span class="p">,</span> <span class="n">TransE</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.models.base_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseKGE</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.models.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">EnsembleKGE</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.models.pykeen_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">PykeenKGE</span>
@@ -460,7 +458,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loading entity and relation indexes...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
-    
+
         <span class="c1"># Use per-column dtype to avoid pandas&gt;=3.0.0 applying dtype=str to the index column</span>
         <span class="c1"># (which would make index values strings instead of ints, breaking downstream assertions)</span>
         <span class="n">entity_to_idx</span> <span class="o">=</span> <span class="p">{</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;entity&quot;</span><span class="p">]:</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path_of_experiment_folder</span><span class="si">}</span><span class="s2">/entity_to_idx.csv&quot;</span><span class="p">,</span><span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;entity&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">})</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s1">&#39;index&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
@@ -1107,7 +1105,7 @@
             <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="n">name</span><span class="p">]</span><span class="o">+</span> <span class="n">row</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
 
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    </span>
+
 <span class="sd">    # Write entity embeddings directly to CSV</span>
 <span class="sd">    with open(entity_csv_path, &quot;w&quot;) as f:</span>
 <span class="sd">        for row in entity_emb:</span>

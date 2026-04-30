@@ -88,8 +88,11 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.models.clifford</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">.base_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseKGE</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseKGE</span>
+
+
 <div class="viewcode-block" id="Keci">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.Keci">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Keci</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
@@ -147,7 +150,7 @@
 <div class="viewcode-block" id="Keci.compute_sigma_pp">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.Keci.compute_sigma_pp">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_sigma_pp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">rp</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute  sigma_{pp} = \sum_{i=1}^{p-1} \sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k</span>
 
 <span class="sd">        sigma_{pp} captures the interactions between along p bases</span>
@@ -178,7 +181,7 @@
 <div class="viewcode-block" id="Keci.compute_sigma_qq">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.Keci.compute_sigma_qq">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_sigma_qq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute  sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k</span>
 <span class="sd">        sigma_{q} captures the interactions between along q bases</span>
 <span class="sd">        For instance, let q e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3</span>
@@ -212,7 +215,7 @@
 <div class="viewcode-block" id="Keci.compute_sigma_pq">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.Keci.compute_sigma_pq">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_sigma_pq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j</span>
 
 <span class="sd">        results = []</span>
@@ -246,8 +249,8 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">clifford_multiplication</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Compute our CL multiplication</span>
 
-<span class="sd">        h = h_0 + \sum_{i=1}^p h_i e_i + \sum_{j=p+1}^{p+q} h_j e_j</span>
-<span class="sd">        r = r_0 + \sum_{i=1}^p r_i e_i + \sum_{j=p+1}^{p+q} r_j e_j</span>
+<span class="sd">        h = h_0 + \\sum_{i=1}^p h_i e_i + \\sum_{j=p+1}^{p+q} h_j e_j</span>
+<span class="sd">        r = r_0 + \\sum_{i=1}^p r_i e_i + \\sum_{j=p+1}^{p+q} r_j e_j</span>
 
 <span class="sd">        ei ^2 = +1     for i =&lt; i =&lt; p</span>
 <span class="sd">        ej ^2 = -1     for p &lt; j =&lt; p+q</span>
@@ -255,17 +258,17 @@
 
 <span class="sd">        h r =   sigma_0 + sigma_p + sigma_q + sigma_{pp} + sigma_{q}+ sigma_{pq}</span>
 <span class="sd">        where</span>
-<span class="sd">                (1) sigma_0 = h_0 r_0 + \sum_{i=1}^p (h_0 r_i) e_i - \sum_{j=p+1}^{p+q} (h_j r_j) e_j</span>
+<span class="sd">                (1) sigma_0 = h_0 r_0 + \\sum_{i=1}^p (h_0 r_i) e_i - \\sum_{j=p+1}^{p+q} (h_j r_j) e_j</span>
 
-<span class="sd">                (2) sigma_p = \sum_{i=1}^p (h_0 r_i + h_i r_0) e_i</span>
+<span class="sd">                (2) sigma_p = \\sum_{i=1}^p (h_0 r_i + h_i r_0) e_i</span>
 
-<span class="sd">                (3) sigma_q = \sum_{j=p+1}^{p+q} (h_0 r_j + h_j r_0) e_j</span>
+<span class="sd">                (3) sigma_q = \\sum_{j=p+1}^{p+q} (h_0 r_j + h_j r_0) e_j</span>
 
-<span class="sd">                (4) sigma_{pp} = \sum_{i=1}^{p-1} \sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k</span>
+<span class="sd">                (4) sigma_{pp} = \\sum_{i=1}^{p-1} \\sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k</span>
 
-<span class="sd">                (5) sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k</span>
+<span class="sd">                (5) sigma_{qq} = \\sum_{j=1}^{p+q-1} \\sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k</span>
 
-<span class="sd">                (6) sigma_{pq} = \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j</span>
+<span class="sd">                (6) sigma_{pq} = \\sum_{i=1}^{p} \\sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">h0</span><span class="p">)</span>
@@ -498,7 +501,7 @@
 <div class="viewcode-block" id="Keci.forward_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.Keci.forward_k_vs_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Kvsall training</span>
 
 <span class="sd">        (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .</span>
@@ -784,18 +787,18 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">KeciTransformer</span><span class="p">(</span><span class="n">Keci</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Keci with Transformer architecture.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Concatenates h0, hp, hq, r0, rp, rq into a single embedding vector and processes through transformer.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;KeciTransformer&#39;</span>
-        
+
         <span class="c1"># Boolean flag to include clifford multiplication in embedding</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">use_clifford_mul</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;use_clifford_mul&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-        
-        <span class="c1"># Input dimension: </span>
+
+        <span class="c1"># Input dimension:</span>
         <span class="c1"># Original: h0 (r) + hp (r*p) + hq (r*q) + r0 (r) + rp (r*p) + rq (r*q) = 2 * embedding_dim</span>
         <span class="c1"># Clifford multiplication: sigma_0 (r) + sigma_p (r*p) + sigma_q (r*q) + sigma_pp (r*(p*(p-1)/2)) + sigma_qq (r*(q*(q-1)/2)) + sigma_pq (r*p*q)</span>
         <span class="n">original_dim</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
@@ -807,12 +810,12 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span> <span class="o">=</span> <span class="n">original_dim</span> <span class="o">+</span> <span class="n">clifford_dim</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span> <span class="o">=</span> <span class="n">original_dim</span>
-        
+
         <span class="c1"># Transformer configuration</span>
         <span class="n">n_layer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_layer&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
         <span class="n">dropout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dropout&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
         <span class="n">bias</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bias&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-        
+
         <span class="c1"># Calculate valid n_head: must divide input_dim evenly</span>
         <span class="c1"># Use user-specified n_head if valid, otherwise find largest valid divisor &lt;= 4</span>
         <span class="n">requested_n_head</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n_head&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
@@ -826,7 +829,7 @@
                     <span class="n">n_head</span> <span class="o">=</span> <span class="n">h</span>
         <span class="c1"># Sequence length is 1 (single embedding vector treated as one token)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">seq_len</span> <span class="o">=</span> <span class="mi">1</span>
-        
+
         <span class="c1"># Transformer components</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span>
             <span class="n">wpe</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seq_len</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dim</span><span class="p">),</span>  <span class="c1"># positional embeddings</span>
@@ -846,60 +849,60 @@
 <span class="sd">        Parameter</span>
 <span class="sd">        ---------</span>
 <span class="sd">        x: torch.LongTensor with (n,2) shape</span>
-<span class="sd">        </span>
+
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        torch.FloatTensor with (n, |E|) shape</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (1) Retrieve real-valued embedding vectors.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        
+
         <span class="c1"># (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations</span>
         <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_cl_multivector</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
         <span class="n">r0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_cl_multivector</span><span class="p">(</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
-        
+
         <span class="c1"># (3) Flatten base embeddings</span>
         <span class="c1"># h0: (n, r), hp: (n, r, p), hq: (n, r, q), r0: (n, r), rp: (n, r, p), rq: (n, r, q)</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="n">h0</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        
+
         <span class="n">hp_flat</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n, r*p)</span>
         <span class="n">hq_flat</span> <span class="o">=</span> <span class="n">hq</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n, r*q)</span>
         <span class="n">rp_flat</span> <span class="o">=</span> <span class="n">rp</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n, r*p)</span>
         <span class="n">rq_flat</span> <span class="o">=</span> <span class="n">rq</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n, r*q)</span>
-        
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_clifford_mul</span><span class="p">:</span>
             <span class="c1"># Compute clifford multiplication</span>
             <span class="n">sigma_0</span><span class="p">,</span> <span class="n">sigma_p</span><span class="p">,</span> <span class="n">sigma_q</span><span class="p">,</span> <span class="n">sigma_pp</span><span class="p">,</span> <span class="n">sigma_qq</span><span class="p">,</span> <span class="n">sigma_pq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clifford_multiplication</span><span class="p">(</span><span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">)</span>
-            
+
             <span class="c1"># Flatten clifford multiplication results</span>
             <span class="n">sigma_p_flat</span> <span class="o">=</span> <span class="n">sigma_p</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n, r*p)</span>
             <span class="n">sigma_q_flat</span> <span class="o">=</span> <span class="n">sigma_q</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n, r*q)</span>
             <span class="n">sigma_pp_flat</span> <span class="o">=</span> <span class="n">sigma_pp</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n, r*p*(p-1)/2)</span>
             <span class="n">sigma_qq_flat</span> <span class="o">=</span> <span class="n">sigma_qq</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n, r*q*(q-1)/2)</span>
             <span class="n">sigma_pq_flat</span> <span class="o">=</span> <span class="n">sigma_pq</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n, r*p*q)</span>
-            
+
             <span class="c1"># Concatenate all embeddings including clifford multiplication</span>
-            <span class="n">x_emb</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">h0</span><span class="p">,</span> <span class="n">hp_flat</span><span class="p">,</span> <span class="n">hq_flat</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">rp_flat</span><span class="p">,</span> <span class="n">rq_flat</span><span class="p">,</span> 
+            <span class="n">x_emb</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">h0</span><span class="p">,</span> <span class="n">hp_flat</span><span class="p">,</span> <span class="n">hq_flat</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">rp_flat</span><span class="p">,</span> <span class="n">rq_flat</span><span class="p">,</span>
                               <span class="n">sigma_0</span><span class="p">,</span> <span class="n">sigma_p_flat</span><span class="p">,</span> <span class="n">sigma_q_flat</span><span class="p">,</span> <span class="n">sigma_pp_flat</span><span class="p">,</span> <span class="n">sigma_qq_flat</span><span class="p">,</span> <span class="n">sigma_pq_flat</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Concatenate base embeddings only</span>
             <span class="n">x_emb</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">h0</span><span class="p">,</span> <span class="n">hp_flat</span><span class="p">,</span> <span class="n">hq_flat</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">rp_flat</span><span class="p">,</span> <span class="n">rq_flat</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        
+
         <span class="c1"># (4) Reshape for transformer: (n, 1, input_dim)</span>
         <span class="n">x_emb</span> <span class="o">=</span> <span class="n">x_emb</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        
+
         <span class="c1"># (5) Apply transformer</span>
         <span class="n">device</span> <span class="o">=</span> <span class="n">x_emb</span><span class="o">.</span><span class="n">device</span>
         <span class="n">pos</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_len</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
-        
+
         <span class="n">pos_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="o">.</span><span class="n">wpe</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
         <span class="n">x_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">x_emb</span> <span class="o">+</span> <span class="n">pos_emb</span><span class="p">)</span>
-        
+
         <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="o">.</span><span class="n">h</span><span class="p">:</span>
             <span class="n">x_emb</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">x_emb</span><span class="p">)</span>
         <span class="n">x_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="o">.</span><span class="n">ln_f</span><span class="p">(</span><span class="n">x_emb</span><span class="p">)</span>
         <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_head</span><span class="p">(</span><span class="n">x_emb</span><span class="p">)</span>  <span class="c1"># (n, 1, num_entities)</span>
-        
+
         <span class="c1"># (6) Squeeze and return logits directly as scores</span>
         <span class="k">return</span> <span class="n">logits</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (n, num_entities)</span></div>
 </div>
@@ -910,7 +913,7 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.TransformerBlock">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TransformerBlock</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A single transformer block with self-attention and MLP.&quot;&quot;&quot;</span>
-    
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_embd</span><span class="p">,</span> <span class="n">n_head</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ln_1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="n">n_embd</span><span class="p">,</span> <span class="n">elementwise_affine</span><span class="o">=</span><span class="ow">not</span> <span class="n">bias</span><span class="p">)</span>
@@ -932,7 +935,7 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.TransformerSelfAttention">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TransformerSelfAttention</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Multi-head self-attention for the Keci Transformer.&quot;&quot;&quot;</span>
-    
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_embd</span><span class="p">,</span> <span class="n">n_head</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">assert</span> <span class="n">n_embd</span> <span class="o">%</span> <span class="n">n_head</span> <span class="o">==</span> <span class="mi">0</span>
@@ -948,12 +951,12 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.TransformerSelfAttention.forward">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="n">B</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        
+
         <span class="n">q</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_attn</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_embd</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">k</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_head</span><span class="p">,</span> <span class="n">C</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_head</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
         <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_head</span><span class="p">,</span> <span class="n">C</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_head</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
         <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_head</span><span class="p">,</span> <span class="n">C</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_head</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-        
+
         <span class="c1"># Non-causal attention (bidirectional)</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">scaled_dot_product_attention</span><span class="p">(</span>
             <span class="n">q</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">attn_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -971,7 +974,7 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.TransformerMLP">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TransformerMLP</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;MLP for the Keci Transformer.&quot;&quot;&quot;</span>
-    
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_embd</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">c_fc</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">n_embd</span><span class="p">,</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">n_embd</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="n">bias</span><span class="p">)</span>
@@ -1056,7 +1059,7 @@
 
         <span class="c1"># h0, hp, hq, hk, h0, rp, rq, rk = self.apply_coefficients(h0, hp, hq, hk, h0, rp, rq,rk)</span>
 
-        <span class="c1"># (4) Compute a triple score based on interactions described by the basis 1. </span>
+        <span class="c1"># (4) Compute a triple score based on interactions described by the basis 1.</span>
         <span class="n">h0r0t0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;br, br -&gt; b&#39;</span><span class="p">,</span> <span class="n">h0</span> <span class="o">*</span> <span class="n">r0</span><span class="p">,</span> <span class="n">t0</span><span class="p">)</span>
 
         <span class="c1"># (5) Compute a triple score based on interactions described by the bases of p {e_1, ..., e_p}.</span>
@@ -1122,15 +1125,15 @@
 
         <span class="k">return</span> <span class="n">h0r0t0</span> <span class="o">+</span> <span class="n">score_p</span> <span class="o">+</span> <span class="n">score_q</span> <span class="o">+</span> <span class="n">score_r</span> <span class="o">+</span> <span class="n">sigma_pp</span> <span class="o">+</span> <span class="n">sigma_qq</span> <span class="o">+</span> <span class="n">sigma_rr</span> <span class="o">+</span> <span class="n">sigma_pq</span> <span class="o">+</span> <span class="n">sigma_qr</span> <span class="o">+</span> <span class="n">sigma_pr</span></div>
 
-    
+
 <div class="viewcode-block" id="DeCaL.cl_pqr">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.DeCaL.cl_pqr">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">cl_pqr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">:</span>
 
 <span class="w">        </span><span class="sd">&#39;&#39;&#39; Input: tensor(batch_size, emb_dim) ---&gt; output: tensor with 1+p+q+r components with size (batch_size, emb_dim/(1+p+q+r)) each.</span>
 
-<span class="sd">        1) takes a tensor of size (batch_size, emb_dim), split it into 1 + p + q +r components, hence 1+p+q+r must be a divisor </span>
-<span class="sd">        of the emb_dim. </span>
+<span class="sd">        1) takes a tensor of size (batch_size, emb_dim), split it into 1 + p + q +r components, hence 1+p+q+r must be a divisor</span>
+<span class="sd">        of the emb_dim.</span>
 <span class="sd">        2) Return a list of the 1+p+q+r components vectors, each are tensors of size (batch_size, emb_dim/(1+p+q+r)) &#39;&#39;&#39;</span>
 
         <span class="c1"># num1 = 2**(p+q+r) #total number of vector in cl_pqr then after choose the first p+q+r+1 vectors</span>
@@ -1144,8 +1147,8 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.DeCaL.compute_sigmas_single">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_sigmas_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_h_emb</span><span class="p">,</span> <span class="n">list_r_emb</span><span class="p">,</span> <span class="n">list_t_emb</span><span class="p">):</span>
 
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;here we compute all the sums with no others vectors interaction taken with the scalar product with t, that is,</span>
-<span class="sd">        </span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;here we compute all the sums with no others vectors interaction taken with the scalar product with t, that is,</span>
+
 <span class="sd">        .. math::</span>
 
 <span class="sd">             s0 = h_0r_0t_0</span>
@@ -1154,15 +1157,15 @@
 <span class="sd">             s3 = \sum_{i=1}^{q}(h_0r_it_i + h_ir_0t_i)</span>
 <span class="sd">             s4 = \sum_{i=p+1}^{p+q}(h_0r_it_i + h_ir_0t_i)</span>
 <span class="sd">             s5 = \sum_{i=p+q+1}^{p+q+r}(h_0r_it_i + h_ir_0t_i)</span>
-<span class="sd">        </span>
+
 <span class="sd">        and return:</span>
-<span class="sd">        </span>
+
 <span class="sd">        .. math::</span>
 
 <span class="sd">            sigma_0t = \sigma_0 \cdot t_0 = s0 + s1 -s2</span>
 <span class="sd">            s3, s4 and s5</span>
-<span class="sd">        </span>
-<span class="sd">        </span>
+
+
 <span class="sd">        &#39;&#39;&#39;</span>
 
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span>
@@ -1197,7 +1200,7 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.DeCaL.compute_sigmas_multivect">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_sigmas_multivect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_h_emb</span><span class="p">,</span> <span class="n">list_r_emb</span><span class="p">):</span>
 
-<span class="w">        </span><span class="sd">&#39;&#39;&#39;Here we compute and return all the sums with vectors interaction for the same and different bases.</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&#39;&#39;&#39;Here we compute and return all the sums with vectors interaction for the same and different bases.</span>
 
 <span class="sd">           For same bases vectors interaction we have</span>
 
@@ -1205,16 +1208,16 @@
 
 <span class="sd">                \sigma_pp = \sum_{i=1}^{p-1}\sum_{i&#39;=i+1}^{p}(h_ir_{i&#39;}-h_{i&#39;}r_i) (models the interactions between e_i and e_i&#39; for 1 &lt;= i, i&#39; &lt;= p)</span>
 <span class="sd">                \sigma_qq = \sum_{j=p+1}^{p+q-1}\sum_{j&#39;=j+1}^{p+q}(h_jr_{j&#39;}-h_{j&#39;} (models the interactions between e_j and e_j&#39; for p+1 &lt;= j, j&#39; &lt;= p+q)</span>
-<span class="sd">                \sigma_rr = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k&#39;=k+1}^{p}(h_kr_{k&#39;}-h_{k&#39;}r_k) (models the interactions between e_k and e_k&#39; for p+q+1 &lt;= k, k&#39; &lt;= p+q+r) </span>
-<span class="sd">            </span>
+<span class="sd">                \sigma_rr = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k&#39;=k+1}^{p}(h_kr_{k&#39;}-h_{k&#39;}r_k) (models the interactions between e_k and e_k&#39; for p+q+1 &lt;= k, k&#39; &lt;= p+q+r)</span>
+
 <span class="sd">           For different base vector interactions, we have</span>
-<span class="sd">           </span>
+
 <span class="sd">            .. math::</span>
 
 <span class="sd">                \sigma_pq = \sum_{i=1}^{p}\sum_{j=p+1}^{p+q}(h_ir_j - h_jr_i) (interactionsn between e_i and e_j for 1&lt;=i &lt;=p and p+1&lt;= j &lt;= p+q)</span>
 <span class="sd">                \sigma_pr = \sum_{i=1}^{p}\sum_{k=p+q+1}^{p+q+r}(h_ir_k - h_kr_i) (interactionsn between e_i and e_k for 1&lt;=i &lt;=p and p+q+1&lt;= k &lt;= p+q+r)</span>
 <span class="sd">                \sigma_qr = \sum_{j=p+1}^{p+q}\sum_{j=p+q+1}^{p+q+r}(h_jr_k - h_kr_j) (interactionsn between e_j and e_k for p+1 &lt;= j &lt;=p+q and p+q+1&lt;= j &lt;= p+q+r)</span>
-<span class="sd">           </span>
+
 <span class="sd">           &#39;&#39;&#39;</span>
 
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span>
@@ -1257,7 +1260,7 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.DeCaL.forward_k_vs_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Kvsall training</span>
 
 <span class="sd">            (1) Retrieve real-valued embedding vectors for heads and relations</span>
@@ -1345,7 +1348,7 @@
             <span class="n">sigma_qr</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_sigma_qr</span><span class="p">(</span><span class="n">hq</span><span class="o">=</span><span class="n">hq</span><span class="p">,</span> <span class="n">hk</span><span class="o">=</span><span class="n">hk</span><span class="p">,</span> <span class="n">rq</span><span class="o">=</span><span class="n">rq</span><span class="p">,</span> <span class="n">rk</span><span class="o">=</span><span class="n">rk</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">sigma_qr</span> <span class="o">=</span> <span class="mi">0</span>
-    
+
         <span class="k">return</span> <span class="n">h0r0t0</span> <span class="o">+</span> <span class="n">score_p</span> <span class="o">+</span> <span class="n">score_q</span> <span class="o">+</span> <span class="n">score_r</span> <span class="o">+</span> <span class="n">sigma_pp</span> <span class="o">+</span> <span class="n">sigma_qq</span> <span class="o">+</span> <span class="n">sigma_rr</span> <span class="o">+</span> <span class="n">sigma_pq</span> <span class="o">+</span> <span class="n">sigma_pr</span> <span class="o">+</span> <span class="n">sigma_qr</span></div>
 
 
@@ -1369,7 +1372,7 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.DeCaL.construct_cl_multivector">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">construct_cl_multivector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">re</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Construct a batch of multivectors Cl_{p,q,r}(\mathbb{R}^d)</span>
 
 <span class="sd">        Parameter</span>
@@ -1378,10 +1381,10 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        a0: torch.FloatTensor </span>
-<span class="sd">        ap: torch.FloatTensor </span>
-<span class="sd">        aq: torch.FloatTensor </span>
-<span class="sd">        ar: torch.FloatTensor </span>
+<span class="sd">        a0: torch.FloatTensor</span>
+<span class="sd">        ap: torch.FloatTensor</span>
+<span class="sd">        aq: torch.FloatTensor</span>
+<span class="sd">        ar: torch.FloatTensor</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">batch_size</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
         <span class="c1"># (1) A_{n \times k}: take the first k columns</span>
@@ -1407,10 +1410,10 @@
 <div class="viewcode-block" id="DeCaL.compute_sigma_pp">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.DeCaL.compute_sigma_pp">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_sigma_pp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">rp</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compute </span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute</span>
 <span class="sd">        .. math::</span>
-<span class="sd">        </span>
+
 <span class="sd">            \sigma_{p,p}^* = \sum_{i=1}^{p-1}\sum_{i&#39;=i+1}^{p}(x_iy_{i&#39;}-x_{i&#39;}y_i)</span>
 
 <span class="sd">        \sigma_{pp} captures the interactions between along p bases</span>
@@ -1441,11 +1444,11 @@
 <div class="viewcode-block" id="DeCaL.compute_sigma_qq">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.DeCaL.compute_sigma_qq">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_sigma_qq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compute  </span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute</span>
 
 <span class="sd">        .. math::</span>
-<span class="sd">        </span>
+
 <span class="sd">            \sigma_{q,q}^* = \sum_{j=p+1}^{p+q-1}\sum_{j&#39;=j+1}^{p+q}(x_jy_{j&#39;}-x_{j&#39;}y_j) Eq. 16</span>
 
 <span class="sd">        sigma_{q} captures the interactions between along q bases</span>
@@ -1481,9 +1484,9 @@
 <div class="viewcode-block" id="DeCaL.compute_sigma_rr">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.DeCaL.compute_sigma_rr">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_sigma_rr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hk</span><span class="p">,</span> <span class="n">rk</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        .. math:: </span>
-<span class="sd">        </span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. math::</span>
+
 <span class="sd">            \sigma_{r,r}^* = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k&#39;=k+1}^{p}(x_ky_{k&#39;}-x_{k&#39;}y_k)</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1502,11 +1505,11 @@
 <div class="viewcode-block" id="DeCaL.compute_sigma_pq">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.DeCaL.compute_sigma_pq">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_sigma_pq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compute </span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute</span>
 
-<span class="sd">        .. math:: </span>
-<span class="sd">        </span>
+<span class="sd">        .. math::</span>
+
 <span class="sd">            \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j</span>
 
 <span class="sd">        results = []</span>
@@ -1525,10 +1528,10 @@
 <div class="viewcode-block" id="DeCaL.compute_sigma_pr">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.DeCaL.compute_sigma_pr">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_sigma_pr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hk</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rk</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute</span>
 
-<span class="sd">        .. math:: </span>
+<span class="sd">        .. math::</span>
 
 <span class="sd">            \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j</span>
 
@@ -1548,8 +1551,8 @@
 <div class="viewcode-block" id="DeCaL.compute_sigma_qr">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.clifford.DeCaL.compute_sigma_qr">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_sigma_qr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">hk</span><span class="p">,</span> <span class="n">rq</span><span class="p">,</span> <span class="n">rk</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        .. math:: </span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        .. math::</span>
 
 <span class="sd">            \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j</span>
 

@@ -88,10 +88,12 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.read_preprocess_save_load_kg.read_from_disk</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_from_disk</span><span class="p">,</span> <span class="n">read_from_triple_store_with_pandas</span><span class="p">,</span> <span class="n">read_from_triple_store_with_polars</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_from_disk</span><span class="p">,</span> <span class="n">read_from_triple_store_with_pandas</span><span class="p">,</span> <span class="n">read_from_triple_store_with_polars</span>
 
 
 <div class="viewcode-block" id="ReadFromDisk">
