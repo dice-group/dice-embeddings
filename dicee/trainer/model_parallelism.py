@@ -6,6 +6,7 @@ import torch
 from ..abstracts import AbstractTrainer
 from ..models.ensemble import EnsembleKGE
 from ..static_funcs_training import make_iterable_verbose
+from .auto_batch_finder import find_good_batch_size
 
 
 def extract_input_outputs(z: list, device=None):
@@ -27,108 +28,6 @@ def extract_input_outputs(z: list, device=None):
     else:
         raise ValueError('Unexpected batch shape..')
 
-
-def find_good_batch_size(train_loader,tp_ensemble_model):
-    # () Initial batch size.
-    initial_batch_size=train_loader.batch_size
-    # () # of training data points.
-    training_dataset_size=len(train_loader.dataset)
-    # () Batch is large enough.
-    if initial_batch_size >= training_dataset_size:
-        return training_dataset_size, None
-    # () Log the number of training data points.
-    print("Number of training data points:",training_dataset_size)
-
-    def increase_batch_size_until_cuda_out_of_memory(ensemble_model, train_loader, batch_size,delta: int = None):
-        assert delta is not None, "delta cannot be None."
-        assert isinstance(delta, int), "delta must be a positive integer."
-        # () Store the batch sizes and GPU memory usages in a tuple.
-        batch_sizes_and_mem_usages = []
-        # () Increase the batch size until a stopping criterion is reached.
-        try:
-            while True:
-                start_time=time.time()
-                # () Initialize a dataloader with a current batch_size
-                train_dataloaders = torch.utils.data.DataLoader(train_loader.dataset,
-                                                                batch_size=batch_size,
-                                                                shuffle=True,
-                                                                sampler=None,
-                                                                batch_sampler=None,
-                                                                num_workers=train_loader.num_workers,
-                                                                collate_fn=train_loader.dataset.collate_fn,
-                                                                pin_memory=False,
-                                                                drop_last=False,
-                                                                timeout=0,
-                                                                worker_init_fn=None,
-                                                                persistent_workers=False)
-
-                batch_loss = None
-                for i, batch_of_training_data in enumerate(train_dataloaders):
-                    batch_loss = forward_backward_update_loss(batch_of_training_data, ensemble_model)
-                    break
-
-                global_free_memory, total_memory = torch.cuda.mem_get_info(device="cuda:0")
-                percentage_used_gpu_memory = (total_memory - global_free_memory) / total_memory
-                rt=time.time()-start_time
-
-                print(f"Random Batch Loss: {batch_loss:0.4}\tGPU Usage: {percentage_used_gpu_memory:0.3}\tRuntime: {rt:.3f}\tBatch Size: {batch_size}")
-
-                # Store the batch size and the runtime
-                batch_sizes_and_mem_usages.append((batch_size, rt))
-
-                # ()
-                # https://github.com/pytorch/pytorch/issues/21819
-                # CD: as we reach close to 1.0 GPU memory usage, we observe RuntimeError: CUDA error: an illegal memory access was encountered.
-                # CD: To avoid this problem, we add the following condition as a temp solution.
-                if percentage_used_gpu_memory > 0.9:
-                    # Mimik out of memory error
-                    return batch_sizes_and_mem_usages, False
-                if batch_size < training_dataset_size:
-                    # Increase the batch size.
-                    batch_size += int(batch_size / delta)
-                else:
-                    return batch_sizes_and_mem_usages,True
-
-        except torch.OutOfMemoryError:
-            # Provide helpful suggestions for OOM errors
-            gpu_mem = torch.cuda.get_device_properties(0).total_memory / (1024**3)  # Convert to GB
-            allocated = torch.cuda.memory_allocated(0) / (1024**3)
-            print("\\n⚠️  CUDA Out of Memory Error\\n")
-            print(f"GPU Memory: {gpu_mem:.2f} GB total, {allocated:.2f} GB allocated\\n")
-            print(f"Attempted batch size: {batch_size}\\n")
-            print("Suggestions to reduce memory usage:\\n")
-            print(f"  1. Reduce --batch_size (current: {batch_size}, try: {batch_size//2})\\n")
-            print("  2. Reduce --embedding_dim\\n")
-            print("  3. Use --scoring_technique NegSample with --neg_ratio 10\\n")
-            print("  4. Enable mixed precision: --trainer PL --pl_trainer_kwargs '{\\\"precision\\\":\\\"16-mixed\\\"}\'\\n")
-            print("  5. Use --trainer torchCPUTrainer to train on CPU\\n")
-            print("\\nSee docs/guides/troubleshooting.md for more solutions\\n")
-            return batch_sizes_and_mem_usages, False
-
-    history_batch_sizes_and_mem_usages=[]
-    batch_size=initial_batch_size
-
-    for delta in range(1,5,1):
-        result,flag= increase_batch_size_until_cuda_out_of_memory(tp_ensemble_model, train_loader, batch_size,delta=delta)
-
-        history_batch_sizes_and_mem_usages.extend(result)
-
-        if flag:
-            batch_size, batch_rt = history_batch_sizes_and_mem_usages[-1]
-        else:
-            assert len(history_batch_sizes_and_mem_usages)>2, "GPU memory errorin the first try"
-            # CUDA ERROR Observed
-            batch_size, batch_rt=history_batch_sizes_and_mem_usages[-2]
-            # https://github.com/pytorch/pytorch/issues/21819
-            break
-
-        if batch_size>=training_dataset_size:
-            batch_size=training_dataset_size
-            break
-        else:
-            continue
-
-    return batch_size, batch_rt
 
 
 def forward_backward_update_loss(z:Tuple, ensemble_model)->float:
@@ -165,7 +64,11 @@ class TensorParallel(AbstractTrainer):
         train_dataloader = kwargs['train_dataloaders']
         # () Find a batch size so that available GPU memory is *almost* fully used.
         if self.attributes.auto_batch_finding:
-            batch_size, batch_rt=find_good_batch_size(train_dataloader, ensemble_model)
+            def _tp_training_step(batch):
+                return forward_backward_update_loss(batch, ensemble_model)
+            batch_size, batch_rt = find_good_batch_size(
+                train_dataloader, _tp_training_step, device=torch.device("cuda", 0)
+            )
 
             train_dataloader = torch.utils.data.DataLoader(train_dataloader.dataset,
                                                             batch_size=batch_size,

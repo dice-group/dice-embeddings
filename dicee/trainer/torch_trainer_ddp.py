@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from dicee.abstracts import AbstractTrainer
+from dicee.trainer.auto_batch_finder import find_good_batch_size
 
 torch.set_float32_matmul_precision('high')
 
@@ -167,6 +168,40 @@ class NodeTrainer:
         -------
 
         """
+        if getattr(self.trainer.attributes, "auto_batch_finding", False):
+            if self.local_rank == 0:
+                device = torch.device("cuda", self.local_rank)
+
+                def _training_step_fn(batch):
+                    source, targets = self.extract_input_outputs(batch)
+                    return self._run_batch(source, targets)
+
+                new_batch_size, _ = find_good_batch_size(
+                    self.train_dataset_loader, _training_step_fn, device=device
+                )
+            else:
+                new_batch_size = 0
+
+            # Broadcast the found batch size from rank 0 to all processes
+            batch_size_tensor = torch.tensor(new_batch_size, dtype=torch.long, device=self.local_rank)
+            torch.distributed.broadcast(batch_size_tensor, src=0)
+            new_batch_size = int(batch_size_tensor.item())
+
+            if new_batch_size != self.train_dataset_loader.batch_size:
+                self.train_dataset_loader = DataLoader(
+                    self.train_dataset_loader.dataset,
+                    batch_size=new_batch_size,
+                    shuffle=False,
+                    num_workers=self.trainer.attributes.num_core,
+                    collate_fn=self.train_dataset_loader.dataset.collate_fn,
+                    pin_memory=True,
+                    drop_last=False,
+                    persistent_workers=False,
+                    sampler=torch.utils.data.distributed.DistributedSampler(
+                        self.train_dataset_loader.dataset
+                    ),
+                )
+
         num_of_batches=len(self.train_dataset_loader)
         for epoch in (tqdm_bar := make_iterable_verbose(range(self.num_epochs),
                                                       verbose=self.local_rank == self.global_rank == 0,
