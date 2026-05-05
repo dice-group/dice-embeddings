@@ -101,6 +101,9 @@ def get_default_arguments(description=None):
     parser.add_argument('--num_folds_for_cv', type=int, default=0,
                         help='Number of folds in k-fold cross validation.'
                              'If >2 ,no evaluation scenario is applied implies no evaluation.')
+    parser.add_argument('--cv_relation_filter_substrings', type=json.loads, default=None,
+                        help='Optional JSON list of substrings used to restrict validation/test folds during CV. '
+                             'Example: ["resistant_to", "sensitive_to"].')
     parser.add_argument("--eval_model", type=str, default="train_val_test",
                         choices=["None", "train", "train_val", "train_val_test", "test", "val_test", "val", "train_test"],
                         help='Evaluating link prediction performance on data splits. ')
