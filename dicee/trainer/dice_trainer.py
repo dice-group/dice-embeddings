@@ -5,7 +5,6 @@ including PyTorch Lightning, DDP, and custom CPU/GPU trainers.
 """
 import copy
 import os
-import time
 from typing import List, Optional, Tuple, Union
 
 import lightning as pl
@@ -419,7 +418,6 @@ class DICE_Trainer:
         fold_splits = list(kf.split(cv_source))
         # (2) Iterate over (1)
         for ith, (train_index, test_index) in enumerate(fold_splits):
-            fold_start_time = time.time()
             print('-' * 60)
             print(f'Starting fold {ith + 1}/{len(fold_splits)}')
             if relation_filtered_indices.size > 0:
