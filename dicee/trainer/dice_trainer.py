@@ -5,6 +5,7 @@ including PyTorch Lightning, DDP, and custom CPU/GPU trainers.
 """
 import copy
 import os
+import time
 from typing import List, Optional, Tuple, Union
 
 import lightning as pl
@@ -25,7 +26,7 @@ from dicee.callbacks import (
 from dicee.dataset_classes import construct_dataset
 from dicee.knowledge_graph import KG
 from dicee.models.base_model import BaseKGE
-from dicee.static_funcs import select_model, timeit
+from dicee.static_funcs import save_numpy_ndarray, select_model, timeit
 from dicee.weight_averaging import ASWA, EMA, SWA, SWAG, TWA
 
 from ..models.ensemble import EnsembleKGE
@@ -374,25 +375,124 @@ class DICE_Trainer:
         :return: model
         """
         print(f'{self.args.num_folds_for_cv}-fold cross-validation')
+        merged_train_set = self._collect_cv_pool(dataset)
+        relation_filter_ids = self._resolve_relation_filter_ids(
+            relation_to_idx=dataset.relation_to_idx,
+            substrings=getattr(self.args, 'cv_relation_filter_substrings', None),
+        )
+        relation_filtered_indices = self._select_relation_filtered_indices(merged_train_set, relation_filter_ids)
+
+        args = copy.copy(self.args)
+        _, form_of_labelling = select_model(vars(args), self.is_continual_training, self.storage_path)
+
+        # Decide whether to run relation-filtered CV: if the user provided
+        # `cv_relation_filter_substrings` and matching indices exist, run
+        # relation-filtered CV which restricts test/val selection to those
+        # relation-containing triples. Otherwise use the full merged pool.
+        use_relation_filtered_cv = relation_filtered_indices.size > 0 and (
+            getattr(self.args, 'cv_relation_filter_substrings', None) is not None
+        )
+
+        if use_relation_filtered_cv:
+            print(f'CV predicate filter matched {relation_filtered_indices.size} triples.')
+            cv_source = merged_train_set[relation_filtered_indices]
+        else:
+            cv_source = merged_train_set
+        # Prepare a handy inverse relation mapping for readable logs
+        try:
+            relation_map = self._relation_mapping(dataset.relation_to_idx)
+            inverse_relation_map = {v: k for k, v in relation_map.items()}
+        except Exception:
+            inverse_relation_map = {}
+
         # (1) Create Kfold data
         from sklearn.model_selection import KFold
         kf = KFold(n_splits=self.args.num_folds_for_cv, shuffle=True, random_state=1)
         model = None
         eval_folds = []
-        form_of_labelling = None
+        cv_models_dir = os.path.join(self.args.full_storage_path, 'k-models')
+        os.makedirs(cv_models_dir, exist_ok=True)
+
+        print(f'Starting {self.args.num_folds_for_cv}-fold CV. Output dir: {cv_models_dir}')
+        print(f'Using relation-filtered CV: {bool(use_relation_filtered_cv)}; CV pool size: {len(cv_source)}')
+
+        fold_splits = list(kf.split(cv_source))
         # (2) Iterate over (1)
-        for (ith, (train_index, test_index)) in enumerate(kf.split(dataset.train_set)):
+        for ith, (train_index, test_index) in enumerate(fold_splits):
+            fold_start_time = time.time()
+            print('-' * 60)
+            print(f'Starting fold {ith + 1}/{len(fold_splits)}')
+            if relation_filtered_indices.size > 0:
+                val_index = fold_splits[(ith + 1) % len(fold_splits)][1]
+                held_out_rel_idx = np.unique(np.concatenate([test_index, val_index]))
+
+                # Defensive bounds check: ensure indices from KFold are within
+                # the range of relation_filtered_indices. If out-of-range
+                # indices are found, log and ignore them so CV can continue.
+                if held_out_rel_idx.size > 0:
+                    max_idx = int(held_out_rel_idx.max())
+                else:
+                    max_idx = -1
+
+                if max_idx >= relation_filtered_indices.size:
+                    print(
+                        'Warning: held_out_rel_idx contains values >= relation_filtered_indices.size',
+                        f'(max held_out_rel_idx={max_idx}, relation_filtered_indices.size={relation_filtered_indices.size})'
+                    )
+                    print(f'len(cv_source)={len(cv_source)}; filtering out invalid held-out indices')
+                    valid_mask = held_out_rel_idx < relation_filtered_indices.size
+                    invalid = held_out_rel_idx[~valid_mask]
+                    if invalid.size > 0:
+                        print(f'Skipping {invalid.size} out-of-range indices (examples): {invalid[:5]}')
+                    held_out_rel_idx = held_out_rel_idx[valid_mask]
+
+                if held_out_rel_idx.size == 0:
+                    held_out_indices = np.asarray([], dtype=int)
+                else:
+                    held_out_indices = relation_filtered_indices[held_out_rel_idx]
+
+                train_mask = np.ones(len(merged_train_set), dtype=bool)
+                if held_out_indices.size > 0:
+                    train_mask[held_out_indices] = False
+                train_set_for_i_th_fold = merged_train_set[train_mask]
+                test_set_for_i_th_fold = merged_train_set[relation_filtered_indices[test_index]]
+                val_set_for_i_th_fold = merged_train_set[relation_filtered_indices[val_index]]
+            else:
+                val_index = fold_splits[(ith + 1) % len(fold_splits)][1]
+                train_set_for_i_th_fold = cv_source[train_index]
+                test_set_for_i_th_fold = cv_source[test_index]
+                val_set_for_i_th_fold = cv_source[val_index]
+            # Log fold dataset sizes
+            try:
+                train_n = len(train_set_for_i_th_fold)
+                test_n = len(test_set_for_i_th_fold)
+                val_n = len(val_set_for_i_th_fold)
+            except Exception:
+                train_n = np.asarray(train_set_for_i_th_fold).shape[0]
+                test_n = np.asarray(test_set_for_i_th_fold).shape[0]
+                val_n = np.asarray(val_set_for_i_th_fold).shape[0]
+
+            print(f'Fold {ith + 1}: train={train_n}, test={test_n}, val={val_n}')
+            if use_relation_filtered_cv:
+                # report unique relation ids in held-out (test+val)
+                try:
+                    rels = np.unique(np.concatenate([test_set_for_i_th_fold[:, 1], val_set_for_i_th_fold[:, 1]]))
+                    rel_names = [inverse_relation_map.get(int(r), str(r)) for r in rels[:10]]
+                    print(f'Fold {ith + 1}: held-out relations count={len(rels)}; examples={rel_names}')
+                except Exception:
+                    pass
+
             # (2.1) Create a new copy for the callbacks
             args = copy.copy(self.args)
             trainer = initialize_trainer(args, get_callbacks(args))
             model, form_of_labelling = select_model(vars(args), self.is_continual_training, self.storage_path)
             print(f'{form_of_labelling} training starts: {model.name}')
 
-            train_set_for_i_th_fold, test_set_for_i_th_fold = dataset.train_set[train_index], dataset.train_set[
-                test_index]
+            # Save each fold split
+            save_numpy_ndarray(data=train_set_for_i_th_fold, file_path=f'{cv_models_dir}/train_set_{ith}_fold.npy')
+            save_numpy_ndarray(data=test_set_for_i_th_fold, file_path=f'{cv_models_dir}/test_set_{ith}_fold.npy')
+            save_numpy_ndarray(data=val_set_for_i_th_fold, file_path=f'{cv_models_dir}/val_set_{ith}_fold.npy')
 
-            # Save each fold test set
-            save_numpy_ndarray(data=test_set_for_i_th_fold, file_path=f'{self.args.full_storage_path}/test_set_{ith}_fold.npy')
             trainer.fit(model, train_dataloaders=self.init_dataloader(
                 construct_dataset(train_set=train_set_for_i_th_fold,
                                   entity_to_idx=dataset.entity_to_idx,
@@ -402,19 +502,143 @@ class DICE_Trainer:
                                   neg_ratio=self.args.neg_ratio,
                                   label_smoothing_rate=self.args.label_smoothing_rate)))
 
-            res = self.evaluator.eval_with_data(dataset=dataset, trained_model=model, triple_idx=test_set_for_i_th_fold,
-                                                form_of_labelling=form_of_labelling)
-            # res = self.evaluator.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
-            eval_folds.append([res['MRR'], res['H@1'], res['H@3'], res['H@10']])
-        eval_folds = pd.DataFrame(eval_folds, columns=['MRR', 'H@1', 'H@3', 'H@10'])
-        self.evaluator.report = eval_folds.to_dict()
-        print(eval_folds)
-        print(eval_folds.describe())
-        
-        # Save results to csv
-        eval_folds.to_csv(f'{self.args.full_storage_path}/kfold_results.csv', index=False)
-        eval_folds.describe().to_csv(f'{self.args.full_storage_path}/kfold_result_stats.csv')
+            fold_model_path = os.path.join(cv_models_dir, f'model_fold_{ith + 1}.pt')
+            torch.save(model.state_dict(), fold_model_path)
+
+            if self.args.eval_model is not None:
+                res = self.evaluator.eval_with_data(dataset=dataset, trained_model=model, triple_idx=test_set_for_i_th_fold,
+                                                    form_of_labelling=form_of_labelling)
+                fold_record = {
+                    'MRR': res['MRR'],
+                    'H@1': res['H@1'],
+                    'H@3': res['H@3'],
+                    'H@10': res['H@10'],
+                }
+                eval_folds.append(fold_record)
+
+        if self.args.eval_model is not None:
+            eval_folds = pd.DataFrame(eval_folds)
+            self.evaluator.report = eval_folds.to_dict()
+            print(eval_folds)
+            print(eval_folds.describe())
+
+            # Save results to csv
+            eval_folds.to_csv(f'{self.args.full_storage_path}/kfold_results.csv', index=False)
+            eval_folds.describe().to_csv(f'{self.args.full_storage_path}/kfold_result_stats.csv')
         # results = {'H@1': eval_folds['H@1'].mean(), 'H@3': eval_folds['H@3'].mean(), 'H@10': eval_folds['H@10'].mean(),
         #           'MRR': eval_folds['MRR'].mean()}
         # print(f'KFold Cross Validation Results: {results}')
         return model, form_of_labelling
+
+    @staticmethod
+    def _collect_cv_pool(dataset) -> np.ndarray:
+        splits = [np.asarray(dataset.train_set)]
+        if getattr(dataset, 'valid_set', None) is not None:
+            splits.append(np.asarray(dataset.valid_set))
+        if getattr(dataset, 'test_set', None) is not None:
+            splits.append(np.asarray(dataset.test_set))
+        if len(splits) == 1:
+            return splits[0]
+        return np.concatenate(splits, axis=0)
+
+    @staticmethod
+    def _relation_mapping(relation_to_idx) -> dict:
+        if isinstance(relation_to_idx, dict):
+            return relation_to_idx
+        if isinstance(relation_to_idx, pd.DataFrame):
+            if relation_to_idx.shape[1] == 1:
+                relation_col = relation_to_idx.columns[0]
+                return dict(zip(relation_to_idx[relation_col].tolist(), relation_to_idx.index.tolist()))
+            if 'relation' in relation_to_idx.columns and 'index' in relation_to_idx.columns:
+                return dict(zip(relation_to_idx['relation'].tolist(), relation_to_idx['index'].tolist()))
+            if relation_to_idx.shape[1] >= 2:
+                first_col, second_col = relation_to_idx.columns[:2]
+                return dict(zip(relation_to_idx[second_col].tolist(), relation_to_idx[first_col].tolist()))
+        if isinstance(relation_to_idx, polars.DataFrame):
+            if 'relation' in relation_to_idx.columns and 'index' in relation_to_idx.columns:
+                return dict(zip(relation_to_idx['relation'].to_list(), relation_to_idx['index'].to_list()))
+            if len(relation_to_idx.columns) >= 2:
+                first_col, second_col = relation_to_idx.columns[:2]
+                return dict(zip(relation_to_idx[second_col].to_list(), relation_to_idx[first_col].to_list()))
+        raise TypeError(f'Unsupported relation_to_idx type: {type(relation_to_idx)}')
+
+    @classmethod
+    def _resolve_relation_filter_ids(cls, relation_to_idx, substrings) -> List[int]:
+        if not substrings:
+            substrings = ['resistant_to', 'sensitive_to']
+        mapping = cls._relation_mapping(relation_to_idx)
+        lowered_substrings = tuple(str(item).lower() for item in substrings)
+        return [relation_idx for relation, relation_idx in mapping.items()
+                if any(substr in str(relation).lower() for substr in lowered_substrings)]
+
+    @staticmethod
+    def _select_relation_filtered_indices(merged_train_set: np.ndarray, relation_filter_ids: List[int]) -> np.ndarray:
+        if not relation_filter_ids:
+            return np.asarray([], dtype=np.int64)
+        relation_column = np.asarray(merged_train_set)[:, 1]
+        return np.flatnonzero(np.isin(relation_column, np.asarray(relation_filter_ids)))
+
+    @staticmethod
+    def _macro_precision_recall_f1(y_true: np.ndarray, y_pred: np.ndarray, labels: List[int]) -> dict:
+        precision_scores = []
+        recall_scores = []
+        f1_scores = []
+
+        y_true = np.asarray(y_true)
+        y_pred = np.asarray(y_pred)
+
+        for label in labels:
+            true_positive = np.sum((y_true == label) & (y_pred == label))
+            false_positive = np.sum((y_true != label) & (y_pred == label))
+            false_negative = np.sum((y_true == label) & (y_pred != label))
+
+            precision = true_positive / (true_positive + false_positive) if (true_positive + false_positive) else 0.0
+            recall = true_positive / (true_positive + false_negative) if (true_positive + false_negative) else 0.0
+            f1 = (2.0 * precision * recall / (precision + recall)) if (precision + recall) else 0.0
+
+            precision_scores.append(precision)
+            recall_scores.append(recall)
+            f1_scores.append(f1)
+
+        return {
+            'PredicatePrecision': float(np.mean(precision_scores)) if precision_scores else 0.0,
+            'PredicateRecall': float(np.mean(recall_scores)) if recall_scores else 0.0,
+            'PredicateF1': float(np.mean(f1_scores)) if f1_scores else 0.0,
+        }
+
+    @classmethod
+    def _compute_relation_prediction_macro_metrics(
+        cls,
+        *,
+        model,
+        triple_idx: np.ndarray,
+        ee_vocab,
+        relation_ids: List[int],
+        batch_size: int,
+    ) -> dict:
+        if hasattr(ee_vocab, 'result'):
+            ee_vocab = ee_vocab.result()
+
+        y_true = []
+        y_pred = []
+
+        model.eval()
+        with torch.no_grad():
+            for i in range(0, len(triple_idx), batch_size):
+                data_batch = triple_idx[i:i + batch_size]
+                e1_idx_e2_idx = torch.LongTensor(data_batch[:, [0, 2]])
+                r_idx = torch.LongTensor(data_batch[:, 1])
+
+                predictions = model.forward_k_vs_all(x=e1_idx_e2_idx)
+
+                for j in range(data_batch.shape[0]):
+                    filt = ee_vocab[(int(data_batch[j][0]), int(data_batch[j][2]))]
+                    target_value = predictions[j, r_idx[j]].item()
+                    predictions[j, filt] = -np.Inf
+                    predictions[j, r_idx[j]] = target_value
+
+                predicted_relation_idx = torch.argmax(predictions, dim=1).cpu().numpy()
+                y_true.extend(r_idx.cpu().numpy().tolist())
+                y_pred.extend(predicted_relation_idx.tolist())
+
+        return cls._macro_precision_recall_f1(np.asarray(y_true), np.asarray(y_pred), relation_ids)
