@@ -176,10 +176,12 @@ def setup_distributed_training(args) -> Dict[str, Union[bool, int]]:
                 f"but current={torch.cuda.current_device()}"
             )
             if not dist.is_initialized():
+                timeout_seconds = int(os.environ.get("DICEE_DDP_TIMEOUT_SECONDS", "7200"))
                 dist.init_process_group(
                     backend="nccl",
                     init_method="env://",
                     device_id=torch.device(f"cuda:{local_rank}"),
+                    timeout=datetime.timedelta(seconds=timeout_seconds),
                 )
             rank = dist.get_rank()
             world_size = dist.get_world_size()
