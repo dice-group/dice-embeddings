@@ -1,6 +1,8 @@
-import torch
-from typing import Tuple
 import time
+from typing import Tuple
+
+import torch
+
 
 def extract_input_outputs(z: list, device=None):
     # pin arrays x,y, which allows us to move them to GPU asynchronously (non_blocking=True)
@@ -55,12 +57,12 @@ def find_good_batch_size(train_loader,tp_ensemble_model):
                                                                 timeout=0,
                                                                 worker_init_fn=None,
                                                                 persistent_workers=False)
-                
+
                 batch_loss = None
                 for i, batch_of_training_data in enumerate(train_dataloaders):
                     batch_loss = forward_backward_update_loss(batch_of_training_data, ensemble_model)
                     break
-                
+
                 global_free_memory, total_memory = torch.cuda.mem_get_info(device="cuda:0")
                 percentage_used_gpu_memory = (total_memory - global_free_memory) / total_memory
                 rt=time.time()-start_time
@@ -69,7 +71,7 @@ def find_good_batch_size(train_loader,tp_ensemble_model):
 
                 # Store the batch size and the runtime
                 batch_sizes_and_mem_usages.append((batch_size, rt))
-                
+
                 # ()
                 # https://github.com/pytorch/pytorch/issues/21819
                 # CD: as we reach close to 1.0 GPU memory usage, we observe RuntimeError: CUDA error: an illegal memory access was encountered.
@@ -82,7 +84,7 @@ def find_good_batch_size(train_loader,tp_ensemble_model):
                     batch_size += int(batch_size / delta)
                 else:
                     return batch_sizes_and_mem_usages,True
-                        
+
         except torch.OutOfMemoryError as e:
             print(f"torch.OutOfMemoryError caught! {e}\n\n")
             return batch_sizes_and_mem_usages, False
@@ -92,14 +94,14 @@ def find_good_batch_size(train_loader,tp_ensemble_model):
 
     for delta in range(1,5,1):
         result,flag= increase_batch_size_until_cuda_out_of_memory(tp_ensemble_model, train_loader, batch_size,delta=delta)
-        
+
         history_batch_sizes_and_mem_usages.extend(result)
 
         if flag:
             batch_size, batch_rt = history_batch_sizes_and_mem_usages[-1]
         else:
             assert len(history_batch_sizes_and_mem_usages)>2, "GPU memory errorin the first try"
-            # CUDA ERROR Observed 
+            # CUDA ERROR Observed
             batch_size, batch_rt=history_batch_sizes_and_mem_usages[-2]
             # https://github.com/pytorch/pytorch/issues/21819
             break

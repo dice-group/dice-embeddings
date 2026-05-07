@@ -14,12 +14,12 @@ import numpy as np
 import pandas as pd
 import torch
 
-from .link_prediction import evaluate_lp, evaluate_bpe_lp
+from .link_prediction import evaluate_bpe_lp, evaluate_lp
 from .utils import (
-    compute_metrics_from_ranks_simple,
-    update_hits,
-    create_hits_dict,
     ALL_HITS_RANGE,
+    compute_metrics_from_ranks_simple,
+    create_hits_dict,
+    update_hits,
 )
 
 # Valid scoring techniques
@@ -91,7 +91,7 @@ class Evaluator:
             self.re_vocab = dataset.re_vocab.result()
 
         if isinstance(dataset.ee_vocab, dict):
-            self.ee_vocab = dataset.ee_vocab.result()
+            self.ee_vocab = dataset.ee_vocab
         else:
             self.ee_vocab = dataset.ee_vocab.result()
 
@@ -171,7 +171,7 @@ class Evaluator:
                     trained_model=trained_model,
                     form_of_labelling=form_of_labelling
                 )
-        elif self.args.scoring_technique == 'NegSample':
+        elif self.args.scoring_technique in ['NegSample', 'FixedNegSample']:
             self.eval_rank_of_head_and_tail_entity(
                 train_set=dataset.train_set,
                 valid_set=dataset.valid_set,
@@ -656,7 +656,7 @@ class Evaluator:
 
         train_set, valid_set, test_set = self._load_indexed_datasets()
 
-        if self.args.scoring_technique == 'NegSample':
+        if self.args.scoring_technique in ['NegSample', 'FixedNegSample']:
             self.eval_rank_of_head_and_tail_entity(
                 train_set=train_set,
                 valid_set=valid_set,

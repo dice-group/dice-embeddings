@@ -1,9 +1,11 @@
 import functools
-import numpy as np
-from typing import Tuple
 import time
 from collections import defaultdict
-from .sanity_checkers import sanity_checking_with_arguments, sanity_check_callback_args
+from typing import Tuple
+
+import numpy as np
+
+from .sanity_checkers import sanity_check_callback_args, sanity_checking_with_arguments
 
 enable_log = False
 def timeit(func):
@@ -51,7 +53,7 @@ def preprocesses_input_args(args):
     # reciprocal checking
     if args.scoring_technique in ["AllvsAll", "1vsSample", "KvsAll", "1vsAll", "KvsSample"]:
         args.apply_reciprical_or_noise = True
-    elif args.scoring_technique in ["NegSample", "Sentence"]:
+    elif args.scoring_technique in ["FixedNegSample","NegSample", "Sentence"]:
         args.apply_reciprical_or_noise = False
     else:
         raise KeyError(f'Unexpected input for scoring_technique \t{args.scoring_technique}')

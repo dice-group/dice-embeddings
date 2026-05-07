@@ -1,11 +1,13 @@
-from collections import defaultdict
-from typing import Union, Dict, List, Tuple
-import numpy as np
-import random
 import os
 import pickle
+import random
+from collections import defaultdict
 from copy import deepcopy
-from .static_funcs import save_pickle, load_pickle
+from typing import Dict, List, Tuple, Union
+
+import numpy as np
+
+from .static_funcs import load_pickle, save_pickle
 
 
 class QueryGenerator:
@@ -112,7 +114,7 @@ class QueryGenerator:
                 for j in range(40):
                     if len(ent_in[answer].keys()) < 1:
                         return True  # not enough relations, return True to indicate broken flag
-                    r_tmp = random.sample(ent_in[answer].keys(), 1)[0]
+                    r_tmp = random.sample(list(ent_in[answer].keys()), 1)[0]
                     if r_tmp // 2 != r // 2 or r_tmp == r:
                         r = r_tmp
                         found = True
@@ -120,7 +122,7 @@ class QueryGenerator:
                 if not found:
                     return True
                 query_structure[-1][i] = r
-                answer = random.sample(ent_in[answer][r], 1)[0]
+                answer = random.sample(list(ent_in[answer][r]), 1)[0]
             if query_structure[0] == 'e':
                 query_structure[0] = answer
             else:

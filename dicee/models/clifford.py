@@ -1,6 +1,34 @@
-from .base_model import BaseKGE
 import torch
+
+from .base_model import BaseKGE
+
+
 class Keci(BaseKGE):
+    """Keci: Knowledge Graph Embedding via Clifford Algebra.
+
+    Embeds entities and relations as multi-vectors in the Clifford algebra
+    Cl_{p,q}(R^d) and scores triples via the Clifford product.  The algebra
+    is parameterised by two non-negative integers *p* and *q*:
+
+    * ``p = 0, q = 0`` — reduces to a standard bilinear (DistMult-like) model.
+    * ``p = 0, q = 1`` — equivalent to ComplEx.
+    * Larger ``p`` and ``q`` capture higher-order geometric interactions.
+
+    The embedding dimension must satisfy ``embedding_dim % (p + q + 1) == 0``;
+    the resulting quotient is stored as ``self.r``.
+
+    Parameters
+    ----------
+    args : dict
+        Configuration dictionary.  Recognised keys (beyond those in
+        :class:`BaseKGE`): ``p`` (int, default 0) and ``q`` (int, default 0).
+
+    References
+    ----------
+    Demir et al., *Clifford Embeddings — A Generalized Approach for Embedding
+    in Normed Algebras*, ECML 2023.
+    """
+
     def __init__(self, args):
         super().__init__(args)
         self.name = 'Keci'
@@ -28,7 +56,7 @@ class Keci(BaseKGE):
             torch.nn.init.zeros_(self.q_coefficients.weight)
 
     def compute_sigma_pp(self, hp, rp):
-        """
+        r"""
         Compute  sigma_{pp} = \sum_{i=1}^{p-1} \sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k
 
         sigma_{pp} captures the interactions between along p bases
@@ -56,7 +84,7 @@ class Keci(BaseKGE):
         return sigma_pp
 
     def compute_sigma_qq(self, hq, rq):
-        """
+        r"""
         Compute  sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k
         sigma_{q} captures the interactions between along q bases
         For instance, let q e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
@@ -82,12 +110,12 @@ class Keci(BaseKGE):
             sigma_qq = torch.einsum('nrp,nrx->nrpx', hq, rq) - torch.einsum('nrx,nrp->nrpx', hq, rq)
             sigma_qq = sigma_qq[:, :, indices[0], indices[1]]
         else:
-            sigma_qq = torch.zeros((len(hq), self.r, int((self.q * (self.q - 1)) / 2)))
+            sigma_qq = torch.zeros((len(hq), self.r, int((self.q * (self.q - 1)) / 2)), device=hq.device)
 
         return sigma_qq
 
     def compute_sigma_pq(self, *, hp, hq, rp, rq):
-        """
+        r"""
         \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
 
         results = []
@@ -115,8 +143,8 @@ class Keci(BaseKGE):
     def clifford_multiplication(self, h0, hp, hq, r0, rp, rq):
         """ Compute our CL multiplication
 
-        h = h_0 + \sum_{i=1}^p h_i e_i + \sum_{j=p+1}^{p+q} h_j e_j
-        r = r_0 + \sum_{i=1}^p r_i e_i + \sum_{j=p+1}^{p+q} r_j e_j
+        h = h_0 + \\sum_{i=1}^p h_i e_i + \\sum_{j=p+1}^{p+q} h_j e_j
+        r = r_0 + \\sum_{i=1}^p r_i e_i + \\sum_{j=p+1}^{p+q} r_j e_j
 
         ei ^2 = +1     for i =< i =< p
         ej ^2 = -1     for p < j =< p+q
@@ -124,17 +152,17 @@ class Keci(BaseKGE):
 
         h r =   sigma_0 + sigma_p + sigma_q + sigma_{pp} + sigma_{q}+ sigma_{pq}
         where
-                (1) sigma_0 = h_0 r_0 + \sum_{i=1}^p (h_0 r_i) e_i - \sum_{j=p+1}^{p+q} (h_j r_j) e_j
+                (1) sigma_0 = h_0 r_0 + \\sum_{i=1}^p (h_0 r_i) e_i - \\sum_{j=p+1}^{p+q} (h_j r_j) e_j
 
-                (2) sigma_p = \sum_{i=1}^p (h_0 r_i + h_i r_0) e_i
+                (2) sigma_p = \\sum_{i=1}^p (h_0 r_i + h_i r_0) e_i
 
-                (3) sigma_q = \sum_{j=p+1}^{p+q} (h_0 r_j + h_j r_0) e_j
+                (3) sigma_q = \\sum_{j=p+1}^{p+q} (h_0 r_j + h_j r_0) e_j
 
-                (4) sigma_{pp} = \sum_{i=1}^{p-1} \sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k
+                (4) sigma_{pp} = \\sum_{i=1}^{p-1} \\sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k
 
-                (5) sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k
+                (5) sigma_{qq} = \\sum_{j=1}^{p+q-1} \\sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k
 
-                (6) sigma_{pq} = \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
+                (6) sigma_{pq} = \\sum_{i=1}^{p} \\sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
 
         """
         n = len(h0)
@@ -161,20 +189,31 @@ class Keci(BaseKGE):
 
     def construct_cl_multivector(self, x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[
         torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
-        """
+        """Split a flat embedding vector into the three Clifford components.
 
-        Construct a batch of multivectors Cl_{p,q}(\mathbb{R}^d)
+        Given an embedding ``x`` of dimension ``d = r + r*p + r*q``, returns
+        the scalar part ``a0``, the *p*-blade part ``ap``, and the *q*-blade
+        part ``aq``.
 
-        Parameter
-        ---------
-        x: torch.FloatTensor with (n,d) shape
+        Parameters
+        ----------
+        x : torch.FloatTensor
+            Shape ``(batch_size, d)``.
+        r : int
+            Scalar block size (``embedding_dim // (p + q + 1)``).
+        p : int
+            Number of positive-signature basis elements.
+        q : int
+            Number of negative-signature basis elements.
 
         Returns
         -------
-        a0: torch.FloatTensor with (n,r) shape
-        ap: torch.FloatTensor with (n,r,p) shape
-        aq: torch.FloatTensor with (n,r,q) shape
-
+        a0 : torch.FloatTensor
+            Shape ``(batch_size, r)`` — scalar (grade-0) part.
+        ap : torch.FloatTensor
+            Shape ``(batch_size, r, p)`` — positive-blade part.
+        aq : torch.FloatTensor
+            Shape ``(batch_size, r, q)`` — negative-blade part.
         """
         batch_size, d = x.shape
         # (1) A_{n \times k}: take the first k columns
@@ -191,7 +230,24 @@ class Keci(BaseKGE):
             aq = torch.zeros((batch_size, r, q), device=self.device)
         return a0, ap, aq
 
-    def forward_k_vs_with_explicit(self, x: torch.Tensor):
+    def forward_k_vs_with_explicit(self, x: torch.Tensor) -> torch.FloatTensor:
+        """KvsAll scoring using an explicit loop over sigma_pp/qq/pq terms.
+
+        Functionally equivalent to :meth:`forward_k_vs_all` but computes the
+        higher-order interaction terms (sigma_pp, sigma_qq, sigma_pq) with
+        explicit nested loops rather than einsum contractions.  Kept for
+        reference and correctness verification.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Shape ``(batch_size, num_entities)`` score matrix.
+        """
         n = len(x)
         # (1) Retrieve real-valued embedding vectors.
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
@@ -255,7 +311,29 @@ class Keci(BaseKGE):
 
         return score_sigma_0 + score_sigma_p + score_sigma_q + sigma_pp + sigma_qq + sigma_pq
 
-    def k_vs_all_score(self, bpe_head_ent_emb, bpe_rel_ent_emb, E):
+    def k_vs_all_score(self, bpe_head_ent_emb: torch.FloatTensor,
+                       bpe_rel_ent_emb: torch.FloatTensor,
+                       E: torch.FloatTensor) -> torch.FloatTensor:
+        """Compute Clifford-product scores for a head/relation batch vs. all entities.
+
+        Decomposes the head-entity and relation embeddings into Clifford
+        multi-vectors, performs the Cl_{p,q} product, and inner-products the
+        result against the entity embedding matrix *E*.
+
+        Parameters
+        ----------
+        bpe_head_ent_emb : torch.FloatTensor
+            Head-entity embeddings, shape ``(batch_size, embedding_dim)``.
+        bpe_rel_ent_emb : torch.FloatTensor
+            Relation embeddings, shape ``(batch_size, embedding_dim)``.
+        E : torch.FloatTensor
+            All entity embeddings, shape ``(num_entities, embedding_dim)``.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Shape ``(batch_size, num_entities)`` score matrix.
+        """
         # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
         h0, hp, hq = self.construct_cl_multivector(bpe_head_ent_emb, r=self.r, p=self.p, q=self.q)
         r0, rp, rq = self.construct_cl_multivector(bpe_rel_ent_emb, r=self.r, p=self.p, q=self.q)
@@ -305,7 +383,7 @@ class Keci(BaseKGE):
         return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
 
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
-        """
+        r"""
         Kvsall training
 
         (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
@@ -330,18 +408,30 @@ class Keci(BaseKGE):
 
     def construct_batch_selected_cl_multivector(self, x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[
         torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
-        """
-        Construct a batch of batchs multivectors Cl_{p,q}(\mathbb{R}^d)
+        """Split a batched, *k*-selected embedding tensor into Clifford components.
 
-        Parameter
-        ---------
-        x: torch.FloatTensor with (n,k, d) shape
+        A variant of :meth:`construct_cl_multivector` for tensors that have an
+        extra *k* dimension (e.g. when scoring against *k* sampled targets).
+
+        Parameters
+        ----------
+        x : torch.FloatTensor
+            Shape ``(batch_size, k, d)``.
+        r : int
+            Scalar block size.
+        p : int
+            Number of positive-signature basis elements.
+        q : int
+            Number of negative-signature basis elements.
 
         Returns
         -------
-        a0: torch.FloatTensor with (n,k, m) shape
-        ap: torch.FloatTensor with (n,k, m, p) shape
-        aq: torch.FloatTensor with (n,k, m, q) shape
+        a0 : torch.FloatTensor
+            Shape ``(batch_size, k, r)``.
+        ap : torch.FloatTensor
+            Shape ``(batch_size, k, r, p)``.
+        aq : torch.FloatTensor
+            Shape ``(batch_size, k, r, q)``.
         """
         batch_size, k, d = x.shape
 
@@ -560,6 +650,194 @@ class Keci(BaseKGE):
         return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
 
 
+class KeciTransformer(Keci):
+    """
+    Keci with Transformer architecture.
+
+    Concatenates h0, hp, hq, r0, rp, rq into a single embedding vector and processes through transformer.
+    """
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'KeciTransformer'
+
+        # Boolean flag to include clifford multiplication in embedding
+        self.use_clifford_mul = self.args.get("use_clifford_mul", False)
+
+        # Input dimension:
+        # Original: h0 (r) + hp (r*p) + hq (r*q) + r0 (r) + rp (r*p) + rq (r*q) = 2 * embedding_dim
+        # Clifford multiplication: sigma_0 (r) + sigma_p (r*p) + sigma_q (r*q) + sigma_pp (r*(p*(p-1)/2)) + sigma_qq (r*(q*(q-1)/2)) + sigma_pq (r*p*q)
+        original_dim = 2 * self.embedding_dim
+        if self.use_clifford_mul:
+            clifford_dim = self.r + self.r * self.p + self.r * self.q + \
+                           self.r * int((self.p * (self.p - 1)) / 2) + \
+                           self.r * int((self.q * (self.q - 1)) / 2) + \
+                           self.r * self.p * self.q
+            self.input_dim = original_dim + clifford_dim
+        else:
+            self.input_dim = original_dim
+
+        # Transformer configuration
+        n_layer = self.args.get("n_layer", 4)
+        dropout = self.args.get("dropout", 0.0)
+        bias = self.args.get("bias", False)
+
+        # Calculate valid n_head: must divide input_dim evenly
+        # Use user-specified n_head if valid, otherwise find largest valid divisor <= 4
+        requested_n_head = self.args.get("n_head", 4)
+        if self.input_dim % requested_n_head == 0:
+            n_head = requested_n_head
+        else:
+            # Find largest divisor of input_dim that is <= requested_n_head and >= 1
+            n_head = 1
+            for h in range(1, requested_n_head + 1):
+                if self.input_dim % h == 0:
+                    n_head = h
+        # Sequence length is 1 (single embedding vector treated as one token)
+        self.seq_len = 1
+
+        # Transformer components
+        self.transformer = torch.nn.ModuleDict(dict(
+            wpe=torch.nn.Embedding(self.seq_len, self.input_dim),  # positional embeddings
+            drop=torch.nn.Dropout(dropout),
+            h=torch.nn.ModuleList([TransformerBlock(self.input_dim, n_head, dropout, bias) for _ in range(n_layer)]),
+            ln_f=torch.nn.LayerNorm(self.input_dim, elementwise_affine=not bias),
+        ))
+        # Output projection: maps to number of entities for scoring
+        self.lm_head = torch.nn.Linear(self.input_dim, self.num_entities, bias=False)
+
+    def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
+        """
+        Kvsall training
+
+        Parameter
+        ---------
+        x: torch.LongTensor with (n,2) shape
+
+        Returns
+        -------
+        torch.FloatTensor with (n, |E|) shape
+        """
+        # (1) Retrieve real-valued embedding vectors.
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+
+        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
+        h0, hp, hq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
+        r0, rp, rq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
+
+        # (3) Flatten base embeddings
+        # h0: (n, r), hp: (n, r, p), hq: (n, r, q), r0: (n, r), rp: (n, r, p), rq: (n, r, q)
+        batch_size = h0.shape[0]
+
+        hp_flat = hp.view(batch_size, -1)  # (n, r*p)
+        hq_flat = hq.view(batch_size, -1)  # (n, r*q)
+        rp_flat = rp.view(batch_size, -1)  # (n, r*p)
+        rq_flat = rq.view(batch_size, -1)  # (n, r*q)
+
+        if self.use_clifford_mul:
+            # Compute clifford multiplication
+            sigma_0, sigma_p, sigma_q, sigma_pp, sigma_qq, sigma_pq = self.clifford_multiplication(h0, hp, hq, r0, rp, rq)
+
+            # Flatten clifford multiplication results
+            sigma_p_flat = sigma_p.view(batch_size, -1)  # (n, r*p)
+            sigma_q_flat = sigma_q.view(batch_size, -1)  # (n, r*q)
+            sigma_pp_flat = sigma_pp.view(batch_size, -1)  # (n, r*p*(p-1)/2)
+            sigma_qq_flat = sigma_qq.view(batch_size, -1)  # (n, r*q*(q-1)/2)
+            sigma_pq_flat = sigma_pq.view(batch_size, -1)  # (n, r*p*q)
+
+            # Concatenate all embeddings including clifford multiplication
+            x_emb = torch.cat([h0, hp_flat, hq_flat, r0, rp_flat, rq_flat,
+                              sigma_0, sigma_p_flat, sigma_q_flat, sigma_pp_flat, sigma_qq_flat, sigma_pq_flat], dim=1)
+        else:
+            # Concatenate base embeddings only
+            x_emb = torch.cat([h0, hp_flat, hq_flat, r0, rp_flat, rq_flat], dim=1)
+
+        # (4) Reshape for transformer: (n, 1, input_dim)
+        x_emb = x_emb.unsqueeze(1)
+
+        # (5) Apply transformer
+        device = x_emb.device
+        pos = torch.arange(0, self.seq_len, dtype=torch.long, device=device)
+
+        pos_emb = self.transformer.wpe(pos)
+        x_emb = self.transformer.drop(x_emb + pos_emb)
+
+        for block in self.transformer.h:
+            x_emb = block(x_emb)
+        x_emb = self.transformer.ln_f(x_emb)
+        logits = self.lm_head(x_emb)  # (n, 1, num_entities)
+
+        # (6) Squeeze and return logits directly as scores
+        return logits.squeeze(1)  # (n, num_entities)
+
+
+class TransformerBlock(torch.nn.Module):
+    """A single transformer block with self-attention and MLP."""
+
+    def __init__(self, n_embd, n_head, dropout=0.0, bias=False):
+        super().__init__()
+        self.ln_1 = torch.nn.LayerNorm(n_embd, elementwise_affine=not bias)
+        self.attn = TransformerSelfAttention(n_embd, n_head, dropout, bias)
+        self.ln_2 = torch.nn.LayerNorm(n_embd, elementwise_affine=not bias)
+        self.mlp = TransformerMLP(n_embd, dropout, bias)
+
+    def forward(self, x):
+        x = x + self.attn(self.ln_1(x))
+        x = x + self.mlp(self.ln_2(x))
+        return x
+
+
+class TransformerSelfAttention(torch.nn.Module):
+    """Multi-head self-attention for the Keci Transformer."""
+
+    def __init__(self, n_embd, n_head, dropout=0.0, bias=False):
+        super().__init__()
+        assert n_embd % n_head == 0
+        self.c_attn = torch.nn.Linear(n_embd, 3 * n_embd, bias=bias)
+        self.c_proj = torch.nn.Linear(n_embd, n_embd, bias=bias)
+        self.attn_dropout = torch.nn.Dropout(dropout)
+        self.resid_dropout = torch.nn.Dropout(dropout)
+        self.n_head = n_head
+        self.n_embd = n_embd
+        self.dropout = dropout
+
+    def forward(self, x):
+        B, T, C = x.size()
+
+        q, k, v = self.c_attn(x).split(self.n_embd, dim=2)
+        k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+        q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+        v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+
+        # Non-causal attention (bidirectional)
+        y = torch.nn.functional.scaled_dot_product_attention(
+            q, k, v, attn_mask=None,
+            dropout_p=self.dropout if self.training else 0,
+            is_causal=False
+        )
+        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        y = self.resid_dropout(self.c_proj(y))
+        return y
+
+
+class TransformerMLP(torch.nn.Module):
+    """MLP for the Keci Transformer."""
+
+    def __init__(self, n_embd, dropout=0.0, bias=False):
+        super().__init__()
+        self.c_fc = torch.nn.Linear(n_embd, 4 * n_embd, bias=bias)
+        self.gelu = torch.nn.GELU()
+        self.c_proj = torch.nn.Linear(4 * n_embd, n_embd, bias=bias)
+        self.dropout = torch.nn.Dropout(dropout)
+
+    def forward(self, x):
+        x = self.c_fc(x)
+        x = self.gelu(x)
+        x = self.c_proj(x)
+        x = self.dropout(x)
+        return x
+
+
 class CKeci(Keci):
     " Without learning dimension scaling"
 
@@ -618,7 +896,7 @@ class DeCaL(BaseKGE):
 
         # h0, hp, hq, hk, h0, rp, rq, rk = self.apply_coefficients(h0, hp, hq, hk, h0, rp, rq,rk)
 
-        # (4) Compute a triple score based on interactions described by the basis 1. 
+        # (4) Compute a triple score based on interactions described by the basis 1.
         h0r0t0 = torch.einsum('br, br -> b', h0 * r0, t0)
 
         # (5) Compute a triple score based on interactions described by the bases of p {e_1, ..., e_p}.
@@ -683,13 +961,13 @@ class DeCaL(BaseKGE):
             sigma_qr = 0
 
         return h0r0t0 + score_p + score_q + score_r + sigma_pp + sigma_qq + sigma_rr + sigma_pq + sigma_qr + sigma_pr
-    
+
     def cl_pqr(self, a:torch.tensor)->torch.tensor:
 
         ''' Input: tensor(batch_size, emb_dim) ---> output: tensor with 1+p+q+r components with size (batch_size, emb_dim/(1+p+q+r)) each.
 
-        1) takes a tensor of size (batch_size, emb_dim), split it into 1 + p + q +r components, hence 1+p+q+r must be a divisor 
-        of the emb_dim. 
+        1) takes a tensor of size (batch_size, emb_dim), split it into 1 + p + q +r components, hence 1+p+q+r must be a divisor
+        of the emb_dim.
         2) Return a list of the 1+p+q+r components vectors, each are tensors of size (batch_size, emb_dim/(1+p+q+r)) '''
 
         # num1 = 2**(p+q+r) #total number of vector in cl_pqr then after choose the first p+q+r+1 vectors
@@ -700,8 +978,8 @@ class DeCaL(BaseKGE):
 
     def compute_sigmas_single(self, list_h_emb, list_r_emb, list_t_emb):
 
-        '''here we compute all the sums with no others vectors interaction taken with the scalar product with t, that is,
-        
+        r'''here we compute all the sums with no others vectors interaction taken with the scalar product with t, that is,
+
         .. math::
 
              s0 = h_0r_0t_0
@@ -710,15 +988,15 @@ class DeCaL(BaseKGE):
              s3 = \sum_{i=1}^{q}(h_0r_it_i + h_ir_0t_i)
              s4 = \sum_{i=p+1}^{p+q}(h_0r_it_i + h_ir_0t_i)
              s5 = \sum_{i=p+q+1}^{p+q+r}(h_0r_it_i + h_ir_0t_i)
-        
+
         and return:
-        
+
         .. math::
 
             sigma_0t = \sigma_0 \cdot t_0 = s0 + s1 -s2
             s3, s4 and s5
-        
-        
+
+
         '''
 
         p = self.p
@@ -750,7 +1028,7 @@ class DeCaL(BaseKGE):
 
     def compute_sigmas_multivect(self, list_h_emb, list_r_emb):
 
-        '''Here we compute and return all the sums with vectors interaction for the same and different bases.
+        r'''Here we compute and return all the sums with vectors interaction for the same and different bases.
 
            For same bases vectors interaction we have
 
@@ -758,16 +1036,16 @@ class DeCaL(BaseKGE):
 
                 \sigma_pp = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(h_ir_{i'}-h_{i'}r_i) (models the interactions between e_i and e_i' for 1 <= i, i' <= p)
                 \sigma_qq = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(h_jr_{j'}-h_{j'} (models the interactions between e_j and e_j' for p+1 <= j, j' <= p+q)
-                \sigma_rr = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(h_kr_{k'}-h_{k'}r_k) (models the interactions between e_k and e_k' for p+q+1 <= k, k' <= p+q+r) 
-            
+                \sigma_rr = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(h_kr_{k'}-h_{k'}r_k) (models the interactions between e_k and e_k' for p+q+1 <= k, k' <= p+q+r)
+
            For different base vector interactions, we have
-           
+
             .. math::
 
                 \sigma_pq = \sum_{i=1}^{p}\sum_{j=p+1}^{p+q}(h_ir_j - h_jr_i) (interactionsn between e_i and e_j for 1<=i <=p and p+1<= j <= p+q)
                 \sigma_pr = \sum_{i=1}^{p}\sum_{k=p+q+1}^{p+q+r}(h_ir_k - h_kr_i) (interactionsn between e_i and e_k for 1<=i <=p and p+q+1<= k <= p+q+r)
                 \sigma_qr = \sum_{j=p+1}^{p+q}\sum_{j=p+q+1}^{p+q+r}(h_jr_k - h_kr_j) (interactionsn between e_j and e_k for p+1 <= j <=p+q and p+q+1<= j <= p+q+r)
-           
+
            '''
 
         p = self.p
@@ -807,7 +1085,7 @@ class DeCaL(BaseKGE):
 
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
 
-        """
+        r"""
             Kvsall training
 
             (1) Retrieve real-valued embedding vectors for heads and relations
@@ -895,7 +1173,7 @@ class DeCaL(BaseKGE):
             sigma_qr = torch.sum(self.compute_sigma_qr(hq=hq, hk=hk, rq=rq, rk=rk), dim=[1, 2, 3]).unsqueeze(-1)
         else:
             sigma_qr = 0
-    
+
         return h0r0t0 + score_p + score_q + score_r + sigma_pp + sigma_qq + sigma_rr + sigma_pq + sigma_pr + sigma_qr
 
     def apply_coefficients(self, h0, hp, hq, hk, r0, rp, rq, rk):
@@ -913,7 +1191,7 @@ class DeCaL(BaseKGE):
 
     def construct_cl_multivector(self, x: torch.FloatTensor, re: int, p: int, q: int, r: int) -> tuple[
         torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
-        """
+        r"""
         Construct a batch of multivectors Cl_{p,q,r}(\mathbb{R}^d)
 
         Parameter
@@ -922,10 +1200,10 @@ class DeCaL(BaseKGE):
 
         Returns
         -------
-        a0: torch.FloatTensor 
-        ap: torch.FloatTensor 
-        aq: torch.FloatTensor 
-        ar: torch.FloatTensor 
+        a0: torch.FloatTensor
+        ap: torch.FloatTensor
+        aq: torch.FloatTensor
+        ar: torch.FloatTensor
         """
         batch_size, d = x.shape
         # (1) A_{n \times k}: take the first k columns
@@ -948,10 +1226,10 @@ class DeCaL(BaseKGE):
         return a0, ap, aq, ar
 
     def compute_sigma_pp(self, hp, rp):
-        """
-        Compute 
+        r"""
+        Compute
         .. math::
-        
+
             \sigma_{p,p}^* = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(x_iy_{i'}-x_{i'}y_i)
 
         \sigma_{pp} captures the interactions between along p bases
@@ -979,11 +1257,11 @@ class DeCaL(BaseKGE):
         return sigma_pp
 
     def compute_sigma_qq(self, hq, rq):
-        """
-        Compute  
+        r"""
+        Compute
 
         .. math::
-        
+
             \sigma_{q,q}^* = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(x_jy_{j'}-x_{j'}y_j) Eq. 16
 
         sigma_{q} captures the interactions between along q bases
@@ -1016,9 +1294,9 @@ class DeCaL(BaseKGE):
         return sigma_qq
 
     def compute_sigma_rr(self, hk, rk):
-        """
-        .. math:: 
-        
+        r"""
+        .. math::
+
             \sigma_{r,r}^* = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(x_ky_{k'}-x_{k'}y_k)
 
         """
@@ -1034,11 +1312,11 @@ class DeCaL(BaseKGE):
         return sigma_rr
 
     def compute_sigma_pq(self, *, hp, hq, rp, rq):
-        """
-        Compute 
+        r"""
+        Compute
 
-        .. math:: 
-        
+        .. math::
+
             \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
 
         results = []
@@ -1054,10 +1332,10 @@ class DeCaL(BaseKGE):
         return sigma_pq
 
     def compute_sigma_pr(self, *, hp, hk, rp, rk):
-        """
+        r"""
         Compute
 
-        .. math:: 
+        .. math::
 
             \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
 
@@ -1074,8 +1352,8 @@ class DeCaL(BaseKGE):
         return sigma_pr
 
     def compute_sigma_qr(self, *, hq, hk, rq, rk):
-        """
-        .. math:: 
+        r"""
+        .. math::
 
             \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
 

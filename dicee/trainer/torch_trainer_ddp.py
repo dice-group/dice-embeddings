@@ -1,9 +1,11 @@
 import os
-import torch
 from typing import Iterable
-from dicee.abstracts import AbstractTrainer
+
+import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+
+from dicee.abstracts import AbstractTrainer
 
 torch.set_float32_matmul_precision('high')
 

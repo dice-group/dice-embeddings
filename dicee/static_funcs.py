@@ -17,13 +17,13 @@ from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 import numpy as np
 import pandas as pd
 import polars as pl
+import psutil
 import requests
 import torch
+import torch.distributed as dist
+from lightning.pytorch.utilities.rank_zero import rank_zero_only
 
-from .models import (
-    AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ,
-    DeCaL, DistMult, DualE, Keci, LFMult, OMult, Pyke, QMult, Shallom, TransE
-)
+from .models import AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ, DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, OMult, Pyke, QMult, Shallom, TransE
 from .models.base_model import BaseKGE
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
@@ -44,6 +44,7 @@ MODEL_REGISTRY: Dict[str, Tuple[Type, str]] = {
     'TransE': (TransE, 'EntityPrediction'),
     'Pyke': (Pyke, 'EntityPrediction'),
     'Keci': (Keci, 'EntityPrediction'),
+    'KeciTransformer': (KeciTransformer, 'EntityPrediction'),
     'CKeci': (CKeci, 'EntityPrediction'),
     'BytE': (BytE, 'EntityPrediction'),
     'LFMult': (LFMult, 'EntityPrediction'),
@@ -134,11 +135,6 @@ def timeit(func: Callable) -> Callable:
     Returns:
         Wrapped function that prints timing information.
     """
-    try:
-        import psutil
-    except ModuleNotFoundError:
-        raise ModuleNotFoundError("psutil is required for the timeit decorator but is part of the optional dependencies."
-                                  " Please install it via 'pip install psutil'.")
     @functools.wraps(func)
     def timeit_wrapper(*args, **kwargs):
         start_time = time.perf_counter()
@@ -148,6 +144,53 @@ def timeit(func: Callable) -> Callable:
         print(f'Took {total_time:.4f} secs | Current Memory Usage {memory_mb:.5f} MB')
         return result
     return timeit_wrapper
+
+
+def setup_distributed_training(args) -> Dict[str, Union[bool, int]]:
+    """Resolve distributed-training state and initialize custom DDP when needed."""
+    trainer_name = getattr(args, "trainer", None)
+    required_env_vars = ("LOCAL_RANK", "RANK", "WORLD_SIZE")
+    torchrun_launched = all(env_var in os.environ for env_var in required_env_vars)
+    distributed = trainer_name == "torchDDP" or (
+        trainer_name == "PL" and torchrun_launched
+    )
+
+    if trainer_name == "torchDDP" and not torchrun_launched:
+        raise RuntimeError(
+            "torchDDP trainer must be launched with torchrun."
+            "Please use appropriate commands for torchDDP trainer."
+        )
+
+    if distributed or trainer_name == "PL":
+        local_rank = int(os.environ.get("LOCAL_RANK", getattr(rank_zero_only, "rank", 0)))
+        rank = int(os.environ.get("RANK", local_rank))
+        world_size = int(os.environ.get("WORLD_SIZE", torch.cuda.device_count()))
+
+        if distributed:
+            torch.cuda.set_device(local_rank)
+            assert torch.cuda.current_device() == local_rank, (
+                f"set_device failed! local_rank={local_rank} "
+                f"but current={torch.cuda.current_device()}"
+            )
+            if not dist.is_initialized():
+                dist.init_process_group(
+                    backend="nccl",
+                    init_method="env://",
+                    device_id=torch.device(f"cuda:{local_rank}"),
+                )
+            rank = dist.get_rank()
+            world_size = dist.get_world_size()
+            print(f"[Rank {rank}] mapped to GPU {local_rank}", flush=True)
+    else:
+        distributed = False
+        rank, world_size, local_rank = 0, 1, 0
+
+    return {
+        "distributed": distributed,
+        "rank": rank,
+        "world_size": world_size,
+        "local_rank": local_rank,
+    }
 
 def save_pickle(*, data: Optional[object] = None, file_path: str) -> None:
     """Save data to a pickle file.
@@ -269,10 +312,12 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
     else:
         if verbose>0:
             print('Loading entity and relation indexes...', end=' ')
-    
-        entity_to_idx = { v["entity"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv",index_col=0,dtype=str).to_dict(orient='index').items()}
 
-        relation_to_idx = { v["relation"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv",index_col=0,dtype=str).to_dict(orient='index').items()}
+        # Use per-column dtype to avoid pandas>=3.0.0 applying dtype=str to the index column
+        # (which would make index values strings instead of ints, breaking downstream assertions)
+        entity_to_idx = { v["entity"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv",index_col=0,dtype={'entity': str}).to_dict(orient='index').items()}
+
+        relation_to_idx = { v["relation"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv",index_col=0,dtype={'relation': str}).to_dict(orient='index').items()}
 
 
         if verbose > 0:
@@ -482,7 +527,16 @@ def intialize_model(args: Dict, verbose: int = 0) -> Tuple[BaseKGE, str]:
         model_class, form_of_labelling = MODEL_REGISTRY[model_name]
         return model_class(args=args), form_of_labelling
 
-    raise ValueError(f"Unknown model: {model_name}. Available models: {list(MODEL_REGISTRY.keys())}")
+    # Provide helpful error message
+    available_models = ', '.join(sorted(MODEL_REGISTRY.keys())[:10])
+    raise ValueError(
+        f"Unknown model: '{model_name}'\\n"
+        f"\\nAvailable models (showing first 10): {available_models}, ...\\n"
+        f"\\nAll models: {', '.join(sorted(MODEL_REGISTRY.keys()))}\\n"
+        f"\\nFor PyKEEN models, use: --model Pykeen_ModelName\\n"
+        f"  Examples: Pykeen_ComplEx, Pykeen_DistMult, Pykeen_QuatE\\n"
+        f"\\nSee: docs/guides/ or tests/test_regression_*.py for examples\\n"
+    )
 
 
 # Keep backward compatibility - this is now handled by the registry
@@ -535,6 +589,9 @@ def _legacy_intialize_model(args: dict, verbose: int = 0) -> Tuple[object, str]:
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'Keci':
         model = Keci(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'KeciTransformer':
+        model = KeciTransformer(args=args)
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'CKeci':
         model = CKeci(args=args)
@@ -831,7 +888,7 @@ def from_pretrained_model_write_embeddings_into_csv(path: str) -> None:
             writer.writerow([name]+ row.tolist())
 
     """
-    
+
     # Write entity embeddings directly to CSV
     with open(entity_csv_path, "w") as f:
         for row in entity_emb:

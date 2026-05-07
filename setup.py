@@ -16,11 +16,11 @@ _core_deps = [
     "numpy==1.26.4",
     "torch>=2.5.1",
     "lightning>=2.5.0.post0",
-    "pandas<=2.3.3",
+    "pandas>=2.1.0",
     "requests>=2.32.3",
     "polars>=0.16.14",
-    "pytorch_lightning>=2.5.1",
     "tiktoken>=0.5.1",
+    "psutil>=5.9.4",
 ]
 
 # Optional dependencies for various features
@@ -29,7 +29,6 @@ _optional_deps = [
     "rdflib>=7.0.0",
     "tiktoken>=0.5.1",
     "pykeen>=1.10.2",
-    "psutil>=5.9.4",
     "matplotlib>=3.8.2",
     "zstandard>=0.21.0",
     "requests>=2.32.3",
@@ -40,6 +39,7 @@ _optional_deps = [
 _dev_deps = [
     "pytest>=7.2.2",
     "ruff>=0.0.284",
+    "mypy>=1.0.0",
     "scikit-learn>=1.2.2",
 ]
 
@@ -89,7 +89,7 @@ with open('README.md', 'r') as fh:
 setup(
     name="dicee",
     description="Dice embedding is an hardware-agnostic framework for large-scale knowledge graph embedding applications",
-    version="0.3.2",
+    version="0.3.3",
     packages=find_packages(exclude=["tests", "tests.*"]),
     extras_require=extras,
     install_requires=list(install_requires),

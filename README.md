@@ -24,28 +24,6 @@ Recently developed frameworks can be effectively applied in a wide range of rese
 Yet, using these frameworks in real-world applications becomes more challenging as the size of the knowledge graph grows.
 
 We developed the DICE Embeddings framework (dicee) to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
-To achieve this goal, we rely on
-1. **[Pandas](https://pandas.pydata.org/) & Co.** to use parallelism at preprocessing a large knowledge graph,
-2. **[PyTorch](https://pytorch.org/) & Co.** to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and
-3. **[Huggingface](https://huggingface.co/)** to ease the deployment of pre-trained models.
-
-**Why [Pandas](https://pandas.pydata.org/) & Co. ?**
-A large knowledge graph can be read and preprocessed (e.g. removing literals) by pandas, modin, or polars in parallel.
-Through polars, a knowledge graph having more than 1 billion triples can be read in parallel fashion. 
-Importantly, using these frameworks allow us to perform all necessary computations on a single CPU as well as a cluster of computers.
-
-**Why [PyTorch](https://pytorch.org/) & Co. ?**
-PyTorch is one of the most popular machine learning frameworks available at the time of writing. 
-PytorchLightning facilitates scaling the training procedure of PyTorch without boilerplate.
-In our framework, we combine [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/).
-Users can choose the trainer class (e.g., DDP by Pytorch) to train large knowledge graph embedding models with billions of parameters.
-PytorchLightning allows us to use state-of-the-art model parallelism techniques (e.g. Fully Sharded Training, FairScale, or DeepSpeed)
-without extra effort.
-With our framework, practitioners can directly use PytorchLightning for model parallelism to train gigantic embedding models.
-
-**Why [Huggingface](https://huggingface.co/)?**
-Seamlessly deploy and share pre-trained embedding models through the Huggingface ecosystem.
-
 ## For more please visit [dice-embeddings](https://dice-group.github.io/dice-embeddings/)!
 
 ## Installation
@@ -90,11 +68,11 @@ python -m pytest -p no:warnings --ff # to run the failures first and then the re
 <details> <summary> To see available Models</summary>
 
 * ```--model Decal | Keci | DualE | ComplEx | QMult | OMult | ConvQ | ConvO | ConEx | TransE | DistMult | Shallom```
-* ```--model Pykeen_QuatE | Pykeen_Mure ``` all embedding models available in https://github.com/pykeen/pykeen#models can be selected.
+* ```--model Pykeen_QuatE | Pykeen_Mure ``` all embedding models available in https://github.com/pykeen/pykeen#models can be selected. **📖 [PyKEEN integration →](docs/guides/pykeen_integration.md)** | **📖 [Examples →](tests/test_pykeen.py)**
 
 Training and scoring techniques
 * ```--trainer torchCPUTrainer | PL | MP | torchDDP ```
-* ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample ```
+* ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample | FixedNegSample```
 
 </details>
 
@@ -109,21 +87,51 @@ A KGE model can be trained with a state-of-the-art training technique ```--train
 dicee --dataset_dir "KGs/UMLS" --trainer "torchCPUTrainer" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism
 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
-# Model Parallelism
-dicee --dataset_dir "KGs/UMLS" --trainer "MP" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
+# Tensor Parallelism
+dicee --dataset_dir "KGs/UMLS" --trainer "TP" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism in native torch
-OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" --trainer "torchDDP" --scoring_technique KvsAll
+OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" --trainer "torchDDP" --scoring_technique KvsAll --path_to_store_single_run "UMLS_torchDDP"
+
 ```
+
 A KGE model model can also be trained in multi-node multi-gpu DDP setting. 
 ```bash
-torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10"
-torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10"
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_torchDDP"
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_torchDDP"
 ```
-On large knowledge graphs, this configurations should be used.
+Multi-node training is also possible with the `PL` trainer 
+```bash
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "PL" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_PL"
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "PL" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_PL"
+```
 
+On large knowledge graphs, this configurations should be used.
 Note: When training with multi-GPU or Distributed Data Parallel (DDP) settings, you must provide the `--path_to_store_single_run` argument to specify where to store the results of a single training run. This ensures that all processes write to the correct directory and prevents conflicts.
 
-where the data is in the following form
+Here is an example of an iterative training of a a KGE model can be resumed.
+```bash
+# No training.
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique "FixedNegSample" --trainer "torchDDP" --scoring_technique FixedNegSample --path_to_store_single_run "UMLS_torchDDP" --num_epochs 0
+# Train 10 epochs on fixed negative samples.
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique "FixedNegSample" --trainer "torchDDP" --scoring_technique FixedNegSample --num_epochs 10 --continual_learning "UMLS_torchDDP" --random_seed 1
+# Train 10 epochs on fixed negative samples.
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique "FixedNegSample" --trainer "torchDDP" --scoring_technique FixedNegSample --num_epochs 10 --continual_learning "UMLS_torchDDP" --random_seed 2
+# Train 10 epochs on fixed negative samples.
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --scoring_technique "FixedNegSample" --trainer "torchDDP" --scoring_technique FixedNegSample --num_epochs 10 --continual_learning "UMLS_torchDDP" --random_seed 3
+```
+When using a multi-GPU setup, `PL` Trainer  automatically utilizes all available CUDA devices. To perform training on a single device, set the environment variable `CUDA_VISIBLE_DEVICES=0` before running your command. For example:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test" --num_epochs 100
+``` 
+The `CUDA_VISIBLE_DEVICES=0` setting limits the program to access only the specified GPU(s), making all others invisible.  
+Multiple GPUs can be selected by providing a comma-separated list, for example: `CUDA_VISIBLE_DEVICES=0,1`.
+Additional PyTorch Lightning trainer options can be passed with `--pl_trainer_kwargs`, e.g. `--pl_trainer_kwargs '{"precision":"16-mixed","strategy":"ddp"}'`. PyTorch Lightning Trainer has many optional parameters; see: https://lightning.ai/docs/pytorch/stable/common/trainer.html
+
+**📖 [See trainer examples →](tests/test_trainers.py)** | **📖 [Custom trainer →](tests/test_custom_trainer.py)**
+
+
+The data is in the following form
 ```bash
 $ head -3 KGs/UMLS/train.txt 
 acquired_abnormality    location_of     experimental_model_of_disease
@@ -145,9 +153,11 @@ Moreover, a KGE model can be also trained  by providing **an endpoint of a tripl
 dicee --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Keci
 ```
 
+**📖 [See dataset format details →](docs/guides/datasets.md)** | **📖 [Different backend examples →](tests/test_different_backends.py)**
+
 #### Scoring Techniques
 
-We have implemented state-of-the-art scoring techniques to train a KGE model ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample ```.
+We have implemented state-of-the-art scoring techniques to train a KGE model ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample | FixedNegSample```.
 ```bash
 dicee --dataset_dir "KGs/YAGO3-10" --model Keci --trainer "torchCPUTrainer" --scoring_technique "NegSample" --neg_ratio 10 --num_epochs 10 --batch_size 10_000 --num_core 0 --eval_model None
 # Epoch:10: 100%|███████████| 10/10 [01:31<00:00,  9.11s/it, loss_step=0.09423, loss_epoch=0.07897]
@@ -164,6 +174,8 @@ dicee --dataset_dir "KGs/YAGO3-10" --model Keci --trainer "torchCPUTrainer" --sc
 ```
 Increasing the number of cores often (but not always) helps to decrease the runtimes on large knowledge graphs ```--num_core 4 --scoring_technique KvsSample | NegSample --neg_ratio 1``` 
 
+**📖 [See scoring technique examples →](tests/test_k_fold_cv_*.py)** | **📖 [KvsSample →](tests/test_onevssample.py)** 
+
 A KGE model can be also trained in a python script
 ```python
 from dicee.executer import Execute
@@ -172,6 +184,16 @@ args = Namespace()
 args.model = 'Keci'
 args.scoring_technique = "KvsAll"  # 1vsAll, or AllvsAll, or NegSample
 args.dataset_dir = "KGs/UMLS"
+args.path_to_store_single_run = "Keci_UMLS"
+args.num_epochs = 100
+args.embedding_dim = 32
+args.batch_size = 1024
+reports = Execute(args).start()
+print(reports["Train"]["MRR"]) # => 0.9912
+print(reports["Test"]["MRR"]) # => 0.8155
+```
+
+**📖 [See more training examples →](tests/test_execute_start.py)** | **📖 [Model-specific tests →](tests/test_regression_*.py)**
 args.path_to_store_single_run = "Keci_UMLS"
 args.num_epochs = 100
 args.embedding_dim = 32
@@ -197,10 +219,17 @@ _:1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07
 <http://www.benchmark.org/family#hasParent> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
 ```
 
-**Continual Training:** the training phase of a pretrained model can be resumed. The model will saved in the same directory ``` --continual_learning "KeciFamilyRun"```.
+**Continual Training:** the training phase of a pretrained model can be resumed.
+The run reuses configuration and serialized artifacts from the existing experiment folder and stores updated outputs in the same directory using `--continual_learning "KeciFamilyRun"`.
 ```bash
 dicee --continual_learning "KeciFamilyRun" --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --backend rdflib --eval_model None
 ```
+The continual directory should contain the stored configuration and serialized training data (for example `configuration.json`, `memory_map_train_set.npy`, and mapping files `entity_to_idx`/`relation_to_idx` in `.csv` or legacy `.p` format).
+If `--eval_model` is set, evaluation runs after training using stored indexed artifacts. If `--eval_model None`, no evaluation is executed.
+Periodic evaluation and weight-averaging callbacks are also supported in continual training.
+
+**📖 [See continual learning examples →](tests/test_continual_training.py)** | **📖 [Online learning →](tests/test_online_learning.py)**
+
 #### Ensemble Learning with Knowledge Graph Embeddings
 
 The KGE models in our **dice-embedding** framework now support a range of state-of-the-art weight averaging techniques, including:
@@ -247,17 +276,7 @@ dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_ep
 ```
 For more details on periodic evaluations, please refer to the periodic evaluation section below in this file.
 
----
-
-#### Single device training on Multi-Device setup
-
-When using a multi-GPU setup, `PL` Trainer  automatically utilizes all available CUDA devices. To perform training on a single device, set the environment variable `CUDA_VISIBLE_DEVICES=0` before running your command. For example:
-
-```bash
-CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test" --num_epochs 100
-``` 
-The `CUDA_VISIBLE_DEVICES=0` setting limits the program to access only the specified GPU(s), making all others invisible.  
-Multiple GPUs can be selected by providing a comma-separated list, for example: `CUDA_VISIBLE_DEVICES=0,1`.
+**📖 [See SWA examples →](tests/test_swa.py)** | **📖 [Adaptive SWA →](tests/test_adaptive_swa.py)** | **📖 [Ensemble construction →](tests/test_ensemble_construction.py)**
 
 #### Periodic Evaluation during training
 
@@ -297,171 +316,148 @@ dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_ep
 dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_epochs 300 --lr 0.1 \
       --eval_every_n_epochs 100 --n_epochs_eval_model test --save_every_n_epochs --adaptive_swa
 ```
+
+**📖 [See periodic evaluation examples →](tests/test_periodic_eval_callback.py)** | **📖 [Periodic eval with weight averaging →](tests/test_periodic_eval_weight_averaging.py)**
+
 Currently, Periodic Evaluations as well as Ensemble Models can only be used in combination with `torchCPUTrainer` or `PL` trainer with a single CUDA-capable device.
 </details>
 
-## Search and Retrieval via Qdrant Vector Database
+## Link Prediction & Inference
+<details> <summary> Using Pre-trained Models </summary>
 
-<details> <summary> To see a code snippet </summary>
-
-```bash
-# Train an embedding model
-dicee --dataset_dir KGs/Countries-S1 --path_to_store_single_run CountryEmbeddings --model Keci --p 0 --q 1 --embedding_dim 256 --scoring_technique AllvsAll --num_epochs 300 --save_embeddings_as_csv
-```
-Start qdrant instance.
-
-```bash
-pip3 install fastapi uvicorn qdrant-client
-docker pull qdrant/qdrant && docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant
-```
-Upload Embeddings into vector database and start a webservice
-```bash
-dicee_vector_db --index --serve --path CountryEmbeddings --collection "countries_vdb"
-Creating a collection countries_vdb with distance metric:Cosine
-Completed!
-INFO:     Started server process [28953]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-```
-Retrieve an embedding vector.
-```bash
-curl -X 'GET' 'http://0.0.0.0:8000/api/get?q=germany' -H 'accept: application/json'
-# {"result": [{"name": "europe","vector": [...]}]}
-```
-Retrieve embedding vectors.
-```bash
-curl -X 'POST' 'http://0.0.0.0:8000/api/search_batch' -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"queries": ["brunei","guam"]}'
-# {"results": [{ "name": "europe","vector": [...]},{ "name": "northern_europe","vector": [...]}]}    
-```
-Retrieve an average of embedding vectors.
-```bash
-curl -X 'POST' 'http://0.0.0.0:8000/api/search_batch' -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"queries": ["europe","northern_europe"],"reducer": "mean"}'
-# {"results":{"name": ["europe","northern_europe"],"vectors": [...]}}
-```
-
-</details>
-
-
-## Answering Complex Queries 
-<details> <summary> To see a code snippet </summary>
-
-```python
-# pip install dicee
-# wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate & unzip KGs.zip
-from dicee.executer import Execute
-from dicee.config import Namespace
-from dicee.knowledge_graph_embeddings import KGE
-# (1) Train a KGE model
-args = Namespace()
-args.model = 'Keci'
-args.p=0
-args.q=1
-args.optim = 'Adam'
-args.scoring_technique = "AllvsAll"
-args.path_single_kg = "KGs/Family/family-benchmark_rich_background.owl"
-args.backend = "rdflib"
-args.num_epochs = 200
-args.batch_size = 1024
-args.lr = 0.1
-args.embedding_dim = 512
-result = Execute(args).start()
-# (2) Load the pre-trained model
-pre_trained_kge = KGE(path=result['path_experiment_folder'])
-# (3) Single-hop query answering
-# Query: ?E : \exist E.hasSibling(E, F9M167)
-# Question: Who are the siblings of F9M167?
-# Answer: [F9M157, F9F141], as (F9M167, hasSibling, F9M157) and (F9M167, hasSibling, F9F141)
-predictions = pre_trained_kge.answer_multi_hop_query(query_type="1p",
-                                                     query=('http://www.benchmark.org/family#F9M167',
-                                                            ('http://www.benchmark.org/family#hasSibling',)),
-                                                     tnorm="min", k=3)
-top_entities = [topk_entity for topk_entity, query_score in predictions]
-assert "http://www.benchmark.org/family#F9F141" in top_entities
-assert "http://www.benchmark.org/family#F9M157" in top_entities
-# (2) Two-hop query answering
-# Query: ?D : \exist E.Married(D, E) \land hasSibling(E, F9M167)
-# Question: To whom a sibling of F9M167 is married to?
-# Answer: [F9F158, F9M142] as (F9M157 #married F9F158) and (F9F141 #married F9M142)
-predictions = pre_trained_kge.answer_multi_hop_query(query_type="2p",
-                                                     query=("http://www.benchmark.org/family#F9M167",
-                                                            ("http://www.benchmark.org/family#hasSibling",
-                                                             "http://www.benchmark.org/family#married")),
-                                                     tnorm="min", k=3)
-top_entities = [topk_entity for topk_entity, query_score in predictions]
-assert "http://www.benchmark.org/family#F9M142" in top_entities
-assert "http://www.benchmark.org/family#F9F158" in top_entities
-# (3) Three-hop query answering
-# Query: ?T : \exist D.type(D,T) \land Married(D,E) \land hasSibling(E, F9M167)
-# Question: What are the type of people who are married to a sibling of F9M167?
-# (3) Answer: [Person, Male, Father] since  F9M157 is [Brother Father Grandfather Male] and F9M142 is [Male Grandfather Father]
-
-predictions = pre_trained_kge.answer_multi_hop_query(query_type="3p", query=("http://www.benchmark.org/family#F9M167",
-                                                                             ("http://www.benchmark.org/family#hasSibling",
-                                                                             "http://www.benchmark.org/family#married",
-                                                                             "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")),
-                                                     tnorm="min", k=5)
-top_entities = [topk_entity for topk_entity, query_score in predictions]
-print(top_entities)
-assert "http://www.benchmark.org/family#Person" in top_entities
-assert "http://www.benchmark.org/family#Father" in top_entities
-assert "http://www.benchmark.org/family#Male" in top_entities
-```
-For more, please refer to `examples/multi_hop_query_answering`.
-</details>
-
-## Predicting Missing Links
-<details> <summary> To see a code snippet</summary>
+### Download & Use Pretrained Models
 
 ```python
 from dicee import KGE
-# (1) Train a knowledge graph embedding model..
-# (2) Load a pretrained model
-pre_trained_kge = KGE(path='..')
-# (3) Predict missing links through head entity rankings
-pre_trained_kge.predict_topk(h=[".."],r=[".."],topk=10)
-# (4) Predict missing links through relation rankings
-pre_trained_kge.predict_topk(h=[".."],t=[".."],topk=10)
-# (5) Predict missing links through tail entity rankings
-pre_trained_kge.predict_topk(r=[".."],t=[".."],topk=10)
+
+# Download from URL
+model = KGE(url="https://files.dice-research.org/projects/DiceEmbeddings/KINSHIP-Keci-dim128-epoch256-KvsAll")
+
+# Or load local model
+model = KGE(path="Experiments/2024-01-15...")
+
+# Make a prediction
+model.predict(h="person49", r="term12", t="person39", logits=False)
 ```
 
-</details>
+**📖 [See download & evaluation examples →](tests/test_download_and_eval.py)**
 
-## Literal Prediction using Pre-trained KGE
-<details> <summary> To see a code snippet</summary>
+### Predict Missing Links
 
 ```python
 from dicee import KGE
-# (1) Train a knowledge graph embedding model..
-# (2) Load a pretrained model
-pre_trained_kge = KGE(path='..')
-# (3) Train a literal Emebedding Model using interactive KGE
-pre_trained_kge.train_literals(train_file_path = "")
-# (4) Predict Literal value for Entity-Attribute pair
-pre_trained_kge.predict_literals(entity=[".."],attribute=[".."])
+
+model = KGE(path="...")
+
+# Predict missing tail entities
+predictions = model.predict_topk(h=["Mongolia"], r=["isLocatedIn"], topk=3)
+# [('Asia', 0.65), ('Airport', 0.37), ...]
+
+# Predict missing head entities  
+predictions = model.predict_topk(r=["isLocatedIn"], t=["Asia"], topk=10)
+
+# Predict missing relations
+predictions = model.predict_topk(h=["Mongolia"], t=["Asia"], topk=5)
 ```
-A detailed illustration and explanation of literal prediction is provided in `examples/KGE_literal_prediction.py`.
+
+**📖 [See complete link prediction examples →](tests/test_predict_kge.py)**
 
 </details>
 
-## Downloading Pretrained Models 
-
-We provide plenty pretrained knowledge graph embedding models at [dice-research.org/projects/DiceEmbeddings/](https://files.dice-research.org/projects/DiceEmbeddings/).
-<details> <summary> To see a code snippet </summary>
+## Multi-Hop Query Answering
+<details> <summary> EPFO Queries (1p, 2p, 3p, 2i, 3i, ip, pi, 2u, up) </summary>
 
 ```python
 from dicee import KGE
+
+# Load pre-trained model
+model = KGE(path="...")
+
+# 1-hop: Who are the siblings of F9M167?
+# Query: ?E : ∃E.hasSibling(E, F9M167)
+predictions = model.answer_multi_hop_query(
+    query_type="1p",
+    query=('http://www.benchmark.org/family#F9M167',
+           ('http://www.benchmark.org/family#hasSibling',)),
+    tnorm="min", k=3
+)
+# => [('F9F141', 0.99), ('F9M157', 0.98), ...]
+
+# 2-hop: To whom is a sibling of F9M167 married?
+# Query: ?D : ∃E.Married(D,E) ∧ hasSibling(E, F9M167)
+predictions = model.answer_multi_hop_query(
+    query_type="2p",
+    query=("http://www.benchmark.org/family#F9M167",
+           ("http://www.benchmark.org/family#hasSibling",
+            "http://www.benchmark.org/family#married")),
+    tnorm="min", k=3
+)
+# => [('F9F158', 0.95), ('F9M142', 0.93), ...]
+
+# 3-hop: What type of people are married to a sibling of F9M167?
+# Query: ?T : ∃D.type(D,T) ∧ Married(D,E) ∧ hasSibling(E, F9M167)
+predictions = model.answer_multi_hop_query(
+    query_type="3p",
+    query=("http://www.benchmark.org/family#F9M167",
+           ("http://www.benchmark.org/family#hasSibling",
+            "http://www.benchmark.org/family#married",
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")),
+    tnorm="min", k=5
+)
+# => [('Person', 0.99), ('Male', 0.99), ('Father', 0.98), ...]
+```
+
+**📖 [See multi-hop query examples →](tests/test_answer_multi_hop_query.py)**  
+**Supported query types:** `1p` (1-hop projection), `2p` (2-hop), `3p` (3-hop), `2i` (2-way intersection), `3i` (3-way intersection), `ip` (intersection-projection), `pi` (projection-intersection), `2u` (2-way union), `up` (union-projection)
+
+</details>
+
+## Literal Prediction
+<details> <summary> Predicting Numeric/Literal Values </summary>
+
+```python
+from dicee import KGE
+
+# Load pre-trained model
+model = KGE(path="...")
+
+# Train literal prediction module on top of KGE
+model.train_literals(train_file_path="literals_train.csv")
+
+# Predict literal values
+predictions = model.predict_literals(entity=["Person1"], attribute=["hasAge"])
+# => [(42.5, 0.89), (43.2, 0.85), ...]
+```
+
+**📖 [See literal prediction examples →](tests/test_predict_kge_literals.py)**
+
+</details>
+
+## Pre-trained Models
+
+We provide pre-trained knowledge graph embedding models at [dice-research.org/projects/DiceEmbeddings/](https://files.dice-research.org/projects/DiceEmbeddings/).
+<details> <summary> Download & Compare Models </summary>
+
+```python
+from dicee import KGE
+
+# Download different models
 mure = KGE(url="https://files.dice-research.org/projects/DiceEmbeddings/YAGO3-10-Pykeen_MuRE-dim128-epoch256-KvsAll")
 quate = KGE(url="https://files.dice-research.org/projects/DiceEmbeddings/YAGO3-10-Pykeen_QuatE-dim128-epoch256-KvsAll")
 keci = KGE(url="https://files.dice-research.org/projects/DiceEmbeddings/YAGO3-10-Keci-dim128-epoch256-KvsAll")
-quate.predict_topk(h=["Mongolia"],r=["isLocatedIn"],topk=3)
-# [('Asia', 0.9894362688064575), ('Europe', 0.01575559377670288), ('Tadanari_Lee', 0.012544365599751472)]
-keci.predict_topk(h=["Mongolia"],r=["isLocatedIn"],topk=3)
-# [('Asia', 0.6522021293640137), ('Chinggis_Khaan_International_Airport', 0.36563414335250854), ('Democratic_Party_(Mongolia)', 0.19600993394851685)]
-mure.predict_topk(h=["Mongolia"],r=["isLocatedIn"],topk=3)
-# [('Asia', 0.9996906518936157), ('Ulan_Bator', 0.0009907372295856476), ('Philippines', 0.0003116439620498568)]
+
+# Compare predictions
+mure.predict_topk(h=["Mongolia"], r=["isLocatedIn"], topk=3)
+# [('Asia', 0.9997), ('Ulan_Bator', 0.0010), ('Philippines', 0.0003)]
+
+quate.predict_topk(h=["Mongolia"], r=["isLocatedIn"], topk=3)
+# [('Asia', 0.9894), ('Europe', 0.0158), ('Tadanari_Lee', 0.0125)]
+
+keci.predict_topk(h=["Mongolia"], r=["isLocatedIn"], topk=3)
+# [('Asia', 0.6522), ('Airport', 0.3656), ('Democratic_Party', 0.1960)]
 ```
+
+**📖 [See download & evaluation examples →](tests/test_download_and_eval.py)**
 
 </details>
 
@@ -1216,4 +1212,3 @@ url={https://openreview.net/forum?id=6T45-4TFqaX}}
   organization={IEEE}
 ```
 For any questions or wishes, please contact:  ```caglar.demir@upb.de```
-

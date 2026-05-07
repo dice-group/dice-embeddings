@@ -1,13 +1,13 @@
+import concurrent
+from typing import List, Tuple, Union
+
+import numpy as np
 import pandas as pd
 import polars as pl
-from .util import (timeit, pandas_dataframe_indexer, dataset_sanity_checking, 
-                   get_er_vocab, get_re_vocab, get_ee_vocab, apply_reciprocal_or_noise, 
-                   polars_dataframe_indexer)
+
 from dicee.static_funcs import numpy_data_type_changer
-import numpy as np
-import concurrent
-from typing import List, Tuple
-from typing import Union
+
+from .util import apply_reciprocal_or_noise, dataset_sanity_checking, get_ee_vocab, get_er_vocab, get_re_vocab, pandas_dataframe_indexer, polars_dataframe_indexer, timeit
 
 
 class PreprocessKG:
@@ -204,7 +204,7 @@ class PreprocessKG:
     def preprocess_with_byte_pair_encoding(self):
         assert isinstance(self.kg.raw_train_set, pd.DataFrame)
         assert self.kg.raw_train_set.columns.tolist() == ['subject', 'relation', 'object']
-        
+
         # Add reciprocal or noisy triples
         self.kg.raw_train_set = apply_reciprocal_or_noise(add_reciprocal=self.kg.add_reciprocal,
                                                           eval_model=self.kg.eval_model,
@@ -215,7 +215,7 @@ class PreprocessKG:
         self.kg.raw_test_set = apply_reciprocal_or_noise(add_reciprocal=self.kg.add_reciprocal,
                                                          eval_model=self.kg.eval_model,
                                                          df=self.kg.raw_test_set, info="Test")
-        
+
         # Transform DataFrames to list of tuples with BPE encoding
         self.kg.train_set = self.__replace_values_df(df=self.kg.raw_train_set, f=self.kg.enc.encode)
         self.kg.valid_set = self.__replace_values_df(df=self.kg.raw_valid_set, f=self.kg.enc.encode)
@@ -272,7 +272,7 @@ class PreprocessKG:
         # Construct vocabulary
         self.sequential_vocabulary_construction()
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
-        
+
         max_idx = max(self.kg.num_entities, self.kg.num_relations)
 
         # Index and convert datasets
@@ -283,7 +283,7 @@ class PreprocessKG:
             return numpy_data_type_changer(indexed, num=max_idx)
 
         self.kg.train_set = index_and_convert(self.kg.raw_train_set, "train")
-        
+
         if self.kg.raw_valid_set is not None:
             self.kg.valid_set = index_and_convert(self.kg.raw_valid_set, "valid")
 
@@ -323,7 +323,7 @@ class PreprocessKG:
         if self.kg.raw_test_set is not None:
             splits.append(self.kg.raw_test_set)
         df_str_kg = pl.concat(splits)
-        
+
         # Build entity vocabulary (sorted alphabetically for deterministic indexing)
         print("Collecting entities...")
         subjects = df_str_kg.select(pl.col("subject").unique().alias("entity"))
@@ -331,7 +331,7 @@ class PreprocessKG:
         self.kg.entity_to_idx = pl.concat([subjects, objects], how="vertical").unique().sort("entity")
         self.kg.entity_to_idx = self.kg.entity_to_idx.with_row_index("index").select(["index", "entity"])
         print(f"Unique entities: {len(self.kg.entity_to_idx)}")
-        
+
         # Build relation vocabulary (sorted alphabetically for deterministic indexing)
         print('Relation Indexing...')
         self.kg.relation_to_idx = df_str_kg.select(pl.col("relation").unique()).sort("relation")
@@ -339,17 +339,17 @@ class PreprocessKG:
         del df_str_kg
         # Index datasets
         print(f'Indexing Training Data {self.kg.raw_train_set.shape}...')
-        self.kg.train_set = polars_dataframe_indexer(self.kg.raw_train_set, self.kg.entity_to_idx, 
+        self.kg.train_set = polars_dataframe_indexer(self.kg.raw_train_set, self.kg.entity_to_idx,
                                                       self.kg.relation_to_idx).to_numpy()
 
         if self.kg.raw_valid_set is not None:
             print(f'Indexing Val Data {self.kg.raw_valid_set.shape}...')
-            self.kg.valid_set = polars_dataframe_indexer(self.kg.raw_valid_set, self.kg.entity_to_idx, 
+            self.kg.valid_set = polars_dataframe_indexer(self.kg.raw_valid_set, self.kg.entity_to_idx,
                                                           self.kg.relation_to_idx).to_numpy()
 
         if self.kg.raw_test_set is not None:
             print(f'Indexing Test Data {self.kg.raw_test_set.shape}...')
-            self.kg.test_set = polars_dataframe_indexer(self.kg.raw_test_set, self.kg.entity_to_idx, 
+            self.kg.test_set = polars_dataframe_indexer(self.kg.raw_test_set, self.kg.entity_to_idx,
                                                          self.kg.relation_to_idx).to_numpy()
 
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
