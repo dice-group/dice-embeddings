@@ -374,7 +374,12 @@ class DICE_Trainer:
         :return: model
         """
         print(f'{self.args.num_folds_for_cv}-fold cross-validation')
-        merged_train_set = self._collect_cv_pool(dataset)
+        single_kg_cv = getattr(dataset, 'path_single_kg', None) is not None
+        if single_kg_cv:
+            print('Single-file KG: using train_set only for the CV pool.')
+            merged_train_set = np.asarray(dataset.train_set)
+        else:
+            merged_train_set = self._collect_cv_pool(dataset)
         relation_filter_ids = self._resolve_relation_filter_ids(
             relation_to_idx=dataset.relation_to_idx,
             substrings=getattr(self.args, 'cv_relation_filter_substrings', None),
