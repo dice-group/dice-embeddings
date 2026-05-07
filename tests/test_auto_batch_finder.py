@@ -1,12 +1,14 @@
-from unittest.mock import MagicMock, patch
-
+import pytest
 import torch
 
+from dicee.config import Namespace
+from dicee.executer import Execute
 from dicee.trainer.auto_batch_finder import find_good_batch_size
 
 
 def make_mock_loader(batch_size=32, dataset_size=1000):
     """Create a minimal mock DataLoader for testing."""
+    from unittest.mock import MagicMock
     dataset = MagicMock()
     dataset.__len__ = MagicMock(return_value=dataset_size)
     dataset.collate_fn = None
@@ -22,8 +24,64 @@ def dummy_training_step(batch):
     return 0.5
 
 
+class TestAutoBatchFinderEndToEnd:
+    """End-to-end integration tests using the real model pipeline."""
+
+    @pytest.mark.filterwarnings("ignore::UserWarning")
+    def test_auto_batch_finding_true_cpu_trainer(self):
+        """End-to-end: auto_batch_finding=True with torchCPUTrainer runs without error."""
+        args = Namespace()
+        args.model = "DistMult"
+        args.scoring_technique = "KvsAll"
+        args.optim = "Adam"
+        args.dataset_dir = "KGs/UMLS"
+        args.num_epochs = 1
+        args.batch_size = 32
+        args.lr = 0.1
+        args.embedding_dim = 32
+        args.input_dropout_rate = 0.0
+        args.hidden_dropout_rate = 0.0
+        args.feature_map_dropout_rate = 0.0
+        args.auto_batch_finding = True
+        args.read_only_few = None
+        args.sample_triples_ratio = None
+        args.num_folds_for_cv = None
+        args.backend = "pandas"
+        args.trainer = "torchCPUTrainer"
+        args.normalization = None
+        result = Execute(args).start()
+        assert result is not None
+        assert "Train" in result
+
+    @pytest.mark.filterwarnings("ignore::UserWarning")
+    def test_auto_batch_finding_false_cpu_trainer(self):
+        """End-to-end: auto_batch_finding=False with torchCPUTrainer runs without error."""
+        args = Namespace()
+        args.model = "DistMult"
+        args.scoring_technique = "KvsAll"
+        args.optim = "Adam"
+        args.dataset_dir = "KGs/UMLS"
+        args.num_epochs = 1
+        args.batch_size = 32
+        args.lr = 0.1
+        args.embedding_dim = 32
+        args.input_dropout_rate = 0.0
+        args.hidden_dropout_rate = 0.0
+        args.feature_map_dropout_rate = 0.0
+        args.auto_batch_finding = False
+        args.read_only_few = None
+        args.sample_triples_ratio = None
+        args.num_folds_for_cv = None
+        args.backend = "pandas"
+        args.trainer = "torchCPUTrainer"
+        args.normalization = None
+        result = Execute(args).start()
+        assert result is not None
+        assert "Train" in result
+
+
 class TestFindGoodBatchSizeCPU:
-    """Tests that run on CPU only — no GPU required."""
+    """Unit tests using real DataLoader on CPU — no GPU required."""
 
     def test_cpu_skips_batch_finding_and_returns_initial(self):
         """On CPU, batch finding must be skipped and initial batch size returned."""
@@ -72,8 +130,8 @@ class TestFindGoodBatchSizeCPU:
         assert isinstance(result_bs, int)
         assert result_bs > 0
 
-    def test_auto_batch_finding_false_flag_bypassed(self):
-        """When called with CPU device, behaviour is same as auto_batch_finding=False."""
+    def test_auto_batch_finding_disabled_returns_unchanged(self):
+        """On CPU, result is identical to auto_batch_finding=False — no side effects."""
         loader = make_mock_loader(batch_size=64, dataset_size=800)
         device = torch.device("cpu")
         result_bs, result_rt = find_good_batch_size(loader, dummy_training_step, device)
@@ -84,65 +142,21 @@ class TestFindGoodBatchSizeCPU:
 class TestFindGoodBatchSizeInvalidDevice:
     """Tests for graceful handling of unusual or invalid device inputs."""
 
-    def test_invalid_device_string_raises_or_falls_back(self):
-        """Passing an invalid device string should raise RuntimeError or fall back safely."""
+    def test_invalid_device_string_raises_runtime_error(self):
+        """Passing an invalid device string must raise RuntimeError specifically."""
         loader = make_mock_loader(batch_size=32, dataset_size=1000)
-        try:
-            result_bs, result_rt = find_good_batch_size(
-                loader, dummy_training_step, "not_a_real_device"
-            )
-            assert result_bs == 32
-        except (RuntimeError, ValueError):
-            pass
+        with pytest.raises(RuntimeError):
+            find_good_batch_size(loader, dummy_training_step, "not_a_real_device")
 
-    def test_none_device_raises_or_falls_back(self):
-        """Passing None as device should not crash silently — raise or fall back."""
+    def test_none_device_raises_type_error(self):
+        """Passing None as device must raise TypeError specifically."""
         loader = make_mock_loader(batch_size=32, dataset_size=1000)
-        try:
-            result_bs, result_rt = find_good_batch_size(
-                loader, dummy_training_step, None
-            )
-            assert result_bs == 32
-        except (RuntimeError, ValueError, AttributeError, TypeError):
-            pass
+        with pytest.raises(TypeError):
+            find_good_batch_size(loader, dummy_training_step, None)
 
-
-class TestFindGoodBatchSizeMockedCUDA:
-    """Tests that mock CUDA behaviour to verify GPU code paths without real hardware."""
-
-    def test_cuda_oom_on_first_batch_raises_assertion(self):
-        """If OOM happens on the very first batch, an AssertionError should be raised."""
-        loader = make_mock_loader(batch_size=32, dataset_size=1000)
-
-        def oom_training_step(batch):
-            raise torch.cuda.OutOfMemoryError
-
-        try:
-            with patch("torch.cuda.is_available", return_value=True):
-                with patch("torch.cuda.mem_get_info", return_value=(1000, 10000)):
-                    with patch("torch.utils.data.DataLoader") as mock_dl:
-                        mock_dl.return_value = [MagicMock()]
-                        device = torch.device("cpu")  # CPU skips — acceptable outcome
-                        find_good_batch_size(loader, oom_training_step, device)
-        except (AssertionError, torch.cuda.OutOfMemoryError, TypeError):
-            pass
-
-    def test_gpu_memory_above_90_percent_stops_increase(self):
-        """When GPU memory usage exceeds 90%, batch size should stop increasing."""
-        loader = make_mock_loader(batch_size=32, dataset_size=10000)
-
-        def mock_training_step(batch):
-            return 0.1
-
-        # CPU device skips batch finding — this confirms the function
-        # returns safely without crashing when GPU is unavailable
-        device = torch.device("cpu")
-        result_bs, result_rt = find_good_batch_size(loader, mock_training_step, device)
-        assert result_bs == 32
-        assert result_rt is None
 
 class TestFindGoodBatchSizeEdgeCases:
-    """Edge cases around dataset size, batch size, and loader configuration."""
+    """Edge cases around dataset size and batch size boundaries."""
 
     def test_small_dataset_one_sample(self):
         """Dataset with 1 sample: batch_size >= dataset_size, return 1 immediately."""
@@ -166,3 +180,4 @@ class TestFindGoodBatchSizeEdgeCases:
         device = torch.device("cpu")
         result_bs, _ = find_good_batch_size(loader, dummy_training_step, device)
         assert result_bs <= 100
+
