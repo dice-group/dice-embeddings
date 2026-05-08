@@ -24,8 +24,8 @@ Given a head entity :math:`e_i`, estimate the posterior over relations:
 
     P(r_j \\mid e_i) \\approx \\text{TabPFN}_{\\text{rel}}\\bigl(\\phi(e_i)\\bigr)
 
-where :math:`\\phi(e_i) \\in \\mathbb{R}^{2|\\mathcal{R}|}` are degree-based features
-(see :func:`entity_features`).
+where :math:`\\phi(e_i)` is an entity feature vector produced by the selected
+:class:`EntityFeaturiser` (``--features degree`` or ``--features kge``).
 
 **Stage 2 — Tail predictor.**
 For each relation :math:`r_j`, estimate the posterior over tail entities:
@@ -39,7 +39,7 @@ Marginalise out the latent relation to obtain an unconditional tail score:
 
 .. math::
 
-    P(e_k \\mid e_i) = \\sum_{j=1}^{|\\mathcal{R}|} P(r_j \\mid e_i)\\; P(e_k \\mid e_i, r_j)
+    P(e_k \\mid e_i) = \\sum_{j=1}^{|\\mathcal{R}|} P(r_j \\mid e_i)\\\\; P(e_k \\mid e_i, r_j)
 
 Works best on small KGs: UMLS, Family, KINSHIP, Animals.
 TabPFN is designed for :math:`\\leq 10{,}000` samples and :math:`\\leq 100` features.
@@ -85,14 +85,49 @@ Usage Examples
 .. code-block:: bash
 
     python tabpfn_kg_explore.py --dataset_dir KGs/UMLS --query_entity "enzyme"
+
+Entity Feature Strategies
+--------------------------
+Select the feature strategy with ``--features``.
+
+**Default — relational degree profile (no external model required):**
+
+.. code-block:: bash
+
+    python tabpfn_kg_explore.py --dataset_dir KGs/UMLS --features degree --save --cache umls_degree.pkl
+
+**KGE embeddings — first train a Keci model with dicee, then use its embeddings:**
+
+.. code-block:: bash
+
+    # Step 1: train a Keci model and store it
+    dicee --dataset_dir KGs/UMLS --model Keci --embedding_dim 64 \
+          --num_epochs 200 --path_to_store_single_run Experiments/Keci_UMLS
+
+    # Step 2: build the TabPFN pipeline using Keci entity embeddings
+    python tabpfn_kg_explore.py \\
+        --dataset_dir KGs/UMLS \\
+        --features kge \\
+        --kge_path Experiments/Keci_UMLS \\
+        --save --cache umls_kge.pkl
+
+    # Step 3: evaluate
+    python tabpfn_kg_explore.py \\
+        --load --cache umls_kge.pkl \\
+        --mode evaluate --dataset_dir KGs/UMLS
+
+Any dicee model (ComplEx, DistMult, TransE, …) can be used — just point
+``--kge_path`` at the experiment folder that contains ``model.pt``.
 """
+
+import pickle
+from abc import ABC, abstractmethod
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import pickle
-from pathlib import Path
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 from tabpfn import TabPFNClassifier
 from tqdm import tqdm
 
@@ -304,38 +339,160 @@ def build_tensor(triples: np.ndarray, n_entities: int, n_relations: int) -> np.n
 
 # ── 3. Entity feature vectors from tensor slices ─────────────────────────────
 
-def entity_features(T: np.ndarray) -> np.ndarray:
-    """Compute degree-based feature vectors for every entity.
 
-    Rather than flattening :math:`\\mathbf{T}[i,:,:]` (which has
-    :math:`|\\mathcal{E}| \\times |\\mathcal{R}|` entries and is impractical for
-    large graphs), we aggregate into two degree vectors:
+class EntityFeaturiser(ABC):
+    """Abstract base class for entity feature extraction.
 
-    .. math::
+    Any implementation must produce a matrix
+    :math:`\\Phi \\in \\mathbb{R}^{|\\mathcal{E}| \\times d}` where row
+    :math:`i` is the feature vector :math:`\\phi(e_i)` for entity :math:`e_i`.
+    All downstream stages (training and inference) consume only this matrix,
+    making the feature strategy fully interchangeable.
 
-        d^{\\text{out}}_{i,j} = \\sum_{k} \\mathbf{T}_{i,k,j}
-        \\qquad\\text{(out-degree of } e_i \\text{ under } r_j\\text{)}
+    To add a new strategy:
 
-    .. math::
-
-        d^{\\text{in}}_{i,j}  = \\sum_{k} \\mathbf{T}_{k,i,j}
-        \\qquad\\text{(in-degree  of } e_i \\text{ under } r_j\\text{)}
-
-    The final feature vector is the concatenation:
-
-    .. math::
-
-        \\phi(e_i) = \\bigl[d^{\\text{out}}_{i,\\cdot}\\;\\|\\; d^{\\text{in}}_{i,\\cdot}\\bigr]
-        \\in \\mathbb{R}^{2|\\mathcal{R}|}
-
-    Output shape: ``(|E|, 2 * |R|)``.
+    1. Subclass :class:`EntityFeaturiser`.
+    2. Implement :meth:`fit_transform`.
+    3. Register the name in :func:`build_featuriser`.
     """
-    n_e, _, n_r = T.shape
-    # Out-degree per relation: how many tails does e_i have for each relation
-    out_deg = T.sum(axis=1)          # (n_entities, n_relations)
-    # In-degree per relation: how many heads point to e_i for each relation
-    in_deg  = T.sum(axis=0)          # (n_entities, n_relations)
-    return np.hstack([out_deg, in_deg]).astype(np.float32)   # (n_entities, 2*n_r)
+
+    @abstractmethod
+    def fit_transform(
+        self,
+        T: np.ndarray,
+        e2i: dict,
+        i2e: dict,
+    ) -> np.ndarray:
+        """Compute and return the entity feature matrix.
+
+        Parameters
+        ----------
+        T:
+            3-D binary adjacency tensor :math:`\\mathbf{T}`.
+        e2i:
+            Entity name → integer index mapping.
+        i2e:
+            Integer index → entity name mapping.
+
+        Returns
+        -------
+        np.ndarray
+            Shape ``(|E|, d)``, dtype ``float32``.
+        """
+
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Short identifier shown in CLI output."""
+
+
+class DegreeFeaturiser(EntityFeaturiser):
+    """Represent each entity by its relational degree profile.
+
+    Out- and in-degree counts per relation are concatenated:
+
+    .. math::
+
+        d^{\\text{out}}_{i,j} = \\sum_{k} \\mathbf{T}_{i,k,j}, \\qquad
+        d^{\\text{in}}_{i,j}  = \\sum_{k} \\mathbf{T}_{k,i,j}
+
+    .. math::
+
+        \\phi(e_i) = \\bigl[d^{\\text{out}}_{i,\\cdot}\\\\;\\|\\\\;
+        d^{\\text{in}}_{i,\\cdot}\\bigr] \\in \\mathbb{R}^{2|\\mathcal{R}|}
+
+    No external model required — works on any KG straight from the tensor.
+    """
+
+    @property
+    def name(self) -> str:
+        return "degree"
+
+    def fit_transform(self, T: np.ndarray, e2i: dict, i2e: dict) -> np.ndarray:
+        out_deg = T.sum(axis=1)   # (|E|, |R|)
+        in_deg  = T.sum(axis=0)   # (|E|, |R|)
+        return np.hstack([out_deg, in_deg]).astype(np.float32)
+
+
+class KGEFeaturiser(EntityFeaturiser):
+    """Represent each entity by its embedding from a pre-trained dicee KGE model.
+
+    Loads the model via :class:`dicee.KGE` and calls
+    :meth:`get_transductive_entity_embeddings` to extract the embedding
+    matrix.  The feature dimensionality equals the model's ``embedding_dim``.
+
+    .. math::
+
+        \\phi(e_i) = \\mathbf{E}[i] \\in \\mathbb{R}^{d_{\\text{emb}}}
+
+    where :math:`\\mathbf{E}` is the entity embedding table of the trained model.
+
+    Parameters
+    ----------
+    kge_path:
+        Path to an experiment folder produced by dicee (must contain
+        ``model.pt`` and ``configuration.json``).
+    """
+
+    def __init__(self, kge_path: str):
+        self.kge_path = kge_path
+        self._model = None
+
+    @property
+    def name(self) -> str:
+        return f"kge:{self.kge_path}"
+
+    def fit_transform(self, T: np.ndarray, e2i: dict, i2e: dict) -> np.ndarray:
+        from dicee import KGE  # lazy import — not required for degree mode
+        self._model = KGE(path=self.kge_path)
+
+        # Entities ordered by their integer index (same order as T rows)
+        ordered_entities = [i2e[i] for i in range(len(i2e))]
+
+        # Filter to entities known to the KGE model
+        known = [e for e in ordered_entities if e in self._model.entity_to_idx]
+        unknown = [e for e in ordered_entities if e not in self._model.entity_to_idx]
+        if unknown:
+            print(rf"[KGEFeaturiser] Warning: {len(unknown)} entities not in KGE model\; "
+                  "using zero vectors for them.")
+
+        d = self._model.model.entity_embeddings.embedding_dim
+        X = np.zeros((len(ordered_entities), d), dtype=np.float32)
+
+        if known:
+            embs = self._model.get_transductive_entity_embeddings(
+                known, as_pytorch=True
+            ).detach().numpy().astype(np.float32)
+            for i, name in enumerate(known):
+                X[e2i[name]] = embs[i]
+
+        return X
+
+
+def build_featuriser(name: str, kge_path: str | None) -> EntityFeaturiser:
+    """Factory that maps a strategy name to an :class:`EntityFeaturiser`.
+
+    Available strategies
+    --------------------
+    ``degree``
+        :class:`DegreeFeaturiser` — no external model needed.
+    ``kge``
+        :class:`KGEFeaturiser` — requires ``--kge_path``.
+
+    Parameters
+    ----------
+    name:
+        Strategy identifier, one of ``{"degree", "kge"}``.
+    kge_path:
+        Path to a dicee experiment folder.  Required when ``name == "kge"``.
+    """
+    if name == "degree":
+        return DegreeFeaturiser()
+    if name == "kge":
+        if not kge_path:
+            raise ValueError("--kge_path is required when --features kge")
+        return KGEFeaturiser(kge_path)
+    raise ValueError(f"Unknown --features value '{name}'. Choose from: degree, kge")
 
 
 # ── 4. Stage 1 — Relation predictor ──────────────────────────────────────────
@@ -348,7 +505,7 @@ def build_relation_prediction_dataset(triples: np.ndarray, X_entities: np.ndarra
 
     .. math::
 
-        \\bigl(\\phi(e_i),\; r_j\\bigr)
+        \\bigl(\\phi(e_i),\\; r_j\\bigr)
 
     so the classifier learns :math:`P(r_j \\mid \\phi(e_i))`.
     """
@@ -394,7 +551,7 @@ def build_tail_prediction_dataset(triples: np.ndarray, X_entities: np.ndarray, r
 
         \\mathcal{T}_j = \\{(e_i, e_k) \\mid (e_i, r_j, e_k) \\in \\mathcal{T}\\}
 
-    and build examples :math:`(\\phi(e_i),\; e_k)` so the classifier learns
+    and build examples :math:`(\\phi(e_i),\\; e_k)` so the classifier learns
     :math:`P(e_k \\mid e_i, r_j)`.
     """
     mask = triples[:, 1] == relation_id
@@ -469,7 +626,7 @@ def build_pair_relation_dataset(triples: np.ndarray, X_entities: np.ndarray):
 
     .. math::
 
-        \\psi(e_i, e_k) = \\bigl[\\phi(e_i) \\;\\|\\; \\phi(e_k)\\bigr]
+        \\psi(e_i, e_k) = \\bigl[\\phi(e_i) \\\\;\\|\\\\; \\phi(e_k)\\bigr]
         \\in \\mathbb{R}^{4|\\mathcal{R}|}
 
     and use the relation :math:`r_j` as the target, so the classifier learns
@@ -713,7 +870,7 @@ def predict_tails(
     .. math::
 
         P(e_k \\mid e_i)
-        = \\sum_{j=1}^{|\\mathcal{R}|} P(r_j \\mid e_i)\\; P(e_k \\mid e_i, r_j)
+        = \\sum_{j=1}^{|\\mathcal{R}|} P(r_j \\mid e_i)\\\\; P(e_k \\mid e_i, r_j)
 
     where
 
@@ -757,6 +914,20 @@ if __name__ == "__main__":
     parser.add_argument("--query_relation", default=None, help="Relation name (for link_predict mode)")
     parser.add_argument("--top_k", type=int, default=10)
     parser.add_argument("--n_test", type=int, default=None, help="Randomly subsample this many test triples for evaluation (None = use all)")
+    parser.add_argument(
+        "--features",
+        default="degree",
+        choices=["degree", "kge"],
+        help=(
+            "degree  : relational degree profile phi(e_i) in R^{2|R|} (default, no external model)\n"
+            "kge     : entity embeddings from a pre-trained dicee model (requires --kge_path)"
+        ),
+    )
+    parser.add_argument(
+        "--kge_path",
+        default=None,
+        help="Path to a dicee experiment folder (required when --features kge)",
+    )
     parser.add_argument("--cache", default=DEFAULT_CACHE, help="Path to cache file")
     parser.add_argument("--save", action="store_true", help="Save trained pipeline to --cache after training")
     parser.add_argument("--load", action="store_true", help="Load pipeline from --cache and skip training")
@@ -774,7 +945,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.load:
-        # ── Load all artefacts from disk; skip every training stage ───────────
+        # ── Load all artefacts from disk\; skip every training stage ───────────
         p = load_pipeline(args.cache)
         e2i, r2i       = p["e2i"], p["r2i"]
         X_ent, triples = p["X_ent"], p["triples"]
@@ -797,7 +968,10 @@ if __name__ == "__main__":
         print("\n=== Building 3D adjacency tensor ===")
         T = build_tensor(triples, n_e, n_r)
         print(f"  Tensor shape: {T.shape}  (density: {T.mean():.5f})")
-        X_ent = entity_features(T)
+
+        featuriser = build_featuriser(args.features, args.kge_path)
+        print(f"\n=== Computing entity features  [{featuriser.name}] ===")
+        X_ent = featuriser.fit_transform(T, e2i, i2e)
         print(f"  Entity feature matrix: {X_ent.shape}")
 
         print("\n=== Stage 1: Train relation predictor (head → relation) ===")
@@ -816,7 +990,7 @@ if __name__ == "__main__":
             )
 
     if rel_clf is None:
-        print("Stage 1 classifier unavailable; cannot run inference.")
+        print(r"Stage 1 classifier unavailable\; cannot run inference.")
         raise SystemExit(1)
 
     # ──────────────────────────────────────────────────────────────────────
