@@ -7,6 +7,7 @@ import torch
 from tqdm import tqdm
 
 from dicee.abstracts import AbstractTrainer
+from dicee.trainer.auto_batch_finder import find_good_batch_size
 
 
 class TorchTrainer(AbstractTrainer):
@@ -84,6 +85,26 @@ class TorchTrainer(AbstractTrainer):
         self.training_step = self.model.training_step
         # (1) Start running callbacks
         self.on_fit_start(self, self.model)
+
+        if getattr(self.attributes, "auto_batch_finding", False):
+            def _training_step_fn(batch):
+                x_batch, y_batch = self.extract_input_outputs_set_device(batch)
+                self.optimizer.zero_grad(set_to_none=True)
+                return self.forward_backward_update(x_batch, y_batch)
+            new_batch_size, _ = find_good_batch_size(
+                self.train_dataloaders, _training_step_fn, device=self.device
+            )
+            if new_batch_size != self.train_dataloaders.batch_size:
+                self.train_dataloaders = torch.utils.data.DataLoader(
+                    self.train_dataloaders.dataset,
+                    batch_size=new_batch_size,
+                    shuffle=True,
+                    num_workers=self.train_dataloaders.num_workers,
+                    collate_fn=self.train_dataloaders.dataset.collate_fn,
+                    pin_memory=False,
+                    drop_last=False,
+                    persistent_workers=False,
+                )
 
         print(f'NumOfDataPoints:{len(self.train_dataloaders.dataset)} '
               f'| NumOfEpochs:{self.attributes.max_epochs} '
