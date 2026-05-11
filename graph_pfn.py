@@ -15,6 +15,9 @@ Key improvements over the baseline
 6. Two-layer prediction head — more expressive than a single linear layer.
 7. AdamW + cosine LR + gradient clipping — modern training recipe.
 8. Hits@1 evaluation during training — tracks task-level accuracy.
+9. Rich subgraph prior — context window filled with inverse edges, sibling
+   multi-relation triples, a distractor chain, and extended-chain triples
+   rather than random noise, giving the Transformer real structural signal.
 """
 
 import random
@@ -28,68 +31,115 @@ import torch.nn as nn
 # 1.  DATA PRIOR
 # ---------------------------------------------------------------------------
 
-class TransitiveGraphPrior:
+class RichSubgraphPrior:
     """
-    Generates synthetic tasks that require transitive-closure reasoning.
+    Generates tasks from richer multi-relational subgraphs.
 
-    Entity and relation indices are *re-randomised* per task so the model
-    cannot memorise entity identities — it must reason from structure alone.
-    The support set is always guaranteed to contain the chain triples needed
-    to answer the hop-k query.
+    Each task samples a hop depth in [1, max_hop] and fills the context with:
+      - Critical chain triples  (guaranteed; make the task solvable)
+      - Inverse edges           (teach relation directionality)
+      - Sibling triples         (chain entities connected via other relations —
+                                 simulates a real multi-relational neighbourhood)
+      - Distractor chain        (same relation, fully disjoint entities — tests
+                                 the model's ability to ignore irrelevant paths)
+      - Extended chain          (chain triples beyond the answer node — forces
+                                 precise hop counting, not "longest path" heuristics)
+      - Random noise            (pads any remaining slots)
+
+    Entity/relation indices are re-randomised per task.
     """
 
-    def __init__(self, num_entities: int = 50, num_relations: int = 5):
+    def __init__(
+        self,
+        num_entities: int = 100,
+        num_relations: int = 10,
+        max_hop: int = 3,
+    ):
         self.num_entities = num_entities
         self.num_relations = num_relations
+        self.max_hop = max_hop
 
     def generate_task(
         self,
-        context_size: int = 10,
-        hop: int = 2,
+        context_size: int = 32,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Returns
         -------
-        support : LongTensor (context_size, 3)   — observed (h, r, t) triples
-        query   : LongTensor (2,)                — (h_q, r_q)
-        target  : LongTensor scalar              — expected tail entity
+        support : LongTensor (context_size, 3)  — observed (h, r, t) triples
+        query   : LongTensor (2,)               — (h_q, r_q)
+        target  : LongTensor scalar             — expected tail entity
         """
-        assert context_size >= hop, "context_size must be at least hop to hold critical triples"
+        hop = random.randint(1, self.max_hop)
+        assert context_size >= hop
 
         r = random.randint(0, self.num_relations - 1)
+        r_inv = (r + 1) % self.num_relations
+        other_rels = [rr for rr in range(self.num_relations) if rr not in (r, r_inv)]
 
-        # Build a chain long enough to answer a hop-k query
-        chain_len = max(context_size, hop) + 1
-        chain = random.sample(range(self.num_entities), chain_len + 1)
+        # Build a chain that extends several nodes beyond the answer
+        extra = 3
+        chain = random.sample(range(self.num_entities), min(hop + extra + 1, self.num_entities))
 
-        # ── Guaranteed critical triples (must survive into support) ─────────
-        # We need chain[i] -r-> chain[i+1] for i in 0..hop-1 to answer the query.
+        # ── Critical triples ────────────────────────────────────────────────
         critical: List[Tuple[int, int, int]] = [
             (chain[i], r, chain[i + 1]) for i in range(hop)
         ]
-
-        # Remaining chain triples and noise fill the rest of the context window
-        rest_chain = [(chain[i], r, chain[i + 1]) for i in range(hop, chain_len)]
-        noise = [
-            (
-                random.randint(0, self.num_entities - 1),
-                random.randint(0, self.num_relations - 1),
-                random.randint(0, self.num_entities - 1),
-            )
-            for _ in range(5)
-        ]
-        filler = rest_chain + noise
-        random.shuffle(filler)
-
-        support = critical + filler[: context_size - hop]
-        random.shuffle(support)  # shuffle so query position carries no signal
-
+        critical_set: set = set(map(tuple, critical))
         query_h, query_r, target_t = chain[0], r, chain[hop]
 
+        # ── Structured filler ───────────────────────────────────────────────
+        structured: List[Tuple[int, int, int]] = []
+
+        # a) Inverse edges for each critical triple
+        for h_, r_, t_ in critical:
+            structured.append((t_, r_inv, h_))
+
+        # b) Sibling triples: chain entities connected via other relations
+        chain_nodes = chain[: hop + 1]
+        for i, ei in enumerate(chain_nodes):
+            for j, ej in enumerate(chain_nodes):
+                if i != j and other_rels:
+                    structured.append((ei, random.choice(other_rels), ej))
+
+        # c) Distractor chain: same relation r, disjoint entity set
+        pool = [e for e in range(self.num_entities) if e not in set(chain)]
+        if len(pool) >= hop + 1:
+            d_chain = random.sample(pool, hop + 1)
+            for i in range(hop):
+                structured.append((d_chain[i], r, d_chain[i + 1]))
+
+        # d) Extended chain triples beyond the answer node (forces precise hop counting)
+        for i in range(hop, min(hop + extra, len(chain) - 1)):
+            structured.append((chain[i], r, chain[i + 1]))
+
+        # Deduplicate structured filler
+        seen: set = set(critical_set)
+        deduped: List[Tuple[int, int, int]] = []
+        for t in structured:
+            key = tuple(t)
+            if key not in seen:
+                seen.add(key)
+                deduped.append(t)
+
+        random.shuffle(deduped)
+        remaining = context_size - len(critical)
+        selected = deduped[:remaining]
+
+        # e) Pad with random noise if structured filler is insufficient
+        while len(selected) < remaining:
+            nh = random.randint(0, self.num_entities - 1)
+            nr_ = random.randint(0, self.num_relations - 1)
+            nt = random.randint(0, self.num_entities - 1)
+            key = (nh, nr_, nt)
+            if key not in seen:
+                seen.add(key)
+                selected.append(key)
+
+        support = critical + selected
+        random.shuffle(support)  # shuffle so position carries no signal
+
         # ── Re-randomise entity / relation indices ───────────────────────────
-        # Every entity/relation gets a fresh random ID drawn without replacement
-        # from [0, num_entities) / [0, num_relations) so the model cannot use
-        # memorised ID semantics — only structural context matters.
         unique_ents = list(
             {e for h_, _, t_ in support for e in (h_, t_)} | {query_h, target_t}
         )
@@ -177,7 +227,9 @@ class TriplePFN(nn.Module):
             batch_first=True,
             norm_first=True,   # pre-norm: more stable gradients for deeper stacks
         )
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        self.transformer = nn.TransformerEncoder(
+            encoder_layer, num_layers=num_layers, enable_nested_tensor=False
+        )
 
         # Two-layer head is more expressive than a single linear projection
         self.head = nn.Sequential(
@@ -237,19 +289,19 @@ def _collate(
 
 
 def train(
-    num_epochs: int = 2000,
-    batch_size: int = 32,
-    context_size: int = 8,
-    num_entities: int = 50,
-    num_relations: int = 5,
-    embed_dim: int = 128,
-    num_heads: int = 4,
-    num_layers: int = 4,
+    num_epochs: int = 3000,
+    batch_size: int = 64,
+    context_size: int = 32,
+    num_entities: int = 100,
+    num_relations: int = 10,
+    embed_dim: int = 256,
+    num_heads: int = 8,
+    num_layers: int = 6,
     lr: float = 1e-4,
     eval_every: int = 200,
 ) -> TriplePFN:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    prior = TransitiveGraphPrior(num_entities=num_entities, num_relations=num_relations)
+    prior = RichSubgraphPrior(num_entities=num_entities, num_relations=num_relations)
     model = TriplePFN(
         num_entities=num_entities,
         num_relations=num_relations,
@@ -270,7 +322,7 @@ def train(
         model.train()
         supports, queries, targets = _collate(
             [prior.generate_task(context_size=context_size) for _ in range(batch_size)]
-        )
+        )  # generate_task samples hop in [1, max_hop] internally
         supports = supports.to(device)
         queries = queries.to(device)
         targets = targets.to(device)
@@ -286,7 +338,7 @@ def train(
             model.eval()
             with torch.no_grad():
                 e_sup, e_qry, e_tgt = _collate(
-                    [prior.generate_task(context_size=context_size) for _ in range(256)]
+                    [prior.generate_task(context_size=context_size) for _ in range(512)]
                 )
                 e_sup = e_sup.to(device)
                 e_qry = e_qry.to(device)
