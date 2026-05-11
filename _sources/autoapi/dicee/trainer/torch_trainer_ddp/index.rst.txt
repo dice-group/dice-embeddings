@@ -31,31 +31,21 @@ Module Contents
    Bases: :py:obj:`dicee.abstracts.AbstractTrainer`
 
 
-    A Trainer based on torch.nn.parallel.DistributedDataParallel
+   Abstract base class for KGE model trainers.
 
-    Arguments
-   ----------
-   train_set_idx
-       Indexed triples for the training.
-   entity_idxs
-       mapping.
-   relation_idxs
-       mapping.
-   form
-       ?
-   store
-        ?
-   label_smoothing_rate
-        Using hard targets (0,1) drives weights to infinity.
-        An outlier produces enormous gradients.
+   Provides the callback dispatch mechanism shared by all concrete trainer
+   implementations (TorchTrainer, TorchDDPTrainer, etc.).  Sub-classes call
+   the ``on_*`` hooks at the appropriate points in the training loop so that
+   any registered :class:`AbstractCallback` can react.
 
-   :rtype: torch.utils.data.Dataset
+   :param args: Processed configuration object.  Must expose at least
+                ``random_seed`` (int).
+   :type args: argparse.Namespace or similar
+   :param callbacks: Ordered list of callback instances to invoke at each lifecycle hook.
+   :type callbacks: list of AbstractCallback
 
 
    .. py:method:: fit(*args, **kwargs)
-
-      Train model
-
 
 
 .. py:class:: NodeTrainer(trainer, model: torch.nn.Module, train_dataset_loader: torch.utils.data.DataLoader, callbacks, num_epochs: int)
@@ -102,8 +92,5 @@ Module Contents
 
 
    .. py:method:: train()
-
-      Training loop for DDP
-
 
 

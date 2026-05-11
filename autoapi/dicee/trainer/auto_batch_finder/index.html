@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>dicee.trainer.model_parallelism &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+  <title>dicee.trainer.auto_batch_finder &mdash; DICE Embeddings 0.1.3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
@@ -24,8 +24,8 @@
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
-    <link rel="next" title="dicee.trainer.torch_trainer" href="../torch_trainer/index.html" />
-    <link rel="prev" title="dicee.trainer.dice_trainer" href="../dice_trainer/index.html" /> 
+    <link rel="next" title="dicee.trainer.dice_trainer" href="../dice_trainer/index.html" />
+    <link rel="prev" title="dicee.trainer" href="../index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -87,14 +87,13 @@
 <li class="toctree-l3"><a class="reference internal" href="../../static_preprocess_funcs/index.html">dicee.static_preprocess_funcs</a></li>
 <li class="toctree-l3 current"><a class="reference internal" href="../index.html">dicee.trainer</a><ul class="current">
 <li class="toctree-l4 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l5"><a class="reference internal" href="../auto_batch_finder/index.html">dicee.trainer.auto_batch_finder</a></li>
-<li class="toctree-l5"><a class="reference internal" href="../dice_trainer/index.html">dicee.trainer.dice_trainer</a></li>
-<li class="toctree-l5 current"><a class="current reference internal" href="#">dicee.trainer.model_parallelism</a><ul>
-<li class="toctree-l6"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">dicee.trainer.auto_batch_finder</a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="../dice_trainer/index.html">dicee.trainer.dice_trainer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../model_parallelism/index.html">dicee.trainer.model_parallelism</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../torch_trainer/index.html">dicee.trainer.torch_trainer</a></li>
 <li class="toctree-l5"><a class="reference internal" href="../torch_trainer_ddp/index.html">dicee.trainer.torch_trainer_ddp</a></li>
 </ul>
@@ -129,9 +128,9 @@
       <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
           <li class="breadcrumb-item"><a href="../../index.html">dicee</a></li>
           <li class="breadcrumb-item"><a href="../index.html">dicee.trainer</a></li>
-      <li class="breadcrumb-item active">dicee.trainer.model_parallelism</li>
+      <li class="breadcrumb-item active">dicee.trainer.auto_batch_finder</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../../../../_sources/autoapi/dicee/trainer/model_parallelism/index.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../../../_sources/autoapi/dicee/trainer/auto_batch_finder/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -139,27 +138,14 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-dicee.trainer.model_parallelism">
-<span id="dicee-trainer-model-parallelism"></span><h1>dicee.trainer.model_parallelism<a class="headerlink" href="#module-dicee.trainer.model_parallelism" title="Link to this heading"></a></h1>
-<section id="classes">
-<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.model_parallelism.TensorParallel" title="dicee.trainer.model_parallelism.TensorParallel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TensorParallel</span></code></a></p></td>
-<td><p>Abstract base class for KGE model trainers.</p></td>
-</tr>
-</tbody>
-</table>
-</section>
+  <section id="module-dicee.trainer.auto_batch_finder">
+<span id="dicee-trainer-auto-batch-finder"></span><h1>dicee.trainer.auto_batch_finder<a class="headerlink" href="#module-dicee.trainer.auto_batch_finder" title="Link to this heading"></a></h1>
 <section id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.model_parallelism.extract_input_outputs" title="dicee.trainer.model_parallelism.extract_input_outputs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_input_outputs</span></code></a>(z[, device])</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.trainer.model_parallelism.forward_backward_update_loss" title="dicee.trainer.model_parallelism.forward_backward_update_loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward_backward_update_loss</span></code></a>(→ float)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.auto_batch_finder.find_good_batch_size" title="dicee.trainer.auto_batch_finder.find_good_batch_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_good_batch_size</span></code></a>(→ Tuple[int, Optional[float]])</p></td>
+<td><p>Find a batch size that uses GPU memory efficiently.</p></td>
 </tr>
 </tbody>
 </table>
@@ -167,39 +153,29 @@
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.extract_input_outputs">
-<span class="sig-prename descclassname"><span class="pre">dicee.trainer.model_parallelism.</span></span><span class="sig-name descname"><span class="pre">extract_input_outputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#extract_input_outputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.extract_input_outputs" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.forward_backward_update_loss">
-<span class="sig-prename descclassname"><span class="pre">dicee.trainer.model_parallelism.</span></span><span class="sig-name descname"><span class="pre">forward_backward_update_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#forward_backward_update_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.forward_backward_update_loss" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.TensorParallel">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.trainer.model_parallelism.</span></span><span class="sig-name descname"><span class="pre">TensorParallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#TensorParallel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.TensorParallel" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="../../abstracts/index.html#dicee.abstracts.AbstractTrainer" title="dicee.abstracts.AbstractTrainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractTrainer</span></code></a></p>
-<p>Abstract base class for KGE model trainers.</p>
-<p>Provides the callback dispatch mechanism shared by all concrete trainer
-implementations (TorchTrainer, TorchDDPTrainer, etc.).  Sub-classes call
-the <code class="docutils literal notranslate"><span class="pre">on_*</span></code> hooks at the appropriate points in the training loop so that
-any registered <code class="xref py py-class docutils literal notranslate"><span class="pre">AbstractCallback</span></code> can react.</p>
+<dt class="sig sig-object py" id="dicee.trainer.auto_batch_finder.find_good_batch_size">
+<span class="sig-prename descclassname"><span class="pre">dicee.trainer.auto_batch_finder.</span></span><span class="sig-name descname"><span class="pre">find_good_batch_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_step_fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/trainer/auto_batch_finder.html#find_good_batch_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.auto_batch_finder.find_good_batch_size" title="Link to this definition"></a></dt>
+<dd><p>Find a batch size that uses GPU memory efficiently.</p>
+<p>Progressively increases batch size (with tunable delta) until GPU memory
+exceeds 90% or a CUDA OOM error is raised, then backs off to the last safe
+batch size.  Only supported on CUDA devices; returns the initial batch size
+unchanged on CPU.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>args</strong> (<em>argparse.Namespace</em><em> or </em><em>similar</em>) – Processed configuration object.  Must expose at least
-<code class="docutils literal notranslate"><span class="pre">random_seed</span></code> (int).</p></li>
-<li><p><strong>callbacks</strong> (<em>list</em><em> of </em><a class="reference internal" href="../../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><em>AbstractCallback</em></a>) – Ordered list of callback instances to invoke at each lifecycle hook.</p></li>
+<li><p><strong>train_loader</strong> – DataLoader wrapping the training dataset.</p></li>
+<li><p><strong>training_step_fn</strong> – Callable[[batch], float] — runs one forward+backward
+pass and returns the scalar loss.  Each trainer passes its own
+implementation so this function stays trainer-agnostic.</p></li>
+<li><p><strong>device</strong> – torch.device (or anything accepted by torch.device()) used to
+monitor GPU memory.</p></li>
 </ul>
 </dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>(batch_size, runtime) where runtime is the wall-clock seconds of the
+last successful batch, or None when batch finding was skipped.</p>
+</dd>
 </dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.trainer.model_parallelism.TensorParallel.fit">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/model_parallelism.html#TensorParallel.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.model_parallelism.TensorParallel.fit" title="Link to this definition"></a></dt>
-<dd><p>Train model</p>
-</dd></dl>
-
 </dd></dl>
 
 </section>
@@ -209,8 +185,8 @@ any registered <code class="xref py py-class docutils literal notranslate"><span
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../dice_trainer/index.html" class="btn btn-neutral float-left" title="dicee.trainer.dice_trainer" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../torch_trainer/index.html" class="btn btn-neutral float-right" title="dicee.trainer.torch_trainer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../index.html" class="btn btn-neutral float-left" title="dicee.trainer" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../dice_trainer/index.html" class="btn btn-neutral float-right" title="dicee.trainer.dice_trainer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

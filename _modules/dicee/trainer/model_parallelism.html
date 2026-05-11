@@ -88,14 +88,14 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.trainer.model_parallelism</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractTrainer</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..models.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">EnsembleKGE</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..static_funcs_training</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_iterable_verbose</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.auto_batch_finder</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_good_batch_size</span>
 
 
 <div class="viewcode-block" id="extract_input_outputs">
@@ -119,111 +119,6 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unexpected batch shape..&#39;</span><span class="p">)</span></div>
 
-
-
-<div class="viewcode-block" id="find_good_batch_size">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/model_parallelism/index.html#dicee.trainer.model_parallelism.find_good_batch_size">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">find_good_batch_size</span><span class="p">(</span><span class="n">train_loader</span><span class="p">,</span><span class="n">tp_ensemble_model</span><span class="p">):</span>
-    <span class="c1"># () Initial batch size.</span>
-    <span class="n">initial_batch_size</span><span class="o">=</span><span class="n">train_loader</span><span class="o">.</span><span class="n">batch_size</span>
-    <span class="c1"># () # of training data points.</span>
-    <span class="n">training_dataset_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
-    <span class="c1"># () Batch is large enough.</span>
-    <span class="k">if</span> <span class="n">initial_batch_size</span> <span class="o">&gt;=</span> <span class="n">training_dataset_size</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">training_dataset_size</span><span class="p">,</span> <span class="kc">None</span>
-    <span class="c1"># () Log the number of training data points.</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of training data points:&quot;</span><span class="p">,</span><span class="n">training_dataset_size</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">increase_batch_size_until_cuda_out_of_memory</span><span class="p">(</span><span class="n">ensemble_model</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span><span class="n">delta</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="n">delta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;delta cannot be None.&quot;</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="s2">&quot;delta must be a positive integer.&quot;</span>
-        <span class="c1"># () Store the batch sizes and GPU memory usages in a tuple.</span>
-        <span class="n">batch_sizes_and_mem_usages</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="c1"># () Increase the batch size until a stopping criterion is reached.</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-                <span class="n">start_time</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-                <span class="c1"># () Initialize a dataloader with a current batch_size</span>
-                <span class="n">train_dataloaders</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
-                                                                <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
-                                                                <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                                                <span class="n">sampler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                                                                <span class="n">batch_sampler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                                                                <span class="n">num_workers</span><span class="o">=</span><span class="n">train_loader</span><span class="o">.</span><span class="n">num_workers</span><span class="p">,</span>
-                                                                <span class="n">collate_fn</span><span class="o">=</span><span class="n">train_loader</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">collate_fn</span><span class="p">,</span>
-                                                                <span class="n">pin_memory</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                                                                <span class="n">drop_last</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                                                                <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                                                <span class="n">worker_init_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                                                                <span class="n">persistent_workers</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-                <span class="n">batch_loss</span> <span class="o">=</span> <span class="kc">None</span>
-                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batch_of_training_data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">train_dataloaders</span><span class="p">):</span>
-                    <span class="n">batch_loss</span> <span class="o">=</span> <span class="n">forward_backward_update_loss</span><span class="p">(</span><span class="n">batch_of_training_data</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
-                    <span class="k">break</span>
-
-                <span class="n">global_free_memory</span><span class="p">,</span> <span class="n">total_memory</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">mem_get_info</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span>
-                <span class="n">percentage_used_gpu_memory</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_memory</span> <span class="o">-</span> <span class="n">global_free_memory</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_memory</span>
-                <span class="n">rt</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">start_time</span>
-
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Random Batch Loss: </span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">0.4</span><span class="si">}</span><span class="se">\t</span><span class="s2">GPU Usage: </span><span class="si">{</span><span class="n">percentage_used_gpu_memory</span><span class="si">:</span><span class="s2">0.3</span><span class="si">}</span><span class="se">\t</span><span class="s2">Runtime: </span><span class="si">{</span><span class="n">rt</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="se">\t</span><span class="s2">Batch Size: </span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-                <span class="c1"># Store the batch size and the runtime</span>
-                <span class="n">batch_sizes_and_mem_usages</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">rt</span><span class="p">))</span>
-
-                <span class="c1"># ()</span>
-                <span class="c1"># https://github.com/pytorch/pytorch/issues/21819</span>
-                <span class="c1"># CD: as we reach close to 1.0 GPU memory usage, we observe RuntimeError: CUDA error: an illegal memory access was encountered.</span>
-                <span class="c1"># CD: To avoid this problem, we add the following condition as a temp solution.</span>
-                <span class="k">if</span> <span class="n">percentage_used_gpu_memory</span> <span class="o">&gt;</span> <span class="mf">0.9</span><span class="p">:</span>
-                    <span class="c1"># Mimik out of memory error</span>
-                    <span class="k">return</span> <span class="n">batch_sizes_and_mem_usages</span><span class="p">,</span> <span class="kc">False</span>
-                <span class="k">if</span> <span class="n">batch_size</span> <span class="o">&lt;</span> <span class="n">training_dataset_size</span><span class="p">:</span>
-                    <span class="c1"># Increase the batch size.</span>
-                    <span class="n">batch_size</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">batch_size</span> <span class="o">/</span> <span class="n">delta</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="k">return</span> <span class="n">batch_sizes_and_mem_usages</span><span class="p">,</span><span class="kc">True</span>
-
-        <span class="k">except</span> <span class="n">torch</span><span class="o">.</span><span class="n">OutOfMemoryError</span><span class="p">:</span>
-            <span class="c1"># Provide helpful suggestions for OOM errors</span>
-            <span class="n">gpu_mem</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">get_device_properties</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">total_memory</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1024</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>  <span class="c1"># Convert to GB</span>
-            <span class="n">allocated</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">memory_allocated</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1024</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">n⚠️  CUDA Out of Memory Error</span><span class="se">\\</span><span class="s2">n&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;GPU Memory: </span><span class="si">{</span><span class="n">gpu_mem</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GB total, </span><span class="si">{</span><span class="n">allocated</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> GB allocated</span><span class="se">\\</span><span class="s2">n&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Attempted batch size: </span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="se">\\</span><span class="s2">n&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Suggestions to reduce memory usage:</span><span class="se">\\</span><span class="s2">n&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  1. Reduce --batch_size (current: </span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">, try: </span><span class="si">{</span><span class="n">batch_size</span><span class="o">//</span><span class="mi">2</span><span class="si">}</span><span class="s2">)</span><span class="se">\\</span><span class="s2">n&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  2. Reduce --embedding_dim</span><span class="se">\\</span><span class="s2">n&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  3. Use --scoring_technique NegSample with --neg_ratio 10</span><span class="se">\\</span><span class="s2">n&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  4. Enable mixed precision: --trainer PL --pl_trainer_kwargs &#39;{</span><span class="se">\\\&quot;</span><span class="s2">precision</span><span class="se">\\\&quot;</span><span class="s2">:</span><span class="se">\\\&quot;</span><span class="s2">16-mixed</span><span class="se">\\\&quot;</span><span class="s2">}</span><span class="se">\&#39;\\</span><span class="s2">n&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  5. Use --trainer torchCPUTrainer to train on CPU</span><span class="se">\\</span><span class="s2">n&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">nSee docs/guides/troubleshooting.md for more solutions</span><span class="se">\\</span><span class="s2">n&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">batch_sizes_and_mem_usages</span><span class="p">,</span> <span class="kc">False</span>
-
-    <span class="n">history_batch_sizes_and_mem_usages</span><span class="o">=</span><span class="p">[]</span>
-    <span class="n">batch_size</span><span class="o">=</span><span class="n">initial_batch_size</span>
-
-    <span class="k">for</span> <span class="n">delta</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">):</span>
-        <span class="n">result</span><span class="p">,</span><span class="n">flag</span><span class="o">=</span> <span class="n">increase_batch_size_until_cuda_out_of_memory</span><span class="p">(</span><span class="n">tp_ensemble_model</span><span class="p">,</span> <span class="n">train_loader</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span><span class="n">delta</span><span class="o">=</span><span class="n">delta</span><span class="p">)</span>
-
-        <span class="n">history_batch_sizes_and_mem_usages</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">flag</span><span class="p">:</span>
-            <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_rt</span> <span class="o">=</span> <span class="n">history_batch_sizes_and_mem_usages</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">history_batch_sizes_and_mem_usages</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;GPU memory errorin the first try&quot;</span>
-            <span class="c1"># CUDA ERROR Observed</span>
-            <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_rt</span><span class="o">=</span><span class="n">history_batch_sizes_and_mem_usages</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
-            <span class="c1"># https://github.com/pytorch/pytorch/issues/21819</span>
-            <span class="k">break</span>
-
-        <span class="k">if</span> <span class="n">batch_size</span><span class="o">&gt;=</span><span class="n">training_dataset_size</span><span class="p">:</span>
-            <span class="n">batch_size</span><span class="o">=</span><span class="n">training_dataset_size</span>
-            <span class="k">break</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">continue</span>
-
-    <span class="k">return</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_rt</span></div>
 
 
 
@@ -268,7 +163,11 @@
         <span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;train_dataloaders&#39;</span><span class="p">]</span>
         <span class="c1"># () Find a batch size so that available GPU memory is *almost* fully used.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">auto_batch_finding</span><span class="p">:</span>
-            <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_rt</span><span class="o">=</span><span class="n">find_good_batch_size</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">_tp_training_step</span><span class="p">(</span><span class="n">batch</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">forward_backward_update_loss</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">ensemble_model</span><span class="p">)</span>
+            <span class="n">batch_size</span><span class="p">,</span> <span class="n">batch_rt</span> <span class="o">=</span> <span class="n">find_good_batch_size</span><span class="p">(</span>
+                <span class="n">train_dataloader</span><span class="p">,</span> <span class="n">_tp_training_step</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="p">)</span>
 
             <span class="n">train_dataloader</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">train_dataloader</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
                                                             <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>

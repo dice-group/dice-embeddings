@@ -18,7 +18,6 @@ Functions
 .. autoapisummary::
 
    dicee.trainer.model_parallelism.extract_input_outputs
-   dicee.trainer.model_parallelism.find_good_batch_size
    dicee.trainer.model_parallelism.forward_backward_update_loss
 
 
@@ -26,8 +25,6 @@ Module Contents
 ---------------
 
 .. py:function:: extract_input_outputs(z: list, device=None)
-
-.. py:function:: find_good_batch_size(train_loader, tp_ensemble_model)
 
 .. py:function:: forward_backward_update_loss(z: Tuple, ensemble_model) -> float
 
