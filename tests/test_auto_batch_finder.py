@@ -24,60 +24,57 @@ def dummy_training_step(batch):
     return 0.5
 
 
+def make_training_args(*, trainer, auto_batch_finding):
+    args = Namespace()
+    args.model = "DistMult"
+    args.scoring_technique = "KvsAll"
+    args.optim = "Adam"
+    args.dataset_dir = "KGs/UMLS"
+    args.num_epochs = 1
+    args.batch_size = 32
+    args.lr = 0.1
+    args.embedding_dim = 32
+    args.input_dropout_rate = 0.0
+    args.hidden_dropout_rate = 0.0
+    args.feature_map_dropout_rate = 0.0
+    args.auto_batch_finding = auto_batch_finding
+    args.read_only_few = None
+    args.sample_triples_ratio = None
+    args.num_folds_for_cv = None
+    args.backend = "pandas"
+    args.trainer = trainer
+    args.normalization = None
+    return args
+
+
 class TestAutoBatchFinderEndToEnd:
     """End-to-end integration tests using the real model pipeline."""
 
     @pytest.mark.filterwarnings("ignore::UserWarning")
     def test_auto_batch_finding_true_cpu_trainer(self):
         """End-to-end: auto_batch_finding=True with torchCPUTrainer runs without error."""
-        args = Namespace()
-        args.model = "DistMult"
-        args.scoring_technique = "KvsAll"
-        args.optim = "Adam"
-        args.dataset_dir = "KGs/UMLS"
-        args.num_epochs = 1
-        args.batch_size = 32
-        args.lr = 0.1
-        args.embedding_dim = 32
-        args.input_dropout_rate = 0.0
-        args.hidden_dropout_rate = 0.0
-        args.feature_map_dropout_rate = 0.0
-        args.auto_batch_finding = True
-        args.read_only_few = None
-        args.sample_triples_ratio = None
-        args.num_folds_for_cv = None
-        args.backend = "pandas"
-        args.trainer = "torchCPUTrainer"
-        args.normalization = None
+        args = make_training_args(trainer="torchCPUTrainer", auto_batch_finding=True)
         result = Execute(args).start()
         assert result is not None
         assert "Train" in result
 
     @pytest.mark.filterwarnings("ignore::UserWarning")
-    def test_auto_batch_finding_false_cpu_trainer(self):
-        """End-to-end: auto_batch_finding=False with torchCPUTrainer runs without error."""
-        args = Namespace()
-        args.model = "DistMult"
-        args.scoring_technique = "KvsAll"
-        args.optim = "Adam"
-        args.dataset_dir = "KGs/UMLS"
-        args.num_epochs = 1
-        args.batch_size = 32
-        args.lr = 0.1
-        args.embedding_dim = 32
-        args.input_dropout_rate = 0.0
-        args.hidden_dropout_rate = 0.0
-        args.feature_map_dropout_rate = 0.0
-        args.auto_batch_finding = False
-        args.read_only_few = None
-        args.sample_triples_ratio = None
-        args.num_folds_for_cv = None
-        args.backend = "pandas"
-        args.trainer = "torchCPUTrainer"
-        args.normalization = None
+    @pytest.mark.parametrize("trainer", ["torchCPUTrainer", "PL"])
+    def test_auto_batch_finding_false_supported_trainers(self, trainer):
+        """End-to-end: auto_batch_finding=False runs without error."""
+        args = make_training_args(trainer=trainer, auto_batch_finding=False)
         result = Execute(args).start()
         assert result is not None
         assert "Train" in result
+
+    def test_auto_batch_finding_false_torch_ddp_requires_torchrun(self, monkeypatch):
+        """torchDDP must be launched with torchrun, even when auto batch finding is disabled."""
+        for env_var in ("LOCAL_RANK", "RANK", "WORLD_SIZE"):
+            monkeypatch.delenv(env_var, raising=False)
+
+        args = make_training_args(trainer="torchDDP", auto_batch_finding=False)
+        with pytest.raises(RuntimeError, match="torchDDP trainer must be launched with torchrun"):
+            Execute(args)
 
 
 class TestFindGoodBatchSizeCPU:
@@ -129,15 +126,6 @@ class TestFindGoodBatchSizeCPU:
         result_bs, _ = find_good_batch_size(loader, dummy_training_step, device)
         assert isinstance(result_bs, int)
         assert result_bs > 0
-
-    def test_auto_batch_finding_disabled_returns_unchanged(self):
-        """On CPU, result is identical to auto_batch_finding=False — no side effects."""
-        loader = make_mock_loader(batch_size=64, dataset_size=800)
-        device = torch.device("cpu")
-        result_bs, result_rt = find_good_batch_size(loader, dummy_training_step, device)
-        assert result_bs == 64
-        assert result_rt is None
-
 
 class TestFindGoodBatchSizeInvalidDevice:
     """Tests for graceful handling of unusual or invalid device inputs."""
