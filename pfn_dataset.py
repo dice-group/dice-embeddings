@@ -202,6 +202,13 @@ class RichSubgraphPrior:
         query_triple : FloatTensor (3, ST_DIM)  — [head_emb, rel_emb, tail_emb]
         label        : FloatTensor scalar  — 1.0 = real, 0.0 = corrupted
         """
+
+        # TODO:CD: We only corrupt the tail entity for negative examples.  
+        # As context_size increases, 
+        # We firstly add one-hop triples of the focal entity, then two-hop triples, and so on.
+        # This ensures that the support set grows in a structured manner, maintaining local relevance.
+
+        
         # a. Pick one KG; unpack triples + pre-computed ST embedding matrices.
         triples, entity_embs, relation_embs, entity_to_triples, entity_to_neighbors = random.choice(self.kg_pools)
         n_ent = entity_embs.shape[0]
@@ -255,12 +262,15 @@ class RichSubgraphPrior:
             space = context_size - len(ctx_idxs)
             ctx_idxs.extend(remaining[:space])
 
+        # If the KG is smaller than context_size, repeat triples (with replacement)
+        # to fill the remaining slots.  The transformer tolerates duplicate tokens
+        # in the support — it just re-encodes the same triple, which is harmless.
         if len(ctx_idxs) < context_size:
-            raise ValueError(
-                f"Cannot build duplicate-free support of size {context_size} with only "
-                f"{max(0, len(triples) - 1)} available non-query triples in this KG pool. "
-                "Reduce --context-size or increase available triples (e.g. higher max_per_kg)."
-            )
+            all_available = [i for i in range(len(triples)) if i != q_tri_idx]
+            if not all_available:
+                all_available = list(range(len(triples)))
+            shortfall = context_size - len(ctx_idxs)
+            ctx_idxs.extend(random.choices(all_available, k=shortfall))
 
         support_raw = [triples[i] for i in ctx_idxs]
 

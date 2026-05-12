@@ -314,7 +314,9 @@ def train(
     ).to(device)
     if save_path and os.path.isfile(save_path):
         print(f"Resuming from checkpoint {save_path!r}...")
-        model.load_state_dict(torch.load(save_path, map_location=device))
+        ckpt = torch.load(save_path, map_location=device)
+        state = ckpt["state_dict"] if isinstance(ckpt, dict) and "state_dict" in ckpt else ckpt
+        model.load_state_dict(state)
     else:
         print("Starting training from scratch.")
 
@@ -367,11 +369,12 @@ def train(
             # EMA loss (α=0.98) gives a smooth per-batch signal, unlike running average
             ema_loss = batch_loss if ema_loss is None else 0.98 * ema_loss + 0.02 * batch_loss
 
-            if (batch_idx + 1) % 50 == 0:
+            print_every = max(1, len(dataloader) // 10)
+            if (batch_idx + 1) % print_every == 0:
                 current_lr = optimizer.param_groups[0]["lr"]
                 print(
                     f"  Epoch {epoch + 1:>5d} | Batch {batch_idx + 1:>5d} / {len(dataloader)}"
-                    f" | EMA Loss: {ema_loss:.6f} | LR: {current_lr:.2e}"
+                    f" | BCE Loss: {batch_loss:.6f} | EMA Loss: {ema_loss:.6f} | LR: {current_lr:.2e}"
                 )
 
         avg_loss = epoch_loss / num_batches if num_batches > 0 else 0.0
@@ -379,7 +382,18 @@ def train(
 
     if save_path:
         model.cpu()
-        torch.save(model.state_dict(), save_path)
+        torch.save(
+            {
+                "hparams": {
+                    "embed_dim": embed_dim,
+                    "num_heads": num_heads,
+                    "num_layers": num_layers,
+                    "dropout": dropout,
+                },
+                "state_dict": model.state_dict(),
+            },
+            save_path,
+        )
         print(f"Model saved to {save_path!r}")
 
     # ── Post-training evaluation ────────────────────────────────────────────
@@ -394,6 +408,7 @@ def train(
             train_file=eval_train_file,
             test_file=eval_test_file,
             device=device,
+            context_size=context_size,
         )
         model.cpu()
         print(f"  MRR:     {metrics['MRR']:.4f}")
@@ -419,11 +434,11 @@ def main():
     # Train subcommand
     train_parser = subparsers.add_parser("train", help="Meta-train a GraphPFN model.")
     train_parser.add_argument(
-        "--epochs", type=int, default=100,
+        "--epochs", type=int, default=1,
         help="Number of full passes over the pre-generated episode dataset."
     )
     train_parser.add_argument(
-        "--batch-size", type=int, default=1024,
+        "--batch-size", type=int, default=256,
         help="Number of episodes per mini-batch. Larger values make better use of GPU parallelism."
     )
     train_parser.add_argument(
@@ -435,7 +450,7 @@ def main():
         help="Root directory that contains one or more KG sub-folders, each with a train.txt file."
     )
     train_parser.add_argument(
-        "--context-size", type=int, default=2,
+        "--context-size", type=int, default=64,
         help=(
             "Number of *support triples* shown to the model per episode. "
             "Each support triple is a (head, relation, tail) string tuple drawn from the "
@@ -444,7 +459,7 @@ def main():
         ),
     )
     train_parser.add_argument(
-        "--num-episodes", type=int, default=1000,
+        "--num-episodes", type=int, default=5000,
         help=(
             "Total number of training episodes to pre-generate and cache to disk. "
             "Each episode is one (support, query, label) sample: a set of context_size "
@@ -506,25 +521,52 @@ def main():
     )
 
     # Infer subcommand
-    infer_parser = subparsers.add_parser("infer", help="Infer top-k tails.")
-    infer_parser.add_argument(
-        "--model", type=str, required=True, help="Path to trained model."
+    infer_parser = subparsers.add_parser(
+        "infer",
+        help="Predict top-k tail entities for a (head, relation, ?) query.",
+        description=(
+            "Load a trained GraphPFN model, use a KG file as in-context support, "
+            "and rank all candidate entities for a given (head, relation) query.\n\n"
+            "Example:\n"
+            "  python graph_pfn.py infer \\\n"
+            "      --model model.pt \\\n"
+            "      --train-file KGs/Countries-S1/train.txt \\\n"
+            "      --head slovakia --relation neighbor --k 5"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     infer_parser.add_argument(
-        "--query", type=str, nargs=2, required=True, metavar=("HEAD", "RELATION"),
-        help="Query (head and relation)."
+        "--model", type=str, required=True,
+        help="Path to a saved model checkpoint (.pt).",
     )
     infer_parser.add_argument(
-        "--support", type=str, nargs="*", help="Support triples as h,r,t."
+        "--train-file", type=str, required=True,
+        metavar="TRAIN_TXT",
+        help="Path to train.txt whose triples are used as in-context support.",
     )
     infer_parser.add_argument(
-        "--data", type=str, default=None, help="Data file for sampling context."
+        "--head", type=str, required=True,
+        help="Head entity string token for the query (e.g. 'slovakia').",
     )
     infer_parser.add_argument(
-        "--context-size", type=int, default=32, help="Context size."
+        "--relation", type=str, required=True,
+        help="Relation string token for the query (e.g. 'neighbor').",
     )
     infer_parser.add_argument(
-        "--k", type=int, default=5, help="Number of top predictions."
+        "--k", type=int, default=10,
+        help="Number of top-k tail predictions to display (default: 10).",
+    )
+    infer_parser.add_argument(
+        "--support-size", type=int, default=None, metavar="N",
+        help=(
+            "Use only the first N triples from train.txt as support. "
+            "Set this to the context_size used during training to test memorisation "
+            "(e.g. --support-size 64). Defaults to all triples."
+        ),
+    )
+    infer_parser.add_argument(
+        "--show-support", action="store_true",
+        help="Print the support triples before scoring so you can pick a query that is in-context.",
     )
 
     # Score subcommand
@@ -567,29 +609,56 @@ def main():
             eval_test_file=args.eval_test,
         )
     elif args.command == "infer":
-        model = TriplePFN()
-        model.load_state_dict(torch.load(args.model, map_location="cpu"))
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        ckpt = torch.load(args.model, map_location=device)
+        if isinstance(ckpt, dict) and "hparams" in ckpt:
+            model = TriplePFN(**ckpt["hparams"])
+            model.load_state_dict(ckpt["state_dict"])
+        else:
+            model = TriplePFN()
+            model.load_state_dict(ckpt)
+        model.to(device)
         model.eval()
 
-        query_h, query_r = args.query
-        if args.support:
-            support = [
-                tuple(s.split(",")) for s in args.support
-            ]
-            results = infer(model, query_h, query_r, support, k=args.k)
-        elif args.data:
-            results = infer(model, query_h, query_r, [], k=args.k)
-        else:
-            print("Error: provide either --support or --data")
-            sys.exit(1)
+        # Load triples from the train file as in-context support.
+        support: List[Tuple[str, str, str]] = []
+        with open(args.train_file) as fh:
+            for line in fh:
+                parts = line.strip().split()
+                if len(parts) == 3:
+                    support.append((parts[0], parts[1], parts[2]))
 
-        print(f"\nTop-{args.k} predictions for ({query_h}, {query_r}, ?):")
-        for entity, score in results:
-            print(f"  {entity:<20}  {score:>8.4f}")
+        if args.support_size is not None:
+            support = support[:args.support_size]
+            print(f"Support: first {len(support)} triples from '{args.train_file}'")
+        else:
+            print(f"Support loaded: {len(support):,} triples from '{args.train_file}'")
+
+        if args.show_support:
+            print(f"\n{'─'*52}")
+            print(f"  {'#':<5}  {'Head':<20}  {'Relation':<15}  Tail")
+            print(f"  {'─'*5}  {'─'*20}  {'─'*15}  {'─'*20}")
+            for i, (h, r, t) in enumerate(support, start=1):
+                print(f"  {i:<5}  {h:<20}  {r:<15}  {t}")
+            print(f"{'─'*52}\n")
+
+        results = infer(model, args.head, args.relation, support, k=args.k, device=device)
+
+        print(f"\nTop-{args.k} predictions for ({args.head}, {args.relation}, ?):")
+        print(f"  {'Entity':<30}  Log P(true)")
+        print(f"  {'-'*30}  -----------")
+        for rank, (entity, score) in enumerate(results, start=1):
+            log_p_true = torch.nn.functional.logsigmoid(torch.tensor(score)).item()
+            print(f"  {rank}. {entity:<28}  {log_p_true:>11.4f}")
 
     elif args.command == "score":
-        model = TriplePFN()
-        model.load_state_dict(torch.load(args.model, map_location="cpu"))
+        ckpt = torch.load(args.model, map_location="cpu")
+        if isinstance(ckpt, dict) and "hparams" in ckpt:
+            model = TriplePFN(**ckpt["hparams"])
+            model.load_state_dict(ckpt["state_dict"])
+        else:
+            model = TriplePFN()
+            model.load_state_dict(ckpt)
         model.eval()
 
         h, r, t = args.triple

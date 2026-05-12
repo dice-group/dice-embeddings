@@ -27,6 +27,7 @@ def evaluate(
     test_file: str,
     device: Optional[torch.device] = None,
     batch_size: int = 32,
+    context_size: Optional[int] = None,
 ) -> Dict[str, float]:
     """Evaluate a trained GraphPFN on transductive link-prediction.
 
@@ -55,8 +56,14 @@ def evaluate(
     device : torch.device or None
         Inference device.  Defaults to the device of model parameters.
     batch_size : int
-        Number of candidate triples scored per forward pass per test query.
-        Reduce if OOM.
+        Retained for API compatibility. Evaluation now scores one candidate
+        tail at a time to minimise peak GPU memory.
+    context_size : int or None
+        Maximum number of support triples fed to the model per query.  Should
+        match the ``context_size`` used during training so the transformer sees
+        sequences of the same length as those it was trained on.  When ``None``
+        all training triples are used as support, which will cause a
+        distribution shift if ``len(train_triples) > training context_size``.
 
     Returns
     -------
@@ -72,6 +79,7 @@ def evaluate(
     """
     if device is None:
         device = next(model.parameters()).device
+    _ = batch_size  # Kept for backward compatibility; not used.
 
     # ── 1. Parse train.txt and build vocab ───────────────────────────────────
     entity_vocab: Dict[str, int] = {}     # string token → local 0-based int
@@ -103,10 +111,26 @@ def evaluate(
     entity_embs   = _encode_strings(entity_strings).to(device)    # (n_ent, ST_DIM)
     relation_embs = _encode_strings(relation_strings).to(device)  # (n_rel, ST_DIM)
 
-    # ── 3. Build support tensor from all training triples ─────────────────────
+    # ── 3. Build support tensor from training triples ───────────────────────────
     h_list = [h for h, _r, _t in train_triples]
     r_list = [_r for _h, _r, _t in train_triples]
     t_list = [_t for _h, _r, _t in train_triples]
+
+    if context_size is not None and len(train_triples) > context_size:
+        sample_idxs = random.sample(range(len(train_triples)), context_size)
+        h_list = [h_list[i] for i in sample_idxs]
+        r_list = [r_list[i] for i in sample_idxs]
+        t_list = [t_list[i] for i in sample_idxs]
+        print(
+            f"  Support capped: {len(train_triples):,} → {context_size} triples "
+            f"(pass context_size=None to use all)."
+        )
+    elif context_size is None and len(train_triples) > 256:
+        print(
+            f"  Warning: using all {len(train_triples):,} train triples as support. "
+            f"Pass context_size=<training context_size> to match training distribution."
+        )
+
     sup_h = entity_embs[h_list]    # (S, ST_DIM)
     sup_r = relation_embs[r_list]  # (S, ST_DIM)
     sup_t = entity_embs[t_list]    # (S, ST_DIM)
@@ -138,33 +162,29 @@ def evaluate(
 
     # ── 5. Rank each test query ───────────────────────────────────────────────
     # For every test triple (h, r, t*) score (h, r, t_i) for every entity t_i
-    # in the vocabulary by batching over candidates.
+    # one candidate at a time to keep memory usage bounded.
     model.eval()
 
     ranks: List[float] = []
     hits1 = hits3 = hits10 = 0
     running_rr = 0.0
-
     progress = tqdm(test_queries, desc="Evaluating queries", unit="query")
     for qi, (q_h, q_r, q_t) in enumerate(progress, start=1):
 
         q_h_emb = entity_embs[q_h]    # (ST_DIM,)
         q_r_emb = relation_embs[q_r]  # (ST_DIM,)
 
-        # Score all (q_h, q_r, t_i) for t_i in [0, n_ent) in batches.
+        # Score all (q_h, q_r, t_i) for t_i in [0, n_ent), one by one.
         all_scores: List[float] = []
-        for cstart in range(0, n_ent, batch_size):
-            c_embs = entity_embs[cstart : cstart + batch_size]  # (C, ST_DIM)
-            C = c_embs.shape[0]
-
-            sup_c    = sup.expand(C, -1, -1, -1)                          # (C, S, 3, ST_DIM)
-            q_h_exp  = q_h_emb.unsqueeze(0).expand(C, -1)                # (C, ST_DIM)
-            q_r_exp  = q_r_emb.unsqueeze(0).expand(C, -1)                # (C, ST_DIM)
-            q_triples = torch.stack([q_h_exp, q_r_exp, c_embs], dim=1)   # (C, 3, ST_DIM)
-
-            with torch.no_grad():
-                scores = model(sup_c, q_triples)   # (C,) logits
-            all_scores.extend(scores.tolist())
+        with torch.no_grad():
+            for cand_idx in range(n_ent):
+                c_emb = entity_embs[cand_idx].unsqueeze(0)                 # (1, ST_DIM)
+                q_triple = torch.stack(
+                    [q_h_emb.unsqueeze(0), q_r_emb.unsqueeze(0), c_emb],
+                    dim=1,
+                )                                                           # (1, 3, ST_DIM)
+                score = model(sup, q_triple)                                # scalar or (1,)
+                all_scores.append(float(score.item() if score.dim() == 0 else score[0].item()))
 
         # Rank the true tail q_t directly by its index (no permutation needed).
         tgt_score = all_scores[q_t]
@@ -298,14 +318,19 @@ def infer(
     q_h_emb = entity_embs[entity_to_idx[query_h]]    # (ST_DIM,)
     q_r_emb = relation_embs[relation_to_idx[query_r]] # (ST_DIM,)
 
-    sup_c    = support_tensor.unsqueeze(0).expand(C, -1, -1, -1)  # (C, S, 3, ST_DIM)
-    q_h_exp  = q_h_emb.unsqueeze(0).expand(C, -1)                 # (C, ST_DIM)
-    q_r_exp  = q_r_emb.unsqueeze(0).expand(C, -1)                 # (C, ST_DIM)
-    q_triples = torch.stack([q_h_exp, q_r_exp, cand_embs], dim=1) # (C, 3, ST_DIM)
-
     model.eval()
+    sup_1 = support_tensor.unsqueeze(0)   # (1, S, 3, ST_DIM) — reused for every candidate
+    scores_list: List[float] = []
     with torch.no_grad():
-        scores = model(sup_c, q_triples)   # (C,) logits
+        for cand_idx in range(C):
+            c_emb = cand_embs[cand_idx].unsqueeze(0)                        # (1, ST_DIM)
+            q_triple = torch.stack(
+                [q_h_emb.unsqueeze(0), q_r_emb.unsqueeze(0), c_emb], dim=1
+            )                                                                # (1, 3, ST_DIM)
+            score = model(sup_1, q_triple)                                   # scalar or (1,)
+            scores_list.append(float(score.item() if score.dim() == 0 else score[0].item()))
+
+    scores = torch.tensor(scores_list)
 
     k = min(k, C)
     topk_scores, topk_idx = torch.topk(scores, k)
