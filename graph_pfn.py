@@ -166,11 +166,14 @@ triples and a query ``(head_str, relation_str, ?)``:
 """
 
 import argparse
+import json
+import math
 import os
 import random
 import sys
 from typing import Dict, List, Optional, Tuple
 
+import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -184,10 +187,19 @@ from pfn_model import TriplePFN
 # TRAINING
 # ---------------------------------------------------------------------------
 
+def _set_seed(seed: int) -> None:
+    """Fix Python, NumPy, and PyTorch random seeds for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
 def train(
     num_epochs: int = 1000,
-    batch_size: int = 256,
-    learning_rate: float = 1e-3,
+    batch_size: int = 1024,
+    learning_rate: float = 1e-4,
     kg_dir: str = "KGs/",
     context_size: int = 32,
     num_episodes: int = 100_000,
@@ -198,6 +210,10 @@ def train(
     num_heads: int = 8,
     num_layers: int = 6,
     dropout: float = 0.1,
+    seed: int = 42,
+    warmup_ratio: float = 0.05,
+    eval_train_file: Optional[str] = None,
+    eval_test_file: Optional[str] = None,
 ) -> TriplePFN:
     """Meta-train a GraphPFN model on entity-centric episodes from real KGs.
 
@@ -210,9 +226,9 @@ def train(
     num_epochs : int
         Number of training epochs.
     batch_size : int
-        Mini-batch size for DataLoader (default: 256).
+        Mini-batch size for DataLoader (default: 1024).
     learning_rate : float
-        Initial learning rate for AdamW.
+        Peak learning rate for AdamW after warmup (default: 1e-4).
     kg_dir : str
         Root directory containing KGs (each with a ``train.txt`` file).
     context_size : int
@@ -220,9 +236,11 @@ def train(
     num_episodes : int
         Total number of episodes to pre-generate.
     dataset_cache_dir : str
-        Directory for pre-computed episode cache.
+        Directory for pre-computed episode cache.  Re-used as-is on
+        subsequent runs if the ``dataset_meta.json`` sidecar is present.
     save_path : str or None
-        If given, save the final model to this path.
+        If given, save the final model to this path.  If the file already
+        exists it is loaded and training resumes from that checkpoint.
     device : torch.device or None
         Training device. Defaults to CUDA if available, else CPU.
     embed_dim : int
@@ -233,6 +251,16 @@ def train(
         Number of transformer encoder layers (default: 6).
     dropout : float
         Dropout rate (default: 0.1).
+    seed : int
+        Random seed for Python, NumPy, and PyTorch (default: 42).
+    warmup_ratio : float
+        Fraction of total training steps used for linear LR warmup (default: 0.05).
+    eval_train_file : str or None
+        Path to a ``train.txt`` file used as the in-context support during
+        post-training evaluation.  Required together with *eval_test_file*.
+    eval_test_file : str or None
+        Path to a ``test.txt`` file to evaluate link-prediction metrics
+        (MRR, MR, Hits@1/3/10) after training finishes.
 
     Returns
     -------
@@ -244,40 +272,78 @@ def train(
     >>> model = train(num_epochs=3000, kg_dir="KGs/")
     >>> torch.save(model.state_dict(), "model.pt")
     """
+    _set_seed(seed)
+
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    print(f"Loading KGs from {kg_dir!r}...")
-    kg_pools = _load_real_triples(kg_dir)
-    if not kg_pools:
-        raise ValueError(f"No KGs found in {kg_dir!r}")
-
-    print(f"Initialising RichSubgraphPrior...")
-    prior = RichSubgraphPrior(kg_pools=kg_pools)
-
-    print(f"Pre-generating {num_episodes:,} episodes to {dataset_cache_dir!r}...")
-    build_dataset(prior, num_episodes, context_size, dataset_cache_dir)
+    # ── Dataset: reuse cache if already generated ────────────────────────────
+    meta_path = os.path.join(dataset_cache_dir, "dataset_meta.json")
+    if os.path.isfile(meta_path):
+        print(f"Found existing dataset cache at {dataset_cache_dir!r} — skipping generation.")
+    else:
+        print(f"Loading KGs from {kg_dir!r}...")
+        kg_pools = _load_real_triples(kg_dir)
+        if not kg_pools:
+            raise ValueError(f"No KGs found in {kg_dir!r}")
+        print("Initialising RichSubgraphPrior...")
+        prior = RichSubgraphPrior(kg_pools=kg_pools)
+        print(f"Pre-generating {num_episodes:,} episodes to {dataset_cache_dir!r}...")
+        build_dataset(prior, num_episodes, context_size, dataset_cache_dir)
 
     dataset = PFNDataset(dataset_cache_dir, expected_context_size=context_size)
     dataloader = DataLoader(
         dataset, batch_size=batch_size, shuffle=True, num_workers=0
     )
 
+    num_samples = len(dataset)
+    batches_per_epoch = len(dataloader)
+    print(
+        f"Dataset: {num_samples:,} episodes  |  "
+        f"Batch size: {batch_size}  |  "
+        f"Batches per epoch: {batches_per_epoch:,}  |  "
+        f"Total mini-batch updates: {batches_per_epoch * num_epochs:,}"
+    )
+
+    # ── Model: resume from checkpoint if it exists ───────────────────────────
     model = TriplePFN(
         embed_dim=embed_dim,
         num_heads=num_heads,
         num_layers=num_layers,
         dropout=dropout,
     ).to(device)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, num_epochs)
+    if save_path and os.path.isfile(save_path):
+        print(f"Resuming from checkpoint {save_path!r}...")
+        model.load_state_dict(torch.load(save_path, map_location=device))
+    else:
+        print("Starting training from scratch.")
+
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=0.01)
+
+    # Per-step linear warmup → cosine decay scheduler.
+    total_steps = num_epochs * len(dataloader)
+    warmup_steps = max(1, int(total_steps * warmup_ratio))
+
+    def _lr_lambda(step: int) -> float:
+        if step < warmup_steps:
+            return step / warmup_steps
+        progress = (step - warmup_steps) / max(1, total_steps - warmup_steps)
+        return 0.5 * (1.0 + math.cos(math.pi * progress))
+
+    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, _lr_lambda)
     loss_fn = nn.BCEWithLogitsLoss()
 
-    print(f"Training on {device} for {num_epochs} epochs...")
+    print(
+        f"Training on {device} for {num_epochs} epochs  "
+        f"(seed={seed}, lr={learning_rate}, warmup={warmup_steps} steps, total={total_steps} steps)..."
+    )
+
+    global_step = 0
     for epoch in range(num_epochs):
         model.train()
         epoch_loss = 0.0
         num_batches = 0
+        ema_loss: Optional[float] = None  # exponential moving average of per-batch loss
 
         for batch_idx, (support, query, label) in enumerate(dataloader):
             support = support.to(device)
@@ -291,24 +357,50 @@ def train(
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
+            scheduler.step()
+            global_step += 1
 
-            epoch_loss += loss.item()
+            batch_loss = loss.item()
+            epoch_loss += batch_loss
             num_batches += 1
 
-            # Progress update every 10 batches
-            if (batch_idx + 1) % 10 == 0:
-                avg_batch_loss = epoch_loss / num_batches
-                print(f"  Epoch {epoch + 1:>5d} | Batch {batch_idx + 1:>4d} / {len(dataloader)} | Loss: {avg_batch_loss:.6f}")
+            # EMA loss (α=0.98) gives a smooth per-batch signal, unlike running average
+            ema_loss = batch_loss if ema_loss is None else 0.98 * ema_loss + 0.02 * batch_loss
 
-        scheduler.step()
+            if (batch_idx + 1) % 50 == 0:
+                current_lr = optimizer.param_groups[0]["lr"]
+                print(
+                    f"  Epoch {epoch + 1:>5d} | Batch {batch_idx + 1:>5d} / {len(dataloader)}"
+                    f" | EMA Loss: {ema_loss:.6f} | LR: {current_lr:.2e}"
+                )
+
         avg_loss = epoch_loss / num_batches if num_batches > 0 else 0.0
-
-        print(f"  Epoch {epoch + 1:>5d} / {num_epochs}  |  Avg Loss: {avg_loss:.6f}")
+        print(f"  Epoch {epoch + 1:>5d} / {num_epochs}  |  Avg Loss: {avg_loss:.6f}  |  EMA Loss: {ema_loss:.6f}")
 
     if save_path:
         model.cpu()
         torch.save(model.state_dict(), save_path)
         print(f"Model saved to {save_path!r}")
+
+    # ── Post-training evaluation ────────────────────────────────────────────
+    if eval_train_file and eval_test_file:
+        print("\n" + "=" * 60)
+        print("Link-Prediction Evaluation")
+        print("=" * 60)
+        model.to(device)
+        model.eval()
+        metrics = evaluate(
+            model,
+            train_file=eval_train_file,
+            test_file=eval_test_file,
+            device=device,
+        )
+        model.cpu()
+        print(f"  MRR:     {metrics['MRR']:.4f}")
+        print(f"  MR:      {metrics['MR']:.1f}")
+        print(f"  Hits@1:  {metrics['Hits@1']:.4f}")
+        print(f"  Hits@3:  {metrics['Hits@3']:.4f}")
+        print(f"  Hits@10: {metrics['Hits@10']:.4f}")
 
     return model.cpu()
 
@@ -327,37 +419,90 @@ def main():
     # Train subcommand
     train_parser = subparsers.add_parser("train", help="Meta-train a GraphPFN model.")
     train_parser.add_argument(
-        "--epochs", type=int, default=1000, help="Number of training epochs."
+        "--epochs", type=int, default=100,
+        help="Number of full passes over the pre-generated episode dataset."
     )
     train_parser.add_argument(
-        "--batch-size", type=int, default=32, help="Batch size for training."
+        "--batch-size", type=int, default=1024,
+        help="Number of episodes per mini-batch. Larger values make better use of GPU parallelism."
     )
     train_parser.add_argument(
-        "--lr", type=float, default=1e-3, help="Learning rate."
+        "--lr", type=float, default=1e-4,
+        help="Peak learning rate reached after the linear warmup phase (AdamW, default: 1e-4)."
     )
     train_parser.add_argument(
-        "--kg-dir", type=str, default="KGs/", help="Root KG directory."
+        "--kg-dir", type=str, default="KGs/",
+        help="Root directory that contains one or more KG sub-folders, each with a train.txt file."
     )
     train_parser.add_argument(
-        "--context-size", type=int, default=32, help="Context size for episodes."
+        "--context-size", type=int, default=2,
+        help=(
+            "Number of *support triples* shown to the model per episode. "
+            "Each support triple is a (head, relation, tail) string tuple drawn from the "
+            "1-hop neighbourhood of a focal entity. The query triple (whose label is "
+            "predicted) is NOT counted — the transformer input is context_size+1 tokens long."
+        ),
     )
     train_parser.add_argument(
-        "--num-episodes", type=int, default=100_000, help="Total episodes to generate."
+        "--num-episodes", type=int, default=1000,
+        help=(
+            "Total number of training episodes to pre-generate and cache to disk. "
+            "Each episode is one (support, query, label) sample: a set of context_size "
+            "real triples around a randomly chosen focal entity, plus one query triple "
+            "that is either real (label=1) or tail-corrupted (label=0). "
+            "This becomes the fixed dataset size; with --batch-size B and --epochs E "
+            "there are ceil(num_episodes / B) * E total mini-batch updates."
+        ),
     )
     train_parser.add_argument(
-        "--embed-dim", type=int, default=512, help="Model embedding dimension."
+        "--embed-dim", type=int, default=512,
+        help=(
+            "Working embedding dimension d of the model. "
+            "Frozen SentenceTransformer embeddings (384-dim) are projected to this size "
+            "before being fed to the Transformer encoder."
+        ),
     )
     train_parser.add_argument(
-        "--num-heads", type=int, default=8, help="Number of attention heads."
+        "--num-heads", type=int, default=8,
+        help="Number of self-attention heads in each Transformer encoder layer. Must divide --embed-dim."
     )
     train_parser.add_argument(
-        "--num-layers", type=int, default=6, help="Number of transformer layers."
+        "--num-layers", type=int, default=6,
+        help="Number of stacked Transformer encoder layers."
     )
     train_parser.add_argument(
-        "--dropout", type=float, default=0.1, help="Dropout rate."
+        "--dropout", type=float, default=0.1,
+        help="Dropout probability applied inside the Transformer encoder and the score head."
     )
     train_parser.add_argument(
-        "--save", type=str, default=None, help="Path to save the trained model."
+        "--seed", type=int, default=42,
+        help="Random seed for Python, NumPy, and PyTorch (for reproducibility)."
+    )
+    train_parser.add_argument(
+        "--warmup-ratio", type=float, default=0.05,
+        help=(
+            "Fraction of total training steps used for linear LR warmup. "
+            "E.g. 0.05 means the LR ramps from 0 to --lr over the first 5%% of steps, "
+            "then follows a cosine decay back to 0."
+        ),
+    )
+    train_parser.add_argument(
+        "--save", type=str, default=None,
+        help="File path for saving the trained model (.pt). If the file already exists, training resumes from it."
+    )
+    train_parser.add_argument(
+        "--eval-train", type=str, default=None, metavar="TRAIN_FILE",
+        help=(
+            "Path to train.txt used as the in-context support for post-training evaluation. "
+            "Requires --eval-test. Example: KGs/UMLS/train.txt"
+        ),
+    )
+    train_parser.add_argument(
+        "--eval-test", type=str, default=None, metavar="TEST_FILE",
+        help=(
+            "Path to test.txt to compute link-prediction metrics (MRR, MR, Hits@1/3/10) "
+            "after training finishes. Requires --eval-train. Example: KGs/UMLS/test.txt"
+        ),
     )
 
     # Infer subcommand
@@ -415,7 +560,11 @@ def main():
             num_heads=args.num_heads,
             num_layers=args.num_layers,
             dropout=args.dropout,
+            seed=args.seed,
+            warmup_ratio=args.warmup_ratio,
             save_path=args.save,
+            eval_train_file=args.eval_train,
+            eval_test_file=args.eval_test,
         )
     elif args.command == "infer":
         model = TriplePFN()

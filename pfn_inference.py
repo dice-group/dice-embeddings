@@ -11,6 +11,7 @@ import random
 from typing import Dict, List, Optional, Tuple
 
 import torch
+from tqdm.auto import tqdm
 
 from pfn_dataset import _encode_strings
 from pfn_model import TriplePFN
@@ -142,10 +143,10 @@ def evaluate(
 
     ranks: List[float] = []
     hits1 = hits3 = hits10 = 0
+    running_rr = 0.0
 
-    for qi, (q_h, q_r, q_t) in enumerate(test_queries):
-        if qi % 100 == 0 and qi > 0:
-            print(f"    {qi}/{len(test_queries)} queries done")
+    progress = tqdm(test_queries, desc="Evaluating queries", unit="query")
+    for qi, (q_h, q_r, q_t) in enumerate(progress, start=1):
 
         q_h_emb = entity_embs[q_h]    # (ST_DIM,)
         q_r_emb = relation_embs[q_r]  # (ST_DIM,)
@@ -173,6 +174,16 @@ def evaluate(
         hits1  += int(rank <= 1)
         hits3  += int(rank <= 3)
         hits10 += int(rank <= 10)
+        running_rr += 1.0 / rank
+
+        progress.set_postfix(
+            {
+                "MRR": f"{running_rr / qi:.4f}",
+                "Hits@1": f"{hits1 / qi:.4f}",
+                "Hits@3": f"{hits3 / qi:.4f}",
+                "Hits@10": f"{hits10 / qi:.4f}",
+            }
+        )
 
     total = len(ranks)
     if total == 0:
