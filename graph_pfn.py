@@ -236,7 +236,7 @@ def _encode_strings(strings: List[str]) -> torch.Tensor:
 
 def _load_real_triples(
     kg_dir: str,
-    max_per_kg: int = 20_000,
+    max_per_kg: int = 500,
 ) -> List[Tuple[List[Tuple[int, int, int]], torch.Tensor, torch.Tensor]]:
     """Load all ``train.txt`` files under *kg_dir* as episodic task pools.
 
@@ -580,7 +580,7 @@ def _collate(
 def train(
     num_epochs: int = 3000,
     batch_size: int = 8,
-    context_size: int = 1_000,
+    context_size: int = 64,
     embed_dim: int = 256,
     num_heads: int = 8,
     num_layers: int = 6,
@@ -1025,7 +1025,7 @@ def _build_parser() -> argparse.ArgumentParser:
     tr = sub.add_parser("train", help="Meta-train a TriplePFN model.")
     tr.add_argument("--epochs",        type=int,   default=3000,  help="Training epochs (default: 3000)")
     tr.add_argument("--batch-size",    type=int,   default=8,     help="Tasks per batch (default: 8; reduce if OOM with large contexts)")
-    tr.add_argument("--context-size",  type=int,   default=1_000, help="Support triples per task (default: 1000)")
+    tr.add_argument("--context-size",  type=int,   default=64,    help="Support triples per task (default: 64; increase if VRAM allows)")
     tr.add_argument("--embed-dim",     type=int,   default=256,   help="Embedding dimension (default: 256)")
     tr.add_argument("--num-heads",     type=int,   default=8,     help="Transformer attention heads (default: 8)")
     tr.add_argument("--num-layers",    type=int,   default=6,     help="Transformer layers (default: 6)")
