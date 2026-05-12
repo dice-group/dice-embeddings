@@ -187,3 +187,8 @@ Literal_KGs/
 
 # VS code Stuff
 .vscode/
+
+# GraphPFN artifacts (kept locally for continual training)
+.pfn_cache/
+model.pt
+*.pt
