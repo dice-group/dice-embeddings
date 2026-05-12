@@ -4,9 +4,9 @@ Graph Prior-Fitted Network (GraphPFN) for in-context link prediction.
 Model
 -----
 GraphPFN is a **Prior-Fitted Network (PFN)** for knowledge graph link
-prediction.  A PFN is meta-trained over a synthetic prior so that, at
-inference time, it performs Bayesian prediction purely through a single
-forward pass — without any gradient update on the target graph.
+prediction.  A PFN is meta-trained over a prior so that, at inference time,
+it performs in-context prediction purely through a single forward pass —
+without any gradient update on the target graph.
 
 **Problem statement.**
 Given a knowledge graph G = (E, R, T) with entity set E, relation set R,
@@ -20,19 +20,25 @@ sigmoid function, and f_θ is the learned scoring network.  At evaluation
 time, all candidate tails are scored and the target is ranked accordingly.
 
 **Embeddings.**
-Each entity e ∈ E and relation r ∈ R is mapped to a d-dimensional vector:
+Entity and relation tokens are represented using the frozen pre-trained
+SentenceTransformer **all-MiniLM-L6-v2** (384-dimensional, no gradients).
+No learnable embedding tables are maintained::
 
-    e  →  φ_e  ∈ ℝ^d      via  nn.Embedding(|E|, d)
-    r  →  ψ_r  ∈ ℝ^d      via  nn.Embedding(|R|, d)
+    e  →  ST(e)  ∈ ℝ^{384}   (frozen, from all-MiniLM-L6-v2)
+    r  →  ST(r)  ∈ ℝ^{384}   (frozen, from all-MiniLM-L6-v2)
+
+Two learned linear projections bring these down to the model working
+dimension d::
+
+    entity_proj   :  ℝ^{384} → ℝ^d
+    relation_proj :  ℝ^{384} → ℝ^d
 
 **Triple encoder.**
 A two-layer MLP with GELU activations encodes any triple (h, r, t) —
 whether a support triple or the complete query triple — into a single
 token, preserving the distinct roles of head, relation, and tail:
 
-    τ(h, r, t)  =  MLP_enc( [φ_h ; ψ_r ; φ_t] )  ∈ ℝ^d
-
-where [·;·;·] denotes concatenation:
+    τ(h, r, t)  =  MLP_enc( [proj_e(ST(h)) ; proj_r(ST(r)) ; proj_e(ST(t))] )  ∈ ℝ^d
 
     MLP_enc :  ℝ^{3d}  →  ℝ^{2d}  →  ℝ^d
                Linear, GELU, Linear
@@ -42,11 +48,11 @@ The S support tokens and the query token are concatenated into a sequence
 of length S + 1 and passed through a pre-norm Transformer encoder
 (norm_first=True, L layers, H heads):
 
-    Z  =  LayerNorm-drop( [τ(h_1,r_1,t_1) ; … ; τ(h_S,r_S,t_S) ; τ(h_q,r_q,t_q)] )
+    Z  =  LayerNorm-drop( [τ(sup_1) ; … ; τ(sup_S) ; τ(query)] )
     Z' =  TransformerEncoder(Z)                              ∈ ℝ^{(S+1) × d}
 
 The last token Z'_{S+1} aggregates information from all support triples
-via full self-attention.
+via full bidirectional self-attention.
 
 **Prediction head (binary scorer).**
 A two-layer MLP (``score_head``) maps the aggregated query token to a
@@ -60,16 +66,16 @@ scalar logit:
     P(triple is true | T_ctx)  =  σ( f_θ(T_ctx, q) )
 
 **Training objective.**
-The model is meta-trained on tasks sampled from a synthetic prior
-(RichSubgraphPrior) using binary cross-entropy loss:
+The model is meta-trained on tasks sampled from :class:`RichSubgraphPrior`
+using binary cross-entropy loss:
 
     L  =  -  𝔼_{(T_ctx, q, y) ~ P}  [ y · log σ(f) + (1-y) · log(1-σ(f)) ]
 
 Each episode samples a context window of triples from a real knowledge
 graph.  The query triple is either a real triple (y=1) or a corrupted
-triple with a random tail (y=0).  Entity and relation indices are
-**re-randomised per task**, so the model cannot memorise symbol
-identities and must learn purely from graph structure.
+triple with a random tail (y=0).  Because entity/relation identity is
+carried by frozen SentenceTransformer embeddings, **no ID re-randomisation
+is needed** — the model learns structural patterns directly from semantics.
 
 Optimisation uses AdamW with cosine learning-rate annealing and gradient
 clipping (‖g‖ ≤ 1).
@@ -107,7 +113,7 @@ Infer by sampling the support automatically from the training file::
         --data KGs/Countries-S1/train.txt --context-size 32 --k 5
 
 The data file must have one triple per line (tab- or space-separated
-string tokens or integers)::
+string tokens)::
 
     # KGs/Countries-S1/train.txt (excerpt)
     western_africa  locatedin  africa
@@ -116,82 +122,29 @@ string tokens or integers)::
 
 Quick-start: inference (Python API)
 -------------------------------------
-After meta-training, use a TriplePFN model to predict the missing tail entity
-given a small support set of (head, relation, tail) triples and a query
-(head, relation, ?).  All indices must be integers in the same symbol space
-that was used during training (num_entities / num_relations).
+After meta-training, use a :class:`TriplePFN` model to predict the missing
+tail entity given a small support set of ``(head, relation, tail)`` **string**
+triples and a query ``(head_str, relation_str, ?)``:
 
-Example — Option A: explicit support tensor (Countries-S1 geography)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. code-block:: python
 
-    import torch
     from graph_pfn import train, infer
 
     # 1. Meta-train the model (or load a checkpoint)
-    model = train(num_epochs=3000)
-    torch.save(model.state_dict(), "model.pt")
+    model = train(num_epochs=3000, kg_dir="KGs/")
 
-    # 2. Build a support context from Countries-S1 triples (integer-indexed).
-    #    Suppose: slovakia=0, ukraine=1, hungary=2, austria=3, czechia=4
-    #             poland=5,  neighbor=0
-    support = torch.tensor(
-        [
-            [0, 0, 1],  # slovakia neighbor ukraine
-            [0, 0, 2],  # slovakia neighbor hungary
-            [0, 0, 3],  # slovakia neighbor austria
-            [0, 0, 4],  # slovakia neighbor czechia
-        ],
-        dtype=torch.long,
-    )
-    query = torch.tensor([0, 0], dtype=torch.long)  # slovakia neighbor ?
+    # 2. Build support context as string triples — no ID mapping needed
+    support = [
+        ("slovakia", "neighbor", "ukraine"),
+        ("slovakia", "neighbor", "hungary"),
+        ("slovakia", "neighbor", "austria"),
+        ("slovakia", "neighbor", "czechia"),
+    ]
 
-    # 3. Run inference
-    top_k = infer(model, query, support=support, k=3)
-    # Returns: [(entity_idx, probability), ...] sorted by descending probability
-    for entity_idx, prob in top_k:
-        print(f"entity {entity_idx}  prob={prob:.4f}")
-
-Example — Option B: auto-sample support from Countries-S1 train file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. code-block:: python
-
-    import torch
-    from graph_pfn import train, infer
-
-    model = train(num_epochs=3000)
-
-    # Load Countries-S1 triples as string tuples
-    data = []
-    with open("KGs/Countries-S1/train.txt") as f:
-        for line in f:
-            parts = line.strip().split()
-            if len(parts) == 3:
-                data.append(tuple(parts))  # e.g. ('slovakia', 'neighbor', 'ukraine')
-
-    # Ask: which region does morocco belong to?
-    # The context is sampled automatically, biased toward morocco / locatedin triples.
-    query_str = ("morocco", "locatedin")  # answer in test.txt: africa
-
-    # Build vocab from data so string tokens map to integer indices
-    entity_vocab, relation_vocab = {}, {}
-    int_data = []
-    for h, r, t in data:
-        for tok, vocab in ((h, entity_vocab), (t, entity_vocab)):
-            if tok not in vocab:
-                vocab[tok] = len(vocab)
-        if r not in relation_vocab:
-            relation_vocab[r] = len(relation_vocab)
-        int_data.append((entity_vocab[h], relation_vocab[r], entity_vocab[t]))
-
-    q = torch.tensor(
-        [entity_vocab[query_str[0]], relation_vocab[query_str[1]]],
-        dtype=torch.long,
-    )
-    top_k = infer(model, q, data=int_data, context_size=32, k=5)
-    idx_to_entity = {v: k for k, v in entity_vocab.items()}
-    for entity_idx, prob in top_k:
-        print(f"{idx_to_entity[entity_idx]:20s}  prob={prob:.4f}")
+    # 3. Run inference — returns (entity_string, logit) pairs
+    top_k = infer(model, "slovakia", "neighbor", support, k=3)
+    for entity, score in top_k:
+        print(f"{entity:<20}  score={score:.4f}")
 """
 
 import argparse
@@ -241,21 +194,24 @@ def _load_real_triples(
     """Load all ``train.txt`` files under *kg_dir* as episodic task pools.
 
     Each KG is kept separate so that tasks sample context triples from a single
-    graph (preserving relational structure).  Vocabularies are per-KG and are
-    discarded after indexing — entity/relation indices are re-randomised per
-    task anyway so the concrete values never matter.
+    graph (preserving relational structure).  Entity and relation tokens are
+    encoded to 384-dimensional vectors by the frozen all-MiniLM-L6-v2
+    SentenceTransformer and stored as float tensors.  No ID re-randomisation
+    is performed — semantic identity is captured by the embedding itself.
 
     Parameters
     ----------
     kg_dir : str
         Root directory to walk recursively for ``train.txt`` files.
     max_per_kg : int
-        Maximum number of triples to retain per KG.  Large KGs (YAGO, FB15k)
-        are randomly downsampled so they do not dominate the task distribution.
+        Maximum number of triples to retain per KG.  Large KGs are randomly
+        downsampled so they do not dominate the task distribution.
 
     Returns
     -------
     List of ``(triples, entity_embs, relation_embs)`` tuples — one per KG.
+    ``triples`` is a list of ``(h_idx, r_idx, t_idx)`` integer tuples that
+    index into ``entity_embs`` / ``relation_embs``.
     ``entity_embs`` and ``relation_embs`` are FloatTensors of shape
     ``(n_ent, 384)`` and ``(n_rel, 384)`` produced by all-MiniLM-L6-v2.
     """
@@ -309,22 +265,24 @@ class RichSubgraphPrior:
     Each episode consists of:
 
     - A **support set** of ``context_size`` triples sampled uniformly from
-      one randomly chosen KG (the in-context knowledge base).
-    - A **query triple** ``(h, r, t)`` — a fully specified triple.
-    - A **label** — ``1`` if the query triple is a real KG triple,
-      ``0`` if it is corrupted (tail replaced with a random entity).
+      one randomly chosen KG (the in-context knowledge base), represented as
+      FloatTensor ``(context_size, 3, 384)`` of SentenceTransformer embeddings.
+    - A **query triple** ``(h, r, t)`` — a fully specified triple, represented
+      as FloatTensor ``(3, 384)``.
+    - A **label** — ``1.0`` if the query triple is a real KG triple,
+      ``0.0`` if it is corrupted (tail replaced with a random entity).
 
     This binary scoring formulation removes the constraint that the target
     entity must appear in the support context.  The model learns to assign
-    high probability to triples that are consistent with the observed context
-    graph and low probability to corrupted ones.
+    high logit to triples that are consistent with the observed context
+    graph and low logit to corrupted ones.
 
     At evaluation time the model receives the full ``train.txt`` as context
     and scores every candidate completion of a test query ``(h, r, ?)``,
     ranking the true tail by score.
 
-    Entity and relation indices are **re-randomised per task** so the model
-    learns structural patterns, not symbol identities.
+    Entity and relation identity is captured by frozen SentenceTransformer
+    embeddings, so **no ID re-randomisation** is needed during training.
     """
 
     def __init__(
@@ -451,22 +409,31 @@ class TriplePFN(nn.Module):
     Prior-Fitted Network that scores a fully-specified triple
     ``(head, relation, tail)`` against an in-context support set.
 
+    Entity and relation tokens are embedded by the frozen all-MiniLM-L6-v2
+    SentenceTransformer (384-dim, no gradients) and projected to the model
+    working dimension *d* by two small learned linear layers:
+
+    - ``entity_proj``   : ℝ^{384} → ℝ^d
+    - ``relation_proj`` : ℝ^{384} → ℝ^d
+
+    Each triple is then encoded by :class:`TripleEncoder` (a 2-layer MLP over
+    the concatenation of the three projected embeddings) into a single token
+    of shape ``(d,)``.  The S support tokens plus the query token form a
+    sequence fed to a pre-norm Transformer encoder.  The last token (query
+    position) is projected to a scalar logit by ``score_head``.
+
     Unlike a multi-class classifier, this model takes a **complete** triple
-    as input and predicts the probability that it is a true KG triple given
-    the observed context.  There is no constraint that the tail entity must
-    appear in the support.
+    as input and predicts whether it is a true KG triple given the context.
+    At evaluation time, all candidate tail entities are enumerated and
+    ranked by score.
 
     Forward interface::
 
-        logit = model(support_triples, query_triple)
+        logit = model(support_triples, query_triple)  # (B,) or scalar
         prob  = torch.sigmoid(logit)
 
-    At evaluation time, this binary scoring is applied to all candidate
-    completions of a query ``(h, r, ?)`` by varying the tail over the
-    entity vocabulary and ranking by score.
-
-    Supports both unbatched ``(S, 3)`` / ``(3,)`` and batched
-    ``(B, S, 3)`` / ``(B, 3)`` inputs.
+    Accepts both unbatched ``(S, 3, 384)`` / ``(3, 384)`` and batched
+    ``(B, S, 3, 384)`` / ``(B, 3, 384)`` float-tensor inputs.
     """
 
     def __init__(
@@ -602,8 +569,9 @@ def train(
     real triples and low scores to corrupted ones.  No constraint is imposed
     on whether the query tail appears in the support context.
 
-    Entity and relation indices are re-randomised per task so the model learns
-    structural patterns, not symbol identities.
+    Entity and relation identity is captured by frozen SentenceTransformer
+    embeddings, so no ID re-randomisation is needed.  The model learns
+    structural patterns directly from the semantic representations.
 
     After pre-training, call :func:`evaluate` to benchmark on any KG by
     providing ``train.txt`` as the full in-context support.
@@ -630,8 +598,9 @@ def train(
         Print accuracy on a held-out batch of 512 tasks every this many epochs.
     kg_dir : str or None
         Root directory to scan for ``train.txt`` files (e.g. ``KGs/``).
-        :func:`_load_real_triples` loads all KGs (capped at 20k triples each)
-        into episodic task pools.
+        :func:`_load_real_triples` loads all KGs (capped at ``max_per_kg``
+        triples, default 500) and encodes their tokens with the frozen
+        all-MiniLM-L6-v2 SentenceTransformer.
 
     Returns
     -------
