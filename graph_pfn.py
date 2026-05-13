@@ -101,6 +101,11 @@ Train a model and save it::
 
     python graph_pfn.py train --epochs 10000 --save model.pt
 
+Train with random support sampling plus support-order permutations::
+
+    python graph_pfn.py train --kg-dir KGs/Countries-S1/ --epochs 10000 --save model.pt \
+        --support-sampler random --permute-support
+
 Infer with an explicit support set (real triples from Countries-S1)::
 
     python graph_pfn.py infer --model model.pt \
@@ -110,6 +115,13 @@ Infer with an explicit support set (real triples from Countries-S1)::
         --k 5
 
 Infer by sampling the support automatically from the training file::
+
+    python graph_pfn.py infer --model model.pt \
+        --head slovakia --relation neighbor \
+        --train-file KGs/Countries-S1/train.txt --context-size 32 --k 5
+
+
+Backward-compatible infer syntax (also supported)::
 
     python graph_pfn.py infer --model model.pt \
         --query slovakia neighbor \
@@ -176,8 +188,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from tqdm.auto import tqdm
 
-from pfn_dataset import PFNDataset, RichSubgraphPrior, _load_real_triples, build_dataset
+from pfn_dataset import PFNDataset, RandomSupportPrior, RichSubgraphPrior, _load_real_triples, build_dataset
 from pfn_inference import evaluate, infer, score_triple
 from pfn_model import TriplePFN
 
@@ -192,6 +205,46 @@ def _set_seed(seed: int) -> None:
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+
+
+def _estimate_train_step_flops(
+    model: TriplePFN,
+    loss_fn: nn.Module,
+    support: torch.Tensor,
+    query: torch.Tensor,
+    label: torch.Tensor,
+    device: torch.device,
+) -> Optional[int]:
+    """Estimate total FLOPs for one train step (forward + backward).
+
+    Returns None if profiler FLOP accounting is unavailable on this platform.
+    """
+    activities = [torch.profiler.ProfilerActivity.CPU]
+    if device.type == "cuda":
+        activities.append(torch.profiler.ProfilerActivity.CUDA)
+
+    model.zero_grad(set_to_none=True)
+    with torch.profiler.profile(activities=activities, with_flops=True, acc_events=True) as prof:
+        logits = model(support, query)
+        loss = loss_fn(logits, label)
+        loss.backward()
+    model.zero_grad(set_to_none=True)
+
+    total_flops = 0
+    for evt in prof.key_averages():
+        total_flops += int(getattr(evt, "flops", 0) or 0)
+    return total_flops if total_flops > 0 else None
+
+
+def _format_flops(flops: float) -> str:
+    """Human-readable FLOPs units."""
+    units = ["FLOPs", "KFLOPs", "MFLOPs", "GFLOPs", "TFLOPs", "PFLOPs"]
+    value = float(flops)
+    unit_idx = 0
+    while value >= 1000.0 and unit_idx < len(units) - 1:
+        value /= 1000.0
+        unit_idx += 1
+    return f"{value:.3f} {units[unit_idx]}"
 
 
 def train(
@@ -213,12 +266,17 @@ def train(
     warmup_ratio: float = 0.05,
     eval_train_file: Optional[str] = None,
     eval_test_file: Optional[str] = None,
+    support_sampler: str = "entity-centric",
+    permute_support: bool = False,
+    early_stop_loss: Optional[float] = None,
+    report_flops: bool = True,
 ) -> TriplePFN:
-    """Meta-train a GraphPFN model on entity-centric episodes from real KGs.
+    """Meta-train a GraphPFN model on episodic samples from real KGs.
 
     Loads all ``train.txt`` files under *kg_dir*, generates pre-computed
-    episodes via :class:`RichSubgraphPrior`, and trains the model using
-    AdamW with cosine annealing and gradient clipping.
+    episodes via either :class:`RichSubgraphPrior` (entity-centric) or
+    :class:`RandomSupportPrior` (random support sampling), and trains the model
+    using AdamW with cosine annealing and gradient clipping.
 
     Parameters
     ----------
@@ -264,6 +322,18 @@ def train(
     eval_test_file : str or None
         Path to a ``test.txt`` file to evaluate link-prediction metrics
         (MRR, MR, Hits@1/3/10) after training finishes.
+    support_sampler : str
+        Support generator used for episodes:
+        ``"entity-centric"`` (default) or ``"random"``.
+    permute_support : bool
+        If True, apply a random permutation to support order in every episode.
+        For ``support_sampler="random"`` this enables order augmentation.
+    early_stop_loss : float or None
+        If set, stop training early once epoch-average BCE loss is less than
+        or equal to this threshold.
+    report_flops : bool
+        If True, profile the first mini-batch and print estimated FLOPs for one
+        train step (forward + backward).
 
     Returns
     -------
@@ -279,6 +349,8 @@ def train(
 
     if negative_ratio < 0:
         raise ValueError(f"negative_ratio must be >= 0, got {negative_ratio}.")
+    if early_stop_loss is not None and early_stop_loss < 0:
+        raise ValueError(f"early_stop_loss must be >= 0, got {early_stop_loss}.")
 
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -288,8 +360,22 @@ def train(
     kg_pools = _load_real_triples(kg_dir)
     if not kg_pools:
         raise ValueError(f"No KGs found in {kg_dir!r}")
-    print("Initialising RichSubgraphPrior...")
-    prior = RichSubgraphPrior(kg_pools=kg_pools)
+    if support_sampler not in {"entity-centric", "random"}:
+        raise ValueError(
+            f"Unknown support_sampler={support_sampler!r}. Expected 'entity-centric' or 'random'."
+        )
+
+    if support_sampler == "entity-centric":
+        print("Initialising RichSubgraphPrior (entity-centric support sampling)...")
+        prior = RichSubgraphPrior(kg_pools=kg_pools)
+        if permute_support:
+            print("  Note: --permute-support currently applies to random sampler only; ignoring it.")
+    else:
+        print(
+            "Initialising RandomSupportPrior "
+            f"(random support sampling, permute_support={permute_support})..."
+        )
+        prior = RandomSupportPrior(kg_pools=kg_pools, permute_support=permute_support)
     print(f"Pre-generating {num_episodes:,} episodes to {dataset_cache_dir!r}...")
     build_dataset(
         prior,
@@ -349,15 +435,52 @@ def train(
     )
 
     global_step = 0
+    flops_reported = False
     for epoch in range(num_epochs):
         model.train()
         epoch_loss = 0.0
         num_batches = 0
 
-        for batch_idx, (support, query, label) in enumerate(dataloader):
+        pbar = tqdm(
+            dataloader,
+            desc=f"Epoch {epoch + 1}/{num_epochs}",
+            unit="batch",
+            leave=False,
+        )
+        for batch_idx, (support, query, label) in enumerate(pbar, start=1):
             support = support.to(device)
             query = query.to(device)
             label = label.to(device)
+
+            if report_flops and not flops_reported:
+                try:
+                    total_flops = _estimate_train_step_flops(
+                        model=model,
+                        loss_fn=loss_fn,
+                        support=support,
+                        query=query,
+                        label=label,
+                        device=device,
+                    )
+                    if total_flops is None:
+                        print("FLOPs report: unavailable on this platform/backend.")
+                    else:
+                        step_human = _format_flops(total_flops)
+                        run_total_flops = total_flops * total_steps
+                        run_total_human = _format_flops(run_total_flops)
+                        print(
+                            "FLOPs report (first mini-batch): "
+                            f"{total_flops:,} FLOPs per train step (forward+backward) "
+                            f"= {step_human}."
+                        )
+                        print(
+                            "Estimated total compute for planned training: "
+                            f"{run_total_flops:,} FLOPs over {total_steps:,} steps "
+                            f"= {run_total_human}."
+                        )
+                except Exception as exc:
+                    print(f"FLOPs report skipped: profiler error: {exc}")
+                flops_reported = True
 
             logits = model(support, query)
             loss = loss_fn(logits, label)
@@ -373,16 +496,24 @@ def train(
             epoch_loss += batch_loss
             num_batches += 1
 
-            print_every = max(1, len(dataloader) // 10)
-            if (batch_idx + 1) % print_every == 0:
-                current_lr = optimizer.param_groups[0]["lr"]
-                print(
-                    f"  Epoch {epoch + 1:>5d} | Batch {batch_idx + 1:>5d} / {len(dataloader)}"
-                    f" | BCE Loss: {batch_loss:.6f} | LR: {current_lr:.2e}"
-                )
+            current_lr = optimizer.param_groups[0]["lr"]
+            running_avg = epoch_loss / num_batches
+            pbar.set_postfix(
+                bce=f"{batch_loss:.4f}",
+                avg=f"{running_avg:.4f}",
+                lr=f"{current_lr:.2e}",
+            )
 
         avg_loss = epoch_loss / num_batches if num_batches > 0 else 0.0
         print(f"  Epoch {epoch + 1:>5d} / {num_epochs}  |  Avg Loss: {avg_loss:.6f}")
+
+        if early_stop_loss is not None and avg_loss <= early_stop_loss:
+            print(
+                "Early stopping triggered: "
+                f"avg BCE loss {avg_loss:.6f} <= threshold {early_stop_loss:.6f} "
+                f"at epoch {epoch + 1}."
+            )
+            break
 
     if save_path:
         model.cpu()
@@ -393,6 +524,14 @@ def train(
                     "num_heads": num_heads,
                     "num_layers": num_layers,
                     "dropout": dropout,
+                },
+                "run_config": {
+                    "context_size": context_size,
+                    "support_sampler": support_sampler,
+                    "permute_support": permute_support,
+                    "batch_size": batch_size,
+                    "num_episodes": num_episodes,
+                    "negative_ratio": negative_ratio,
                 },
                 "state_dict": model.state_dict(),
             },
@@ -481,6 +620,25 @@ def main():
         ),
     )
     train_parser.add_argument(
+        "--support-sampler",
+        type=str,
+        choices=("entity-centric", "random"),
+        default="entity-centric",
+        help=(
+            "How support triples are sampled per episode: "
+            "'entity-centric' (focal-neighbourhood expansion) or "
+            "'random' (uniform random triples)."
+        ),
+    )
+    train_parser.add_argument(
+        "--permute-support",
+        action="store_true",
+        help=(
+            "Apply a random permutation to support order in each episode. "
+            "Useful with --support-sampler random for order-robust training."
+        ),
+    )
+    train_parser.add_argument(
         "--embed-dim", type=int, default=512,
         help=(
             "Working embedding dimension d of the model. "
@@ -530,6 +688,32 @@ def main():
             "after training finishes. Requires --eval-train. Example: KGs/UMLS/test.txt"
         ),
     )
+    train_parser.add_argument(
+        "--early-stop-loss",
+        type=float,
+        default=None,
+        help=(
+            "Stop training early once epoch-average BCE loss is <= this value. "
+            "Example: --early-stop-loss 0.02"
+        ),
+    )
+    train_parser.add_argument(
+        "--report-flops",
+        dest="report_flops",
+        action="store_true",
+        default=True,
+        help=(
+            "Estimate and print FLOPs for one train step (forward+backward) "
+            "using the first mini-batch (default: enabled)."
+        ),
+    )
+    train_parser.add_argument(
+        "--no-report-flops",
+        dest="report_flops",
+        action="store_false",
+        help="Disable FLOPs reporting.",
+    )
+    
 
     # Infer subcommand
     infer_parser = subparsers.add_parser(
@@ -551,28 +735,39 @@ def main():
         help="Path to a saved model checkpoint (.pt).",
     )
     infer_parser.add_argument(
-        "--train-file", type=str, required=True,
+        "--train-file", "--data", dest="train_file", type=str, required=False,
         metavar="TRAIN_TXT",
         help="Path to train.txt whose triples are used as in-context support.",
     )
     infer_parser.add_argument(
-        "--head", type=str, required=True,
+        "--head", type=str, required=False,
         help="Head entity string token for the query (e.g. 'slovakia').",
     )
     infer_parser.add_argument(
-        "--relation", type=str, required=True,
+        "--relation", type=str, required=False,
         help="Relation string token for the query (e.g. 'neighbor').",
+    )
+    infer_parser.add_argument(
+        "--query", type=str, nargs=2, required=False, metavar=("HEAD", "RELATION"),
+        help="Backward-compatible form of query inputs: --query <head> <relation>.",
     )
     infer_parser.add_argument(
         "--k", type=int, default=10,
         help="Number of top-k tail predictions to display (default: 10).",
     )
     infer_parser.add_argument(
+        "--context-size", type=int, default=None, metavar="N",
+        help=(
+            "Maximum number of support triples used during inference. "
+            "If omitted, uses context_size saved in the checkpoint (fallback: 128). "
+            "If train.txt contains more than this, support is truncated to N."
+        ),
+    )
+    infer_parser.add_argument(
         "--support-size", type=int, default=None, metavar="N",
         help=(
-            "Use only the first N triples from train.txt as support. "
-            "Set this to the context_size used during training to test memorisation "
-            "(e.g. --support-size 64). Defaults to all triples."
+            "Optional additional cap on support triples from train.txt. "
+            "Final support size is min(--context-size, --support-size) when both are set."
         ),
     )
     infer_parser.add_argument(
@@ -622,13 +817,51 @@ def main():
             save_path=args.save,
             eval_train_file=args.eval_train,
             eval_test_file=args.eval_test,
+            support_sampler=args.support_sampler,
+            permute_support=args.permute_support,
+            early_stop_loss=args.early_stop_loss,
+            report_flops=args.report_flops,
         )
     elif args.command == "infer":
+        if args.query is not None:
+            if args.head is None:
+                args.head = args.query[0]
+            if args.relation is None:
+                args.relation = args.query[1]
+
+        missing = []
+        if args.train_file is None:
+            missing.append("--train-file/--data")
+        if args.head is None:
+            missing.append("--head or --query")
+        if args.relation is None:
+            missing.append("--relation or --query")
+        if missing:
+            infer_parser.error("the following arguments are required: " + ", ".join(missing))
+        if args.support_size is not None and args.support_size <= 0:
+            infer_parser.error("--support-size must be a positive integer")
+
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         ckpt = torch.load(args.model, map_location=device)
+        ckpt_run_cfg = ckpt.get("run_config", {}) if isinstance(ckpt, dict) else {}
+
+        if args.context_size is None:
+            # Prefer training-time context_size from checkpoint to avoid mismatch.
+            args.context_size = int(ckpt_run_cfg.get("context_size", 128))
+            print(f"Using checkpoint context_size={args.context_size} for inference.")
+        if args.context_size <= 0:
+            infer_parser.error("--context-size must be a positive integer")
+
         if isinstance(ckpt, dict) and "hparams" in ckpt:
             model = TriplePFN(**ckpt["hparams"])
             model.load_state_dict(ckpt["state_dict"])
+            if ckpt_run_cfg:
+                print(
+                    "Loaded checkpoint run settings: "
+                    f"context_size={ckpt_run_cfg.get('context_size')}, "
+                    f"support_sampler={ckpt_run_cfg.get('support_sampler')}, "
+                    f"permute_support={ckpt_run_cfg.get('permute_support')}"
+                )
         else:
             model = TriplePFN()
             model.load_state_dict(ckpt)
@@ -643,11 +876,22 @@ def main():
                 if len(parts) == 3:
                     support.append((parts[0], parts[1], parts[2]))
 
+        total_support = len(support)
+        effective_cap = args.context_size
         if args.support_size is not None:
-            support = support[:args.support_size]
-            print(f"Support: first {len(support)} triples from '{args.train_file}'")
+            effective_cap = min(effective_cap, args.support_size)
+
+        if total_support > effective_cap:
+            support = support[:effective_cap]
+            print(
+                f"Support capped: {total_support:,} -> {len(support):,} triples "
+                f"(context_size={args.context_size}, support_size={args.support_size})."
+            )
         else:
-            print(f"Support loaded: {len(support):,} triples from '{args.train_file}'")
+            print(
+                f"Support loaded: {len(support):,} triples from '{args.train_file}' "
+                f"(<= context_size={args.context_size})."
+            )
 
         print(f"\n{'─'*52}")
         print(f"  {'#':<5}  {'Head':<20}  {'Relation':<15}  Tail")

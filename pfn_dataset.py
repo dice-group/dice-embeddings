@@ -453,6 +453,120 @@ class RichSubgraphPrior:
         return self._generate_real_task(context_size, force_label=force_label, verbose=verbose)
 
 
+class RandomSupportPrior:
+    """Generates binary triple-scoring episodes with random support sampling.
+
+    Unlike :class:`RichSubgraphPrior` (entity-centric neighborhood expansion),
+    this prior samples support triples uniformly from the KG pool, which can be
+    useful when support sets in deployment are not tightly centered around a
+    focal entity.
+
+    A random query triple is selected from the same KG.  Labels are generated
+    exactly like the entity-centric prior:
+
+    - ``label=1``: query remains a true triple.
+    - ``label=0``: query tail is replaced with a random entity.
+
+    Optionally, support order can be permuted per episode so the model sees
+    many orderings of the same structural evidence.
+    """
+
+    def __init__(
+        self,
+        kg_pools: Optional[list] = None,
+        permute_support: bool = False,
+    ):
+        # list of (triples, entity_embs, relation_embs, entity_to_triples, entity_to_neighbors,
+        # entity_strings, relation_strings) per KG
+        self.kg_pools = kg_pools
+        self.permute_support = permute_support
+
+    def _generate_real_task(
+        self,
+        context_size: int,
+        force_label: Optional[int] = None,
+        verbose: bool = False,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Sample one binary-labelled episode with random support triples."""
+        triples, entity_embs, relation_embs, _e2t, _e2n, entity_strings, relation_strings = random.choice(self.kg_pools)
+        n_ent = entity_embs.shape[0]
+
+        q_tri_idx = random.randrange(len(triples))
+        q_h, q_r, q_t = triples[q_tri_idx]
+
+        all_idxs = [i for i in range(len(triples)) if i != q_tri_idx]
+        if len(all_idxs) >= context_size:
+            ctx_idxs = random.sample(all_idxs, k=context_size)
+        else:
+            ctx_idxs = all_idxs[:]
+            shortfall = context_size - len(ctx_idxs)
+            if not ctx_idxs:
+                ctx_idxs = [q_tri_idx] * context_size
+            else:
+                ctx_idxs.extend(random.choices(ctx_idxs, k=shortfall))
+
+        if self.permute_support:
+            random.shuffle(ctx_idxs)
+
+        support_raw = [triples[i] for i in ctx_idxs]
+
+        if force_label is None:
+            label = int(random.random() < 0.5)
+        else:
+            label = int(force_label)
+
+        h_list = [h for h, _r, _t in support_raw]
+        r_list = [_r for _h, _r, _t in support_raw]
+        t_list = [_t for _h, _r, _t in support_raw]
+        sup_h = entity_embs[h_list]
+        sup_r = relation_embs[r_list]
+        sup_t = entity_embs[t_list]
+        support_tensor = torch.stack([sup_h, sup_r, sup_t], dim=1)
+
+        q_h_emb = entity_embs[q_h]
+        q_r_emb = relation_embs[q_r]
+        if label == 1:
+            q_t_actual = q_t
+            q_t_emb = entity_embs[q_t]
+        else:
+            q_t_actual = random.choice([i for i in range(n_ent) if i != q_t])
+            q_t_emb = entity_embs[q_t_actual]
+
+        query_tensor = torch.stack([q_h_emb, q_r_emb, q_t_emb], dim=0)
+
+        if verbose:
+            print("\n  ─── Episode Debug Output (RandomSupportPrior) ───")
+            print("  Support triples (string):")
+            for tri_idx in ctx_idxs:
+                h, r, t = triples[tri_idx]
+                print(f"    ({entity_strings[h]}, {relation_strings[r]}, {entity_strings[t]})")
+            q_h_str = entity_strings[q_h]
+            q_r_str = relation_strings[q_r]
+            q_t_actual_str = entity_strings[q_t_actual]
+            print(f"  Query triple (string): ({q_h_str}, {q_r_str}, {q_t_actual_str})")
+            if label == 0:
+                q_t_true_str = entity_strings[q_t]
+                print(f"    True tail (for reference): {q_t_true_str}")
+                print(f"    Sampled tail (used): {q_t_actual_str}")
+            print(f"  Label: {label} ({'real' if label == 1 else 'negatively sampled'})")
+            print("  ─────────────────────────────────────────────────")
+
+        return support_tensor, query_tensor, torch.tensor(float(label))
+
+    def generate_task(
+        self,
+        context_size: int = 1000,
+        force_label: Optional[int] = None,
+        verbose: bool = False,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Sample one binary-labelled training episode."""
+        if not self.kg_pools:
+            raise ValueError(
+                "kg_pools is empty.  Pass --kg-dir (CLI) or kg_dir (API) to load real KGs."
+            )
+        return self._generate_real_task(context_size, force_label=force_label, verbose=verbose)
+
+
 def _collate(
     tasks: List[Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]
 ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
