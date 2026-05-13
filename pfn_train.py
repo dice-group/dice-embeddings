@@ -231,6 +231,9 @@ def train(
     )
 
     model = TriplePFN(embed_dim=embed_dim, num_heads=num_heads, num_layers=num_layers, dropout=dropout).to(device)
+    # number of trainable parameters for reference:
+    num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Model initialized with {num_params:,} trainable parameters.")
     if save_path and os.path.isfile(save_path):
         print(f"Resuming from checkpoint {save_path!r}...")
         ckpt = torch.load(save_path, map_location=device)
