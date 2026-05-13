@@ -18,8 +18,8 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
-from torch.utils.data import Dataset
 from sentence_transformers import SentenceTransformer
+from torch.utils.data import Dataset
 
 # ── Sentence-Transformer embedding cache ────────────────────────────────────
 _ST_MODEL: Optional[SentenceTransformer] = None
@@ -59,6 +59,8 @@ def _load_real_triples(
         torch.Tensor,
         Dict[int, List[int]],
         Dict[int, List[int]],
+        List[str],
+        List[str],
     ]
 ]:
     """Load all ``train.txt`` files under *kg_dir* as episodic task pools.
@@ -79,15 +81,15 @@ def _load_real_triples(
 
     Returns
     -------
-    List of ``(triples, entity_embs, relation_embs, entity_to_triples, entity_to_neighbors)``
-    tuples — one per KG.  ``triples`` is a list of ``(h_idx, r_idx, t_idx)`` integer
-    tuples that index into ``entity_embs`` / ``relation_embs``.
-    ``entity_embs`` and ``relation_embs`` are FloatTensors of shape
-    ``(n_ent, 384)`` and ``(n_rel, 384)`` produced by all-MiniLM-L6-v2.
-    ``entity_to_triples`` maps each entity index to the list of triple indices
-    in which that entity appears (as head or tail).
-    ``entity_to_neighbors`` stores the undirected entity graph adjacency list
-    used for hop-wise context expansion.
+    List of ``(triples, entity_embs, relation_embs, entity_to_triples, entity_to_neighbors,
+    entity_strings, relation_strings)`` tuples — one per KG.  ``triples`` is a list of
+    ``(h_idx, r_idx, t_idx)`` integer tuples that index into ``entity_embs`` / ``relation_embs``.
+    ``entity_embs`` and ``relation_embs`` are FloatTensors of shape ``(n_ent, 384)`` and
+    ``(n_rel, 384)`` produced by all-MiniLM-L6-v2.  ``entity_to_triples`` maps each entity
+    index to the list of triple indices in which that entity appears (as head or tail).
+    ``entity_to_neighbors`` stores the undirected entity graph adjacency list used for
+    hop-wise context expansion.  ``entity_strings`` and ``relation_strings`` are lists
+    of the original token strings, indexed consistently with entity/relation embeddings.
     """
     pools = []
     for root, _dirs, files in os.walk(kg_dir):     # walk the directory tree recursively
@@ -102,8 +104,8 @@ def _load_real_triples(
                     raw.append((parts[0], parts[1], parts[2]))
         if not raw:                                # entirely empty file — nothing to learn from
             continue
-        if len(raw) > max_per_kg:                  # large KGs (YAGO, FB15k) would otherwise
-            raw = random.sample(raw, max_per_kg)   # dominate the task distribution; downsample
+        #if len(raw) > max_per_kg:                  # large KGs (YAGO, FB15k) would otherwise
+        #    raw = random.sample(raw, max_per_kg)   # dominate the task distribution; downsample
 
         entity_vocab: Dict[str, int] = {}          # string entity → local integer index
         relation_vocab: Dict[str, int] = {}        # string relation → local integer index
@@ -142,7 +144,8 @@ def _load_real_triples(
             f"  {kg_name:<30s}  {len(triples):>6d} triples  "
             f"{len(entity_vocab):>5d} entities  {len(relation_vocab):>4d} relations"
         )
-        pools.append((triples, entity_embs, relation_embs, entity_to_triples, entity_to_neighbors))
+        pools.append((triples, entity_embs, relation_embs, entity_to_triples, entity_to_neighbors,
+                      entity_strings, relation_strings))
 
     return pools
 
@@ -175,96 +178,187 @@ class RichSubgraphPrior:
         kg_pools: Optional[list] = None,
     ):
         self.max_hop = max_hop
-        self.kg_pools = kg_pools  # list of (triples, entity_embs, relation_embs, entity_to_triples, entity_to_neighbors) per KG
+        # list of (triples, entity_embs, relation_embs, entity_to_triples, entity_to_neighbors,
+        # entity_strings, relation_strings) per KG
+        self.kg_pools = kg_pools
 
     def _generate_real_task(
         self,
         context_size: int,
+        force_label: Optional[int] = None,
+        verbose: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Sample one binary-labelled episode from a real KG.
+        """Sample one binary-labelled episode from a real KG via entity-centric hop-wise sampling.
 
-        Entity-centric sampling strategy:
+        The episode construction strategy ensures that the support context is both
+        **locally coherent** (grounded in a focal entity's neighborhood) and
+        **structurally diverse** (expanding across multiple hops to reach distant
+        entities while maintaining connectivity).  Neighbors are handled
+        intelligently via a frontier-based BFS: if an entity appears in triples
+        from multiple parents in the current hop, it is discovered only once
+        (tracked by ``visited_entities`` set) and expanded once (added to
+        ``next_frontier`` set), avoiding redundant processing while maximizing
+        unique neighbor discovery.
 
-        a. Select a random KG.
-        b. Select a random focal entity ``e`` and collect its 1-hop neighbourhood
-           — all triples in the KG where ``e`` appears as head or tail.
-        c. From the neighbourhood, sample the **query** triple (positive example).
-          d. Build support by expanding from the focal entity in hop order
-              (1-hop, then 2-hop, ... up to ``max_hop``), adding unique triples
-              without repetition.
-        e. With probability 0.5 keep the query as-is (label=1); otherwise replace
-           the tail with a random entity from the full KG (label=0).
-        f. Look up pre-computed SentenceTransformer embeddings to build tensors.
+        **Algorithm outline:**
+
+        1. **Select a random KG** from the loaded pools.  Each KG is treated as
+           a separate episodic task source to preserve relational structure.
+
+        2. **Pick a random focal entity** ``e`` and collect its 1-hop neighbourhood
+           — the set of all triples where ``e`` appears as head or tail.  If the
+           focal entity has very few or no triples, fall back to all triples
+           in the KG.
+
+        3. **Sample the query triple** uniformly from the focal entity's
+           neighbourhood.  This ensures the query is semantically relevant to
+           the support context.
+
+        4. **Expand the support set in hop order** using a frontier-based BFS:
+           - **Hop 0 (initial):** Start with the focal entity as the frontier.
+           - **Each hop:** Collect all unvisited triples of frontier entities
+             (avoiding re-selection via ``chosen`` set) and discover their
+             neighboring entities (avoiding re-visitation via ``visited_entities``
+             set).  Shuffle candidate triples and add up to ``space`` of them
+             to the support set.
+           - **Frontier advancement:** After processing all frontier entities,
+             move all newly discovered entities to the next frontier.  A neighbor
+             might appear in multiple triples from different frontier entities;
+             the ``visited_entities`` set ensures it is only expanded once, while
+             the triples connecting to it are individually selected for inclusion
+             in support.
+           - **Termination:** Stop expanding when context_size is reached or
+             no new neighbors can be discovered.
+
+        5. **Fill remaining slots** (if any):
+           - First, try to sample from the remaining unexplored triples
+             (no repetition) to preserve diversity.
+           - If the KG is smaller than context_size, pad with repetitions
+             from available triples.  The transformer handles duplicate tokens
+             gracefully by re-encoding the same triple, which is harmless.
+
+        6. **Decide label:** Either keep the query as-is (label=1, positive),
+           or replace its tail with a random entity from the full KG (label=0,
+           negative).  The ``force_label`` parameter allows external control
+           for ratio scheduling during dataset generation.
+
+        7. **Build tensor representations** by looking up pre-computed
+           SentenceTransformer embeddings (384-dim) for all entities and
+           relations in the support and query.
+
+        Parameters
+        ----------
+        verbose : bool
+            If True, print the string representations of support triples, query,
+            and label for debugging purposes.
 
         Returns
         -------
         support      : FloatTensor (context_size, 3, ST_DIM)
-        query_triple : FloatTensor (3, ST_DIM)  — [head_emb, rel_emb, tail_emb]
-        label        : FloatTensor scalar  — 1.0 = real, 0.0 = corrupted
+            Context triple embeddings, padded with duplicates if needed.
+        query_triple : FloatTensor (3, ST_DIM)
+            [head_emb, relation_emb, tail_emb] — the candidate triple.
+        label        : FloatTensor scalar
+            1.0 if query is a real KG triple, 0.0 if tail is negatively sampled.
         """
 
-        # TODO:CD: We only corrupt the tail entity for negative examples.  
-        # As context_size increases, 
-        # We firstly add one-hop triples of the focal entity, then two-hop triples, and so on.
-        # This ensures that the support set grows in a structured manner, maintaining local relevance.
+        # TODO:CD: Currently we only corrupt the tail entity for negative examples.
+        # Consider extending to head corruption or relation corruption for richer
+        # learning signals.  As context_size increases, we incrementally add
+        # one-hop triples, then two-hop triples, and so on, ensuring the support
+        # set grows in a structured manner while maintaining local relevance.
 
-        
-        # a. Pick one KG; unpack triples + pre-computed ST embedding matrices.
-        triples, entity_embs, relation_embs, entity_to_triples, entity_to_neighbors = random.choice(self.kg_pools)
+        # ── STEP 1: SELECT A RANDOM KG ──────────────────────────────────────
+        # Pick one KG from the pool; unpack its triples, embeddings, and
+        # vocabulary strings for potential debug output.
+        triples, entity_embs, relation_embs, entity_to_triples, entity_to_neighbors, entity_strings, relation_strings = random.choice(self.kg_pools)
         n_ent = entity_embs.shape[0]
 
-        # b. Pick a focal entity and get its 1-hop neighbourhood triple indices.
+        # ── STEP 2: PICK A RANDOM FOCAL ENTITY & GET ITS NEIGHBORHOOD ──────
+        # The focal entity anchors the entire episode; all support and query
+        # triples will be sampled from its neighborhood or further via BFS.
         focal = random.randrange(n_ent)
         neighbourhood = entity_to_triples.get(focal, [])
-        # Fall back to a random triple when the entity has no known triples.
+        # Fallback: if the focal entity has no triples (isolated), sample from
+        # all KG triples.  This prevents the episode generator from crashing
+        # on sparse entities.
         if len(neighbourhood) < 2:
             neighbourhood = list(range(len(triples)))
 
-        # c. Sample the query triple from the neighbourhood.
+        # ── STEP 3: SAMPLE THE QUERY TRIPLE FROM THE NEIGHBORHOOD ──────────
+        # This ensures the query is semantically close to the focal entity,
+        # making the learning task more coherent.
         q_tri_idx = random.choice(neighbourhood)
         q_h, q_r, q_t = triples[q_tri_idx]
 
-        # d. Build support in hop order without duplicated triples.
+        # ── STEP 4: BUILD SUPPORT VIA HOP-WISE BFS EXPANSION ────────────────
+        # Initialize the frontier-based graph traversal.
+        #   - ctx_idxs: list of triple indices selected for the support set.
+        #   - chosen: set of triple indices already added (prevents duplicates).
+        #   - visited_entities: set of entities already visited (prevents re-expansion).
+        #   - frontier: current set of entities to expand from.
         ctx_idxs: List[int] = []
         chosen = {q_tri_idx}
         visited_entities = {focal}
         frontier = {focal}
 
+        # BFS expansion: iterate through each hop up to max_hop.
         for _hop in range(max(1, self.max_hop)):
+            # Early termination conditions:
+            #   1. Support size already meets context_size.
+            #   2. No new entities to expand (frontier exhausted).
             if len(ctx_idxs) >= context_size or not frontier:
                 break
 
-            hop_candidates: List[int] = []
-            next_frontier = set()
+            hop_candidates: List[int] = []  # triples reachable from current frontier
+            next_frontier = set()           # entities to expand in the next hop
 
+            # ─ Expand from each entity in the current frontier ─
             for ent in frontier:
+                # Collect all triples involving this entity that haven't
+                # been selected yet.  A single entity might appear in multiple
+                # triples; we add all of them to the candidate pool, then
+                # intelligently shuffle and sample to maintain diversity.
                 for tri_idx in entity_to_triples.get(ent, []):
                     if tri_idx in chosen:
-                        continue
+                        continue  # Skip already-selected triples.
                     chosen.add(tri_idx)
                     hop_candidates.append(tri_idx)
 
+                # Discover neighbors (unvisited entities connected to ent).
+                # A neighbor might appear in multiple triples from different
+                # frontier entities; the visited_entities set ensures it is
+                # only added to next_frontier once, avoiding redundant re-visitation.
                 for nbr in entity_to_neighbors.get(ent, []):
                     if nbr not in visited_entities:
                         visited_entities.add(nbr)
                         next_frontier.add(nbr)
 
+            # Add candidates to support set: shuffle to randomize hop-local
+            # order, then take up to 'space' candidates to fill the current
+            # support budget.  This balances hop-wise expansion (closer
+            # entities first) with random sampling within each hop.
             random.shuffle(hop_candidates)
             space = context_size - len(ctx_idxs)
             ctx_idxs.extend(hop_candidates[:space])
             frontier = next_frontier
 
-        # If hop-limited expansion is insufficient, fill from remaining triples
-        # uniformly without replacement to keep support duplicate-free.
+        # ── STEP 4b: FILL FROM REMAINING UNEXPLORED TRIPLES ────────────────
+        # If hop expansion did not reach context_size, try to fill the support
+        # by sampling from triples we haven't visited yet.  This maximizes
+        # knowledge diversity without repetition.
         if len(ctx_idxs) < context_size:
             remaining = [i for i in range(len(triples)) if i not in chosen]
             random.shuffle(remaining)
             space = context_size - len(ctx_idxs)
             ctx_idxs.extend(remaining[:space])
 
-        # If the KG is smaller than context_size, repeat triples (with replacement)
-        # to fill the remaining slots.  The transformer tolerates duplicate tokens
-        # in the support — it just re-encodes the same triple, which is harmless.
+        # ── STEP 4c: PAD WITH DUPLICATES IF NECESSARY ──────────────────────
+        # Some KGs (especially small ones like Countries-S1 with ~150 triples)
+        # may be smaller than context_size.  We pad with repetitions of
+        # available triples.  The transformer handles duplicate tokens
+        # gracefully: it re-encodes the same triple multiple times, which
+        # provides redundant information but does not break the forward pass.
         if len(ctx_idxs) < context_size:
             all_available = [i for i in range(len(triples)) if i != q_tri_idx]
             if not all_available:
@@ -274,10 +368,18 @@ class RichSubgraphPrior:
 
         support_raw = [triples[i] for i in ctx_idxs]
 
-        # e. Decide label: 50 % positive, 50 % corrupted negative.
-        label = int(random.random() < 0.5)
+        # ── STEP 5: DECIDE LABEL (POSITIVE OR NEGATIVE) ──────────────────────
+        # Determine whether the query is a real triple (label=1) or a negatively
+        # sampled triple with a corrupted tail (label=0).  The force_label
+        # parameter allows external scheduling (e.g., for 1:N pos:neg ratio).
+        if force_label is None:
+            label = int(random.random() < 0.5)
+        else:
+            label = int(force_label)
 
-        # f. Build float support tensor from pre-computed embeddings.
+        # ── STEP 6: BUILD FLOAT TENSORS FROM PRE-COMPUTED EMBEDDINGS ────────
+        # Unpack entity and relation indices from support triples and look up
+        # their pre-computed SentenceTransformer embeddings (384-dim).
         h_list = [h for h, _r, _t in support_raw]
         r_list = [_r for _h, _r, _t in support_raw]
         t_list = [_t for _h, _r, _t in support_raw]
@@ -286,27 +388,57 @@ class RichSubgraphPrior:
         sup_t = entity_embs[t_list]    # (S, ST_DIM)
         support_tensor = torch.stack([sup_h, sup_r, sup_t], dim=1)  # (S, 3, ST_DIM)
 
-        # Build query triple embedding.
+        # Build query triple embedding: [head_emb, rel_emb, tail_emb].
+        # If label=1, the tail is real; if label=0, it's a random entity.
         q_h_emb = entity_embs[q_h]    # (ST_DIM,)
         q_r_emb = relation_embs[q_r]  # (ST_DIM,)
         if label == 1:
+            q_t_actual = q_t
             q_t_emb = entity_embs[q_t]
         else:
-            neg_idx = random.choice([i for i in range(n_ent) if i != q_t])
-            q_t_emb = entity_embs[neg_idx]
+            # Negative sampling: replace tail with a random entity different
+            # from the true tail.
+            q_t_actual = random.choice([i for i in range(n_ent) if i != q_t])
+            q_t_emb = entity_embs[q_t_actual]
 
         query_tensor = torch.stack([q_h_emb, q_r_emb, q_t_emb], dim=0)  # (3, ST_DIM)
+
+        # ── OPTIONAL: DEBUG OUTPUT ──────────────────────────────────────────
+        # Print string representations of support, query, and label for debugging.
+        if verbose:
+            print("\n  ─── Episode Debug Output ───")
+            print("  Support triples (string):")
+            for tri_idx in ctx_idxs:
+                h, r, t = triples[tri_idx]
+                print(f"    ({entity_strings[h]}, {relation_strings[r]}, {entity_strings[t]})")
+            q_h_str = entity_strings[q_h]
+            q_r_str = relation_strings[q_r]
+            q_t_actual_str = entity_strings[q_t_actual]
+            print(f"  Query triple (string): ({q_h_str}, {q_r_str}, {q_t_actual_str})")
+            if label == 0:
+                q_t_true_str = entity_strings[q_t]
+                print(f"    True tail (for reference): {q_t_true_str}")
+                print(f"    Sampled tail (used): {q_t_actual_str}")
+            print(f"  Label: {label} ({'real' if label == 1 else 'negatively sampled'})")
+            print("  ───────────────────────────")
 
         return support_tensor, query_tensor, torch.tensor(float(label))
 
     def generate_task(
         self,
         context_size: int = 1000,
+        force_label: Optional[int] = None,
+        verbose: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Sample one binary-labelled training episode.
 
         Delegates to :meth:`_generate_real_task`.  ``kg_pools`` must be set
         (pass ``kg_dir`` to :func:`train`).
+
+        Parameters
+        ----------
+        verbose : bool
+            If True, print string representations of support, query, and label.
 
         Returns
         -------
@@ -318,7 +450,7 @@ class RichSubgraphPrior:
             raise ValueError(
                 "kg_pools is empty.  Pass --kg-dir (CLI) or kg_dir (API) to load real KGs."
             )
-        return self._generate_real_task(context_size)
+        return self._generate_real_task(context_size, force_label=force_label, verbose=verbose)
 
 
 def _collate(
@@ -341,6 +473,7 @@ def build_dataset(
     num_episodes: int,
     context_size: int,
     path: str,
+    negative_ratio: int = 1,
 ) -> None:
     """Pre-generate training episodes and persist them as memory-mapped .npy files.
 
@@ -370,6 +503,9 @@ def build_dataset(
         at training time.
     path : str
         Directory in which to write the dataset files (created if absent).
+    negative_ratio : int
+        Number of negative examples generated per positive example.  For
+        example, ``negative_ratio=10`` yields a 1:10 positive:negative schedule.
     """
     os.makedirs(path, exist_ok=True)
     sup_path = os.path.join(path, "dataset_supports.npy")
@@ -391,10 +527,12 @@ def build_dataset(
 
     log_every = max(1, num_episodes // 10)
     print(f"  Generating {num_episodes:,} episodes  →  {path!r}")
+    cycle_len = negative_ratio + 1
     for i in range(num_episodes):
         if i % log_every == 0:
             print(f"    {i:>7,} / {num_episodes:,}")
-        sup, qry, lbl = prior.generate_task(context_size=context_size)
+        force_label = 1 if (i % cycle_len == 0) else 0
+        sup, qry, lbl = prior.generate_task(context_size=context_size, force_label=force_label)
         sup_mm[i] = sup.numpy()
         qry_mm[i] = qry.numpy()
         lbl_mm[i] = lbl.item()
@@ -404,11 +542,19 @@ def build_dataset(
     lbl_mm.flush()
     del sup_mm, qry_mm, lbl_mm
 
-    meta = {"num_episodes": num_episodes, "context_size": context_size, "st_dim": _ST_DIM}
+    meta = {
+        "num_episodes": num_episodes,
+        "context_size": context_size,
+        "st_dim": _ST_DIM,
+        "negative_ratio": negative_ratio,
+    }
     with open(os.path.join(path, "dataset_meta.json"), "w") as fh:
         json.dump(meta, fh, indent=2)
 
-    print(f"  Done  ({num_episodes:,} episodes, context_size={context_size})\n")
+    print(
+        f"  Done  ({num_episodes:,} episodes, context_size={context_size}, "
+        f"pos:neg ≈ 1:{negative_ratio})\n"
+    )
 
 
 class PFNDataset(Dataset):

@@ -166,12 +166,11 @@ triples and a query ``(head_str, relation_str, ?)``:
 """
 
 import argparse
-import json
 import math
 import os
 import random
 import sys
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -181,7 +180,6 @@ from torch.utils.data import DataLoader
 from pfn_dataset import PFNDataset, RichSubgraphPrior, _load_real_triples, build_dataset
 from pfn_inference import evaluate, infer, score_triple
 from pfn_model import TriplePFN
-
 
 # ---------------------------------------------------------------------------
 # TRAINING
@@ -203,6 +201,7 @@ def train(
     kg_dir: str = "KGs/",
     context_size: int = 32,
     num_episodes: int = 100_000,
+    negative_ratio: int = 1,
     dataset_cache_dir: str = ".pfn_cache",
     save_path: Optional[str] = None,
     device: Optional[torch.device] = None,
@@ -235,9 +234,13 @@ def train(
         Number of support triples per episode.
     num_episodes : int
         Total number of episodes to pre-generate.
+    negative_ratio : int
+        Number of negative examples generated per positive example.  For
+        example, ``negative_ratio=10`` yields approximately a 1:10
+        positive:negative ratio in the cached dataset.
     dataset_cache_dir : str
-        Directory for pre-computed episode cache.  Re-used as-is on
-        subsequent runs if the ``dataset_meta.json`` sidecar is present.
+        Directory for pre-computed episodes.  This dataset is regenerated on
+        every training run to preserve sampling randomness.
     save_path : str or None
         If given, save the final model to this path.  If the file already
         exists it is loaded and training resumes from that checkpoint.
@@ -274,22 +277,27 @@ def train(
     """
     _set_seed(seed)
 
+    if negative_ratio < 0:
+        raise ValueError(f"negative_ratio must be >= 0, got {negative_ratio}.")
+
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # ── Dataset: reuse cache if already generated ────────────────────────────
-    meta_path = os.path.join(dataset_cache_dir, "dataset_meta.json")
-    if os.path.isfile(meta_path):
-        print(f"Found existing dataset cache at {dataset_cache_dir!r} — skipping generation.")
-    else:
-        print(f"Loading KGs from {kg_dir!r}...")
-        kg_pools = _load_real_triples(kg_dir)
-        if not kg_pools:
-            raise ValueError(f"No KGs found in {kg_dir!r}")
-        print("Initialising RichSubgraphPrior...")
-        prior = RichSubgraphPrior(kg_pools=kg_pools)
-        print(f"Pre-generating {num_episodes:,} episodes to {dataset_cache_dir!r}...")
-        build_dataset(prior, num_episodes, context_size, dataset_cache_dir)
+    # ── Dataset: always regenerate so every run has fresh random episodes ────
+    print(f"Loading KGs from {kg_dir!r}...")
+    kg_pools = _load_real_triples(kg_dir)
+    if not kg_pools:
+        raise ValueError(f"No KGs found in {kg_dir!r}")
+    print("Initialising RichSubgraphPrior...")
+    prior = RichSubgraphPrior(kg_pools=kg_pools)
+    print(f"Pre-generating {num_episodes:,} episodes to {dataset_cache_dir!r}...")
+    build_dataset(
+        prior,
+        num_episodes,
+        context_size,
+        dataset_cache_dir,
+        negative_ratio=negative_ratio,
+    )
 
     dataset = PFNDataset(dataset_cache_dir, expected_context_size=context_size)
     dataloader = DataLoader(
@@ -345,7 +353,6 @@ def train(
         model.train()
         epoch_loss = 0.0
         num_batches = 0
-        ema_loss: Optional[float] = None  # exponential moving average of per-batch loss
 
         for batch_idx, (support, query, label) in enumerate(dataloader):
             support = support.to(device)
@@ -366,19 +373,16 @@ def train(
             epoch_loss += batch_loss
             num_batches += 1
 
-            # EMA loss (α=0.98) gives a smooth per-batch signal, unlike running average
-            ema_loss = batch_loss if ema_loss is None else 0.98 * ema_loss + 0.02 * batch_loss
-
             print_every = max(1, len(dataloader) // 10)
             if (batch_idx + 1) % print_every == 0:
                 current_lr = optimizer.param_groups[0]["lr"]
                 print(
                     f"  Epoch {epoch + 1:>5d} | Batch {batch_idx + 1:>5d} / {len(dataloader)}"
-                    f" | BCE Loss: {batch_loss:.6f} | EMA Loss: {ema_loss:.6f} | LR: {current_lr:.2e}"
+                    f" | BCE Loss: {batch_loss:.6f} | LR: {current_lr:.2e}"
                 )
 
         avg_loss = epoch_loss / num_batches if num_batches > 0 else 0.0
-        print(f"  Epoch {epoch + 1:>5d} / {num_epochs}  |  Avg Loss: {avg_loss:.6f}  |  EMA Loss: {ema_loss:.6f}")
+        print(f"  Epoch {epoch + 1:>5d} / {num_epochs}  |  Avg Loss: {avg_loss:.6f}")
 
     if save_path:
         model.cpu()
@@ -434,11 +438,11 @@ def main():
     # Train subcommand
     train_parser = subparsers.add_parser("train", help="Meta-train a GraphPFN model.")
     train_parser.add_argument(
-        "--epochs", type=int, default=1,
+        "--epochs", type=int, default=10,
         help="Number of full passes over the pre-generated episode dataset."
     )
     train_parser.add_argument(
-        "--batch-size", type=int, default=256,
+        "--batch-size", type=int, default=100,
         help="Number of episodes per mini-batch. Larger values make better use of GPU parallelism."
     )
     train_parser.add_argument(
@@ -446,11 +450,11 @@ def main():
         help="Peak learning rate reached after the linear warmup phase (AdamW, default: 1e-4)."
     )
     train_parser.add_argument(
-        "--kg-dir", type=str, default="KGs/",
+        "--kg-dir", type=str, default="KGs/Countries-S1/",
         help="Root directory that contains one or more KG sub-folders, each with a train.txt file."
     )
     train_parser.add_argument(
-        "--context-size", type=int, default=64,
+        "--context-size", type=int, default=128,
         help=(
             "Number of *support triples* shown to the model per episode. "
             "Each support triple is a (head, relation, tail) string tuple drawn from the "
@@ -467,6 +471,13 @@ def main():
             "that is either real (label=1) or tail-corrupted (label=0). "
             "This becomes the fixed dataset size; with --batch-size B and --epochs E "
             "there are ceil(num_episodes / B) * E total mini-batch updates."
+        ),
+    )
+    train_parser.add_argument(
+        "--negative-ratio", type=int, default=1,
+        help=(
+            "Number of negative episodes generated per positive episode in the "
+            "cached training set. For example, 10 means 1 positive for 10 negatives."
         ),
     )
     train_parser.add_argument(
@@ -588,6 +599,9 @@ def main():
         "--context-size", type=int, default=32, help="Context size per pass."
     )
 
+    if len(sys.argv) == 1 or (sys.argv[1] not in ("train", "infer", "score", "-h", "--help")):
+        sys.argv.insert(1, "train")
+
     args = parser.parse_args()
 
     if args.command == "train":
@@ -598,6 +612,7 @@ def main():
             kg_dir=args.kg_dir,
             context_size=args.context_size,
             num_episodes=args.num_episodes,
+            negative_ratio=args.negative_ratio,
             embed_dim=args.embed_dim,
             num_heads=args.num_heads,
             num_layers=args.num_layers,
@@ -634,13 +649,12 @@ def main():
         else:
             print(f"Support loaded: {len(support):,} triples from '{args.train_file}'")
 
-        if args.show_support:
-            print(f"\n{'─'*52}")
-            print(f"  {'#':<5}  {'Head':<20}  {'Relation':<15}  Tail")
-            print(f"  {'─'*5}  {'─'*20}  {'─'*15}  {'─'*20}")
-            for i, (h, r, t) in enumerate(support, start=1):
-                print(f"  {i:<5}  {h:<20}  {r:<15}  {t}")
-            print(f"{'─'*52}\n")
+        print(f"\n{'─'*52}")
+        print(f"  {'#':<5}  {'Head':<20}  {'Relation':<15}  Tail")
+        print(f"  {'─'*5}  {'─'*20}  {'─'*15}  {'─'*20}")
+        for i, (h, r, t) in enumerate(support, start=1):
+            print(f"  {i:<5}  {h:<20}  {r:<15}  {t}")
+        print(f"{'─'*52}\n")
 
         results = infer(model, args.head, args.relation, support, k=args.k, device=device)
 
