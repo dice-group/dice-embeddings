@@ -367,7 +367,7 @@ def score_triple(
     same query triple ``(triple_h, triple_r, triple_t)``.  Each pass uses a
     freshly and independently sampled support context of *context_size* triples
     drawn uniformly at random from the file.  The returned score is the average
-    sigmoid probability across all *n* passes.
+    unnormalized logit across all *n* passes.
 
     Parameters
     ----------
@@ -392,7 +392,7 @@ def score_triple(
     Returns
     -------
     float
-        Average sigmoid probability P(triple is true | context) in [0, 1],
+        Average unnormalized logit (raw model score),
         averaged over *n* random contexts.
 
     Examples
@@ -406,7 +406,7 @@ def score_triple(
 
         model = train(num_epochs=3000, kg_dir="KGs/")
 
-        p_true = score_triple(
+        logit = score_triple(
             model,
             triple_h="slovakia",
             triple_r="neighbor",
@@ -415,7 +415,7 @@ def score_triple(
             n=10,
             context_size=32,
         )
-        print(f"P(slovakia neighbor austria) = {p_true:.4f}")
+        print(f"Logit(slovakia neighbor austria) = {logit:.4f}")
     """
     if device is None:
         device = next(model.parameters()).device
@@ -478,7 +478,7 @@ def score_triple(
             logits.append(float(logit.item() if logit.dim() == 0 else logit[0].item()))
 
     avg_logit = sum(logits) / len(logits)
-    return float(torch.sigmoid(torch.tensor(avg_logit)).item())
+    return avg_logit
 
 
 # ---------------------------------------------------------------------------
@@ -509,18 +509,18 @@ def main() -> None:
         "infer",
         help="Predict top-k tail entities for a (head, relation, ?) query.",
     )
-    infer_parser.add_argument("--model", type=str, required=True, help="Path to model checkpoint (.pt).")
+    infer_parser.add_argument("--model", type=str, default="model.pt", help="Path to model checkpoint (.pt).")
     infer_parser.add_argument(
         "--train-file",
         "--data",
         dest="train_file",
         type=str,
-        required=False,
+        default="KGs/Countries-S1/train.txt",
         metavar="TRAIN_TXT",
         help="Path to train.txt whose triples are used as in-context support.",
     )
-    infer_parser.add_argument("--head", type=str, required=False, help="Head entity string for the query.")
-    infer_parser.add_argument("--relation", type=str, required=False, help="Relation string for the query.")
+    infer_parser.add_argument("--head", type=str, default="slovakia", help="Head entity string for the query.")
+    infer_parser.add_argument("--relation", type=str, default="neighbor", help="Relation string for the query.")
     infer_parser.add_argument(
         "--query",
         type=str,
@@ -529,7 +529,7 @@ def main() -> None:
         metavar=("HEAD", "RELATION"),
         help="Backward-compatible: --query <head> <relation>.",
     )
-    infer_parser.add_argument("--k", type=int, default=10, help="Number of top-k predictions to display.")
+    infer_parser.add_argument("--k", type=int, default=5, help="Number of top-k predictions to display.")
     infer_parser.add_argument(
         "--context-size",
         type=int,
@@ -548,7 +548,7 @@ def main() -> None:
 
     score_parser = subparsers.add_parser(
         "score",
-        help="Estimate P(triple is true) via Monte Carlo context sampling.",
+        help="Compute unnormalized logit for a triple via Monte Carlo context sampling.",
     )
     score_parser.add_argument("--model", type=str, required=True, help="Path to model checkpoint (.pt).")
     score_parser.add_argument(
@@ -636,11 +636,10 @@ def main() -> None:
         results = infer(model, args.head, args.relation, support, k=args.k, device=device)
 
         print(f"\nTop-{args.k} predictions for ({args.head}, {args.relation}, ?):")
-        print(f"  {'Entity':<30}  Log P(true)")
+        print(f"  {'Entity':<30}  Logit")
         print(f"  {'-' * 30}  -----------")
         for rank, (entity, raw_score) in enumerate(results, start=1):
-            log_p_true = torch.nn.functional.logsigmoid(torch.tensor(raw_score)).item()
-            print(f"  {rank}. {entity:<28}  {log_p_true:>11.4f}")
+            print(f"  {rank}. {entity:<28}  {raw_score:>11.4f}")
 
     elif args.command == "score":
         ckpt = torch.load(args.model, map_location="cpu")
@@ -653,8 +652,8 @@ def main() -> None:
         model.eval()
 
         h, r, t = args.triple
-        prob = score_triple(model, h, r, t, args.data, n=args.n, context_size=args.context_size)
-        print(f"P({h} {r} {t}) = {prob:.4f}")
+        logit = score_triple(model, h, r, t, args.data, n=args.n, context_size=args.context_size)
+        print(f"Logit({h} {r} {t}) = {logit:.4f}")
     else:
         parser.print_help()
 
