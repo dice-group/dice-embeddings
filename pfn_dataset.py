@@ -588,6 +588,7 @@ def build_dataset(
     context_size: int,
     path: str,
     negative_ratio: int = 1,
+    verbose: bool = False,
 ) -> None:
     """Pre-generate training episodes and persist them as memory-mapped .npy files.
 
@@ -620,6 +621,8 @@ def build_dataset(
     negative_ratio : int
         Number of negative examples generated per positive example.  For
         example, ``negative_ratio=10`` yields a 1:10 positive:negative schedule.
+    verbose : bool
+        If True, print progress logs and episode debug output during generation.
     """
     os.makedirs(path, exist_ok=True)
     sup_path = os.path.join(path, "dataset_supports.npy")
@@ -646,7 +649,7 @@ def build_dataset(
         if i % log_every == 0:
             print(f"    {i:>7,} / {num_episodes:,}")
         force_label = 1 if (i % cycle_len == 0) else 0
-        sup, qry, lbl = prior.generate_task(context_size=context_size, force_label=force_label)
+        sup, qry, lbl = prior.generate_task(context_size=context_size, verbose=verbose, force_label=force_label)
         sup_mm[i] = sup.numpy()
         qry_mm[i] = qry.numpy()
         lbl_mm[i] = lbl.item()

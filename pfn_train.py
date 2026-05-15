@@ -11,9 +11,9 @@ Usage
     # Resume from an existing checkpoint:
     python pfn_train.py --kg-dir KGs/ --epochs 20000 --save model.pt
 
-    # Random support sampling with support-order permutation (data augmentation):
+    # Use entity-centric sampling or disable support permutation (defaults: random + permute):
     python pfn_train.py --kg-dir KGs/ --epochs 10000 --save model.pt \\
-        --support-sampler random --permute-support
+        --support-sampler entity-centric --no-permute-support
 
     # Larger model (embed-dim 1024, 12 layers, 16 heads):
     python pfn_train.py --kg-dir KGs/ --epochs 10000 --save model.pt \\
@@ -27,9 +27,6 @@ Usage
     python pfn_train.py --kg-dir KGs/UMLS/ --epochs 5000 --save model.pt \\
         --eval-train KGs/UMLS/train.txt --eval-test KGs/UMLS/test.txt
 
-    # Disable FLOPs reporting:
-    python pfn_train.py --kg-dir KGs/Countries-S1/ --epochs 1000 --save model.pt \\
-        --no-report-flops
 
     # Multi-GPU DDP training with torchrun (1 visible GPU):
     torchrun --standalone --nproc_per_node=1 pfn_train.py  --ddp --kg-dir KGs --epochs 10 --save model.pt
@@ -227,8 +224,6 @@ def train(
         Apply random permutation to support order per episode.
     early_stop_loss : float or None
         Stop once epoch-average BCE loss <= this value.
-    report_flops : bool
-        Print estimated FLOPs for one train step.
     use_ddp : bool
         If True, enable torchrun-style DistributedDataParallel across all
         visible GPUs. Also auto-enables when launched with ``WORLD_SIZE>1``.
@@ -489,24 +484,31 @@ def main():
         description="Meta-train a GraphPFN model on episodic KG samples.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--epochs", type=int, default=10, help="Number of full passes over the episode dataset.")
-    parser.add_argument("--batch-size", type=int, default=100, help="Episodes per mini-batch.")
+    parser.add_argument("--epochs", type=int, default=1, help="Number of full passes over the episode dataset.")
+    parser.add_argument("--batch-size", type=int, default=256, help="Episodes per mini-batch.")
     parser.add_argument("--lr", type=float, default=1e-4, help="Peak learning rate (AdamW).")
-    parser.add_argument("--kg-dir", type=str, default="KGs/Countries-S1/", help="Root directory containing KGs.")
+    parser.add_argument("--kg-dir", type=str, default="KGs", help="Root directory containing KGs.")
     parser.add_argument(
-        "--context-size", type=int, default=128,
+        "--context-size", type=int, default=32,
         help="Number of support triples per episode.",
     )
-    parser.add_argument("--num-episodes", type=int, default=5000, help="Total episodes to pre-generate and cache.")
+    parser.add_argument("--num-episodes", type=int, default=1_000, help="Total episodes to pre-generate and cache.")
     parser.add_argument(
         "--negative-ratio", type=int, default=1,
         help="Negative episodes generated per positive episode.",
     )
     parser.add_argument(
-        "--support-sampler", type=str, choices=("entity-centric", "random"), default="entity-centric",
+        "--support-sampler", type=str, choices=("entity-centric", "random"), default="random",
         help="Support sampling strategy per episode.",
     )
-    parser.add_argument("--permute-support", action="store_true", help="Randomly permute support order per episode.")
+    parser.add_argument(
+        "--permute-support", action="store_true", default=True,
+        help="Randomly permute support order per episode."
+    )
+    parser.add_argument(
+        "--no-permute-support", dest="permute_support", action="store_false",
+        help="Disable support permutation."
+    )
     parser.add_argument("--embed-dim", type=int, default=512, help="Model embedding dimension.")
     parser.add_argument("--num-heads", type=int, default=8, help="Transformer attention heads (must divide --embed-dim).")
     parser.add_argument("--num-layers", type=int, default=6, help="Transformer encoder layers.")
@@ -520,8 +522,6 @@ def main():
         "--early-stop-loss", type=float, default=None,
         help="Stop early once epoch-average BCE loss <= this value.",
     )
-    parser.add_argument("--report-flops", dest="report_flops", action="store_true", default=True, help="Print FLOPs estimate (default: on).")
-    parser.add_argument("--no-report-flops", dest="report_flops", action="store_false", help="Disable FLOPs reporting.")
     parser.add_argument(
         "--ddp",
         action="store_true",
@@ -549,7 +549,6 @@ def main():
         support_sampler=args.support_sampler,
         permute_support=args.permute_support,
         early_stop_loss=args.early_stop_loss,
-        report_flops=args.report_flops,
         use_ddp=args.ddp,
     )
 
