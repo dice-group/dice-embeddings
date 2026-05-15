@@ -32,21 +32,21 @@ def main() -> None:
 
     cmd = sys.argv[1]
     if cmd == "train":
-        from pfn_train import main as train_main
+        from pfn.train import main as train_main
 
         sys.argv = [sys.argv[0]] + sys.argv[2:]
         train_main()
         return
 
     if cmd in ("infer", "score"):
-        from pfn_inference import main as inference_main
+        from pfn.inference import main as inference_main
 
         sys.argv = [sys.argv[0], cmd] + sys.argv[2:]
         inference_main()
         return
 
     if cmd == "eval":
-        from pfn_evaluate import main as evaluate_main
+        from pfn.evaluate import main as evaluate_main
 
         if len(sys.argv) < 3:
             sys.argv = [sys.argv[0], "rank"]

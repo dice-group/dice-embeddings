@@ -1,0 +1,14 @@
+kamp                   neighbor     westernstraße
+westernstraße          neighbor     marienstraße
+marienstraße           neighbor     rathausplatz
+rathausplatz           locatedin    kernstadt
+liboriberg             neighbor     marienstraße
+residenzstraße         neighbor     schloßstraße
+schloßstraße           neighbor     bielefelder_straße
+bielefelder_straße     locatedin    schloß_neuhaus
+marstall               neighbor     residenzstraße
+von-ketteler-straße    neighbor     dionysiusstraße
+dionysiusstraße        neighbor     germanenstraße
+germanenstraße         locatedin    elsen
+barkhauser_straße      neighbor     alter_hellweg
+alter_hellweg          locatedin    wewer

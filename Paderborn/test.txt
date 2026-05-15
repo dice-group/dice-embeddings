@@ -1,0 +1,3 @@
+kamp                   locatedin    kernstadt
+marstall               locatedin    schloß_neuhaus
+von-ketteler-straße    locatedin    elsen

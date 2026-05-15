@@ -1,0 +1,271 @@
+Using checkpoint context_size=128 for inference.
+Loaded checkpoint run settings: context_size=128, support_sampler=random, permute_support=True
+Support capped: 1,111 -> 128 triples (context_size=128, support_size=None).
+
+────────────────────────────────────────────────────
+  #      Head                  Relation         Tail
+  ─────  ────────────────────  ───────────────  ────────────────────
+  1      western_africa        locatedin        africa
+  2      slovakia              neighbor         ukraine
+  3      slovakia              neighbor         hungary
+  4      slovakia              neighbor         austria
+  5      slovakia              neighbor         czechia
+  6      slovakia              neighbor         poland
+  7      niger                 neighbor         algeria
+  8      niger                 neighbor         chad
+  9      niger                 neighbor         libya
+  10     niger                 neighbor         burkina_faso
+  11     niger                 neighbor         mali
+  12     niger                 neighbor         nigeria
+  13     niger                 neighbor         benin
+  14     belize                locatedin        americas
+  15     morocco               neighbor         western_sahara
+  16     morocco               neighbor         spain
+  17     morocco               neighbor         algeria
+  18     falkland_islands      locatedin        south_america
+  19     saint_vincent_and_the_grenadines  locatedin        americas
+  20     brunei                locatedin        asia
+  21     iran                  locatedin        asia
+  22     indonesia             locatedin        asia
+  23     senegal               neighbor         gambia
+  24     senegal               neighbor         mauritania
+  25     senegal               neighbor         mali
+  26     senegal               neighbor         guinea-bissau
+  27     senegal               neighbor         guinea
+  28     central_america       locatedin        americas
+  29     equatorial_guinea     neighbor         gabon
+  30     equatorial_guinea     neighbor         cameroon
+  31     gibraltar             neighbor         spain
+  32     hungary               locatedin        eastern_europe
+  33     poland                locatedin        eastern_europe
+  34     micronesia            locatedin        oceania
+  35     eritrea               locatedin        eastern_africa
+  36     barbados              locatedin        caribbean
+  37     kiribati              locatedin        oceania
+  38     italy                 locatedin        europe
+  39     new_zealand           locatedin        oceania
+  40     liechtenstein         neighbor         switzerland
+  41     liechtenstein         neighbor         austria
+  42     guam                  locatedin        micronesia
+  43     venezuela             neighbor         brazil
+  44     venezuela             neighbor         colombia
+  45     venezuela             neighbor         guyana
+  46     afghanistan           neighbor         pakistan
+  47     afghanistan           neighbor         iran
+  48     afghanistan           neighbor         turkmenistan
+  49     afghanistan           neighbor         uzbekistan
+  50     afghanistan           neighbor         china
+  51     afghanistan           neighbor         tajikistan
+  52     greece                neighbor         turkey
+  53     greece                neighbor         albania
+  54     greece                neighbor         macedonia
+  55     greece                neighbor         bulgaria
+  56     iraq                  locatedin        asia
+  57     republic_of_the_congo  locatedin        middle_africa
+  58     falkland_islands      locatedin        americas
+  59     mayotte               locatedin        eastern_africa
+  60     qatar                 neighbor         saudi_arabia
+  61     british_virgin_islands  locatedin        caribbean
+  62     peru                  locatedin        americas
+  63     indonesia             locatedin        south-eastern_asia
+  64     austria               locatedin        europe
+  65     norway                locatedin        northern_europe
+  66     saint_martin          locatedin        caribbean
+  67     zambia                locatedin        eastern_africa
+  68     ecuador               neighbor         peru
+  69     ecuador               neighbor         colombia
+  70     aruba                 locatedin        americas
+  71     mongolia              locatedin        asia
+  72     senegal               locatedin        western_africa
+  73     taiwan                locatedin        asia
+  74     costa_rica            locatedin        central_america
+  75     french_guiana         locatedin        south_america
+  76     yemen                 neighbor         oman
+  77     yemen                 neighbor         saudi_arabia
+  78     namibia               neighbor         south_africa
+  79     namibia               neighbor         zambia
+  80     namibia               neighbor         angola
+  81     namibia               neighbor         botswana
+  82     hong_kong             neighbor         china
+  83     guadeloupe            locatedin        americas
+  84     turkmenistan          locatedin        central_asia
+  85     paraguay              neighbor         brazil
+  86     paraguay              neighbor         argentina
+  87     paraguay              neighbor         bolivia
+  88     iceland               locatedin        northern_europe
+  89     azerbaijan            locatedin        asia
+  90     india                 neighbor         afghanistan
+  91     india                 neighbor         bangladesh
+  92     india                 neighbor         myanmar
+  93     india                 neighbor         pakistan
+  94     india                 neighbor         nepal
+  95     india                 neighbor         bhutan
+  96     india                 neighbor         china
+  97     india                 neighbor         sri_lanka
+  98     cameroon              locatedin        middle_africa
+  99     Åland_islands         locatedin        europe
+  100    british_indian_ocean_territory  locatedin        africa
+  101    croatia               neighbor         hungary
+  102    croatia               neighbor         serbia
+  103    croatia               neighbor         montenegro
+  104    croatia               neighbor         bosnia_and_herzegovina
+  105    croatia               neighbor         slovenia
+  106    cameroon              locatedin        africa
+  107    ukraine               locatedin        eastern_europe
+  108    ethiopia              neighbor         eritrea
+  109    ethiopia              neighbor         sudan
+  110    ethiopia              neighbor         djibouti
+  111    ethiopia              neighbor         south_sudan
+  112    ethiopia              neighbor         somalia
+  113    ethiopia              neighbor         kenya
+  114    antigua_and_barbuda   locatedin        caribbean
+  115    denmark               locatedin        europe
+  116    saint_pierre_and_miquelon  locatedin        americas
+  117    honduras              locatedin        central_america
+  118    republic_of_the_congo  neighbor         cameroon
+  119    republic_of_the_congo  neighbor         dr_congo
+  120    republic_of_the_congo  neighbor         angola
+  121    republic_of_the_congo  neighbor         gabon
+  122    republic_of_the_congo  neighbor         central_african_republic
+  123    eastern_asia          locatedin        asia
+  124    sint_maarten          locatedin        americas
+  125    slovenia              locatedin        europe
+  126    marshall_islands      locatedin        micronesia
+  127    malaysia              neighbor         brunei
+  128    malaysia              neighbor         indonesia
+────────────────────────────────────────────────────
+
+  Loading sentence-transformers/all-MiniLM-L6-v2 ...
+
+Top-500 predictions for (slovakia, neighbor, ?):
+  Entity                          Log P(true)
+  ------------------------------  -----------
+  1. ukraine                           -0.0008
+  2. czechia                           -0.0050
+  3. poland                            -0.0057
+  4. bulgaria                          -0.0066
+  5. slovakia                          -0.0089
+  6. austria                           -0.0096
+  7. albania                           -0.0148
+  8. denmark                           -0.0241
+  9. hungary                           -0.0320
+  10. norway                            -0.0788
+  11. montenegro                        -3.6805
+  12. macedonia                         -4.7030
+  13. serbia                            -6.1186
+  14. bosnia_and_herzegovina            -6.5126
+  15. switzerland                       -6.6098
+  16. croatia                           -7.0408
+  17. italy                             -7.3641
+  18. greece                            -8.4500
+  19. liechtenstein                     -8.5503
+  20. slovenia                          -8.6931
+  21. china                             -8.9060
+  22. mongolia                          -9.0841
+  23. uzbekistan                       -10.7868
+  24. tajikistan                       -11.0729
+  25. turkey                           -11.4421
+  26. europe                           -12.9724
+  27. spain                            -13.2959
+  28. taiwan                           -13.4813
+  29. iceland                          -13.7465
+  30. iran                             -13.8816
+  31. turkmenistan                     -14.4371
+  32. azerbaijan                       -14.5294
+  33. pakistan                         -14.5396
+  34. central_america                  -14.9635
+  35. central_asia                     -15.0685
+  36. hong_kong                        -15.0721
+  37. saint_pierre_and_miquelon        -15.2051
+  38. asia                             -15.4042
+  39. americas                         -15.6782
+  40. afghanistan                      -15.6997
+  41. eastern_europe                   -15.7800
+  42. myanmar                          -15.8437
+  43. bhutan                           -15.8493
+  44. ecuador                          -15.9372
+  45. qatar                            -15.9946
+  46. new_zealand                      -16.1475
+  47. iraq                             -16.1716
+  48. saudi_arabia                     -16.2016
+  49. eastern_asia                     -16.2667
+  50. south-eastern_asia               -16.2826
+  51. india                            -16.4557
+  52. morocco                          -16.4559
+  53. brunei                           -16.5534
+  54. gibraltar                        -16.7479
+  55. saint_martin                     -16.7485
+  56. malaysia                         -16.8112
+  57. brazil                           -16.9081
+  58. northern_europe                  -16.9374
+  59. oceania                          -17.0282
+  60. south_america                    -17.0890
+  61. venezuela                        -17.1331
+  62. argentina                        -17.1602
+  63. libya                            -17.1899
+  64. western_sahara                   -17.3029
+  65. bolivia                          -17.3602
+  66. micronesia                       -17.3936
+  67. eastern_africa                   -17.4085
+  68. oman                             -17.4324
+  69. bangladesh                       -17.5057
+  70. peru                             -17.5178
+  71. paraguay                         -17.5305
+  72. sri_lanka                        -17.5702
+  73. colombia                         -17.6691
+  74. caribbean                        -17.7057
+  75. africa                           -17.7092
+  76. saint_vincent_and_the_grenadines     -17.7164
+  77. indonesia                        -17.7169
+  78. nepal                            -17.8272
+  79. algeria                          -17.8486
+  80. yemen                            -17.8520
+  81. somalia                          -17.8806
+  82. zambia                           -17.8927
+  83. western_africa                   -17.9086
+  84. mauritania                       -17.9346
+  85. guyana                           -17.9410
+  86. sint_maarten                     -18.0438
+  87. chad                             -18.0694
+  88. middle_africa                    -18.0709
+  89. burkina_faso                     -18.1053
+  90. dr_congo                         -18.1220
+  91. french_guiana                    -18.1652
+  92. belize                           -18.2181
+  93. cameroon                         -18.2504
+  94. guam                             -18.2763
+  95. kenya                            -18.2927
+  96. british_virgin_islands           -18.3157
+  97. honduras                         -18.3245
+  98. sudan                            -18.3518
+  99. british_indian_ocean_territory     -18.3609
+  100. niger                            -18.3619
+  101. costa_rica                       -18.3859
+  102. central_african_republic         -18.3992
+  103. republic_of_the_congo            -18.4016
+  104. south_africa                     -18.4361
+  105. kiribati                         -18.4473
+  106. angola                           -18.4539
+  107. south_sudan                      -18.5502
+  108. gambia                           -18.5542
+  109. benin                            -18.5723
+  110. mali                             -18.5936
+  111. mayotte                          -18.6824
+  112. guinea                           -18.7139
+  113. marshall_islands                 -18.7282
+  114. gabon                            -18.7809
+  115. nigeria                          -18.7827
+  116. namibia                          -18.7975
+  117. ethiopia                         -18.8229
+  118. eritrea                          -18.8505
+  119. Åland_islands                    -18.8519
+  120. botswana                         -18.8534
+  121. senegal                          -18.8974
+  122. antigua_and_barbuda              -18.9132
+  123. equatorial_guinea                -18.9903
+  124. djibouti                         -19.0423
+  125. guinea-bissau                    -19.1410
+  126. falkland_islands                 -19.1490
+  127. barbados                         -19.1609
+  128. guadeloupe                       -19.3557
+  129. aruba                            -19.5832

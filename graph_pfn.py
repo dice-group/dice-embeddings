@@ -190,9 +190,9 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
-from pfn_dataset import PFNDataset, RandomSupportPrior, RichSubgraphPrior, _load_real_triples, build_dataset
-from pfn_inference import evaluate, infer, score_triple
-from pfn_model import TriplePFN
+from pfn.dataset import PFNDataset, RandomSupportPrior, RichSubgraphPrior, _load_real_triples, build_dataset
+from pfn.inference import evaluate, infer, score_triple
+from pfn.model import TriplePFN
 
 # ---------------------------------------------------------------------------
 # TRAINING
