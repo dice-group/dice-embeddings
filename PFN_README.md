@@ -36,7 +36,7 @@ The `pfn/` directory provides wrappers and a package CLI:
 ### Option 1: Keep script commands
 
 ```bash
-python pfn_train.py --kg-dir KGs/Countries-S1/ --epochs 1000 --save model.pt
+python pfn_train.py --kg-dir KGs --epochs 1 --save model.pt
 python pfn_inference.py infer --model model.pt --train-file KGs/Countries-S1/train.txt --head slovakia --relation neighbor --k 5
 python pfn_evaluate.py rank --model model.pt --train-file KGs/Countries-S1/train.txt --test-file KGs/Countries-S1/test.txt
 ```
