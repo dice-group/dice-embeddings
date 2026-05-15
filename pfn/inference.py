@@ -25,6 +25,249 @@ from pfn.model import TriplePFN
 
 
 # ---------------------------------------------------------------------------
+# VISUALIZATION
+# ---------------------------------------------------------------------------
+
+def visualize_triple_scoring(
+    model: TriplePFN,
+    query_h: str,
+    query_r: str,
+    query_t: str,
+    support: List[Tuple[str, str, str]],
+    device: Optional[torch.device] = None,
+    top_k_support: int = 10,
+    save_path: Optional[str] = None,
+    show_plot: bool = True,
+) -> None:
+    """Visualize how the model scores a query triple given support context.
+
+    This function provides insight into the model's reasoning by showing:
+    1. The support context (in-context knowledge)
+    2. The query triple being scored
+    3. The model's score/logit
+    4. Attention patterns (which support triples the model focuses on)
+    5. Matplotlib visualization of attention weights
+
+    Parameters
+    ----------
+    model : TriplePFN
+        A meta-trained TriplePFN instance.
+    query_h : str
+        Head entity of the query triple.
+    query_r : str
+        Relation of the query triple.
+    query_t : str
+        Tail entity of the query triple.
+    support : list of (head, relation, tail) string triples
+        In-context support triples (the knowledge base).
+    device : torch.device or None
+        Inference device. Defaults to model's device.
+    top_k_support : int, default 10
+        Number of top support triples to display (by attention weight).
+    save_path : str or None
+        Path to save the attention visualization plot (e.g., "attention.png").
+    show_plot : bool, default True
+        Whether to display the plot interactively.
+
+    Examples
+    --------
+    >>> from pfn import TriplePFN
+    >>> from pfn.inference import visualize_triple_scoring
+    >>> model = TriplePFN()
+    >>> model.load_state_dict(torch.load("model.pt"))
+    >>> support = [
+    ...     ("slovakia", "neighbor", "ukraine"),
+    ...     ("slovakia", "neighbor", "austria"),
+    ...     ("austria", "neighbor", "germany"),
+    ... ]
+    >>> visualize_triple_scoring(
+    ...     model, "slovakia", "neighbor", "poland",
+    ...     support, top_k_support=5
+    ... )
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    
+    if device is None:
+        device = next(model.parameters()).device
+
+    if not support:
+        raise ValueError("'support' must contain at least one triple.")
+
+    model.eval()
+    model.to(device)
+    
+    # Use the new forward_with_attention method
+    logit, attention_weights = model.forward_with_attention(
+        support_triples=support,
+        query_triple=(query_h, query_r, query_t)
+    )
+    prob = 1.0 / (1.0 + np.exp(-logit))  # sigmoid
+    
+    # attention_weights shape: (num_layers, num_heads, S+1, S+1)
+    # Extract attention from query token (last position) to support tokens
+    # Average over all layers and heads
+    attn_from_query = attention_weights[:, :, -1, :-1].cpu().numpy()  # (num_layers, num_heads, S)
+    attn_avg = attn_from_query.mean(axis=(0, 1))  # (S,)
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # VISUALIZATION OUTPUT
+    # ══════════════════════════════════════════════════════════════════════════
+    print("\n" + "═" * 80)
+    print("  GraphPFN Triple Scoring Visualization")
+    print("═" * 80)
+
+    print("\n┌─ QUERY TRIPLE " + "─" * 64)
+    print(f"│  ({query_h}, {query_r}, {query_t})")
+    print(f"│")
+    print(f"│  Model Score (logit):  {float(logit):>8.4f}")
+    print(f"│  Probability:          {float(prob):>8.4f}  {'✓ LIKELY TRUE' if prob > 0.5 else '✗ LIKELY FALSE'}")
+    print("└" + "─" * 79)
+
+    print("\n┌─ SUPPORT CONTEXT " + "─" * 61)
+    print(f"│  Total support triples: {len(support)}")
+    print("│")
+    
+    # Show top-k support triples SORTED BY ATTENTION
+    # Sort by attention weight (descending)
+    sorted_indices = np.argsort(attn_avg)[::-1]
+    k = min(top_k_support, len(support))
+    
+    print(f"│  Support triples (showing top-{k} by attention):")
+    print("│  " + "─" * 76)
+    print(f"│  {'#':<4}  {'Head':<20}  {'Relation':<20}  {'Tail':<20}  {'Attn%':<6}")
+    print("│  " + "─" * 76)
+    
+    for i, idx in enumerate(sorted_indices[:k], start=1):
+        h, r, t = support[idx]
+        attn_pct = attn_avg[idx] * 100
+        
+        # Highlight triples that share entities/relations with query
+        marker = ""
+        if h == query_h or t == query_h or h == query_t or t == query_t:
+            marker = " ◄─ entity"
+        elif r == query_r:
+            marker = " ◄─ relation"
+        
+        print(f"│  {i:<4}  {h:<20}  {r:<20}  {t:<20}  {attn_pct:5.2f}{marker}")
+    
+    if len(support) > k:
+        print(f"│  ...  ({len(support) - k} more triples)")
+    
+    print("└" + "─" * 79)
+
+    print("\n┌─ MODEL INSIGHTS " + "─" * 62)
+    print("│")
+    print("│  How the model works:")
+    print("│  • No positional encodings → treats support as an UNORDERED SET")
+    print("│  • Self-attention aggregates evidence from all support triples")
+    print("│  • Variable context size: trained on S=32, can handle S=32 to S=1000+")
+    print("│  • Attention weights reveal which support triples are most relevant")
+    print("│")
+    print("│  Key architectural features:")
+    print(f"│  • Embedding dim: {model.embed_dim}")
+    print(f"│  • Transformer layers: {len(model.transformer.layers)}")
+    print(f"│  • Attention heads: {model.transformer.layers[0].self_attn.num_heads}")
+    print("│")
+    
+    # Analyze support relevance
+    shared_entities = sum(1 for h, r, t in support if h in (query_h, query_t) or t in (query_h, query_t))
+    shared_relations = sum(1 for h, r, t in support if r == query_r)
+    
+    print(f"│  Context relevance analysis:")
+    print(f"│  • Triples sharing entities with query:   {shared_entities:>3} / {len(support)} ({100*shared_entities/len(support):.1f}%)")
+    print(f"│  • Triples with same relation as query:   {shared_relations:>3} / {len(support)} ({100*shared_relations/len(support):.1f}%)")
+    print("│")
+    print("└" + "─" * 79)
+    
+    print("\n" + "═" * 80 + "\n")
+    
+    # ══════════════════════════════════════════════════════════════════════════
+    # MATPLOTLIB ATTENTION VISUALIZATION
+    # ══════════════════════════════════════════════════════════════════════════
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, max(8, len(support) * 0.25)))
+    
+    # LEFT: Attention scores bar chart (top K support triples)
+    display_k = min(20, len(support))
+    top_indices = sorted_indices[:display_k]
+    top_attention = attn_avg[top_indices]
+    
+    triple_labels = []
+    for idx in top_indices:
+        h, r, t = support[idx]
+        label = f"{idx+1:2d}. {h[:15]:<15} {r[:12]:<12} {t[:15]:<15}"
+        if h == query_h or t == query_t or h == query_t or t == query_h:
+            label += " ◄ entity"
+        elif r == query_r:
+            label += " ◄ relation"
+        triple_labels.append(label)
+    
+    y_pos = np.arange(len(triple_labels))
+    colors = ['steelblue' if attn > attn_avg.mean() else 'lightsteelblue' for attn in top_attention]
+    ax1.barh(y_pos, top_attention, color=colors, alpha=0.8)
+    ax1.set_yticks(y_pos)
+    ax1.set_yticklabels(triple_labels, fontsize=9, family='monospace')
+    ax1.set_xlabel('Attention Weight (avg over layers & heads)', fontsize=11)
+    ax1.set_title(f'Top-{display_k} Support Triples by Attention\\nQuery: ({query_h}, {query_r}, {query_t})', 
+                  fontsize=12, fontweight='bold')
+    ax1.invert_yaxis()
+    ax1.grid(axis='x', alpha=0.3, linestyle='--')
+    ax1.axvline(x=attn_avg.mean(), color='red', linestyle='--', linewidth=1.5, alpha=0.7, label=f'Mean: {attn_avg.mean():.4f}')
+    ax1.legend(loc='lower right', fontsize=9)
+    
+    # RIGHT: Full attention matrix heatmap
+    # Show attention from all tokens to all tokens (averaged over layers & heads)
+    full_attn = attention_weights.mean(dim=(0, 1)).cpu().numpy()  # (S+1, S+1)
+    
+    im = ax2.imshow(full_attn, cmap='YlOrRd', aspect='auto', interpolation='nearest', vmin=0)
+    ax2.set_xlabel('To Token', fontsize=11)
+    ax2.set_ylabel('From Token', fontsize=11)
+    ax2.set_title('Full Attention Matrix\\n(all layers & heads averaged)', fontsize=12, fontweight='bold')
+    
+    # Colorbar
+    cbar = plt.colorbar(im, ax=ax2)
+    cbar.set_label('Attention Weight', fontsize=10)
+    
+    # Mark query token position
+    query_pos = len(support)
+    ax2.axhline(y=query_pos - 0.5, color='blue', linewidth=2.5, linestyle='--', alpha=0.7, label='Query token')
+    ax2.axvline(x=query_pos - 0.5, color='blue', linewidth=2.5, linestyle='--', alpha=0.7)
+    
+    # Ticks
+    if len(support) <= 20:
+        tick_positions = list(range(len(support))) + [query_pos]
+        tick_labels = [str(i+1) for i in range(len(support))] + ['Q']
+    else:
+        tick_step = max(1, len(support) // 10)
+        tick_positions = list(range(0, len(support), tick_step)) + [query_pos]
+        tick_labels = [str(i+1) for i in range(0, len(support), tick_step)] + ['Q']
+    
+    ax2.set_xticks(tick_positions)
+    ax2.set_xticklabels(tick_labels, fontsize=9)
+    ax2.set_yticks(tick_positions)
+    ax2.set_yticklabels(tick_labels, fontsize=9)
+    ax2.legend(loc='upper right', fontsize=9)
+    
+    plt.suptitle(
+        f'GraphPFN Attention Visualization\n'
+        f'Score: {logit:.4f} | Probability: {prob:.4f} | Support Context: {len(support)} triples',
+        fontsize=14, fontweight='bold', y=0.995
+    )
+    
+    plt.tight_layout(rect=[0, 0, 1, 0.97])
+    
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches='tight')
+        print(f"📊 Attention visualization saved to: {save_path}\n")
+    
+    if show_plot:
+        plt.show()
+    else:
+        plt.close()
+
+
+# ---------------------------------------------------------------------------
 # EVALUATION
 # ---------------------------------------------------------------------------
 
@@ -430,7 +673,7 @@ def score_triple(
             parts = line.split()
             if len(parts) == 3:
                 all_rows.append((parts[0], parts[1], parts[2]))
-
+    print(f"Loaded {len(all_rows):,} triples from '{data_file}' for context sampling.")
     if not all_rows:
         raise ValueError(f"No valid triples found in '{data_file}'.")
 
