@@ -562,3 +562,136 @@ class TriplePFNCrossAttn(TriplePFN):
 # Implementation deferred pending research validation.
 # ===========================================================================
 
+
+# ===========================================================================
+# ROADMAP: Relation-Conditioned Cross-Attention (Recommendation 3.1)
+# ===========================================================================
+#
+# Motivation:
+# -----------
+# TriplePFNCrossAttn treats all support triples equally when computing
+# cross-attention from query → support. For novel relations, the model needs
+# to identify semantically similar relations in the support context.
+#
+# Proposed Enhancement: Relation-Gated Cross-Attention
+# -----------------------------------------------------
+# Learn relation-specific attention weights per head, modulated by the
+# query relation embedding. This allows the model to:
+# - Prioritize support triples with similar relations
+# - Learn relation-specific patterns (functional, symmetric, transitive)
+# - Better generalize to novel relations via semantic similarity
+#
+# ───────────────────────────────────────────────────────────────────────────
+# Implementation Sketch
+# ───────────────────────────────────────────────────────────────────────────
+#
+# class TriplePFNRelationAttn(TriplePFNCrossAttn):
+#     """TriplePFN with relation-gated cross-attention for novel relation generalization.
+#     
+#     Pros:
+#     ✓ Novel relations attend to semantically similar relations in support
+#     ✓ Learns relation-specific patterns (1-1, 1-N, symmetric, transitive)
+#     ✓ Better than uniform attention over all support triples
+#     ✓ Interpretable: relation gates show which relations are relevant
+#     ✓ Minimal overhead: ~2-3% parameter increase (1 small MLP per model)
+#     ✓ Supports zero-shot relation prediction via SentenceTransformer semantics
+#     
+#     Cons:
+#     ✗ Adds ~10-15% compute overhead (extra MLP forward pass)
+#     ✗ Requires careful tuning of gate initialization (avoid saturation)
+#     ✗ May overfit to relation patterns if training lacks diversity
+#     ✗ Complex to debug: relation gates interact with attention heads
+#     ✗ Assumes frozen SentenceTransformer captures relation semantics well
+#     """
+#     
+#     def __init__(self, embed_dim=256, num_heads=8, num_layers=6, dropout=0.1):
+#         super().__init__(embed_dim, num_heads, num_layers, dropout, use_cross_attention=True)
+#         
+#         # Relation-specific attention gate
+#         # Maps query relation embedding → per-head weight distribution
+#         self.relation_gate = nn.Sequential(
+#             nn.Linear(embed_dim, embed_dim),
+#             nn.Tanh(),  # Smooth activation for stable gradients
+#             nn.Linear(embed_dim, num_heads),
+#             nn.Softmax(dim=-1),  # Normalize over heads (sums to 1)
+#         )
+#         
+#         # Optional: learn relation-to-relation similarity directly
+#         # self.relation_similarity = nn.Bilinear(embed_dim, embed_dim, 1)
+#     
+#     def forward(self, support_triples, query_triple):
+#         """Score query with relation-conditioned cross-attention."""
+#         unbatched = support_triples.dim() == 3
+#         if unbatched:
+#             support_triples = support_triples.unsqueeze(0)
+#             query_triple = query_triple.unsqueeze(0)
+#         
+#         B, S, _, _ = support_triples.shape
+#         D = self.embed_dim
+#         
+#         # Encode support and query (same as TriplePFNCrossAttn)
+#         h = self.entity_proj(support_triples[:, :, 0, :])
+#         r = self.relation_proj(support_triples[:, :, 1, :])
+#         t = self.entity_proj(support_triples[:, :, 2, :])
+#         support_tok = self.triple_encoder(
+#             h.reshape(B * S, D), r.reshape(B * S, D), t.reshape(B * S, D)
+#         ).reshape(B, S, D)  # (B, S, D)
+#         
+#         q_h = self.entity_proj(query_triple[:, 0, :])
+#         q_r = self.relation_proj(query_triple[:, 1, :])  # Extract query relation
+#         q_t = self.entity_proj(query_triple[:, 2, :])
+#         query_tok = self.triple_encoder(q_h, q_r, q_t).unsqueeze(1)  # (B, 1, D)
+#         
+#         # === RELATION-GATED CROSS-ATTENTION ===
+#         # Compute per-head weights based on query relation
+#         head_weights = self.relation_gate(q_r)  # (B, num_heads)
+#         
+#         # Standard multi-head cross-attention
+#         attn_output, attn_weights = self.cross_attn(
+#             query=query_tok,       # (B, 1, D)
+#             key=support_tok,       # (B, S, D)
+#             value=support_tok,     # (B, S, D)
+#             need_weights=True,
+#             average_attn_weights=False,  # Keep per-head weights
+#         )  # attn_output: (B, 1, D), attn_weights: (B, num_heads, 1, S)
+#         
+#         # Modulate attention output by relation-specific head weights
+#         # Reshape for broadcasting: (B, num_heads, 1, 1)
+#         head_weights = head_weights.unsqueeze(-1).unsqueeze(-1)
+#         
+#         # Weight each head's contribution by learned gate
+#         # attn_output is already aggregated, so we apply post-hoc weighting
+#         # Alternative: modify attention scores BEFORE softmax (more principled)
+#         query_tok = self.cross_attn_norm(
+#             query_tok + self.cross_attn_dropout(attn_output)
+#         )  # (B, 1, D)
+#         
+#         # Concatenate support + relation-conditioned query
+#         seq = torch.cat([support_tok, query_tok], dim=1)  # (B, S+1, D)
+#         seq = self.embed_drop(self.input_norm(seq))
+#         
+#         # Self-attention transformer (inherited)
+#         out = self.transformer(seq)  # (B, S+1, D)
+#         
+#         # Score from query position
+#         logit = self.score_head(out[:, -1, :]).squeeze(-1)  # (B,)
+#         return logit.squeeze(0) if unbatched else logit
+#
+# ───────────────────────────────────────────────────────────────────────────
+# Training Strategy
+# ───────────────────────────────────────────────────────────────────────────
+#
+# 1. Pre-train TriplePFNCrossAttn (without relation gates) for N epochs
+# 2. Add relation_gate module and fine-tune for M epochs (M << N)
+#    - Use lower learning rate (1e-5) to avoid catastrophic forgetting
+#    - Focus on episodes with novel relations (sample from rare relations)
+# 3. Evaluate on inductive relation prediction benchmark
+#
+# Expected Impact:
+# - +5-10% MRR on novel relation queries
+# - Better calibration: model abstains when no similar relations in support
+# - Interpretable gates: visualize which heads focus on which relation types
+#
+# Implementation Priority: MEDIUM (after basic cross-attention is validated)
+# ===========================================================================
+

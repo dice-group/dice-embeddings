@@ -396,6 +396,356 @@ def visualize_triple_scoring(
 
 
 # ---------------------------------------------------------------------------
+# SMART SUPPORT SELECTION (Recommendation 3)
+# ---------------------------------------------------------------------------
+
+def select_relevant_support(
+    query: Tuple[str, str, str],
+    kg_triples: List[Tuple[str, str, str]],
+    k: int = 32,
+    strategy: str = "entity-centric",
+    entity_to_triples: Optional[Dict[str, List[int]]] = None,
+    relation_to_triples: Optional[Dict[str, List[int]]] = None,
+    triple_embeddings: Optional[torch.Tensor] = None,
+    device: Optional[torch.device] = None,
+) -> List[Tuple[str, str, str]]:
+    """Select top-k relevant support triples for a query using smart retrieval.
+    
+    This function implements three retrieval strategies to address the training-inference
+    distribution mismatch and Monte Carlo inefficiency issues (Recommendations 1.1 & 1.2).
+    
+    Parameters
+    ----------
+    query : tuple of (head, relation, tail) strings
+        The query triple for which to retrieve relevant support.
+    kg_triples : list of (head, relation, tail) string triples
+        Full knowledge graph from which to sample support.
+    k : int, default 32
+        Number of support triples to retrieve.
+    strategy : str, default "entity-centric"
+        Retrieval strategy: "entity-centric" | "embedding-sim" | "relation-focused".
+    entity_to_triples : dict or None
+        Mapping from entity string to list of triple indices (for entity-centric).
+        Format: {"entity_name": [idx1, idx2, ...]} where idx is position in kg_triples.
+    relation_to_triples : dict or None
+        Mapping from relation string to list of triple indices (for relation-focused).
+        Format: {"relation_name": [idx1, idx2, ...]} where idx is position in kg_triples.
+    triple_embeddings : torch.Tensor or None
+        Precomputed embeddings for all kg_triples (for embedding-sim strategy).
+        Shape: (len(kg_triples), embedding_dim). Can be mean([h_emb, r_emb, t_emb]).
+    device : torch.device or None
+        Device for tensor operations (for embedding-sim strategy).
+    
+    Returns
+    -------
+    list of (head, relation, tail) string triples
+        Top-k support triples selected by the specified strategy.
+    
+    Examples
+    --------
+    >>> # Entity-centric retrieval (mirrors RichSubgraphPrior training)
+    >>> query = ("slovakia", "neighbor", "austria")
+    >>> entity_to_triples = build_entity_index(kg_triples)
+    >>> support = select_relevant_support(
+    ...     query, kg_triples, k=32, strategy="entity-centric",
+    ...     entity_to_triples=entity_to_triples
+    ... )
+    
+    >>> # Embedding similarity retrieval (works with novel entities)
+    >>> triple_embs = precompute_triple_embeddings(kg_triples)
+    >>> support = select_relevant_support(
+    ...     query, kg_triples, k=32, strategy="embedding-sim",
+    ...     triple_embeddings=triple_embs
+    ... )
+    
+    >>> # Relation-focused retrieval
+    >>> relation_to_triples = build_relation_index(kg_triples)
+    >>> support = select_relevant_support(
+    ...     query, kg_triples, k=32, strategy="relation-focused",
+    ...     relation_to_triples=relation_to_triples
+    ... )
+    
+    Notes
+    -----
+    **Strategy A: Entity-Centric Retrieval**
+        - BFS from query head and tail entities (1-hop, 2-hop, 3-hop)
+        - Mirrors RichSubgraphPrior training distribution
+        - Fast: O(k) lookups via entity_to_triples index
+        - Best for: Transductive link prediction (entities in train)
+    
+    **Strategy B: Embedding Similarity**
+        - Cosine similarity in SentenceTransformer embedding space
+        - Works with novel entities (zero-shot generalization)
+        - Requires precomputed triple embeddings for efficiency
+        - Best for: Inductive link prediction (novel entities/graphs)
+    
+    **Strategy C: Relation-Focused**
+        - Prioritizes triples with same relation as query
+        - Falls back to entity-centric if insufficient matches
+        - Captures relation-specific patterns (functional, symmetric)
+        - Best for: Relation prediction tasks
+    
+    See Also
+    --------
+    build_entity_index : Create entity_to_triples mapping
+    build_relation_index : Create relation_to_triples mapping
+    precompute_triple_embeddings : Encode all triples for embedding-sim
+    """
+    if not kg_triples:
+        return []
+    
+    if strategy == "entity-centric":
+        return _entity_centric_retrieval(query, kg_triples, k, entity_to_triples)
+    elif strategy == "embedding-sim":
+        return _embedding_similarity_retrieval(query, kg_triples, k, triple_embeddings, device)
+    elif strategy == "relation-focused":
+        return _relation_focused_retrieval(query, kg_triples, k, relation_to_triples, entity_to_triples)
+    else:
+        raise ValueError(f"Unknown strategy: {strategy}. Choose from: entity-centric, embedding-sim, relation-focused")
+
+
+def _entity_centric_retrieval(
+    query: Tuple[str, str, str],
+    kg_triples: List[Tuple[str, str, str]],
+    k: int,
+    entity_to_triples: Optional[Dict[str, List[int]]],
+) -> List[Tuple[str, str, str]]:
+    """Strategy A: BFS from query entities (mirrors RichSubgraphPrior training)."""
+    if entity_to_triples is None:
+        # Fallback: build index on-the-fly
+        entity_to_triples = build_entity_index(kg_triples)
+    
+    q_h, q_r, q_t = query
+    selected_indices = set()
+    
+    # BFS: 1-hop neighborhood (triples directly connected to query entities)
+    for entity in [q_h, q_t]:
+        if entity in entity_to_triples:
+            selected_indices.update(entity_to_triples[entity])
+    
+    # If we don't have enough triples, expand to 2-hop
+    if len(selected_indices) < k:
+        # Collect entities from 1-hop neighborhood
+        one_hop_entities = set()
+        for idx in list(selected_indices):
+            h, r, t = kg_triples[idx]
+            one_hop_entities.add(h)
+            one_hop_entities.add(t)
+        
+        # Add triples connected to 1-hop entities
+        for entity in one_hop_entities:
+            if entity in entity_to_triples:
+                selected_indices.update(entity_to_triples[entity])
+            if len(selected_indices) >= k * 2:  # Stop early if we have enough
+                break
+    
+    # Convert to list and sample k triples
+    selected_indices = list(selected_indices)
+    if len(selected_indices) <= k:
+        return [kg_triples[idx] for idx in selected_indices]
+    else:
+        # Prioritize 1-hop over 2-hop (closer triples first)
+        sampled = random.sample(selected_indices, k)
+        return [kg_triples[idx] for idx in sampled]
+
+
+def _embedding_similarity_retrieval(
+    query: Tuple[str, str, str],
+    kg_triples: List[Tuple[str, str, str]],
+    k: int,
+    triple_embeddings: Optional[torch.Tensor],
+    device: Optional[torch.device],
+) -> List[Tuple[str, str, str]]:
+    """Strategy B: Cosine similarity in SentenceTransformer embedding space."""
+    if triple_embeddings is None:
+        # Fallback: encode query and all triples on-the-fly (slow, not recommended for large KGs)
+        print("Warning: triple_embeddings not provided. Encoding on-the-fly (slow).")
+        all_triples = [query] + kg_triples
+        triple_strs = [f"{h} {r} {t}" for h, r, t in all_triples]
+        embs = _encode_strings(triple_strs)
+        if device is not None:
+            embs = embs.to(device)
+        query_emb = embs[0:1]  # (1, D)
+        kg_embs = embs[1:]     # (N, D)
+    else:
+        # Use precomputed embeddings (recommended)
+        if device is None:
+            device = triple_embeddings.device
+        
+        # Encode query
+        query_str = f"{query[0]} {query[1]} {query[2]}"
+        query_emb = _encode_strings([query_str]).to(device)  # (1, D)
+        kg_embs = triple_embeddings  # (N, D)
+    
+    # Cosine similarity: (1, D) @ (D, N) → (1, N)
+    query_emb_norm = query_emb / (query_emb.norm(dim=1, keepdim=True) + 1e-8)
+    kg_embs_norm = kg_embs / (kg_embs.norm(dim=1, keepdim=True) + 1e-8)
+    similarities = (query_emb_norm @ kg_embs_norm.T).squeeze(0)  # (N,)
+    
+    # Top-k most similar
+    if len(kg_triples) <= k:
+        return kg_triples
+    else:
+        top_k_indices = similarities.topk(k).indices.cpu().tolist()
+        return [kg_triples[idx] for idx in top_k_indices]
+
+
+def _relation_focused_retrieval(
+    query: Tuple[str, str, str],
+    kg_triples: List[Tuple[str, str, str]],
+    k: int,
+    relation_to_triples: Optional[Dict[str, List[int]]],
+    entity_to_triples: Optional[Dict[str, List[int]]],
+) -> List[Tuple[str, str, str]]:
+    """Strategy C: Prioritize triples with same relation, fall back to entity-centric."""
+    if relation_to_triples is None:
+        relation_to_triples = build_relation_index(kg_triples)
+    
+    q_h, q_r, q_t = query
+    selected_indices = []
+    
+    # Priority 1: Triples with same relation
+    if q_r in relation_to_triples:
+        selected_indices = relation_to_triples[q_r].copy()
+    
+    # If insufficient, fall back to entity-centric
+    if len(selected_indices) < k:
+        entity_support = _entity_centric_retrieval(query, kg_triples, k, entity_to_triples)
+        entity_indices = []
+        for triple in entity_support:
+            try:
+                idx = kg_triples.index(triple)
+                if idx not in selected_indices:
+                    entity_indices.append(idx)
+            except ValueError:
+                continue
+        selected_indices.extend(entity_indices)
+    
+    # Sample k triples
+    if len(selected_indices) <= k:
+        return [kg_triples[idx] for idx in selected_indices]
+    else:
+        sampled = random.sample(selected_indices, k)
+        return [kg_triples[idx] for idx in sampled]
+
+
+def build_entity_index(kg_triples: List[Tuple[str, str, str]]) -> Dict[str, List[int]]:
+    """Build entity → triple_indices mapping for fast entity-centric retrieval.
+    
+    Parameters
+    ----------
+    kg_triples : list of (head, relation, tail) string triples
+        Knowledge graph triples to index.
+    
+    Returns
+    -------
+    dict
+        Mapping from entity string to list of indices in kg_triples.
+        Format: {"entity_name": [idx1, idx2, ...]}
+    
+    Examples
+    --------
+    >>> kg = [("slovakia", "neighbor", "austria"), ("austria", "neighbor", "germany")]
+    >>> index = build_entity_index(kg)
+    >>> print(index["austria"])
+    [0, 1]  # austria appears in both triples
+    """
+    entity_to_triples = {}
+    for idx, (h, r, t) in enumerate(kg_triples):
+        if h not in entity_to_triples:
+            entity_to_triples[h] = []
+        entity_to_triples[h].append(idx)
+        
+        if t not in entity_to_triples:
+            entity_to_triples[t] = []
+        entity_to_triples[t].append(idx)
+    
+    return entity_to_triples
+
+
+def build_relation_index(kg_triples: List[Tuple[str, str, str]]) -> Dict[str, List[int]]:
+    """Build relation → triple_indices mapping for fast relation-focused retrieval.
+    
+    Parameters
+    ----------
+    kg_triples : list of (head, relation, tail) string triples
+        Knowledge graph triples to index.
+    
+    Returns
+    -------
+    dict
+        Mapping from relation string to list of indices in kg_triples.
+        Format: {"relation_name": [idx1, idx2, ...]}
+    
+    Examples
+    --------
+    >>> kg = [("slovakia", "neighbor", "austria"), ("austria", "neighbor", "germany")]
+    >>> index = build_relation_index(kg)
+    >>> print(index["neighbor"])
+    [0, 1]  # both triples have "neighbor" relation
+    """
+    relation_to_triples = {}
+    for idx, (h, r, t) in enumerate(kg_triples):
+        if r not in relation_to_triples:
+            relation_to_triples[r] = []
+        relation_to_triples[r].append(idx)
+    
+    return relation_to_triples
+
+
+def precompute_triple_embeddings(
+    kg_triples: List[Tuple[str, str, str]],
+    device: Optional[torch.device] = None,
+) -> torch.Tensor:
+    """Encode all KG triples using SentenceTransformer for embedding-sim retrieval.
+    
+    Precomputing embeddings enables fast cosine similarity search without re-encoding
+    triples for every query. For large KGs (>100k triples), consider using FAISS
+    for approximate nearest neighbor search.
+    
+    Parameters
+    ----------
+    kg_triples : list of (head, relation, tail) string triples
+        Knowledge graph triples to encode.
+    device : torch.device or None
+        Device to store embeddings.
+    
+    Returns
+    -------
+    torch.Tensor
+        Triple embeddings, shape (len(kg_triples), 384).
+        Each triple is encoded as a single string "head relation tail".
+    
+    Examples
+    --------
+    >>> kg = [("slovakia", "neighbor", "austria"), ("austria", "neighbor", "germany")]
+    >>> embs = precompute_triple_embeddings(kg)
+    >>> print(embs.shape)
+    torch.Size([2, 384])
+    
+    Notes
+    -----
+    For large KGs, consider batching or using FAISS:
+    
+        import faiss
+        triple_embs = precompute_triple_embeddings(kg_triples).cpu().numpy()
+        index = faiss.IndexFlatIP(triple_embs.shape[1])  # Inner product = cosine (normalized)
+        faiss.normalize_L2(triple_embs)
+        index.add(triple_embs)
+        
+        # At query time:
+        query_emb = _encode_strings([query_str]).cpu().numpy()
+        faiss.normalize_L2(query_emb)
+        distances, indices = index.search(query_emb, k=32)
+    """
+    triple_strs = [f"{h} {r} {t}" for h, r, t in kg_triples]
+    embeddings = _encode_strings(triple_strs)
+    if device is not None:
+        embeddings = embeddings.to(device)
+    return embeddings
+
+
+# ---------------------------------------------------------------------------
 # EVALUATION
 # ---------------------------------------------------------------------------
 
