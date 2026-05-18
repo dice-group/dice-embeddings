@@ -50,7 +50,7 @@ from tqdm.auto import tqdm
 
 from pfn.dataset import PFNDataset, RandomSupportPrior, RichSubgraphPrior, _load_real_triples, build_dataset
 from pfn.inference import evaluate
-from pfn.model import TriplePFN
+from pfn.model import TriplePFN, TriplePFNCrossAttn
 
 
 # ---------------------------------------------------------------------------
@@ -178,6 +178,8 @@ def train(
     early_stop_loss: Optional[float] = None,
     report_flops: bool = True,
     use_ddp: bool = False,
+    corruption_mode: str = "mixed",
+    use_cross_attention: bool = False,
 ) -> TriplePFN:
     """Meta-train a GraphPFN model on episodic samples from real KGs.
 
@@ -228,6 +230,15 @@ def train(
     use_ddp : bool
         If True, enable torchrun-style DistributedDataParallel across all
         visible GPUs. Also auto-enables when launched with ``WORLD_SIZE>1``.
+    corruption_mode : str
+        Which triple component to corrupt for negative sampling:
+        - "tail": only corrupt tail entity (legacy behavior)
+        - "head": only corrupt head entity
+        - "relation": only corrupt relation
+        - "mixed": randomly choose head/relation/tail per negative example (default, recommended)
+    use_cross_attention : bool
+        If True, use TriplePFNCrossAttn with explicit query→support cross-attention.
+        If False, use standard TriplePFN self-attention (default).
 
     Returns
     -------
@@ -268,17 +279,17 @@ def train(
 
         if support_sampler == "entity-centric":
             if is_main_process:
-                print("Initialising RichSubgraphPrior (entity-centric support sampling)...")
-            prior = RichSubgraphPrior(kg_pools=kg_pools)
+                print(f"Initialising RichSubgraphPrior (entity-centric support sampling, corruption_mode={corruption_mode!r})...")
+            prior = RichSubgraphPrior(kg_pools=kg_pools, corruption_mode=corruption_mode)
             if permute_support and is_main_process:
                 print("  Note: --permute-support currently applies to random sampler only; ignoring it.")
         else:
             if is_main_process:
                 print(
-                    "Initialising RandomSupportPrior "
-                    f"(random support sampling, permute_support={permute_support})..."
+                    f"Initialising RandomSupportPrior "
+                    f"(random support sampling, permute_support={permute_support}, corruption_mode={corruption_mode!r})..."
                 )
-            prior = RandomSupportPrior(kg_pools=kg_pools, permute_support=permute_support)
+            prior = RandomSupportPrior(kg_pools=kg_pools, permute_support=permute_support, corruption_mode=corruption_mode)
 
         if is_main_process:
             print(f"Pre-generating {num_episodes:,} episodes to {dataset_cache_dir!r}...")
@@ -313,10 +324,18 @@ def train(
                 f"Total optimizer updates: {batches_per_epoch * num_epochs:,}"
             )
 
-        model = TriplePFN(embed_dim=embed_dim, num_heads=num_heads, num_layers=num_layers, dropout=dropout).to(device)
+        if use_cross_attention:
+            model = TriplePFNCrossAttn(
+                embed_dim=embed_dim, num_heads=num_heads, num_layers=num_layers, dropout=dropout, use_cross_attention=True
+            ).to(device)
+        else:
+            model = TriplePFN(
+                embed_dim=embed_dim, num_heads=num_heads, num_layers=num_layers, dropout=dropout
+            ).to(device)
         num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
         if is_main_process:
-            print(f"Model initialized with {num_params:,} trainable parameters.")
+            model_type = "TriplePFNCrossAttn" if use_cross_attention else "TriplePFN"
+            print(f"{model_type} initialized with {num_params:,} trainable parameters.")
         if save_path and os.path.isfile(save_path):
             if is_main_process:
                 print(f"Resuming from checkpoint {save_path!r}...")
@@ -452,6 +471,9 @@ def train(
                         "negative_ratio": negative_ratio,
                         "use_ddp": ddp_enabled,
                         "world_size": world_size,
+                        "corruption_mode": corruption_mode,
+                        "model_type": "TriplePFNCrossAttn" if use_cross_attention else "TriplePFN",
+                        "recommended_inference_strategy": "entity-centric" if support_sampler == "entity-centric" else "random",
                     },
                     "state_dict": base_model.state_dict(),
                 },
@@ -533,6 +555,18 @@ def main():
         action="store_true",
         help="Enable torchrun-style DistributedDataParallel across all visible GPUs.",
     )
+    parser.add_argument(
+        "--corruption-mode",
+        type=str,
+        choices=("tail", "head", "relation", "mixed"),
+        default="mixed",
+        help="Which triple component to corrupt for negative sampling (default: mixed = random choice per example).",
+    )
+    parser.add_argument(
+        "--use-cross-attention",
+        action="store_true",
+        help="Use TriplePFNCrossAttn with explicit query→support cross-attention instead of standard TriplePFN.",
+    )
 
     args = parser.parse_args()
     train(
@@ -556,6 +590,8 @@ def main():
         permute_support=args.permute_support,
         early_stop_loss=args.early_stop_loss,
         use_ddp=args.ddp,
+        corruption_mode=args.corruption_mode,
+        use_cross_attention=args.use_cross_attention,
     )
 
 

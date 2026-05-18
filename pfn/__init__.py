@@ -7,7 +7,7 @@ compatibility with the existing top-level scripts.
 from pfn.dataset import PFNDataset, RandomSupportPrior, RichSubgraphPrior, build_dataset
 from pfn.evaluate import evaluate_bce
 from pfn.inference import evaluate, infer, score_triple, visualize_triple_scoring
-from pfn.model import TriplePFN
+from pfn.model import TriplePFN, TriplePFNCrossAttn
 from pfn.train import train
 
 __all__ = [
@@ -15,6 +15,7 @@ __all__ = [
     "RandomSupportPrior",
     "RichSubgraphPrior",
     "TriplePFN",
+    "TriplePFNCrossAttn",
     "build_dataset",
     "evaluate",
     "evaluate_bce",

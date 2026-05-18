@@ -341,3 +341,224 @@ class TriplePFN(nn.Module):
             # Compute final score
             logit = self.score_head(x[:, -1, :]).squeeze(-1)
             return logit.item(), attention_weights
+
+
+# ===========================================================================
+# QUERY-CONDITIONED CROSS-ATTENTION MODEL (Recommendation 4.1)
+# ===========================================================================
+
+class TriplePFNCrossAttn(TriplePFN):
+    """
+    TriplePFN with query-conditioned cross-attention.
+    
+    Architecture Enhancement (Recommendation 4.1):
+    ----------------------------------------------
+    Standard TriplePFN concatenates support and query tokens, then applies
+    self-attention. This variant adds an explicit cross-attention layer where
+    the query attends over support BEFORE the transformer encoder.
+    
+    Benefits:
+    - Query explicitly selects relevant support triples (interpretable)
+    - Attention weights = relevance scores for visualization/debugging
+    - Better gradient flow to support encoding
+    - More parameter-efficient than deeper self-attention
+    
+    Architecture:
+        1. Encode support triples → support_tokens (S, D)
+        2. Encode query triple → query_token (1, D)
+        3. Cross-attention: query attends to support
+           - Q = query_token, K = V = support_tokens
+           - Output: weighted_support (1, D)
+        4. Concatenate [support_tokens, query_token + weighted_support]
+        5. Self-attention transformer (existing)
+        6. Score head (existing)
+    
+    Usage:
+        model = TriplePFNCrossAttn(embed_dim=512, num_heads=8, ...)
+        # Rest identical to TriplePFN
+    """
+    
+    def __init__(
+        self,
+        embed_dim: int = 256,
+        num_heads: int = 8,
+        num_layers: int = 6,
+        dropout: float = 0.1,
+        use_cross_attention: bool = True,  # Can disable for ablation
+    ):
+        super().__init__(embed_dim, num_heads, num_layers, dropout)
+        self.use_cross_attention = use_cross_attention
+        
+        if use_cross_attention:
+            # Single cross-attention layer: query → support
+            self.cross_attn = nn.MultiheadAttention(
+                embed_dim=embed_dim,
+                num_heads=num_heads,
+                dropout=dropout,
+                batch_first=True,
+            )
+            self.cross_attn_norm = nn.LayerNorm(embed_dim)
+            self.cross_attn_dropout = nn.Dropout(dropout)
+    
+    def forward(
+        self,
+        support_triples: torch.Tensor,    # (B, S, 3, ST_DIM) or (S, 3, ST_DIM)
+        query_triple: torch.Tensor,       # (B, 3, ST_DIM)   or (3, ST_DIM)
+    ) -> torch.Tensor:
+        """Score query with cross-attention support weighting."""
+        unbatched = support_triples.dim() == 3
+        if unbatched:
+            support_triples = support_triples.unsqueeze(0)
+            query_triple = query_triple.unsqueeze(0)
+        
+        B, S, _, _ = support_triples.shape
+        D = self.embed_dim
+        
+        # Encode support and query (same as base TriplePFN)
+        h = self.entity_proj(support_triples[:, :, 0, :])
+        r = self.relation_proj(support_triples[:, :, 1, :])
+        t = self.entity_proj(support_triples[:, :, 2, :])
+        support_tok = self.triple_encoder(
+            h.reshape(B * S, D), r.reshape(B * S, D), t.reshape(B * S, D)
+        ).reshape(B, S, D)  # (B, S, D)
+        
+        q_h = self.entity_proj(query_triple[:, 0, :])
+        q_r = self.relation_proj(query_triple[:, 1, :])
+        q_t = self.entity_proj(query_triple[:, 2, :])
+        query_tok = self.triple_encoder(q_h, q_r, q_t).unsqueeze(1)  # (B, 1, D)
+        
+        # Cross-attention: query attends to support
+        if self.use_cross_attention:
+            # query_tok is Q, support_tok is K and V
+            attn_output, _attn_weights = self.cross_attn(
+                query=query_tok,           # (B, 1, D)
+                key=support_tok,           # (B, S, D)
+                value=support_tok,         # (B, S, D)
+                need_weights=False,
+            )  # attn_output: (B, 1, D) - query representation weighted by support
+            
+            # Residual connection: query + attended_support
+            query_tok = self.cross_attn_norm(
+                query_tok + self.cross_attn_dropout(attn_output)
+            )  # (B, 1, D)
+        
+        # Concatenate support + enhanced query
+        seq = torch.cat([support_tok, query_tok], dim=1)  # (B, S+1, D)
+        seq = self.embed_drop(self.input_norm(seq))
+        
+        # Self-attention transformer (inherited from TriplePFN)
+        out = self.transformer(seq)  # (B, S+1, D)
+        
+        # Score from query position (last token)
+        logit = self.score_head(out[:, -1, :]).squeeze(-1)  # (B,)
+        return logit.squeeze(0) if unbatched else logit
+
+
+# ===========================================================================
+# ROADMAP: Learned Support Retrieval (Recommendation 4.2)
+# ===========================================================================
+#
+# Current limitation: Support selection at inference time is heuristic
+# (entity-centric BFS, embedding similarity, random sampling).
+#
+# Proposed: Train a lightweight RETRIEVER to score support relevance.
+#
+# ───────────────────────────────────────────────────────────────────────────
+# Architecture: Bi-Encoder Retriever
+# ───────────────────────────────────────────────────────────────────────────
+#
+# class SupportRetriever(nn.Module):
+#     """Scores how relevant a support triple is to a query triple."""
+#     
+#     def __init__(self, embed_dim=256):
+#         super().__init__()
+#         # Shared triple encoder (same as TripleEncoder in main model)
+#         self.triple_encoder = TripleEncoder(embed_dim)
+#         
+#         # Similarity scoring: dot product or learned MLP
+#         self.score_mlp = nn.Sequential(
+#             nn.Linear(embed_dim * 2, embed_dim),
+#             nn.ReLU(),
+#             nn.Linear(embed_dim, 1),
+#         )
+#     
+#     def forward(self, query_emb, support_emb):
+#         """
+#         Args:
+#             query_emb: (B, D) - encoded query triple
+#             support_emb: (B, K, D) - K candidate support triples
+#         Returns:
+#             scores: (B, K) - relevance scores (higher = more relevant)
+#         """
+#         # Expand query to match support shape
+#         query_expanded = query_emb.unsqueeze(1).expand(-1, support_emb.size(1), -1)
+#         
+#         # Concatenate and score
+#         combined = torch.cat([query_expanded, support_emb], dim=-1)  # (B, K, 2*D)
+#         scores = self.score_mlp(combined).squeeze(-1)  # (B, K)
+#         return scores
+#
+# ───────────────────────────────────────────────────────────────────────────
+# Training Strategies
+# ───────────────────────────────────────────────────────────────────────────
+#
+# Option 1: Joint Training
+#   - Train retriever and TriplePFN together
+#   - Loss = L_scoring (BCE) + λ * L_retrieval (contrastive or ranking)
+#   - Pros: End-to-end optimization
+#   - Cons: Complex, slower convergence
+#
+# Option 2: Post-hoc Training (RECOMMENDED)
+#   - Train TriplePFN first (existing workflow)
+#   - Extract attention weights from trained model
+#   - Train retriever to predict attention patterns:
+#       - Positive pairs: (query, high-attention support triples)
+#       - Negative pairs: (query, low-attention support triples)
+#   - Pros: Simple, leverages existing model knowledge
+#   - Cons: Two-stage training
+#
+# Option 3: Self-Supervised Contrastive
+#   - Positive: (query, entity-centric neighborhood triples)
+#   - Negative: (query, random triples from different KG)
+#   - Loss: InfoNCE contrastive loss
+#   - Pros: No labels needed
+#   - Cons: May not align with downstream task
+#
+# ───────────────────────────────────────────────────────────────────────────
+# Inference Workflow
+# ───────────────────────────────────────────────────────────────────────────
+#
+# def infer_with_retrieval(model, retriever, query, kg_triples, k=32):
+#     """
+#     1. Encode all KG triples with retriever (can precompute & cache)
+#     2. Encode query triple
+#     3. Score all supports: retriever(query, kg_triples) → relevance scores
+#     4. Select top-K supports by score
+#     5. Feed to TriplePFN: model(top_k_supports, query) → prediction
+#     """
+#     # Encode query
+#     query_emb = encode_triple(query)  # (1, D)
+#     
+#     # Score all supports (batch for efficiency)
+#     support_embs = encode_triples(kg_triples)  # (N, D)
+#     scores = retriever(query_emb, support_embs)  # (N,)
+#     
+#     # Top-K retrieval
+#     top_k_idx = torch.topk(scores, k=k).indices
+#     top_k_supports = [kg_triples[i] for i in top_k_idx]
+#     
+#     # Main model prediction
+#     return model(top_k_supports, query)
+#
+# ───────────────────────────────────────────────────────────────────────────
+# Expected Benefits
+# ───────────────────────────────────────────────────────────────────────────
+#
+# - Faster inference on large KGs (retrieve K from 10K+ triples efficiently)
+# - Better than heuristics (learned relevance > hand-crafted rules)
+# - Scalability: Precompute support embeddings, use FAISS for retrieval
+# - Interpretability: Inspect retriever scores to understand context selection
+#
+# Implementation deferred pending research validation.
+# ===========================================================================
+

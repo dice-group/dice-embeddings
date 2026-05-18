@@ -177,11 +177,17 @@ class RichSubgraphPrior:
         self,
         max_hop: int = 3,
         kg_pools: Optional[list] = None,
+        corruption_mode: str = "tail",
     ):
         self.max_hop = max_hop
         # list of (triples, entity_embs, relation_embs, entity_to_triples, entity_to_neighbors,
         # entity_strings, relation_strings) per KG
         self.kg_pools = kg_pools
+        # Corruption mode: which triple component to corrupt for negatives
+        assert corruption_mode in {"tail", "head", "relation", "mixed"}, (
+            f"corruption_mode must be 'tail', 'head', 'relation', or 'mixed', got {corruption_mode!r}"
+        )
+        self.corruption_mode = corruption_mode
 
     def _generate_real_task(
         self,
@@ -389,18 +395,51 @@ class RichSubgraphPrior:
         sup_t = entity_embs[t_list]    # (S, ST_DIM)
         support_tensor = torch.stack([sup_h, sup_r, sup_t], dim=1)  # (S, 3, ST_DIM)
 
-        # Build query triple embedding: [head_emb, rel_emb, tail_emb].
-        # If label=1, the tail is real; if label=0, it's a random entity.
-        q_h_emb = entity_embs[q_h]    # (ST_DIM,)
-        q_r_emb = relation_embs[q_r]  # (ST_DIM,)
+        # Build query triple with symmetric negative sampling.
+        # Decide what component to corrupt based on corruption_mode.
+        n_rel = relation_embs.shape[0]
+        
         if label == 1:
-            q_t_actual = q_t
+            # Positive example: keep original triple
+            q_h_actual, q_r_actual, q_t_actual = q_h, q_r, q_t
+            q_h_emb = entity_embs[q_h]
+            q_r_emb = relation_embs[q_r]
             q_t_emb = entity_embs[q_t]
+            corrupted_component = None
         else:
-            # Negative sampling: replace tail with a random entity different
-            # from the true tail.
-            q_t_actual = random.choice([i for i in range(n_ent) if i != q_t])
-            q_t_emb = entity_embs[q_t_actual]
+            # Negative example: choose corruption target
+            if self.corruption_mode == "tail":
+                corrupt = "tail"
+            elif self.corruption_mode == "head":
+                corrupt = "head"
+            elif self.corruption_mode == "relation":
+                corrupt = "relation"
+            else:  # mixed
+                corrupt = random.choice(["head", "relation", "tail"])
+            
+            corrupted_component = corrupt
+            
+            if corrupt == "head":
+                # Corrupt head entity
+                q_h_actual = random.choice([i for i in range(n_ent) if i != q_h])
+                q_h_emb = entity_embs[q_h_actual]
+                q_r_actual, q_t_actual = q_r, q_t
+                q_r_emb = relation_embs[q_r]
+                q_t_emb = entity_embs[q_t]
+            elif corrupt == "relation":
+                # Corrupt relation
+                q_r_actual = random.choice([i for i in range(n_rel) if i != q_r])
+                q_r_emb = relation_embs[q_r_actual]
+                q_h_actual, q_t_actual = q_h, q_t
+                q_h_emb = entity_embs[q_h]
+                q_t_emb = entity_embs[q_t]
+            else:  # tail
+                # Corrupt tail entity
+                q_t_actual = random.choice([i for i in range(n_ent) if i != q_t])
+                q_t_emb = entity_embs[q_t_actual]
+                q_h_actual, q_r_actual = q_h, q_r
+                q_h_emb = entity_embs[q_h]
+                q_r_emb = relation_embs[q_r]
 
         query_tensor = torch.stack([q_h_emb, q_r_emb, q_t_emb], dim=0)  # (3, ST_DIM)
 
@@ -412,14 +451,21 @@ class RichSubgraphPrior:
             for tri_idx in ctx_idxs:
                 h, r, t = triples[tri_idx]
                 print(f"    ({entity_strings[h]}, {relation_strings[r]}, {entity_strings[t]})")
-            q_h_str = entity_strings[q_h]
-            q_r_str = relation_strings[q_r]
-            q_t_actual_str = entity_strings[q_t_actual]
-            print(f"  Query triple (string): ({q_h_str}, {q_r_str}, {q_t_actual_str})")
+            q_h_str = entity_strings[q_h_actual]
+            q_r_str = relation_strings[q_r_actual]
+            q_t_str = entity_strings[q_t_actual]
+            print(f"  Query triple (string): ({q_h_str}, {q_r_str}, {q_t_str})")
             if label == 0:
-                q_t_true_str = entity_strings[q_t]
-                print(f"    True tail (for reference): {q_t_true_str}")
-                print(f"    Sampled tail (used): {q_t_actual_str}")
+                print(f"    Corrupted component: {corrupted_component}")
+                if corrupted_component == "head":
+                    print(f"    True head: {entity_strings[q_h]}")
+                    print(f"    Sampled head: {entity_strings[q_h_actual]}")
+                elif corrupted_component == "relation":
+                    print(f"    True relation: {relation_strings[q_r]}")
+                    print(f"    Sampled relation: {relation_strings[q_r_actual]}")
+                else:  # tail
+                    print(f"    True tail: {entity_strings[q_t]}")
+                    print(f"    Sampled tail: {entity_strings[q_t_actual]}")
             print(f"  Label: {label} ({'real' if label == 1 else 'negatively sampled'})")
             print("  ───────────────────────────")
 
@@ -477,11 +523,17 @@ class RandomSupportPrior:
         self,
         kg_pools: Optional[list] = None,
         permute_support: bool = False,
+        corruption_mode: str = "tail",
     ):
         # list of (triples, entity_embs, relation_embs, entity_to_triples, entity_to_neighbors,
         # entity_strings, relation_strings) per KG
         self.kg_pools = kg_pools
         self.permute_support = permute_support
+        # Corruption mode: which triple component to corrupt for negatives
+        assert corruption_mode in {"tail", "head", "relation", "mixed"}, (
+            f"corruption_mode must be 'tail', 'head', 'relation', or 'mixed', got {corruption_mode!r}"
+        )
+        self.corruption_mode = corruption_mode
 
     def _generate_real_task(
         self,
@@ -525,14 +577,51 @@ class RandomSupportPrior:
         sup_t = entity_embs[t_list]
         support_tensor = torch.stack([sup_h, sup_r, sup_t], dim=1)
 
-        q_h_emb = entity_embs[q_h]
-        q_r_emb = relation_embs[q_r]
+        # Build query triple with symmetric negative sampling.
+        # Decide what component to corrupt based on corruption_mode.
+        n_rel = relation_embs.shape[0]
+        
         if label == 1:
-            q_t_actual = q_t
+            # Positive example: keep original triple
+            q_h_actual, q_r_actual, q_t_actual = q_h, q_r, q_t
+            q_h_emb = entity_embs[q_h]
+            q_r_emb = relation_embs[q_r]
             q_t_emb = entity_embs[q_t]
+            corrupted_component = None
         else:
-            q_t_actual = random.choice([i for i in range(n_ent) if i != q_t])
-            q_t_emb = entity_embs[q_t_actual]
+            # Negative example: choose corruption target
+            if self.corruption_mode == "tail":
+                corrupt = "tail"
+            elif self.corruption_mode == "head":
+                corrupt = "head"
+            elif self.corruption_mode == "relation":
+                corrupt = "relation"
+            else:  # mixed
+                corrupt = random.choice(["head", "relation", "tail"])
+            
+            corrupted_component = corrupt
+            
+            if corrupt == "head":
+                # Corrupt head entity
+                q_h_actual = random.choice([i for i in range(n_ent) if i != q_h])
+                q_h_emb = entity_embs[q_h_actual]
+                q_r_actual, q_t_actual = q_r, q_t
+                q_r_emb = relation_embs[q_r]
+                q_t_emb = entity_embs[q_t]
+            elif corrupt == "relation":
+                # Corrupt relation
+                q_r_actual = random.choice([i for i in range(n_rel) if i != q_r])
+                q_r_emb = relation_embs[q_r_actual]
+                q_h_actual, q_t_actual = q_h, q_t
+                q_h_emb = entity_embs[q_h]
+                q_t_emb = entity_embs[q_t]
+            else:  # tail
+                # Corrupt tail entity
+                q_t_actual = random.choice([i for i in range(n_ent) if i != q_t])
+                q_t_emb = entity_embs[q_t_actual]
+                q_h_actual, q_r_actual = q_h, q_r
+                q_h_emb = entity_embs[q_h]
+                q_r_emb = relation_embs[q_r]
 
         query_tensor = torch.stack([q_h_emb, q_r_emb, q_t_emb], dim=0)
 
@@ -542,14 +631,21 @@ class RandomSupportPrior:
             for tri_idx in ctx_idxs:
                 h, r, t = triples[tri_idx]
                 print(f"    ({entity_strings[h]}, {relation_strings[r]}, {entity_strings[t]})")
-            q_h_str = entity_strings[q_h]
-            q_r_str = relation_strings[q_r]
-            q_t_actual_str = entity_strings[q_t_actual]
-            print(f"  Query triple (string): ({q_h_str}, {q_r_str}, {q_t_actual_str})")
+            q_h_str = entity_strings[q_h_actual]
+            q_r_str = relation_strings[q_r_actual]
+            q_t_str = entity_strings[q_t_actual]
+            print(f"  Query triple (string): ({q_h_str}, {q_r_str}, {q_t_str})")
             if label == 0:
-                q_t_true_str = entity_strings[q_t]
-                print(f"    True tail (for reference): {q_t_true_str}")
-                print(f"    Sampled tail (used): {q_t_actual_str}")
+                print(f"    Corrupted component: {corrupted_component}")
+                if corrupted_component == "head":
+                    print(f"    True head: {entity_strings[q_h]}")
+                    print(f"    Sampled head: {entity_strings[q_h_actual]}")
+                elif corrupted_component == "relation":
+                    print(f"    True relation: {relation_strings[q_r]}")
+                    print(f"    Sampled relation: {relation_strings[q_r_actual]}")
+                else:  # tail
+                    print(f"    True tail: {entity_strings[q_t]}")
+                    print(f"    Sampled tail: {entity_strings[q_t_actual]}")
             print(f"  Label: {label} ({'real' if label == 1 else 'negatively sampled'})")
             print("  ─────────────────────────────────────────────────")
 

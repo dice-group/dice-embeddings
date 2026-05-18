@@ -10,6 +10,134 @@ This module also provides a CLI:
 
     python pfn_inference.py infer --model model.pt --train-file KGs/Countries-S1/train.txt --head slovakia --relation neighbor --k 5
     python pfn_inference.py score --model model.pt --data KGs/Countries-S1/train.txt --triple slovakia neighbor austria --n 10
+
+═══════════════════════════════════════════════════════════════════════════
+ROADMAP: Smart Support Selection (Recommendations 1.1 & 1.2)
+═══════════════════════════════════════════════════════════════════════════
+
+Current Limitation
+------------------
+At inference time, support triple selection uses:
+- ``evaluate()``: ALL training triples or random sampling
+- ``score_triple()``: Monte Carlo with N random support samples (expensive)
+
+Both strategies are suboptimal:
+✗ Random sampling may miss relevant context
+✗ Using ALL triples causes distribution shift (if > training context_size)
+✗ Monte Carlo requires N forward passes (10× slower than single pass)
+
+Training uses **entity-centric neighborhood sampling** (RichSubgraphPrior),
+but inference lacks a matching retrieval strategy → attention pattern mismatch.
+
+───────────────────────────────────────────────────────────────────────────
+Proposed: Query-Aware Support Retrieval
+───────────────────────────────────────────────────────────────────────────
+
+Implement ``select_relevant_support(query, kg_triples, k, strategy)`` with
+three retrieval strategies:
+
+**Strategy A: Entity-Centric Retrieval** (mirrors training)
+    Given query (h, r, t):
+    1. Perform BFS from query head and tail entities
+    2. Collect 1-hop, 2-hop, 3-hop neighborhoods
+    3. Return up to k triples (prioritize closer hops)
+    
+    Pros:
+    ✓ Matches training distribution (RichSubgraphPrior)
+    ✓ Fast (O(k) triple lookups via entity_to_triples index)
+    ✓ Interpretable (local neighborhood context)
+    ✓ No additional model components required
+    
+    Cons:
+    ✗ May miss relation-specific patterns
+    ✗ Requires entity appearing in training KG
+    
+    Best for: Transductive link prediction (test entities seen in train)
+
+**Strategy B: Embedding Similarity**
+    Given query (h, r, t):
+    1. Encode query as single vector: mean([h_emb, r_emb, t_emb])
+    2. Encode all KG triples similarly (can precompute & cache)
+    3. Cosine similarity → top-k most similar triples
+    
+    Pros:
+    ✓ Finds semantically related context across graph
+    ✓ Works with novel entities (zero-shot)
+    ✓ Leverages frozen SentenceTransformer semantic space
+    
+    Cons:
+    ✗ Slower for large KGs (O(N) similarity computations)
+    ✗ Requires indexing (FAISS) for scalability
+    ✗ May retrieve semantically similar but structurally irrelevant triples
+    
+    Best for: Inductive link prediction (novel entities), small-medium KGs
+
+**Strategy C: Relation-Focused**
+    Given query (h, r, t):
+    1. Prioritize triples with same relation r
+    2. Fall back to entity-centric if insufficient (<k triples)
+    3. Learn relation-specific patterns (functional, symmetric, etc.)
+    
+    Pros:
+    ✓ Captures relation semantics (1-to-1, 1-to-N, etc.)
+    ✓ Fast (O(k) lookups via relation_to_triples index)
+    ✓ Complements entity-centric retrieval
+    
+    Cons:
+    ✗ Sparse for rare relations
+    ✗ May ignore entity-specific context
+    
+    Best for: Relation prediction tasks, understanding relation constraints
+
+───────────────────────────────────────────────────────────────────────────
+Recommendation 1.2: Eliminate Monte Carlo Inefficiency
+───────────────────────────────────────────────────────────────────────────
+
+Replace ``score_triple()`` Monte Carlo approach:
+
+**Before**: 10 passes × 32 random triples = 10 forward passes
+**After**:  1 pass × 32 relevant triples = 1 forward pass (10× speedup)
+
+Use Strategy A/B/C to select support once, then single forward pass.
+Probability estimate is more reliable (consistent context) and faster.
+
+───────────────────────────────────────────────────────────────────────────
+Implementation Sketch
+───────────────────────────────────────────────────────────────────────────
+
+def select_relevant_support(
+    query: Tuple[str, str, str],
+    kg_triples: List[Tuple[str, str, str]],
+    k: int = 32,
+    strategy: str = "entity-centric",
+    entity_to_triples: Optional[Dict] = None,
+    relation_to_triples: Optional[Dict] = None,
+) -> List[Tuple[str, str, str]]:
+    \"\"\"Select top-k relevant support triples for a query.\"\"\"    
+    if strategy == "entity-centric":
+        # BFS from query entities (mirrors RichSubgraphPrior)
+        return _entity_centric_retrieval(query, entity_to_triples, k)
+    elif strategy == "embedding-sim":
+        # Cosine similarity in SentenceTransformer space
+        return _embedding_similarity_retrieval(query, kg_triples, k)
+    elif strategy == "relation-focused":
+        # Same relation priority
+        return _relation_focused_retrieval(query, relation_to_triples, k)
+    else:
+        raise ValueError(f"Unknown strategy: {strategy}")
+
+───────────────────────────────────────────────────────────────────────────
+Expected Impact
+───────────────────────────────────────────────────────────────────────────
+
+✓ Training-inference alignment → better MRR/Hits@k
+✓ 10× faster inference (eliminate Monte Carlo)
+✓ Handles novel entities (Strategy B)
+✓ Interpretable support selection (Strategy A/C)
+✓ Minimal code changes (<200 lines)
+
+To be implemented in future PR after research validation.
+═══════════════════════════════════════════════════════════════════════════
 """
 
 import argparse
