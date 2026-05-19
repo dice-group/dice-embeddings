@@ -1,0 +1,42 @@
+# Ablation: collapse all non-anchor entities to a single anonymous token.
+# Tests whether intra-subgraph variable binding (same entity = same [Z_i])
+# is what carries inductive signal, or whether the [X]/relation structure
+# alone is enough.
+#
+# IMPORTANT: z_pool_size=1 means the vocab only contains [Z_0]. Outputs
+# land under checkpoints/{run_name}/ — pointing eval at the wrong run
+# will load an incompatible vocab.
+
+# Model
+d_model: 128
+n_heads: 8
+n_triple_layers: 2
+n_sab: 4
+dropout: 0.1
+
+# Optimization
+batch_size: 128
+lr: 1.0e-4
+weight_decay: 1.0e-2
+warmup_steps: 1000
+max_steps: 10000
+grad_clip: 1.0
+
+# Sampling
+max_triples: 128
+z_pool_size: 1
+cardinality_cutoff: 100
+neg_samples_per_pos: 4
+collapse_z: true
+
+# Data
+data_dir: data/dbpedia50
+triple_format: head_tail_relation   # DBpedia50 layout: h <TAB> t <TAB> r
+type_relation: "rdf:type"
+
+# Eval / checkpointing
+val_every: 2000
+run_name: z1            # outputs go to checkpoints/{run_name}/
+seed: 0
+num_workers: 4
+device: cuda

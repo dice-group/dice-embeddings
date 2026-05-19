@@ -1,0 +1,44 @@
+# Countries-S1: small inductive benchmark (~1.1k train triples, 271 entities,
+# 2 relations: `neighbor`, `locatedin`). Predict locatedin(country, region)
+# from neighbor structure.
+#
+# Vocab behavior with cardinality_cutoff=100:
+#   locatedin → 28 distinct objects (regions + subregions) → [VAL_*] schema
+#   neighbor  → 164 distinct objects (countries)           → [Z_i] anonymized
+# That's the right split: target labels stay schema, instances stay inductive.
+#
+# No rdf:type relation in this dataset, so type_relation is left empty
+# (cardinality cutoff alone handles the schema/instance separation).
+
+# Model
+d_model: 128
+n_heads: 8
+n_triple_layers: 2
+n_sab: 4
+dropout: 0.1
+
+# Optimization
+batch_size: 64          # small dataset (1111 train triples)
+lr: 1.0e-4
+weight_decay: 1.0e-2
+warmup_steps: 200
+max_steps: 2000
+grad_clip: 1.0
+
+# Sampling
+max_triples: 64         # countries have ~5-10 neighbors → small subgraphs
+z_pool_size: 128        # ≥ max distinct anonymized entities per subgraph
+cardinality_cutoff: 100
+neg_samples_per_pos: 4
+
+# Data
+data_dir: Countries-S1
+triple_format: head_relation_tail   # standard KG-completion: h <TAB> r <TAB> t
+type_relation: ""
+
+# Eval / checkpointing
+val_every: 500
+run_name: countries_s1
+seed: 0
+num_workers: 2
+device: cuda
