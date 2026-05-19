@@ -1,4 +1,4 @@
-"""Unified CLI: `python -m ilp {train,infer,score}`.
+"""Unified CLI: `python -m ilp {train,infer,score,eval}`.
 
 Designed to mirror the `pfn` interface so this model is a drop-in replacement.
 The CLI flow produces a single self-contained .pt bundle (model + vocab +
@@ -14,9 +14,10 @@ import argparse
 from pathlib import Path
 
 import torch
+import yaml
 
 from .dataset import KnowledgeGraph, augment_with_inverse, read_triples
-from .eval import score_candidates
+from .eval import evaluate, score_candidates
 from .model import InductiveKGModel
 from .train import train_model
 
@@ -65,6 +66,22 @@ def _load_bundle(model_path: str) -> tuple[InductiveKGModel, dict, set[str], dic
     return model, vocab, set(bundle["fixed_values"]), cfg, device
 
 
+def _apply_overrides(cfg: dict, overrides: list[str] | None) -> None:
+    """Apply `--set key=value` overrides. Values are YAML-parsed so numbers,
+    booleans, and null work as expected (e.g. `--set lr=1e-3 --set collapse_z=true`).
+    Unknown keys raise — typos shouldn't silently no-op."""
+    for item in overrides or []:
+        if "=" not in item:
+            raise SystemExit(f"--set expects key=value, got: {item!r}")
+        key, raw = item.split("=", 1)
+        key = key.strip()
+        if key not in cfg:
+            raise SystemExit(
+                f"--set: unknown config key {key!r}. Known keys: {sorted(cfg)}"
+            )
+        cfg[key] = yaml.safe_load(raw)
+
+
 def cmd_train(args: argparse.Namespace) -> None:
     cfg = dict(DEFAULT_CFG)
     cfg["data_dir"] = str(Path(args.kg_dir))
@@ -73,6 +90,7 @@ def cmd_train(args: argparse.Namespace) -> None:
         cfg["triple_format"] = args.triple_format
     if args.device:
         cfg["device"] = args.device
+    _apply_overrides(cfg, args.set)
     train_model(cfg, save_path=Path(args.save))
 
 
@@ -106,6 +124,41 @@ def cmd_score(args: argparse.Namespace) -> None:
     print(f"{scores[tail]:.4f}")
 
 
+def cmd_eval(args: argparse.Namespace) -> None:
+    model, vocab, fixed_values, cfg, device = _load_bundle(args.model)
+    fmt = cfg.get("triple_format", "head_relation_tail")
+    kg_dir = Path(args.kg_dir)
+
+    test_path = Path(args.test_file) if args.test_file else kg_dir / "test.txt"
+    test = read_triples(test_path, fmt=fmt)
+
+    known: list = list(test)
+    train_path = kg_dir / "train.txt"
+    if train_path.exists():
+        known += read_triples(train_path, fmt=fmt)
+    valid_path = kg_dir / "valid.txt"
+    if valid_path.exists():
+        known += read_triples(valid_path, fmt=fmt)
+
+    test_kg = KnowledgeGraph(augment_with_inverse(test))
+    results = evaluate(
+        model, test, test_kg, vocab, fixed_values, test_kg.entities,
+        known_triples=known,
+        max_triples=cfg["max_triples"], z_pool=cfg["z_pool_size"],
+        device=device, collapse_z=cfg.get("collapse_z", False),
+    )
+    for split in ("tail", "head", "avg"):
+        m = results[split]
+        if split == "avg":
+            print(f"{split:5s}  MRR={m['MRR']:.4f}  H@1={m['Hits@1']:.4f}  "
+                  f"H@3={m['Hits@3']:.4f}  H@10={m['Hits@10']:.4f}")
+        else:
+            print(f"{split:5s}  MRR={m['MRR']:.4f}  H@1={m['Hits@1']:.4f}  "
+                  f"H@3={m['Hits@3']:.4f}  H@10={m['Hits@10']:.4f}  n={m['n']}")
+    if results.get("n_skipped"):
+        print(f"(skipped {results['n_skipped']} test triples with unseen relations)")
+
+
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="ilp")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -119,6 +172,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Source file column order (see TRIPLE_FORMATS). "
                         f"Default: {DEFAULT_CFG['triple_format']}.")
     t.add_argument("--device", default=None, help="cuda | cpu (auto-falls-back if cuda missing).")
+    t.add_argument("--set", action="append", metavar="KEY=VALUE", default=[],
+                   help="Override any config key (repeatable). Value is YAML-parsed, "
+                        "e.g. --set cardinality_cutoff=0 --set lr=1e-3 --set collapse_z=true.")
     t.set_defaults(func=cmd_train)
 
     i = sub.add_parser("infer", help="Top-k tail predictions for (head, relation, ?).")
@@ -136,6 +192,15 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Triples file used to build the KG context for subgraph extraction.")
     s.add_argument("--triple", nargs=3, metavar=("HEAD", "RELATION", "TAIL"), required=True)
     s.set_defaults(func=cmd_score)
+
+    e = sub.add_parser("eval", help="Filtered MRR / Hits@K on a held-out split.")
+    e.add_argument("--model", required=True, help="Bundled .pt produced by `ilp train`.")
+    e.add_argument("--kg-dir", required=True,
+                   help="Directory containing test.txt (and optionally train.txt, valid.txt "
+                        "to build the filter set).")
+    e.add_argument("--test-file", default=None,
+                   help="Override path to the eval split (default: {kg-dir}/test.txt).")
+    e.set_defaults(func=cmd_eval)
 
     return ap
 

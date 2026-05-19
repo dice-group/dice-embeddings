@@ -8,7 +8,7 @@ set of triples; intra-triple position (S/R/O) is encoded, inter-triple is not.
 
 ```
 ilp/
-  cli.py                       # python -m ilp {train,infer,score}
+  cli.py                       # python -m ilp {train,infer,score,eval}
   __main__.py                  # dispatch
   vocab.py                     # schema / Z-pool vocabulary
   dataset.py                   # KG, two-hop subgraph, anonymized sample
@@ -65,6 +65,11 @@ python -m ilp infer --model model.pt --train-file KGs/Countries-S1/train.txt \
 # Score: a specific (head, relation, tail) triple
 python -m ilp score --model model.pt --data KGs/Countries-S1/train.txt \
     --triple slovakia neighbor austria
+
+# Eval: filtered MRR / Hits@K on the held-out split
+python -m ilp eval --model model.pt --kg-dir KGs/Countries-S1/
+#   reads {kg-dir}/test.txt and uses train+valid+test as the filter set.
+#   Override the eval split with --test-file path/to/other.txt
 ```
 
 `infer` and `score` need a triples file (`--train-file` / `--data`) because
@@ -76,6 +81,30 @@ KG-completion layout). Use the YAML workflow above if you need other formats
 or fine-grained hyperparameter control. The two flows share the same core
 `train_model()` and are interchangeable for inference — a bundle produced
 either way loads via `ilp.cli._load_bundle`.
+
+### Overriding hyperparameters
+
+`train` takes repeatable `--set key=value` flags. Values are YAML-parsed, so
+numbers / booleans / `null` work as expected. Unknown keys raise — typos
+won't silently no-op.
+
+```bash
+# Force fully-inductive vocab: every entity becomes an anonymous [Z_i]
+python -m ilp train --kg-dir KGs/Countries-S1/ --epochs 100 --save model_c0.pt \
+    --set cardinality_cutoff=0
+
+# Other examples
+python -m ilp train ... --set lr=1e-3 --set batch_size=128 --set collapse_z=true
+```
+
+On Countries-S1 the cutoff=0 ablation is illustrative: with the default
+cutoff=100 the 28 region labels become `[VAL_*]` schema tokens, so the
+`locatedin` tail direction collapses to memorized lookup
+(`tail MRR=1.000 / head MRR=0.327 / avg=0.664`). With `cardinality_cutoff=0`,
+all entities are anonymized and the model is forced to rank from subgraph
+structure alone — held-out generalization becomes balanced across directions
+(`tail=0.814 / head=0.875 / avg=0.845`). Training loss is higher, but the
+result actually reflects inductive ability rather than vocab lookup.
 
 ## Notes
 
