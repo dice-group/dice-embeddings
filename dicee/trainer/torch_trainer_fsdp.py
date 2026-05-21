@@ -12,9 +12,13 @@ from torch.distributed.fsdp import (
     MixedPrecision,
     BackwardPrefetch,
 )
-from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+
+try:
+    from torch._dynamo.eval_frame import OptimizedModule
+except ImportError:
+    OptimizedModule = None
 
 torch.set_float32_matmul_precision('high')
 
@@ -395,17 +399,25 @@ class TorchFSDPTrainer(AbstractTrainer):
     def _materialize_full_state_on_rank_zero(self) -> torch.nn.Module:
         """Materialize full model state on rank 0 for checkpointing."""
         if getattr(self.raw_model, "manual_sharded_entity_training", False):
-            return self._materialize_sharded_distmult_on_rank_zero()
+            return self._materialize_sharded_entity_model_on_rank_zero()
         
         cfg = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
-        with FSDP.state_dict_type(self.model, StateDictType.FULL_STATE_DICT, cfg):
-            state_dict = self.model.state_dict()
+        fsdp_model = self._unwrap_optimized_model(self.model)
+        with FSDP.state_dict_type(fsdp_model, StateDictType.FULL_STATE_DICT, cfg):
+            state_dict = fsdp_model.state_dict()
         
         if self.local_rank == self.global_rank == 0:
             self.raw_model.load_state_dict(state_dict, strict=True)
             self.raw_model.loss_history = list(self.loss_history)
         
         return self.raw_model
+
+    @staticmethod
+    def _unwrap_optimized_model(model: torch.nn.Module) -> torch.nn.Module:
+        """Return the original module when torch.compile wraps the model."""
+        if OptimizedModule is not None and isinstance(model, OptimizedModule):
+            return model._orig_mod
+        return model
 
     def _sync_replicated_parameters(self) -> None:
         """Synchronize replicated parameters across all ranks."""
@@ -421,13 +433,15 @@ class TorchFSDPTrainer(AbstractTrainer):
                 dist.all_reduce(param.grad, op=dist.ReduceOp.SUM)
                 param.grad.div_(world_size)
 
-    def _materialize_sharded_distmult_on_rank_zero(self) -> torch.nn.Module:
+    def _materialize_sharded_entity_model_on_rank_zero(self) -> torch.nn.Module:
         """Gather sharded entity embeddings to rank 0 using CPU objects."""
+        self.async_stream.synchronize()
         local_weight = self.raw_model.local_entity_embeddings.weight.detach().cpu()
-        gathered = [None for _ in range(dist.get_world_size())] if self.local_rank == self.global_rank == 0 else None
-        dist.gather_object(local_weight, object_gather_list=gathered, dst=self.global_rank)
+        is_rank_zero = self.global_rank == 0
+        gathered = [None for _ in range(dist.get_world_size())] if is_rank_zero else None
+        dist.gather_object(local_weight, object_gather_list=gathered, dst=0)
 
-        if self.local_rank == self.global_rank == 0:
+        if is_rank_zero:
             full_entity_weight = torch.cat(
                 gathered,
                 dim=0,
