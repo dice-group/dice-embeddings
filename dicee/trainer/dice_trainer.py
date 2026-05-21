@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import polars
 import torch
+from lightning.pytorch.strategies import DDPStrategy
 
 from dicee.callbacks import (
     AccumulateEpochLossCallback,
@@ -43,6 +44,34 @@ def load_term_mapping(file_path: str) -> polars.DataFrame:
         Polars DataFrame containing the mapping.
     """
     return polars.read_csv(f"{file_path}.csv")
+
+
+def _resolve_lightning_strategy(args):
+    """Return a Lightning strategy that is safe for models with conditional branches.
+
+    Lightning's default DDP configuration raises when some parameters do not
+    contribute to the current loss. DICE models can legitimately exercise only
+    one scoring path per batch, so DDP needs unused-parameter detection enabled.
+    """
+    pl_kwargs = getattr(args, "pl_trainer_kwargs", {}) or {}
+    strategy = pl_kwargs.get("strategy", "auto")
+
+    if isinstance(strategy, DDPStrategy):
+        if getattr(strategy, "find_unused_parameters", False):
+            return strategy
+        return DDPStrategy(find_unused_parameters=True)
+
+    if isinstance(strategy, str):
+        if strategy == "ddp":
+            return "ddp_find_unused_parameters_true"
+        if strategy.startswith("ddp") and "find_unused_parameters" not in strategy:
+            return DDPStrategy(find_unused_parameters=True)
+        return strategy
+
+    if strategy == "auto" and torch.cuda.device_count() > 1:
+        return DDPStrategy(find_unused_parameters=True)
+
+    return strategy
 
 
 def initialize_trainer(
@@ -78,7 +107,7 @@ def initialize_trainer(
         # NOTE: PyTorch Lightning Trainer has many optional parameters
         # See: https://lightning.ai/docs/pytorch/stable/common/trainer.html
         trainer = pl.Trainer(accelerator=kwargs.get("accelerator", "auto"),
-                          strategy=kwargs.get("strategy", "auto"),
+                          strategy=_resolve_lightning_strategy(args),
                           num_nodes=kwargs.get("num_nodes", 1),
                           precision=kwargs.get("precision", None),
                           logger=kwargs.get("logger", None),
