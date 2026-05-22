@@ -1,0 +1,42 @@
+# WN18RR_v1 — ablation: no schema at all.
+#   type_relation: ""  (nothing promoted by name)
+#   cardinality_cutoff: 0  (no cardinality-based fallback)
+# → every entity anonymizes to [Z_*]. The vocab summary will warn loudly.
+#
+# Compare to:
+#   wn18rr_v1.yaml          — explicit schema (_hypernym, ...) → 841 [VAL_*]
+#   <previous baseline run> — cutoff=100 only                  → 42  [VAL_*]
+
+# Model
+d_model: 128
+n_heads: 8
+n_triple_layers: 2
+n_sab: 4
+dropout: 0.1
+
+# Optimization
+batch_size: 128
+lr: 1.0e-4
+weight_decay: 1.0e-2
+warmup_steps: 500
+max_steps: 12000
+grad_clip: 1.0
+
+# Sampling
+max_triples: 96
+z_pool_size: 192
+cardinality_cutoff: 0
+neg_samples_per_pos: 4
+neg_sampler: uniform
+
+# Data
+data_dir: KGs/WN18RR_v1
+triple_format: head_relation_tail
+type_relation: ""
+
+# Eval / checkpointing
+val_every: 4000
+run_name: wn18rr_v1_no_schema
+seed: 0
+num_workers: 4
+device: cuda

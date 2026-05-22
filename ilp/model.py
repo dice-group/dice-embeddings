@@ -59,10 +59,16 @@ class InductiveKGModel(nn.Module):
         mask: torch.Tensor,            # [B, N]    bool, True = valid
         target_relation: torch.Tensor, # [B]       long
         target_tail: torch.Tensor,     # [B]       long
+        hop_distances: torch.Tensor | None = None,  # [B, N, 3] long; optional per-entity hop-distance tokens
     ) -> torch.Tensor:                 # [B]       float (logits)
         B, N, _ = triples.shape
 
         tok = self.embed(triples) + self.intra_pos          # [B, N, 3, d]
+        if hop_distances is not None:
+            # Hop-distance tokens share the main embedding table — adds zero
+            # new parameters while letting the model use per-entity BFS
+            # distance from the anchor.
+            tok = tok + self.embed(hop_distances)
         tok = self.triple_encoder(tok.view(B * N, 3, -1))   # [B*N, 3, d]
         triple_vec = tok.mean(dim=1).view(B, N, -1)         # [B, N, d]
 

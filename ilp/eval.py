@@ -22,11 +22,12 @@ from .dataset import (
     augment_with_inverse,
     build_sample,
     collate,
+    k_hop_neighborhood,
     read_triples,
     two_hop_neighborhood,
 )
 from .model import InductiveKGModel
-from .vocab import inverse_relation, load_vocab, z_token_ids
+from .vocab import HOP_NONE, hop_distance_token, inverse_relation, load_vocab, z_token_ids
 
 
 @torch.no_grad()
@@ -44,6 +45,8 @@ def score_candidates(
     device: torch.device,
     exclude_triple: Triple | None = None,
     collapse_z: bool = False,
+    subgraph_hops: int = 2,
+    use_hop_distance_tokens: bool = False,
 ) -> dict[str, float]:
     """Score every candidate under a single (anchor, relation) query.
 
@@ -58,7 +61,7 @@ def score_candidates(
     """
     # 1. Build the anonymized subgraph for this query (does not depend on candidate).
     rng = random.Random()
-    subgraph = two_hop_neighborhood(anchor, kg)
+    subgraph, entity_distance = k_hop_neighborhood(anchor, kg, k=subgraph_hops)
     if exclude_triple is not None:
         s_, r_, o_ = exclude_triple
         subgraph.discard((s_, r_, o_))
@@ -93,9 +96,25 @@ def score_candidates(
         [[True] * n + [False] * (max_triples - n)], dtype=torch.bool, device=device
     )
 
+    # Per-position hop-distance tokens. When use_hop_distance_tokens=False
+    # these are all [HOP_NONE] → uniform bias, matches the no-hop training
+    # path (the tok += model.embed(...) below is also gated by the flag).
+    none_id = vocab[HOP_NONE]
+
+    def _hop_id(node: str) -> int:
+        if not use_hop_distance_tokens:
+            return none_id
+        return vocab[hop_distance_token(entity_distance.get(node, -1))]
+
+    hop_tok = [[_hop_id(s), none_id, _hop_id(o)] for s, _, o in subgraph_list]
+    hop_pad = [[none_id, none_id, none_id]] * (max_triples - n)
+    hop_t = torch.tensor([hop_tok + hop_pad], dtype=torch.long, device=device)
+
     # 2. Encode subgraph once → pooled vector [1, d].
     B, N, _ = triples_t.shape
     tok = model.embed(triples_t) + model.intra_pos
+    if use_hop_distance_tokens:
+        tok = tok + model.embed(hop_t)
     tok = model.triple_encoder(tok.view(B * N, 3, -1))
     triple_vec = tok.mean(dim=1).view(B, N, -1)
     x_emb = model.embed(
@@ -161,6 +180,8 @@ def evaluate_direction(
     device: torch.device,
     cand_batch_size: int = 128,
     collapse_z: bool = False,
+    subgraph_hops: int = 2,
+    use_hop_distance_tokens: bool = False,
 ) -> dict[str, float]:
     assert direction in ("tail", "head")
     model.eval()
@@ -168,12 +189,24 @@ def evaluate_direction(
     entity_pool = list(entity_pool)
     pool_set = set(entity_pool)
 
+    rels: list[str] = []
+    reachable_flags: list[bool] = []
     pbar = tqdm(eval_triples, desc=f"eval[{direction}]", unit="q", dynamic_ncols=True)
     for h, r, t in pbar:
         if direction == "tail":
             anchor, true_cand, rel_q = h, t, r
         else:
             anchor, true_cand, rel_q = t, h, inverse_relation(r)
+        rels.append(r)
+        # Is true_cand reachable in anchor's k-hop AFTER excluding the test triple?
+        # Mirrors score_candidates' subgraph construction. Used downstream to
+        # report stratified MRR (reachable vs unreachable) so per-relation gaps
+        # aren't masked by ties on out-of-subgraph candidates (eval.py:115).
+        nb, _ = k_hop_neighborhood(anchor, kg, k=subgraph_hops)
+        nb.discard((h, r, t))
+        nb.discard((t, inverse_relation(r), h))
+        nb_ents = {s for s, _, _ in nb} | {o for _, _, o in nb}
+        reachable_flags.append(true_cand in nb_ents)
         if true_cand not in pool_set:
             # Ensure the true candidate is always rankable.
             cands = entity_pool + [true_cand]
@@ -185,10 +218,13 @@ def evaluate_direction(
             max_triples, z_pool, cand_batch_size, device,
             exclude_triple=(h, r, t),
             collapse_z=collapse_z,
+            subgraph_hops=subgraph_hops,
+            use_hop_distance_tokens=use_hop_distance_tokens,
         )
         true_score = scores[true_cand]
 
         worse = 0
+        equal = 0
         for c, s in scores.items():
             if c == true_cand:
                 continue
@@ -200,7 +236,12 @@ def evaluate_direction(
                     continue
             if s > true_score:
                 worse += 1
-        ranks.append(worse + 1)
+            elif s == true_score:
+                equal += 1
+        # Mid-tie rank: standard KG-completion convention. Optimistic resolution
+        # (just `worse + 1`) lets out-of-subgraph candidates falsely rank-1 because
+        # they all share `unused_z_id` in score_candidates — see eval.py:115.
+        ranks.append(worse + 1 + equal / 2.0)
 
         # Running MRR / Hits@10 in the progress bar.
         if len(ranks) % 50 == 0:
@@ -211,12 +252,36 @@ def evaluate_direction(
             )
 
     ranks_arr = np.array(ranks, dtype=np.float64)
+    reach_arr = np.array(reachable_flags, dtype=bool) if reachable_flags else np.array([], dtype=bool)
+
+    def _agg(mask: np.ndarray) -> dict[str, float]:
+        r_sub = ranks_arr[mask]
+        if len(r_sub) == 0:
+            return {"MRR": 0.0, "Hits@1": 0.0, "Hits@3": 0.0, "Hits@10": 0.0, "n": 0}
+        return {
+            "MRR": float((1.0 / r_sub).mean()),
+            "Hits@1": float((r_sub <= 1).mean()),
+            "Hits@3": float((r_sub <= 3).mean()),
+            "Hits@10": float((r_sub <= 10).mean()),
+            "n": int(mask.sum()),
+        }
+
+    by_rel: dict[str, dict[str, float]] = {}
+    if rels:
+        rels_arr = np.array(rels)
+        for rel in np.unique(rels_arr):
+            mask = rels_arr == rel
+            by_rel[str(rel)] = {
+                **_agg(mask),
+                "reachable": _agg(mask & reach_arr),
+                "unreachable": _agg(mask & ~reach_arr),
+            }
+    all_mask = np.ones(len(ranks_arr), dtype=bool)
     return {
-        "MRR": float((1.0 / ranks_arr).mean()),
-        "Hits@1": float((ranks_arr <= 1).mean()),
-        "Hits@3": float((ranks_arr <= 3).mean()),
-        "Hits@10": float((ranks_arr <= 10).mean()),
-        "n": len(ranks),
+        **_agg(all_mask),
+        "reachable": _agg(reach_arr),
+        "unreachable": _agg(~reach_arr),
+        "by_relation": by_rel,
     }
 
 
@@ -252,6 +317,8 @@ def evaluate(
     device: torch.device,
     cand_batch_size: int = 128,
     collapse_z: bool = False,
+    subgraph_hops: int = 2,
+    use_hop_distance_tokens: bool = False,
 ) -> dict[str, float]:
     eval_triples, dropped = filter_known_relations(eval_triples, vocab)
     if dropped:
@@ -261,12 +328,26 @@ def evaluate(
     tail = evaluate_direction(
         model, eval_triples, kg, vocab, fixed_values, entity_pool, known,
         "tail", max_triples, z_pool, device, cand_batch_size, collapse_z,
+        subgraph_hops=subgraph_hops, use_hop_distance_tokens=use_hop_distance_tokens,
     )
     head = evaluate_direction(
         model, eval_triples, kg, vocab, fixed_values, entity_pool, known,
         "head", max_triples, z_pool, device, cand_batch_size, collapse_z,
+        subgraph_hops=subgraph_hops, use_hop_distance_tokens=use_hop_distance_tokens,
     )
     avg = {k: 0.5 * (tail[k] + head[k]) for k in ("MRR", "Hits@1", "Hits@3", "Hits@10")}
+    # Per-relation averages: only relations evaluated in both directions are aggregated.
+    avg_by_rel: dict[str, dict[str, float]] = {}
+    tail_by = tail.get("by_relation", {})
+    head_by = head.get("by_relation", {})
+    for rel in set(tail_by) | set(head_by):
+        if rel in tail_by and rel in head_by:
+            avg_by_rel[rel] = {
+                k: 0.5 * (tail_by[rel][k] + head_by[rel][k])
+                for k in ("MRR", "Hits@1", "Hits@3", "Hits@10")
+            }
+            avg_by_rel[rel]["n"] = tail_by[rel]["n"]  # same triples scored both directions
+    avg["by_relation"] = avg_by_rel
     return {"tail": tail, "head": head, "avg": avg, "n_skipped": dropped}
 
 

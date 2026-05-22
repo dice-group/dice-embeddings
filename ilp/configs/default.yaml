@@ -24,7 +24,15 @@ neg_samples_per_pos: 4
 # Data
 data_dir: data/dbpedia50
 triple_format: head_tail_relation   # DBpedia50 layout: h <TAB> t <TAB> r
+# Schema relations: tails are always promoted to [VAL_*] regardless of
+# cardinality. Accepts a string (single relation) or a list. Use this for
+# rdf:type and any other relations whose range forms a class/type hierarchy.
 type_relation: "rdf:type"
+# Multi-relation example (e.g. for WordNet-like KGs):
+# type_relation:
+#   - rdf:type
+#   - _hypernym
+#   - _instance_hypernym
 
 # Eval / checkpointing
 val_every: 2000

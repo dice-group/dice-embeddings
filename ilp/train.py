@@ -21,12 +21,13 @@ from .dataset import (
     InductiveKGDataset,
     KnowledgeGraph,
     augment_with_inverse,
+    build_negative_sampler,
     collate,
     read_triples,
     verify_inductive_split,
 )
 from .model import InductiveKGModel
-from .vocab import build_vocab, load_vocab, save_vocab
+from .vocab import build_vocab, format_vocab_summary, load_vocab, save_vocab
 
 
 def warmup_cosine(step: int, warmup: int, total: int) -> float:
@@ -86,6 +87,7 @@ def train_model(
                 z_pool_size=cfg["z_pool_size"],
                 cardinality_cutoff=cfg["cardinality_cutoff"],
                 type_relation=cfg["type_relation"],
+                subgraph_hops=cfg.get("subgraph_hops", 2),
             )
             save_vocab(vocab, fixed_values, vocab_path)
         (run_dir / "config.yaml").write_text(yaml.safe_dump(cfg, sort_keys=False))
@@ -97,10 +99,18 @@ def train_model(
             cardinality_cutoff=cfg["cardinality_cutoff"],
             type_relation=cfg["type_relation"],
         )
+    print(format_vocab_summary(
+        train_triples, fixed_values,
+        type_relation=cfg["type_relation"],
+        cardinality_cutoff=cfg["cardinality_cutoff"],
+    ))
     print(f"Vocab size: {len(vocab)} (|fixed_values|={len(fixed_values)})")
 
     train_kg = KnowledgeGraph(augment_with_inverse(train_triples))
 
+    neg_sampler = build_negative_sampler(
+        cfg.get("neg_sampler"), train_kg, train_kg.entities
+    )
     train_ds = InductiveKGDataset(
         positive_triples=train_triples,
         kg=train_kg,
@@ -112,6 +122,9 @@ def train_model(
         neg_per_pos=cfg["neg_samples_per_pos"],
         both_directions=True,
         collapse_z=cfg.get("collapse_z", False),
+        neg_sampler=neg_sampler,
+        subgraph_hops=cfg.get("subgraph_hops", 2),
+        use_hop_distance_tokens=cfg.get("use_hop_distance_tokens", False),
     )
     loader = DataLoader(
         train_ds,
@@ -162,6 +175,7 @@ def train_model(
             logits = model(
                 batch["triples"], batch["mask"],
                 batch["target_relation"], batch["target_tail"],
+                hop_distances=batch.get("hop_distances") if cfg.get("use_hop_distance_tokens", False) else None,
             )
             loss = loss_fn(logits, batch["label"])
             opt.zero_grad(set_to_none=True)

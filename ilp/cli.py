@@ -17,7 +17,7 @@ import torch
 import yaml
 
 from .dataset import KnowledgeGraph, augment_with_inverse, read_triples
-from .eval import evaluate, score_candidates
+from .eval import evaluate, filter_known_relations, score_candidates
 from .model import InductiveKGModel
 from .train import train_model
 
@@ -33,7 +33,19 @@ DEFAULT_CFG: dict = {
     "warmup_steps": 200, "max_steps": 2000, "grad_clip": 1.0,
     # Sampling
     "max_triples": 64, "z_pool_size": 256,
-    "cardinality_cutoff": 100, "neg_samples_per_pos": 4,
+    # cardinality_cutoff=0 disables the cardinality-based fallback heuristic;
+    # schema membership should come from `type_relation` (explicit). Raise it
+    # if you want low-cardinality relation ranges auto-promoted to [VAL_*].
+    "cardinality_cutoff": 0, "neg_samples_per_pos": 4,
+    # Negative sampling. "uniform" | "relation_tail_prior" | "two_hop" |
+    # {mixture: {uniform: 0.5, two_hop: 0.5}}. Override via --set, e.g.:
+    #   --set 'neg_sampler={mixture: {uniform: 0.5, relation_tail_prior: 0.25, two_hop: 0.25}}'
+    "neg_sampler": "uniform",
+    # Subgraph depth and hop-distance-token feature. With the flag off the
+    # model behaves identically to a vocab built without hop tokens; with it
+    # on, each entity gets a token encoding its BFS distance to the anchor.
+    "subgraph_hops": 2,
+    "use_hop_distance_tokens": False,
     # Data
     "triple_format": "head_relation_tail", "type_relation": "",
     # Runtime
@@ -97,6 +109,7 @@ def cmd_train(args: argparse.Namespace) -> None:
 def cmd_infer(args: argparse.Namespace) -> None:
     model, vocab, fixed_values, cfg, device = _load_bundle(args.model)
     triples = read_triples(args.train_file, fmt=cfg.get("triple_format", "head_relation_tail"))
+    triples, _ = filter_known_relations(triples, vocab)
     kg = KnowledgeGraph(augment_with_inverse(triples))
     candidates = sorted(kg.entities)
     scores = score_candidates(
@@ -104,6 +117,8 @@ def cmd_infer(args: argparse.Namespace) -> None:
         max_triples=cfg["max_triples"], z_pool=cfg["z_pool_size"],
         batch_size=128, device=device,
         collapse_z=cfg.get("collapse_z", False),
+        subgraph_hops=cfg.get("subgraph_hops", 2),
+        use_hop_distance_tokens=cfg.get("use_hop_distance_tokens", False),
     )
     topk = sorted(scores.items(), key=lambda kv: -kv[1])[: args.k]
     for tail, s in topk:
@@ -114,12 +129,15 @@ def cmd_score(args: argparse.Namespace) -> None:
     head, relation, tail = args.triple
     model, vocab, fixed_values, cfg, device = _load_bundle(args.model)
     triples = read_triples(args.data, fmt=cfg.get("triple_format", "head_relation_tail"))
+    triples, _ = filter_known_relations(triples, vocab)
     kg = KnowledgeGraph(augment_with_inverse(triples))
     scores = score_candidates(
         model, head, relation, [tail], kg, vocab, fixed_values,
         max_triples=cfg["max_triples"], z_pool=cfg["z_pool_size"],
         batch_size=1, device=device,
         collapse_z=cfg.get("collapse_z", False),
+        subgraph_hops=cfg.get("subgraph_hops", 2),
+        use_hop_distance_tokens=cfg.get("use_hop_distance_tokens", False),
     )
     print(f"{scores[tail]:.4f}")
 
@@ -140,12 +158,30 @@ def cmd_eval(args: argparse.Namespace) -> None:
     if valid_path.exists():
         known += read_triples(valid_path, fmt=fmt)
 
-    test_kg = KnowledgeGraph(augment_with_inverse(test))
+    # Subgraph context: by default the test split itself (legacy behavior).
+    # For GraIL-style inductive eval, pass --obs-file pointing at the observed
+    # inductive graph so queries are scored against a richer context — e.g.
+    #   --obs-file KGs/WN18RR_v1_ind/train.txt --test-file .../test.txt
+    if args.obs_file:
+        obs_triples = read_triples(Path(args.obs_file), fmt=fmt)
+        # Include the queries themselves so test-internal facts also enter
+        # the subgraph; the test triple of each query is excluded inside
+        # score_candidates via exclude_triple=(h, r, t).
+        obs_triples = obs_triples + test
+    else:
+        obs_triples = test
+    obs_for_graph, dropped_graph = filter_known_relations(obs_triples, vocab)
+    if dropped_graph:
+        print(f"[eval] removed {dropped_graph} observation-KG triples with unseen relations "
+              f"before building subgraph context.")
+    test_kg = KnowledgeGraph(augment_with_inverse(obs_for_graph))
     results = evaluate(
         model, test, test_kg, vocab, fixed_values, test_kg.entities,
         known_triples=known,
         max_triples=cfg["max_triples"], z_pool=cfg["z_pool_size"],
         device=device, collapse_z=cfg.get("collapse_z", False),
+        subgraph_hops=cfg.get("subgraph_hops", 2),
+        use_hop_distance_tokens=cfg.get("use_hop_distance_tokens", False),
     )
     for split in ("tail", "head", "avg"):
         m = results[split]
@@ -155,8 +191,49 @@ def cmd_eval(args: argparse.Namespace) -> None:
         else:
             print(f"{split:5s}  MRR={m['MRR']:.4f}  H@1={m['Hits@1']:.4f}  "
                   f"H@3={m['Hits@3']:.4f}  H@10={m['Hits@10']:.4f}  n={m['n']}")
+            if "reachable" in m:
+                rm = m["reachable"]; um = m["unreachable"]
+                print(f"  reachable    MRR={rm['MRR']:.4f}  H@1={rm['Hits@1']:.4f}  "
+                      f"H@10={rm['Hits@10']:.4f}  n={rm['n']}")
+                print(f"  unreachable  MRR={um['MRR']:.4f}  H@1={um['Hits@1']:.4f}  "
+                      f"H@10={um['Hits@10']:.4f}  n={um['n']}")
     if results.get("n_skipped"):
         print(f"(skipped {results['n_skipped']} test triples with unseen relations)")
+
+    if getattr(args, "json_out", None):
+        import json
+        out_path = Path(args.json_out)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(results, indent=2))
+        print(f"[eval] wrote full results to {out_path}")
+
+    if getattr(args, "per_relation", False):
+        _print_per_relation(results)
+
+
+def _print_per_relation(results: dict, top_n: int = 30) -> None:
+    """Print per-relation MRR table including inverse rows.
+
+    For each relation r, the inverse row r__inv reuses head's metrics as tail
+    and vice versa — predicting the tail of (t, r__inv, h) is the same problem
+    as predicting the head of (h, r, t). The visual flip makes the per-relation
+    asymmetry obvious: functional relations have one direction near 1 and the
+    other near 0; many-to-many relations stay roughly balanced.
+    """
+    tail_br = results["tail"].get("by_relation", {})
+    head_br = results["head"].get("by_relation", {})
+    rels = sorted(
+        set(tail_br) | set(head_br),
+        key=lambda r: -tail_br.get(r, head_br.get(r, {})).get("n", 0),
+    )[:top_n]
+    print(f"\n--- per-relation MRR (top {len(rels)} by support) ---")
+    print(f"{'relation':40s}  {'tail_MRR':>8s}  {'head_MRR':>8s}  {'n':>5s}")
+    for r in rels:
+        t_mrr = tail_br.get(r, {}).get("MRR", float("nan"))
+        h_mrr = head_br.get(r, {}).get("MRR", float("nan"))
+        n = tail_br.get(r, head_br.get(r, {})).get("n", 0)
+        print(f"{r:40s}  {t_mrr:8.4f}  {h_mrr:8.4f}  {n:5d}")
+        print(f"{(r + '__inv'):40s}  {h_mrr:8.4f}  {t_mrr:8.4f}  {n:5d}")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -200,6 +277,14 @@ def build_parser() -> argparse.ArgumentParser:
                         "to build the filter set).")
     e.add_argument("--test-file", default=None,
                    help="Override path to the eval split (default: {kg-dir}/test.txt).")
+    e.add_argument("--obs-file", default=None,
+                   help="Observed-graph triples for subgraph context (GraIL-style "
+                        "inductive eval). If omitted, the test split is used as context.")
+    e.add_argument("--json-out", default=None,
+                   help="If set, dump the full results dict (incl. per-relation MRR) as JSON.")
+    e.add_argument("--per-relation", action="store_true",
+                   help="After eval, print a per-relation MRR table with each relation's "
+                        "inverse row alongside it (tail/head columns swap on the inverse).")
     e.set_defaults(func=cmd_eval)
 
     return ap

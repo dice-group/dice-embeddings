@@ -1,0 +1,40 @@
+# WN18RR_v1 — no schema + hop-distance tokens ON.
+# Compares against wn18rr_v1_no_schema.yaml (same config, flag off).
+
+# Model
+d_model: 128
+n_heads: 8
+n_triple_layers: 2
+n_sab: 4
+dropout: 0.1
+
+# Optimization
+batch_size: 128
+lr: 1.0e-4
+weight_decay: 1.0e-2
+warmup_steps: 500
+max_steps: 12000
+grad_clip: 1.0
+
+# Sampling
+max_triples: 96
+z_pool_size: 192
+cardinality_cutoff: 0
+neg_samples_per_pos: 4
+neg_sampler: uniform
+
+# Subgraph depth + hop-distance-token feature
+subgraph_hops: 2                # BFS depth for context AND hop-token vocab
+use_hop_distance_tokens: true   # each entity gets [HOP_DIST_d] where d = BFS distance to anchor
+
+# Data
+data_dir: KGs/WN18RR_v1
+triple_format: head_relation_tail
+type_relation: ""
+
+# Eval / checkpointing
+val_every: 4000
+run_name: wn18rr_v1_hop_distance
+seed: 0
+num_workers: 4
+device: cuda

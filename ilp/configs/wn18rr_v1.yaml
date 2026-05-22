@@ -1,0 +1,53 @@
+# WN18RR_v1 inductive split (Teru et al., 2020 — GraIL paper).
+#
+# Train graph: KGs/WN18RR_v1/        (entity set A, 5,410 triples, 9 relations)
+# Test graph : KGs/WN18RR_v1_ind/    (entity set B disjoint from A, 1,618 obs + 188 queries)
+#
+# Baselines from the GraIL paper, Table 2 (Hits@10, eval vs 50 random negs):
+#   Neural-LP 74.37 | DRUM 74.37 | RuleN 80.85 | GraIL 82.45
+# Our ilp/eval.py ranks against the full entity pool with mid-tie averaging,
+# so absolute numbers will differ — but it's the same task.
+
+# Model
+d_model: 128
+n_heads: 8
+n_triple_layers: 2
+n_sab: 4
+dropout: 0.1
+
+# Optimization
+batch_size: 128
+lr: 1.0e-4
+weight_decay: 1.0e-2
+warmup_steps: 500
+max_steps: 12000
+grad_clip: 1.0
+
+# Sampling
+# WN18RR has tree-like hierarchies (hypernym chains) → 2-hop subgraphs stay small.
+max_triples: 96
+z_pool_size: 192       # ≥ max distinct entities per anonymized subgraph
+cardinality_cutoff: 0  # rely entirely on `type_relation` below for schema
+neg_samples_per_pos: 4
+neg_sampler: uniform
+
+# Data
+data_dir: KGs/WN18RR_v1
+triple_format: head_relation_tail
+# WordNet has no rdf:type relation, but several relations carry type/taxonomy
+# semantics. Promoting their tails to [VAL_*] gives the model stable schema
+# tokens for the type hierarchy instead of anonymizing it via cardinality:
+#   _hypernym             — is-a-kind-of (taxonomic backbone, 814 classes)
+#   _instance_hypernym    — instance-of-class (Tokyo → city)
+#   _synset_domain_topic_of — topic/domain membership (small fixed set)
+type_relation:
+  - _hypernym
+  - _instance_hypernym
+  - _synset_domain_topic_of
+
+# Eval / checkpointing
+val_every: 4000
+run_name: wn18rr_v1
+seed: 0
+num_workers: 4
+device: cuda
