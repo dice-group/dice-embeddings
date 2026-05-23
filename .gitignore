@@ -192,5 +192,4 @@ Literal_KGs/
 .pfn_cache/
 model.pt
 *.pt
-/ilp/runs
 ilp/CLAUDE.md
