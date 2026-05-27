@@ -2,17 +2,20 @@ import os
 
 import torch
 import torch.distributed as dist
-from dicee.abstracts import AbstractTrainer
-from dicee.static_funcs_training import make_iterable_verbose
 from torch.distributed.fsdp import (
-    FullStateDictConfig,
-    FullyShardedDataParallel as FSDP,
-    StateDictType,
-    ShardingStrategy,
-    MixedPrecision,
     BackwardPrefetch,
+    FullStateDictConfig,
+    MixedPrecision,
+    ShardingStrategy,
+    StateDictType,
+)
+from torch.distributed.fsdp import (
+    FullyShardedDataParallel as FSDP,
 )
 from torch.utils.data import DataLoader
+
+from dicee.abstracts import AbstractTrainer
+from dicee.static_funcs_training import make_iterable_verbose
 
 try:
     from torch._dynamo.eval_frame import OptimizedModule
@@ -44,7 +47,7 @@ def move_batch_to_device(batch: list, device: torch.device, pin_memory: bool = F
 class TorchFSDPTrainer(AbstractTrainer):
     """
     Optimized single-node multi-GPU trainer based on FSDP.
-    
+
     Optimizations include:
     - Persistent workers and prefetching for data loading
     - Async CUDA streams for CPU-GPU transfers
@@ -67,28 +70,28 @@ class TorchFSDPTrainer(AbstractTrainer):
         self.loss_func = None
         self.train_dataset_loader = None
         self.loss_history = []
-        
+
         # Sparse optimizer configuration
         self.sparse_step_interval = max(1, int(getattr(args, "fsdp_sparse_step_interval", 4)))
         self.use_cpu_sparse_optimizer = getattr(args, "fsdp_sparse_optimizer_device", "cpu") == "cpu"
         self.max_accumulated_sparse_grad_nnz = getattr(args, "max_accumulated_sparse_grad_nnz", 1_000_000)
-        
+
         # Mixed precision configuration
         ptdtype_str = getattr(args, "precision", "bfloat16")
         ptdtype_map = {'float32': torch.float32, 'bfloat16': torch.bfloat16, 'float16': torch.float16}
         ptdtype = ptdtype_map.get(ptdtype_str, torch.bfloat16)
         self.ctx = torch.amp.autocast(device_type="cuda", dtype=ptdtype)
         self.scaler = torch.amp.GradScaler("cuda", enabled=(ptdtype == torch.float16))
-        
+
         # FSDP configuration
         self.use_compile = getattr(args, "use_compile", False)
         self.sharding_strategy = getattr(args, "sharding_strategy", "FULL_SHARD")
         self.gradient_clip_val = getattr(args, "gradient_clip_val", None)
-        
+
         # DataLoader configuration
         self.num_workers = getattr(args, "num_workers", self.attributes.num_core)
         self.prefetch_factor = getattr(args, "prefetch_factor", 4)
-        
+
         # CUDA stream for async operations
         self.async_stream = torch.cuda.Stream()
 
@@ -117,7 +120,7 @@ class TorchFSDPTrainer(AbstractTrainer):
 
         self.raw_model = model
         self.raw_model.to(self.device)
-        
+
         # Setup model with FSDP or manual sharding
         if getattr(self.raw_model, "manual_sharded_entity_training", False):
             self.raw_model.setup_fsdp_sharded_entity_training(
@@ -134,11 +137,11 @@ class TorchFSDPTrainer(AbstractTrainer):
         else:
             self.model = self._wrap_model_with_fsdp()
             optimizer_parameters = self.model.parameters()
-        
+
         self.loss_func = model.loss
         self.optimizer = model.configure_optimizers(parameters=optimizer_parameters)
         self.optimizer_parameters = self._optimizer_parameters()
-        
+
         # Optional: Compile model for additional speedup (PyTorch 2.0+)
         if self.use_compile and hasattr(torch, 'compile'):
             if self.local_rank == 0:
@@ -146,7 +149,7 @@ class TorchFSDPTrainer(AbstractTrainer):
             self.model = torch.compile(self.model, mode='reduce-overhead')
 
         num_of_batches = len(self.train_dataset_loader)
-        
+
         # Training loop
         for epoch in (tqdm_bar := make_iterable_verbose(
             range(self.attributes.num_epochs),
@@ -156,12 +159,12 @@ class TorchFSDPTrainer(AbstractTrainer):
         )):
             self.train_dataset_loader.sampler.set_epoch(epoch)
             epoch_loss = 0.0
-            
+
             for i, z in enumerate(self.train_dataset_loader):
                 source, targets = self.extract_input_outputs(z)
                 batch_loss = self._run_batch(source, targets, batch_idx=i + 1)
                 epoch_loss += batch_loss
-                
+
                 # Update progress bar
                 if hasattr(tqdm_bar, 'set_description_str'):
                     tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
@@ -204,7 +207,7 @@ class TorchFSDPTrainer(AbstractTrainer):
             reduce_dtype=torch.bfloat16,
             buffer_dtype=torch.bfloat16,
         )
-        
+
         # Sharding strategy
         sharding_strategy_map = {
             "FULL_SHARD": ShardingStrategy.FULL_SHARD,
@@ -213,7 +216,7 @@ class TorchFSDPTrainer(AbstractTrainer):
             "HYBRID_SHARD": ShardingStrategy.HYBRID_SHARD,
         }
         strategy = sharding_strategy_map.get(self.sharding_strategy, ShardingStrategy.FULL_SHARD)
-        
+
         return FSDP(
             self.raw_model,
             device_id=self.device,
@@ -242,9 +245,9 @@ class TorchFSDPTrainer(AbstractTrainer):
             return self._run_batch_fsdp(source, targets)
 
     def _run_batch_manual_sharding(
-        self, 
-        source: torch.LongTensor, 
-        targets: torch.FloatTensor, 
+        self,
+        source: torch.LongTensor,
+        targets: torch.FloatTensor,
         batch_idx: int
     ) -> float:
         """Run batch with manual sharding and sparse optimizer."""
@@ -271,7 +274,7 @@ class TorchFSDPTrainer(AbstractTrainer):
             batch_idx=batch_idx,
             sparse_step_interval=self.sparse_step_interval,
         )
-        
+
         return batch_loss
 
     def _run_batch_fsdp(self, source: torch.LongTensor, targets: torch.FloatTensor) -> float:
@@ -284,19 +287,19 @@ class TorchFSDPTrainer(AbstractTrainer):
             loss = self.loss_func(output, targets)
 
         batch_loss = loss.item()
-        
+
         self.scaler.scale(loss).backward()
-        
+
         # Unscale gradients for clipping
         self.scaler.unscale_(self.optimizer)
-        
+
         # Optional gradient clipping
         if self.gradient_clip_val is not None:
             self._clip_grad_norm()
-        
+
         self.scaler.step(self.optimizer)
         self.scaler.update()
-        
+
         return batch_loss
 
     def extract_input_outputs(self, z: list):
@@ -320,20 +323,20 @@ class TorchFSDPTrainer(AbstractTrainer):
                     key: value for key, value in state_dict.items()
                     if not key.startswith("local_entity_embeddings.")
                 }
-                trained_model.load_state_dict(dense_state_dict, strict=False)
+                self._load_dense_state_dict_for_materialized_model(trained_model, dense_state_dict)
 
             # Nonzero ranks participate in collectives but intentionally do not return a usable full model.
             return trained_model if self.global_rank == 0 else None
-        
+
         cfg = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
         fsdp_model = self._unwrap_optimized_model(self.model)
         with FSDP.state_dict_type(fsdp_model, StateDictType.FULL_STATE_DICT, cfg):
             state_dict = fsdp_model.state_dict()
-        
+
         if self.local_rank == self.global_rank == 0:
             self.raw_model.load_state_dict(state_dict, strict=True)
             self.raw_model.loss_history = list(self.loss_history)
-        
+
         # Nonzero ranks participate in collectives but intentionally do not return a usable full model.
         return self.raw_model if self.global_rank == 0 else None
 
@@ -360,3 +363,16 @@ class TorchFSDPTrainer(AbstractTrainer):
             for param_group in self.optimizer.param_groups
             for param in param_group["params"]
         ]
+
+    @staticmethod
+    def _load_dense_state_dict_for_materialized_model(model: torch.nn.Module, state_dict: dict) -> None:
+        missing, unexpected = model.load_state_dict(state_dict, strict=False)
+        expected_missing = set()
+        if getattr(model, "entity_embeddings", None) is not None:
+            expected_missing.add("entity_embeddings.weight")
+        unexpected_missing = set(missing) - expected_missing
+        if unexpected_missing or unexpected:
+            raise RuntimeError(
+                f"Unexpected dense state load result. missing={sorted(unexpected_missing)}, "
+                f"unexpected={sorted(unexpected)}"
+            )
