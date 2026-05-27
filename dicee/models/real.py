@@ -3,7 +3,6 @@ from typing import Tuple
 
 import numpy as np
 import torch
-from dicee.models.transformers import Block
 from torch import nn
 
 from dicee.models.transformers import Block
