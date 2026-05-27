@@ -20,7 +20,7 @@ class _AllReduceSum(torch.autograd.Function):
         return grad_output
 
 
-class _FSDPShardedEntityModel(BaseKGE):
+class FSDPShardedEntityModel(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.manual_sharded_entity_training = self.defer_large_embeddings
@@ -30,6 +30,14 @@ class _FSDPShardedEntityModel(BaseKGE):
         self.local_entity_count = self.num_entities
         self._batch_lookup_ids = None
         self._batch_lookup_embeddings = None
+        self.fsdp_sharded_device = None
+        self.fsdp_sharded_async_stream = None
+        self.fsdp_use_cpu_sparse_optimizer = True
+        self.fsdp_max_accumulated_sparse_grad_nnz = 1_000_000
+        self.gpu_sparse_optimizer = None
+        self.cpu_sparse_embedding = None
+        self.cpu_sparse_optimizer = None
+        self.pending_cpu_sparse_grad = None
         if self.manual_sharded_entity_training:
             world_size = int(os.environ.get("WORLD_SIZE", "1"))
             rank = int(os.environ.get("RANK", "0"))
@@ -47,11 +55,178 @@ class _FSDPShardedEntityModel(BaseKGE):
     def configure_optimizers(self, parameters=None):
         if not self.manual_sharded_entity_training:
             return super().configure_optimizers(parameters=parameters)
+        if parameters is not None:
+            return super().configure_optimizers(parameters=parameters)
         dense_parameters = [
             param for name, param in self.named_parameters()
             if name != "local_entity_embeddings.weight"
         ]
         return super().configure_optimizers(parameters=dense_parameters)
+
+    def fsdp_ignored_modules(self):
+        if not self.manual_sharded_entity_training:
+            return []
+        return [self.local_entity_embeddings]
+
+    def fsdp_dense_optimizer_parameters(self, wrapped_model=None):
+        module = wrapped_model if wrapped_model is not None else self
+        return [
+            param for name, param in module.named_parameters()
+            if "local_entity_embeddings.weight" not in name
+        ]
+
+    def setup_fsdp_sharded_entity_training(
+        self,
+        device: torch.device,
+        use_cpu_sparse_optimizer: bool = True,
+        max_accumulated_sparse_grad_nnz: int = 1_000_000,
+        async_stream: torch.cuda.Stream = None,
+    ) -> None:
+        """Prepare replicated parameters and sparse entity optimizer for FSDP training."""
+        if not self.manual_sharded_entity_training:
+            return
+
+        self.fsdp_sharded_device = device
+        self.fsdp_use_cpu_sparse_optimizer = use_cpu_sparse_optimizer
+        self.fsdp_max_accumulated_sparse_grad_nnz = max_accumulated_sparse_grad_nnz
+        self.fsdp_sharded_async_stream = async_stream
+        self._init_sparse_optimizer()
+
+    def zero_sparse_optimizer_grad(self) -> None:
+        if not self.manual_sharded_entity_training:
+            return
+        if self.fsdp_use_cpu_sparse_optimizer:
+            if self.cpu_sparse_optimizer is not None:
+                self.cpu_sparse_optimizer.zero_grad(set_to_none=True)
+        elif self.gpu_sparse_optimizer is not None:
+            self.gpu_sparse_optimizer.zero_grad(set_to_none=True)
+
+    def step_sparse_optimizer(self, batch_idx: int, sparse_step_interval: int) -> None:
+        if not self.manual_sharded_entity_training:
+            return
+
+        if self.fsdp_use_cpu_sparse_optimizer:
+            self._accumulate_cpu_sparse_grad()
+            if batch_idx % sparse_step_interval == 0:
+                self.flush_sparse_optimizer()
+        elif self.gpu_sparse_optimizer is not None:
+            self.gpu_sparse_optimizer.step()
+
+        self.local_entity_embeddings.weight.grad = None
+
+    def flush_sparse_optimizer(self) -> None:
+        if not self.manual_sharded_entity_training or not self.fsdp_use_cpu_sparse_optimizer:
+            return
+        if self.pending_cpu_sparse_grad is None:
+            return
+
+        self.cpu_sparse_optimizer.zero_grad(set_to_none=True)
+        self.cpu_sparse_embedding.weight.grad = self.pending_cpu_sparse_grad
+        self.cpu_sparse_optimizer.step()
+
+        updated_rows = self.pending_cpu_sparse_grad.indices()[0].unique(sorted=True)
+        updated_values = self.cpu_sparse_embedding.weight.data.index_select(0, updated_rows)
+
+        stream = self.fsdp_sharded_async_stream
+        if stream is None:
+            self.local_entity_embeddings.weight.data.index_copy_(
+                0,
+                updated_rows.to(self.fsdp_sharded_device, non_blocking=True),
+                updated_values.to(self.fsdp_sharded_device, non_blocking=True),
+            )
+        else:
+            with torch.cuda.stream(stream):
+                self.local_entity_embeddings.weight.data.index_copy_(
+                    0,
+                    updated_rows.to(self.fsdp_sharded_device, non_blocking=True),
+                    updated_values.to(self.fsdp_sharded_device, non_blocking=True),
+                )
+
+        self.cpu_sparse_embedding.weight.grad = None
+        self.pending_cpu_sparse_grad = None
+
+    def materialize_sharded_entity_model_on_rank_zero(self, loss_history=None) -> torch.nn.Module:
+        """Gather entity shards and rebuild the full embedding table on rank 0."""
+        if self.fsdp_sharded_async_stream is not None:
+            self.fsdp_sharded_async_stream.synchronize()
+
+        local_weight = self.local_entity_embeddings.weight.detach().cpu()
+        is_rank_zero = not dist.is_initialized() or dist.get_rank() == 0
+        world_size = dist.get_world_size() if dist.is_initialized() else 1
+        gathered = [None for _ in range(world_size)] if is_rank_zero else None
+        if dist.is_initialized():
+            dist.gather_object(local_weight, object_gather_list=gathered, dst=0)
+        else:
+            gathered = [local_weight]
+
+        if is_rank_zero:
+            full_entity_weight = torch.cat(gathered, dim=0)[: self.num_entities]
+            full_entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+            full_entity_embeddings.weight.data.copy_(full_entity_weight)
+
+            self.entity_embeddings = full_entity_embeddings
+            self.local_entity_embeddings = None
+            self.manual_sharded_entity_training = False
+            if loss_history is not None:
+                self.loss_history = list(loss_history)
+
+        return self
+
+    def _init_sparse_optimizer(self) -> None:
+        if not self.fsdp_use_cpu_sparse_optimizer:
+            self.gpu_sparse_optimizer = torch.optim.SparseAdam(
+                [self.local_entity_embeddings.weight],
+                lr=self.learning_rate,
+            )
+            return
+
+        local_weight = self.local_entity_embeddings.weight.detach().cpu()
+        self.cpu_sparse_embedding = torch.nn.Embedding(
+            local_weight.shape[0],
+            local_weight.shape[1],
+            sparse=True,
+            device="cpu",
+        )
+        self.cpu_sparse_embedding.weight.data = local_weight.pin_memory()
+        self.cpu_sparse_optimizer = torch.optim.SparseAdam(
+            [self.cpu_sparse_embedding.weight],
+            lr=self.learning_rate,
+        )
+
+    def _accumulate_cpu_sparse_grad(self) -> None:
+        sparse_grad = self.local_entity_embeddings.weight.grad
+        if sparse_grad is None:
+            return
+
+        sparse_grad = sparse_grad.coalesce()
+        if sparse_grad._nnz() == 0:
+            return
+
+        if (
+            self.pending_cpu_sparse_grad is not None
+            and self.pending_cpu_sparse_grad._nnz() > self.fsdp_max_accumulated_sparse_grad_nnz
+        ):
+            self.flush_sparse_optimizer()
+
+        cpu_grad = torch.sparse_coo_tensor(
+            sparse_grad.indices().cpu(),
+            sparse_grad.values().cpu(),
+            sparse_grad.size(),
+            device="cpu",
+            check_invariants=False,
+        ).coalesce()
+
+        if self.pending_cpu_sparse_grad is None:
+            self.pending_cpu_sparse_grad = cpu_grad
+            return
+
+        self.pending_cpu_sparse_grad = torch.sparse_coo_tensor(
+            torch.cat((self.pending_cpu_sparse_grad.indices(), cpu_grad.indices()), dim=1),
+            torch.cat((self.pending_cpu_sparse_grad.values(), cpu_grad.values()), dim=0),
+            cpu_grad.size(),
+            device="cpu",
+            check_invariants=False,
+        ).coalesce()
 
     def _entity_lookup(self, entity_ids: torch.LongTensor) -> torch.FloatTensor:
         if not self.manual_sharded_entity_training:
@@ -122,7 +297,10 @@ class _FSDPShardedEntityModel(BaseKGE):
         raise RuntimeError("Full entity embeddings are materialized by the trainer on rank 0 after training.")
 
 
-class FSDPDistMult(_FSDPShardedEntityModel):
+_FSDPShardedEntityModel = FSDPShardedEntityModel
+
+
+class FSDPDistMult(FSDPShardedEntityModel):
     def __init__(self, args):
         super().__init__(args)
         self.name = "DistMult"
@@ -151,7 +329,7 @@ class FSDPDistMult(_FSDPShardedEntityModel):
         return (self.hidden_dropout(self.hidden_normalizer(h * r)) * t).sum(dim=1)
 
 
-class FSDPComplEx(_FSDPShardedEntityModel):
+class FSDPComplEx(FSDPShardedEntityModel):
     def __init__(self, args):
         super().__init__(args)
         self.name = "ComplEx"
@@ -202,7 +380,7 @@ class FSDPComplEx(_FSDPShardedEntityModel):
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
 
 
-class FSDPTransE(_FSDPShardedEntityModel):
+class FSDPTransE(FSDPShardedEntityModel):
     def __init__(self, args):
         super().__init__(args)
         self.name = "TransE"

@@ -1,9 +1,9 @@
 import os
-from typing import Iterable
 
 import torch
 import torch.distributed as dist
 from dicee.abstracts import AbstractTrainer
+from dicee.static_funcs_training import make_iterable_verbose
 from torch.distributed.fsdp import (
     FullStateDictConfig,
     FullyShardedDataParallel as FSDP,
@@ -13,7 +13,6 @@ from torch.distributed.fsdp import (
     BackwardPrefetch,
 )
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 
 try:
     from torch._dynamo.eval_frame import OptimizedModule
@@ -23,11 +22,23 @@ except ImportError:
 torch.set_float32_matmul_precision('high')
 
 
-def make_iterable_verbose(iterable_object, verbose, desc="Default", position=None, leave=True) -> Iterable:
-    if verbose:
-        return tqdm(iterable_object, desc=desc, position=position, leave=leave)
-    else:
-        return iterable_object
+def move_batch_to_device(batch: list, device: torch.device, pin_memory: bool = False):
+    """Move a Dice dataloader batch to a device."""
+
+    def move(tensor):
+        if pin_memory:
+            tensor = tensor.pin_memory()
+        return tensor.to(device, non_blocking=True)
+
+    if len(batch) == 2:
+        x_batch, y_batch = batch
+        return move(x_batch), move(y_batch)
+
+    if len(batch) == 3:
+        x_batch, y_idx_batch, y_batch = batch
+        return (move(x_batch), move(y_idx_batch)), move(y_batch)
+
+    raise ValueError("Unexpected batch shape..")
 
 
 class TorchFSDPTrainer(AbstractTrainer):
@@ -52,10 +63,7 @@ class TorchFSDPTrainer(AbstractTrainer):
         self.model = None
         self.raw_model = None
         self.optimizer = None
-        self.gpu_sparse_optimizer = None
-        self.cpu_sparse_embedding = None
-        self.cpu_sparse_optimizer = None
-        self.pending_cpu_sparse_grad = None
+        self.optimizer_parameters = None
         self.loss_func = None
         self.train_dataset_loader = None
         self.loss_history = []
@@ -112,16 +120,24 @@ class TorchFSDPTrainer(AbstractTrainer):
         
         # Setup model with FSDP or manual sharding
         if getattr(self.raw_model, "manual_sharded_entity_training", False):
-            self.model = self.raw_model
-            self._sync_replicated_parameters()
+            self.raw_model.setup_fsdp_sharded_entity_training(
+                device=self.device,
+                use_cpu_sparse_optimizer=self.use_cpu_sparse_optimizer,
+                max_accumulated_sparse_grad_nnz=self.max_accumulated_sparse_grad_nnz,
+                async_stream=self.async_stream,
+            )
+            # Keep the local sparse entity shard outside FSDP; dense parameters are still FSDP-managed.
+            self.model = self._wrap_model_with_fsdp(
+                ignored_modules=self.raw_model.fsdp_ignored_modules(),
+            )
+            optimizer_parameters = self.raw_model.fsdp_dense_optimizer_parameters(self.model)
         else:
             self.model = self._wrap_model_with_fsdp()
+            optimizer_parameters = self.model.parameters()
         
         self.loss_func = model.loss
-        self.optimizer = model.configure_optimizers(parameters=self.model.parameters())
-        
-        if getattr(self.raw_model, "manual_sharded_entity_training", False):
-            self._init_sparse_optimizer()
+        self.optimizer = model.configure_optimizers(parameters=optimizer_parameters)
+        self.optimizer_parameters = self._optimizer_parameters()
         
         # Optional: Compile model for additional speedup (PyTorch 2.0+)
         if self.use_compile and hasattr(torch, 'compile'):
@@ -160,8 +176,8 @@ class TorchFSDPTrainer(AbstractTrainer):
                         )
 
             # Flush any remaining sparse gradients at epoch end
-            if getattr(self.raw_model, "manual_sharded_entity_training", False) and self.use_cpu_sparse_optimizer:
-                self._flush_cpu_sparse_optimizer()
+            if getattr(self.raw_model, "manual_sharded_entity_training", False):
+                self.raw_model.flush_sparse_optimizer()
 
             avg_epoch_loss = epoch_loss / num_of_batches
             self.loss_history.append(avg_epoch_loss)
@@ -172,12 +188,15 @@ class TorchFSDPTrainer(AbstractTrainer):
                 for c in self.callbacks:
                     c.on_train_epoch_end(self, self.raw_model)
 
+        # Full-state materialization and final callbacks are rank-0 only; keep other ranks alive until done.
         dist.barrier()
         trained_model = self._materialize_full_state_on_rank_zero()
-        self.on_fit_end(self, trained_model)
+        if self.global_rank == 0:
+            self.on_fit_end(self, trained_model)
+        dist.barrier()
         return trained_model
 
-    def _wrap_model_with_fsdp(self) -> FSDP:
+    def _wrap_model_with_fsdp(self, ignored_modules=None) -> FSDP:
         """Wrap model with FSDP using optimized configuration."""
         # Mixed precision policy
         mp_policy = MixedPrecision(
@@ -203,6 +222,7 @@ class TorchFSDPTrainer(AbstractTrainer):
             param_init_fn=self._param_init_fn,
             sharding_strategy=strategy,
             mixed_precision=mp_policy,
+            ignored_modules=ignored_modules,
             backward_prefetch=BackwardPrefetch.BACKWARD_PRE,  # Prefetch for better performance
             limit_all_gathers=True,  # Reduce memory spikes
             forward_prefetch=True,  # Prefetch forward passes
@@ -229,12 +249,7 @@ class TorchFSDPTrainer(AbstractTrainer):
     ) -> float:
         """Run batch with manual sharding and sparse optimizer."""
         self.optimizer.zero_grad(set_to_none=True)
-        
-        if self.use_cpu_sparse_optimizer:
-            if self.cpu_sparse_optimizer is not None:
-                self.cpu_sparse_optimizer.zero_grad(set_to_none=True)
-        elif self.gpu_sparse_optimizer is not None:
-            self.gpu_sparse_optimizer.zero_grad(set_to_none=True)
+        self.raw_model.zero_sparse_optimizer_grad()
 
         with self.ctx:
             output = self.model(source)
@@ -244,37 +259,31 @@ class TorchFSDPTrainer(AbstractTrainer):
 
         self.scaler.scale(loss).backward()
 
-        self._sync_replicated_gradients()
-
         self.scaler.unscale_(self.optimizer)
 
         if self.gradient_clip_val is not None:
-            torch.nn.utils.clip_grad_norm_(
-                [p for n, p in self.raw_model.named_parameters() 
-                 if n != "local_entity_embeddings.weight"],
-                self.gradient_clip_val
-            )
+            self._clip_grad_norm(self.optimizer_parameters)
 
         self.scaler.step(self.optimizer)
         self.scaler.update()
 
-        if self.use_cpu_sparse_optimizer:
-            self._accumulate_cpu_sparse_grad()
-            if batch_idx % self.sparse_step_interval == 0:
-                self._flush_cpu_sparse_optimizer()
-        else:
-            self.gpu_sparse_optimizer.step()
-
-        self.raw_model.local_entity_embeddings.weight.grad = None
+        self.raw_model.step_sparse_optimizer(
+            batch_idx=batch_idx,
+            sparse_step_interval=self.sparse_step_interval,
+        )
         
         return batch_loss
 
     def _run_batch_fsdp(self, source: torch.LongTensor, targets: torch.FloatTensor) -> float:
         """Run batch with standard FSDP."""
+        # Zero before forward so a failed batch cannot leak stale gradients into the next batch.
+        self.optimizer.zero_grad(set_to_none=True)
+
         with self.ctx:
             output = self.model(source)
             loss = self.loss_func(output, targets)
-            batch_loss = loss.item()
+
+        batch_loss = loss.item()
         
         self.scaler.scale(loss).backward()
         
@@ -283,123 +292,38 @@ class TorchFSDPTrainer(AbstractTrainer):
         
         # Optional gradient clipping
         if self.gradient_clip_val is not None:
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.gradient_clip_val)
+            self._clip_grad_norm()
         
         self.scaler.step(self.optimizer)
         self.scaler.update()
-        self.optimizer.zero_grad(set_to_none=True)
         
         return batch_loss
 
-    def _init_sparse_optimizer(self) -> None:
-        """Initialize sparse optimizer on CPU or GPU."""
-        if not self.use_cpu_sparse_optimizer:
-            self.gpu_sparse_optimizer = torch.optim.SparseAdam(
-                [self.raw_model.local_entity_embeddings.weight],
-                lr=self.raw_model.learning_rate,
-            )
-            return
-
-        # CPU sparse optimizer with pinned memory for faster transfers
-        local_weight = self.raw_model.local_entity_embeddings.weight.detach().cpu()
-        
-        self.cpu_sparse_embedding = torch.nn.Embedding(
-            local_weight.shape[0],
-            local_weight.shape[1],
-            sparse=True,
-            device="cpu",
-        )
-        
-        # Pin memory for faster CPU-GPU transfers
-        self.cpu_sparse_embedding.weight.data = local_weight.pin_memory()
-        
-        self.cpu_sparse_optimizer = torch.optim.SparseAdam(
-            [self.cpu_sparse_embedding.weight],
-            lr=self.raw_model.learning_rate,
-        )
-
-    def _accumulate_cpu_sparse_grad(self) -> None:
-        """Accumulate sparse gradients on CPU with overflow protection."""
-        sparse_grad = self.raw_model.local_entity_embeddings.weight.grad
-        if sparse_grad is None:
-            return
-
-        sparse_grad = sparse_grad.coalesce()
-        if sparse_grad._nnz() == 0:
-            return
-        
-        # Prevent unbounded accumulation - flush if too many non-zeros
-        if self.pending_cpu_sparse_grad is not None and \
-           self.pending_cpu_sparse_grad._nnz() > self.max_accumulated_sparse_grad_nnz:
-            self._flush_cpu_sparse_optimizer()
-        
-        # Transfer to CPU
-        cpu_grad = torch.sparse_coo_tensor(
-            sparse_grad.indices().cpu(),
-            sparse_grad.values().cpu(),
-            sparse_grad.size(),
-            device="cpu",
-            check_invariants=False,
-        ).coalesce()
-        
-        if self.pending_cpu_sparse_grad is None:
-            self.pending_cpu_sparse_grad = cpu_grad
-            return
-
-        # Accumulate gradients
-        self.pending_cpu_sparse_grad = torch.sparse_coo_tensor(
-            torch.cat((self.pending_cpu_sparse_grad.indices(), cpu_grad.indices()), dim=1),
-            torch.cat((self.pending_cpu_sparse_grad.values(), cpu_grad.values()), dim=0),
-            cpu_grad.size(),
-            device="cpu",
-            check_invariants=False,
-        ).coalesce()
-
-    def _flush_cpu_sparse_optimizer(self) -> None:
-        """Flush accumulated sparse gradients from CPU to GPU asynchronously."""
-        if self.pending_cpu_sparse_grad is None:
-            return
-
-        self.cpu_sparse_optimizer.zero_grad(set_to_none=True)
-        self.cpu_sparse_embedding.weight.grad = self.pending_cpu_sparse_grad
-        self.cpu_sparse_optimizer.step()
-
-        updated_rows = self.pending_cpu_sparse_grad.indices()[0].unique(sorted=True)
-        updated_values = self.cpu_sparse_embedding.weight.data.index_select(0, updated_rows)
-        
-        # Use async stream for non-blocking transfer
-        with torch.cuda.stream(self.async_stream):
-            self.raw_model.local_entity_embeddings.weight.data.index_copy_(
-                0,
-                updated_rows.to(self.device, non_blocking=True),
-                updated_values.to(self.device, non_blocking=True),
-            )
-        
-        # Clear accumulated gradients
-        self.cpu_sparse_embedding.weight.grad = None
-        self.pending_cpu_sparse_grad = None
-
     def extract_input_outputs(self, z: list):
         """Extract inputs and outputs from batch, avoiding redundant pinning."""
-        # DataLoader already pins memory, so we skip redundant pin_memory() calls
-        if len(z) == 2:
-            x_batch, y_batch = z
-            x_batch = x_batch.to(self.device, non_blocking=True)
-            y_batch = y_batch.to(self.device, non_blocking=True)
-            return x_batch, y_batch
-        elif len(z) == 3:
-            x_batch, y_idx_batch, y_batch = z
-            x_batch = x_batch.to(self.device, non_blocking=True)
-            y_batch = y_batch.to(self.device, non_blocking=True)
-            y_idx_batch = y_idx_batch.to(self.device, non_blocking=True)
-            return (x_batch, y_idx_batch), y_batch
-        else:
-            raise ValueError('Unexpected batch shape..')
+        return move_batch_to_device(z, self.device, pin_memory=False)
 
     def _materialize_full_state_on_rank_zero(self) -> torch.nn.Module:
         """Materialize full model state on rank 0 for checkpointing."""
         if getattr(self.raw_model, "manual_sharded_entity_training", False):
-            return self._materialize_sharded_entity_model_on_rank_zero()
+            cfg = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
+            fsdp_model = self._unwrap_optimized_model(self.model)
+            with FSDP.state_dict_type(fsdp_model, StateDictType.FULL_STATE_DICT, cfg):
+                state_dict = fsdp_model.state_dict()
+
+            trained_model = self.raw_model.materialize_sharded_entity_model_on_rank_zero(
+                loss_history=self.loss_history,
+            )
+
+            if self.local_rank == self.global_rank == 0:
+                dense_state_dict = {
+                    key: value for key, value in state_dict.items()
+                    if not key.startswith("local_entity_embeddings.")
+                }
+                trained_model.load_state_dict(dense_state_dict, strict=False)
+
+            # Nonzero ranks participate in collectives but intentionally do not return a usable full model.
+            return trained_model if self.global_rank == 0 else None
         
         cfg = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
         fsdp_model = self._unwrap_optimized_model(self.model)
@@ -410,7 +334,8 @@ class TorchFSDPTrainer(AbstractTrainer):
             self.raw_model.load_state_dict(state_dict, strict=True)
             self.raw_model.loss_history = list(self.loss_history)
         
-        return self.raw_model
+        # Nonzero ranks participate in collectives but intentionally do not return a usable full model.
+        return self.raw_model if self.global_rank == 0 else None
 
     @staticmethod
     def _unwrap_optimized_model(model: torch.nn.Module) -> torch.nn.Module:
@@ -419,43 +344,19 @@ class TorchFSDPTrainer(AbstractTrainer):
             return model._orig_mod
         return model
 
-    def _sync_replicated_parameters(self) -> None:
-        """Synchronize replicated parameters across all ranks."""
-        for name, param in self.raw_model.named_parameters():
-            if name != "local_entity_embeddings.weight":
-                dist.broadcast(param.data, src=0)
+    def _clip_grad_norm(self, parameters=None) -> None:
+        fsdp_model = self._unwrap_optimized_model(self.model)
+        if parameters is None and isinstance(fsdp_model, FSDP):
+            fsdp_model.clip_grad_norm_(self.gradient_clip_val)
+            return
+        # Hybrid sparse mode clips only the dense optimizer params; ignored sparse embeddings are handled separately.
+        if parameters is None:
+            parameters = self.model.parameters()
+        torch.nn.utils.clip_grad_norm_(parameters, self.gradient_clip_val)
 
-    def _sync_replicated_gradients(self) -> None:
-        """Synchronize and average replicated gradients across all ranks."""
-        world_size = dist.get_world_size()
-        for name, param in self.raw_model.named_parameters():
-            if name != "local_entity_embeddings.weight" and param.grad is not None:
-                dist.all_reduce(param.grad, op=dist.ReduceOp.SUM)
-                param.grad.div_(world_size)
-
-    def _materialize_sharded_entity_model_on_rank_zero(self) -> torch.nn.Module:
-        """Gather sharded entity embeddings to rank 0 using CPU objects."""
-        self.async_stream.synchronize()
-        local_weight = self.raw_model.local_entity_embeddings.weight.detach().cpu()
-        is_rank_zero = self.global_rank == 0
-        gathered = [None for _ in range(dist.get_world_size())] if is_rank_zero else None
-        dist.gather_object(local_weight, object_gather_list=gathered, dst=0)
-
-        if is_rank_zero:
-            full_entity_weight = torch.cat(
-                gathered,
-                dim=0,
-            )[: self.raw_model.num_entities]
-            
-            full_entity_embeddings = torch.nn.Embedding(
-                self.raw_model.num_entities, 
-                self.raw_model.embedding_dim
-            )
-            full_entity_embeddings.weight.data.copy_(full_entity_weight)
-            
-            self.raw_model.entity_embeddings = full_entity_embeddings
-            self.raw_model.local_entity_embeddings = None
-            self.raw_model.manual_sharded_entity_training = False
-            self.raw_model.loss_history = list(self.loss_history)
-        
-        return self.raw_model
+    def _optimizer_parameters(self):
+        return [
+            param
+            for param_group in self.optimizer.param_groups
+            for param in param_group["params"]
+        ]
