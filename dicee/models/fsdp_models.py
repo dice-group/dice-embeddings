@@ -70,21 +70,35 @@ class FSDPShardedEntityModel(BaseKGE):
             return super().configure_optimizers(parameters=parameters)
         dense_parameters = [
             param for name, param in self.named_parameters()
-            if name != "local_entity_embeddings.weight"
+            if not self._is_sparse_training_parameter(name)
         ]
         return super().configure_optimizers(parameters=dense_parameters)
 
     def fsdp_ignored_modules(self):
         if not self.manual_sharded_entity_training:
             return []
-        return [self.local_entity_embeddings]
+        ignored_modules = [self.local_entity_embeddings]
+        if self.cpu_sparse_embedding is not None:
+            ignored_modules.append(self.cpu_sparse_embedding)
+        return ignored_modules
 
     def fsdp_dense_optimizer_parameters(self, wrapped_model=None):
         module = wrapped_model if wrapped_model is not None else self
         return [
             param for name, param in module.named_parameters()
-            if "local_entity_embeddings.weight" not in name
+            if not self._is_sparse_training_parameter(name)
         ]
+
+    @staticmethod
+    def _is_sparse_training_parameter(name: str) -> bool:
+        return (
+            "local_entity_embeddings.weight" in name
+            or "cpu_sparse_embedding.weight" in name
+        )
+
+    @staticmethod
+    def fsdp_state_dict_excluded_prefixes() -> Tuple[str, ...]:
+        return ("local_entity_embeddings.", "cpu_sparse_embedding.")
 
     def setup_fsdp_sharded_entity_training(
         self,
@@ -164,35 +178,98 @@ class FSDPShardedEntityModel(BaseKGE):
 
         local_weight = self.local_entity_embeddings.weight.detach().cpu()
         is_rank_zero = not dist.is_initialized() or dist.get_rank() == 0
-        world_size = dist.get_world_size() if dist.is_initialized() else 1
-        gathered = [None for _ in range(world_size)] if is_rank_zero else None
+
+        full_entity_embeddings = None
+        copied_rows = 0
+        if is_rank_zero:
+            if local_weight.shape[1] != self.embedding_dim:
+                raise RuntimeError("Local entity shard has an unexpected embedding dimension.")
+            full_entity_embeddings = torch.nn.Embedding(
+                self.num_entities,
+                self.embedding_dim,
+                device="cpu",
+                dtype=local_weight.dtype,
+            )
+
         if dist.is_initialized():
-            dist.gather_object(local_weight, object_gather_list=gathered, dst=0)
+            gloo_group = dist.new_group(backend="gloo")
+            try:
+                copied_rows = self._materialize_entity_shards_with_gloo(
+                    local_weight=local_weight.contiguous(),
+                    full_entity_embeddings=full_entity_embeddings,
+                    gloo_group=gloo_group,
+                )
+            finally:
+                dist.destroy_process_group(gloo_group)
         else:
-            gathered = [local_weight]
+            shard_rows = min(local_weight.shape[0], self.num_entities)
+            full_entity_embeddings.weight.data[:shard_rows].copy_(local_weight[:shard_rows])
+            copied_rows = shard_rows
 
         if is_rank_zero:
-            expected_dtype = gathered[0].dtype
-            expected_dim = gathered[0].shape[1]
-            if any(weight.dtype != expected_dtype or weight.shape[1] != expected_dim for weight in gathered):
-                raise RuntimeError("Gathered entity shards have inconsistent dtype or embedding dimension.")
-
-            full_entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-            offset = 0
-            for shard_weight in gathered:
-                shard_rows = min(shard_weight.shape[0], self.num_entities - offset)
-                if shard_rows <= 0:
-                    break
-                full_entity_embeddings.weight.data[offset: offset + shard_rows].copy_(shard_weight[:shard_rows])
-                offset += shard_rows
+            if copied_rows != self.num_entities:
+                raise RuntimeError(
+                    f"Materialized {copied_rows} entity rows, expected {self.num_entities}."
+                )
 
             self.entity_embeddings = full_entity_embeddings
             self.local_entity_embeddings = None
+            self.cpu_sparse_embedding = None
+            self.cpu_sparse_optimizer = None
+            self.gpu_sparse_optimizer = None
+            self.pending_cpu_sparse_grad = None
             self.manual_sharded_entity_training = False
             if loss_history is not None:
                 self.loss_history = list(loss_history)
 
         return self
+
+    def _materialize_entity_shards_with_gloo(
+        self,
+        local_weight: torch.Tensor,
+        full_entity_embeddings: torch.nn.Embedding,
+        gloo_group,
+    ) -> int:
+        rank = dist.get_rank()
+        world_size = dist.get_world_size()
+        shard_size = (self.num_entities + world_size - 1) // world_size
+        copied_rows = 0
+
+        for shard_rank in range(world_size):
+            start = shard_rank * shard_size
+            end = min(start + shard_size, self.num_entities)
+            expected_rows = max(0, end - start)
+
+            if rank == 0:
+                if shard_rank == 0:
+                    shard_weight = local_weight
+                else:
+                    shard_weight = torch.empty(
+                        expected_rows,
+                        self.embedding_dim,
+                        dtype=local_weight.dtype,
+                        device="cpu",
+                    )
+                    if expected_rows > 0:
+                        dist.recv(shard_weight, src=shard_rank, group=gloo_group)
+
+                if shard_weight.shape != (expected_rows, self.embedding_dim):
+                    raise RuntimeError(
+                        f"Entity shard {shard_rank} has shape {tuple(shard_weight.shape)}, "
+                        f"expected {(expected_rows, self.embedding_dim)}."
+                    )
+                if expected_rows > 0:
+                    full_entity_embeddings.weight.data[start:end].copy_(shard_weight)
+                copied_rows += expected_rows
+            elif rank == shard_rank and expected_rows > 0:
+                if local_weight.shape != (expected_rows, self.embedding_dim):
+                    raise RuntimeError(
+                        f"Local entity shard has shape {tuple(local_weight.shape)}, "
+                        f"expected {(expected_rows, self.embedding_dim)}."
+                    )
+                dist.send(local_weight, dst=0, group=gloo_group)
+
+        return copied_rows
 
     def _init_sparse_optimizer(self) -> None:
         if not self.fsdp_use_cpu_sparse_optimizer:
@@ -269,7 +346,16 @@ class FSDPShardedEntityModel(BaseKGE):
         return self._distributed_entity_lookup(entity_ids)
 
     def _distributed_entity_lookup(self, entity_ids: torch.LongTensor) -> torch.FloatTensor:
-        unique_entity_ids, inverse_indices = torch.unique(entity_ids, sorted=False, return_inverse=True)
+        flat_entity_ids = entity_ids.contiguous().reshape(-1)
+        if flat_entity_ids.numel() == 0:
+            return torch.empty(
+                *entity_ids.shape,
+                self.embedding_dim,
+                device=entity_ids.device,
+                dtype=self.local_entity_embeddings.weight.dtype,
+            )
+
+        unique_entity_ids = self._global_unique_entity_ids(flat_entity_ids)
         outputs = torch.zeros(
             unique_entity_ids.shape[0],
             self.embedding_dim,
@@ -281,7 +367,41 @@ class FSDPShardedEntityModel(BaseKGE):
             local_ids = unique_entity_ids[mask] - self.local_entity_start
             outputs[mask] = self.local_entity_embeddings(local_ids)
         outputs = _AllReduceSum.apply(outputs)
-        return outputs.index_select(0, inverse_indices)
+        positions = torch.searchsorted(unique_entity_ids, flat_entity_ids)
+        if not torch.equal(unique_entity_ids.index_select(0, positions), flat_entity_ids):
+            raise RuntimeError("Distributed entity lookup failed to map all requested entity ids.")
+        return outputs.index_select(0, positions).reshape(*entity_ids.shape, self.embedding_dim)
+
+    @staticmethod
+    def _global_unique_entity_ids(entity_ids: torch.LongTensor) -> torch.LongTensor:
+        local_unique = torch.unique(entity_ids, sorted=True)
+        if not dist.is_initialized():
+            return local_unique
+
+        local_count = torch.tensor([local_unique.numel()], device=entity_ids.device, dtype=torch.long)
+        counts = [torch.zeros_like(local_count) for _ in range(dist.get_world_size())]
+        dist.all_gather(counts, local_count)
+        counts = torch.cat(counts)
+        max_count = int(counts.max().item())
+        if max_count == 0:
+            return local_unique
+
+        padded = torch.empty(max_count, device=entity_ids.device, dtype=torch.long)
+        if local_unique.numel() > 0:
+            padded[:local_unique.numel()] = local_unique
+        if local_unique.numel() < max_count:
+            padded[local_unique.numel():] = 0
+
+        gathered = [torch.empty_like(padded) for _ in range(dist.get_world_size())]
+        dist.all_gather(gathered, padded)
+        requested_ids = [
+            rank_ids[:int(rank_count.item())]
+            for rank_ids, rank_count in zip(gathered, counts)
+            if int(rank_count.item()) > 0
+        ]
+        if not requested_ids:
+            return local_unique
+        return torch.unique(torch.cat(requested_ids), sorted=True)
 
     def _prime_batch_lookup_cache(self, entity_ids: torch.LongTensor) -> None:
         unique_entity_ids = torch.unique(entity_ids, sorted=True)

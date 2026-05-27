@@ -28,10 +28,14 @@ torch.set_float32_matmul_precision('high')
 def move_batch_to_device(batch: list, device: torch.device, pin_memory: bool = False):
     """Move a Dice dataloader batch to a device."""
 
-    def move(tensor):
+    def move(value):
+        if isinstance(value, tuple):
+            return tuple(move(item) for item in value)
+        if isinstance(value, list):
+            return [move(item) for item in value]
         if pin_memory:
-            tensor = tensor.pin_memory()
-        return tensor.to(device, non_blocking=True)
+            value = value.pin_memory()
+        return value.to(device, non_blocking=True)
 
     if len(batch) == 2:
         x_batch, y_batch = batch
@@ -185,11 +189,13 @@ class TorchFSDPTrainer(AbstractTrainer):
             avg_epoch_loss = epoch_loss / num_of_batches
             self.loss_history.append(avg_epoch_loss)
 
-            # Callbacks on rank 0
+            # Epoch callbacks commonly save or inspect parameters. In manual sharded mode the full
+            # entity table exists only after final materialization, so only expose loss history here.
             if self.local_rank == self.global_rank == 0:
                 self.raw_model.loss_history = list(self.loss_history)
-                for c in self.callbacks:
-                    c.on_train_epoch_end(self, self.raw_model)
+                if not getattr(self.raw_model, "manual_sharded_entity_training", False):
+                    for c in self.callbacks:
+                        c.on_train_epoch_end(self, self.raw_model)
 
         # Full-state materialization and final callbacks are rank-0 only; keep other ranks alive until done.
         dist.barrier()
@@ -265,6 +271,8 @@ class TorchFSDPTrainer(AbstractTrainer):
         self.scaler.unscale_(self.optimizer)
 
         if self.gradient_clip_val is not None:
+            # Manual sharded mode clips dense FSDP-managed parameters only. The sparse entity shard
+            # is ignored by FSDP and updated through its sparse optimizer path.
             self._clip_grad_norm(self.optimizer_parameters)
 
         self.scaler.step(self.optimizer)
@@ -319,9 +327,10 @@ class TorchFSDPTrainer(AbstractTrainer):
             )
 
             if self.local_rank == self.global_rank == 0:
+                excluded_prefixes = self.raw_model.fsdp_state_dict_excluded_prefixes()
                 dense_state_dict = {
                     key: value for key, value in state_dict.items()
-                    if not key.startswith("local_entity_embeddings.")
+                    if not key.startswith(excluded_prefixes)
                 }
                 self._load_dense_state_dict_for_materialized_model(trained_model, dense_state_dict)
 
