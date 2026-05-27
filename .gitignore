@@ -187,3 +187,6 @@ Literal_KGs/
 
 # VS code Stuff
 .vscode/
+
+# Claude local editor/runtime files
+.claude/
