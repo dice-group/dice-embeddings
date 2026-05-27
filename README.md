@@ -87,7 +87,7 @@ A KGE model can be trained with a state-of-the-art training technique ```--train
 dicee --dataset_dir "KGs/UMLS" --trainer "torchCPUTrainer" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism
 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
-# Tensor Parallelism
+# Tensor Parallelism (implements Multiple Run Ensemble Learning with Low-Dimensional Knowledge Graph Embeddings)
 dicee --dataset_dir "KGs/UMLS" --trainer "TP" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism in native torch
 OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" --trainer "torchDDP" --scoring_technique KvsAll --path_to_store_single_run "UMLS_torchDDP"
@@ -1114,6 +1114,13 @@ docker run --rm -v ~/.local/share/dicee/KGs:/dicee/KGs dice-embeddings ./main.py
 Currently, we are working on our manuscript describing our framework. 
 If you really like our work and want to cite it now, feel free to choose one :) 
 ```
+# Tensor Parallelism / Model Parallelism
+@article{demir2024ensemble,
+  title={Multiple Run Ensemble Learning with Low-Dimensional Knowledge Graph Embeddings},
+  author={Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+  journal={Accepted},
+  year={2024}
+}
 #ASWA
 @inproceedings{sapkota2025parameter,
   author    = {Sapkota, Rupesh and Demir, Caglar and Sharma, Arnab and Ngonga Ngomo, Axel-Cyrille},

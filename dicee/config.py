@@ -67,7 +67,7 @@ class Namespace(argparse.Namespace):
         """separator for extracting head, relation and tail from a triple"""
 
         self.trainer: str = 'torchCPUTrainer'
-        """Trainer for knowledge graph embedding model"""
+        """Trainer for knowledge graph embedding model. Options: 'torchCPUTrainer' (CPU/single GPU), 'PL' (PyTorch Lightning multi-GPU), 'torchDDP' (native DDP), 'TP' (Tensor Parallelism - implements 'Multiple Run Ensemble Learning with Low-Dimensional Knowledge Graph Embeddings')"""
 
         self.scoring_technique: str = 'KvsAll'
         """Scoring technique for knowledge graph embedding models"""
