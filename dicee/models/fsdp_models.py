@@ -1,11 +1,36 @@
 import os
-from typing import Tuple
+import weakref
+from typing import Dict, Tuple, Type
 
 import numpy as np
 import torch
 import torch.distributed as dist
 
 from .base_model import BaseKGE
+
+
+_FSDP_SHARDED_MODEL_CACHE: Dict[Type[BaseKGE], Type[BaseKGE]] = {}
+
+
+class _ShardedEntityEmbeddingProxy(torch.nn.Module):
+    """Route embedding lookups through the owning model's distributed shard lookup."""
+
+    def __init__(self, owner):
+        super().__init__()
+        object.__setattr__(self, "_owner_ref", weakref.ref(owner))
+
+    def forward(self, entity_ids: torch.LongTensor) -> torch.FloatTensor:
+        owner = self._owner_ref()
+        if owner is None:
+            raise RuntimeError("The sharded entity embedding owner is no longer available.")
+        return owner._entity_lookup(entity_ids)
+
+    @property
+    def weight(self):
+        raise RuntimeError(
+            "Manual FSDP entity sharding does not expose a full entity embedding weight. "
+            "Use a sample-based scoring technique or materialize the model after training."
+        )
 
 
 class _AllReduceSum(torch.autograd.Function):
@@ -56,6 +81,7 @@ class FSDPShardedEntityModel(BaseKGE):
                 sparse=True,
             )
             self.param_init(self.local_entity_embeddings.weight.data)
+            self.entity_embeddings = _ShardedEntityEmbeddingProxy(self)
 
     @staticmethod
     def _distributed_rank_world_size() -> Tuple[int, int]:
@@ -347,11 +373,15 @@ class FSDPShardedEntityModel(BaseKGE):
             return self.entity_embeddings(entity_ids)
 
         if self._batch_lookup_ids is not None and self._batch_lookup_embeddings is not None:
-            entity_ids = entity_ids.contiguous()
-            positions = torch.searchsorted(self._batch_lookup_ids, entity_ids)
+            original_shape = entity_ids.shape
+            flat_entity_ids = entity_ids.contiguous().reshape(-1)
+            positions = torch.searchsorted(self._batch_lookup_ids, flat_entity_ids)
             positions = positions.clamp(max=self._batch_lookup_ids.numel() - 1)
-            if torch.equal(self._batch_lookup_ids.index_select(0, positions), entity_ids):
-                return self._batch_lookup_embeddings.index_select(0, positions)
+            if torch.equal(self._batch_lookup_ids.index_select(0, positions), flat_entity_ids):
+                return self._batch_lookup_embeddings.index_select(0, positions).reshape(
+                    *original_shape,
+                    self.embedding_dim,
+                )
             raise RuntimeError("Sharded entity lookup cache miss during a cached lookup.")
 
         return self._distributed_entity_lookup(entity_ids)
@@ -423,6 +453,21 @@ class FSDPShardedEntityModel(BaseKGE):
         self._batch_lookup_ids = None
         self._batch_lookup_embeddings = None
 
+    def forward(self, x, y_idx: torch.LongTensor = None) -> torch.FloatTensor:
+        if not self.manual_sharded_entity_training or not isinstance(x, tuple):
+            if y_idx is None:
+                return super().forward(x)
+            return super().forward(x, y_idx)
+
+        source, target_entity_idx = x
+        self._prime_batch_lookup_cache(torch.cat((source[:, 0], target_entity_idx.reshape(-1))))
+        try:
+            if y_idx is None:
+                return super().forward((source, target_entity_idx))
+            return super().forward((source, target_entity_idx), y_idx)
+        finally:
+            self._clear_batch_lookup_cache()
+
     def get_triple_representation(self, idx_hrt):
         if not self.manual_sharded_entity_training:
             return super().get_triple_representation(idx_hrt)
@@ -457,6 +502,22 @@ class FSDPShardedEntityModel(BaseKGE):
 
 
 _FSDPShardedEntityModel = FSDPShardedEntityModel
+
+
+def create_fsdp_sharded_model_class(model_class: Type[BaseKGE]) -> Type[BaseKGE]:
+    """Create a manual entity-sharded FSDP variant for a Dice model class."""
+    if issubclass(model_class, FSDPShardedEntityModel):
+        return model_class
+    if model_class not in _FSDP_SHARDED_MODEL_CACHE:
+        _FSDP_SHARDED_MODEL_CACHE[model_class] = type(
+            f"FSDPSharded{model_class.__name__}",
+            (FSDPShardedEntityModel, model_class),
+            {
+                "__module__": model_class.__module__,
+                "__doc__": f"Manual entity-sharded FSDP variant of {model_class.__name__}.",
+            },
+        )
+    return _FSDP_SHARDED_MODEL_CACHE[model_class]
 
 
 class FSDPDistMult(FSDPShardedEntityModel):
