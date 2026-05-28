@@ -176,7 +176,7 @@ class FSDPShardedEntityModel(BaseKGE):
         if self.fsdp_sharded_async_stream is not None:
             self.fsdp_sharded_async_stream.synchronize()
 
-        local_weight = self.local_entity_embeddings.weight.detach().cpu()
+        local_weight = self.local_entity_embeddings.weight.detach().contiguous()
         is_rank_zero = not dist.is_initialized() or dist.get_rank() == 0
 
         full_entity_embeddings = None
@@ -192,16 +192,12 @@ class FSDPShardedEntityModel(BaseKGE):
             )
 
         if dist.is_initialized():
-            gloo_group = dist.new_group(backend="gloo")
-            try:
-                copied_rows = self._materialize_entity_shards_with_gloo(
-                    local_weight=local_weight.contiguous(),
-                    full_entity_embeddings=full_entity_embeddings,
-                    gloo_group=gloo_group,
-                )
-            finally:
-                dist.destroy_process_group(gloo_group)
+            copied_rows = self._materialize_entity_shards_with_all_gather(
+                local_weight=local_weight,
+                full_entity_embeddings=full_entity_embeddings,
+            )
         else:
+            local_weight = local_weight.cpu()
             shard_rows = min(local_weight.shape[0], self.num_entities)
             full_entity_embeddings.weight.data[:shard_rows].copy_(local_weight[:shard_rows])
             copied_rows = shard_rows
@@ -212,62 +208,77 @@ class FSDPShardedEntityModel(BaseKGE):
                     f"Materialized {copied_rows} entity rows, expected {self.num_entities}."
                 )
 
-            self.entity_embeddings = full_entity_embeddings
-            self.local_entity_embeddings = None
-            self.cpu_sparse_embedding = None
-            self.cpu_sparse_optimizer = None
-            self.gpu_sparse_optimizer = None
-            self.pending_cpu_sparse_grad = None
-            self.manual_sharded_entity_training = False
+            materialized_args = dict(self.args)
+            materialized_args["fsdp_sharded_entity"] = False
+            materialized_model = self.__class__(materialized_args)
+            materialized_model.entity_embeddings = full_entity_embeddings
+            materialized_model.manual_sharded_entity_training = False
             if loss_history is not None:
-                self.loss_history = list(loss_history)
+                materialized_model.loss_history = list(loss_history)
+            return materialized_model
 
         return self
 
-    def _materialize_entity_shards_with_gloo(
+    def _materialize_entity_shards_with_all_gather(
         self,
         local_weight: torch.Tensor,
         full_entity_embeddings: torch.nn.Embedding,
-        gloo_group,
+        chunk_rows: int = 65_536,
     ) -> int:
+        """Gather local entity shards with the existing process group.
+
+        FSDP training initializes NCCL for CUDA tensors. Reusing that group avoids creating a
+        separate Gloo group and keeps every rank in the same collective calls during finalization.
+        """
         rank = dist.get_rank()
         world_size = dist.get_world_size()
         shard_size = (self.num_entities + world_size - 1) // world_size
         copied_rows = 0
 
-        for shard_rank in range(world_size):
-            start = shard_rank * shard_size
-            end = min(start + shard_size, self.num_entities)
-            expected_rows = max(0, end - start)
+        local_start = rank * shard_size
+        local_end = min(local_start + shard_size, self.num_entities)
+        expected_local_rows = max(0, local_end - local_start)
+        if local_weight.shape != (expected_local_rows, self.embedding_dim):
+            raise RuntimeError(
+                f"Local entity shard has shape {tuple(local_weight.shape)}, "
+                f"expected {(expected_local_rows, self.embedding_dim)}."
+            )
 
-            if rank == 0:
-                if shard_rank == 0:
-                    shard_weight = local_weight
-                else:
-                    shard_weight = torch.empty(
-                        expected_rows,
-                        self.embedding_dim,
-                        dtype=local_weight.dtype,
-                        device="cpu",
-                    )
-                    if expected_rows > 0:
-                        dist.recv(shard_weight, src=shard_rank, group=gloo_group)
+        chunk_rows = max(1, min(chunk_rows, shard_size))
+        for chunk_start in range(0, shard_size, chunk_rows):
+            current_chunk_rows = min(chunk_rows, shard_size - chunk_start)
+            chunk = torch.zeros(
+                current_chunk_rows,
+                self.embedding_dim,
+                dtype=local_weight.dtype,
+                device=local_weight.device,
+            )
 
-                if shard_weight.shape != (expected_rows, self.embedding_dim):
-                    raise RuntimeError(
-                        f"Entity shard {shard_rank} has shape {tuple(shard_weight.shape)}, "
-                        f"expected {(expected_rows, self.embedding_dim)}."
-                    )
-                if expected_rows > 0:
-                    full_entity_embeddings.weight.data[start:end].copy_(shard_weight)
-                copied_rows += expected_rows
-            elif rank == shard_rank and expected_rows > 0:
-                if local_weight.shape != (expected_rows, self.embedding_dim):
-                    raise RuntimeError(
-                        f"Local entity shard has shape {tuple(local_weight.shape)}, "
-                        f"expected {(expected_rows, self.embedding_dim)}."
-                    )
-                dist.send(local_weight, dst=0, group=gloo_group)
+            valid_local_end = min(chunk_start + current_chunk_rows, expected_local_rows)
+            valid_local_rows = max(0, valid_local_end - chunk_start)
+            if valid_local_rows > 0:
+                chunk[:valid_local_rows].copy_(local_weight[chunk_start:valid_local_end])
+
+            gathered_chunks = [torch.empty_like(chunk) for _ in range(world_size)]
+            dist.all_gather(gathered_chunks, chunk)
+
+            if rank != 0:
+                continue
+
+            for shard_rank, shard_chunk in enumerate(gathered_chunks):
+                shard_global_start = shard_rank * shard_size
+                shard_global_end = min(shard_global_start + shard_size, self.num_entities)
+                shard_rows = max(0, shard_global_end - shard_global_start)
+                valid_end = min(chunk_start + current_chunk_rows, shard_rows)
+                valid_rows = max(0, valid_end - chunk_start)
+                if valid_rows == 0:
+                    continue
+                destination_start = shard_global_start + chunk_start
+                destination_end = destination_start + valid_rows
+                full_entity_embeddings.weight.data[destination_start:destination_end].copy_(
+                    shard_chunk[:valid_rows].cpu()
+                )
+                copied_rows += valid_rows
 
         return copied_rows
 
