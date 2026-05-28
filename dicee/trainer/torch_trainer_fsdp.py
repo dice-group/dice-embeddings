@@ -67,6 +67,7 @@ class TorchFSDPTrainer(AbstractTrainer):
         self.local_rank = int(os.environ["LOCAL_RANK"])
         self.global_rank = int(os.environ["RANK"])
         self.device = torch.device(f"cuda:{self.local_rank}")
+        torch.cuda.set_device(self.device)
         self.model = None
         self.raw_model = None
         self.optimizer = None
@@ -342,12 +343,14 @@ class TorchFSDPTrainer(AbstractTrainer):
         with FSDP.state_dict_type(fsdp_model, StateDictType.FULL_STATE_DICT, cfg):
             state_dict = fsdp_model.state_dict()
 
-        if self.local_rank == self.global_rank == 0:
-            self.raw_model.load_state_dict(state_dict, strict=True)
-            self.raw_model.loss_history = list(self.loss_history)
+        trained_model = None
+        if self.global_rank == 0:
+            trained_model = self.raw_model.__class__(dict(self.raw_model.args))
+            trained_model.load_state_dict(state_dict, strict=True)
+            trained_model.loss_history = list(self.loss_history)
 
         # Nonzero ranks participate in collectives but intentionally do not return a usable full model.
-        return self.raw_model if self.global_rank == 0 else None
+        return trained_model
 
     @staticmethod
     def _unwrap_optimized_model(model: torch.nn.Module) -> torch.nn.Module:
