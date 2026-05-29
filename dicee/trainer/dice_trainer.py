@@ -315,6 +315,7 @@ class DICE_Trainer:
     def init_dataset(self) -> torch.utils.data.Dataset:
         print('Initializing Dataset...', end='\t')
         if isinstance(self.trainer.dataset,KG):
+            sort_train_set = self.args.trainer != "torchFSDP"
             # Create a memory map of training dataset to reduce the memory usage
             path_memory_map=self.trainer.dataset.path_for_serialization + '/memory_map_train_set.npy'
             if not os.path.exists(path_memory_map):
@@ -342,7 +343,8 @@ class DICE_Trainer:
                                               neg_ratio=self.args.neg_ratio,
                                               label_smoothing_rate=self.args.label_smoothing_rate,
                                               byte_pair_encoding=self.args.byte_pair_encoding,
-                                              block_size=self.args.block_size)
+                                              block_size=self.args.block_size,
+                                              sort_train_set=sort_train_set)
         else:
             assert isinstance(self.trainer.dataset, np.memmap), ("Train dataset must be an instance of memmap. "
                                                                  f"Currently, {type(np.memmap)}!")
@@ -365,7 +367,8 @@ class DICE_Trainer:
                                               label_smoothing_rate=self.args.label_smoothing_rate,
                                               byte_pair_encoding=self.args.byte_pair_encoding,
                                               block_size=self.args.block_size,
-                                              seed=self.args.random_seed)
+                                              seed=self.args.random_seed,
+                                              sort_train_set=self.args.trainer != "torchFSDP")
 
 
         return train_dataset

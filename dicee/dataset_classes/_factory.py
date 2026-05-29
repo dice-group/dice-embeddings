@@ -60,6 +60,7 @@ def construct_dataset(
     byte_pair_encoding=None,
     block_size: int = None,
     seed: int = None,
+    sort_train_set: bool = True,
 ) -> torch.utils.data.Dataset:
     """Build the appropriate dataset for the given training configuration.
 
@@ -126,6 +127,7 @@ def construct_dataset(
             neg_sample_ratio=neg_ratio,
             label_smoothing_rate=label_smoothing_rate,
             seed=seed,
+            sort_train_set=sort_train_set,
         )
     elif scoring_technique == "FixedNegSample":
         train_set = FixedNegSampleDataset(

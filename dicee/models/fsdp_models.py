@@ -8,8 +8,92 @@ import torch.distributed as dist
 
 from .base_model import BaseKGE
 
-
 _FSDP_SHARDED_MODEL_CACHE: Dict[Type[BaseKGE], Type[BaseKGE]] = {}
+
+
+class _CPUSparseRowAdam:
+    """Adam for sparse embedding rows with optimizer state kept on CPU."""
+
+    def __init__(self, lr: float, betas=(0.9, 0.999), eps: float = 1e-8, pin_memory: bool = False):
+        self.lr = lr
+        self.beta1, self.beta2 = betas
+        self.eps = eps
+        self.pin_memory = pin_memory and torch.cuda.is_available()
+        self.step_count = 0
+        self.row_to_state: Dict[int, int] = {}
+        self.exp_avg = None
+        self.exp_avg_sq = None
+
+    def zero_grad(self, set_to_none: bool = True) -> None:
+        return None
+
+    def _empty_state(self, dim: int) -> torch.Tensor:
+        tensor = torch.empty((0, dim), dtype=torch.float32, device="cpu")
+        return tensor.pin_memory() if self.pin_memory else tensor
+
+    def _zeros_state(self, rows: int, dim: int) -> torch.Tensor:
+        tensor = torch.zeros((rows, dim), dtype=torch.float32, device="cpu")
+        return tensor.pin_memory() if self.pin_memory else tensor
+
+    def _state_positions(self, rows: torch.Tensor, dim: int) -> torch.Tensor:
+        if self.exp_avg is None:
+            self.exp_avg = self._empty_state(dim)
+            self.exp_avg_sq = self._empty_state(dim)
+
+        positions = torch.empty(rows.numel(), dtype=torch.long, device="cpu")
+        num_new_rows = 0
+        for i, row in enumerate(rows.tolist()):
+            pos = self.row_to_state.get(row)
+            if pos is None:
+                pos = len(self.row_to_state)
+                self.row_to_state[row] = pos
+                num_new_rows += 1
+            positions[i] = pos
+
+        if num_new_rows:
+            self.exp_avg = torch.cat((self.exp_avg, self._zeros_state(num_new_rows, dim)), dim=0)
+            self.exp_avg_sq = torch.cat((self.exp_avg_sq, self._zeros_state(num_new_rows, dim)), dim=0)
+
+        return positions
+
+    def step_sparse_grad(
+        self,
+        weight: torch.Tensor,
+        sparse_grad: torch.Tensor,
+        device: torch.device,
+        stream: torch.cuda.Stream = None,
+    ) -> None:
+        sparse_grad = sparse_grad.coalesce()
+        if sparse_grad._nnz() == 0:
+            return
+
+        rows = sparse_grad.indices()[0].detach().cpu()
+        grads = sparse_grad.values().detach().cpu().float()
+        positions = self._state_positions(rows, grads.shape[1])
+        self.step_count += 1
+
+        exp_avg = self.exp_avg.index_select(0, positions)
+        exp_avg_sq = self.exp_avg_sq.index_select(0, positions)
+        exp_avg.mul_(self.beta1).add_(grads, alpha=1 - self.beta1)
+        exp_avg_sq.mul_(self.beta2).addcmul_(grads, grads, value=1 - self.beta2)
+
+        self.exp_avg.index_copy_(0, positions, exp_avg)
+        self.exp_avg_sq.index_copy_(0, positions, exp_avg_sq)
+
+        bias_correction1 = 1 - self.beta1 ** self.step_count
+        bias_correction2 = 1 - self.beta2 ** self.step_count
+        rows_on_device = rows.to(device, non_blocking=True)
+        current_values = weight.data.index_select(0, rows_on_device).detach().cpu().float()
+        denom = (exp_avg_sq.sqrt() / (bias_correction2 ** 0.5)).add_(self.eps)
+        updated_values = current_values.addcdiv(exp_avg, denom, value=-(self.lr / bias_correction1))
+        updated_values = updated_values.to(device=device, dtype=weight.dtype, non_blocking=True)
+
+        if stream is None:
+            weight.data.index_copy_(0, rows_on_device, updated_values)
+        else:
+            with torch.cuda.stream(stream):
+                weight.data.index_copy_(0, rows_on_device, updated_values)
+            torch.cuda.current_stream().wait_stream(stream)
 
 
 class _ShardedEntityEmbeddingProxy(torch.nn.Module):
@@ -171,30 +255,12 @@ class FSDPShardedEntityModel(BaseKGE):
         if self.pending_cpu_sparse_grad is None:
             return
 
-        self.cpu_sparse_optimizer.zero_grad(set_to_none=True)
-        self.cpu_sparse_embedding.weight.grad = self.pending_cpu_sparse_grad
-        self.cpu_sparse_optimizer.step()
-
-        updated_rows = self.pending_cpu_sparse_grad.indices()[0].unique(sorted=True)
-        updated_values = self.cpu_sparse_embedding.weight.data.index_select(0, updated_rows)
-
-        stream = self.fsdp_sharded_async_stream
-        if stream is None:
-            self.local_entity_embeddings.weight.data.index_copy_(
-                0,
-                updated_rows.to(self.fsdp_sharded_device, non_blocking=True),
-                updated_values.to(self.fsdp_sharded_device, non_blocking=True),
-            )
-        else:
-            with torch.cuda.stream(stream):
-                self.local_entity_embeddings.weight.data.index_copy_(
-                    0,
-                    updated_rows.to(self.fsdp_sharded_device, non_blocking=True),
-                    updated_values.to(self.fsdp_sharded_device, non_blocking=True),
-                )
-            torch.cuda.current_stream().wait_stream(stream)
-
-        self.cpu_sparse_embedding.weight.grad = None
+        self.cpu_sparse_optimizer.step_sparse_grad(
+            self.local_entity_embeddings.weight,
+            self.pending_cpu_sparse_grad,
+            self.fsdp_sharded_device,
+            self.fsdp_sharded_async_stream,
+        )
         self.pending_cpu_sparse_grad = None
 
     def materialize_sharded_entity_model_on_rank_zero(self, loss_history=None) -> torch.nn.Module:
@@ -316,19 +382,9 @@ class FSDPShardedEntityModel(BaseKGE):
             )
             return
 
-        local_weight = self.local_entity_embeddings.weight.detach().cpu()
-        if torch.cuda.is_available():
-            local_weight = local_weight.pin_memory()
-        self.cpu_sparse_embedding = torch.nn.Embedding(
-            local_weight.shape[0],
-            local_weight.shape[1],
-            sparse=True,
-            device="cpu",
-            _weight=local_weight,
-        )
-        self.cpu_sparse_optimizer = torch.optim.SparseAdam(
-            [self.cpu_sparse_embedding.weight],
+        self.cpu_sparse_optimizer = _CPUSparseRowAdam(
             lr=self.learning_rate,
+            pin_memory=False,
         )
 
     def _accumulate_cpu_sparse_grad(self) -> None:
@@ -518,123 +574,3 @@ def create_fsdp_sharded_model_class(model_class: Type[BaseKGE]) -> Type[BaseKGE]
             },
         )
     return _FSDP_SHARDED_MODEL_CACHE[model_class]
-
-
-class FSDPDistMult(FSDPShardedEntityModel):
-    def __init__(self, args):
-        super().__init__(args)
-        self.name = "DistMult"
-
-    def k_vs_all_score(self, emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor):
-        return torch.mm(self.hidden_dropout(self.hidden_normalizer(emb_h * emb_r)), emb_E.transpose(1, 0))
-
-    def forward_k_vs_all(self, x: torch.LongTensor):
-        if self.manual_sharded_entity_training:
-            raise NotImplementedError("Sharded DistMult currently supports only NegSample training.")
-        emb_head, emb_rel = self.get_head_relation_representation(x)
-        return self.k_vs_all_score(emb_h=emb_head, emb_r=emb_rel, emb_E=self.entity_embeddings.weight)
-
-    def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor):
-        if self.manual_sharded_entity_training:
-            self._prime_batch_lookup_cache(torch.cat((x[:, 0], target_entity_idx.reshape(-1))))
-            try:
-                t = self._entity_lookup(target_entity_idx.reshape(-1)).reshape(target_entity_idx.shape[0], target_entity_idx.shape[1], -1)
-                emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
-            finally:
-                self._clear_batch_lookup_cache()
-            hr = torch.einsum("bd, bd -> bd", emb_head_real, emb_rel_real)
-            return torch.einsum("bd, bkd -> bk", hr, t)
-        emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
-        hr = torch.einsum("bd, bd -> bd", emb_head_real, emb_rel_real)
-        t = self.entity_embeddings(target_entity_idx)
-        return torch.einsum("bd, bkd -> bk", hr, t)
-
-    def score(self, h, r, t):
-        return (self.hidden_dropout(self.hidden_normalizer(h * r)) * t).sum(dim=1)
-
-
-class FSDPComplEx(FSDPShardedEntityModel):
-    def __init__(self, args):
-        super().__init__(args)
-        self.name = "ComplEx"
-
-    @staticmethod
-    def _split_complex(tensor: torch.FloatTensor):
-        if tensor.shape[-1] % 2 != 0:
-            raise ValueError("ComplEx requires an even embedding dimension.")
-        return torch.chunk(tensor, 2, dim=-1)
-
-    @staticmethod
-    def score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor):
-        emb_head_real, emb_head_imag = FSDPComplEx._split_complex(head_ent_emb)
-        emb_rel_real, emb_rel_imag = FSDPComplEx._split_complex(rel_ent_emb)
-        emb_tail_real, emb_tail_imag = FSDPComplEx._split_complex(tail_ent_emb)
-        real_real_real = (emb_head_real * emb_rel_real * emb_tail_real).sum(dim=1)
-        real_imag_imag = (emb_head_real * emb_rel_imag * emb_tail_imag).sum(dim=1)
-        imag_real_imag = (emb_head_imag * emb_rel_real * emb_tail_imag).sum(dim=1)
-        imag_imag_real = (emb_head_imag * emb_rel_imag * emb_tail_real).sum(dim=1)
-        return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
-
-    @staticmethod
-    def k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor):
-        emb_head_real, emb_head_imag = FSDPComplEx._split_complex(emb_h)
-        emb_rel_real, emb_rel_imag = FSDPComplEx._split_complex(emb_r)
-        emb_tail_real, emb_tail_imag = FSDPComplEx._split_complex(emb_E)
-        emb_tail_real, emb_tail_imag = emb_tail_real.transpose(1, 0), emb_tail_imag.transpose(1, 0)
-        real_real_real = torch.mm(emb_head_real * emb_rel_real, emb_tail_real)
-        real_imag_imag = torch.mm(emb_head_real * emb_rel_imag, emb_tail_imag)
-        imag_real_imag = torch.mm(emb_head_imag * emb_rel_real, emb_tail_imag)
-        imag_imag_real = torch.mm(emb_head_imag * emb_rel_imag, emb_tail_real)
-        return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
-
-    def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
-        if self.manual_sharded_entity_training:
-            raise NotImplementedError("Sharded ComplEx currently supports only NegSample training.")
-        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
-        return self.k_vs_all_score(head_ent_emb, rel_ent_emb, self.entity_embeddings.weight)
-
-    def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor):
-        if self.manual_sharded_entity_training:
-            self._prime_batch_lookup_cache(torch.cat((x[:, 0], target_entity_idx.reshape(-1))))
-            try:
-                emb_t = self._entity_lookup(target_entity_idx.reshape(-1)).reshape(target_entity_idx.shape[0], target_entity_idx.shape[1], -1)
-                emb_h, emb_r = self.get_head_relation_representation(x)
-            finally:
-                self._clear_batch_lookup_cache()
-        else:
-            emb_t = self.entity_embeddings(target_entity_idx)
-            emb_h, emb_r = self.get_head_relation_representation(x)
-        emb_head_real, emb_head_imag = self._split_complex(emb_h)
-        emb_rel_real, emb_rel_imag = self._split_complex(emb_r)
-        emb_tail_real, emb_tail_imag = self._split_complex(emb_t)
-        real_real_real = torch.einsum("bd, bkd -> bk", emb_head_real * emb_rel_real, emb_tail_real)
-        real_imag_imag = torch.einsum("bd, bkd -> bk", emb_head_real * emb_rel_imag, emb_tail_imag)
-        imag_real_imag = torch.einsum("bd, bkd -> bk", emb_head_imag * emb_rel_real, emb_tail_imag)
-        imag_imag_real = torch.einsum("bd, bkd -> bk", emb_head_imag * emb_rel_imag, emb_tail_real)
-        return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
-
-
-class FSDPTransE(FSDPShardedEntityModel):
-    def __init__(self, args):
-        super().__init__(args)
-        self.name = "TransE"
-        self._norm = 2
-        self.margin = 4
-
-    def score(self, head_ent_emb, rel_ent_emb, tail_ent_emb):
-        return self.margin - torch.nn.functional.pairwise_distance(
-            head_ent_emb + rel_ent_emb,
-            tail_ent_emb,
-            p=self._norm,
-        )
-
-    def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
-        if self.manual_sharded_entity_training:
-            raise NotImplementedError("Sharded TransE currently supports only NegSample/FixedNegSample training.")
-        emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
-        distance = torch.nn.functional.pairwise_distance(
-            torch.unsqueeze(emb_head_real + emb_rel_real, 1),
-            self.entity_embeddings.weight,
-            p=self._norm,
-        )
-        return self.margin - distance

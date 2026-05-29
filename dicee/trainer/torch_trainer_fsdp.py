@@ -155,6 +155,9 @@ class TorchFSDPTrainer(AbstractTrainer):
 
         num_of_batches = len(self.train_dataset_loader)
 
+        if dist.is_available() and dist.is_initialized():
+            dist.barrier()
+
         # Training loop
         for epoch in (tqdm_bar := make_iterable_verbose(
             range(self.attributes.num_epochs),
