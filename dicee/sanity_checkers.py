@@ -102,8 +102,11 @@ def validate_knowledge_graph(args):
 
 def sanity_checking_with_arguments(args):
     assert args.embedding_dim > 0, f"embedding_dim must be strictly positive. Currently:{args.embedding_dim}"
-    valid_techniques = ["AllvsAll", "1vsSample", "KvsSample", "KvsAll", "FixedNegSample", "NegSample", "1vsAll", "Pyke", "Sentence"]
+    valid_techniques = ["AllvsAll", "1vsSample", "KvsSample", "FSDP1vsSample", "KvsAll", "FixedNegSample", "NegSample", "1vsAll", "Pyke", "Sentence"]
     assert args.scoring_technique in valid_techniques, f"Invalid training strategy => {args.scoring_technique}."
+    if args.scoring_technique == "FSDP1vsSample":
+        assert args.trainer == "torchFSDP", f"{args.scoring_technique} is only supported with --trainer torchFSDP."
+        assert not args.byte_pair_encoding, f"{args.scoring_technique} does not support byte pair encoding."
     assert args.learning_rate > 0, f"Learning rate must be greater than 0. Currently:{args.learning_rate}"
     if args.num_folds_for_cv is None:
         args.num_folds_for_cv = 0

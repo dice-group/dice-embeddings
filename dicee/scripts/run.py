@@ -70,7 +70,7 @@ def get_default_arguments(description=None):
                         help="For torchFSDP sharded sparse embedding updates, run the sparse optimizer on CPU or GPU.")
     parser.add_argument('--scoring_technique', default="NegSample",
                         help="Training technique for knowledge graph embedding model",
-                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "FixedNegSample", "1vsSample", "KvsSample"])
+                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "FixedNegSample", "1vsSample", "KvsSample", "FSDP1vsSample"])
     parser.add_argument('--neg_ratio', type=int, default=2,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')

@@ -100,6 +100,12 @@ class TorchFSDPTrainer(AbstractTrainer):
         # CUDA stream for async operations
         self.async_stream = torch.cuda.Stream()
 
+        scoring_technique = getattr(args, "scoring_technique", None)
+        self.use_gpu_1vs_sample = (
+            scoring_technique == "FSDP1vsSample"
+            and not getattr(args, "byte_pair_encoding", False)
+        )
+
     def fit(self, *args, **kwargs):
         assert len(args) == 1
         model, = args
@@ -316,7 +322,43 @@ class TorchFSDPTrainer(AbstractTrainer):
 
     def extract_input_outputs(self, z: list):
         """Extract inputs and outputs from batch, avoiding redundant pinning."""
+        if self.use_gpu_1vs_sample:
+            return self._create_gpu_1vs_sample_batch(z)
         return move_batch_to_device(z, self.device, pin_memory=False)
+
+    def _create_gpu_1vs_sample_batch(self, positive_triples: torch.Tensor):
+        positive_triples = positive_triples.to(self.device, non_blocking=True)
+        source = positive_triples[:, :2]
+        positive_tail_idx = positive_triples[:, 2:3]
+        size_of_batch = positive_triples.shape[0]
+        neg_ratio = int(getattr(self.attributes, "neg_ratio", 1))
+        label_smoothing_rate = float(getattr(self.attributes, "label_smoothing_rate", 0.0))
+        num_entities = int(self.attributes.num_entities)
+
+        if num_entities <= 1:
+            raise ValueError("FSDP1vsSample requires at least two entities for negative sampling.")
+        negative_tail_idx = torch.randint(
+            1,
+            num_entities,
+            size=(size_of_batch, neg_ratio),
+            device=self.device,
+            dtype=torch.long,
+        )
+        negative_tail_idx = (negative_tail_idx + positive_tail_idx) % num_entities
+        target_entity_idx = torch.cat((positive_tail_idx, negative_tail_idx), dim=1)
+
+        positive_labels = torch.ones(
+            (size_of_batch, 1),
+            device=self.device,
+            dtype=torch.float32,
+        ) - label_smoothing_rate
+        negative_labels = torch.zeros(
+            (size_of_batch, neg_ratio),
+            device=self.device,
+            dtype=torch.float32,
+        ) + label_smoothing_rate
+        labels = torch.cat((positive_labels, negative_labels), dim=1)
+        return (source, target_entity_idx), labels
 
     def _materialize_full_state_on_rank_zero(self) -> torch.nn.Module:
         """Materialize full model state on rank 0 for checkpointing."""

@@ -558,7 +558,7 @@ def intialize_model(args: Dict, verbose: int = 0) -> Tuple[BaseKGE, str]:
         model_class, form_of_labelling = MODEL_REGISTRY[model_name]
         if (
             args.get("trainer") == "torchFSDP"
-            and args.get("scoring_technique") in {"NegSample", "FixedNegSample", "KvsSample"}
+            and args.get("scoring_technique") in {"NegSample", "FixedNegSample", "KvsSample", "FSDP1vsSample"}
             and form_of_labelling == "EntityPrediction"
             and model_name not in {"BytE"}
             and not args.get("byte_pair_encoding", False)
