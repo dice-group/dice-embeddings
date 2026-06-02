@@ -69,7 +69,10 @@ def _resolve_lightning_strategy(args):
         return strategy
 
     if strategy == "auto" and torch.cuda.device_count() > 1:
-        return DDPStrategy(find_unused_parameters=True)
+        # Use the Lightning string alias to enable DDP with unused-parameter
+        # detection. Returning the string ensures consistency with other
+        # string-based strategy selections (e.g. 'ddp').
+        return "ddp_find_unused_parameters_true"
 
     return strategy
 
