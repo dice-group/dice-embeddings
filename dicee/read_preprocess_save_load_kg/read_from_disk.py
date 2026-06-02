@@ -1,7 +1,9 @@
-from .util import read_from_disk, read_from_triple_store_with_pandas, read_from_triple_store_with_polars
 import glob
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+
+from .util import read_from_disk, read_from_triple_store_with_pandas, read_from_triple_store_with_polars
 
 
 class ReadFromDisk:

@@ -236,6 +236,7 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
         neg_sample_ratio: int = 1,
         label_smoothing_rate: float = 0.0,
         seed: int = None,
+        sort_train_set: bool = True,
     ):
         assert isinstance(train_set, np.ndarray)
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
@@ -249,11 +250,14 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
                 torch.cuda.manual_seed_all(self.seed)
             np.random.seed(self.seed)
 
-        # Sort by (head, relation, tail) to ensure order-independent training
-        sorted_indices = np.lexsort(
-            (train_set[:, 2], train_set[:, 1], train_set[:, 0])
-        )
-        self.train_set = train_set[sorted_indices]
+        if sort_train_set:
+            # Sort by (head, relation, tail) to ensure order-independent training.
+            sorted_indices = np.lexsort(
+                (train_set[:, 2], train_set[:, 1], train_set[:, 0])
+            )
+            self.train_set = train_set[sorted_indices]
+        else:
+            self.train_set = train_set
 
         assert num_entities >= max(self.train_set[:, 0]) and num_entities >= max(
             self.train_set[:, 2]

@@ -1,18 +1,20 @@
-from collections import defaultdict
-import numpy as np
-import polars
-import glob
-import time
 import functools
-import pandas as pd
-import pickle
+import glob
 import os
+import pickle
+import time
+from collections import defaultdict
+from multiprocessing import Process, cpu_count
+from typing import Tuple
+
+import numpy as np
+import pandas as pd
+import polars
+import polars as pl
 import psutil
 import requests
-from typing import Tuple
-import polars as pl
-from multiprocessing import Process, cpu_count
 from tqdm import tqdm
+
 
 def polars_dataframe_indexer(df_polars:polars.DataFrame, idx_entity:polars.DataFrame, idx_relation:polars.DataFrame)->polars.DataFrame:
     """
@@ -164,7 +166,7 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
     """Load and Preprocess via Polars"""
     assert separator is not None, "separator cannot be None"
     print(f'*** Reading {data_path} with Polars ***')
-    
+
     if ".zst" in data_path:
         df = polars.read_csv(data_path, n_rows=read_only_few)
     else:
@@ -176,12 +178,12 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
                              dtypes=[polars.String],
                              new_columns=['subject', 'relation', 'object'],
                              separator=separator)
-    
+
     if sample_triples_ratio:
         print(f"Subsampling {sample_triples_ratio} of input data {df.shape}...")
         df = df.sample(frac=sample_triples_ratio)
         print(df.shape)
-    
+
     return _filter_literal_triples(df, "polars")
 
 
@@ -190,7 +192,7 @@ def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio:
     """Load and Preprocess via Pandas"""
     assert separator is not None, "separator cannot be None"
     print(f'*** Reading {data_path} with Pandas ***')
-    
+
     if data_path[-3:] in [".nt", "ttl", 'txt', 'csv', 'zst']:
         df = pd.read_csv(data_path,
                          sep=separator,
@@ -204,11 +206,11 @@ def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio:
         if read_only_few and read_only_few > 0:
             print(f'Reading only few input data {read_only_few}...')
             df = df.head(read_only_few)
-    
+
     if sample_triples_ratio:
         print(f"Subsampling {sample_triples_ratio} of input data...")
         df = df.sample(frac=sample_triples_ratio)
-    
+
     return _filter_literal_triples(df, "pandas")
 
 
@@ -300,7 +302,7 @@ def read_from_triple_store_with_polars(endpoint: str, chunk_size: int = 500000, 
             parquet_files = sorted(files)
             df_polars = pl.read_parquet(parquet_files)
             return df_polars
-    
+
     total_triples = count_triples(endpoint)
     total_chunks = (total_triples + chunk_size - 1) // chunk_size
     print(f"Total triples: {total_triples}, total chunks: {total_chunks}")

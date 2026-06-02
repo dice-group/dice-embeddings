@@ -1,12 +1,23 @@
-from typing import List, Any, Tuple, Union, Dict
+from typing import Any, Dict, List, Tuple, Union
+
 import lightning as pl
 import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
+
 from .adopt import ADOPT
 
+
 class BaseKGELightning(pl.LightningModule):
+    """Thin PyTorch Lightning wrapper shared by all KGE models.
+
+    Provides the standard Lightning training loop hooks (``training_step``,
+    ``on_train_epoch_end``, ``configure_optimizers``) as well as a helper
+    for reporting model size.  All concrete KGE models should extend
+    :class:`BaseKGE` rather than this class directly.
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.training_step_outputs = []
@@ -23,6 +34,24 @@ class BaseKGELightning(pl.LightningModule):
         return {'EstimatedSizeMB': (num_params + buffer_size) / 1024 ** 2, 'NumParam': num_params}
 
     def training_step(self, batch, batch_idx=None):
+        """Execute one optimisation step for the given mini-batch.
+
+        Handles two- and three-element batches produced by the different
+        dataset classes (``KvsAll`` / ``NegSample`` vs. ``KvsSample``).
+
+        Parameters
+        ----------
+        batch : tuple
+            ``(x, y)`` for standard scoring, or ``(x, y_select, y)`` for
+            sample-based labelling.
+        batch_idx : int, optional
+            Index of the current batch (unused, kept for Lightning API compat).
+
+        Returns
+        -------
+        torch.FloatTensor
+            Scalar loss value for this batch.
+        """
         if len(batch)==2:
             # Default
             x_batch, y_batch = batch
@@ -48,17 +77,25 @@ class BaseKGELightning(pl.LightningModule):
                      logger=False)
         return loss_batch
 
-    def loss_function(self, yhat_batch: torch.FloatTensor, y_batch: torch.FloatTensor):
-        """
+    def loss_function(self, yhat_batch: torch.FloatTensor, y_batch: torch.FloatTensor) -> torch.FloatTensor:
+        """Compute the loss between model predictions and targets.
+
+        Delegates to ``self.loss`` which is configured in
+        :class:`BaseKGE.__init__` based on the scoring technique
+        (``BCEWithLogitsLoss`` for entity/relation prediction,
+        ``CrossEntropyLoss`` for classification).
 
         Parameters
         ----------
-        yhat_batch
-        y_batch
+        yhat_batch : torch.FloatTensor
+            Model output scores, shape ``(batch_size, *)``.
+        y_batch : torch.FloatTensor
+            Ground-truth labels of the same shape as *yhat_batch*.
 
         Returns
         -------
-
+        torch.FloatTensor
+            Scalar loss value.
         """
         return self.loss(yhat_batch, y_batch)
 
@@ -87,6 +124,25 @@ class BaseKGELightning(pl.LightningModule):
         pass
 
     def configure_optimizers(self, parameters=None):
+        """Instantiate and return the optimiser for training.
+
+        The optimiser type is taken from ``self.optimizer_name`` which is set
+        in :meth:`BaseKGE.init_params_with_sanity_checking` from the
+        ``--optim`` argument.  Supported values: ``'SGD'``, ``'Adam'``,
+        ``'Adopt'``, ``'AdamW'``, ``'NAdam'``, ``'Adagrad'``, ``'ASGD'``,
+        ``'Muon'``.
+
+        Parameters
+        ----------
+        parameters : iterable, optional
+            Model parameters to optimise.  Defaults to
+            ``self.parameters()`` when ``None``.
+
+        Returns
+        -------
+        torch.optim.Optimizer
+            The configured optimiser instance.
+        """
         if parameters is None:
             parameters = self.parameters()
 
@@ -125,6 +181,27 @@ class BaseKGELightning(pl.LightningModule):
 
 
 class BaseKGE(BaseKGELightning):
+    """Base class for all Knowledge Graph Embedding models.
+
+    Inherits the Lightning training loop from :class:`BaseKGELightning` and
+    adds the embedding tables, normalisation / dropout layers, and the
+    routing logic that dispatches ``forward()`` calls to the appropriate
+    scoring method.
+
+    Sub-classes must implement at minimum:
+
+    * :meth:`forward_triples` — score a batch of ``(h, r, t)`` triples.
+    * :meth:`forward_k_vs_all` — score a ``(h, r)`` batch against every entity.
+
+    Parameters
+    ----------
+    args : dict
+        Flat configuration dictionary produced by
+        ``vars(argparse.Namespace)``.
+        Required keys: ``embedding_dim``, ``num_entities``, ``num_relations``,
+        ``learning_rate`` (or ``lr``), ``optim``, ``scoring_technique``.
+    """
+
     def __init__(self, args: dict):
         super().__init__()
         self.args = args
@@ -160,6 +237,7 @@ class BaseKGE(BaseKGELightning):
         self.byte_pair_encoding = self.args.get("byte_pair_encoding", False)
         self.max_length_subword_tokens = self.args.get("max_length_subword_tokens", None)
         self.block_size=self.args.get("block_size", None)
+        self.defer_large_embeddings = bool(self.args.get("fsdp_sharded_entity", False))
         if self.byte_pair_encoding and self.args['model'] != "BytE":
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
             self.param_init(self.token_embeddings.weight.data)
@@ -176,23 +254,33 @@ class BaseKGE(BaseKGELightning):
         elif self.byte_pair_encoding and self.args['model'] == "BytE":
             """ Transformer implements token embeddings"""
         else:
+            if self.defer_large_embeddings:
+                self.entity_embeddings = None
+                self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
+                self.param_init(self.relation_embeddings.weight.data)
+            else:
+                self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+                self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
+                self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
-            self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-            self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-            self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+    def forward_byte_pair_encoded_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
+        """KvsAll scoring for BPE-encoded head entities and relations.
 
-    def forward_byte_pair_encoded_k_vs_all(self, x: torch.LongTensor):
-        """
+        Retrieves subword-unit embeddings for the head entity and relation,
+        reduces them to fixed-size vectors via a linear projection, then
+        scores against all BPE entity embeddings.
 
         Parameters
         ----------
-        x : B x 2 x T
-
-
+        x : torch.LongTensor
+            Shape ``(batch_size, 2, T)`` BPE token indices where dim 1
+            indexes ``[head, relation]`` and *T* is
+            ``max_length_subword_tokens``.
 
         Returns
         -------
-
+        torch.FloatTensor
+            Shape ``(batch_size, num_bpe_entities)`` score matrix.
         """
         # (1) Get unit normalized subword units embedding matrices: (B, T, D)
         bpe_head_ent_emb, bpe_rel_ent_emb = self.get_bpe_head_and_relation_representation(x)
@@ -226,17 +314,23 @@ class BaseKGE(BaseKGELightning):
         return self.k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
 
 
-    def forward_byte_pair_encoded_triple(self, x: Tuple[torch.LongTensor, torch.LongTensor]):
-        """
-        byte pair encoded neural link predictors
+    def forward_byte_pair_encoded_triple(self, x: Tuple[torch.LongTensor, torch.LongTensor]) -> torch.FloatTensor:
+        """NegSample scoring for BPE-encoded ``(head, relation, tail)`` triples.
+
+        Retrieves subword-unit embeddings for all three elements and reduces
+        them to fixed-size vectors via a linear projection before computing
+        the triple score.
 
         Parameters
         ----------
+        x : torch.LongTensor
+            Shape ``(batch_size, 3, T)`` BPE token indices.
 
+        Returns
         -------
-
+        torch.FloatTensor
+            Shape ``(batch_size,)`` triple scores.
         """
-
         bpe_head_ent_emb, bpe_rel_ent_emb, bpe_tail_ent_emb = self.get_sentence_representation(x)
         B, T, C = bpe_head_ent_emb.shape
         bpe_head_ent_emb = bpe_head_ent_emb.reshape(B, T * C)
@@ -245,7 +339,14 @@ class BaseKGE(BaseKGELightning):
         bpe_triple_score = self.score(self.lf(bpe_head_ent_emb), self.lf(bpe_rel_ent_emb), self.lf(bpe_tail_ent_emb))
         return bpe_triple_score
 
-    def init_params_with_sanity_checking(self):
+    def init_params_with_sanity_checking(self) -> None:
+        """Populate model hyper-parameters from ``self.args`` with safe defaults.
+
+        Reads embedding dimension, learning rate, dropout rates, normalisation
+        strategy, optimizer name, and parameter initialisation scheme from the
+        ``args`` dict.  Falls back to sensible defaults for any missing key so
+        that minimal ``args`` dicts (e.g. for unit tests) are still valid.
+        """
         if self.args.get('weight_decay'):
             self.weight_decay = self.args['weight_decay']
         else:
@@ -290,13 +391,13 @@ class BaseKGE(BaseKGELightning):
             self.normalizer_class = torch.nn.LayerNorm
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim)
-            if self.args['scoring_technique'] in ['NegSample', 'FixedNegSample', 'KvsSample']:
+            if self.args['scoring_technique'] in ['NegSample', 'FixedNegSample', 'KvsSample', 'FSDP1vsSample']:
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
         elif self.args.get("normalization") == 'BatchNorm1d':
             self.normalizer_class = torch.nn.BatchNorm1d
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
-            if self.args['scoring_technique'] in ['NegSample', 'FixedNegSample', 'KvsSample']:
+            if self.args['scoring_technique'] in ['NegSample', 'FixedNegSample', 'KvsSample', 'FSDP1vsSample']:
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
         elif self.args.get("normalization") is None:
             self.normalizer_class = IdentityClass
@@ -314,18 +415,31 @@ class BaseKGE(BaseKGELightning):
             self.optimizer_name = IdentityClass
 
     def forward(self, x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]],
-                y_idx: torch.LongTensor = None):
-        """
+                y_idx: torch.LongTensor = None) -> torch.FloatTensor:
+        """Route the forward pass to the appropriate scoring method.
+
+        Inspects the shape and type of *x* to decide which low-level scorer
+        to call:
+
+        * Tuple ``(x, y_idx)``   → :meth:`forward_k_vs_sample`
+        * ``(batch, 3)`` tensor  → :meth:`forward_triples`
+        * ``(batch, 2)`` tensor  → :meth:`forward_k_vs_all`
+        * BPE triple tensor      → :meth:`forward_byte_pair_encoded_triple`
+        * BPE pair tensor        → :meth:`forward_byte_pair_encoded_k_vs_all`
 
         Parameters
         ----------
-        x
-        y_idx
-        ordered_bpe_entities
+        x : torch.LongTensor or Tuple[torch.LongTensor, torch.LongTensor]
+            Either a plain index tensor or a ``(triple_idx, target_idx)``
+            tuple for sample-based labelling.
+        y_idx : torch.LongTensor, optional
+            Target entity indices used by :meth:`forward_k_vs_sample`.
+            Ignored when *x* is a plain tensor.
 
         Returns
         -------
-
+        torch.FloatTensor
+            Score tensor whose shape depends on the selected scorer.
         """
         if isinstance(x, tuple):
             x, y_idx = x
@@ -350,27 +464,65 @@ class BaseKGE(BaseKGELightning):
                     return self.forward_byte_pair_encoded_k_vs_all(x)
 
     def forward_triples(self, x: torch.LongTensor) -> torch.Tensor:
-        """
+        """Score a batch of ``(head, relation, tail)`` index triples.
 
         Parameters
         ----------
-        x
+        x : torch.LongTensor
+            Shape ``(batch_size, 3)`` integer tensor where each row is
+            ``[head_idx, relation_idx, tail_idx]``.
 
         Returns
         -------
-
+        torch.FloatTensor
+            Shape ``(batch_size,)`` triple scores.
         """
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         h_emb, r_emb, t_emb = self.get_triple_representation(x)
         return self.score(h_emb, r_emb, t_emb)
 
     def forward_k_vs_all(self, *args, **kwargs):
+        """Score a ``(head, relation)`` batch against every entity.
+
+        Sub-classes must override this method.  The default implementation
+        raises ``ValueError`` to make missing overrides obvious at runtime.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Shape ``(batch_size, num_entities)`` score matrix.
+        """
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_all function')
 
     def forward_k_vs_sample(self, *args, **kwargs):
+        """Score a ``(head, relation)`` batch against a sampled subset of entities.
+
+        Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that
+        support sample-based labelling must override this method.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Shape ``(batch_size, k)`` score matrix where *k* is the number
+            of sampled target entities.
+        """
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_sample function')
 
-    def get_triple_representation(self, idx_hrt):
+    def get_triple_representation(self, idx_hrt) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
+        """Retrieve and normalise embedding vectors for a triple index batch.
+
+        Parameters
+        ----------
+        idx_hrt : torch.LongTensor
+            Shape ``(batch_size, 3)`` integer tensor with columns
+            ``[head_idx, relation_idx, tail_idx]``.
+
+        Returns
+        -------
+        head_ent_emb, rel_ent_emb, tail_ent_emb : torch.FloatTensor
+            Each has shape ``(batch_size, embedding_dim)`` after applying the
+            configured dropout and normalisation.
+        """
         # (1) Split input into indexes.
         idx_head_entity, idx_relation, idx_tail_entity = idx_hrt[:, 0], idx_hrt[:, 1], idx_hrt[:, 2]
         # (2) Retrieve embeddings & Apply Dropout & Normalization
@@ -380,7 +532,21 @@ class BaseKGE(BaseKGELightning):
         tail_ent_emb = self.normalize_tail_entity_embeddings(self.entity_embeddings(idx_tail_entity))
         return head_ent_emb, rel_ent_emb, tail_ent_emb
 
-    def get_head_relation_representation(self, indexed_triple):
+    def get_head_relation_representation(self, indexed_triple) -> Tuple[torch.FloatTensor, torch.FloatTensor]:
+        """Retrieve and normalise embedding vectors for head entities and relations.
+
+        Parameters
+        ----------
+        indexed_triple : torch.LongTensor
+            Shape ``(batch_size, 2)`` integer tensor with columns
+            ``[head_idx, relation_idx]``.
+
+        Returns
+        -------
+        head_ent_emb, rel_ent_emb : torch.FloatTensor
+            Each has shape ``(batch_size, embedding_dim)`` after applying the
+            configured dropout and normalisation.
+        """
         # (1) Split input into indexes.
         idx_head_entity, idx_relation = indexed_triple[:, 0], indexed_triple[:, 1]
         # (2) Retrieve embeddings & Apply Dropout & Normalization
@@ -389,16 +555,20 @@ class BaseKGE(BaseKGELightning):
         rel_ent_emb = self.normalize_relation_embeddings(self.input_dp_rel_real(self.relation_embeddings(idx_relation)))
         return head_ent_emb, rel_ent_emb
 
-    def get_sentence_representation(self, x: torch.LongTensor):
-        """
+    def get_sentence_representation(self, x: torch.LongTensor) -> Tuple[
+            torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
+        """Retrieve BPE subword-unit embeddings for a batch of triples.
 
         Parameters
         ----------
-        x shape (b,3,t)
+        x : torch.LongTensor
+            Shape ``(batch_size, 3, T)`` where *T* is
+            ``max_length_subword_tokens``.
 
         Returns
         -------
-
+        head_ent_emb, rel_emb, tail_emb : torch.FloatTensor
+            Each has shape ``(batch_size, T, embedding_dim)``.
         """
         h, r, t = x[:, 0, :], x[:, 1, :], x[:, 2, :]
         head_ent_emb = self.token_embeddings(h)
@@ -407,16 +577,25 @@ class BaseKGE(BaseKGELightning):
         return head_ent_emb, rel_emb, tail_emb
 
     def get_bpe_head_and_relation_representation(self, x: torch.LongTensor) -> Tuple[
-        torch.FloatTensor, torch.FloatTensor]:
-        """
+            torch.FloatTensor, torch.FloatTensor]:
+        """Retrieve unit-normalised BPE embeddings for head entities and relations.
+
+        Each entity/relation is represented as a sequence of *T* subword
+        tokens.  Their token embeddings are L2-normalised across the
+        sequence dimension so that the resulting matrix has unit Frobenius
+        norm.
 
         Parameters
         ----------
-        x : B x 2 x T
+        x : torch.LongTensor
+            Shape ``(batch_size, 2, T)`` where dim 1 indexes
+            ``[head, relation]`` and *T* is ``max_length_subword_tokens``.
 
         Returns
         -------
-
+        head_ent_emb, rel_emb : torch.FloatTensor
+            Each has shape ``(batch_size, T, embedding_dim)``, L2-normalised
+            over the ``(T, D)`` dimensions.
         """
         # h: batchsize, T where T represents the maximum shaped token size
         # h: B x T, r: B x T
@@ -435,19 +614,30 @@ class BaseKGE(BaseKGELightning):
         return head_ent_emb, rel_emb
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
-        """
+        """Return the entity and relation embedding matrices as numpy arrays.
 
         Returns
         -------
-
+        entity_embeddings : numpy.ndarray
+            Shape ``(num_entities, embedding_dim)``.
+        relation_embeddings : numpy.ndarray
+            Shape ``(num_relations, embedding_dim)``.
         """
         return self.entity_embeddings.weight.data.data.detach(), self.relation_embeddings.weight.data.detach()
 
 
 class IdentityClass(torch.nn.Module):
+    """No-op normalisation / dropout placeholder.
+
+    Used whenever no normalisation layer is requested (``--normalization None``).
+    All inputs are returned unchanged so that the rest of the model code does
+    not need conditional checks around normalisation calls.
+    """
+
     def __init__(self, args=None):
         super().__init__()
         self.args = args
+
     def __call__(self, x):
         return x
 

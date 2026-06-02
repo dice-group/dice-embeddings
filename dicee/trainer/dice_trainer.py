@@ -33,6 +33,8 @@ from ..models.ensemble import EnsembleKGE
 from .model_parallelism import TensorParallel
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
+from .torch_trainer_fsdp import TorchFSDPTrainer
+
 
 def load_term_mapping(file_path: str) -> polars.DataFrame:
     """Load term-to-index mapping from CSV file.
@@ -46,41 +48,46 @@ def load_term_mapping(file_path: str) -> polars.DataFrame:
     return polars.read_csv(f"{file_path}.csv")
 
 
-def _resolve_lightning_strategy(args):
-    """Return a Lightning strategy that is safe for models with conditional branches.
+def _cuda_is_usable() -> bool:
+    """Return True only when CUDA can be fully initialised.
 
-    Lightning's default DDP configuration raises when some parameters do not
-    contribute to the current loss. DICE models can legitimately exercise only
-    one scoring path per batch, so DDP needs unused-parameter detection enabled.
+    ``torch.cuda.device_count()`` does not trigger full CUDA runtime init,
+    so it may return >0 even when the runtime is in a broken/corrupted state
+    (e.g. after a kernel crash in a previous test).  Calling
+    ``get_device_name`` forces the actual init and lets us detect the bad
+    state before handing control to PyTorch Lightning.
     """
-    pl_kwargs = getattr(args, "pl_trainer_kwargs", {}) or {}
-    strategy = pl_kwargs.get("strategy", "auto")
+    try:
+        if torch.cuda.device_count() > 0:
+            torch.cuda.get_device_name(0)
+            return True
+    except Exception:
+        pass
+    return False
 
-    if isinstance(strategy, DDPStrategy):
-        if getattr(strategy, "find_unused_parameters", False):
-            return strategy
-        return DDPStrategy(find_unused_parameters=True)
 
-    if isinstance(strategy, str):
-        if strategy == "ddp":
-            return "ddp_find_unused_parameters_true"
-        if strategy.startswith("ddp") and "find_unused_parameters" not in strategy:
-            return DDPStrategy(find_unused_parameters=True)
-        return strategy
+def _disable_cuda_in_process() -> None:
+    """Patch ``torch.cuda.is_available`` to return ``False`` for this process.
 
-    if strategy == "auto" and torch.cuda.device_count() > 1:
-        # Use the Lightning string alias to enable DDP with unused-parameter
-        # detection. Returning the string ensures consistency with other
-        # string-based strategy selections (e.g. 'ddp').
-        return "ddp_find_unused_parameters_true"
+    Lightning's ``_collect_rng_states`` (called from ``isolate_rng``) checks
+    ``torch.cuda.is_available()`` and, when it returns ``True``, calls
+    ``torch.cuda.get_rng_state_all()``.  That triggers a full CUDA runtime
+    init which crashes if the runtime is already in a broken state.  Setting
+    ``accelerator="cpu"`` alone is not sufficient because Lightning still
+    collects CUDA RNG state regardless of the chosen accelerator.
 
-    return strategy
+    This function is only called after ``_cuda_is_usable()`` has already
+    confirmed that the CUDA runtime cannot be initialised, so permanently
+    returning ``False`` from ``is_available`` is both safe and correct for
+    the lifetime of the current process.
+    """
+    torch.cuda.is_available = lambda: False  # type: ignore[assignment]
 
 
 def initialize_trainer(
     args,
     callbacks: List
-) -> Union[TorchTrainer, TensorParallel, TorchDDPTrainer, pl.Trainer]:
+) -> Union[TorchTrainer, TensorParallel, TorchDDPTrainer, TorchFSDPTrainer, pl.Trainer]:
     """Initialize the appropriate trainer based on configuration.
 
     Args:
@@ -93,7 +100,7 @@ def initialize_trainer(
     Raises:
         AssertionError: If trainer is None after initialization.
     """
-    trainer: Optional[Union[TorchTrainer, TensorParallel, TorchDDPTrainer, pl.Trainer]] = None
+    trainer: Optional[Union[TorchTrainer, TensorParallel, TorchDDPTrainer, TorchFSDPTrainer, pl.Trainer]] = None
     if args.trainer == 'torchCPUTrainer':
         print('Initializing TorchTrainer CPU Trainer...', end='\t')
         trainer = TorchTrainer(args, callbacks=callbacks)
@@ -104,13 +111,20 @@ def initialize_trainer(
         assert torch.cuda.is_available()
         print('Initializing TorchDDPTrainer GPU', end='\t')
         trainer = TorchDDPTrainer(args, callbacks=callbacks)
+    elif args.trainer == 'torchFSDP':
+        assert torch.cuda.is_available()
+        print('Initializing TorchFSDPTrainer GPU', end='\t')
+        trainer = TorchFSDPTrainer(args, callbacks=callbacks)
     elif args.trainer == 'PL':
         print('Initializing Pytorch-lightning Trainer', end='\t')
         kwargs = {**vars(args), **(getattr(args, "pl_trainer_kwargs", {}) or {})}
         # NOTE: PyTorch Lightning Trainer has many optional parameters
         # See: https://lightning.ai/docs/pytorch/stable/common/trainer.html
-        trainer = pl.Trainer(accelerator=kwargs.get("accelerator", "auto"),
-                          strategy=_resolve_lightning_strategy(args),
+        # Fall back to CPU when CUDA is unavailable or its context is broken.
+        # _disable_cuda_in_process() was already called above when needed.
+        _default_accelerator = "cpu" if not torch.cuda.is_available() else "auto"
+        trainer = pl.Trainer(accelerator=kwargs.get("accelerator", _default_accelerator),
+                          strategy=kwargs.get("strategy", "auto"),
                           num_nodes=kwargs.get("num_nodes", 1),
                           precision=kwargs.get("precision", None),
                           logger=kwargs.get("logger", None),
@@ -247,7 +261,10 @@ class DICE_Trainer:
               f' # of GPUs:{torch.cuda.device_count()} |'
               f' # of CPUs for dataloader:{self.args.num_core}')
         for i in range(torch.cuda.device_count()):
-            print(torch.cuda.get_device_name(i))
+            try:
+                print(torch.cuda.get_device_name(i))
+            except Exception as exc:
+                print(f'GPU {i}: <unable to query name — {exc}>')
 
     def continual_start(self,knowledge_graph):
         """
@@ -275,7 +292,7 @@ class DICE_Trainer:
         return model, form_of_labelling
 
     @timeit
-    def initialize_trainer(self, callbacks: List) -> pl.Trainer | TensorParallel | TorchTrainer | TorchDDPTrainer:
+    def initialize_trainer(self, callbacks: List) -> pl.Trainer | TensorParallel | TorchTrainer | TorchDDPTrainer | TorchFSDPTrainer:
         """ Initialize Trainer from input arguments """
         return initialize_trainer(self.args, callbacks)
 
@@ -300,6 +317,7 @@ class DICE_Trainer:
     def init_dataset(self) -> torch.utils.data.Dataset:
         print('Initializing Dataset...', end='\t')
         if isinstance(self.trainer.dataset,KG):
+            sort_train_set = self.args.trainer != "torchFSDP"
             # Create a memory map of training dataset to reduce the memory usage
             path_memory_map=self.trainer.dataset.path_for_serialization + '/memory_map_train_set.npy'
             if not os.path.exists(path_memory_map):
@@ -327,7 +345,8 @@ class DICE_Trainer:
                                               neg_ratio=self.args.neg_ratio,
                                               label_smoothing_rate=self.args.label_smoothing_rate,
                                               byte_pair_encoding=self.args.byte_pair_encoding,
-                                              block_size=self.args.block_size)
+                                              block_size=self.args.block_size,
+                                              sort_train_set=sort_train_set)
         else:
             assert isinstance(self.trainer.dataset, np.memmap), ("Train dataset must be an instance of memmap. "
                                                                  f"Currently, {type(np.memmap)}!")
@@ -350,7 +369,8 @@ class DICE_Trainer:
                                               label_smoothing_rate=self.args.label_smoothing_rate,
                                               byte_pair_encoding=self.args.byte_pair_encoding,
                                               block_size=self.args.block_size,
-                                              seed=self.args.random_seed)
+                                              seed=self.args.random_seed,
+                                              sort_train_set=self.args.trainer != "torchFSDP")
 
 
         return train_dataset
@@ -369,7 +389,7 @@ class DICE_Trainer:
         assert isinstance(knowledge_graph, np.memmap) or isinstance(knowledge_graph, KG), \
             f"knowledge_graph must be an instance of KG or np.memmap. Currently {type(knowledge_graph)}"
         if self.args.num_folds_for_cv == 0:
-            self.trainer: Union[TensorParallel, TorchTrainer, TorchDDPTrainer, pl.Trainer]
+            self.trainer: Union[TensorParallel, TorchTrainer, TorchDDPTrainer, TorchFSDPTrainer, pl.Trainer]
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
             model, form_of_labelling = self.initialize_or_load_model()
             self.trainer.evaluator = self.evaluator
@@ -379,9 +399,10 @@ class DICE_Trainer:
 
             if isinstance(self.trainer, TensorParallel):
                 assert isinstance(model, EnsembleKGE), type(model)
-
                 model = self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
                 assert isinstance(model,EnsembleKGE)
+            elif isinstance(self.trainer, TorchFSDPTrainer):
+                model = self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
             else:
                 self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
 

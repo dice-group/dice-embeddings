@@ -13,21 +13,20 @@ import pickle
 import time
 from collections import defaultdict
 from typing import Callable, Dict, List, Optional, Tuple, Type, Union
-import psutil
+
 import numpy as np
 import pandas as pd
 import polars as pl
+import psutil
 import requests
 import torch
 import torch.distributed as dist
 from lightning.pytorch.utilities.rank_zero import rank_zero_only
 
-from .models import (
-    AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ,
-    DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, OMult, Pyke, QMult, Shallom, TransE
-)
+from .models import AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ, DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, OMult, Pyke, QMult, Shallom, TransE
 from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
+from .models.fsdp_models import create_fsdp_sharded_model_class
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
 
@@ -154,14 +153,14 @@ def setup_distributed_training(args) -> Dict[str, Union[bool, int]]:
     trainer_name = getattr(args, "trainer", None)
     required_env_vars = ("LOCAL_RANK", "RANK", "WORLD_SIZE")
     torchrun_launched = all(env_var in os.environ for env_var in required_env_vars)
-    distributed = trainer_name == "torchDDP" or (
+    distributed = trainer_name in {"torchDDP", "torchFSDP"} or (
         trainer_name == "PL" and torchrun_launched
     )
 
-    if trainer_name == "torchDDP" and not torchrun_launched:
+    if trainer_name in {"torchDDP", "torchFSDP"} and not torchrun_launched:
         raise RuntimeError(
-            "torchDDP trainer must be launched with torchrun."
-            "Please use appropriate commands for torchDDP trainer."
+            f"{trainer_name} trainer must be launched with torchrun."
+            f"Please use appropriate commands for {trainer_name} trainer."
         )
 
     if distributed or trainer_name == "PL":
@@ -340,10 +339,12 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
     else:
         if verbose>0:
             print('Loading entity and relation indexes...', end=' ')
-    
-        entity_to_idx = { v["entity"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv",index_col=0,dtype=str).to_dict(orient='index').items()}
 
-        relation_to_idx = { v["relation"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv",index_col=0,dtype=str).to_dict(orient='index').items()}
+        # Use per-column dtype to avoid pandas>=3.0.0 applying dtype=str to the index column
+        # (which would make index values strings instead of ints, breaking downstream assertions)
+        entity_to_idx = { v["entity"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv",index_col=0,dtype={'entity': str}).to_dict(orient='index').items()}
+
+        relation_to_idx = { v["relation"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv",index_col=0,dtype={'relation': str}).to_dict(orient='index').items()}
 
 
         if verbose > 0:
@@ -556,9 +557,28 @@ def intialize_model(args: Dict, verbose: int = 0) -> Tuple[BaseKGE, str]:
     # Use model registry for standard models
     if model_name in MODEL_REGISTRY:
         model_class, form_of_labelling = MODEL_REGISTRY[model_name]
+        if (
+            args.get("trainer") == "torchFSDP"
+            and args.get("scoring_technique") in {"NegSample", "FixedNegSample", "KvsSample", "FSDP1vsSample"}
+            and form_of_labelling == "EntityPrediction"
+            and model_name not in {"BytE"}
+            and not args.get("byte_pair_encoding", False)
+        ):
+            model_class = create_fsdp_sharded_model_class(model_class)
+            args = dict(args)
+            args["fsdp_sharded_entity"] = True
         return model_class(args=args), form_of_labelling
 
-    raise ValueError(f"Unknown model: {model_name}. Available models: {list(MODEL_REGISTRY.keys())}")
+    # Provide helpful error message
+    available_models = ', '.join(sorted(MODEL_REGISTRY.keys())[:10])
+    raise ValueError(
+        f"Unknown model: '{model_name}'\\n"
+        f"\\nAvailable models (showing first 10): {available_models}, ...\\n"
+        f"\\nAll models: {', '.join(sorted(MODEL_REGISTRY.keys()))}\\n"
+        f"\\nFor PyKEEN models, use: --model Pykeen_ModelName\\n"
+        f"  Examples: Pykeen_ComplEx, Pykeen_DistMult, Pykeen_QuatE\\n"
+        f"\\nSee: docs/guides/ or tests/test_regression_*.py for examples\\n"
+    )
 
 
 # Keep backward compatibility - this is now handled by the registry
@@ -913,7 +933,7 @@ def from_pretrained_model_write_embeddings_into_csv(path: str) -> None:
             writer.writerow([name]+ row.tolist())
 
     """
-    
+
     # Write entity embeddings directly to CSV
     with open(entity_csv_path, "w") as f:
         for row in entity_emb:

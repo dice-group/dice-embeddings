@@ -188,3 +188,7 @@ Literal_KGs/
 # VS code Stuff
 .vscode/
 compute_fold_metrics.py
+
+
+# Claude local editor/runtime files
+.claude/

@@ -276,3 +276,38 @@ class KvsSampleDataset(torch.utils.data.Dataset):
             (torch.ones(num_positive_class), torch.zeros(num_negative_class)), 0
         )
         return x, y_idx, y_vec
+
+
+class FSDP1vsSampleDataset(torch.utils.data.Dataset):
+    """Lightweight positive-triple dataset for FSDP GPU-side 1vsSample training."""
+
+    def __init__(
+        self,
+        train_set_idx: np.ndarray,
+        entity_idxs,
+        relation_idxs,
+        form,
+        neg_ratio=None,
+        label_smoothing_rate: float = 0.0,
+    ):
+        super().__init__()
+        assert len(train_set_idx) > 0
+        assert isinstance(train_set_idx, (np.memmap, np.ndarray))
+        assert form == "EntityPrediction"
+        assert neg_ratio is not None
+        self.train_data = train_set_idx
+        self.num_entities = len(entity_idxs)
+        self.num_relations = len(relation_idxs)
+        self.neg_ratio = neg_ratio
+        self.label_smoothing_rate = label_smoothing_rate
+        self.collate_fn = self.collate_positive_triples
+
+    def __len__(self):
+        return len(self.train_data)
+
+    def __getitem__(self, idx):
+        return torch.from_numpy(self.train_data[idx].copy()).long()
+
+    @staticmethod
+    def collate_positive_triples(batch):
+        return torch.stack(batch, dim=0)

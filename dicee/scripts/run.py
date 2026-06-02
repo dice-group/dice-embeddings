@@ -1,6 +1,8 @@
-import json
-from dicee.executer import Execute, ContinuousExecute
 import argparse
+import json
+
+from dicee.executer import ContinuousExecute, Execute
+
 
 def get_default_arguments(description=None):
     """ Extends lightning Trainer's arguments with ours """
@@ -27,8 +29,8 @@ def get_default_arguments(description=None):
     parser.add_argument("--backend", type=str, default="pandas",
                         choices=["pandas", "polars", "rdflib"],
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
-    parser.add_argument("--separator", type=str, default="\s+",
-                        help='Pandas \s+, t for \t polars works with the last two.')
+    parser.add_argument("--separator", type=str, default=r"\s+",
+                        help='Pandas \\s+, t for \t polars works with the last two.')
     parser.add_argument("--reuse_existing_run_dir", action="store_true",
                         help="If set, reuse the existing path_to_store_single_run directory if it exists. "
                              "If not set, the directory will be deleted and recreated if it exists.")
@@ -59,11 +61,16 @@ def get_default_arguments(description=None):
                         help='{"PPE":{ "last_percent_to_consider": 10}}'
                              '"Perturb": {"level": "out", "ratio": 0.2, "method": "RN", "scaler": 0.3}')
     parser.add_argument("--trainer", type=str, default='PL',
-                        choices=['torchCPUTrainer', 'PL', 'torchDDP', "TP"],
-                        help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only), TP (Model Paralelisim)')
+                        choices=['torchCPUTrainer', 'PL', 'torchDDP', 'torchFSDP', "TP"],
+                        help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchFSDP (custom fsdp), torchCPUTrainer (custom cpu only), TP (Model Paralelisim)')
+    parser.add_argument("--fsdp_sparse_step_interval", type=int, default=4,
+                        help="For torchFSDP sharded sparse embedding updates, apply the CPU sparse optimizer every N batches.")
+    parser.add_argument("--fsdp_sparse_optimizer_device", type=str, default="cpu",
+                        choices=["cpu", "gpu"],
+                        help="For torchFSDP sharded sparse embedding updates, run the sparse optimizer on CPU or GPU.")
     parser.add_argument('--scoring_technique', default="NegSample",
                         help="Training technique for knowledge graph embedding model",
-                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "FixedNegSample", "1vsSample", "KvsSample"])
+                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "FixedNegSample", "1vsSample", "KvsSample", "FSDP1vsSample"])
     parser.add_argument('--neg_ratio', type=int, default=2,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
@@ -147,7 +154,7 @@ def get_default_arguments(description=None):
                         help="Find a batch size fitting in GPUs. Only available for TP trainer")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
-    
+
     # Learning rate scheduling with configuration
     parser.add_argument("--adaptive_lr", type=json.loads, default={},
                         help='Enable adaptive learning rate scheduling with configuration. '

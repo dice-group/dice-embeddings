@@ -16,7 +16,7 @@ _core_deps = [
     "numpy==1.26.4",
     "torch>=2.5.1",
     "lightning>=2.5.0.post0",
-    "pandas<=2.3.3",
+    "pandas>=2.1.0",
     "requests>=2.32.3",
     "polars>=0.16.14",
     "tiktoken>=0.5.1",
@@ -39,6 +39,7 @@ _optional_deps = [
 _dev_deps = [
     "pytest>=7.2.2",
     "ruff>=0.0.284",
+    "mypy>=1.0.0",
     "scikit-learn>=1.2.2",
 ]
 

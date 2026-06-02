@@ -1,11 +1,13 @@
-from collections import defaultdict
-from typing import Union, Dict, List, Tuple
-import numpy as np
-import random
 import os
 import pickle
+import random
+from collections import defaultdict
 from copy import deepcopy
-from .static_funcs import save_pickle, load_pickle
+from typing import Dict, List, Tuple, Union
+
+import numpy as np
+
+from .static_funcs import load_pickle, save_pickle
 
 
 class QueryGenerator:

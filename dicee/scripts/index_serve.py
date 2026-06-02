@@ -5,16 +5,16 @@ $ dicee_vector_db --index --serve --path CountryEmbeddings --collection "countri
 """
 import argparse
 import os
+from typing import List, Optional
+
 import numpy as np
 import pandas as pd
-from qdrant_client import QdrantClient
-from qdrant_client.http.models import Distance, VectorParams
-from qdrant_client.http.models import PointStruct
-
-from fastapi import FastAPI
 import uvicorn
+from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import List, Optional
+from qdrant_client import QdrantClient
+from qdrant_client.http.models import Distance, PointStruct, VectorParams
+
 
 def get_default_arguments():
     parser = argparse.ArgumentParser(add_help=False)
