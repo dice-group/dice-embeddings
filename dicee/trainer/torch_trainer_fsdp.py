@@ -25,7 +25,7 @@ except ImportError:
 torch.set_float32_matmul_precision('high')
 
 
-def move_batch_to_device(batch: list, device: torch.device, pin_memory: bool = False):
+def move_batch_to_device(batch: list, device: torch.device):
     """Move a Dice dataloader batch to a device."""
 
     def move(value):
@@ -33,8 +33,6 @@ def move_batch_to_device(batch: list, device: torch.device, pin_memory: bool = F
             return tuple(move(item) for item in value)
         if isinstance(value, list):
             return [move(item) for item in value]
-        if pin_memory:
-            value = value.pin_memory()
         return value.to(device, non_blocking=True)
 
     if len(batch) == 2:
@@ -74,7 +72,6 @@ class TorchFSDPTrainer(AbstractTrainer):
         self.optimizer_parameters = None
         self.loss_func = None
         self.train_dataset_loader = None
-        self.loss_history = []
 
         # Sparse optimizer configuration
         self.sparse_step_interval = max(1, int(getattr(args, "fsdp_sparse_step_interval", 4)))
@@ -84,9 +81,9 @@ class TorchFSDPTrainer(AbstractTrainer):
         # Mixed precision configuration
         ptdtype_str = getattr(args, "precision", "bfloat16")
         ptdtype_map = {'float32': torch.float32, 'bfloat16': torch.bfloat16, 'float16': torch.float16}
-        ptdtype = ptdtype_map.get(ptdtype_str, torch.bfloat16)
-        self.ctx = torch.amp.autocast(device_type="cuda", dtype=ptdtype)
-        self.scaler = torch.amp.GradScaler("cuda", enabled=(ptdtype == torch.float16))
+        self.ptdtype = ptdtype_map.get(ptdtype_str, torch.bfloat16)
+        self.ctx = torch.amp.autocast(device_type="cuda", dtype=self.ptdtype)
+        self.scaler = torch.amp.GradScaler("cuda", enabled=(self.ptdtype == torch.float16))
 
         # FSDP configuration
         self.use_compile = getattr(args, "use_compile", False)
@@ -167,11 +164,13 @@ class TorchFSDPTrainer(AbstractTrainer):
         # Training loop
         for epoch in (tqdm_bar := make_iterable_verbose(
             range(self.attributes.num_epochs),
-            verbose=self.local_rank == self.global_rank == 0,
+            verbose=self.global_rank == 0,
             position=0,
             leave=True,
         )):
             self.train_dataset_loader.sampler.set_epoch(epoch)
+            if self.global_rank == 0:
+                self.on_train_epoch_start(self, self.raw_model)
             epoch_loss = 0.0
 
             for i, z in enumerate(self.train_dataset_loader):
@@ -197,15 +196,11 @@ class TorchFSDPTrainer(AbstractTrainer):
                 self.raw_model.flush_sparse_optimizer()
 
             avg_epoch_loss = epoch_loss / num_of_batches
-            self.loss_history.append(avg_epoch_loss)
+            self.raw_model.loss_history.append(avg_epoch_loss)
 
-            # Epoch callbacks commonly save or inspect parameters. In manual sharded mode the full
-            # entity table exists only after final materialization, so only expose loss history here.
-            if self.local_rank == self.global_rank == 0:
-                self.raw_model.loss_history = list(self.loss_history)
-                if not getattr(self.raw_model, "manual_sharded_entity_training", False):
-                    for c in self.callbacks:
-                        c.on_train_epoch_end(self, self.raw_model)
+            if self.global_rank == 0:
+                for c in self.callbacks:
+                    c.on_train_epoch_end(self, self.raw_model)
 
         # Full-state materialization and final callbacks are rank-0 only; keep other ranks alive until done.
         dist.barrier()
@@ -213,25 +208,20 @@ class TorchFSDPTrainer(AbstractTrainer):
         if self.global_rank == 0:
             self.on_fit_end(self, trained_model)
         dist.barrier()
+        if dist.is_initialized():
+            dist.destroy_process_group()
         return trained_model
 
     def _wrap_model_with_fsdp(self, ignored_modules=None) -> FSDP:
         """Wrap model with FSDP using optimized configuration."""
-        # Mixed precision policy
+        # Mixed precision policy — must match the dtype resolved from args.precision in __init__
         mp_policy = MixedPrecision(
-            param_dtype=torch.bfloat16,
-            reduce_dtype=torch.bfloat16,
-            buffer_dtype=torch.bfloat16,
+            param_dtype=self.ptdtype,
+            reduce_dtype=self.ptdtype,
+            buffer_dtype=self.ptdtype,
         )
 
-        # Sharding strategy
-        sharding_strategy_map = {
-            "FULL_SHARD": ShardingStrategy.FULL_SHARD,
-            "SHARD_GRAD_OP": ShardingStrategy.SHARD_GRAD_OP,
-            "NO_SHARD": ShardingStrategy.NO_SHARD,
-            "HYBRID_SHARD": ShardingStrategy.HYBRID_SHARD,
-        }
-        strategy = sharding_strategy_map.get(self.sharding_strategy, ShardingStrategy.FULL_SHARD)
+        strategy = getattr(ShardingStrategy, self.sharding_strategy, ShardingStrategy.FULL_SHARD)
 
         return FSDP(
             self.raw_model,
@@ -324,7 +314,7 @@ class TorchFSDPTrainer(AbstractTrainer):
         """Extract inputs and outputs from batch, avoiding redundant pinning."""
         if self.use_gpu_1vs_sample:
             return self._create_gpu_1vs_sample_batch(z)
-        return move_batch_to_device(z, self.device, pin_memory=False)
+        return move_batch_to_device(z, self.device)
 
     def _create_gpu_1vs_sample_batch(self, positive_triples: torch.Tensor):
         positive_triples = positive_triples.to(self.device, non_blocking=True)
@@ -337,14 +327,16 @@ class TorchFSDPTrainer(AbstractTrainer):
 
         if num_entities <= 1:
             raise ValueError("FSDP1vsSample requires at least two entities for negative sampling.")
+        # Draw from [0, num_entities-1) then shift by the positive index so every entity
+        # except the true tail has equal probability of being sampled as a negative.
         negative_tail_idx = torch.randint(
-            1,
-            num_entities,
+            0,
+            num_entities - 1,
             size=(size_of_batch, neg_ratio),
             device=self.device,
             dtype=torch.long,
         )
-        negative_tail_idx = (negative_tail_idx + positive_tail_idx) % num_entities
+        negative_tail_idx = (negative_tail_idx + positive_tail_idx + 1) % num_entities
         target_entity_idx = torch.cat((positive_tail_idx, negative_tail_idx), dim=1)
 
         positive_labels = torch.ones(
@@ -362,40 +354,37 @@ class TorchFSDPTrainer(AbstractTrainer):
 
     def _materialize_full_state_on_rank_zero(self) -> torch.nn.Module:
         """Materialize full model state on rank 0 for checkpointing."""
+        state_dict = self._gather_full_state_dict()
+
         if getattr(self.raw_model, "manual_sharded_entity_training", False):
-            cfg = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
-            fsdp_model = self._unwrap_optimized_model(self.model)
-            with FSDP.state_dict_type(fsdp_model, StateDictType.FULL_STATE_DICT, cfg):
-                state_dict = fsdp_model.state_dict()
-
             trained_model = self.raw_model.materialize_sharded_entity_model_on_rank_zero(
-                loss_history=self.loss_history,
+                loss_history=self.raw_model.loss_history,
             )
-
-            if self.local_rank == self.global_rank == 0:
+            if self.global_rank == 0:
                 excluded_prefixes = self.raw_model.fsdp_state_dict_excluded_prefixes()
                 dense_state_dict = {
                     key: value for key, value in state_dict.items()
                     if not key.startswith(excluded_prefixes)
                 }
                 self._load_dense_state_dict_for_materialized_model(trained_model, dense_state_dict)
-
             # Nonzero ranks participate in collectives but intentionally do not return a usable full model.
             return trained_model if self.global_rank == 0 else None
-
-        cfg = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
-        fsdp_model = self._unwrap_optimized_model(self.model)
-        with FSDP.state_dict_type(fsdp_model, StateDictType.FULL_STATE_DICT, cfg):
-            state_dict = fsdp_model.state_dict()
 
         trained_model = None
         if self.global_rank == 0:
             trained_model = self.raw_model.__class__(dict(self.raw_model.args))
             trained_model.load_state_dict(state_dict, strict=True)
-            trained_model.loss_history = list(self.loss_history)
+            trained_model.loss_history = list(self.raw_model.loss_history)
 
         # Nonzero ranks participate in collectives but intentionally do not return a usable full model.
         return trained_model
+
+    def _gather_full_state_dict(self) -> dict:
+        """Collect the full (un-sharded) state dict on rank 0, offloaded to CPU."""
+        cfg = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
+        fsdp_model = self._unwrap_optimized_model(self.model)
+        with FSDP.state_dict_type(fsdp_model, StateDictType.FULL_STATE_DICT, cfg):
+            return fsdp_model.state_dict()
 
     @staticmethod
     def _unwrap_optimized_model(model: torch.nn.Module) -> torch.nn.Module:
