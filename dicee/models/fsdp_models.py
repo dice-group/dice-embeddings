@@ -19,13 +19,27 @@ class _CPUSparseRowAdam:
     the repeated torch.cat + temporary-tensor pattern of the old compact-state
     approach, which could spike RAM by 2× the full state size every time a new
     entity row was encountered.
+
+    state_dtype controls the storage dtype of exp_avg / exp_avg_sq.  bfloat16
+    halves their memory footprint vs float32 while keeping the same dynamic
+    range (8-bit exponent).  The EMA updates are always computed in float32 and
+    rounded back to state_dtype on write, so numerical behaviour is essentially
+    identical to a pure float32 implementation.
     """
 
-    def __init__(self, lr: float, betas=(0.9, 0.999), eps: float = 1e-8, pin_memory: bool = False):
+    def __init__(
+        self,
+        lr: float,
+        betas=(0.9, 0.999),
+        eps: float = 1e-8,
+        pin_memory: bool = False,
+        state_dtype: torch.dtype = torch.bfloat16,
+    ):
         self.lr = lr
         self.beta1, self.beta2 = betas
         self.eps = eps
         self.pin_memory = pin_memory and torch.cuda.is_available()
+        self.state_dtype = state_dtype
         self.step_count = 0
         self.exp_avg = None
         self.exp_avg_sq = None
@@ -37,9 +51,9 @@ class _CPUSparseRowAdam:
         """Allocate Adam state once for the full embedding table — no further reallocation."""
         if self.exp_avg is not None:
             return
-        state = torch.zeros(num_rows, dim, dtype=torch.float32, device="cpu")
+        state = torch.zeros(num_rows, dim, dtype=self.state_dtype, device="cpu")
         self.exp_avg = state.pin_memory() if self.pin_memory else state
-        state2 = torch.zeros(num_rows, dim, dtype=torch.float32, device="cpu")
+        state2 = torch.zeros(num_rows, dim, dtype=self.state_dtype, device="cpu")
         self.exp_avg_sq = state2.pin_memory() if self.pin_memory else state2
 
     def step_dense_grad(
@@ -64,13 +78,15 @@ class _CPUSparseRowAdam:
         self._ensure_state_allocated(num_rows, dim)
         self.step_count += 1
 
-        exp_avg_rows = self.exp_avg[rows]
-        exp_avg_sq_rows = self.exp_avg_sq[rows]
+        # Upcast to float32 for numerically stable EMA updates, then store back
+        # in state_dtype (bfloat16 by default) to halve the memory footprint.
+        exp_avg_rows = self.exp_avg[rows].float()
+        exp_avg_sq_rows = self.exp_avg_sq[rows].float()
         exp_avg_rows.mul_(self.beta1).add_(grads, alpha=1 - self.beta1)
         exp_avg_sq_rows.mul_(self.beta2).addcmul_(grads, grads, value=1 - self.beta2)
 
-        self.exp_avg.index_copy_(0, rows, exp_avg_rows)
-        self.exp_avg_sq.index_copy_(0, rows, exp_avg_sq_rows)
+        self.exp_avg.index_copy_(0, rows, exp_avg_rows.to(self.state_dtype))
+        self.exp_avg_sq.index_copy_(0, rows, exp_avg_sq_rows.to(self.state_dtype))
 
         bias_correction1 = 1 - self.beta1 ** self.step_count
         bias_correction2 = 1 - self.beta2 ** self.step_count
@@ -380,6 +396,7 @@ class FSDPShardedEntityModel(BaseKGE):
         self.cpu_sparse_optimizer = _CPUSparseRowAdam(
             lr=self.learning_rate,
             pin_memory=False,
+            state_dtype=torch.bfloat16,
         )
 
     def _accumulate_cpu_sparse_grad(self) -> None:
