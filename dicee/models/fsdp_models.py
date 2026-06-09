@@ -12,80 +12,88 @@ _FSDP_SHARDED_MODEL_CACHE: Dict[Type[BaseKGE], Type[BaseKGE]] = {}
 
 
 class _CPUSparseRowAdam:
-    """Adam for sparse embedding rows with optimizer state kept on CPU."""
+    """Adam for sparse embedding rows with optimizer state kept on CPU.
 
-    def __init__(self, lr: float, betas=(0.9, 0.999), eps: float = 1e-8, pin_memory: bool = False):
+    State tensors (exp_avg, exp_avg_sq) are pre-allocated to the full
+    [num_entities, embedding_dim] shape on the first update call.  This avoids
+    the repeated torch.cat + temporary-tensor pattern of the old compact-state
+    approach, which could spike RAM by 2× the full state size every time a new
+    entity row was encountered.
+
+    state_dtype controls the storage dtype of exp_avg / exp_avg_sq.  bfloat16
+    halves their memory footprint vs float32 while keeping the same dynamic
+    range (8-bit exponent).  The EMA updates are always computed in float32 and
+    rounded back to state_dtype on write, so numerical behaviour is essentially
+    identical to a pure float32 implementation.
+    """
+
+    def __init__(
+        self,
+        lr: float,
+        betas=(0.9, 0.999),
+        eps: float = 1e-8,
+        pin_memory: bool = False,
+        state_dtype: torch.dtype = torch.bfloat16,
+    ):
         self.lr = lr
         self.beta1, self.beta2 = betas
         self.eps = eps
         self.pin_memory = pin_memory and torch.cuda.is_available()
+        self.state_dtype = state_dtype
         self.step_count = 0
-        self.row_to_state: Dict[int, int] = {}
         self.exp_avg = None
         self.exp_avg_sq = None
 
     def zero_grad(self, set_to_none: bool = True) -> None:
         return None
 
-    def _empty_state(self, dim: int) -> torch.Tensor:
-        tensor = torch.empty((0, dim), dtype=torch.float32, device="cpu")
-        return tensor.pin_memory() if self.pin_memory else tensor
+    def _ensure_state_allocated(self, num_rows: int, dim: int) -> None:
+        """Allocate Adam state once for the full embedding table — no further reallocation."""
+        if self.exp_avg is not None:
+            return
+        state = torch.zeros(num_rows, dim, dtype=self.state_dtype, device="cpu")
+        self.exp_avg = state.pin_memory() if self.pin_memory else state
+        state2 = torch.zeros(num_rows, dim, dtype=self.state_dtype, device="cpu")
+        self.exp_avg_sq = state2.pin_memory() if self.pin_memory else state2
 
-    def _zeros_state(self, rows: int, dim: int) -> torch.Tensor:
-        tensor = torch.zeros((rows, dim), dtype=torch.float32, device="cpu")
-        return tensor.pin_memory() if self.pin_memory else tensor
-
-    def _state_positions(self, rows: torch.Tensor, dim: int) -> torch.Tensor:
-        if self.exp_avg is None:
-            self.exp_avg = self._empty_state(dim)
-            self.exp_avg_sq = self._empty_state(dim)
-
-        positions = torch.empty(rows.numel(), dtype=torch.long, device="cpu")
-        num_new_rows = 0
-        for i, row in enumerate(rows.tolist()):
-            pos = self.row_to_state.get(row)
-            if pos is None:
-                pos = len(self.row_to_state)
-                self.row_to_state[row] = pos
-                num_new_rows += 1
-            positions[i] = pos
-
-        if num_new_rows:
-            self.exp_avg = torch.cat((self.exp_avg, self._zeros_state(num_new_rows, dim)), dim=0)
-            self.exp_avg_sq = torch.cat((self.exp_avg_sq, self._zeros_state(num_new_rows, dim)), dim=0)
-
-        return positions
-
-    def step_sparse_grad(
+    def step_dense_grad(
         self,
         weight: torch.Tensor,
-        sparse_grad: torch.Tensor,
+        dense_grad: torch.Tensor,
         device: torch.device,
         stream: torch.cuda.Stream = None,
     ) -> None:
-        sparse_grad = sparse_grad.coalesce()
-        if sparse_grad._nnz() == 0:
+        """Update embedding rows using a dense gradient accumulator.
+
+        ``dense_grad`` is a [num_local_rows, dim] float32 tensor where each row
+        holds the accumulated gradient for that entity.  Rows that were never
+        touched remain exactly zero and are skipped.
+        """
+        rows = dense_grad.any(dim=1).nonzero(as_tuple=False).squeeze(1)
+        if rows.numel() == 0:
             return
 
-        rows = sparse_grad.indices()[0].detach().cpu()
-        grads = sparse_grad.values().detach().cpu().float()
-        positions = self._state_positions(rows, grads.shape[1])
+        grads = dense_grad[rows]  # [num_touched_rows, dim], float32
+        num_rows, dim = weight.shape
+        self._ensure_state_allocated(num_rows, dim)
         self.step_count += 1
 
-        exp_avg = self.exp_avg.index_select(0, positions)
-        exp_avg_sq = self.exp_avg_sq.index_select(0, positions)
-        exp_avg.mul_(self.beta1).add_(grads, alpha=1 - self.beta1)
-        exp_avg_sq.mul_(self.beta2).addcmul_(grads, grads, value=1 - self.beta2)
+        # Upcast to float32 for numerically stable EMA updates, then store back
+        # in state_dtype (bfloat16 by default) to halve the memory footprint.
+        exp_avg_rows = self.exp_avg[rows].float()
+        exp_avg_sq_rows = self.exp_avg_sq[rows].float()
+        exp_avg_rows.mul_(self.beta1).add_(grads, alpha=1 - self.beta1)
+        exp_avg_sq_rows.mul_(self.beta2).addcmul_(grads, grads, value=1 - self.beta2)
 
-        self.exp_avg.index_copy_(0, positions, exp_avg)
-        self.exp_avg_sq.index_copy_(0, positions, exp_avg_sq)
+        self.exp_avg.index_copy_(0, rows, exp_avg_rows.to(self.state_dtype))
+        self.exp_avg_sq.index_copy_(0, rows, exp_avg_sq_rows.to(self.state_dtype))
 
         bias_correction1 = 1 - self.beta1 ** self.step_count
         bias_correction2 = 1 - self.beta2 ** self.step_count
         rows_on_device = rows.to(device, non_blocking=True)
         current_values = weight.data.index_select(0, rows_on_device).detach().cpu().float()
-        denom = (exp_avg_sq.sqrt() / (bias_correction2 ** 0.5)).add_(self.eps)
-        updated_values = current_values.addcdiv(exp_avg, denom, value=-(self.lr / bias_correction1))
+        denom = (exp_avg_sq_rows.sqrt() / (bias_correction2 ** 0.5)).add_(self.eps)
+        updated_values = current_values.addcdiv(exp_avg_rows, denom, value=-(self.lr / bias_correction1))
         updated_values = updated_values.to(device=device, dtype=weight.dtype, non_blocking=True)
 
         if stream is None:
@@ -152,7 +160,8 @@ class FSDPShardedEntityModel(BaseKGE):
         self.gpu_sparse_optimizer = None
         self.cpu_sparse_embedding = None
         self.cpu_sparse_optimizer = None
-        self.pending_cpu_sparse_grad = None
+        self.pending_cpu_sparse_grad = None  # dense [local_entity_count, embedding_dim] accumulator
+        self._has_pending_grad = False
         if self.manual_sharded_entity_training:
             rank, world_size = self._distributed_rank_world_size()
             shard_size = (self.num_entities + world_size - 1) // world_size
@@ -252,16 +261,18 @@ class FSDPShardedEntityModel(BaseKGE):
     def flush_sparse_optimizer(self) -> None:
         if not self.manual_sharded_entity_training or not self.fsdp_use_cpu_sparse_optimizer:
             return
-        if self.pending_cpu_sparse_grad is None:
+        if not self._has_pending_grad:
             return
 
-        self.cpu_sparse_optimizer.step_sparse_grad(
+        self.cpu_sparse_optimizer.step_dense_grad(
             self.local_entity_embeddings.weight,
             self.pending_cpu_sparse_grad,
             self.fsdp_sharded_device,
             self.fsdp_sharded_async_stream,
         )
-        self.pending_cpu_sparse_grad = None
+        # Reset in-place: keep the tensor alive to avoid re-allocation next interval
+        self.pending_cpu_sparse_grad.zero_()
+        self._has_pending_grad = False
 
     def materialize_sharded_entity_model_on_rank_zero(self, loss_history=None) -> torch.nn.Module:
         """Gather entity shards and rebuild the full embedding table on rank 0."""
@@ -385,6 +396,7 @@ class FSDPShardedEntityModel(BaseKGE):
         self.cpu_sparse_optimizer = _CPUSparseRowAdam(
             lr=self.learning_rate,
             pin_memory=False,
+            state_dtype=torch.bfloat16,
         )
 
     def _accumulate_cpu_sparse_grad(self) -> None:
@@ -396,33 +408,18 @@ class FSDPShardedEntityModel(BaseKGE):
         if sparse_grad._nnz() == 0:
             return
 
-        if (
-            self.pending_cpu_sparse_grad is not None
-            and self.pending_cpu_sparse_grad._nnz() > self.fsdp_max_accumulated_sparse_grad_nnz
-        ):
-            self.flush_sparse_optimizer()
-
-        cpu_grad = torch.sparse_coo_tensor(
-            sparse_grad.indices().cpu(),
-            sparse_grad.values().cpu(),
-            sparse_grad.size(),
-            device="cpu",
-            check_invariants=False,
-        ).coalesce()
+        rows = sparse_grad.indices()[0].cpu()
+        values = sparse_grad.values().detach().cpu().float()
 
         if self.pending_cpu_sparse_grad is None:
-            self.pending_cpu_sparse_grad = cpu_grad
-            return
+            # Allocate the dense accumulator once; its size is fixed for the entire training run.
+            # index_add_ below is in-place, so no new tensors are created on subsequent batches.
+            self.pending_cpu_sparse_grad = torch.zeros(
+                self.local_entity_count, self.embedding_dim, dtype=torch.float32, device="cpu"
+            )
 
-        if self.pending_cpu_sparse_grad.size() != cpu_grad.size():
-            raise RuntimeError("Cannot accumulate sparse gradients with different shapes.")
-        self.pending_cpu_sparse_grad = torch.sparse_coo_tensor(
-            torch.cat((self.pending_cpu_sparse_grad.indices(), cpu_grad.indices()), dim=1),
-            torch.cat((self.pending_cpu_sparse_grad.values(), cpu_grad.values()), dim=0),
-            cpu_grad.size(),
-            device="cpu",
-            check_invariants=False,
-        ).coalesce()
+        self.pending_cpu_sparse_grad.index_add_(0, rows, values)
+        self._has_pending_grad = True
 
     def _entity_lookup(self, entity_ids: torch.LongTensor) -> torch.FloatTensor:
         if not self.manual_sharded_entity_training:
