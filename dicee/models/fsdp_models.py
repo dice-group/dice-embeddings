@@ -255,7 +255,6 @@ class RowWiseShardedEmbedding(nn.Module):
     def forward(self, entity_ids: torch.LongTensor) -> torch.FloatTensor:
         original_shape = entity_ids.shape
         flat = entity_ids.reshape(-1)     # [N]
-        N    = flat.numel()
 
         # Which rank owns each requested index?
         owner_ranks = (flat // self.shard_size).clamp(0, self.world_size - 1)

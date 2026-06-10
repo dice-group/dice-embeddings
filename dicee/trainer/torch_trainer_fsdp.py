@@ -506,8 +506,8 @@ class TorchFSDPTrainer(AbstractTrainer):
         before the base scoring class in the MRO.  We want the first BaseKGE
         subclass that is not TorchRecShardedEntityModel.
         """
-        from dicee.models.fsdp_models import TorchRecShardedEntityModel
         from dicee.models.base_model import BaseKGE, BaseKGELightning
+        from dicee.models.fsdp_models import TorchRecShardedEntityModel
 
         _skip = {TorchRecShardedEntityModel, BaseKGE, BaseKGELightning}
         for cls in type(self.raw_model).__mro__:
