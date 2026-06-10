@@ -26,7 +26,7 @@ from lightning.pytorch.utilities.rank_zero import rank_zero_only
 from .models import AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ, DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, OMult, Pyke, QMult, Shallom, TransE
 from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
-from .models.fsdp_models import create_fsdp_sharded_model_class
+from .models.fsdp_models import create_torchrec_sharded_model_class
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
 
@@ -556,14 +556,14 @@ def intialize_model(args: Dict, verbose: int = 0) -> Tuple[BaseKGE, str]:
     # Use model registry for standard models
     if model_name in MODEL_REGISTRY:
         model_class, form_of_labelling = MODEL_REGISTRY[model_name]
-        if (
-            args.get("trainer") == "torchFSDP"
-            and args.get("scoring_technique") in {"NegSample", "FixedNegSample", "KvsSample", "FSDP1vsSample"}
-            and form_of_labelling == "EntityPrediction"
-            and model_name not in {"BytE"}
-            and not args.get("byte_pair_encoding", False)
-        ):
-            model_class = create_fsdp_sharded_model_class(model_class)
+        _is_sample_technique = args.get("scoring_technique") in {
+            "NegSample", "FixedNegSample", "KvsSample", "FSDP1vsSample"
+        }
+        _entity_prediction = form_of_labelling == "EntityPrediction"
+        _no_bpe = model_name not in {"BytE"} and not args.get("byte_pair_encoding", False)
+
+        if args.get("trainer") == "torchFSDP" and _is_sample_technique and _entity_prediction and _no_bpe:
+            model_class = create_torchrec_sharded_model_class(model_class)
             args = dict(args)
             args["fsdp_sharded_entity"] = True
         return model_class(args=args), form_of_labelling
