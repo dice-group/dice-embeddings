@@ -155,7 +155,7 @@ class TorchFSDPTrainer(AbstractTrainer):
             "bfloat16": torch.bfloat16,
             "float16": torch.float16,
         }
-        self.ptdtype = ptdtype_map.get(fsdp_kwargs.get("precision", "bfloat16"), torch.bfloat16)
+        self.ptdtype = ptdtype_map.get(fsdp_kwargs.get("precision", "float32"), torch.float32)
         self.ctx = torch.amp.autocast(device_type="cuda", dtype=self.ptdtype)
         self.scaler = torch.amp.GradScaler("cuda", enabled=(self.ptdtype == torch.float16))
 
@@ -167,14 +167,7 @@ class TorchFSDPTrainer(AbstractTrainer):
         self.num_workers = fsdp_kwargs.get("num_workers", self.attributes.num_core)
         self.prefetch_factor = fsdp_kwargs.get("prefetch_factor", 4)
 
-        # Scoring technique
-        scoring_technique = getattr(args, "scoring_technique", None)
-        self.use_gpu_1vs_sample = (
-            scoring_technique == "FSDP1vsSample"
-            and not getattr(args, "byte_pair_encoding", False)
-        )
-
-        _optim_dev = fsdp_kwargs.get("fsdp_optim_device", "gpu")
+        _optim_dev = fsdp_kwargs.get("fsdp_optim_device", "cpu")
         self.entity_optim_device = (
             torch.device(f"cuda:{self.local_rank}") if _optim_dev == "gpu"
             else torch.device("cpu")
@@ -401,42 +394,7 @@ class TorchFSDPTrainer(AbstractTrainer):
     # ------------------------------------------------------------------
 
     def extract_input_outputs(self, z):
-        if self.use_gpu_1vs_sample:
-            return self._create_gpu_1vs_sample_batch(z)
         return _move_to_device(z, self.device)
-
-    def _create_gpu_1vs_sample_batch(self, positive_triples: torch.Tensor):
-        positive_triples = positive_triples.to(self.device, non_blocking=True)
-        source = positive_triples[:, :2]
-        positive_tail_idx = positive_triples[:, 2:3]
-        size_of_batch = positive_triples.shape[0]
-        neg_ratio = int(getattr(self.attributes, "neg_ratio", 1))
-        label_smoothing_rate = float(getattr(self.attributes, "label_smoothing_rate", 0.0))
-        num_entities = int(self.attributes.num_entities)
-
-        if num_entities <= 1:
-            raise ValueError("FSDP1vsSample requires at least two entities.")
-
-        negative_tail_idx = torch.randint(
-            0,
-            num_entities - 1,
-            size=(size_of_batch, neg_ratio),
-            device=self.device,
-            dtype=torch.long,
-        )
-        negative_tail_idx = (negative_tail_idx + positive_tail_idx + 1) % num_entities
-        target_entity_idx = torch.cat((positive_tail_idx, negative_tail_idx), dim=1)
-
-        positive_labels = (
-            torch.ones((size_of_batch, 1), device=self.device, dtype=torch.float32)
-            - label_smoothing_rate
-        )
-        negative_labels = (
-            torch.zeros((size_of_batch, neg_ratio), device=self.device, dtype=torch.float32)
-            + label_smoothing_rate
-        )
-        labels = torch.cat((positive_labels, negative_labels), dim=1)
-        return (source, target_entity_idx), labels
 
     # ------------------------------------------------------------------
     # FSDP for dense parameters

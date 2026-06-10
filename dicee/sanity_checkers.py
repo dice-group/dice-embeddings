@@ -109,6 +109,33 @@ def sanity_checking_with_arguments(args):
             f"{args.scoring_technique} is only supported with --trainer torchFSDP."
         )
         assert not args.byte_pair_encoding, f"{args.scoring_technique} does not support byte pair encoding."
+
+    if args.trainer == "torchFSDP":
+        _fsdp_supported_techniques = {"NegSample", "FixedNegSample", "KvsSample", "FSDP1vsSample"}
+        if args.scoring_technique not in _fsdp_supported_techniques:
+            raise NotImplementedError(
+                f"torchFSDP only supports sample-based scoring techniques "
+                f"({', '.join(sorted(_fsdp_supported_techniques))}). "
+                f"Got: '{args.scoring_technique}'. "
+                f"AllvsAll / KvsAll / 1vsAll require the full entity table on every rank, "
+                f"which is incompatible with row-wise entity sharding."
+            )
+        if args.byte_pair_encoding or args.model == "BytE":
+            raise NotImplementedError(
+                "torchFSDP does not support byte pair encoding. "
+                "The entity embedding table must be a standard nn.Embedding for row-wise sharding."
+            )
+        if args.model.startswith("Pykeen_"):
+            raise NotImplementedError(
+                f"torchFSDP does not support PyKEEN models (got '{args.model}'). "
+                "PyKEEN models do not inherit from BaseKGE and cannot use row-wise entity sharding."
+            )
+        if args.model == "Shallom":
+            raise NotImplementedError(
+                "torchFSDP does not support Shallom. "
+                "Shallom uses RelationPrediction form; FSDP entity sharding requires EntityPrediction models."
+            )
+
     assert args.learning_rate > 0, f"Learning rate must be greater than 0. Currently:{args.learning_rate}"
     if args.num_folds_for_cv is None:
         args.num_folds_for_cv = 0
