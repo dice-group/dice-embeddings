@@ -1,6 +1,8 @@
 """InductiveKGModel: per-triple encoder + permutation-invariant SAB stack (spec §5)."""
 from __future__ import annotations
 
+from pathlib import Path
+
 import torch
 import torch.nn as nn
 
@@ -88,3 +90,40 @@ class InductiveKGModel(nn.Module):
         target_emb = tr + tt
         feats = torch.cat([pooled, target_emb, pooled * target_emb], dim=-1)
         return self.classifier(feats).squeeze(-1)
+
+
+# --- bundle helpers (shared by train / eval / predict) --------------------
+
+def resolve_device(cfg: dict) -> torch.device:
+    """Honour cfg['device'] but fall back to CPU when CUDA is unavailable."""
+    return torch.device(cfg.get("device", "cpu") if torch.cuda.is_available() else "cpu")
+
+
+def build_model(cfg: dict, vocab: dict[str, int], device: torch.device) -> "InductiveKGModel":
+    """Construct an InductiveKGModel from a config dict and vocab."""
+    return InductiveKGModel(
+        vocab_size=len(vocab),
+        x_token_id=vocab["[X]"],
+        d_model=cfg["d_model"],
+        n_heads=cfg["n_heads"],
+        n_triple_layers=cfg["n_triple_layers"],
+        n_sab=cfg["n_sab"],
+        dropout=cfg["dropout"],
+    ).to(device)
+
+
+def load_bundle(
+    model_path: str | Path,
+) -> tuple["InductiveKGModel", dict, set[str], dict, torch.device]:
+    """Load a self-contained {model, vocab, fixed_values, cfg} bundle (.pt).
+
+    Returns (model in eval mode, vocab, fixed_values, cfg, device).
+    """
+    bundle = torch.load(model_path, map_location="cpu")
+    cfg = bundle["cfg"]
+    device = resolve_device(cfg)
+    vocab = bundle["vocab"]
+    model = build_model(cfg, vocab, device)
+    model.load_state_dict(bundle["model"])
+    model.eval()
+    return model, vocab, set(bundle["fixed_values"]), cfg, device

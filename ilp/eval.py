@@ -1,7 +1,10 @@
 """Filtered MRR/Hits@K evaluation (spec §7.1) + invariance tests (spec §7.2).
 
-Usage:
-    python -m ilp.eval --run checkpoints/default
+CLI-first: evaluate a self-contained model bundle on a held-out split.
+
+    python -m ilp.eval --model checkpoints/run/model_final.pt --kg-dir KGs/mykg
+    python -m ilp.eval --model bundle.pt --kg-dir KGs/kg_inductive \\
+        --obs-file KGs/kg_inductive_ind/train.txt --test-file KGs/kg_inductive_ind/test.txt
 """
 from __future__ import annotations
 
@@ -12,7 +15,6 @@ from typing import Iterable, Sequence
 
 import numpy as np
 import torch
-import yaml
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
@@ -26,8 +28,8 @@ from .dataset import (
     read_triples,
     two_hop_neighborhood,
 )
-from .model import InductiveKGModel
-from .vocab import HOP_NONE, hop_distance_token, inverse_relation, load_vocab, z_token_ids
+from .model import InductiveKGModel, load_bundle
+from .vocab import HOP_NONE, hop_distance_token, inverse_relation, z_token_ids
 
 
 @torch.no_grad()
@@ -405,57 +407,148 @@ def test_z_relabeling_invariance(
     return diff <= atol, diff
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--run", required=True,
-                    help="Run directory under checkpoints/, e.g. checkpoints/z1")
-    ap.add_argument("--ckpt", default=None,
-                    help="Checkpoint file. Defaults to {run}/model_final.pt")
-    args = ap.parse_args()
-    run_dir = Path(args.run)
-    cfg = yaml.safe_load((run_dir / "config.yaml").read_text())
-    ckpt_path = Path(args.ckpt) if args.ckpt else run_dir / "model_final.pt"
+# --- reusable eval driver (shared by this CLI and train.py auto-eval) ------
 
-    data_dir = Path(cfg["data_dir"])
-    fmt = cfg.get("triple_format", "head_tail_relation")
-    train = read_triples(data_dir / "train.txt", fmt=fmt)
-    valid = read_triples(data_dir / "valid.txt", fmt=fmt)
-    test = read_triples(data_dir / "test.txt", fmt=fmt)
-    vocab, fixed_values = load_vocab(run_dir / "vocab.json")
+def load_eval_inputs(
+    kg_dir: str | Path,
+    fmt: str,
+    test_file: str | Path | None = None,
+    obs_file: str | Path | None = None,
+) -> tuple[list[Triple], list[Triple], list[Triple]]:
+    """Resolve (test, known, context) triple lists for evaluation.
 
-    # Filter the test graph too: any triple whose relation isn't in vocab
-    # would crash subgraph encoding. (DBpedia50 open-world quirk.)
-    test_for_graph, dropped_graph = filter_known_relations(test, vocab)
-    if dropped_graph:
-        print(f"[eval] removed {dropped_graph} test KG triples with unseen relations "
-              f"before subgraph extraction.")
-    test_kg = KnowledgeGraph(augment_with_inverse(test_for_graph))
-    test_entities = test_kg.entities
+    - test     : the queries (kg_dir/test.txt unless `test_file` overrides).
+    - known    : train + valid + test, the filter set for filtered ranking.
+    - context  : triples used to build the subgraph KG. Defaults to the test
+      split; with `obs_file` (GraIL-style) it is obs_file + test.
+    """
+    kg_dir = Path(kg_dir)
+    test_path = Path(test_file) if test_file else kg_dir / "test.txt"
+    test = read_triples(test_path, fmt=fmt)
 
-    device = torch.device(cfg["device"] if torch.cuda.is_available() else "cpu")
-    model = InductiveKGModel(
-        vocab_size=len(vocab),
-        x_token_id=vocab["[X]"],
-        d_model=cfg["d_model"],
-        n_heads=cfg["n_heads"],
-        n_triple_layers=cfg["n_triple_layers"],
-        n_sab=cfg["n_sab"],
-        dropout=cfg["dropout"],
-    ).to(device)
-    state = torch.load(ckpt_path, map_location=device)
-    model.load_state_dict(state["model"])
+    known: list[Triple] = list(test)
+    for name in ("train.txt", "valid.txt"):
+        p = kg_dir / name
+        if p.exists():
+            known += read_triples(p, fmt=fmt)
 
-    results = evaluate(
-        model, test_for_graph, test_kg, vocab, fixed_values, test_entities,
-        known_triples=train + valid + test_for_graph,
-        max_triples=cfg["max_triples"],
-        z_pool=cfg["z_pool_size"],
-        device=device,
-        collapse_z=cfg.get("collapse_z", False),
+    if obs_file:
+        # Include the queries so test-internal facts also enter the subgraph;
+        # each query's own triple is excluded inside score_candidates.
+        context = read_triples(Path(obs_file), fmt=fmt) + test
+    else:
+        context = list(test)
+    return test, known, context
+
+
+def run_eval(
+    model: InductiveKGModel,
+    vocab: dict[str, int],
+    fixed_values: set[str],
+    cfg: dict,
+    device: torch.device,
+    *,
+    test_triples: Sequence[Triple],
+    known_triples: Sequence[Triple],
+    context_triples: Sequence[Triple],
+) -> dict:
+    """Build the context KG and run filtered MRR/Hits@K evaluation."""
+    context_for_graph, dropped = filter_known_relations(context_triples, vocab)
+    if dropped:
+        print(f"[eval] removed {dropped} context triples with unseen relations "
+              f"before building the subgraph KG.")
+    kg = KnowledgeGraph(augment_with_inverse(context_for_graph))
+    return evaluate(
+        model, test_triples, kg, vocab, fixed_values, kg.entities,
+        known_triples=known_triples,
+        max_triples=cfg["max_triples"], z_pool=cfg["z_pool_size"],
+        device=device, collapse_z=cfg.get("collapse_z", False),
+        subgraph_hops=cfg.get("subgraph_hops", 2),
+        use_hop_distance_tokens=cfg.get("use_hop_distance_tokens", False),
     )
-    print("Tail :", results["tail"])
-    print("Head :", results["head"])
-    print("Avg  :", results["avg"])
+
+
+def print_eval_results(results: dict, per_relation: bool = False) -> None:
+    for split in ("tail", "head", "avg"):
+        m = results[split]
+        if split == "avg":
+            print(f"{split:5s}  MRR={m['MRR']:.4f}  H@1={m['Hits@1']:.4f}  "
+                  f"H@3={m['Hits@3']:.4f}  H@10={m['Hits@10']:.4f}")
+        else:
+            print(f"{split:5s}  MRR={m['MRR']:.4f}  H@1={m['Hits@1']:.4f}  "
+                  f"H@3={m['Hits@3']:.4f}  H@10={m['Hits@10']:.4f}  n={m['n']}")
+            if "reachable" in m:
+                rm = m["reachable"]; um = m["unreachable"]
+                print(f"  reachable    MRR={rm['MRR']:.4f}  H@1={rm['Hits@1']:.4f}  "
+                      f"H@10={rm['Hits@10']:.4f}  n={rm['n']}")
+                print(f"  unreachable  MRR={um['MRR']:.4f}  H@1={um['Hits@1']:.4f}  "
+                      f"H@10={um['Hits@10']:.4f}  n={um['n']}")
+    if results.get("n_skipped"):
+        print(f"(skipped {results['n_skipped']} test triples with unseen relations)")
+    if per_relation:
+        _print_per_relation(results)
+
+
+def _print_per_relation(results: dict, top_n: int = 30) -> None:
+    """Per-relation MRR table including inverse rows.
+
+    For each relation r, the inverse row r__inv reuses head's metrics as tail
+    and vice versa — predicting the tail of (t, r__inv, h) is the same problem
+    as predicting the head of (h, r, t). The flip makes per-relation asymmetry
+    obvious: functional relations have one direction near 1 and the other near 0.
+    """
+    tail_br = results["tail"].get("by_relation", {})
+    head_br = results["head"].get("by_relation", {})
+    rels = sorted(
+        set(tail_br) | set(head_br),
+        key=lambda r: -tail_br.get(r, head_br.get(r, {})).get("n", 0),
+    )[:top_n]
+    print(f"\n--- per-relation MRR (top {len(rels)} by support) ---")
+    print(f"{'relation':40s}  {'tail_MRR':>8s}  {'head_MRR':>8s}  {'n':>5s}")
+    for r in rels:
+        t_mrr = tail_br.get(r, {}).get("MRR", float("nan"))
+        h_mrr = head_br.get(r, {}).get("MRR", float("nan"))
+        n = tail_br.get(r, head_br.get(r, {})).get("n", 0)
+        print(f"{r:40s}  {t_mrr:8.4f}  {h_mrr:8.4f}  {n:5d}")
+        print(f"{(r + '__inv'):40s}  {h_mrr:8.4f}  {t_mrr:8.4f}  {n:5d}")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    ap = argparse.ArgumentParser(
+        prog="ilp.eval",
+        description="Filtered MRR / Hits@K evaluation of a model bundle on a held-out split.",
+    )
+    ap.add_argument("--model", required=True, help="Bundled .pt (model + vocab + cfg).")
+    ap.add_argument("--kg-dir", required=True,
+                    help="Directory with test.txt (and optionally train.txt/valid.txt for the filter set).")
+    ap.add_argument("--test-file", default=None,
+                    help="Override path to the eval split (default: {kg-dir}/test.txt).")
+    ap.add_argument("--obs-file", default=None,
+                    help="Observed-graph triples for subgraph context (GraIL-style inductive eval). "
+                         "If omitted, the test split is used as context.")
+    ap.add_argument("--json-out", default=None,
+                    help="If set, dump the full results dict (incl. per-relation MRR) as JSON.")
+    ap.add_argument("--per-relation", action="store_true",
+                    help="Print a per-relation MRR table with each relation's inverse row alongside it.")
+    return ap
+
+
+def main():
+    args = build_parser().parse_args()
+    model, vocab, fixed_values, cfg, device = load_bundle(args.model)
+    fmt = cfg.get("triple_format", "head_relation_tail")
+    test, known, context = load_eval_inputs(args.kg_dir, fmt, args.test_file, args.obs_file)
+    results = run_eval(
+        model, vocab, fixed_values, cfg, device,
+        test_triples=test, known_triples=known, context_triples=context,
+    )
+    print_eval_results(results, per_relation=args.per_relation)
+    if args.json_out:
+        import json
+        out_path = Path(args.json_out)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(results, indent=2))
+        print(f"[eval] wrote full results to {out_path}")
 
 
 if __name__ == "__main__":

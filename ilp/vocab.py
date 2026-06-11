@@ -47,6 +47,7 @@ def build_vocab(
     triples: Iterable[tuple[str, str, str]],
     z_pool_size: int = 100,
     cardinality_cutoff: int = 0,
+    tail_diversity_cutoff: float = 0.0,
     type_relation: str | Iterable[str] | None = "rdf:type",
     subgraph_hops: int = 2,
 ) -> tuple[dict[str, int], set[str]]:
@@ -66,10 +67,17 @@ def build_vocab(
     - a list/tuple of strings: ``["_hypernym", "_instance_hypernym"]``
     - an empty string or ``None``: no relations promoted by name.
 
-    `cardinality_cutoff` is a fallback heuristic: any relation whose range
-    has fewer than `cutoff` distinct tails has *all* its tails promoted to
-    [VAL_*]. Default is 0 (disabled) — prefer explicit `type_relation`
-    listing over the cardinality guess.
+    Two cardinality heuristics auto-promote a relation's *entire* range to
+    [VAL_*]; a relation is promoted if **either** fires (both default off):
+
+    - `tail_diversity_cutoff` (preferred): promote when the tail-diversity
+      ratio ``distinct_tails / triples_with_this_relation < cutoff``. This is
+      scale-invariant — it asks "how reusable is the average tail value?", so
+      a 700-code controlled vocabulary seen 20× each is promoted while a 1:1
+      instance relation is not, regardless of absolute size. ``0.0`` disables.
+    - `cardinality_cutoff`: promote when a relation has fewer than `cutoff`
+      *distinct* tails. Absolute-count fallback; brittle as the graph grows
+      (misses large-but-low-diversity code lists). ``0`` disables.
     """
     if type_relation is None or type_relation == "":
         schema_rels: set[str] = set()
@@ -84,10 +92,17 @@ def build_vocab(
 
     fixed_values: set[str] = set(classes)
     range_by_rel: dict[str, set[str]] = defaultdict(set)
+    count_by_rel: dict[str, int] = defaultdict(int)
     for _, r, o in triples:
         range_by_rel[r].add(o)
+        count_by_rel[r] += 1
     for r, vals in range_by_rel.items():
-        if len(vals) < cardinality_cutoff:
+        n_distinct = len(vals)
+        promote = n_distinct < cardinality_cutoff
+        if tail_diversity_cutoff > 0.0:
+            diversity = n_distinct / count_by_rel[r]
+            promote = promote or diversity < tail_diversity_cutoff
+        if promote:
             fixed_values.update(vals)
 
     vocab: dict[str, int] = {PAD: 0, X: 1}
@@ -117,6 +132,7 @@ def format_vocab_summary(
     fixed_values: set[str],
     type_relation: str | Iterable[str] | None = None,
     cardinality_cutoff: int = 0,
+    tail_diversity_cutoff: float = 0.0,
 ) -> str:
     """Return a banner-style summary of vocab schema/instance breakdown.
 
@@ -159,11 +175,32 @@ def format_vocab_summary(
         lines.append("")
         lines.append("  type_relation: <none declared>")
 
+    if tail_diversity_cutoff and tail_diversity_cutoff > 0.0:
+        from collections import defaultdict as _dd
+        rng_by_rel: dict[str, set[str]] = _dd(set)
+        cnt_by_rel: dict[str, int] = _dd(int)
+        for _h, r, t in triples:
+            rng_by_rel[r].add(t)
+            cnt_by_rel[r] += 1
+        promoted = sorted(
+            (len(v) / cnt_by_rel[r], r, len(v))
+            for r, v in rng_by_rel.items()
+            if len(v) / cnt_by_rel[r] < tail_diversity_cutoff
+        )
+        lines.append("")
+        lines.append(f"  tail_diversity_cutoff: {tail_diversity_cutoff:.2f} "
+                     "(relations with distinct_tails/triples below this are auto-promoted)")
+        lines.append(f"  → {len(promoted)} relation(s) promoted by diversity:")
+        for div, r, n_tails in promoted:
+            lines.append(f"    {r:35s} → {n_tails:>5,} tails  (diversity {div:6.2%})")
+    else:
+        lines.append("  tail_diversity_cutoff: 0.0 (diversity auto-promotion disabled)")
+
     if cardinality_cutoff and cardinality_cutoff > 0:
         lines.append(f"  cardinality_cutoff: {cardinality_cutoff} "
                      "(relations with fewer distinct tails are auto-promoted)")
     else:
-        lines.append("  cardinality_cutoff: 0 (auto-promotion disabled)")
+        lines.append("  cardinality_cutoff: 0 (count auto-promotion disabled)")
 
     lines.append(bar)
     if n_schema == 0:
@@ -173,7 +210,8 @@ def format_vocab_summary(
             "     any stable type identity. To fix this, either:",
             "       • set `type_relation` to a list of schema-bearing relations",
             "         (e.g. ['rdf:type', '_hypernym'])",
-            "       • or raise `cardinality_cutoff` > 0 to enable the fallback heuristic.",
+            "       • set `tail_diversity_cutoff` > 0 (e.g. 0.2) to auto-promote",
+            "         low-diversity controlled-vocabulary relations.",
             bar,
         ]
     return "\n".join(lines)

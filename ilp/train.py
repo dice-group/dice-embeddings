@@ -1,9 +1,20 @@
-"""Training loop (spec §6).
+"""CLI-first training for InductiveKGModel (spec §6).
 
-Usage (YAML, reproducible-experiment flow):
-    python -m ilp.train --config ilp/configs/default.yaml
+Run with plain CLI flags, a YAML config, or both (flags override the config,
+which overrides the built-in defaults):
 
-Usage (CLI flow): see ilp.cli — train_model() is the shared core.
+    # pure CLI — trains for 100 epochs by default, then auto-evaluates test.txt
+    python -m ilp.train --data-dir KGs/kg_transductive --save runs/kg.pt
+
+    # YAML config
+    python -m ilp.train --config ilp/configs/kg_transductive.yaml
+
+    # config + targeted overrides
+    python -m ilp.train --config ilp/configs/kg_transductive.yaml --epochs 50 --lr 3e-4
+
+    # GraIL-style inductive: train on graph A, eval on the disjoint inference graph
+    python -m ilp.train --data-dir KGs/kg_inductive --save runs/kg_ind.pt \\
+        --test-file KGs/kg_inductive_ind/test.txt --obs-file KGs/kg_inductive_ind/train.txt
 """
 from __future__ import annotations
 
@@ -26,8 +37,32 @@ from .dataset import (
     read_triples,
     verify_inductive_split,
 )
-from .model import InductiveKGModel
+from .eval import load_eval_inputs, print_eval_results, run_eval
+from .model import build_model, resolve_device
 from .vocab import build_vocab, format_vocab_summary, load_vocab, save_vocab
+
+# Canonical defaults. A YAML --config overrides these; explicit CLI flags
+# override both. Chosen to work out of the box on small/medium KGs.
+DEFAULT_CFG: dict = {
+    # Model
+    "d_model": 128, "n_heads": 8, "n_triple_layers": 2, "n_sab": 4, "dropout": 0.1,
+    # Optimization (epoch-based; max_steps is derived at runtime)
+    "epochs": 100, "batch_size": 128, "lr": 1.0e-4, "weight_decay": 1.0e-2,
+    "warmup_steps": 1000, "grad_clip": 1.0,
+    # Sampling
+    "max_triples": 128, "z_pool_size": 300,
+    "cardinality_cutoff": 0, "tail_diversity_cutoff": 0.0,
+    "neg_samples_per_pos": 4, "neg_sampler": "uniform",
+    "subgraph_hops": 2, "use_hop_distance_tokens": False, "collapse_z": False,
+    # Data
+    "triple_format": "head_relation_tail", "type_relation": "",
+    # Runtime / checkpointing
+    "val_every": 1_000_000, "run_name": "run", "seed": 0, "num_workers": 2,
+    "device": "cuda",
+}
+
+# cfg keys settable from the CLI (data_dir has no default, handled separately).
+CFG_KEYS = set(DEFAULT_CFG) | {"data_dir"}
 
 
 def warmup_cosine(step: int, warmup: int, total: int) -> float:
@@ -46,34 +81,36 @@ def train_model(
     *,
     save_path: str | Path | None = None,
     run_dir: str | Path | None = None,
+    eval_after: bool = True,
+    eval_test_file: str | Path | None = None,
+    eval_obs_file: str | Path | None = None,
+    eval_per_relation: bool = False,
 ) -> dict:
-    """Train a model from a config dict. Returns the saved bundle.
+    """Train a model from a config dict, then (optionally) evaluate on test.
 
-    `cfg` is mutated in place to record any derived values (e.g. epochs →
-    max_steps), so the snapshot stored in the bundle reflects what was
-    actually used.
+    `cfg` is mutated in place to record derived values (epochs → max_steps),
+    so the snapshot stored in the bundle reflects what was actually used.
 
     save_path:
-        If given, write a single-file bundle {model, vocab, fixed_values,
-        cfg, step} to this path. The bundle is fully self-contained and
-        loadable by `ilp.cli` for inference.
+        Write a single-file bundle {model, vocab, fixed_values, cfg, step}.
+        Fully self-contained and loadable by `ilp.eval` / `ilp.predict`.
     run_dir:
-        If given, also write `vocab.json`, `config.yaml`, and intermediate
-        `model_step{N}.pt` checkpoints there (the reproducible-experiment
-        workflow). `model_final.pt` is written here too.
+        Also write `vocab.json`, `config.yaml`, intermediate `model_step{N}.pt`
+        checkpoints, and `model_final.pt` here (reproducible-experiment flow).
 
-    At least one of `save_path` / `run_dir` should be provided.
+    eval_after:
+        After training, if a test split is available (eval_test_file, else
+        {data_dir}/test.txt), run filtered MRR/Hits@K and print the metrics.
     """
     random.seed(cfg["seed"])
     torch.manual_seed(cfg["seed"])
 
     data_dir = Path(cfg["data_dir"])
-    fmt = cfg.get("triple_format", "head_tail_relation")
+    fmt = cfg.get("triple_format", "head_relation_tail")
     train_triples = read_triples(data_dir / "train.txt", fmt=fmt)
     test_path = data_dir / "test.txt"
     if test_path.exists():
-        test_triples = read_triples(test_path, fmt=fmt)
-        verify_inductive_split(train_triples, test_triples)
+        verify_inductive_split(train_triples, read_triples(test_path, fmt=fmt))
 
     run_dir = Path(run_dir) if run_dir is not None else None
     if run_dir is not None:
@@ -86,6 +123,7 @@ def train_model(
                 train_triples,
                 z_pool_size=cfg["z_pool_size"],
                 cardinality_cutoff=cfg["cardinality_cutoff"],
+                tail_diversity_cutoff=cfg.get("tail_diversity_cutoff", 0.0),
                 type_relation=cfg["type_relation"],
                 subgraph_hops=cfg.get("subgraph_hops", 2),
             )
@@ -97,20 +135,20 @@ def train_model(
             train_triples,
             z_pool_size=cfg["z_pool_size"],
             cardinality_cutoff=cfg["cardinality_cutoff"],
+            tail_diversity_cutoff=cfg.get("tail_diversity_cutoff", 0.0),
             type_relation=cfg["type_relation"],
+            subgraph_hops=cfg.get("subgraph_hops", 2),
         )
     print(format_vocab_summary(
         train_triples, fixed_values,
         type_relation=cfg["type_relation"],
         cardinality_cutoff=cfg["cardinality_cutoff"],
+        tail_diversity_cutoff=cfg.get("tail_diversity_cutoff", 0.0),
     ))
     print(f"Vocab size: {len(vocab)} (|fixed_values|={len(fixed_values)})")
 
     train_kg = KnowledgeGraph(augment_with_inverse(train_triples))
-
-    neg_sampler = build_negative_sampler(
-        cfg.get("neg_sampler"), train_kg, train_kg.entities
-    )
+    neg_sampler = build_negative_sampler(cfg.get("neg_sampler"), train_kg, train_kg.entities)
     train_ds = InductiveKGDataset(
         positive_triples=train_triples,
         kg=train_kg,
@@ -136,46 +174,41 @@ def train_model(
         persistent_workers=cfg["num_workers"] > 0,
     )
 
-    # Epochs are the CLI's natural unit. Resolve into max_steps once we
-    # know dataset size, then record both back into cfg for the snapshot.
-    if "epochs" in cfg:
-        steps_per_epoch = max(1, len(train_triples) // cfg["batch_size"])
-        cfg["max_steps"] = cfg["epochs"] * steps_per_epoch
-        cfg["warmup_steps"] = min(cfg.get("warmup_steps", 1000), max(1, cfg["max_steps"] // 10))
-        print(f"epochs={cfg['epochs']} × steps_per_epoch={steps_per_epoch} "
-              f"→ max_steps={cfg['max_steps']} (warmup={cfg['warmup_steps']})")
+    # Epochs are the unit. Resolve into steps once we know the loader length,
+    # then record everything back into cfg for the saved snapshot.
+    epochs = cfg["epochs"]
+    steps_per_epoch = max(1, len(loader))
+    total_steps = epochs * steps_per_epoch
+    warmup_steps = min(cfg.get("warmup_steps", 1000), max(1, total_steps // 10))
+    cfg["steps_per_epoch"] = steps_per_epoch
+    cfg["max_steps"] = total_steps
+    cfg["warmup_steps"] = warmup_steps
+    print(f"epochs={epochs} × steps_per_epoch={steps_per_epoch} "
+          f"→ {total_steps} steps (warmup={warmup_steps})")
 
-    device = torch.device(cfg["device"] if torch.cuda.is_available() else "cpu")
-    model = InductiveKGModel(
-        vocab_size=len(vocab),
-        x_token_id=vocab["[X]"],
-        d_model=cfg["d_model"],
-        n_heads=cfg["n_heads"],
-        n_triple_layers=cfg["n_triple_layers"],
-        n_sab=cfg["n_sab"],
-        dropout=cfg["dropout"],
-    ).to(device)
-
-    opt = torch.optim.AdamW(
-        model.parameters(), lr=cfg["lr"], weight_decay=cfg["weight_decay"]
-    )
+    device = resolve_device(cfg)
+    model = build_model(cfg, vocab, device)
+    opt = torch.optim.AdamW(model.parameters(), lr=cfg["lr"], weight_decay=cfg["weight_decay"])
     sched = torch.optim.lr_scheduler.LambdaLR(
-        opt, lr_lambda=lambda s: warmup_cosine(s, cfg["warmup_steps"], cfg["max_steps"])
+        opt, lr_lambda=lambda s: warmup_cosine(s, warmup_steps, total_steps)
     )
     loss_fn = torch.nn.BCEWithLogitsLoss()
 
     step = 0
-    running = 0.0
-    log_every = 100
-    model.train()
-    pbar = tqdm(total=cfg["max_steps"], desc="train", unit="step", dynamic_ncols=True)
-    while step < cfg["max_steps"]:
-        for batch in loader:
+    use_hop = cfg.get("use_hop_distance_tokens", False)
+    epoch_bar = tqdm(range(epochs), desc="epochs", unit="ep", dynamic_ncols=True)
+    for epoch in epoch_bar:
+        model.train()
+        running = 0.0
+        n_batches = 0
+        batch_bar = tqdm(loader, desc=f"epoch {epoch + 1}/{epochs}", unit="batch",
+                         leave=False, dynamic_ncols=True)
+        for batch in batch_bar:
             batch = {k: v.to(device, non_blocking=True) for k, v in batch.items()}
             logits = model(
                 batch["triples"], batch["mask"],
                 batch["target_relation"], batch["target_tail"],
-                hop_distances=batch.get("hop_distances") if cfg.get("use_hop_distance_tokens", False) else None,
+                hop_distances=batch.get("hop_distances") if use_hop else None,
             )
             loss = loss_fn(logits, batch["label"])
             opt.zero_grad(set_to_none=True)
@@ -183,23 +216,20 @@ def train_model(
             torch.nn.utils.clip_grad_norm_(model.parameters(), cfg["grad_clip"])
             opt.step()
             sched.step()
-            running += loss.item()
-            step += 1
-            pbar.update(1)
 
-            if step % log_every == 0:
-                lr = sched.get_last_lr()[0]
-                pbar.set_postfix(loss=f"{running / log_every:.4f}", lr=f"{lr:.2e}")
-                running = 0.0
+            running += loss.item()
+            n_batches += 1
+            step += 1
+            batch_bar.set_postfix(loss=f"{running / n_batches:.4f}",
+                                  lr=f"{sched.get_last_lr()[0]:.2e}")
 
             if run_dir is not None and step % cfg["val_every"] == 0:
                 ckpt = run_dir / f"model_step{step}.pt"
                 torch.save({"model": model.state_dict(), "step": step, "cfg": cfg}, ckpt)
-                pbar.write(f"saved {ckpt}")
-
-            if step >= cfg["max_steps"]:
-                break
-    pbar.close()
+                batch_bar.write(f"saved {ckpt}")
+        batch_bar.close()
+        epoch_bar.set_postfix(avg_loss=f"{running / max(1, n_batches):.4f}")
+    epoch_bar.close()
 
     bundle = {
         "model": model.state_dict(),
@@ -215,20 +245,129 @@ def train_model(
         save_path.parent.mkdir(parents=True, exist_ok=True)
         torch.save(bundle, save_path)
         print(f"saved {save_path}")
-    print("done.")
+    print("training done.")
+
+    if eval_after:
+        test_path = Path(eval_test_file) if eval_test_file else data_dir / "test.txt"
+        if test_path.exists():
+            print("\n" + "=" * 60 + "\nEvaluation (filtered MRR / Hits@K)\n" + "=" * 60)
+            model.eval()
+            test, known, context = load_eval_inputs(
+                data_dir, fmt, test_file=test_path, obs_file=eval_obs_file
+            )
+            results = run_eval(
+                model, vocab, fixed_values, cfg, device,
+                test_triples=test, known_triples=known, context_triples=context,
+            )
+            print_eval_results(results, per_relation=eval_per_relation)
+        else:
+            print(f"[eval] no test split at {test_path}; skipping auto-eval.")
+
     return bundle
 
 
-DEFAULT_CONFIG = Path(__file__).parent / "configs" / "default.yaml"
+def resolve_cfg(args: argparse.Namespace) -> dict:
+    """Layer config sources: DEFAULT_CFG → --config YAML → explicit CLI flags.
+
+    Only flags actually passed appear in `args` (defaults are SUPPRESS-ed),
+    so unset flags never clobber YAML/default values.
+    """
+    cfg = dict(DEFAULT_CFG)
+    if getattr(args, "config", None):
+        cfg.update(load_config(args.config))
+    for key in CFG_KEYS:
+        if key in vars(args):
+            cfg[key] = getattr(args, key)
+    if "data_dir" not in cfg or not cfg["data_dir"]:
+        raise SystemExit("data_dir is required: pass --data-dir or set it in --config.")
+    return cfg
+
+
+def build_parser() -> argparse.ArgumentParser:
+    ap = argparse.ArgumentParser(
+        prog="ilp.train",
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    ap.add_argument("--config", default=None, help="YAML config file (base values).")
+    ap.add_argument("--data-dir", dest="data_dir", default=argparse.SUPPRESS,
+                    help="Directory with train.txt (and optionally valid.txt/test.txt).")
+    # Output targets
+    ap.add_argument("--save", default=None, help="Write a self-contained .pt bundle here.")
+    ap.add_argument("--run-dir", default=None,
+                    help="Write vocab.json/config.yaml/checkpoints here. "
+                         "If neither --save nor --run-dir is given, defaults to checkpoints/{run_name}.")
+    # Auto-eval
+    ap.add_argument("--no-eval", dest="eval_after", action="store_false",
+                    help="Skip the automatic post-training evaluation.")
+    ap.add_argument("--test-file", default=None,
+                    help="Eval split for auto-eval (default: {data-dir}/test.txt).")
+    ap.add_argument("--obs-file", default=None,
+                    help="Observed-graph triples for subgraph context at eval (GraIL-style).")
+    ap.add_argument("--per-relation", action="store_true",
+                    help="Print a per-relation MRR table after evaluation.")
+
+    g = ap.add_argument_group("hyperparameters (override config/defaults)")
+
+    def opt(flag, dest, typ, help):
+        g.add_argument(flag, dest=dest, type=typ, default=argparse.SUPPRESS,
+                       help=f"{help} (default: {DEFAULT_CFG[dest]})")
+
+    opt("--d-model", "d_model", int, "Model dimension")
+    opt("--n-heads", "n_heads", int, "Attention heads")
+    opt("--n-triple-layers", "n_triple_layers", int, "Per-triple encoder layers")
+    opt("--n-sab", "n_sab", int, "Set-attention blocks")
+    opt("--dropout", "dropout", float, "Dropout")
+    opt("--epochs", "epochs", int, "Training epochs")
+    opt("--batch-size", "batch_size", int, "Batch size")
+    opt("--lr", "lr", float, "Peak learning rate")
+    opt("--weight-decay", "weight_decay", float, "AdamW weight decay")
+    opt("--warmup-steps", "warmup_steps", int, "Warmup steps (capped to total/10)")
+    opt("--grad-clip", "grad_clip", float, "Gradient clip norm")
+    opt("--max-triples", "max_triples", int, "Max subgraph triples per sample")
+    opt("--z-pool-size", "z_pool_size", int, "Anonymization Z-pool size")
+    opt("--cardinality-cutoff", "cardinality_cutoff", int, "Distinct-tail count cutoff for [VAL_*] promotion")
+    opt("--tail-diversity-cutoff", "tail_diversity_cutoff", float,
+        "Promote a relation's tails to [VAL_*] when distinct_tails/triples < this (e.g. 0.2)")
+    opt("--neg-samples-per-pos", "neg_samples_per_pos", int, "Negatives per positive")
+    opt("--neg-sampler", "neg_sampler", str, "uniform | relation_tail_prior | two_hop")
+    opt("--subgraph-hops", "subgraph_hops", int, "BFS depth for subgraph extraction")
+    opt("--triple-format", "triple_format", str, "Source column order (see TRIPLE_FORMATS)")
+    opt("--type-relation", "type_relation", str, "Relation whose tails become [VAL_*] schema tokens")
+    opt("--val-every", "val_every", int, "Checkpoint every N steps (run-dir mode)")
+    opt("--seed", "seed", int, "Random seed")
+    opt("--num-workers", "num_workers", int, "DataLoader workers")
+    opt("--device", "device", str, "cuda | cpu (auto-falls back to cpu)")
+    opt("--run-name", "run_name", str, "Run name (default run dir = checkpoints/{run_name})")
+    g.add_argument("--use-hop-distance-tokens", dest="use_hop_distance_tokens",
+                   action="store_true", default=argparse.SUPPRESS,
+                   help="Add per-entity BFS-distance tokens.")
+    g.add_argument("--collapse-z", dest="collapse_z", action="store_true",
+                   default=argparse.SUPPRESS, help="Collapse Z pool on exhaustion (z_pool=1 ablation).")
+    return ap
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--config", default=str(DEFAULT_CONFIG))
-    args = ap.parse_args()
-    cfg = load_config(args.config)
-    run_dir = Path("checkpoints") / cfg["run_name"]
-    train_model(cfg, run_dir=run_dir)
+    args = build_parser().parse_args()
+    cfg = resolve_cfg(args)
+
+    save_path = Path(args.save) if args.save else None
+    if args.run_dir:
+        run_dir = Path(args.run_dir)
+    elif save_path is None:
+        run_dir = Path("checkpoints") / cfg["run_name"]
+    else:
+        run_dir = None
+
+    train_model(
+        cfg,
+        save_path=save_path,
+        run_dir=run_dir,
+        eval_after=args.eval_after,
+        eval_test_file=args.test_file,
+        eval_obs_file=args.obs_file,
+        eval_per_relation=args.per_relation,
+    )
 
 
 if __name__ == "__main__":
