@@ -1,573 +1,452 @@
-import os
-import weakref
-from typing import Dict, Tuple, Type
+"""
+Row-wise sharded entity embeddings for multi-GPU training.
 
-import numpy as np
+Entity embeddings are partitioned row-wise across ranks:
+  - dist.all_to_all_single routes index requests to the owning rank
+  - A custom autograd Function propagates gradients back through the all_to_all
+  - _LocalSparseAdam updates only the rows that received a non-zero gradient
+
+Public API:
+  model.setup_torchrec_training(device, lr)          — called by trainer before loop
+  model.gather_entity_embeddings_on_rank_zero()      — called by trainer after loop
+  create_torchrec_sharded_model_class(ModelClass)    — factory used by static_funcs.py
+"""
+
+from __future__ import annotations
+
+import math
+from typing import Dict, Optional, Type
+
 import torch
 import torch.distributed as dist
+import torch.nn as nn
 
 from .base_model import BaseKGE
 
-_FSDP_SHARDED_MODEL_CACHE: Dict[Type[BaseKGE], Type[BaseKGE]] = {}
+_SHARDED_MODEL_CACHE: Dict[Type[BaseKGE], Type[BaseKGE]] = {}
 
 
-class _CPUSparseRowAdam:
-    """Adam for sparse embedding rows with optimizer state kept on CPU.
+# ---------------------------------------------------------------------------
+# Local sparse Adam for a single per-rank embedding shard
+# ---------------------------------------------------------------------------
 
-    State tensors (exp_avg, exp_avg_sq) are pre-allocated to the full
-    [num_entities, embedding_dim] shape on the first update call.  This avoids
-    the repeated torch.cat + temporary-tensor pattern of the old compact-state
-    approach, which could spike RAM by 2× the full state size every time a new
-    entity row was encountered.
+class _LocalSparseAdam:
+    """Sparse Adam that only updates rows that received a non-zero gradient.
 
-    state_dtype controls the storage dtype of exp_avg / exp_avg_sq.  bfloat16
-    halves their memory footprint vs float32 while keeping the same dynamic
-    range (8-bit exponent).  The EMA updates are always computed in float32 and
-    rounded back to state_dtype on write, so numerical behaviour is essentially
-    identical to a pure float32 implementation.
+    State tensors live on the same device as the embedding weight and are
+    stored in bfloat16 (same exponent range as float32, half the memory).
+    The Adam arithmetic is done in float32 and written back to bfloat16.
     """
 
     def __init__(
         self,
-        lr: float,
-        betas=(0.9, 0.999),
+        local_rows: int,
+        embedding_dim: int,
+        lr: float = 1e-3,
+        betas: tuple = (0.9, 0.999),
         eps: float = 1e-8,
-        pin_memory: bool = False,
+        device=None,
         state_dtype: torch.dtype = torch.bfloat16,
     ):
         self.lr = lr
         self.beta1, self.beta2 = betas
         self.eps = eps
-        self.pin_memory = pin_memory and torch.cuda.is_available()
-        self.state_dtype = state_dtype
         self.step_count = 0
-        self.exp_avg = None
-        self.exp_avg_sq = None
+        self.state_dtype = state_dtype
 
-    def zero_grad(self, set_to_none: bool = True) -> None:
-        return None
+        self.exp_avg = torch.zeros(local_rows, embedding_dim,
+                                   device=device, dtype=state_dtype)
+        self.exp_avg_sq = torch.zeros(local_rows, embedding_dim,
+                                      device=device, dtype=state_dtype)
 
-    def _ensure_state_allocated(self, num_rows: int, dim: int) -> None:
-        """Allocate Adam state once for the full embedding table — no further reallocation."""
-        if self.exp_avg is not None:
-            return
-        state = torch.zeros(num_rows, dim, dtype=self.state_dtype, device="cpu")
-        self.exp_avg = state.pin_memory() if self.pin_memory else state
-        state2 = torch.zeros(num_rows, dim, dtype=self.state_dtype, device="cpu")
-        self.exp_avg_sq = state2.pin_memory() if self.pin_memory else state2
+    @torch.no_grad()
+    def step(self, weight: torch.Tensor, grad: torch.Tensor) -> None:
+        """Apply Adam update to rows with non-zero gradient.
 
-    def step_dense_grad(
-        self,
-        weight: torch.Tensor,
-        dense_grad: torch.Tensor,
-        device: torch.device,
-        stream: torch.cuda.Stream = None,
-    ) -> None:
-        """Update embedding rows using a dense gradient accumulator.
-
-        ``dense_grad`` is a [num_local_rows, dim] float32 tensor where each row
-        holds the accumulated gradient for that entity.  Rows that were never
-        touched remain exactly zero and are skipped.
+        Works with optimizer states on any device (GPU or CPU).
+        GPU states: pure GPU kernels, zero PCIe traffic, < 1 ms per step.
+        CPU states: GPU→CPU index+grad transfer, CPU float32 math, CPU→GPU write-back.
         """
-        rows = dense_grad.any(dim=1).nonzero(as_tuple=False).squeeze(1)
-        if rows.numel() == 0:
+        if grad.is_sparse:
+            grad_c = grad.coalesce()
+            active_rows = grad_c.indices()[0]   # [k] on grad's device (GPU)
+            g            = grad_c.values()       # [k, D] on GPU
+        else:
+            active_rows = grad.norm(dim=1).nonzero(as_tuple=True)[0]
+            g            = grad[active_rows]
+
+        if active_rows.numel() == 0:
             return
 
-        grads = dense_grad[rows]  # [num_touched_rows, dim], float32
-        num_rows, dim = weight.shape
-        self._ensure_state_allocated(num_rows, dim)
         self.step_count += 1
 
-        # Upcast to float32 for numerically stable EMA updates, then store back
-        # in state_dtype (bfloat16 by default) to halve the memory footprint.
-        exp_avg_rows = self.exp_avg[rows].float()
-        exp_avg_sq_rows = self.exp_avg_sq[rows].float()
-        exp_avg_rows.mul_(self.beta1).add_(grads, alpha=1 - self.beta1)
-        exp_avg_sq_rows.mul_(self.beta2).addcmul_(grads, grads, value=1 - self.beta2)
+        bc1 = 1.0 - self.beta1 ** self.step_count
+        bc2 = 1.0 - self.beta2 ** self.step_count
+        step_size = self.lr * math.sqrt(bc2) / bc1
 
-        self.exp_avg.index_copy_(0, rows, exp_avg_rows.to(self.state_dtype))
-        self.exp_avg_sq.index_copy_(0, rows, exp_avg_sq_rows.to(self.state_dtype))
+        # Move index and grad to wherever the optimizer states live.
+        # GPU→GPU: zero-cost; GPU→CPU: PCIe transfer (only when states are on CPU).
+        state_device = self.exp_avg.device
+        idx = active_rows.to(state_device)
+        g_f = g.to(device=state_device, dtype=torch.float32)
 
-        bias_correction1 = 1 - self.beta1 ** self.step_count
-        bias_correction2 = 1 - self.beta2 ** self.step_count
-        rows_on_device = rows.to(device, non_blocking=True)
-        current_values = weight.data.index_select(0, rows_on_device).detach().cpu().float()
-        denom = (exp_avg_sq_rows.sqrt() / (bias_correction2 ** 0.5)).add_(self.eps)
-        updated_values = current_values.addcdiv(exp_avg_rows, denom, value=-(self.lr / bias_correction1))
-        updated_values = updated_values.to(device=device, dtype=weight.dtype, non_blocking=True)
+        ea  = self.exp_avg[idx].float()
+        eas = self.exp_avg_sq[idx].float()
 
-        if stream is None:
-            weight.data.index_copy_(0, rows_on_device, updated_values)
-        else:
-            with torch.cuda.stream(stream):
-                weight.data.index_copy_(0, rows_on_device, updated_values)
-            torch.cuda.current_stream().wait_stream(stream)
+        ea.mul_(self.beta1).add_(g_f, alpha=1.0 - self.beta1)
+        eas.mul_(self.beta2).addcmul_(g_f, g_f, value=1.0 - self.beta2)
 
+        self.exp_avg[idx]    = ea.to(self.state_dtype)
+        self.exp_avg_sq[idx] = eas.to(self.state_dtype)
 
-class _ShardedEntityEmbeddingProxy(torch.nn.Module):
-    """Route embedding lookups through the owning model's distributed shard lookup."""
-
-    def __init__(self, owner):
-        super().__init__()
-        object.__setattr__(self, "_owner_ref", weakref.ref(owner))
-
-    def forward(self, entity_ids: torch.LongTensor) -> torch.FloatTensor:
-        owner = self._owner_ref()
-        if owner is None:
-            raise RuntimeError("The sharded entity embedding owner is no longer available.")
-        return owner._entity_lookup(entity_ids)
-
-    @property
-    def weight(self):
-        raise RuntimeError(
-            "Manual FSDP entity sharding does not expose a full entity embedding weight. "
-            "Use a sample-based scoring technique or materialize the model after training."
+        update = ea / (eas.sqrt() + self.eps)
+        # index_add_ writes back to weight in-place.
+        # fancy-indexing (weight.data[active_rows].add_(...)) creates a copy and
+        # discards it — the original tensor would never be modified.
+        weight.data.index_add_(
+            0, active_rows,
+            update.to(device=weight.device, dtype=weight.dtype) * (-step_size),
         )
 
 
-class _AllReduceSum(torch.autograd.Function):
+# ---------------------------------------------------------------------------
+# Differentiable all-to-all embedding lookup
+# ---------------------------------------------------------------------------
+
+class _RowWiseEmbLookup(torch.autograd.Function):
+    """Forward : route index requests → local lookup → route embeddings back.
+    Backward : route grad back to owning ranks → scatter-add into weight.grad.
+
+    Both directions use dist.all_to_all_single (variable-length splits).
+    """
+
     @staticmethod
-    def forward(ctx, tensor):
+    def forward(
+        ctx,
+        weight,          # [local_rows, D]  nn.Parameter on this rank
+        sorted_indices,  # [N]              indices sorted by owner rank (int64)
+        send_counts,     # list[int]        #indices sent to each rank
+        recv_counts,     # list[int]        #indices received from each rank
+        unsort_idx,      # [N]              inverse permutation (int64)
+        start_row,       # int              global row offset for this rank
+        local_rows,      # int              number of rows on this rank
+    ):
+        total_recv = sum(recv_counts)
+        D = weight.shape[1]
+        device = weight.device
+
+        # 1. Send index requests to owning ranks
+        recv_indices = torch.empty(total_recv, dtype=torch.long, device=device)
         if dist.is_initialized():
-            dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
-            ctx.world_size = dist.get_world_size()
+            dist.all_to_all_single(
+                recv_indices, sorted_indices,
+                output_split_sizes=recv_counts,
+                input_split_sizes=send_counts,
+            )
         else:
-            ctx.world_size = 1
-        return tensor
+            recv_indices.copy_(sorted_indices)
+
+        # 2. Local lookup (localize to [0, local_rows))
+        local_idx = (recv_indices - start_row).clamp(0, max(local_rows - 1, 0))
+        local_embs = weight[local_idx]  # [total_recv, D]
+
+        # 3. Send embeddings back to requesting ranks
+        N = sorted_indices.shape[0]
+        sorted_result = torch.empty(N, D, device=device, dtype=weight.dtype)
+        if dist.is_initialized():
+            dist.all_to_all_single(
+                sorted_result, local_embs,
+                output_split_sizes=send_counts,
+                input_split_sizes=recv_counts,
+            )
+        else:
+            sorted_result.copy_(local_embs)
+
+        # 4. Unsort — restore original request order
+        output = sorted_result[unsort_idx]
+
+        ctx.save_for_backward(local_idx, unsort_idx)
+        ctx.send_counts = send_counts
+        ctx.recv_counts = recv_counts
+        ctx.local_rows  = local_rows
+        ctx.D           = D
+        return output
 
     @staticmethod
     def backward(ctx, grad_output):
+        """grad_output: [N, D] gradient for the embedding outputs (after unsort)."""
+        local_idx, unsort_idx = ctx.saved_tensors
+        D      = ctx.D
+        device = grad_output.device
+
+        # Invert the unsort to put grads back in sorted (send) order
+        sort_idx    = torch.argsort(unsort_idx)
+        grad_sorted = grad_output[sort_idx]           # [N, D]
+
+        # Route grads back to owning ranks (reverse of step 3)
+        total_recv = sum(ctx.recv_counts)
+        grad_local = torch.empty(total_recv, D, device=device, dtype=grad_output.dtype)
         if dist.is_initialized():
-            dist.all_reduce(grad_output, op=dist.ReduceOp.SUM)
-            grad_output.div_(ctx.world_size)
-        return grad_output
-
-
-class FSDPShardedEntityModel(BaseKGE):
-    def __init__(self, args):
-        super().__init__(args)
-        self.manual_sharded_entity_training = self.defer_large_embeddings
-        self.local_entity_embeddings = None
-        self.local_entity_start = 0
-        self.local_entity_end = self.num_entities
-        self.local_entity_count = self.num_entities
-        self._batch_lookup_ids = None
-        self._batch_lookup_embeddings = None
-        self.fsdp_sharded_device = None
-        self.fsdp_sharded_async_stream = None
-        self.fsdp_use_cpu_sparse_optimizer = True
-        self.fsdp_max_accumulated_sparse_grad_nnz = 1_000_000
-        self.gpu_sparse_optimizer = None
-        self.cpu_sparse_embedding = None
-        self.cpu_sparse_optimizer = None
-        self.pending_cpu_sparse_grad = None  # dense [local_entity_count, embedding_dim] accumulator
-        self._has_pending_grad = False
-        if self.manual_sharded_entity_training:
-            rank, world_size = self._distributed_rank_world_size()
-            shard_size = (self.num_entities + world_size - 1) // world_size
-            self.local_entity_start = rank * shard_size
-            self.local_entity_end = min(self.local_entity_start + shard_size, self.num_entities)
-            self.local_entity_count = max(0, self.local_entity_end - self.local_entity_start)
-            self.local_entity_embeddings = torch.nn.Embedding(
-                self.local_entity_count,
-                self.embedding_dim,
-                sparse=True,
-            )
-            self.param_init(self.local_entity_embeddings.weight.data)
-            self.entity_embeddings = _ShardedEntityEmbeddingProxy(self)
-
-    @staticmethod
-    def _distributed_rank_world_size() -> Tuple[int, int]:
-        if dist.is_initialized():
-            return dist.get_rank(), dist.get_world_size()
-        return int(os.environ.get("RANK", "0")), int(os.environ.get("WORLD_SIZE", "1"))
-
-    def configure_optimizers(self, parameters=None):
-        if not self.manual_sharded_entity_training:
-            return super().configure_optimizers(parameters=parameters)
-        if parameters is not None:
-            return super().configure_optimizers(parameters=parameters)
-        dense_parameters = [
-            param for name, param in self.named_parameters()
-            if not self._is_sparse_training_parameter(name)
-        ]
-        return super().configure_optimizers(parameters=dense_parameters)
-
-    def fsdp_ignored_modules(self):
-        if not self.manual_sharded_entity_training:
-            return []
-        ignored_modules = [self.local_entity_embeddings]
-        if self.cpu_sparse_embedding is not None:
-            ignored_modules.append(self.cpu_sparse_embedding)
-        return ignored_modules
-
-    def fsdp_dense_optimizer_parameters(self, wrapped_model=None):
-        module = wrapped_model if wrapped_model is not None else self
-        return [
-            param for name, param in module.named_parameters()
-            if not self._is_sparse_training_parameter(name)
-        ]
-
-    @staticmethod
-    def _is_sparse_training_parameter(name: str) -> bool:
-        return (
-            "local_entity_embeddings.weight" in name
-            or "cpu_sparse_embedding.weight" in name
-        )
-
-    @staticmethod
-    def fsdp_state_dict_excluded_prefixes() -> Tuple[str, ...]:
-        return ("local_entity_embeddings.", "cpu_sparse_embedding.")
-
-    def setup_fsdp_sharded_entity_training(
-        self,
-        device: torch.device,
-        use_cpu_sparse_optimizer: bool = True,
-        max_accumulated_sparse_grad_nnz: int = 1_000_000,
-        async_stream: torch.cuda.Stream = None,
-    ) -> None:
-        """Prepare replicated parameters and sparse entity optimizer for FSDP training."""
-        if not self.manual_sharded_entity_training:
-            return
-
-        self.fsdp_sharded_device = device
-        self.fsdp_use_cpu_sparse_optimizer = use_cpu_sparse_optimizer
-        self.fsdp_max_accumulated_sparse_grad_nnz = max_accumulated_sparse_grad_nnz
-        self.fsdp_sharded_async_stream = async_stream
-        self._init_sparse_optimizer()
-
-    def zero_sparse_optimizer_grad(self) -> None:
-        if not self.manual_sharded_entity_training:
-            return
-        if self.fsdp_use_cpu_sparse_optimizer:
-            if self.cpu_sparse_optimizer is not None:
-                self.cpu_sparse_optimizer.zero_grad(set_to_none=True)
-        elif self.gpu_sparse_optimizer is not None:
-            self.gpu_sparse_optimizer.zero_grad(set_to_none=True)
-
-    def step_sparse_optimizer(self, batch_idx: int, sparse_step_interval: int) -> None:
-        if not self.manual_sharded_entity_training:
-            return
-
-        if self.fsdp_use_cpu_sparse_optimizer:
-            self._accumulate_cpu_sparse_grad()
-            if batch_idx % sparse_step_interval == 0:
-                self.flush_sparse_optimizer()
-        elif self.gpu_sparse_optimizer is not None:
-            self.gpu_sparse_optimizer.step()
-
-        self.local_entity_embeddings.weight.grad = None
-
-    def flush_sparse_optimizer(self) -> None:
-        if not self.manual_sharded_entity_training or not self.fsdp_use_cpu_sparse_optimizer:
-            return
-        if not self._has_pending_grad:
-            return
-
-        self.cpu_sparse_optimizer.step_dense_grad(
-            self.local_entity_embeddings.weight,
-            self.pending_cpu_sparse_grad,
-            self.fsdp_sharded_device,
-            self.fsdp_sharded_async_stream,
-        )
-        # Reset in-place: keep the tensor alive to avoid re-allocation next interval
-        self.pending_cpu_sparse_grad.zero_()
-        self._has_pending_grad = False
-
-    def materialize_sharded_entity_model_on_rank_zero(self, loss_history=None) -> torch.nn.Module:
-        """Gather entity shards and rebuild the full embedding table on rank 0."""
-        if self.fsdp_sharded_async_stream is not None:
-            self.fsdp_sharded_async_stream.synchronize()
-
-        local_weight = self.local_entity_embeddings.weight.detach().contiguous()
-        is_rank_zero = not dist.is_initialized() or dist.get_rank() == 0
-
-        full_entity_embeddings = None
-        copied_rows = 0
-        if is_rank_zero:
-            if local_weight.shape[1] != self.embedding_dim:
-                raise RuntimeError("Local entity shard has an unexpected embedding dimension.")
-            full_entity_embeddings = torch.nn.Embedding(
-                self.num_entities,
-                self.embedding_dim,
-                device="cpu",
-                dtype=local_weight.dtype,
-            )
-
-        if dist.is_initialized():
-            copied_rows = self._materialize_entity_shards_with_all_gather(
-                local_weight=local_weight,
-                full_entity_embeddings=full_entity_embeddings,
+            dist.all_to_all_single(
+                grad_local, grad_sorted,
+                output_split_sizes=ctx.recv_counts,
+                input_split_sizes=ctx.send_counts,
             )
         else:
-            local_weight = local_weight.cpu()
-            shard_rows = min(local_weight.shape[0], self.num_entities)
-            full_entity_embeddings.weight.data[:shard_rows].copy_(local_weight[:shard_rows])
-            copied_rows = shard_rows
+            grad_local.copy_(grad_sorted)
 
-        if is_rank_zero:
-            if copied_rows != self.num_entities:
-                raise RuntimeError(
-                    f"Materialized {copied_rows} entity rows, expected {self.num_entities}."
-                )
+        # Return a SPARSE gradient instead of a dense [local_rows, D] tensor.
+        # Dense would allocate 42+ GiB (= one full shard) every backward pass.
+        # Sparse stores only the ~total_recv accessed rows (~153 MB).
+        # Duplicate indices (same entity looked up multiple times per batch)
+        # are merged by .coalesce() inside _LocalSparseAdam.step.
+        sparse_grad = torch.sparse_coo_tensor(
+            local_idx.unsqueeze(0),   # [1, total_recv] — row indices
+            grad_local,               # [total_recv, D] — gradient values
+            size=(ctx.local_rows, D),
+            device=device,
+        )
+        # (weight, sorted_indices, send_counts, recv_counts, unsort_idx, start_row, local_rows)
+        return sparse_grad, None, None, None, None, None, None
 
-            materialized_args = dict(self.args)
-            materialized_args["fsdp_sharded_entity"] = False
-            materialized_model = self.__class__(materialized_args)
-            materialized_model.entity_embeddings = full_entity_embeddings
-            materialized_model.manual_sharded_entity_training = False
-            if loss_history is not None:
-                materialized_model.loss_history = list(loss_history)
-            return materialized_model
 
-        return self
+# ---------------------------------------------------------------------------
+# Row-wise sharded embedding module
+# ---------------------------------------------------------------------------
 
-    def _materialize_entity_shards_with_all_gather(
+class RowWiseShardedEmbedding(nn.Module):
+    """Entity embedding table sharded row-wise across ranks.
+
+    Each rank owns rows [start_row, end_row).  forward() looks like nn.Embedding
+    so every existing scoring function works unchanged.
+    """
+
+    def __init__(
         self,
-        local_weight: torch.Tensor,
-        full_entity_embeddings: torch.nn.Embedding,
-        chunk_rows: int = 65_536,
-    ) -> int:
-        """Gather local entity shards with the existing process group.
+        num_embeddings: int,
+        embedding_dim: int,
+        rank: int,
+        world_size: int,
+        device: torch.device,
+        weight_dtype: torch.dtype = torch.bfloat16,
+    ):
+        super().__init__()
+        self.num_embeddings = num_embeddings
+        self.embedding_dim  = embedding_dim
+        self.rank           = rank
+        self.world_size     = world_size
+        self.device         = device
 
-        FSDP training initializes NCCL for CUDA tensors. Reusing that group avoids creating a
-        separate Gloo group and keeps every rank in the same collective calls during finalization.
+        self.shard_size = math.ceil(num_embeddings / world_size)
+        self.start_row  = rank * self.shard_size
+        self.end_row    = min(self.start_row + self.shard_size, num_embeddings)
+        self.local_rows = self.end_row - self.start_row
+
+        # bfloat16 halves the per-rank GPU footprint (42.8 GiB → 21.4 GiB for 180M entities).
+        # bfloat16 has the same exponent range as float32 so no overflow risk.
+        # The Adam optimizer states remain float32 on CPU for numerical stability.
+        self.weight = nn.Parameter(
+            torch.empty(self.local_rows, embedding_dim, device=device, dtype=weight_dtype)
+        )
+        nn.init.normal_(self.weight, std=1.0 / math.sqrt(embedding_dim))
+
+        self._local_adam: Optional[_LocalSparseAdam] = None
+
+    def forward(self, entity_ids: torch.LongTensor) -> torch.FloatTensor:
+        original_shape = entity_ids.shape
+        flat = entity_ids.reshape(-1)     # [N]
+
+        # Which rank owns each requested index?
+        owner_ranks = (flat // self.shard_size).clamp(0, self.world_size - 1)
+
+        # Sort by owner so all_to_all sends contiguous chunks
+        sort_idx    = torch.argsort(owner_ranks, stable=True)
+        unsort_idx  = torch.argsort(sort_idx,    stable=True)
+        sorted_flat = flat[sort_idx]
+
+        send_counts = torch.bincount(owner_ranks, minlength=self.world_size).tolist()
+        send_counts = [int(c) for c in send_counts]
+
+        # Exchange counts with all other ranks
+        if dist.is_initialized():
+            send_t = torch.tensor(send_counts, dtype=torch.long, device=self.device)
+            recv_t = torch.zeros_like(send_t)
+            dist.all_to_all_single(recv_t, send_t)
+            recv_counts = [int(c) for c in recv_t.tolist()]
+        else:
+            recv_counts = send_counts
+
+        out_flat = _RowWiseEmbLookup.apply(
+            self.weight, sorted_flat,
+            send_counts, recv_counts,
+            unsort_idx,
+            self.start_row, self.local_rows,
+        )
+
+        if len(original_shape) == 1:
+            return out_flat
+        return out_flat.reshape(*original_shape, self.embedding_dim)
+
+
+# ---------------------------------------------------------------------------
+# Model mixin
+# ---------------------------------------------------------------------------
+
+class TorchRecShardedEntityModel(BaseKGE):
+    """Mixin that defers entity embedding allocation and wires up row-wise sharding.
+
+    Lifecycle
+    ---------
+    1. __init__()                         — entity_embeddings is None
+    2. setup_torchrec_training(dev, lr)   — creates RowWiseShardedEmbedding
+    3. gather_entity_embeddings_on_rank_zero() — called by trainer after last epoch
+    """
+
+    def __init__(self, args):
+        _args = dict(args)
+        _args["fsdp_sharded_entity"] = True   # BaseKGE sets entity_embeddings=None
+        super().__init__(_args)
+        self._torchrec_dmp     = None   # kept so existing trainer isinstance checks pass
+        self._torchrec_adapter: Optional[RowWiseShardedEmbedding] = None
+
+    def setup_torchrec_training(
+        self,
+        device: torch.device,
+        lr: float,
+        optimizer_cls=None,       # unused — we always use _LocalSparseAdam
+        optimizer_kwargs: dict = None,
+        adam_device: torch.device = None,
+    ) -> None:
+        """Create the per-rank embedding shard and its local sparse Adam.
+
+        adam_device — where exp_avg / exp_avg_sq are stored:
+          GPU  (default) : pure GPU kernels, no PCIe, ~42.8 GiB extra GPU RAM per rank.
+          CPU            : lower GPU footprint, PCIe transfer each step.
+        Falls back to the embedding device (GPU) when not specified.
         """
-        rank = dist.get_rank()
-        world_size = dist.get_world_size()
-        shard_size = (self.num_entities + world_size - 1) // world_size
-        copied_rows = 0
+        rank       = dist.get_rank()       if dist.is_initialized() else 0
+        world_size = dist.get_world_size() if dist.is_initialized() else 1
 
-        local_start = rank * shard_size
-        local_end = min(local_start + shard_size, self.num_entities)
-        expected_local_rows = max(0, local_end - local_start)
-        if local_weight.shape != (expected_local_rows, self.embedding_dim):
-            raise RuntimeError(
-                f"Local entity shard has shape {tuple(local_weight.shape)}, "
-                f"expected {(expected_local_rows, self.embedding_dim)}."
-            )
+        sharded_emb = RowWiseShardedEmbedding(
+            num_embeddings=self.num_entities,
+            embedding_dim=self.embedding_dim,
+            rank=rank,
+            world_size=world_size,
+            device=device,
+        )
+        # Respect the model's weight initializer (xavier_normal or identity)
+        self.param_init(sharded_emb.weight.data)
 
-        chunk_rows = max(1, min(chunk_rows, shard_size))
-        for chunk_start in range(0, shard_size, chunk_rows):
-            current_chunk_rows = min(chunk_rows, shard_size - chunk_start)
-            chunk = torch.zeros(
-                current_chunk_rows,
-                self.embedding_dim,
-                dtype=local_weight.dtype,
-                device=local_weight.device,
-            )
-
-            valid_local_end = min(chunk_start + current_chunk_rows, expected_local_rows)
-            valid_local_rows = max(0, valid_local_end - chunk_start)
-            if valid_local_rows > 0:
-                chunk[:valid_local_rows].copy_(local_weight[chunk_start:valid_local_end])
-
-            gathered_chunks = [torch.empty_like(chunk) for _ in range(world_size)]
-            dist.all_gather(gathered_chunks, chunk)
-
-            if rank != 0:
-                continue
-
-            for shard_rank, shard_chunk in enumerate(gathered_chunks):
-                shard_global_start = shard_rank * shard_size
-                shard_global_end = min(shard_global_start + shard_size, self.num_entities)
-                shard_rows = max(0, shard_global_end - shard_global_start)
-                valid_end = min(chunk_start + current_chunk_rows, shard_rows)
-                valid_rows = max(0, valid_end - chunk_start)
-                if valid_rows == 0:
-                    continue
-                destination_start = shard_global_start + chunk_start
-                destination_end = destination_start + valid_rows
-                full_entity_embeddings.weight.data[destination_start:destination_end].copy_(
-                    shard_chunk[:valid_rows].cpu()
-                )
-                copied_rows += valid_rows
-
-        return copied_rows
-
-    def _init_sparse_optimizer(self) -> None:
-        if not self.fsdp_use_cpu_sparse_optimizer:
-            self.gpu_sparse_optimizer = torch.optim.SparseAdam(
-                [self.local_entity_embeddings.weight],
-                lr=self.learning_rate,
-            )
-            return
-
-        self.cpu_sparse_optimizer = _CPUSparseRowAdam(
-            lr=self.learning_rate,
-            pin_memory=False,
+        lr_eff = (optimizer_kwargs or {}).get("lr", lr)
+        state_device = adam_device if adam_device is not None else device
+        sharded_emb._local_adam = _LocalSparseAdam(
+            local_rows=sharded_emb.local_rows,
+            embedding_dim=self.embedding_dim,
+            lr=lr_eff,
+            device=state_device,
             state_dtype=torch.bfloat16,
         )
 
-    def _accumulate_cpu_sparse_grad(self) -> None:
-        sparse_grad = self.local_entity_embeddings.weight.grad
-        if sparse_grad is None:
-            return
+        self._torchrec_adapter = sharded_emb
+        self.entity_embeddings  = sharded_emb
 
-        sparse_grad = sparse_grad.coalesce()
-        if sparse_grad._nnz() == 0:
-            return
+    def gather_entity_embeddings_on_rank_zero(self) -> Optional[nn.Embedding]:
+        """Gather the full entity table on rank 0; return None on other ranks."""
+        if self._torchrec_adapter is None:
+            raise RuntimeError("setup_torchrec_training() must be called before gathering.")
+        return _gather_shards(self._torchrec_adapter)
 
-        rows = sparse_grad.indices()[0].cpu()
-        values = sparse_grad.values().detach().cpu().float()
-
-        if self.pending_cpu_sparse_grad is None:
-            # Allocate the dense accumulator once; its size is fixed for the entire training run.
-            # index_add_ below is in-place, so no new tensors are created on subsequent batches.
-            self.pending_cpu_sparse_grad = torch.zeros(
-                self.local_entity_count, self.embedding_dim, dtype=torch.float32, device="cpu"
-            )
-
-        self.pending_cpu_sparse_grad.index_add_(0, rows, values)
-        self._has_pending_grad = True
-
-    def _entity_lookup(self, entity_ids: torch.LongTensor) -> torch.FloatTensor:
-        if not self.manual_sharded_entity_training:
-            return self.entity_embeddings(entity_ids)
-
-        if self._batch_lookup_ids is not None and self._batch_lookup_embeddings is not None:
-            original_shape = entity_ids.shape
-            flat_entity_ids = entity_ids.contiguous().reshape(-1)
-            positions = torch.searchsorted(self._batch_lookup_ids, flat_entity_ids)
-            positions = positions.clamp(max=self._batch_lookup_ids.numel() - 1)
-            if torch.equal(self._batch_lookup_ids.index_select(0, positions), flat_entity_ids):
-                return self._batch_lookup_embeddings.index_select(0, positions).reshape(
-                    *original_shape,
-                    self.embedding_dim,
-                )
-            raise RuntimeError("Sharded entity lookup cache miss during a cached lookup.")
-
-        return self._distributed_entity_lookup(entity_ids)
-
-    def _distributed_entity_lookup(self, entity_ids: torch.LongTensor) -> torch.FloatTensor:
-        flat_entity_ids = entity_ids.contiguous().reshape(-1)
-        if flat_entity_ids.numel() == 0:
-            return torch.empty(
-                *entity_ids.shape,
-                self.embedding_dim,
-                device=entity_ids.device,
-                dtype=self.local_entity_embeddings.weight.dtype,
-            )
-
-        unique_entity_ids = self._global_unique_entity_ids(flat_entity_ids)
-        outputs = torch.zeros(
-            unique_entity_ids.shape[0],
-            self.embedding_dim,
-            device=unique_entity_ids.device,
-            dtype=self.local_entity_embeddings.weight.dtype,
+    def get_embeddings(self):
+        raise RuntimeError(
+            "Full entity embeddings are not available during sharded training; "
+            "they are materialised by the trainer on rank 0 after training."
         )
-        mask = (unique_entity_ids >= self.local_entity_start) & (unique_entity_ids < self.local_entity_end)
-        if mask.any():
-            local_ids = unique_entity_ids[mask] - self.local_entity_start
-            outputs[mask] = self.local_entity_embeddings(local_ids)
-        outputs = _AllReduceSum.apply(outputs)
-        positions = torch.searchsorted(unique_entity_ids, flat_entity_ids)
-        if not torch.equal(unique_entity_ids.index_select(0, positions), flat_entity_ids):
-            raise RuntimeError("Distributed entity lookup failed to map all requested entity ids.")
-        return outputs.index_select(0, positions).reshape(*entity_ids.shape, self.embedding_dim)
 
-    @staticmethod
-    def _global_unique_entity_ids(entity_ids: torch.LongTensor) -> torch.LongTensor:
-        local_unique = torch.unique(entity_ids, sorted=True)
-        if not dist.is_initialized():
-            return local_unique
-
-        local_count = torch.tensor([local_unique.numel()], device=entity_ids.device, dtype=torch.long)
-        counts = [torch.zeros_like(local_count) for _ in range(dist.get_world_size())]
-        dist.all_gather(counts, local_count)
-        counts = torch.cat(counts)
-        max_count = int(counts.max().item())
-        if max_count == 0:
-            return local_unique
-
-        padded = torch.empty(max_count, device=entity_ids.device, dtype=torch.long)
-        if local_unique.numel() > 0:
-            padded[:local_unique.numel()] = local_unique
-        if local_unique.numel() < max_count:
-            padded[local_unique.numel():] = 0
-
-        gathered = [torch.empty_like(padded) for _ in range(dist.get_world_size())]
-        dist.all_gather(gathered, padded)
-        requested_ids = [
-            rank_ids[:int(rank_count.item())]
-            for rank_ids, rank_count in zip(gathered, counts)
-            if int(rank_count.item()) > 0
-        ]
-        if not requested_ids:
-            return local_unique
-        return torch.unique(torch.cat(requested_ids), sorted=True)
-
-    def _prime_batch_lookup_cache(self, entity_ids: torch.LongTensor) -> None:
-        unique_entity_ids = torch.unique(entity_ids, sorted=True)
-        self._batch_lookup_ids = unique_entity_ids
-        self._batch_lookup_embeddings = self._distributed_entity_lookup(unique_entity_ids)
-
-    def _clear_batch_lookup_cache(self) -> None:
-        self._batch_lookup_ids = None
-        self._batch_lookup_embeddings = None
-
-    def forward(self, x, y_idx: torch.LongTensor = None) -> torch.FloatTensor:
-        if not self.manual_sharded_entity_training or not isinstance(x, tuple):
-            if y_idx is None:
-                return super().forward(x)
-            return super().forward(x, y_idx)
-
-        source, target_entity_idx = x
-        self._prime_batch_lookup_cache(torch.cat((source[:, 0], target_entity_idx.reshape(-1))))
-        try:
-            if y_idx is None:
-                return super().forward((source, target_entity_idx))
-            return super().forward((source, target_entity_idx), y_idx)
-        finally:
-            self._clear_batch_lookup_cache()
-
-    def get_triple_representation(self, idx_hrt):
-        if not self.manual_sharded_entity_training:
-            return super().get_triple_representation(idx_hrt)
-        idx_head_entity, idx_relation, idx_tail_entity = idx_hrt[:, 0], idx_hrt[:, 1], idx_hrt[:, 2]
-        self._prime_batch_lookup_cache(torch.cat((idx_head_entity, idx_tail_entity)))
-        try:
-            head_ent_emb = self.normalize_head_entity_embeddings(
-                self.input_dp_ent_real(self._entity_lookup(idx_head_entity))
-            )
-            rel_ent_emb = self.normalize_relation_embeddings(
-                self.input_dp_rel_real(self.relation_embeddings(idx_relation))
-            )
-            tail_ent_emb = self.normalize_tail_entity_embeddings(self._entity_lookup(idx_tail_entity))
-        finally:
-            self._clear_batch_lookup_cache()
-        return head_ent_emb, rel_ent_emb, tail_ent_emb
-
-    def get_head_relation_representation(self, indexed_triple):
-        if not self.manual_sharded_entity_training:
-            return super().get_head_relation_representation(indexed_triple)
-        idx_head_entity, idx_relation = indexed_triple[:, 0], indexed_triple[:, 1]
-        head_ent_emb = self.normalize_head_entity_embeddings(
-            self.input_dp_ent_real(self._entity_lookup(idx_head_entity))
+    def forward_k_vs_all(self, *args, **kwargs):
+        raise RuntimeError(
+            "forward_k_vs_all accesses entity_embeddings.weight directly and cannot "
+            "run with row-wise sharding. Use --scoring_technique FSDP1vsSample instead."
         )
-        rel_ent_emb = self.normalize_relation_embeddings(self.input_dp_rel_real(self.relation_embeddings(idx_relation)))
-        return head_ent_emb, rel_ent_emb
-
-    def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
-        if not self.manual_sharded_entity_training:
-            return super().get_embeddings()
-        raise RuntimeError("Full entity embeddings are materialized by the trainer on rank 0 after training.")
 
 
-_FSDPShardedEntityModel = FSDPShardedEntityModel
+# ---------------------------------------------------------------------------
+# Gather helper
+# ---------------------------------------------------------------------------
+
+def _gather_shards(sharded_emb: RowWiseShardedEmbedding) -> Optional[nn.Embedding]:
+    """Collect all per-rank shards and build a full nn.Embedding on rank 0."""
+    world_size   = dist.get_world_size() if dist.is_initialized() else 1
+    rank         = dist.get_rank()       if dist.is_initialized() else 0
+    local_w_cpu  = sharded_emb.weight.data.detach().cpu().float()
+    local_rows   = local_w_cpu.shape[0]
+    D            = local_w_cpu.shape[1]
+    num_entities = sharded_emb.num_embeddings
+
+    if world_size == 1:
+        emb = nn.Embedding(num_entities, D)
+        emb.weight.data.copy_(local_w_cpu)
+        return emb
+
+    # Exchange shard sizes so every rank knows the row offsets
+    rows_t      = torch.tensor([local_rows], device=sharded_emb.device, dtype=torch.long)
+    all_rows_t  = [torch.zeros_like(rows_t) for _ in range(world_size)]
+    dist.all_gather(all_rows_t, rows_t)
+    all_rows    = [int(t.item()) for t in all_rows_t]
+
+    if sum(all_rows) != num_entities:
+        raise RuntimeError(f"Gathered {sum(all_rows)} rows, expected {num_entities}.")
+
+    dest_starts = [sum(all_rows[:i]) for i in range(world_size)]
+    full_weight = torch.zeros(num_entities, D, dtype=torch.float32) if rank == 0 else None
+
+    max_rows = max(all_rows)
+    chunk    = min(65_536, max_rows)
+    dev      = sharded_emb.device
+    # gathered and buf must be on the same CUDA device as the input —
+    # NCCL cannot write into CPU memory via all_gather (cudaErrorIllegalAddress).
+    gathered = [torch.empty(chunk, D, dtype=torch.float32, device=dev) for _ in range(world_size)]
+
+    for start in range(0, max_rows, chunk):
+        cur   = min(chunk, max_rows - start)
+        buf   = torch.zeros(chunk, D, dtype=torch.float32, device=dev)
+        valid = min(cur, max(0, local_rows - start))
+        if valid > 0:
+            buf[:valid].copy_(local_w_cpu[start: start + valid])
+        dist.all_gather(gathered, buf)
+        if rank == 0:
+            for r, shard_chunk in enumerate(gathered):
+                v = min(cur, max(0, all_rows[r] - start))
+                if v <= 0:
+                    continue
+                dst = dest_starts[r] + start
+                full_weight[dst: dst + v] = shard_chunk[:v].cpu()
+
+    if rank != 0:
+        return None
+    emb = nn.Embedding(num_entities, D)
+    emb.weight.data.copy_(full_weight)
+    return emb
 
 
-def create_fsdp_sharded_model_class(model_class: Type[BaseKGE]) -> Type[BaseKGE]:
-    """Create a manual entity-sharded FSDP variant for a Dice model class."""
-    if issubclass(model_class, FSDPShardedEntityModel):
+# ---------------------------------------------------------------------------
+# Factory — API unchanged so static_funcs.py needs no edits
+# ---------------------------------------------------------------------------
+
+def create_torchrec_sharded_model_class(model_class: Type[BaseKGE]) -> Type[BaseKGE]:
+    """Return a row-wise sharded variant of *model_class*.
+
+    The returned class inherits all scoring functions from *model_class* unchanged.
+    Only entity_embeddings is replaced at training time.
+    """
+    if issubclass(model_class, TorchRecShardedEntityModel):
         return model_class
-    if model_class not in _FSDP_SHARDED_MODEL_CACHE:
-        _FSDP_SHARDED_MODEL_CACHE[model_class] = type(
-            f"FSDPSharded{model_class.__name__}",
-            (FSDPShardedEntityModel, model_class),
+    if model_class not in _SHARDED_MODEL_CACHE:
+        _SHARDED_MODEL_CACHE[model_class] = type(
+            f"TorchRec{model_class.__name__}",
+            (TorchRecShardedEntityModel, model_class),
             {
                 "__module__": model_class.__module__,
-                "__doc__": f"Manual entity-sharded FSDP variant of {model_class.__name__}.",
+                "__doc__": f"Row-wise sharded variant of {model_class.__name__}.",
             },
         )
-    return _FSDP_SHARDED_MODEL_CACHE[model_class]
+    return _SHARDED_MODEL_CACHE[model_class]

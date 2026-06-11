@@ -113,7 +113,7 @@ def initialize_trainer(
         trainer = TorchDDPTrainer(args, callbacks=callbacks)
     elif args.trainer == 'torchFSDP':
         assert torch.cuda.is_available()
-        print('Initializing TorchFSDPTrainer GPU', end='\t')
+        print('Initializing TorchFSDPTrainer (row-wise sharded) GPU', end='\t')
         trainer = TorchFSDPTrainer(args, callbacks=callbacks)
     elif args.trainer == 'PL':
         print('Initializing Pytorch-lightning Trainer', end='\t')
@@ -317,7 +317,7 @@ class DICE_Trainer:
     def init_dataset(self) -> torch.utils.data.Dataset:
         print('Initializing Dataset...', end='\t')
         if isinstance(self.trainer.dataset,KG):
-            sort_train_set = self.args.trainer != "torchFSDP"
+            sort_train_set = self.args.trainer not in {"torchFSDP"}
             # Create a memory map of training dataset to reduce the memory usage
             path_memory_map=self.trainer.dataset.path_for_serialization + '/memory_map_train_set.npy'
             if not os.path.exists(path_memory_map):
@@ -370,7 +370,7 @@ class DICE_Trainer:
                                               byte_pair_encoding=self.args.byte_pair_encoding,
                                               block_size=self.args.block_size,
                                               seed=self.args.random_seed,
-                                              sort_train_set=self.args.trainer != "torchFSDP")
+                                              sort_train_set=self.args.trainer not in {"torchFSDP"})
 
 
         return train_dataset
