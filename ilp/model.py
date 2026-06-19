@@ -19,10 +19,10 @@ class InductiveKGModel(nn.Module):
         dropout: float = 0.1,
     ):
         super().__init__()
-        self.x_token_id = x_token_id
-        self.d_model = d_model
+        self.x_token_id = x_token_id # usually 1 
+        self.d_model = d_model # e.g. 128
 
-        self.embed = nn.Embedding(vocab_size, d_model, padding_idx=0)
+        self.embed = nn.Embedding(vocab_size, d_model, padding_idx=0) # shape [vocab_size, d_model] -> first row all 0s
         # Intra-triple positional encoding (subject / relation / object).
         # Inter-triple position is intentionally absent — that's what makes
         # the SAB stack permutation-invariant.
