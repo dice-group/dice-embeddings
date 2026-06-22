@@ -180,6 +180,7 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 KGs/
+KGs_ind/
 Experiments/
 checkpoints/
 *.zip

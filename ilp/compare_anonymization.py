@@ -1,18 +1,17 @@
 """Compare entity-featurization schemes for inductive KGE (CPU-friendly).
 
-Trains the *same* InductiveKGModel under three schemes for the anonymous
-entity slots, on the *same* synthetic data and seed, so differences are
-attributable to the scheme alone:
+Trains the *same* InductiveKGModel under two schemes for the anonymous
+entity slots, on the *same* data and seed, so differences are attributable
+to the scheme alone:
 
     learned  – current approach: [Z_i] are rows of a learned nn.Embedding.
-    frozen   – a fixed random pool of vectors, assigned per sample, NOT learned.
     runtime  – no pool: a fresh random vector per distinct entity, per forward
-               pass (pure RNI; Abboud et al. 2021).
+               pass (pure RNI; Abboud et al. 2021). Marginalize at eval (eval_mc).
 
 The task requires *variable binding*: a triple (h, rt, t) is true iff some e
 has (h, ra, e) and (e, rb, t). The model must keep the anonymous intermediate
 `e` bound across two context triples and the candidate — which is exactly the
-property the three schemes handle differently. Train/test entities are disjoint
+property the schemes handle differently. Train/test entities are disjoint
 (true inductive) and `rt` edges never appear in context (no leakage).
 
 Run from the repo root (the dir that contains the `ilp/` package):
@@ -43,79 +42,8 @@ from .dataset import (
     two_hop_neighborhood,
     verify_inductive_split,
 )
-from .model import InductiveKGModel
+from .model import InductiveKGModel, load_state_dict_compat
 from .vocab import build_vocab, inverse_relation
-
-
-# --------------------------------------------------------------------------- #
-# Model variant: same architecture, three ways to embed the anonymous slots.
-# --------------------------------------------------------------------------- #
-class MultiModeKGModel(InductiveKGModel):
-    """InductiveKGModel where [Z_*] slots use learned / frozen / runtime vectors.
-
-    Only the entity-slot embedding changes; [X], [REL_*], [VAL_*], [HOP_*]
-    stay learned exactly as in the base model. `z_start`/`z_pool` describe the
-    contiguous block of [Z_0..Z_{z_pool-1}] ids in the vocab.
-    """
-
-    def __init__(self, *args, z_mode: str = "learned", z_start: int = 0,
-                 z_pool: int = 0, **kw):
-        super().__init__(*args, **kw)
-        self.z_mode = z_mode
-        self.z_start = z_start
-        self.z_pool = max(1, z_pool)
-        bank = torch.randn(self.z_pool, self.d_model)
-        bank = bank / bank.norm(dim=-1, keepdim=True)
-        self.register_buffer("z_bank", bank)  # frozen pool
-
-    def _entity_embed(self, ids: torch.Tensor, rand_bank: torch.Tensor | None):
-        """Embed token ids, overriding [Z_*] positions per the active scheme.
-
-        `ids` has shape [B, ...] (leading dim must be the batch). `rand_bank`
-        is [B, z_pool, d] for runtime mode, else None.
-        """
-        emb = self.embed(ids)
-        if self.z_mode == "learned":
-            return emb
-        is_z = (ids >= self.z_start) & (ids < self.z_start + self.z_pool)
-        z_local = (ids - self.z_start).clamp(0, self.z_pool - 1)
-        if self.z_mode == "frozen":
-            z_emb = self.z_bank[z_local]
-        else:  # runtime
-            B, d = ids.shape[0], self.d_model
-            flat = z_local.reshape(B, -1)                      # [B, M]
-            g = torch.gather(rand_bank, 1, flat.unsqueeze(-1).expand(-1, -1, d))
-            z_emb = g.reshape(*ids.shape, d)
-        return torch.where(is_z.unsqueeze(-1), z_emb, emb)
-
-    def forward(self, triples, mask, target_relation, target_tail,
-                hop_distances=None):
-        B, N, _ = triples.shape
-        rand_bank = None
-        if self.z_mode == "runtime":
-            rand_bank = torch.randn(B, self.z_pool, self.d_model,
-                                    device=triples.device)
-            rand_bank = rand_bank / rand_bank.norm(dim=-1, keepdim=True)
-
-        tok = self._entity_embed(triples, rand_bank) + self.intra_pos
-        if hop_distances is not None:
-            tok = tok + self.embed(hop_distances)
-        tok = self.triple_encoder(tok.view(B * N, 3, -1))
-        triple_vec = tok.mean(dim=1).view(B, N, -1)
-
-        x_emb = self.embed(torch.full((B, 1), self.x_token_id,
-                                      device=triples.device, dtype=torch.long))
-        h = torch.cat([x_emb, triple_vec], dim=1)
-        mask_ext = torch.cat(
-            [torch.ones(B, 1, dtype=torch.bool, device=mask.device), mask], dim=1)
-        h = self.sab_stack(h, src_key_padding_mask=~mask_ext)
-        pooled = h[:, 0]
-
-        tr = self.embed(target_relation)
-        tt = self._entity_embed(target_tail, rand_bank)
-        target_emb = tr + tt
-        feats = torch.cat([pooled, target_emb, pooled * target_emb], dim=-1)
-        return self.classifier(feats).squeeze(-1)
 
 
 # --------------------------------------------------------------------------- #
@@ -213,12 +141,19 @@ def evaluate(model, positives, kg, vocab, fixed_values, cfg, device, mc):
                      subgraph_hops=cfg["subgraph_hops"])
         for (h, r, c, l) in instances
     ])
-    batch = {k: v.to(device) for k, v in batch.items()}
-    logits = torch.zeros(len(instances), device=device)
-    for _ in range(mc):
-        logits += model(batch["triples"], batch["mask"],
-                        batch["target_relation"], batch["target_tail"])
-    logits /= mc
+    # Process in mini-batches: a single 24k-instance batch OOMs on small GPUs,
+    # and runtime mode allocates a [B, z_pool, d] random bank on top of that.
+    eval_bs = cfg.get("eval_batch_size", 512)
+    n = len(instances)
+    logits = torch.zeros(n, device=device)
+    for start in range(0, n, eval_bs):
+        sl = slice(start, start + eval_bs)
+        sub = {k: v[sl].to(device) for k, v in batch.items()}
+        acc_l = torch.zeros(sub["label"].shape[0], device=device)
+        for _ in range(mc):
+            acc_l += model(sub["triples"], sub["mask"],
+                           sub["target_relation"], sub["target_tail"])
+        logits[sl] = acc_l / mc
     labels = batch["label"].tolist()
     scores = logits.tolist()
     acc = sum((s > 0) == (l == 1.0) for s, l in zip(scores, labels)) / len(labels)
@@ -235,19 +170,26 @@ def z_collapse(model, z_start, z_pool):
 
 
 # --------------------------------------------------------------------------- #
-def train_one(mode, data, vocab, fixed_values, cfg, device, neg_sampler=None):
+def build_multimode(mode, vocab, cfg, device):
+    """Construct an InductiveKGModel in the given z_mode with standard wiring."""
+    z_pool = cfg["z_pool_size"] if mode != "learned" else 0
+    return InductiveKGModel(
+        vocab_size=len(vocab), x_token_id=vocab["[X]"],
+        d_model=cfg["d_model"], n_heads=cfg["n_heads"],
+        n_triple_layers=cfg["n_triple_layers"], n_sab=cfg["n_sab"],
+        dropout=cfg["dropout"],
+        z_mode=mode, z_start=vocab["[Z_0]"], z_pool=z_pool,
+    ).to(device)
+
+
+def train_one(mode, data, vocab, fixed_values, cfg, device, neg_sampler=None,
+              ckpt_dir=None):
     ctx_kg, train_pos, test_ctx_kg, test_pos = data
     z_start = vocab["[Z_0]"]
     torch.manual_seed(cfg["seed"])  # identical init across modes
     random.seed(cfg["seed"])
 
-    model = MultiModeKGModel(
-        vocab_size=len(vocab), x_token_id=vocab["[X]"],
-        d_model=cfg["d_model"], n_heads=cfg["n_heads"],
-        n_triple_layers=cfg["n_triple_layers"], n_sab=cfg["n_sab"],
-        dropout=cfg["dropout"],
-        z_mode=mode, z_start=z_start, z_pool=cfg["z_pool_size"],
-    ).to(device)
+    model = build_multimode(mode, vocab, cfg, device)
 
     neg = neg_sampler or HardNeg(ctx_kg, ctx_kg.entities, true_tails_both_dirs(train_pos))
     ds = InductiveKGDataset(
@@ -257,8 +199,11 @@ def train_one(mode, data, vocab, fixed_values, cfg, device, neg_sampler=None):
         neg_per_pos=cfg["neg_per_pos"], both_directions=True,
         seed=cfg["seed"], neg_sampler=neg, subgraph_hops=cfg["subgraph_hops"],
     )
+    nw = cfg.get("num_workers", 0)
     loader = DataLoader(ds, batch_size=cfg["batch_size"], shuffle=True,
-                        num_workers=0, collate_fn=collate, drop_last=True)
+                        num_workers=nw, collate_fn=collate, drop_last=True,
+                        persistent_workers=nw > 0,
+                        prefetch_factor=4 if nw > 0 else None)
 
     opt = torch.optim.AdamW(model.parameters(), lr=cfg["lr"], weight_decay=1e-2)
     loss_fn = nn.BCEWithLogitsLoss()
@@ -280,15 +225,45 @@ def train_one(mode, data, vocab, fixed_values, cfg, device, neg_sampler=None):
             run += loss.item()
             nb += 1
         last = run / max(1, nb)
-        if (ep + 1) % max(1, cfg["epochs"] // 5) == 0:
-            print(f"  [{mode:7s}] epoch {ep + 1:>3}/{cfg['epochs']}  loss={last:.4f}")
+        if (ep + 1) % max(1, cfg["epochs"] // 20) == 0:
+            print(f"  [{mode:7s}] epoch {ep + 1:>3}/{cfg['epochs']}  loss={last:.4f}",
+                  flush=True)
 
     mc = cfg["eval_mc"] if mode == "runtime" else 1
     acc, au = evaluate(model, test_pos, test_ctx_kg, vocab, fixed_values,
                        cfg, device, mc)
     coll = z_collapse(model, z_start, cfg["z_pool_size"]).item() if mode == "learned" else float("nan")
+    if ckpt_dir is not None:
+        Path(ckpt_dir).mkdir(parents=True, exist_ok=True)
+        ckpt = Path(ckpt_dir) / f"{mode}.pt"
+        torch.save({"model": model.state_dict(), "mode": mode, "cfg": cfg,
+                    "vocab": vocab, "fixed_values": sorted(fixed_values)}, ckpt)
+        print(f"  saved checkpoint → {ckpt}")
     return {"mode": mode, "train_loss": last, "test_acc": acc, "test_auc": au,
             "z_cos": coll, "secs": time.time() - t0}
+
+
+def eval_one(mode, ckpt_dir, data, device):
+    """Re-evaluate a saved checkpoint against `data`'s eval graph. No training.
+
+    Uses the checkpoint's own vocab / fixed_values / cfg so the model matches
+    exactly how it was trained — only the eval context (test_ctx_kg/test_pos)
+    comes from the current run's --obs-file/--test-file.
+    """
+    _, _, test_ctx_kg, test_pos = data
+    ckpt = torch.load(Path(ckpt_dir) / f"{mode}.pt", map_location=device)
+    cfg, vocab = ckpt["cfg"], ckpt["vocab"]
+    fixed_values = set(ckpt["fixed_values"])
+    model = build_multimode(mode, vocab, cfg, device)
+    load_state_dict_compat(model, ckpt["model"])
+    t0 = time.time()
+    mc = cfg["eval_mc"] if mode == "runtime" else 1
+    acc, au = evaluate(model, test_pos, test_ctx_kg, vocab, fixed_values,
+                       cfg, device, mc)
+    z_start = vocab["[Z_0]"]
+    coll = z_collapse(model, z_start, cfg["z_pool_size"]).item() if mode == "learned" else float("nan")
+    return {"mode": mode, "train_loss": float("nan"), "test_acc": acc,
+            "test_auc": au, "z_cos": coll, "secs": time.time() - t0}
 
 
 def load_synthetic(cfg, args, rng):
@@ -350,13 +325,14 @@ def load_real(cfg, args, rng):
 
 
 def main():
+    print(">>> compare_anonymization starting (stdout is live)", flush=True)
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--d-model", type=int, default=64)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--eval-mc", type=int, default=8, help="MC draws for runtime eval")
-    ap.add_argument("--modes", default="learned,frozen,runtime")
+    ap.add_argument("--modes", default="learned,runtime")
     ap.add_argument("--z-pool", type=int, default=128, help="Z-slot pool size")
     # Synthetic-task knobs
     ap.add_argument("--chains", type=int, default=250, help="train composition chains")
@@ -370,15 +346,33 @@ def main():
     ap.add_argument("--triple-format", default="head_relation_tail")
     ap.add_argument("--type-relation", default="rdf:type")
     ap.add_argument("--tail-diversity-cutoff", type=float, default=0.2)
+    ap.add_argument("--device", default="auto",
+                    help="'auto' (cuda if available), 'cuda', or 'cpu'.")
+    ap.add_argument("--eval-batch-size", type=int, default=512,
+                    help="Mini-batch size for the eval forward pass.")
+    ap.add_argument("--batch-size", type=int, default=64,
+                    help="Training batch size (bump for GPU).")
+    ap.add_argument("--num-workers", type=int, default=0,
+                    help="DataLoader workers; >0 parallelizes the CPU sample BFS.")
+    ap.add_argument("--ckpt-dir", default=None,
+                    help="Save per-mode model checkpoints here (train) / load them (--eval-only).")
+    ap.add_argument("--eval-only", action="store_true",
+                    help="Skip training: load --ckpt-dir checkpoints and re-evaluate "
+                         "against the current --obs-file/--test-file. No retraining.")
     args = ap.parse_args()
 
     cfg = {
         "d_model": args.d_model, "n_heads": 4, "n_triple_layers": 1, "n_sab": 2,
-        "dropout": 0.1, "epochs": args.epochs, "batch_size": 64, "lr": 3e-4,
+        "dropout": 0.1, "epochs": args.epochs, "batch_size": args.batch_size, "lr": 3e-4,
         "max_triples": 32, "z_pool_size": args.z_pool, "neg_per_pos": 4,
         "subgraph_hops": 2, "seed": args.seed, "eval_mc": args.eval_mc,
+        "eval_batch_size": args.eval_batch_size,
+        "num_workers": args.num_workers,
     }
-    device = torch.device("cpu")
+    if args.device == "auto":
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    else:
+        device = torch.device(args.device)
     rng = random.Random(args.seed)
 
     if args.data_dir:
@@ -390,14 +384,20 @@ def main():
         print("[synthetic 2-hop composition]")
         data, vocab, fixed_values, train_neg = load_synthetic(cfg, args, rng)
     print(f"vocab={len(vocab)}  train_pos={len(data[1])}  "
-          f"test_pos={len(data[3])}  device=cpu\n")
+          f"test_pos={len(data[3])}  device={device}\n")
+
+    if args.eval_only and not args.ckpt_dir:
+        raise SystemExit("--eval-only requires --ckpt-dir.")
 
     results = []
     for mode in args.modes.split(","):
         mode = mode.strip()
-        print(f"== {mode} ==")
-        results.append(train_one(mode, data, vocab, fixed_values, cfg, device,
-                                 neg_sampler=train_neg))
+        print(f"== {mode}{' (eval-only)' if args.eval_only else ''} ==")
+        if args.eval_only:
+            results.append(eval_one(mode, args.ckpt_dir, data, device))
+        else:
+            results.append(train_one(mode, data, vocab, fixed_values, cfg, device,
+                                     neg_sampler=train_neg, ckpt_dir=args.ckpt_dir))
         print()
 
     print("=" * 70)

@@ -112,9 +112,16 @@ def score_candidates(
     hop_pad = [[none_id, none_id, none_id]] * (max_triples - n)
     hop_t = torch.tensor([hop_tok + hop_pad], dtype=torch.long, device=device)
 
-    # 2. Encode subgraph once → pooled vector [1, d].
+    # 2. Encode subgraph once → pooled vector [1, d]. One shared random
+    # anonymization per query (runtime), so subgraph and candidates see the same
+    # [Z_*] vectors; _entity_embed handles the override. Runtime MC averaging is
+    # done one level up in evaluate_direction (a fresh full draw per pass).
+    rand_bank = (
+        model._make_rand_bank(device=device)
+        if getattr(model, "z_mode", "learned") == "runtime" else None
+    )
     B, N, _ = triples_t.shape
-    tok = model.embed(triples_t) + model.intra_pos
+    tok = model._entity_embed(triples_t, rand_bank) + model.intra_pos
     if use_hop_distance_tokens:
         tok = tok + model.embed(hop_t)
     tok = model.triple_encoder(tok.view(B * N, 3, -1))
@@ -157,8 +164,8 @@ def score_candidates(
     for i in range(0, len(candidates), chunk):
         ct = cand_t[i : i + chunk]
         rt = rel_t[i : i + chunk]
-        tr = model.embed(rt)             # [c, d]
-        tt = model.embed(ct)             # [c, d]
+        tr = model.embed(rt)                          # [c, d]
+        tt = model._entity_embed(ct, rand_bank)       # [c, d]
         target_emb = tr + tt
         pooled_b = pooled_d.unsqueeze(0).expand(target_emb.size(0), -1)
         feats = torch.cat([pooled_b, target_emb, pooled_b * target_emb], dim=-1)
@@ -184,6 +191,7 @@ def evaluate_direction(
     collapse_z: bool = False,
     subgraph_hops: int = 2,
     use_hop_distance_tokens: bool = False,
+    eval_mc: int = 1,
 ) -> dict[str, float]:
     assert direction in ("tail", "head")
     model.eval()
@@ -215,6 +223,9 @@ def evaluate_direction(
         else:
             cands = entity_pool
 
+        # runtime: average over `eval_mc` fresh draws to marginalize the random
+        # features (one draw is too noisy to rank a large pool). learned: 1 pass.
+        mc = max(1, eval_mc) if getattr(model, "z_mode", "learned") == "runtime" else 1
         scores = score_candidates(
             model, anchor, rel_q, cands, kg, vocab, fixed_values,
             max_triples, z_pool, cand_batch_size, device,
@@ -223,6 +234,17 @@ def evaluate_direction(
             subgraph_hops=subgraph_hops,
             use_hop_distance_tokens=use_hop_distance_tokens,
         )
+        for _ in range(mc - 1):
+            extra = score_candidates(
+                model, anchor, rel_q, cands, kg, vocab, fixed_values,
+                max_triples, z_pool, cand_batch_size, device,
+                exclude_triple=(h, r, t),
+                collapse_z=collapse_z,
+                subgraph_hops=subgraph_hops,
+                use_hop_distance_tokens=use_hop_distance_tokens,
+            )
+            for c in scores:
+                scores[c] += extra[c]
         true_score = scores[true_cand]
 
         worse = 0
@@ -321,6 +343,7 @@ def evaluate(
     collapse_z: bool = False,
     subgraph_hops: int = 2,
     use_hop_distance_tokens: bool = False,
+    eval_mc: int = 1,
 ) -> dict[str, float]:
     eval_triples, dropped = filter_known_relations(eval_triples, vocab)
     if dropped:
@@ -331,11 +354,13 @@ def evaluate(
         model, eval_triples, kg, vocab, fixed_values, entity_pool, known,
         "tail", max_triples, z_pool, device, cand_batch_size, collapse_z,
         subgraph_hops=subgraph_hops, use_hop_distance_tokens=use_hop_distance_tokens,
+        eval_mc=eval_mc,
     )
     head = evaluate_direction(
         model, eval_triples, kg, vocab, fixed_values, entity_pool, known,
         "head", max_triples, z_pool, device, cand_batch_size, collapse_z,
         subgraph_hops=subgraph_hops, use_hop_distance_tokens=use_hop_distance_tokens,
+        eval_mc=eval_mc,
     )
     avg = {k: 0.5 * (tail[k] + head[k]) for k in ("MRR", "Hits@1", "Hits@3", "Hits@10")}
     # Per-relation averages: only relations evaluated in both directions are aggregated.
@@ -418,7 +443,9 @@ def load_eval_inputs(
     """Resolve (test, known, context) triple lists for evaluation.
 
     - test     : the queries (kg_dir/test.txt unless `test_file` overrides).
-    - known    : train + valid + test, the filter set for filtered ranking.
+    - known    : the filter set for filtered ranking — train + valid + test, plus
+      the observed inference graph (`obs_file`) when given, so other true facts
+      in the inference graph aren't counted as ranking competitors.
     - context  : triples used to build the subgraph KG. Defaults to the test
       split; with `obs_file` (GraIL-style) it is obs_file + test.
     """
@@ -433,9 +460,11 @@ def load_eval_inputs(
             known += read_triples(p, fmt=fmt)
 
     if obs_file:
+        obs = read_triples(Path(obs_file), fmt=fmt)
+        known += obs
         # Include the queries so test-internal facts also enter the subgraph;
         # each query's own triple is excluded inside score_candidates.
-        context = read_triples(Path(obs_file), fmt=fmt) + test
+        context = obs + test
     else:
         context = list(test)
     return test, known, context
@@ -465,6 +494,7 @@ def run_eval(
         device=device, collapse_z=cfg.get("collapse_z", False),
         subgraph_hops=cfg.get("subgraph_hops", 2),
         use_hop_distance_tokens=cfg.get("use_hop_distance_tokens", False),
+        eval_mc=cfg.get("eval_mc", 8),  # runtime MC draws; ignored for learned
     )
 
 
@@ -530,12 +560,18 @@ def build_parser() -> argparse.ArgumentParser:
                     help="If set, dump the full results dict (incl. per-relation MRR) as JSON.")
     ap.add_argument("--per-relation", action="store_true",
                     help="Print a per-relation MRR table with each relation's inverse row alongside it.")
+    ap.add_argument("--device", default=None,
+                    help="Override compute device (e.g. 'cuda', 'cpu'). Default: 'cuda' "
+                         "if available, else the checkpoint's cfg device.")
     return ap
 
 
 def main():
     args = build_parser().parse_args()
     model, vocab, fixed_values, cfg, device = load_bundle(args.model)
+    if args.device or (device.type == "cpu" and torch.cuda.is_available()):
+        device = torch.device(args.device or "cuda")
+        model.to(device)
     fmt = cfg.get("triple_format", "head_relation_tail")
     test, known, context = load_eval_inputs(args.kg_dir, fmt, args.test_file, args.obs_file)
     results = run_eval(
