@@ -213,7 +213,7 @@ class TorchFSDPTrainer(AbstractTrainer):
         # 2. Create the per-rank entity embedding shard AFTER FSDP is initialised.
         #    FSDP does not manage these parameters; each rank holds its own shard
         #    independently.
-        self.raw_model.setup_torchrec_training(
+        self.raw_model.setup_fsdp_training(
             device=self.device,
             lr=self.attributes.learning_rate,
             adam_device=self.entity_optim_device,
@@ -351,7 +351,7 @@ class TorchFSDPTrainer(AbstractTrainer):
         because scaler.get_scale() is not thread-safe and the scale value is only
         valid until the next scaler.update() call.
         """
-        adapter = getattr(self.raw_model, "_torchrec_adapter", None)
+        adapter = getattr(self.raw_model, "_fsdp_adapter", None)
         if adapter is None or not hasattr(adapter, "_local_adam"):
             return None
         weight = adapter.weight
@@ -431,7 +431,7 @@ class TorchFSDPTrainer(AbstractTrainer):
     def _collect_dense_params(self):
         """Return parameters for the dense optimizer (excludes the entity embedding shard)."""
         entity_param_ids = set()
-        adapter = getattr(self.raw_model, "_torchrec_adapter", None)
+        adapter = getattr(self.raw_model, "_fsdp_adapter", None)
         if adapter is not None:
             for p in adapter.parameters():
                 entity_param_ids.add(id(p))
@@ -464,7 +464,7 @@ class TorchFSDPTrainer(AbstractTrainer):
         trained_model.loss_history = list(self.raw_model.loss_history)
 
         # Strip adapter keys that live outside the plain model before loading.
-        _excluded = ("entity_embeddings.", "_torchrec_adapter.", "_torchrec_dmp.")
+        _excluded = ("entity_embeddings.", "_fsdp_adapter.", "_fsdp_dmp.")
         dense_state_dict = {
             k: v for k, v in state_dict.items()
             if not any(k.startswith(p) for p in _excluded)
@@ -502,20 +502,20 @@ class TorchFSDPTrainer(AbstractTrainer):
     def _concrete_model_class(self):
         """Return the concrete scoring model class (e.g. Keci) from the MRO.
 
-        create_torchrec_sharded_model_class inserts TorchRecShardedEntityModel
+        create_fsdp_sharded_model_class inserts FSDPShardedEntityModel
         before the base scoring class in the MRO.  We want the first BaseKGE
-        subclass that is not TorchRecShardedEntityModel.
+        subclass that is not FSDPShardedEntityModel.
         """
         from dicee.models.base_model import BaseKGE, BaseKGELightning
-        from dicee.models.fsdp_models import TorchRecShardedEntityModel
+        from dicee.models.fsdp_models import FSDPShardedEntityModel
 
-        _skip = {TorchRecShardedEntityModel, BaseKGE, BaseKGELightning}
+        _skip = {FSDPShardedEntityModel, BaseKGE, BaseKGELightning}
         for cls in type(self.raw_model).__mro__:
             if (
                 cls not in _skip
                 and isinstance(cls, type)
                 and issubclass(cls, BaseKGE)
-                and not issubclass(cls, TorchRecShardedEntityModel)
+                and not issubclass(cls, FSDPShardedEntityModel)
             ):
                 return cls
         raise RuntimeError(

@@ -416,3 +416,5 @@ class CoKE(BaseKGE):
                                                          #output: (b,k) -> k scores per batch
 
         return scores
+
+    
