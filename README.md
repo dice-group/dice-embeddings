@@ -71,8 +71,8 @@ python -m pytest -p no:warnings --ff # to run the failures first and then the re
 * ```--model Pykeen_QuatE | Pykeen_Mure ``` all embedding models available in https://github.com/pykeen/pykeen#models can be selected. **📖 [PyKEEN integration →](docs/guides/pykeen_integration.md)** | **📖 [Examples →](tests/test_pykeen.py)**
 
 Training and scoring techniques
-* ```--trainer torchCPUTrainer | PL | MP | torchDDP ```
-* ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample | FixedNegSample```
+* ```--trainer torchCPUTrainer | PL | MP | torchDDP | torchFSDP ```
+* ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample | FixedNegSample | FSDP1vsSample```
 
 </details>
 
@@ -81,7 +81,7 @@ Training and scoring techniques
 
 #### Training Techniques
 
-A KGE model can be trained with a state-of-the-art training technique ```--trainer "torchCPUTrainer" | "PL" | "MP" | torchDDP ```
+A KGE model can be trained with a state-of-the-art training technique ```--trainer "torchCPUTrainer" | "PL" | "MP" | "torchDDP" | "torchFSDP" ```
 ```bash
 # CPU training
 dicee --dataset_dir "KGs/UMLS" --trainer "torchCPUTrainer" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
@@ -104,6 +104,45 @@ Multi-node training is also possible with the `PL` trainer
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "PL" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_PL"
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "PL" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_PL"
 ```
+
+#### FSDP Training (large entity tables)
+
+`torchFSDP` is designed for knowledge graphs where the entity embedding table is too large to fit on a single GPU. Entity embeddings are sharded row-wise across all GPUs — each rank owns a contiguous slice of entity rows and serves lookup requests from other ranks via `all_to_all`. Dense model parameters (relation embeddings, scoring layers) are wrapped with PyTorch FSDP.
+
+```bash
+# Single-node multi-GPU FSDP (replace --nproc_per_node with your GPU count)
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
+  dicee --dataset_dir "KGs/YAGO3-10" --model Keci \
+  --trainer "torchFSDP" --scoring_technique "NegSample" \
+  --path_to_store_single_run "YAGO_fsdp" --num_epochs 100 --batch_size 200000
+
+# With FSDP1vsSample (GPU-efficient 1-vs-sample with true-negative sampling)
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
+  dicee --dataset_dir "KGs/YAGO3-10" --model Keci \
+  --trainer "torchFSDP" --scoring_technique "FSDP1vsSample" --neg_ratio 10 \
+  --path_to_store_single_run "YAGO_fsdp" --num_epochs 100 --batch_size 200000
+```
+
+FSDP-specific options are passed via `--fsdp_trainer_kwargs` (JSON dict):
+
+| Key | Default | Description |
+|---|---|---|
+| `precision` | `float32` | `float32 \| bfloat16 \| float16` |
+| `fsdp_optim_device` | `cpu` | Entity Adam state device — `cpu` saves GPU RAM, `gpu` is faster |
+| `sharding_strategy` | `FULL_SHARD` | FSDP sharding strategy |
+| `gradient_clip_val` | `null` | Optional gradient norm clipping |
+| `num_workers` | `num_core` | DataLoader worker count |
+| `prefetch_factor` | `4` | DataLoader prefetch depth |
+
+```bash
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
+  dicee --dataset_dir "KGs/YAGO3-10" --model Keci \
+  --trainer "torchFSDP" --scoring_technique "NegSample" \
+  --path_to_store_single_run "YAGO_fsdp" \
+  --fsdp_trainer_kwargs '{"precision": "bfloat16", "fsdp_optim_device": "gpu"}'
+```
+
+Compatible scoring techniques: `NegSample`, `FixedNegSample`, `KvsSample`, `FSDP1vsSample`. Mid-epoch evaluation (`--eval_every_n_epochs`, `--eval_at_epochs`) is not supported — entity embeddings are gathered on rank 0 only after training completes.
 
 On large knowledge graphs, this configurations should be used.
 Note: When training with multi-GPU or Distributed Data Parallel (DDP) settings, you must provide the `--path_to_store_single_run` argument to specify where to store the results of a single training run. This ensures that all processes write to the correct directory and prevents conflicts.
@@ -319,7 +358,7 @@ dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_ep
 
 **📖 [See periodic evaluation examples →](tests/test_periodic_eval_callback.py)** | **📖 [Periodic eval with weight averaging →](tests/test_periodic_eval_weight_averaging.py)**
 
-Currently, Periodic Evaluations as well as Ensemble Models can only be used in combination with `torchCPUTrainer` or `PL` trainer with a single CUDA-capable device.
+Currently, Periodic Evaluations as well as Ensemble Models can only be used in combination with `torchCPUTrainer` or `PL` trainer with a single CUDA-capable device. They are not supported with `torchDDP`, `torchFSDP`, or `TP` trainers.
 </details>
 
 ## Link Prediction & Inference
