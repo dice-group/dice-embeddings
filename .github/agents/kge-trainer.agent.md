@@ -39,7 +39,9 @@ You are a training expert for the **dicee Knowledge Graph Embedding framework**.
 | 1 GPU | `PL` with `CUDA_VISIBLE_DEVICES=0` |
 | Multiple GPUs (same machine) | `PL` |
 | Native multi-GPU | `torchDDP` via `torchrun` |
-| Tensor parallelism | `TP` |
+| Tensor parallelism (ensemble) | `TP` |
+
+> **Note:** `TP` implements "Multiple Run Ensemble Learning with Low-Dimensional Knowledge Graph Embeddings"
 
 ### Scoring technique selection
 | KG size | `--scoring_technique` | Notes |

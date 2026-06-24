@@ -1,3 +1,12 @@
+"""Tensor Parallelism trainer for ensemble knowledge graph embeddings.
+
+This module implements the tensor parallelism training strategy described in:
+  "Multiple Run Ensemble Learning with Low-Dimensional Knowledge Graph Embeddings"
+   https://arxiv.org/abs/2104.05003
+
+The TensorParallel trainer creates an ensemble of models, each trained on a separate GPU,
+allowing efficient utilization of multi-GPU systems through model parallelism.
+"""
 from typing import Tuple
 
 import torch
