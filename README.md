@@ -1114,13 +1114,6 @@ docker run --rm -v ~/.local/share/dicee/KGs:/dicee/KGs dice-embeddings ./main.py
 Currently, we are working on our manuscript describing our framework. 
 If you really like our work and want to cite it now, feel free to choose one :) 
 ```
-# Tensor Parallelism / Model Parallelism
-@article{demir2024ensemble,
-  title={Multiple Run Ensemble Learning with Low-Dimensional Knowledge Graph Embeddings},
-  author={Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
-  journal={Accepted},
-  year={2024}
-}
 #ASWA
 @inproceedings{sapkota2025parameter,
   author    = {Sapkota, Rupesh and Demir, Caglar and Sharma, Arnab and Ngonga Ngomo, Axel-Cyrille},
