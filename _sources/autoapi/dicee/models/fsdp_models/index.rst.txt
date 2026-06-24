@@ -1,0 +1,145 @@
+dicee.models.fsdp_models
+========================
+
+.. py:module:: dicee.models.fsdp_models
+
+.. autoapi-nested-parse::
+
+   Row-wise sharded entity embeddings for multi-GPU training.
+
+   Entity embeddings are partitioned row-wise across ranks:
+     - dist.all_to_all_single routes index requests to the owning rank
+     - A custom autograd Function propagates gradients back through the all_to_all
+     - _LocalSparseAdam updates only the rows that received a non-zero gradient
+
+   Public API:
+     model.setup_fsdp_training(device, lr)          — called by trainer before loop
+     model.gather_entity_embeddings_on_rank_zero()      — called by trainer after loop
+     create_fsdp_sharded_model_class(ModelClass)    — factory used by static_funcs.py
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   dicee.models.fsdp_models.RowWiseShardedEmbedding
+   dicee.models.fsdp_models.FSDPShardedEntityModel
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   dicee.models.fsdp_models.create_fsdp_sharded_model_class
+
+
+Module Contents
+---------------
+
+.. py:class:: RowWiseShardedEmbedding(num_embeddings: int, embedding_dim: int, rank: int, world_size: int, device: torch.device, weight_dtype: torch.dtype = torch.bfloat16)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Entity embedding table sharded row-wise across ranks.
+
+   Each rank owns rows [start_row, end_row).  forward() looks like nn.Embedding
+   so every existing scoring function works unchanged.
+
+
+   .. py:attribute:: num_embeddings
+
+
+   .. py:attribute:: embedding_dim
+
+
+   .. py:attribute:: rank
+
+
+   .. py:attribute:: world_size
+
+
+   .. py:attribute:: device
+
+
+   .. py:attribute:: shard_size
+
+
+   .. py:attribute:: start_row
+
+
+   .. py:attribute:: end_row
+
+
+   .. py:attribute:: local_rows
+
+
+   .. py:attribute:: weight
+
+
+   .. py:method:: forward(entity_ids: torch.LongTensor) -> torch.FloatTensor
+
+
+.. py:class:: FSDPShardedEntityModel(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Mixin that defers entity embedding allocation and wires up row-wise sharding.
+
+   Lifecycle
+   ---------
+   1. __init__()                         — entity_embeddings is None
+   2. setup_fsdp_training(dev, lr)   — creates RowWiseShardedEmbedding
+   3. gather_entity_embeddings_on_rank_zero() — called by trainer after last epoch
+
+
+   .. py:method:: setup_fsdp_training(device: torch.device, lr: float, optimizer_cls=None, optimizer_kwargs: dict = None, adam_device: torch.device = None) -> None
+
+      Create the per-rank embedding shard and its local sparse Adam.
+
+      adam_device — where exp_avg / exp_avg_sq are stored:
+        GPU  (default) : pure GPU kernels, no PCIe, ~42.8 GiB extra GPU RAM per rank.
+        CPU            : lower GPU footprint, PCIe transfer each step.
+      Falls back to the embedding device (GPU) when not specified.
+
+
+
+   .. py:method:: gather_entity_embeddings_on_rank_zero() -> Optional[torch.nn.Embedding]
+
+      Gather the full entity table on rank 0; return None on other ranks.
+
+
+
+   .. py:method:: get_embeddings()
+
+      Return the entity and relation embedding matrices as numpy arrays.
+
+      :returns: * **entity_embeddings** (*numpy.ndarray*) -- Shape ``(num_entities, embedding_dim)``.
+                * **relation_embeddings** (*numpy.ndarray*) -- Shape ``(num_relations, embedding_dim)``.
+
+
+
+   .. py:method:: forward_k_vs_all(*args, **kwargs)
+
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
+
+.. py:function:: create_fsdp_sharded_model_class(model_class: Type[dicee.models.base_model.BaseKGE]) -> Type[dicee.models.base_model.BaseKGE]
+
+   Return a row-wise sharded variant of *model_class*.
+
+   The returned class inherits all scoring functions from *model_class* unchanged.
+   Only entity_embeddings is replaced at training time.
+
+

@@ -15,6 +15,7 @@ Submodules
    /autoapi/dicee/trainer/model_parallelism/index
    /autoapi/dicee/trainer/torch_trainer/index
    /autoapi/dicee/trainer/torch_trainer_ddp/index
+   /autoapi/dicee/trainer/torch_trainer_fsdp/index
 
 
 Classes
@@ -93,7 +94,7 @@ Package Contents
 
 
 
-   .. py:method:: initialize_trainer(callbacks: List) -> lightning.Trainer | dicee.trainer.model_parallelism.TensorParallel | dicee.trainer.torch_trainer.TorchTrainer | dicee.trainer.torch_trainer_ddp.TorchDDPTrainer
+   .. py:method:: initialize_trainer(callbacks: List) -> lightning.Trainer | dicee.trainer.model_parallelism.TensorParallel | dicee.trainer.torch_trainer.TorchTrainer | dicee.trainer.torch_trainer_ddp.TorchDDPTrainer | dicee.trainer.torch_trainer_fsdp.TorchFSDPTrainer
 
       Initialize Trainer from input arguments
 

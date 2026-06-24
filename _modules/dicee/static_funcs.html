@@ -116,6 +116,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">AConEx</span><span class="p">,</span> <span class="n">AConvO</span><span class="p">,</span> <span class="n">AConvQ</span><span class="p">,</span> <span class="n">CKeci</span><span class="p">,</span> <span class="n">CoKE</span><span class="p">,</span> <span class="n">ComplEx</span><span class="p">,</span> <span class="n">ConEx</span><span class="p">,</span> <span class="n">ConvO</span><span class="p">,</span> <span class="n">ConvQ</span><span class="p">,</span> <span class="n">DeCaL</span><span class="p">,</span> <span class="n">DistMult</span><span class="p">,</span> <span class="n">DualE</span><span class="p">,</span> <span class="n">Keci</span><span class="p">,</span> <span class="n">KeciTransformer</span><span class="p">,</span> <span class="n">LFMult</span><span class="p">,</span> <span class="n">OMult</span><span class="p">,</span> <span class="n">Pyke</span><span class="p">,</span> <span class="n">QMult</span><span class="p">,</span> <span class="n">Shallom</span><span class="p">,</span> <span class="n">TransE</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.models.base_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseKGE</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.models.ensemble</span><span class="w"> </span><span class="kn">import</span> <span class="n">EnsembleKGE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models.fsdp_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_fsdp_sharded_model_class</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.models.pykeen_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">PykeenKGE</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.models.transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">BytE</span>
 
@@ -259,14 +260,14 @@
     <span class="n">trainer_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="n">required_env_vars</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;LOCAL_RANK&quot;</span><span class="p">,</span> <span class="s2">&quot;RANK&quot;</span><span class="p">,</span> <span class="s2">&quot;WORLD_SIZE&quot;</span><span class="p">)</span>
     <span class="n">torchrun_launched</span> <span class="o">=</span> <span class="nb">all</span><span class="p">(</span><span class="n">env_var</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span> <span class="k">for</span> <span class="n">env_var</span> <span class="ow">in</span> <span class="n">required_env_vars</span><span class="p">)</span>
-    <span class="n">distributed</span> <span class="o">=</span> <span class="n">trainer_name</span> <span class="o">==</span> <span class="s2">&quot;torchDDP&quot;</span> <span class="ow">or</span> <span class="p">(</span>
+    <span class="n">distributed</span> <span class="o">=</span> <span class="n">trainer_name</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;torchDDP&quot;</span><span class="p">,</span> <span class="s2">&quot;torchFSDP&quot;</span><span class="p">}</span> <span class="ow">or</span> <span class="p">(</span>
         <span class="n">trainer_name</span> <span class="o">==</span> <span class="s2">&quot;PL&quot;</span> <span class="ow">and</span> <span class="n">torchrun_launched</span>
     <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">trainer_name</span> <span class="o">==</span> <span class="s2">&quot;torchDDP&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torchrun_launched</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">trainer_name</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;torchDDP&quot;</span><span class="p">,</span> <span class="s2">&quot;torchFSDP&quot;</span><span class="p">}</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torchrun_launched</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-            <span class="s2">&quot;torchDDP trainer must be launched with torchrun.&quot;</span>
-            <span class="s2">&quot;Please use appropriate commands for torchDDP trainer.&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">trainer_name</span><span class="si">}</span><span class="s2"> trainer must be launched with torchrun.&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Please use appropriate commands for </span><span class="si">{</span><span class="n">trainer_name</span><span class="si">}</span><span class="s2"> trainer.&quot;</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">distributed</span> <span class="ow">or</span> <span class="n">trainer_name</span> <span class="o">==</span> <span class="s2">&quot;PL&quot;</span><span class="p">:</span>
@@ -285,6 +286,7 @@
                     <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;nccl&quot;</span><span class="p">,</span>
                     <span class="n">init_method</span><span class="o">=</span><span class="s2">&quot;env://&quot;</span><span class="p">,</span>
                     <span class="n">device_id</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">local_rank</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span>
+                    <span class="n">timeout</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
                 <span class="p">)</span>
             <span class="n">rank</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">get_rank</span><span class="p">()</span>
             <span class="n">world_size</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">get_world_size</span><span class="p">()</span>
@@ -700,6 +702,16 @@
     <span class="c1"># Use model registry for standard models</span>
     <span class="k">if</span> <span class="n">model_name</span> <span class="ow">in</span> <span class="n">MODEL_REGISTRY</span><span class="p">:</span>
         <span class="n">model_class</span><span class="p">,</span> <span class="n">form_of_labelling</span> <span class="o">=</span> <span class="n">MODEL_REGISTRY</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span>
+        <span class="n">_is_sample_technique</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scoring_technique&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="p">{</span>
+            <span class="s2">&quot;NegSample&quot;</span><span class="p">,</span> <span class="s2">&quot;FixedNegSample&quot;</span><span class="p">,</span> <span class="s2">&quot;KvsSample&quot;</span><span class="p">,</span> <span class="s2">&quot;FSDP1vsSample&quot;</span>
+        <span class="p">}</span>
+        <span class="n">_entity_prediction</span> <span class="o">=</span> <span class="n">form_of_labelling</span> <span class="o">==</span> <span class="s2">&quot;EntityPrediction&quot;</span>
+        <span class="n">_no_bpe</span> <span class="o">=</span> <span class="n">model_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;BytE&quot;</span><span class="p">}</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;byte_pair_encoding&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;trainer&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;torchFSDP&quot;</span> <span class="ow">and</span> <span class="n">_is_sample_technique</span> <span class="ow">and</span> <span class="n">_entity_prediction</span> <span class="ow">and</span> <span class="n">_no_bpe</span><span class="p">:</span>
+            <span class="n">model_class</span> <span class="o">=</span> <span class="n">create_fsdp_sharded_model_class</span><span class="p">(</span><span class="n">model_class</span><span class="p">)</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+            <span class="n">args</span><span class="p">[</span><span class="s2">&quot;fsdp_sharded_entity&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="n">model_class</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">),</span> <span class="n">form_of_labelling</span>
 
     <span class="c1"># Provide helpful error message</span>

@@ -16,6 +16,7 @@ Submodules
    /autoapi/dicee/models/complex/index
    /autoapi/dicee/models/dualE/index
    /autoapi/dicee/models/ensemble/index
+   /autoapi/dicee/models/fsdp_models/index
    /autoapi/dicee/models/function_space/index
    /autoapi/dicee/models/literal/index
    /autoapi/dicee/models/octonion/index
@@ -647,6 +648,9 @@ Package Contents
    .. py:attribute:: block_size
 
 
+   .. py:attribute:: defer_large_embeddings
+
+
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
 
       KvsAll scoring for BPE-encoded head entities and relations.
@@ -1043,6 +1047,9 @@ Package Contents
 
 
    .. py:attribute:: block_size
+
+
+   .. py:attribute:: defer_large_embeddings
 
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
@@ -1771,6 +1778,9 @@ Package Contents
    .. py:attribute:: block_size
 
 
+   .. py:attribute:: defer_large_embeddings
+
+
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
 
       KvsAll scoring for BPE-encoded head entities and relations.
@@ -2314,6 +2324,9 @@ Package Contents
 
 
    .. py:attribute:: block_size
+
+
+   .. py:attribute:: defer_large_embeddings
 
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
@@ -2891,6 +2904,9 @@ Package Contents
 
 
    .. py:attribute:: block_size
+
+
+   .. py:attribute:: defer_large_embeddings
 
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
@@ -4018,6 +4034,9 @@ Package Contents
    .. py:attribute:: block_size
 
 
+   .. py:attribute:: defer_large_embeddings
+
+
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
 
       KvsAll scoring for BPE-encoded head entities and relations.
@@ -4437,6 +4456,9 @@ Package Contents
 
 
    .. py:attribute:: block_size
+
+
+   .. py:attribute:: defer_large_embeddings
 
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor

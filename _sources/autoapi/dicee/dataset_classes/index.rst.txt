@@ -30,6 +30,7 @@ Classes
    dicee.dataset_classes.MultiClassClassificationDataset
    dicee.dataset_classes.MultiLabelDataset
    dicee.dataset_classes.AllvsAll
+   dicee.dataset_classes.FSDP1vsSampleDataset
    dicee.dataset_classes.KvsAll
    dicee.dataset_classes.KvsSampleDataset
    dicee.dataset_classes.OnevsAllDataset
@@ -177,7 +178,7 @@ Package Contents
    .. py:method:: __getitem__(idx)
 
 
-.. py:function:: construct_dataset(*, train_set: Union[numpy.ndarray, list], valid_set=None, test_set=None, ordered_bpe_entities=None, train_target_indices=None, target_dim: int = None, entity_to_idx: dict, relation_to_idx: dict, form_of_labelling: str, scoring_technique: str, neg_ratio: int, label_smoothing_rate: float, byte_pair_encoding=None, block_size: int = None, seed: int = None) -> torch.utils.data.Dataset
+.. py:function:: construct_dataset(*, train_set: Union[numpy.ndarray, list], valid_set=None, test_set=None, ordered_bpe_entities=None, train_target_indices=None, target_dim: int = None, entity_to_idx: dict, relation_to_idx: dict, form_of_labelling: str, scoring_technique: str, neg_ratio: int, label_smoothing_rate: float, byte_pair_encoding=None, block_size: int = None, seed: int = None, sort_train_set: bool = True) -> torch.utils.data.Dataset
 
    Build the appropriate dataset for the given training configuration.
 
@@ -245,6 +246,57 @@ Package Contents
 
 
    .. py:attribute:: target_dim
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(idx)
+
+
+.. py:class:: FSDP1vsSampleDataset(train_set_idx: numpy.ndarray, entity_idxs, relation_idxs, form, neg_ratio=None, label_smoothing_rate: float = 0.0)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+   Positive-triple dataset for FSDP 1vsSample training with true-negative sampling.
+
+   Each dataset item is a single positive triple (h, r, t).  The collate_fn
+   builds the full (source, target_idx, labels) batch in a DataLoader worker,
+   sampling true negatives via index remapping so they never coincide with any
+   known positive tail for that (h, r) pair.
+
+   Fixed batch width follows KvsSample:
+       max_num_of_classes = max_positives_per_pair + neg_ratio
+   Each sample contributes 1 positive and (max_num_of_classes - 1) negatives.
+
+
+   .. py:attribute:: train_data
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:attribute:: num_relations
+
+
+   .. py:attribute:: neg_ratio
+      :value: None
+
+
+
+   .. py:attribute:: label_smoothing_rate
+      :value: 0.0
+
+
+
+   .. py:attribute:: max_num_of_classes
+
+
+   .. py:attribute:: num_negatives
+
+
+   .. py:attribute:: collate_fn
 
 
    .. py:method:: __len__()
@@ -602,7 +654,7 @@ Package Contents
    .. py:method:: __getitem__(idx)
 
 
-.. py:class:: TriplePredictionDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0, seed: int = None)
+.. py:class:: TriplePredictionDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0, seed: int = None, sort_train_set: bool = True)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
@@ -633,9 +685,6 @@ Package Contents
    .. py:attribute:: seed
       :value: None
 
-
-
-   .. py:attribute:: train_set
 
 
    .. py:attribute:: length

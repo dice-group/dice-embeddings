@@ -384,6 +384,9 @@ Module Contents
    .. py:attribute:: block_size
 
 
+   .. py:attribute:: defer_large_embeddings
+
+
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
 
       KvsAll scoring for BPE-encoded head entities and relations.

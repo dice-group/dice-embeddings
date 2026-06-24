@@ -1,0 +1,671 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.trainer.torch_trainer_fsdp &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../../../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dicee.trainer.torch_trainer_fsdp</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dicee.trainer.torch_trainer_fsdp</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Multi-GPU trainer: row-wise sharded entity embeddings + FSDP dense parameters.</span>
+
+<span class="sd">Entity embeddings are sharded row-wise across ranks via dist.all_to_all_single.</span>
+<span class="sd">Each rank owns a contiguous slice of entity rows; forward and backward use</span>
+<span class="sd">all_to_all to route index requests and gradient returns to the owning rank.</span>
+<span class="sd">A per-rank _LocalSparseAdam updates only the rows that received a non-zero</span>
+<span class="sd">gradient each batch.</span>
+
+<span class="sd">Dense parameters (relation embeddings, Clifford coefficients, …) are wrapped</span>
+<span class="sd">with FSDP and updated by the standard dense optimizer.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.distributed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dist</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributed.fsdp</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BackwardPrefetch</span><span class="p">,</span>
+    <span class="n">FullStateDictConfig</span><span class="p">,</span>
+    <span class="n">MixedPrecision</span><span class="p">,</span>
+    <span class="n">ShardingStrategy</span><span class="p">,</span>
+    <span class="n">StateDictType</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributed.fsdp</span><span class="w"> </span><span class="kn">import</span> <span class="n">FullyShardedDataParallel</span> <span class="k">as</span> <span class="n">FSDP</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataLoader</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dicee.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractTrainer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dicee.static_funcs_training</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_iterable_verbose</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">torch._dynamo.eval_frame</span><span class="w"> </span><span class="kn">import</span> <span class="n">OptimizedModule</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">OptimizedModule</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_FastDistributedSampler</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Sampler</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Drop-in replacement for DistributedSampler that avoids torch.randperm().tolist().</span>
+
+<span class="sd">    PyTorch&#39;s DistributedSampler calls torch.randperm(N).tolist() at the start</span>
+<span class="sd">    of every epoch. For large N (tens of millions), .tolist() allocates ~N*28 bytes</span>
+<span class="sd">    of Python int objects and takes several seconds — causing a visible stall at</span>
+<span class="sd">    each epoch boundary.</span>
+
+<span class="sd">    This sampler uses numpy: it shuffles a numpy int32 array in-place and yields</span>
+<span class="sd">    numpy scalars directly. numpy scalars support __index__ and work as dataset</span>
+<span class="sd">    indices in __getitem__, so no .tolist() is ever needed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">num_replicas</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rank</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">drop_last</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_replicas</span> <span class="o">=</span> <span class="n">num_replicas</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">=</span> <span class="n">rank</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span> <span class="o">=</span> <span class="n">shuffle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">drop_last</span> <span class="o">=</span> <span class="n">drop_last</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">epoch</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">drop_last</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">%</span> <span class="n">num_replicas</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">-</span> <span class="n">num_replicas</span><span class="p">)</span> <span class="o">/</span> <span class="n">num_replicas</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">/</span> <span class="n">num_replicas</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">*</span> <span class="n">num_replicas</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epoch</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">epoch</span> <span class="o">=</span> <span class="n">epoch</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shuffle</span><span class="p">:</span>
+            <span class="c1"># numpy default_rng is fast and produces the same sequence as</span>
+            <span class="c1"># torch.randperm for the same seed (different algorithm, but</span>
+            <span class="c1"># deterministic per (seed, epoch) pair — sufficient for shuffling).</span>
+            <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span>
+            <span class="n">rng</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>  <span class="c1"># in-place, no extra allocation</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">drop_last</span><span class="p">:</span>
+            <span class="n">padding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_size</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+            <span class="k">if</span> <span class="n">padding</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">indices</span><span class="p">,</span> <span class="n">indices</span><span class="p">[:</span><span class="n">padding</span><span class="p">]])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_size</span><span class="p">]</span>
+
+        <span class="n">per_rank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_size</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_replicas</span>
+        <span class="n">my_slice</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">*</span> <span class="n">per_rank</span> <span class="p">:</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">per_rank</span><span class="p">]</span>
+        <span class="c1"># yield numpy int32 scalars — they satisfy __index__ so DataLoader</span>
+        <span class="c1"># workers can use them directly as dataset indices without any Python list.</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="n">my_slice</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_move_to_device</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Move a dataloader batch (2- or 3-element) to *device*.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">move</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">move</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">v</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">move</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">v</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">batch</span>
+        <span class="k">return</span> <span class="n">move</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">move</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y_idx</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">batch</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">move</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">move</span><span class="p">(</span><span class="n">y_idx</span><span class="p">)),</span> <span class="n">move</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected batch length: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="TorchFSDPTrainer">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_fsdp/index.html#dicee.trainer.torch_trainer_fsdp.TorchFSDPTrainer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TorchFSDPTrainer</span><span class="p">(</span><span class="n">AbstractTrainer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Single-node multi-GPU trainer: row-wise sharded entity embeddings + FSDP.</span>
+
+<span class="sd">    Entity embeddings</span>
+<span class="sd">    -----------------</span>
+<span class="sd">    Sharded row-wise across GPUs.  all_to_all routes each index request to its</span>
+<span class="sd">    owning rank; embeddings and gradients travel back the same way.</span>
+<span class="sd">    _LocalSparseAdam updates only the rows accessed in each batch — O(active_rows)</span>
+<span class="sd">    not O(shard_size).  Each entity receives gradient from every rank&#39;s batches.</span>
+
+<span class="sd">    Dense parameters (relation embeddings, Clifford coefficients, …)</span>
+<span class="sd">    ----------------------------------------------------------------</span>
+<span class="sd">    Wrapped with FSDP; updated by the standard dense optimizer step().</span>
+
+<span class="sd">    Usage</span>
+<span class="sd">    -----</span>
+<span class="sd">    Launched with torchrun:</span>
+<span class="sd">        torchrun --nproc_per_node=4 -u dicee --trainer torchFSDP ...</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;LOCAL_RANK&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">global_rank</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;RANK&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_global_zero</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">global_rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>        <span class="c1"># FSDP-wrapped (dense part)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_model</span> <span class="o">=</span> <span class="kc">None</span>    <span class="c1"># original model instance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="kc">None</span>    <span class="c1"># dense optimizer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss_func</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_adam_thread</span><span class="p">:</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entity_grad_scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c1"># scale captured before scaler.update()</span>
+
+        <span class="n">fsdp_kwargs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s2">&quot;fsdp_trainer_kwargs&quot;</span><span class="p">,</span> <span class="p">{})</span> <span class="ow">or</span> <span class="p">{}</span>
+
+        <span class="n">ptdtype_map</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;float32&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+            <span class="s2">&quot;bfloat16&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span><span class="p">,</span>
+            <span class="s2">&quot;float16&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ptdtype</span> <span class="o">=</span> <span class="n">ptdtype_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">fsdp_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;precision&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">amp</span><span class="o">.</span><span class="n">autocast</span><span class="p">(</span><span class="n">device_type</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ptdtype</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">amp</span><span class="o">.</span><span class="n">GradScaler</span><span class="p">(</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ptdtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sharding_strategy</span> <span class="o">=</span> <span class="n">fsdp_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sharding_strategy&quot;</span><span class="p">,</span> <span class="s2">&quot;FULL_SHARD&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gradient_clip_val</span> <span class="o">=</span> <span class="n">fsdp_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gradient_clip_val&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_compile</span> <span class="o">=</span> <span class="n">fsdp_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;use_compile&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># DataLoader config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_workers</span> <span class="o">=</span> <span class="n">fsdp_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;num_workers&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">num_core</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prefetch_factor</span> <span class="o">=</span> <span class="n">fsdp_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prefetch_factor&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+
+        <span class="n">_optim_dev</span> <span class="o">=</span> <span class="n">fsdp_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fsdp_optim_device&quot;</span><span class="p">,</span> <span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_optim_device</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">_optim_dev</span> <span class="o">==</span> <span class="s2">&quot;gpu&quot;</span>
+            <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Main entry point</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="TorchFSDPTrainer.fit">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_fsdp/index.html#dicee.trainer.torch_trainer_fsdp.TorchFSDPTrainer.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="p">(</span><span class="n">model</span><span class="p">,)</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+
+        <span class="n">base_loader</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;train_dataloaders&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span>
+            <span class="n">base_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">pin_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">num_workers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_workers</span><span class="p">,</span>
+            <span class="n">persistent_workers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_workers</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">prefetch_factor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">prefetch_factor</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_workers</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">collate_fn</span><span class="o">=</span><span class="n">base_loader</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">collate_fn</span><span class="p">,</span>
+            <span class="n">sampler</span><span class="o">=</span><span class="n">_FastDistributedSampler</span><span class="p">(</span>
+                <span class="n">base_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
+                <span class="n">num_replicas</span><span class="o">=</span><span class="n">dist</span><span class="o">.</span><span class="n">get_world_size</span><span class="p">(),</span>
+                <span class="n">rank</span><span class="o">=</span><span class="n">dist</span><span class="o">.</span><span class="n">get_rank</span><span class="p">(),</span>
+                <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">seed</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span> <span class="s2">&quot;random_seed&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="n">drop_last</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="c1"># 1. FSDP-wrap dense parameters FIRST, while entity_embeddings is still None.</span>
+        <span class="c1">#    FSDP init (sync_module_states, device_id broadcast) never sees the large</span>
+        <span class="c1">#    entity shard — avoids the double-allocation that caused OOM.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_dense_with_fsdp</span><span class="p">()</span>
+
+        <span class="c1"># 2. Create the per-rank entity embedding shard AFTER FSDP is initialised.</span>
+        <span class="c1">#    FSDP does not manage these parameters; each rank holds its own shard</span>
+        <span class="c1">#    independently.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_model</span><span class="o">.</span><span class="n">setup_fsdp_training</span><span class="p">(</span>
+            <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+            <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
+            <span class="n">adam_device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_optim_device</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss_func</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">loss</span>
+
+        <span class="c1"># 3. Dense optimizer covers relation embeddings + model-specific params.</span>
+        <span class="c1">#    Entity embedding weight is excluded (handled by _LocalSparseAdam).</span>
+        <span class="n">dense_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_dense_params</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">configure_optimizers</span><span class="p">(</span><span class="n">parameters</span><span class="o">=</span><span class="n">dense_params</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_compile</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">torch</span><span class="p">,</span> <span class="s2">&quot;compile&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Compiling model with torch.compile...&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;reduce-overhead&quot;</span><span class="p">)</span>
+
+        <span class="n">num_of_batches</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">dist</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="ow">and</span> <span class="n">dist</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
+            <span class="n">dist</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
+
+        <span class="c1"># Training loop</span>
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="p">(</span><span class="n">tqdm_bar</span> <span class="o">:=</span> <span class="n">make_iterable_verbose</span><span class="p">(</span>
+            <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">),</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">is_global_zero</span><span class="p">,</span>
+            <span class="n">position</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">leave</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">set_epoch</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_global_zero</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">on_train_epoch_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_model</span><span class="p">)</span>
+            <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span><span class="p">):</span>
+                <span class="n">source</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_input_outputs</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+                <span class="n">batch_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_batch</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+                <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">batch_loss</span>
+
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">tqdm_bar</span><span class="p">,</span> <span class="s2">&quot;set_description_str&quot;</span><span class="p">):</span>
+                    <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_description_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epoch:</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_postfix_str</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;batch=</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">num_of_batches</span><span class="si">}</span><span class="s2">, &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;loss_step=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;loss_epoch=</span><span class="si">{</span><span class="n">epoch_loss</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+            <span class="n">loss_t</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">epoch_loss</span> <span class="o">/</span> <span class="n">num_of_batches</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">dist</span><span class="o">.</span><span class="n">all_reduce</span><span class="p">(</span><span class="n">loss_t</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">dist</span><span class="o">.</span><span class="n">ReduceOp</span><span class="o">.</span><span class="n">AVG</span><span class="p">)</span>
+            <span class="n">avg_epoch_loss</span> <span class="o">=</span> <span class="n">loss_t</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">raw_model</span><span class="o">.</span><span class="n">loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg_epoch_loss</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_global_zero</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_model</span><span class="p">)</span>
+
+        <span class="c1"># Flush the last batch&#39;s async Adam before the barrier.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adam_thread</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_adam_thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_adam_thread</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Materialize: gather all entity shards + dense FSDP state on rank 0.</span>
+        <span class="n">dist</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
+        <span class="n">trained_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_materialize_model</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_global_zero</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">)</span>
+        <span class="n">dist</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">dist</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
+            <span class="n">dist</span><span class="o">.</span><span class="n">destroy_process_group</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">trained_model</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Batch step</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_run_batch</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">targets</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;One gradient step.</span>
+
+<span class="sd">        Async Adam thread timing</span>
+<span class="sd">        ------------------------</span>
+<span class="sd">        The thread is launched at the END of batch N (after scaler.update) and</span>
+<span class="sd">        joined at the START of batch N+1 (before model(source) / FSDP all_gather).</span>
+
+<span class="sd">        Why this window is safe:</span>
+<span class="sd">          • After scaler.update() — FSDP reduce_scatter and GradScaler are fully</span>
+<span class="sd">            done; neither will re-enter CUDA Graph capture until the next backward.</span>
+<span class="sd">          • Before model(source) — FSDP all_gather begins here.  Joining before</span>
+<span class="sd">            this call ensures the thread has no live CUDA-stream access before FSDP</span>
+<span class="sd">            touches the default stream again.</span>
+
+<span class="sd">        What the overlap buys:</span>
+<span class="sd">          DataLoader.__next__() + zero_grad() run on the main thread while the</span>
+<span class="sd">          background thread runs PCIe transfer + CPU Adam (CPU states) or a few</span>
+<span class="sd">          GPU kernels (GPU states), both of which are outside the CUDA Graph</span>
+<span class="sd">          capture window.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># ── join previous batch&#39;s Adam BEFORE FSDP all_gather ──────────────────</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_adam_thread</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_adam_thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_adam_thread</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">(</span><span class="n">set_to_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>          <span class="c1"># ← FSDP all_gather starts here</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_func</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+
+        <span class="n">batch_loss</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>       <span class="c1"># ← FSDP reduce_scatter + capture</span>
+
+        <span class="c1"># Dense optimizer (all FSDP/scaler GPU operations finish inside update())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">unscale_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_clip_val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_clip_dense_grad_norm</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="p">)</span>
+        <span class="c1"># Capture the scale used in this backward BEFORE update() changes it.</span>
+        <span class="c1"># get_scale() after update() returns the next batch&#39;s scale, which would</span>
+        <span class="c1"># produce incorrect unscaling of the entity embedding gradient.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entity_grad_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">get_scale</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+
+        <span class="c1"># ── launch entity Adam AFTER all capture activity is done ───────────────</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_adam_thread</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_launch_entity_adam_async</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">batch_loss</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_launch_entity_adam_async</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;threading.Thread | None&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Snapshot and unscale the entity grad on the main thread, then run</span>
+<span class="sd">        _LocalSparseAdam in a daemon thread.</span>
+
+<span class="sd">        Unscaling must happen on the main thread immediately after scaler.update()</span>
+<span class="sd">        because scaler.get_scale() is not thread-safe and the scale value is only</span>
+<span class="sd">        valid until the next scaler.update() call.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">adapter</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_model</span><span class="p">,</span> <span class="s2">&quot;_fsdp_adapter&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">adapter</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">adapter</span><span class="p">,</span> <span class="s2">&quot;_local_adam&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">weight</span>
+        <span class="k">if</span> <span class="n">weight</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">grad</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">grad</span>   <span class="c1"># sparse COO from _RowWiseEmbLookup.backward</span>
+
+        <span class="c1"># Manual unscale for fp16 GradScaler; bfloat16 has scaler disabled (no-op path).</span>
+        <span class="c1"># Use _entity_grad_scale (captured before scaler.update()) — not get_scale(),</span>
+        <span class="c1"># which returns the next batch&#39;s scale after update() has already run.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">is_enabled</span><span class="p">():</span>
+            <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_entity_grad_scale</span>
+            <span class="k">if</span> <span class="n">scale</span> <span class="o">==</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">scale</span><span class="p">):</span>
+                <span class="n">weight</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">grad</span><span class="o">.</span><span class="n">is_sparse</span><span class="p">:</span>
+                <span class="n">grad_c</span> <span class="o">=</span> <span class="n">grad</span><span class="o">.</span><span class="n">coalesce</span><span class="p">()</span>
+                <span class="n">grad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sparse_coo_tensor</span><span class="p">(</span>
+                    <span class="n">grad_c</span><span class="o">.</span><span class="n">indices</span><span class="p">(),</span>
+                    <span class="n">grad_c</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="o">/</span> <span class="n">scale</span><span class="p">,</span>
+                    <span class="n">grad_c</span><span class="o">.</span><span class="n">size</span><span class="p">(),</span>
+                    <span class="n">device</span><span class="o">=</span><span class="n">grad_c</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">grad</span> <span class="o">=</span> <span class="n">grad</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">div_</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
+
+        <span class="c1"># Clear weight.grad on the main thread; the background thread holds the snapshot.</span>
+        <span class="n">weight</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_run</span><span class="p">():</span>
+            <span class="n">adapter</span><span class="o">.</span><span class="n">_local_adam</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">weight</span><span class="p">,</span> <span class="n">grad</span><span class="p">)</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_run</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">t</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Input extraction</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="TorchFSDPTrainer.extract_input_outputs">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_fsdp/index.html#dicee.trainer.torch_trainer_fsdp.TorchFSDPTrainer.extract_input_outputs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">extract_input_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_move_to_device</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># FSDP for dense parameters</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_wrap_dense_with_fsdp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FSDP</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrap dense parameters with FSDP, excluding the sharded entity embedding.</span>
+
+<span class="sd">        RowWiseShardedEmbedding is passed as ignored_modules so FSDP never</span>
+<span class="sd">        touches it — each rank legitimately holds a different shard.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mp_policy</span> <span class="o">=</span> <span class="n">MixedPrecision</span><span class="p">(</span>
+            <span class="n">param_dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ptdtype</span><span class="p">,</span>
+            <span class="n">reduce_dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ptdtype</span><span class="p">,</span>
+            <span class="n">buffer_dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ptdtype</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">strategy</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
+            <span class="n">ShardingStrategy</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharding_strategy</span><span class="p">,</span> <span class="n">ShardingStrategy</span><span class="o">.</span><span class="n">FULL_SHARD</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">FSDP</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">raw_model</span><span class="p">,</span>
+            <span class="n">device_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+            <span class="n">use_orig_params</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">sync_module_states</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">sharding_strategy</span><span class="o">=</span><span class="n">strategy</span><span class="p">,</span>
+            <span class="n">mixed_precision</span><span class="o">=</span><span class="n">mp_policy</span><span class="p">,</span>
+            <span class="n">ignored_modules</span><span class="o">=</span><span class="p">[],</span>
+            <span class="n">backward_prefetch</span><span class="o">=</span><span class="n">BackwardPrefetch</span><span class="o">.</span><span class="n">BACKWARD_PRE</span><span class="p">,</span>
+            <span class="n">limit_all_gathers</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">forward_prefetch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_collect_dense_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return parameters for the dense optimizer (excludes the entity embedding shard).&quot;&quot;&quot;</span>
+        <span class="n">entity_param_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">adapter</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_model</span><span class="p">,</span> <span class="s2">&quot;_fsdp_adapter&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">adapter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">adapter</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
+                <span class="n">entity_param_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span> <span class="k">if</span> <span class="nb">id</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">entity_param_ids</span><span class="p">]</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Materialization after training</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_materialize_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gather entity shards + dense FSDP state; rebuild a plain CPU model on rank 0.</span>
+
+<span class="sd">          1. (collective) gather entity shards → nn.Embedding on rank 0, None elsewhere</span>
+<span class="sd">          2. (collective) gather FSDP full state dict, offloaded to CPU, rank-0-only</span>
+<span class="sd">          3. rank 0 only: construct a plain (non-sharded) model, wire in entity embeddings,</span>
+<span class="sd">             strip adapter keys, load dense state</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">full_entity_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_model</span><span class="o">.</span><span class="n">gather_entity_embeddings_on_rank_zero</span><span class="p">()</span>
+        <span class="n">state_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gather_full_state_dict</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_rank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">concrete_cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_concrete_model_class</span><span class="p">()</span>
+        <span class="n">plain_args</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_model</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+        <span class="n">plain_args</span><span class="p">[</span><span class="s2">&quot;fsdp_sharded_entity&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">trained_model</span> <span class="o">=</span> <span class="n">concrete_cls</span><span class="p">(</span><span class="n">plain_args</span><span class="p">)</span>
+        <span class="n">trained_model</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">full_entity_emb</span>
+        <span class="n">trained_model</span><span class="o">.</span><span class="n">loss_history</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_model</span><span class="o">.</span><span class="n">loss_history</span><span class="p">)</span>
+
+        <span class="c1"># Strip adapter keys that live outside the plain model before loading.</span>
+        <span class="n">_excluded</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;entity_embeddings.&quot;</span><span class="p">,</span> <span class="s2">&quot;_fsdp_adapter.&quot;</span><span class="p">,</span> <span class="s2">&quot;_fsdp_dmp.&quot;</span><span class="p">)</span>
+        <span class="n">dense_state_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">_excluded</span><span class="p">)</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_load_dense_state_dict_for_materialized_model</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">dense_state_dict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">trained_model</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_gather_full_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Collect the full (un-sharded) FSDP state dict on rank 0, offloaded to CPU.&quot;&quot;&quot;</span>
+        <span class="n">cfg</span> <span class="o">=</span> <span class="n">FullStateDictConfig</span><span class="p">(</span><span class="n">offload_to_cpu</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">rank0_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">fsdp_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unwrap_compiled</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">FSDP</span><span class="o">.</span><span class="n">state_dict_type</span><span class="p">(</span><span class="n">fsdp_model</span><span class="p">,</span> <span class="n">StateDictType</span><span class="o">.</span><span class="n">FULL_STATE_DICT</span><span class="p">,</span> <span class="n">cfg</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">fsdp_model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_dense_state_dict_for_materialized_model</span><span class="p">(</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">:</span> <span class="nb">dict</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load *state_dict* into *model* (strict=False); raise on unexpected mismatches.</span>
+
+<span class="sd">        entity_embeddings.weight is expected to be absent (already assigned directly).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">missing</span><span class="p">,</span> <span class="n">unexpected</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">expected_missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;entity_embeddings&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">expected_missing</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;entity_embeddings.weight&quot;</span><span class="p">)</span>
+        <span class="n">unexpected_missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span> <span class="o">-</span> <span class="n">expected_missing</span>
+        <span class="k">if</span> <span class="n">unexpected_missing</span> <span class="ow">or</span> <span class="n">unexpected</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unexpected dense state load result. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;missing=</span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unexpected_missing</span><span class="p">)</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;unexpected=</span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unexpected</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_concrete_model_class</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the concrete scoring model class (e.g. Keci) from the MRO.</span>
+
+<span class="sd">        create_fsdp_sharded_model_class inserts FSDPShardedEntityModel</span>
+<span class="sd">        before the base scoring class in the MRO.  We want the first BaseKGE</span>
+<span class="sd">        subclass that is not FSDPShardedEntityModel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">dicee.models.base_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseKGE</span><span class="p">,</span> <span class="n">BaseKGELightning</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">dicee.models.fsdp_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">FSDPShardedEntityModel</span>
+
+        <span class="n">_skip</span> <span class="o">=</span> <span class="p">{</span><span class="n">FSDPShardedEntityModel</span><span class="p">,</span> <span class="n">BaseKGE</span><span class="p">,</span> <span class="n">BaseKGELightning</span><span class="p">}</span>
+        <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_model</span><span class="p">)</span><span class="o">.</span><span class="vm">__mro__</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="bp">cls</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_skip</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">BaseKGE</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">FSDPShardedEntityModel</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">return</span> <span class="bp">cls</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Could not find a concrete model class in MRO of &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_model</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Helpers</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_clip_dense_grad_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fsdp_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unwrap_compiled</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fsdp_model</span><span class="p">,</span> <span class="n">FSDP</span><span class="p">):</span>
+            <span class="n">fsdp_model</span><span class="o">.</span><span class="n">clip_grad_norm_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gradient_clip_val</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dense_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_dense_params</span><span class="p">()</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">clip_grad_norm_</span><span class="p">(</span><span class="n">dense_params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_clip_val</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_unwrap_compiled</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">OptimizedModule</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">OptimizedModule</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">_orig_mod</span>
+        <span class="k">return</span> <span class="n">model</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

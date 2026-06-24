@@ -323,14 +323,26 @@
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">details_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">memory_map_details</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_local_rank_zero</span><span class="p">()</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">byte_pair_encoding</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_experiment_folder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span> <span class="o">=</span> <span class="n">read_or_load_kg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">KG</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">memmap_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base_path</span><span class="p">,</span> <span class="s1">&#39;memory_map_train_set.npy&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">(</span>
+                <span class="n">memmap_path</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="n">memory_map_details</span><span class="p">[</span><span class="s2">&quot;dtype&quot;</span><span class="p">],</span>
+                <span class="n">shape</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">memory_map_details</span><span class="p">[</span><span class="s2">&quot;shape&quot;</span><span class="p">]),</span>
+            <span class="p">)</span>
+
         <span class="c1"># memmap_path = os.path.join(base_path, &#39;memory_map_train_set.npy&#39;)</span>
         <span class="c1"># self.knowledge_graph = np.memmap(</span>
         <span class="c1">#     memmap_path,</span>
         <span class="c1">#     mode=&#39;r&#39;,</span>
         <span class="c1">#     dtype=memory_map_details[&quot;dtype&quot;],</span>
-        <span class="c1">#                                     shape=tuple(memory_map_details[&quot;shape&quot;]))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_experiment_folder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">knowledge_graph</span> <span class="o">=</span> <span class="n">read_or_load_kg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">KG</span><span class="p">)</span>
+        <span class="c1">#     shape=tuple(memory_map_details[&quot;shape&quot;]),</span>
+        <span class="c1"># )</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="n">memory_map_details</span><span class="p">[</span><span class="s2">&quot;num_entities&quot;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="n">memory_map_details</span><span class="p">[</span><span class="s2">&quot;num_relations&quot;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_tokens</span> <span class="o">=</span> <span class="kc">None</span>
