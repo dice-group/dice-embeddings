@@ -14,47 +14,19 @@ from __future__ import annotations
 
 import argparse
 
-from .dataset import KnowledgeGraph, augment_with_inverse, read_triples
-from .eval import filter_known_relations, score_candidates
-from .model import load_bundle
-
-
-def _context_kg(data_path: str, vocab: dict, fmt: str) -> KnowledgeGraph:
-    triples = read_triples(data_path, fmt=fmt)
-    triples, _ = filter_known_relations(triples, vocab)
-    return KnowledgeGraph(augment_with_inverse(triples))
+from .scorer import Scorer
 
 
 def cmd_infer(args: argparse.Namespace) -> None:
-    model, vocab, fixed_values, cfg, device = load_bundle(args.model)
-    fmt = cfg.get("triple_format", "head_relation_tail")
-    kg = _context_kg(args.data, vocab, fmt)
-    scores = score_candidates(
-        model, args.head, args.relation, sorted(kg.entities), kg, vocab, fixed_values,
-        max_triples=cfg["max_triples"], z_pool=cfg["z_pool_size"],
-        batch_size=128, device=device,
-        collapse_z=cfg.get("collapse_z", False),
-        subgraph_hops=cfg.get("subgraph_hops", 2),
-        use_hop_distance_tokens=cfg.get("use_hop_distance_tokens", False),
-    )
-    for tail, s in sorted(scores.items(), key=lambda kv: -kv[1])[: args.k]:
+    scorer = Scorer.from_bundle(args.model, args.data)
+    for tail, s in scorer.rank(args.head, args.relation, k=args.k):
         print(f"{s:.4f}\t{tail}")
 
 
 def cmd_score(args: argparse.Namespace) -> None:
     head, relation, tail = args.triple
-    model, vocab, fixed_values, cfg, device = load_bundle(args.model)
-    fmt = cfg.get("triple_format", "head_relation_tail")
-    kg = _context_kg(args.data, vocab, fmt)
-    scores = score_candidates(
-        model, head, relation, [tail], kg, vocab, fixed_values,
-        max_triples=cfg["max_triples"], z_pool=cfg["z_pool_size"],
-        batch_size=1, device=device,
-        collapse_z=cfg.get("collapse_z", False),
-        subgraph_hops=cfg.get("subgraph_hops", 2),
-        use_hop_distance_tokens=cfg.get("use_hop_distance_tokens", False),
-    )
-    print(f"{scores[tail]:.4f}")
+    scorer = Scorer.from_bundle(args.model, args.data)
+    print(f"{scorer.score(head, relation, tail):.4f}")
 
 
 def build_parser() -> argparse.ArgumentParser:

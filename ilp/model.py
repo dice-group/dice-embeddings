@@ -106,19 +106,19 @@ class InductiveKGModel(nn.Module):
             z_emb = g.reshape(*ids.shape, d)
         return torch.where(is_z.unsqueeze(-1), z_emb, emb)
 
-    def forward(
+    def _encode_subgraph(
         self,
         triples: torch.Tensor,         # [B, N, 3] long
         mask: torch.Tensor,            # [B, N]    bool, True = valid
-        target_relation: torch.Tensor, # [B]       long
-        target_tail: torch.Tensor,     # [B]       long
-        hop_distances: torch.Tensor | None = None,  # [B, N, 3] long; optional per-entity hop-distance tokens
-    ) -> torch.Tensor:                 # [B]       float (logits)
+        hop_distances: torch.Tensor | None,
+        rand_bank: torch.Tensor | None,
+    ) -> torch.Tensor:                 # [B, d]    pooled [X] representation
+        """Encode one anonymized subgraph (centered on its [X] token) → pooled vec.
+
+        Shared by the anchor tower and the optional candidate tower, so the two
+        sides are siamese: identical weights, zero extra parameters.
+        """
         B, N, _ = triples.shape
-
-        # One independent random anonymization per sample for runtime mode.
-        rand_bank = self._make_rand_bank(B, triples.device) if self.z_mode == "runtime" else None
-
         tok = self._entity_embed(triples, rand_bank) + self.intra_pos  # [B, N, 3, d]
         if hop_distances is not None:
             # Hop-distance tokens share the main embedding table — adds zero
@@ -137,12 +137,45 @@ class InductiveKGModel(nn.Module):
         )
         # src_key_padding_mask: True positions are *masked out*.
         h = self.sab_stack(h, src_key_padding_mask=~mask_ext)
-        pooled = h[:, 0]                                    # [B, d]
+        return h[:, 0]                                       # [B, d]
+
+    def forward(
+        self,
+        triples: torch.Tensor,         # [B, N, 3] long
+        mask: torch.Tensor,            # [B, N]    bool, True = valid
+        target_relation: torch.Tensor, # [B]       long
+        target_tail: torch.Tensor,     # [B]       long
+        hop_distances: torch.Tensor | None = None,  # [B, N, 3] long; optional per-entity hop-distance tokens
+        cand_triples: torch.Tensor | None = None,        # [B, M, 3] long; candidate subgraph
+        cand_mask: torch.Tensor | None = None,           # [B, M]    bool
+        cand_hop_distances: torch.Tensor | None = None,  # [B, M, 3] long
+    ) -> torch.Tensor:                 # [B]       float (logits)
+        """Score (anchor-subgraph, relation, candidate).
+
+        Single tower (default): the candidate is a *token* — its embedding is
+        meaningful only when it appears in the anchor's subgraph, otherwise it's
+        an ungrounded [Z]. Pass `cand_triples`/`cand_mask` to instead represent
+        the candidate by the pooled vector of *its own* k-hop subgraph (the
+        candidate tower), which grounds candidates that lie outside the anchor's
+        neighborhood. The two towers share weights and never attend to each
+        other, so each entity's subgraph can be encoded once and cached at eval.
+        """
+        B = triples.shape[0]
+
+        # One independent random anonymization per sample for runtime mode.
+        rand_bank = self._make_rand_bank(B, triples.device) if self.z_mode == "runtime" else None
+
+        pooled = self._encode_subgraph(triples, mask, hop_distances, rand_bank)  # [B, d]
 
         tr = self.embed(target_relation)                    # [B, d]
-        tt = self._entity_embed(target_tail, rand_bank)     # [B, d]
+        if cand_triples is not None:
+            # Candidate tower: same encoder run on the candidate's subgraph.
+            tt = self._encode_subgraph(cand_triples, cand_mask, cand_hop_distances, rand_bank)
+        else:
+            tt = self._entity_embed(target_tail, rand_bank)  # [B, d]
+        # TODO: we should consider a more sophistacted interaction for the feature vector  
         target_emb = tr + tt
-        feats = torch.cat([pooled, target_emb, pooled * target_emb], dim=-1)
+        feats = torch.cat([pooled, target_emb, pooled * target_emb], dim=-1) # [B, 3*d] 
         return self.classifier(feats).squeeze(-1)
 
 

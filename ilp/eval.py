@@ -26,153 +26,14 @@ from .dataset import (
     collate,
     k_hop_neighborhood,
     read_triples,
-    two_hop_neighborhood,
 )
 from .model import InductiveKGModel, load_bundle
-from .vocab import HOP_NONE, hop_distance_token, inverse_relation, z_token_ids
-
-
-@torch.no_grad()
-def score_candidates(
-    model: InductiveKGModel,
-    anchor: str,
-    relation: str,
-    candidates: Sequence[str],
-    kg: KnowledgeGraph,
-    vocab: dict[str, int],
-    fixed_values: set[str],
-    max_triples: int,
-    z_pool: int,
-    batch_size: int,                  # kept for backwards compat (unused)
-    device: torch.device,
-    exclude_triple: Triple | None = None,
-    collapse_z: bool = False,
-    subgraph_hops: int = 2,
-    use_hop_distance_tokens: bool = False,
-) -> dict[str, float]:
-    """Score every candidate under a single (anchor, relation) query.
-
-    Optimization: `pooled` depends only on the subgraph, not on the candidate.
-    So we encode the subgraph ONCE, then vary only the candidate token. This
-    replaces the previous per-candidate full forward pass — roughly a 100×
-    to 1000× speedup on DBpedia50-scale eval.
-
-    Z-randomization at inference is a single fixed draw per query (versus a
-    fresh draw per candidate). That's actually more correct: candidates are
-    compared on identical encoded context, not on different anonymizations.
-    """
-    # 1. Build the anonymized subgraph for this query (does not depend on candidate).
-    rng = random.Random()
-    subgraph, entity_distance = k_hop_neighborhood(anchor, kg, k=subgraph_hops)
-    if exclude_triple is not None:
-        s_, r_, o_ = exclude_triple
-        subgraph.discard((s_, r_, o_))
-        subgraph.discard((o_, inverse_relation(r_), s_))
-    if len(subgraph) > max_triples:
-        subgraph_list = rng.sample(list(subgraph), max_triples)
-    else:
-        subgraph_list = list(subgraph)
-
-    z_indices = list(range(z_pool))
-    rng.shuffle(z_indices)
-    entity_map: dict[str, int] = {anchor: vocab["[X]"]}
-
-    def assign(node: str) -> int:
-        if node in entity_map:
-            return entity_map[node]
-        if node in fixed_values:
-            return vocab[f"[VAL_{node}]"]
-        if not z_indices:
-            if collapse_z:
-                entity_map[node] = vocab[f"[Z_{rng.randrange(z_pool)}]"]
-                return entity_map[node]
-            raise RuntimeError(f"Z pool exhausted for anchor={anchor}")
-        entity_map[node] = vocab[f"[Z_{z_indices.pop()}]"]
-        return entity_map[node]
-
-    triples_tok = [[assign(s), vocab[f"[REL_{rel}]"], assign(o)] for s, rel, o in subgraph_list]
-    n = len(triples_tok)
-    pad = [[0, 0, 0]] * (max_triples - n)
-    triples_t = torch.tensor([triples_tok + pad], dtype=torch.long, device=device)
-    mask_t = torch.tensor(
-        [[True] * n + [False] * (max_triples - n)], dtype=torch.bool, device=device
-    )
-
-    # Per-position hop-distance tokens. When use_hop_distance_tokens=False
-    # these are all [HOP_NONE] → uniform bias, matches the no-hop training
-    # path (the tok += model.embed(...) below is also gated by the flag).
-    none_id = vocab[HOP_NONE]
-
-    def _hop_id(node: str) -> int:
-        if not use_hop_distance_tokens:
-            return none_id
-        return vocab[hop_distance_token(entity_distance.get(node, -1))]
-
-    hop_tok = [[_hop_id(s), none_id, _hop_id(o)] for s, _, o in subgraph_list]
-    hop_pad = [[none_id, none_id, none_id]] * (max_triples - n)
-    hop_t = torch.tensor([hop_tok + hop_pad], dtype=torch.long, device=device)
-
-    # 2. Encode subgraph once → pooled vector [1, d]. One shared random
-    # anonymization per query (runtime), so subgraph and candidates see the same
-    # [Z_*] vectors; _entity_embed handles the override. Runtime MC averaging is
-    # done one level up in evaluate_direction (a fresh full draw per pass).
-    rand_bank = (
-        model._make_rand_bank(device=device)
-        if getattr(model, "z_mode", "learned") == "runtime" else None
-    )
-    B, N, _ = triples_t.shape
-    tok = model._entity_embed(triples_t, rand_bank) + model.intra_pos
-    if use_hop_distance_tokens:
-        tok = tok + model.embed(hop_t)
-    tok = model.triple_encoder(tok.view(B * N, 3, -1))
-    triple_vec = tok.mean(dim=1).view(B, N, -1)
-    x_emb = model.embed(
-        torch.tensor([[model.x_token_id]], dtype=torch.long, device=device)
-    )
-    h = torch.cat([x_emb, triple_vec], dim=1)
-    mask_ext = torch.cat(
-        [torch.ones(B, 1, dtype=torch.bool, device=device), mask_t], dim=1
-    )
-    h = model.sab_stack(h, src_key_padding_mask=~mask_ext)
-    pooled = h[:, 0]  # [1, d]
-
-    # 3. Score all candidates in vectorized chunks.
-    # Candidate token: use the subgraph's assignment if present, else [VAL_*] for
-    # schema, else any available [Z_*]. All [Z_*] embeddings are interchangeable
-    # by Z-randomization training — unseen candidates legitimately tie.
-    unused_z_id = (
-        vocab[f"[Z_{z_indices[-1]}]"] if z_indices else vocab["[Z_0]"]
-    )
-    rel_id = vocab[f"[REL_{relation}]"]
-
-    cand_tokens: list[int] = []
-    for c in candidates:
-        if c in entity_map:
-            cand_tokens.append(entity_map[c])
-        elif c in fixed_values:
-            cand_tokens.append(vocab[f"[VAL_{c}]"])
-        else:
-            cand_tokens.append(unused_z_id)
-
-    cand_t = torch.tensor(cand_tokens, dtype=torch.long, device=device)
-    rel_t = torch.full((len(candidates),), rel_id, dtype=torch.long, device=device)
-
-    # Process candidates in batches to keep memory bounded.
-    chunk = 4096
-    out: list[float] = []
-    pooled_d = pooled.squeeze(0)  # [d]
-    for i in range(0, len(candidates), chunk):
-        ct = cand_t[i : i + chunk]
-        rt = rel_t[i : i + chunk]
-        tr = model.embed(rt)                          # [c, d]
-        tt = model._entity_embed(ct, rand_bank)       # [c, d]
-        target_emb = tr + tt
-        pooled_b = pooled_d.unsqueeze(0).expand(target_emb.size(0), -1)
-        feats = torch.cat([pooled_b, target_emb, pooled_b * target_emb], dim=-1)
-        logits = model.classifier(feats).squeeze(-1)
-        out.extend(logits.float().cpu().tolist())
-
-    return dict(zip(candidates, out))
+from .scoring import (
+    build_candidate_table,
+    score_candidates,
+    score_candidates_dual,
+)
+from .vocab import hop_distance_token, inverse_relation, z_token_ids
 
 
 def evaluate_direction(
@@ -192,12 +53,33 @@ def evaluate_direction(
     subgraph_hops: int = 2,
     use_hop_distance_tokens: bool = False,
     eval_mc: int = 1,
+    dual_subgraph: bool = False,
+    cand_index: dict[str, int] | None = None,
+    cand_table: torch.Tensor | None = None,
 ) -> dict[str, float]:
     assert direction in ("tail", "head")
     model.eval()
     ranks: list[int] = []
     entity_pool = list(entity_pool)
     pool_set = set(entity_pool)
+
+    def _score(anchor, rel_q, cands, true_cand):
+        if dual_subgraph:
+            return score_candidates_dual(
+                model, anchor, rel_q, cands, kg, vocab, fixed_values,
+                max_triples, z_pool, device,
+                cand_index=cand_index, cand_table=cand_table,
+                true_cand=true_cand, exclude_triple=(h, r, t),
+                collapse_z=collapse_z, subgraph_hops=subgraph_hops,
+                use_hop_distance_tokens=use_hop_distance_tokens,
+            )
+        return score_candidates(
+            model, anchor, rel_q, cands, kg, vocab, fixed_values,
+            max_triples, z_pool, cand_batch_size, device,
+            exclude_triple=(h, r, t),
+            collapse_z=collapse_z, subgraph_hops=subgraph_hops,
+            use_hop_distance_tokens=use_hop_distance_tokens,
+        )
 
     rels: list[str] = []
     reachable_flags: list[bool] = []
@@ -226,23 +108,9 @@ def evaluate_direction(
         # runtime: average over `eval_mc` fresh draws to marginalize the random
         # features (one draw is too noisy to rank a large pool). learned: 1 pass.
         mc = max(1, eval_mc) if getattr(model, "z_mode", "learned") == "runtime" else 1
-        scores = score_candidates(
-            model, anchor, rel_q, cands, kg, vocab, fixed_values,
-            max_triples, z_pool, cand_batch_size, device,
-            exclude_triple=(h, r, t),
-            collapse_z=collapse_z,
-            subgraph_hops=subgraph_hops,
-            use_hop_distance_tokens=use_hop_distance_tokens,
-        )
+        scores = _score(anchor, rel_q, cands, true_cand)
         for _ in range(mc - 1):
-            extra = score_candidates(
-                model, anchor, rel_q, cands, kg, vocab, fixed_values,
-                max_triples, z_pool, cand_batch_size, device,
-                exclude_triple=(h, r, t),
-                collapse_z=collapse_z,
-                subgraph_hops=subgraph_hops,
-                use_hop_distance_tokens=use_hop_distance_tokens,
-            )
+            extra = _score(anchor, rel_q, cands, true_cand)
             for c in scores:
                 scores[c] += extra[c]
         true_score = scores[true_cand]
@@ -344,23 +212,38 @@ def evaluate(
     subgraph_hops: int = 2,
     use_hop_distance_tokens: bool = False,
     eval_mc: int = 1,
+    dual_subgraph: bool = False,
 ) -> dict[str, float]:
     eval_triples, dropped = filter_known_relations(eval_triples, vocab)
     if dropped:
         print(f"[eval] skipped {dropped} test triples with unseen relations "
               f"(open-world). Evaluating on {len(eval_triples)} triples.")
     known = set(known_triples)
+
+    # Candidate tower: encode every entity's subgraph ONCE and reuse the table
+    # across all queries (both directions) — the precompute that keeps dual eval
+    # fast. Skipped entirely in single mode (cand_index/cand_table stay None).
+    cand_index = cand_table = None
+    if dual_subgraph:
+        cand_index, cand_table = build_candidate_table(
+            model, kg, entity_pool, vocab, fixed_values, max_triples, z_pool, device,
+            collapse_z=collapse_z, subgraph_hops=subgraph_hops,
+            use_hop_distance_tokens=use_hop_distance_tokens,
+        )
+
     tail = evaluate_direction(
         model, eval_triples, kg, vocab, fixed_values, entity_pool, known,
         "tail", max_triples, z_pool, device, cand_batch_size, collapse_z,
         subgraph_hops=subgraph_hops, use_hop_distance_tokens=use_hop_distance_tokens,
-        eval_mc=eval_mc,
+        eval_mc=eval_mc, dual_subgraph=dual_subgraph,
+        cand_index=cand_index, cand_table=cand_table,
     )
     head = evaluate_direction(
         model, eval_triples, kg, vocab, fixed_values, entity_pool, known,
         "head", max_triples, z_pool, device, cand_batch_size, collapse_z,
         subgraph_hops=subgraph_hops, use_hop_distance_tokens=use_hop_distance_tokens,
-        eval_mc=eval_mc,
+        eval_mc=eval_mc, dual_subgraph=dual_subgraph,
+        cand_index=cand_index, cand_table=cand_table,
     )
     avg = {k: 0.5 * (tail[k] + head[k]) for k in ("MRR", "Hits@1", "Hits@3", "Hits@10")}
     # Per-relation averages: only relations evaluated in both directions are aggregated.
@@ -495,6 +378,7 @@ def run_eval(
         subgraph_hops=cfg.get("subgraph_hops", 2),
         use_hop_distance_tokens=cfg.get("use_hop_distance_tokens", False),
         eval_mc=cfg.get("eval_mc", 8),  # runtime MC draws; ignored for learned
+        dual_subgraph=cfg.get("dual_subgraph", False),
     )
 
 

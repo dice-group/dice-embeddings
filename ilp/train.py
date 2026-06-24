@@ -54,6 +54,7 @@ DEFAULT_CFG: dict = {
     "cardinality_cutoff": 0, "tail_diversity_cutoff": 0.0,
     "neg_samples_per_pos": 4, "neg_sampler": "uniform",
     "subgraph_hops": 2, "use_hop_distance_tokens": False, "collapse_z": False,
+    "dual_subgraph": False,
     # Data
     "triple_format": "head_relation_tail", "type_relation": "",
     # Runtime / checkpointing
@@ -163,6 +164,7 @@ def train_model(
         neg_sampler=neg_sampler,
         subgraph_hops=cfg.get("subgraph_hops", 2),
         use_hop_distance_tokens=cfg.get("use_hop_distance_tokens", False),
+        dual_subgraph=cfg.get("dual_subgraph", False),
     )
     loader = DataLoader(
         train_ds,
@@ -196,6 +198,7 @@ def train_model(
 
     step = 0
     use_hop = cfg.get("use_hop_distance_tokens", False)
+    use_dual = cfg.get("dual_subgraph", False)
     epoch_bar = tqdm(range(epochs), desc="epochs", unit="ep", dynamic_ncols=True)
     for epoch in epoch_bar:
         model.train()
@@ -209,6 +212,9 @@ def train_model(
                 batch["triples"], batch["mask"],
                 batch["target_relation"], batch["target_tail"],
                 hop_distances=batch.get("hop_distances") if use_hop else None,
+                cand_triples=batch.get("cand_triples") if use_dual else None,
+                cand_mask=batch.get("cand_mask") if use_dual else None,
+                cand_hop_distances=batch.get("cand_hop_distances") if (use_dual and use_hop) else None,
             )
             loss = loss_fn(logits, batch["label"])
             opt.zero_grad(set_to_none=True)
@@ -344,6 +350,10 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Add per-entity BFS-distance tokens.")
     g.add_argument("--collapse-z", dest="collapse_z", action="store_true",
                    default=argparse.SUPPRESS, help="Collapse Z pool on exhaustion (z_pool=1 ablation).")
+    g.add_argument("--dual-subgraph", dest="dual_subgraph", action="store_true",
+                   default=argparse.SUPPRESS,
+                   help="Anchor in both entities: represent the candidate by its own "
+                        "k-hop subgraph (candidate tower). Eval precomputes one vector per entity.")
     return ap
 
 

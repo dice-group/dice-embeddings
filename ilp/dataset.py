@@ -125,38 +125,32 @@ def two_hop_neighborhood(node: str, kg: KnowledgeGraph) -> set[Triple]:
     return triples
 
 
-def build_sample(
-    anchor: str,
-    relation: str,
-    candidate: str,
-    label: float,
+def _build_subgraph_rows(
+    center: str,
     kg: KnowledgeGraph,
     vocab: dict[str, int],
     fixed_values: set[str],
-    max_triples: int = 64,
-    z_pool: int = 100,
-    rng: random.Random | None = None,
-    exclude_triple: Triple | None = None,
-    collapse_z: bool = False,
-    subgraph_hops: int = 2,
-    use_hop_distance_tokens: bool = False,
-) -> dict[str, torch.Tensor]:
-    """Build one anonymized sample anchored on `anchor`.
+    max_triples: int,
+    z_pool: int,
+    rng: random.Random,
+    exclude_triple: Triple | None,
+    collapse_z: bool,
+    subgraph_hops: int,
+    use_hop_distance_tokens: bool,
+):
+    """Extract, anonymize and tokenize the k-hop subgraph around `center`.
 
-    `anchor` gets the [X] token. `candidate` gets either its [VAL_*] (schema)
-    or a [Z_i] consistent with the subgraph's anonymization.
-
-    `exclude_triple`: drop this triple from the subgraph if present. For
-    positive training samples pass (anchor, relation, candidate) so the
-    target is never leaked into context. For negatives, leave it None.
-
-    `collapse_z`: when True, if the Z pool is exhausted, distinct entities
-    are mapped to a uniformly-random already-existing [Z_i] instead of
-    raising. Used for the z_pool=1 ablation that asks "does variable
-    binding across triples matter?".
+    Returns `(triples_tok, hop_tok, tok_entity, entity_map, z_remaining, none_id)`:
+    - `tok_entity` is the (stateful) closure that mapped this subgraph's entities
+      to token ids — the caller reuses it so the candidate token is consistent
+      with the anonymization (single-tower behaviour). `center` always gets `[X]`.
+    - `entity_map` is the same dict the closure mutates (entity → token id), and
+      `z_remaining` the still-unused `[Z_i]` indices. Scoring callers read these
+      to assign candidate tokens without re-running the closure (see
+      `eval._tokenize_center`). This is the single tokenizer shared by the
+      training path (`build_sample`) and the eval/score path.
     """
-    rng = rng or random
-    subgraph, entity_distance = k_hop_neighborhood(anchor, kg, k=subgraph_hops)
+    subgraph, entity_distance = k_hop_neighborhood(center, kg, k=subgraph_hops)
     if exclude_triple is not None:
         s, r, o = exclude_triple
         subgraph.discard((s, r, o))
@@ -169,7 +163,7 @@ def build_sample(
 
     z_indices = list(range(z_pool))
     rng.shuffle(z_indices)
-    entity_map: dict[str, int] = {anchor: vocab["[X]"]}
+    entity_map: dict[str, int] = {center: vocab["[X]"]}
 
     def tok_entity(node: str) -> int:
         if node in entity_map:
@@ -187,9 +181,6 @@ def build_sample(
         entity_map[node] = vocab[f"[Z_{z_indices.pop()}]"]
         return entity_map[node]
 
-    def tok_rel(rel: str) -> int:
-        return vocab[f"[REL_{rel}]"]
-
     none_id = vocab[HOP_NONE]
 
     def hop_for(node: str) -> int:
@@ -199,7 +190,7 @@ def build_sample(
         return vocab[hop_distance_token(d)]
 
     rows = [
-        ([tok_entity(s), tok_rel(rel), tok_entity(o)],
+        ([tok_entity(s), vocab[f"[REL_{rel}]"], tok_entity(o)],
          [hop_for(s), none_id, hop_for(o)])
         for s, rel, o in subgraph_list
     ]
@@ -209,21 +200,90 @@ def build_sample(
     rng.shuffle(rows)
     triples_tok = [t for t, _ in rows]
     hop_tok = [r for _, r in rows]
+    return triples_tok, hop_tok, tok_entity, entity_map, z_indices, none_id
 
-    candidate_tok = tok_entity(candidate)
-    relation_tok = tok_rel(relation)
 
+def _pad_subgraph(triples_tok, hop_tok, max_triples, none_id):
+    """Pad a tokenized subgraph to `max_triples` → (triples, hop_distances, mask)."""
     n = len(triples_tok)
     pad_t = [[0, 0, 0]] * (max_triples - n)
     pad_r = [[none_id, none_id, none_id]] * (max_triples - n)
-    return {
-        "triples": torch.tensor(triples_tok + pad_t, dtype=torch.long),
-        "hop_distances": torch.tensor(hop_tok + pad_r, dtype=torch.long),
-        "mask": torch.tensor([True] * n + [False] * (max_triples - n), dtype=torch.bool),
-        "target_relation": torch.tensor(relation_tok, dtype=torch.long),
+    return (
+        torch.tensor(triples_tok + pad_t, dtype=torch.long),
+        torch.tensor(hop_tok + pad_r, dtype=torch.long),
+        torch.tensor([True] * n + [False] * (max_triples - n), dtype=torch.bool),
+    )
+
+
+def build_sample(
+    anchor: str,
+    relation: str,
+    candidate: str,
+    label: float,
+    kg: KnowledgeGraph,
+    vocab: dict[str, int],
+    fixed_values: set[str],
+    max_triples: int = 64,
+    z_pool: int = 100,
+    rng: random.Random | None = None,
+    exclude_triple: Triple | None = None,
+    collapse_z: bool = False,
+    subgraph_hops: int = 2,
+    use_hop_distance_tokens: bool = False,
+    dual_subgraph: bool = False,
+) -> dict[str, torch.Tensor]:
+    """Build one anonymized sample anchored on `anchor`.
+
+    `anchor` gets the [X] token. `candidate` gets either its [VAL_*] (schema)
+    or a [Z_i] consistent with the subgraph's anonymization.
+
+    `exclude_triple`: drop this triple from the subgraph if present. For
+    positive training samples pass (anchor, relation, candidate) so the
+    target is never leaked into context. For negatives, leave it None.
+
+    `collapse_z`: when True, if the Z pool is exhausted, distinct entities
+    are mapped to a uniformly-random already-existing [Z_i] instead of
+    raising. Used for the z_pool=1 ablation that asks "does variable
+    binding across triples matter?".
+
+    `dual_subgraph`: also emit `cand_triples`/`cand_hop_distances`/`cand_mask`
+    for the candidate's *own* k-hop subgraph (centered on `candidate` with its
+    own independent anonymization, same `exclude_triple` so the target edge is
+    never leaked). The model's candidate tower consumes these to ground
+    candidates that fall outside the anchor's neighborhood.
+    """
+    rng = rng or random
+    triples_tok, hop_tok, tok_entity, _entity_map, _z_remaining, none_id = _build_subgraph_rows(
+        anchor, kg, vocab, fixed_values, max_triples, z_pool, rng,
+        exclude_triple, collapse_z, subgraph_hops, use_hop_distance_tokens,
+    )
+    # Candidate token consistent with the anchor subgraph's anonymization
+    # (single-tower representation; unused but harmless under dual_subgraph).
+    candidate_tok = tok_entity(candidate)
+
+    triples_t, hop_t, mask_t = _pad_subgraph(triples_tok, hop_tok, max_triples, none_id)
+    out = {
+        "triples": triples_t,
+        "hop_distances": hop_t,
+        "mask": mask_t,
+        "target_relation": torch.tensor(vocab[f"[REL_{relation}]"], dtype=torch.long),
         "target_tail": torch.tensor(candidate_tok, dtype=torch.long),
         "label": torch.tensor(label, dtype=torch.float),
     }
+
+    if dual_subgraph:
+        c_triples_tok, c_hop_tok, *_ = _build_subgraph_rows(
+            candidate, kg, vocab, fixed_values, max_triples, z_pool, rng,
+            exclude_triple, collapse_z, subgraph_hops, use_hop_distance_tokens,
+        )
+        c_triples_t, c_hop_t, c_mask_t = _pad_subgraph(
+            c_triples_tok, c_hop_tok, max_triples, none_id
+        )
+        out["cand_triples"] = c_triples_t
+        out["cand_hop_distances"] = c_hop_t
+        out["cand_mask"] = c_mask_t
+
+    return out
 
 
 class NegativeSampler:
@@ -413,6 +473,7 @@ class InductiveKGDataset(Dataset):
         neg_sampler: NegativeSampler | None = None,
         subgraph_hops: int = 2,
         use_hop_distance_tokens: bool = False,
+        dual_subgraph: bool = False,
     ):
         self.pos = list(positive_triples)
         self.kg = kg
@@ -428,6 +489,7 @@ class InductiveKGDataset(Dataset):
         self.neg_sampler = neg_sampler or UniformNegativeSampler(kg, self.entity_pool)
         self.subgraph_hops = subgraph_hops
         self.use_hop_distance_tokens = use_hop_distance_tokens
+        self.dual_subgraph = dual_subgraph
 
     def __len__(self) -> int:
         return len(self.pos) * (1 + self.neg_per_pos)
@@ -459,6 +521,7 @@ class InductiveKGDataset(Dataset):
                 collapse_z=self.collapse_z,
                 subgraph_hops=self.subgraph_hops,
                 use_hop_distance_tokens=self.use_hop_distance_tokens,
+                dual_subgraph=self.dual_subgraph,
             )
 
         candidate = self.neg_sampler(anchor, r_use, candidate, rng)
@@ -468,6 +531,7 @@ class InductiveKGDataset(Dataset):
             collapse_z=self.collapse_z,
             subgraph_hops=self.subgraph_hops,
             use_hop_distance_tokens=self.use_hop_distance_tokens,
+            dual_subgraph=self.dual_subgraph,
         )
 
 
