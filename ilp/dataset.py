@@ -46,6 +46,12 @@ class KnowledgeGraph:
         for s, r, o in self.triples:
             self.adj[s].add((s, r, o))
             self.adj[o].add((s, r, o))
+        # Memo for k_hop_neighborhood: the graph is immutable after __init__, so
+        # a node's k-hop subgraph is invariant across sample draws. Caching it
+        # turns the per-draw BFS (the data-pipeline bottleneck) into a one-time
+        # cost per (node, k). Anonymization stays per-draw downstream, so this
+        # changes nothing observable about the samples.
+        self._khop_cache: dict[tuple[str, int], tuple[set[Triple], dict[str, int]]] = {}
 
     def __contains__(self, triple: Triple) -> bool:
         return triple in self.triple_set
@@ -101,7 +107,15 @@ def k_hop_neighborhood(
 
     Generalizes to arbitrary k so subgraph depth can be tuned without code
     changes elsewhere.
+
+    The result is memoized on `kg` (see `KnowledgeGraph._khop_cache`) and is
+    therefore shared and **read-only** — callers must not mutate the returned
+    set/dict (copy first if they need to).
     """
+    cached = kg._khop_cache.get((node, k))
+    if cached is not None:
+        return cached
+
     distance: dict[str, int] = {node: 0}
     frontier: set[str] = {node}
     triples: set[Triple] = set()
@@ -116,6 +130,7 @@ def k_hop_neighborhood(
                         distance[x] = d
                         next_frontier.add(x)
         frontier = next_frontier
+    kg._khop_cache[(node, k)] = (triples, distance)
     return triples, distance
 
 
@@ -151,15 +166,19 @@ def _build_subgraph_rows(
       training path (`build_sample`) and the eval/score path.
     """
     subgraph, entity_distance = k_hop_neighborhood(center, kg, k=subgraph_hops)
+    # `subgraph` is the cached, read-only neighborhood — filter the excluded
+    # target triple into a fresh list rather than mutating the cache.
     if exclude_triple is not None:
         s, r, o = exclude_triple
-        subgraph.discard((s, r, o))
-        subgraph.discard((o, inverse_relation(r), s))
-
-    if len(subgraph) > max_triples:
-        subgraph_list = rng.sample(list(subgraph), max_triples)
+        excluded = {(s, r, o), (o, inverse_relation(r), s)}
+        pool = [t for t in subgraph if t not in excluded]
     else:
-        subgraph_list = list(subgraph)
+        pool = list(subgraph)
+
+    if len(pool) > max_triples:
+        subgraph_list = rng.sample(pool, max_triples)
+    else:
+        subgraph_list = pool
 
     z_indices = list(range(z_pool))
     rng.shuffle(z_indices)

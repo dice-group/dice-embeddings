@@ -95,9 +95,11 @@ def evaluate_direction(
         # report stratified MRR (reachable vs unreachable) so per-relation gaps
         # aren't masked by ties on out-of-subgraph candidates (eval.py:115).
         nb, _ = k_hop_neighborhood(anchor, kg, k=subgraph_hops)
-        nb.discard((h, r, t))
-        nb.discard((t, inverse_relation(r), h))
-        nb_ents = {s for s, _, _ in nb} | {o for _, _, o in nb}
+        # `nb` is the cached, read-only neighborhood: exclude the test triple
+        # without mutating it.
+        excluded = {(h, r, t), (t, inverse_relation(r), h)}
+        nb_ents = {e for s, rr, o in nb if (s, rr, o) not in excluded
+                   for e in (s, o)}
         reachable_flags.append(true_cand in nb_ents)
         if true_cand not in pool_set:
             # Ensure the true candidate is always rankable.

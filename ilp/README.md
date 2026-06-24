@@ -21,7 +21,21 @@ ilp/
   configs/z1.yaml              # ablation: collapse Z pool to size 1
   tests/test_dataset.py        # vocab/anonymization sanity
   tests/test_invariance.py     # spec §7.2 regression tests
+  tests/test_inductive_family.py  # self-contained motivating demo (see FAMILY_DEMO.md)
+  FAMILY_DEMO.md               # the family demo, explained for reviewers
 data/download.py               # DBpedia50 fetcher (kept outside the package)
+```
+
+## Motivating example (the family demo)
+
+Want the one-minute "why does this matter?" pitch? See **[FAMILY_DEMO.md](FAMILY_DEMO.md)**.
+It is implemented end-to-end as a single self-contained test — generate a
+synthetic family KG, train, and show the model transferring the rule
+`parentOf(X, Y) ⟹ olderThan(X, Y)` to **families it has never seen**, something
+a transductive embedding model cannot do by construction:
+
+```bash
+pytest ilp/tests/test_inductive_family.py -v -s
 ```
 
 ## Setup

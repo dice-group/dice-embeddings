@@ -10,7 +10,8 @@ anonymization pass. `Scorer` closes over exactly those, so callers get a clean
     scorer.rank(anchor, relation)               # all tails, ranked
 
 without touching tensors. It is the single entry point used by `predict.py`,
-`family_demo.py`, and anywhere else that needs "score this triple".
+the inductive family demo (`tests/test_inductive_family.py`), and anywhere else
+that needs "score this triple".
 
 Efficiency: every method routes through `eval.score_candidates`, which encodes
 the anchor's subgraph **once** and then varies only the candidate token — so
@@ -19,13 +20,16 @@ full forwards. Build the `Scorer` once and reuse it across many queries; the
 context `KnowledgeGraph` (the expensive-to-build part) is constructed a single
 time and held.
 
-Single-tower scoring only (the candidate is a token in the anchor's subgraph),
-matching how `predict.py` has always worked. Dual-tower eval, which precomputes
-a per-entity candidate table, stays in `eval.py`.
+Supports both scoring modes transparently. Single-tower (default): the candidate
+is a token in the anchor's subgraph. Dual-tower (`cfg["dual_subgraph"]`): each
+candidate is represented by its OWN encoded k-hop subgraph via a precomputed
+per-entity table, built once at construction (mirrors `eval.build_candidate_table`)
+so scoring stays fast across many queries.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+import warnings
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Sequence
 
@@ -34,7 +38,7 @@ import torch
 from .dataset import KnowledgeGraph, Triple, augment_with_inverse, read_triples
 from .eval import filter_known_relations
 from .model import InductiveKGModel, load_bundle
-from .scoring import score_candidates
+from .scoring import build_candidate_table, score_candidates, score_candidates_dual
 
 
 @dataclass
@@ -48,17 +52,36 @@ class Scorer:
     cfg: dict
     device: torch.device
 
+    # Dual-tower candidate table (entity → row index, [|E|, d] vectors). Stays
+    # None in single-tower mode; populated by __post_init__ when dual_subgraph.
+    _cand_index: dict[str, int] | None = field(default=None, init=False, repr=False)
+    _cand_table: torch.Tensor | None = field(default=None, init=False, repr=False)
+
     def __post_init__(self) -> None:
-        # Single-tower only. A dual_subgraph checkpoint represents the candidate
-        # by its OWN encoded subgraph (via a precomputed per-entity table), which
-        # this facade doesn't build — scoring it single-tower would silently
-        # mis-score, so refuse rather than lie. Use eval.run_eval for dual models.
-        if self.cfg.get("dual_subgraph"):
-            raise NotImplementedError(
-                "Scorer supports single-tower scoring only; this checkpoint was "
-                "trained with dual_subgraph=True. Use ilp.eval (run_eval) for "
-                "dual-anchored scoring with its precomputed candidate table."
+        # Dual-subgraph checkpoints represent each candidate by its OWN encoded
+        # k-hop subgraph rather than as a token in the anchor's neighborhood.
+        # The candidate tower depends only on the entity's subgraph (not the
+        # anchor/relation), so precompute the per-entity table ONCE here and
+        # reuse it across every query — mirrors eval.build_candidate_table.
+        if not self.cfg.get("dual_subgraph"):
+            return
+        if getattr(self.model, "z_mode", "learned") == "runtime":
+            # The table and each anchor encode draw independent random [Z_*]
+            # banks, so a single score is noisy (eval marginalizes over eval_mc
+            # draws; this one-shot facade can't). Stable only for learned mode.
+            warnings.warn(
+                "Scorer with dual_subgraph + z_mode='runtime': candidate-table "
+                "and anchor encodings use independent random [Z_*] draws, so "
+                "individual scores are noisy. Reliable only for z_mode='learned'."
             )
+        self._cand_index, self._cand_table = build_candidate_table(
+            self.model, self.kg, list(self.kg.entities), self.vocab,
+            self.fixed_values, self.cfg["max_triples"], self.cfg["z_pool_size"],
+            self.device,
+            collapse_z=self.cfg.get("collapse_z", False),
+            subgraph_hops=self.cfg.get("subgraph_hops", 2),
+            use_hop_distance_tokens=self.cfg.get("use_hop_distance_tokens", False),
+        )
 
     # --- construction ------------------------------------------------------
 
@@ -120,10 +143,23 @@ class Scorer:
     ) -> dict[str, float]:
         """Score many candidates under one (anchor, relation) → {candidate: logit}.
 
-        Encodes the anchor subgraph once; candidates only vary the target token.
+        Encodes the anchor subgraph once; candidates then vary only the target —
+        a token (single-tower) or a precomputed subgraph vector (dual-tower).
         """
+        cands = list(candidates)
+        if self.cfg.get("dual_subgraph"):
+            return score_candidates_dual(
+                self.model, anchor, relation, cands,
+                self.kg, self.vocab, self.fixed_values,
+                self.cfg["max_triples"], self.cfg["z_pool_size"], self.device,
+                cand_index=self._cand_index, cand_table=self._cand_table,
+                true_cand=None, exclude_triple=exclude_triple,
+                collapse_z=self.cfg.get("collapse_z", False),
+                subgraph_hops=self.cfg.get("subgraph_hops", 2),
+                use_hop_distance_tokens=self.cfg.get("use_hop_distance_tokens", False),
+            )
         return score_candidates(
-            self.model, anchor, relation, list(candidates),
+            self.model, anchor, relation, cands,
             self.kg, self.vocab, self.fixed_values,
             max_triples=self.cfg["max_triples"], z_pool=self.cfg["z_pool_size"],
             batch_size=0, device=self.device, exclude_triple=exclude_triple,
