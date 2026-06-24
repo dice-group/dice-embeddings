@@ -43,7 +43,7 @@ jobs:
         sphinx-build -M latex docs/ docs/_build/
 
     - name: Compile LaTeX document
-      uses: docker://texlive/texlive:latest
+      uses: docker://texlive/texlive:TL2024-historic
       with:
         args: make -C docs/_build/latex
     - name: Copy Latex pdf to ./html
