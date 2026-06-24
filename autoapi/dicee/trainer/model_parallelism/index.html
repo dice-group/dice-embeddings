@@ -142,6 +142,16 @@
              
   <section id="module-dicee.trainer.model_parallelism">
 <span id="dicee-trainer-model-parallelism"></span><h1>dicee.trainer.model_parallelism<a class="headerlink" href="#module-dicee.trainer.model_parallelism" title="Link to this heading"></a></h1>
+<p>Tensor Parallelism trainer for ensemble knowledge graph embeddings.</p>
+<dl class="simple">
+<dt>This module implements the tensor parallelism training strategy described in:</dt><dd><dl class="simple">
+<dt>“Multiple Run Ensemble Learning with Low-Dimensional Knowledge Graph Embeddings”</dt><dd><p><a class="reference external" href="https://arxiv.org/abs/2104.05003">https://arxiv.org/abs/2104.05003</a></p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>The TensorParallel trainer creates an ensemble of models, each trained on a separate GPU,
+allowing efficient utilization of multi-GPU systems through model parallelism.</p>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">

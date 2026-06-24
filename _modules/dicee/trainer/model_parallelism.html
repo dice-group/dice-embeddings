@@ -88,7 +88,16 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.trainer.model_parallelism</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
+<span></span><span class="sd">&quot;&quot;&quot;Tensor Parallelism trainer for ensemble knowledge graph embeddings.</span>
+
+<span class="sd">This module implements the tensor parallelism training strategy described in:</span>
+<span class="sd">  &quot;Multiple Run Ensemble Learning with Low-Dimensional Knowledge Graph Embeddings&quot;</span>
+<span class="sd">   https://arxiv.org/abs/2104.05003</span>
+
+<span class="sd">The TensorParallel trainer creates an ensemble of models, each trained on a separate GPU,</span>
+<span class="sd">allowing efficient utilization of multi-GPU systems through model parallelism.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 

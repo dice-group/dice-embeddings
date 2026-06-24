@@ -159,7 +159,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;separator for extracting head, relation and tail from a triple&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;torchCPUTrainer&#39;</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Trainer for knowledge graph embedding model&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Trainer for knowledge graph embedding model. Options: &#39;torchCPUTrainer&#39; (CPU/single GPU), &#39;PL&#39; (PyTorch Lightning multi-GPU), &#39;torchDDP&#39; (native DDP), &#39;TP&#39; (Tensor Parallelism - implements &#39;Multiple Run Ensemble Learning with Low-Dimensional Knowledge Graph Embeddings&#39;)&quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">scoring_technique</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;KvsAll&#39;</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Scoring technique for knowledge graph embedding models&quot;&quot;&quot;</span>

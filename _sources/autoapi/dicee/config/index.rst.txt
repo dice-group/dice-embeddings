@@ -174,7 +174,9 @@ Module Contents
       :value: 'torchCPUTrainer'
 
 
-      Trainer for knowledge graph embedding model
+      'torchCPUTrainer' (CPU/single GPU), 'PL' (PyTorch Lightning multi-GPU), 'torchDDP' (native DDP), 'TP' (Tensor Parallelism - implements 'Multiple Run Ensemble Learning with Low-Dimensional Knowledge Graph Embeddings')
+
+      :type: Trainer for knowledge graph embedding model. Options
 
 
    .. py:attribute:: scoring_technique

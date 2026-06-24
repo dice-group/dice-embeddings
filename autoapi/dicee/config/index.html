@@ -326,7 +326,12 @@ or direct assignment.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.trainer">
 <span class="sig-name descname"><span class="pre">trainer</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'torchCPUTrainer'</span></span><a class="headerlink" href="#dicee.config.Namespace.trainer" title="Link to this definition"></a></dt>
-<dd><p>Trainer for knowledge graph embedding model</p>
+<dd><p>‘torchCPUTrainer’ (CPU/single GPU), ‘PL’ (PyTorch Lightning multi-GPU), ‘torchDDP’ (native DDP), ‘TP’ (Tensor Parallelism - implements ‘Multiple Run Ensemble Learning with Low-Dimensional Knowledge Graph Embeddings’)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Trainer for knowledge graph embedding model. Options</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute">
