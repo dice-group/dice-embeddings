@@ -16,7 +16,7 @@ from ._bpe import (
     MultiClassClassificationDataset,
     MultiLabelDataset,
 )
-from ._label_based import AllvsAll, KvsAll, KvsSampleDataset, OnevsAllDataset
+from ._label_based import AllvsAll, FSDP1vsSampleDataset, KvsAll, KvsSampleDataset, OnevsAllDataset
 from ._negative_sampling import FixedNegSampleDataset, OnevsSample, TriplePredictionDataset
 
 
@@ -60,6 +60,7 @@ def construct_dataset(
     byte_pair_encoding=None,
     block_size: int = None,
     seed: int = None,
+    sort_train_set: bool = True,
 ) -> torch.utils.data.Dataset:
     """Build the appropriate dataset for the given training configuration.
 
@@ -126,6 +127,16 @@ def construct_dataset(
             neg_sample_ratio=neg_ratio,
             label_smoothing_rate=label_smoothing_rate,
             seed=seed,
+            sort_train_set=sort_train_set,
+        )
+    elif scoring_technique == "FSDP1vsSample":
+        train_set = FSDP1vsSampleDataset(
+            train_set_idx=train_set,
+            entity_idxs=entity_to_idx,
+            relation_idxs=relation_to_idx,
+            form=form_of_labelling,
+            neg_ratio=neg_ratio,
+            label_smoothing_rate=label_smoothing_rate,
         )
     elif scoring_technique == "FixedNegSample":
         train_set = FixedNegSampleDataset(

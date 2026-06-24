@@ -26,6 +26,7 @@ from lightning.pytorch.utilities.rank_zero import rank_zero_only
 from .models import AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ, DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, OMult, Pyke, QMult, Shallom, TransE
 from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
+from .models.fsdp_models import create_fsdp_sharded_model_class
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
 
@@ -152,14 +153,14 @@ def setup_distributed_training(args) -> Dict[str, Union[bool, int]]:
     trainer_name = getattr(args, "trainer", None)
     required_env_vars = ("LOCAL_RANK", "RANK", "WORLD_SIZE")
     torchrun_launched = all(env_var in os.environ for env_var in required_env_vars)
-    distributed = trainer_name == "torchDDP" or (
+    distributed = trainer_name in {"torchDDP", "torchFSDP"} or (
         trainer_name == "PL" and torchrun_launched
     )
 
-    if trainer_name == "torchDDP" and not torchrun_launched:
+    if trainer_name in {"torchDDP", "torchFSDP"} and not torchrun_launched:
         raise RuntimeError(
-            "torchDDP trainer must be launched with torchrun."
-            "Please use appropriate commands for torchDDP trainer."
+            f"{trainer_name} trainer must be launched with torchrun."
+            f"Please use appropriate commands for {trainer_name} trainer."
         )
 
     if distributed or trainer_name == "PL":
@@ -178,6 +179,7 @@ def setup_distributed_training(args) -> Dict[str, Union[bool, int]]:
                     backend="nccl",
                     init_method="env://",
                     device_id=torch.device(f"cuda:{local_rank}"),
+                    timeout=datetime.timedelta(hours=1),
                 )
             rank = dist.get_rank()
             world_size = dist.get_world_size()
@@ -554,6 +556,16 @@ def intialize_model(args: Dict, verbose: int = 0) -> Tuple[BaseKGE, str]:
     # Use model registry for standard models
     if model_name in MODEL_REGISTRY:
         model_class, form_of_labelling = MODEL_REGISTRY[model_name]
+        _is_sample_technique = args.get("scoring_technique") in {
+            "NegSample", "FixedNegSample", "KvsSample", "FSDP1vsSample"
+        }
+        _entity_prediction = form_of_labelling == "EntityPrediction"
+        _no_bpe = model_name not in {"BytE"} and not args.get("byte_pair_encoding", False)
+
+        if args.get("trainer") == "torchFSDP" and _is_sample_technique and _entity_prediction and _no_bpe:
+            model_class = create_fsdp_sharded_model_class(model_class)
+            args = dict(args)
+            args["fsdp_sharded_entity"] = True
         return model_class(args=args), form_of_labelling
 
     # Provide helpful error message

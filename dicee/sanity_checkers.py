@@ -102,8 +102,40 @@ def validate_knowledge_graph(args):
 
 def sanity_checking_with_arguments(args):
     assert args.embedding_dim > 0, f"embedding_dim must be strictly positive. Currently:{args.embedding_dim}"
-    valid_techniques = ["AllvsAll", "1vsSample", "KvsSample", "KvsAll", "FixedNegSample", "NegSample", "1vsAll", "Pyke", "Sentence"]
+    valid_techniques = ["AllvsAll", "1vsSample", "KvsSample", "FSDP1vsSample", "KvsAll", "FixedNegSample", "NegSample", "1vsAll", "Pyke", "Sentence"]
     assert args.scoring_technique in valid_techniques, f"Invalid training strategy => {args.scoring_technique}."
+    if args.scoring_technique == "FSDP1vsSample":
+        assert args.trainer == "torchFSDP", (
+            f"{args.scoring_technique} is only supported with --trainer torchFSDP."
+        )
+        assert not args.byte_pair_encoding, f"{args.scoring_technique} does not support byte pair encoding."
+
+    if args.trainer == "torchFSDP":
+        _fsdp_supported_techniques = {"NegSample", "FixedNegSample", "KvsSample", "FSDP1vsSample"}
+        if args.scoring_technique not in _fsdp_supported_techniques:
+            raise NotImplementedError(
+                f"torchFSDP only supports sample-based scoring techniques "
+                f"({', '.join(sorted(_fsdp_supported_techniques))}). "
+                f"Got: '{args.scoring_technique}'. "
+                f"AllvsAll / KvsAll / 1vsAll require the full entity table on every rank, "
+                f"which is incompatible with row-wise entity sharding."
+            )
+        if args.byte_pair_encoding or args.model == "BytE":
+            raise NotImplementedError(
+                "torchFSDP does not support byte pair encoding. "
+                "The entity embedding table must be a standard nn.Embedding for row-wise sharding."
+            )
+        if args.model.startswith("Pykeen_"):
+            raise NotImplementedError(
+                f"torchFSDP does not support PyKEEN models (got '{args.model}'). "
+                "PyKEEN models do not inherit from BaseKGE and cannot use row-wise entity sharding."
+            )
+        if args.model == "Shallom":
+            raise NotImplementedError(
+                "torchFSDP does not support Shallom. "
+                "Shallom uses RelationPrediction form; FSDP entity sharding requires EntityPrediction models."
+            )
+
     assert args.learning_rate > 0, f"Learning rate must be greater than 0. Currently:{args.learning_rate}"
     if args.num_folds_for_cv is None:
         args.num_folds_for_cv = 0
@@ -117,7 +149,7 @@ def sanity_check_callback_args(args):
     gpu_count = torch.cuda.device_count() if torch.cuda.is_available() else 0
     # Check if any callbacks are requested
 
-    if (args.trainer == "PL" and gpu_count >= 2) or args.trainer == "torchDDP":
+    if (args.trainer == "PL" and gpu_count >= 2) or args.trainer in {"torchDDP", "torchFSDP"}:
         if args.path_to_store_single_run is None:
             raise NotImplementedError("Path to store experiments must be provided for Multi-GPU training.")
         if args.adaptive_lr:
@@ -133,5 +165,15 @@ def sanity_check_callback_args(args):
         assert args.swa_start_epoch > 0, "SWA Start Epoch must be greater than 0"
 
     # TWA/SWAG trainer compatibility
-    if any([args.twa, args.swag]) and args.trainer in {"TP", "torchDDP"}:
-        raise NotImplementedError("TWA and SWAG are not supported with TP or torchDDP trainers.")
+    if any([args.twa, args.swag]) and args.trainer in {"TP", "torchDDP", "torchFSDP"}:
+        raise NotImplementedError("TWA and SWAG are not supported with TP, torchDDP, or torchFSDP trainers.")
+
+    # Mid-epoch evaluation requires the full model on a single rank, which is not
+    # possible with torchFSDP (entity embeddings are sharded; rank 0 holds only its
+    # shard until _materialize_model() runs at the end of training).
+    if args.trainer == "torchFSDP" and (args.eval_every_n_epochs > 0 or args.eval_at_epochs is not None):
+        raise NotImplementedError(
+            "Mid-epoch evaluation (eval_every_n_epochs / eval_at_epochs) is not supported "
+            "with torchFSDP. Entity embeddings are sharded across ranks and cannot be "
+            "gathered mid-training. Evaluate after training completes instead."
+        )

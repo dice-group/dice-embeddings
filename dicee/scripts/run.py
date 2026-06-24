@@ -61,11 +61,16 @@ def get_default_arguments(description=None):
                         help='{"PPE":{ "last_percent_to_consider": 10}}'
                              '"Perturb": {"level": "out", "ratio": 0.2, "method": "RN", "scaler": 0.3}')
     parser.add_argument("--trainer", type=str, default='PL',
-                        choices=['torchCPUTrainer', 'PL', 'torchDDP', "TP"],
-                        help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only), TP (Model Paralelisim)')
+                        choices=['torchCPUTrainer', 'PL', 'torchDDP', 'torchFSDP', "TP"],
+                        help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchFSDP (row-wise sharded entity embeddings + FSDP dense params, multi-GPU), torchCPUTrainer (custom cpu only), TP (Model Parallelism)')
+    parser.add_argument("--fsdp_trainer_kwargs", type=json.loads, default={},
+                        help='JSON config for the torchFSDP trainer. '
+                             'Example: {"precision": "float32", "fsdp_optim_device": "cpu"}. '
+                             'precision: float32 (default) | bfloat16 | float16. '
+                             'fsdp_optim_device: cpu (default, saves GPU RAM) | gpu (zero-cost Adam steps).')
     parser.add_argument('--scoring_technique', default="NegSample",
                         help="Training technique for knowledge graph embedding model",
-                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "FixedNegSample", "1vsSample", "KvsSample"])
+                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "FixedNegSample", "1vsSample", "KvsSample", "FSDP1vsSample"])
     parser.add_argument('--neg_ratio', type=int, default=2,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')

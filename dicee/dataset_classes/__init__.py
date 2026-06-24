@@ -26,6 +26,7 @@ from ._factory import construct_dataset, reload_dataset  # noqa: F401
 # Label-based scoring datasets
 from ._label_based import (  # noqa: F401
     AllvsAll,
+    FSDP1vsSampleDataset,
     KvsAll,
     KvsSampleDataset,
     OnevsAllDataset,
@@ -48,6 +49,7 @@ __all__ = [
     "MultiLabelDataset",
     # Label-based
     "AllvsAll",
+    "FSDP1vsSampleDataset",
     "KvsAll",
     "KvsSampleDataset",
     "OnevsAllDataset",

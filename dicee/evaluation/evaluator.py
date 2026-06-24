@@ -24,7 +24,7 @@ from .utils import (
 
 # Valid scoring techniques
 VALID_SCORING_TECHNIQUES = frozenset([
-    "AllvsAll", "KvsAll", "1vsSample", "KvsSample", "1vsAll", "NegSample",
+    "AllvsAll", "KvsAll", "1vsSample", "KvsSample", "FSDP1vsSample", "1vsAll", "NegSample",
     "BatchRelaxedKvsAll", "BatchRelaxed1vsAll", "PvsAll", "CCvsAll"
 ])
 
@@ -178,7 +178,7 @@ class Evaluator:
                 test_set=dataset.test_set,
                 trained_model=trained_model
             )
-        elif self.args.scoring_technique in ["AllvsAll", "KvsAll", '1vsSample', "KvsSample", "1vsAll"]:
+        elif self.args.scoring_technique in ["AllvsAll", "KvsAll", '1vsSample', "KvsSample", "FSDP1vsSample", "1vsAll"]:
             self.eval_with_vs_all(
                 train_set=dataset.train_set,
                 valid_set=dataset.valid_set,
@@ -663,7 +663,7 @@ class Evaluator:
                 test_set=test_set,
                 trained_model=trained_model
             )
-        elif self.args.scoring_technique in ["AllvsAll", 'KvsAll', '1vsSample', "KvsSample", '1vsAll']:
+        elif self.args.scoring_technique in ["AllvsAll", 'KvsAll', '1vsSample', "KvsSample", "FSDP1vsSample", '1vsAll']:
             self.eval_with_vs_all(
                 train_set=train_set,
                 valid_set=valid_set,
@@ -706,7 +706,7 @@ class Evaluator:
                 trained_model, triple_idx,
                 info=f'Evaluate {trained_model.name} on a given dataset'
             )
-        elif self.args.scoring_technique in ['KvsAll', '1vsSample', '1vsAll', 'PvsAll', 'CCvsAll']:
+        elif self.args.scoring_technique in ['KvsAll', 'KvsSample', 'FSDP1vsSample', '1vsSample', '1vsAll', 'PvsAll', 'CCvsAll']:
             return self.evaluate_lp_k_vs_all(
                 trained_model, triple_idx,
                 info=f'Evaluate {trained_model.name} on a given dataset',

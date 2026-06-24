@@ -217,14 +217,26 @@ class Execute:
         with open(details_path, 'r') as f:
             memory_map_details = json.load(f)
 
+        if self.is_local_rank_zero() or self.args.byte_pair_encoding:
+            self.args.path_experiment_folder = self.args.path_to_store_single_run
+            self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
+        else:
+            memmap_path = os.path.join(base_path, 'memory_map_train_set.npy')
+            self.knowledge_graph = np.memmap(
+                memmap_path,
+                mode='r',
+                dtype=memory_map_details["dtype"],
+                shape=tuple(memory_map_details["shape"]),
+            )
+
         # memmap_path = os.path.join(base_path, 'memory_map_train_set.npy')
         # self.knowledge_graph = np.memmap(
         #     memmap_path,
         #     mode='r',
         #     dtype=memory_map_details["dtype"],
-        #                                     shape=tuple(memory_map_details["shape"]))
-        self.args.path_experiment_folder = self.args.path_to_store_single_run
-        self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
+        #     shape=tuple(memory_map_details["shape"]),
+        # )
+
         self.args.num_entities = memory_map_details["num_entities"]
         self.args.num_relations = memory_map_details["num_relations"]
         self.args.num_tokens = None

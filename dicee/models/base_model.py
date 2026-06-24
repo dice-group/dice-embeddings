@@ -237,6 +237,7 @@ class BaseKGE(BaseKGELightning):
         self.byte_pair_encoding = self.args.get("byte_pair_encoding", False)
         self.max_length_subword_tokens = self.args.get("max_length_subword_tokens", None)
         self.block_size=self.args.get("block_size", None)
+        self.defer_large_embeddings = bool(self.args.get("fsdp_sharded_entity", False))
         if self.byte_pair_encoding and self.args['model'] != "BytE":
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
             self.param_init(self.token_embeddings.weight.data)
@@ -253,10 +254,14 @@ class BaseKGE(BaseKGELightning):
         elif self.byte_pair_encoding and self.args['model'] == "BytE":
             """ Transformer implements token embeddings"""
         else:
-
-            self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-            self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-            self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+            if self.defer_large_embeddings:
+                self.entity_embeddings = None
+                self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
+                self.param_init(self.relation_embeddings.weight.data)
+            else:
+                self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+                self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
+                self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
     def forward_byte_pair_encoded_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
         """KvsAll scoring for BPE-encoded head entities and relations.
@@ -386,13 +391,13 @@ class BaseKGE(BaseKGELightning):
             self.normalizer_class = torch.nn.LayerNorm
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim)
-            if self.args['scoring_technique'] in ['NegSample', 'FixedNegSample', 'KvsSample']:
+            if self.args['scoring_technique'] in ['NegSample', 'FixedNegSample', 'KvsSample', 'FSDP1vsSample']:
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
         elif self.args.get("normalization") == 'BatchNorm1d':
             self.normalizer_class = torch.nn.BatchNorm1d
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
-            if self.args['scoring_technique'] in ['NegSample', 'FixedNegSample', 'KvsSample']:
+            if self.args['scoring_technique'] in ['NegSample', 'FixedNegSample', 'KvsSample', 'FSDP1vsSample']:
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
         elif self.args.get("normalization") is None:
             self.normalizer_class = IdentityClass

@@ -417,4 +417,3 @@ class CoKE(BaseKGE):
 
         return scores
 
-
