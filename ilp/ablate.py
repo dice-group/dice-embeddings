@@ -1,9 +1,16 @@
-"""Compare dual_subgraph vs single-tower InductiveKGModel, inductively.
+"""Ablation runner for InductiveKGModel on an inductive benchmark.
 
-Trains the *same* `InductiveKGModel` with only `dual_subgraph` flipped (and,
-by default, across both z_modes), on the same data and seed, so any metric
-difference is attributable to the candidate-tower change alone. The two
-single/dual arms share an identical, deterministically-built vocab.
+Trains the *same* `InductiveKGModel` across a grid of z_modes × tower variants,
+on the same data and seed, so any metric difference is attributable to the
+ablated axis alone. All arms share an identical, deterministically-built vocab.
+
+Tower variants:
+  single       candidate scored as a token in the anchor's subgraph.
+  dual         candidate scored by the pooled vector of its own k-hop subgraph
+               (candidate tower), anonymized independently of the anchor.
+  dual_shared  dual, but the candidate subgraph is labeled from the anchor's
+               [Z] assignment, so entities shared by both towers bind to the
+               same slot (per-draw randomized; no persistent per-entity embed).
 
 How the inductive setup works:
 
@@ -22,11 +29,11 @@ auto-eval disabled), `model.load_bundle`, and `eval.{load_eval_inputs,run_eval}`
 
 Run from the repo root (the dir containing the `ilp/` package):
 
-    python -m ilp.compare_dual_subgraph \
+    python -m ilp.ablate \
         --data-dir KGs/WN18RR_v1 --ind-dir KGs/WN18RR_v1_ind \
         --epochs 100 --max-triples 64 \
-        --z-modes learned,runtime --variants single,dual \
-        --json-out checkpoints/compare_dual/results.json
+        --z-modes learned,runtime --variants single,dual,dual_shared \
+        --json-out checkpoints/ablate/results.json
 """
 from __future__ import annotations
 
@@ -40,12 +47,12 @@ from .model import load_bundle
 from .train import DEFAULT_CFG, train_model
 
 
-def build_cfg(args: argparse.Namespace, z_mode: str, dual: bool) -> dict:
+def build_cfg(args: argparse.Namespace, z_mode: str, dual: bool, shared: bool) -> dict:
     """One run's config: production defaults + this experiment's overrides.
 
-    Everything except `z_mode` and `dual_subgraph` is held constant across the
-    grid, and `type_relation=''` keeps the run purely anonymized (no [VAL_*]
-    schema) — the regime where the candidate tower matters most.
+    Everything except `z_mode`, `dual_subgraph` and `shared_anonymization` is
+    held constant across the grid, and `type_relation=''` keeps the run purely
+    anonymized (no [VAL_*] schema) — the regime where the tower change matters most.
     """
     cfg = dict(DEFAULT_CFG)
     cfg.update(
@@ -54,6 +61,7 @@ def build_cfg(args: argparse.Namespace, z_mode: str, dual: bool) -> dict:
         type_relation="",           # pure anonymization — held constant
         z_mode=z_mode,
         dual_subgraph=dual,
+        shared_anonymization=shared,
         epochs=args.epochs,
         batch_size=args.batch_size,
         lr=args.lr,
@@ -71,14 +79,16 @@ def build_cfg(args: argparse.Namespace, z_mode: str, dual: bool) -> dict:
     return cfg
 
 
-def run_combo(args: argparse.Namespace, z_mode: str, dual: bool) -> tuple[str, dict]:
-    """Train one (z_mode, dual?) arm, then eval it on the disjoint inference graph."""
-    tag = f"{z_mode}/{'dual' if dual else 'single'}"
-    slug = f"{z_mode}_{'dual' if dual else 'single'}"
-    cfg = build_cfg(args, z_mode, dual)
+def run_combo(args: argparse.Namespace, z_mode: str, variant: str) -> tuple[str, dict]:
+    """Train one (z_mode, variant) arm, then eval it on the disjoint inference graph."""
+    dual = variant in ("dual", "dual_shared")
+    shared = variant == "dual_shared"
+    tag = f"{z_mode}/{variant}"
+    slug = f"{z_mode}_{variant}"
+    cfg = build_cfg(args, z_mode, dual, shared)
     save_path = Path(args.ckpt_dir) / f"{slug}.pt"
 
-    print(f"\n{'#' * 72}\n# TRAIN  {tag}   (dual_subgraph={dual}, z_mode={z_mode})\n{'#' * 72}",
+    print(f"\n{'#' * 72}\n# TRAIN  {tag}   (dual={dual}, shared={shared}, z_mode={z_mode})\n{'#' * 72}",
           flush=True)
     t0 = time.time()
     # eval_after=False: the bundle's own data_dir is the *transductive* graph;
@@ -115,20 +125,20 @@ def run_combo(args: argparse.Namespace, z_mode: str, dual: bool) -> tuple[str, d
 
 def print_summary(rows: list[tuple[str, dict]]) -> None:
     """Side-by-side averaged (head+tail) MRR / Hits / per-direction MRR table."""
-    print(f"\n{'=' * 86}")
+    print(f"\n{'=' * 90}")
     print("SUMMARY — filtered metrics, averaged over head+tail (inductive)")
-    print("=" * 86)
-    print(f"{'arm':18s}{'MRR':>9s}{'H@1':>8s}{'H@3':>8s}{'H@10':>8s}"
+    print("=" * 90)
+    print(f"{'arm':22s}{'MRR':>9s}{'H@1':>8s}{'H@3':>8s}{'H@10':>8s}"
           f"{'tMRR':>8s}{'hMRR':>8s}{'train_s':>10s}")
-    print("-" * 86)
+    print("-" * 90)
     for tag, r in rows:
         a = r["avg"]
-        print(f"{tag:18s}{a['MRR']:>9.4f}{a['Hits@1']:>8.4f}{a['Hits@3']:>8.4f}"
+        print(f"{tag:22s}{a['MRR']:>9.4f}{a['Hits@1']:>8.4f}{a['Hits@3']:>8.4f}"
               f"{a['Hits@10']:>8.4f}{r['tail']['MRR']:>8.4f}{r['head']['MRR']:>8.4f}"
               f"{r['_train_secs']:>10.1f}")
-    print("=" * 86)
-    print("tMRR/hMRR = tail/head MRR. 'dual' uses the candidate tower (each candidate")
-    print("represented by its own k-hop subgraph); 'single' scores the candidate token.")
+    print("=" * 90)
+    print("single=candidate token; dual=independent candidate tower; "
+          "dual_shared=candidate tower with anchor-shared [Z] labels.")
 
 
 def main() -> None:
@@ -142,8 +152,8 @@ def main() -> None:
     ap.add_argument("--triple-format", default="head_relation_tail")
     ap.add_argument("--z-modes", default="learned,runtime",
                     help="Comma-separated z_modes to sweep (learned, runtime).")
-    ap.add_argument("--variants", default="single,dual",
-                    help="Comma-separated tower variants (single, dual).")
+    ap.add_argument("--variants", default="single,dual,dual_shared",
+                    help="Comma-separated tower variants (single, dual, dual_shared).")
     # Hyperparameters (held constant across the grid)
     ap.add_argument("--epochs", type=int, default=100)
     ap.add_argument("--batch-size", type=int, default=128)
@@ -160,7 +170,7 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--num-workers", type=int, default=2)
     ap.add_argument("--device", default="cuda", help="cuda | cpu (auto-falls back).")
-    ap.add_argument("--ckpt-dir", default="checkpoints/compare_dual",
+    ap.add_argument("--ckpt-dir", default="checkpoints/ablate",
                     help="Where per-arm .pt bundles are written.")
     ap.add_argument("--context-with-test", action="store_true",
                     help="Fold the inference test.txt into the eval context graph "
@@ -174,14 +184,14 @@ def main() -> None:
     Path(args.ckpt_dir).mkdir(parents=True, exist_ok=True)
     z_modes = [m.strip() for m in args.z_modes.split(",") if m.strip()]
     variants = [v.strip() for v in args.variants.split(",") if v.strip()]
-    bad = set(variants) - {"single", "dual"}
+    bad = set(variants) - {"single", "dual", "dual_shared"}
     if bad:
-        raise SystemExit(f"--variants must be 'single'/'dual', got {sorted(bad)}")
+        raise SystemExit(f"--variants must be single/dual/dual_shared, got {sorted(bad)}")
 
     rows: list[tuple[str, dict]] = []
     for z_mode in z_modes:
         for variant in variants:
-            rows.append(run_combo(args, z_mode, variant == "dual"))
+            rows.append(run_combo(args, z_mode, variant))
 
     print_summary(rows)
 

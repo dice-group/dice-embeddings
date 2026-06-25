@@ -152,6 +152,8 @@ def _build_subgraph_rows(
     collapse_z: bool,
     subgraph_hops: int,
     use_hop_distance_tokens: bool,
+    inherit_map: dict[str, int] | None = None,
+    inherit_z: list[int] | None = None,
 ):
     """Extract, anonymize and tokenize the k-hop subgraph around `center`.
 
@@ -164,6 +166,13 @@ def _build_subgraph_rows(
       to assign candidate tokens without re-running the closure (see
       `eval._tokenize_center`). This is the single tokenizer shared by the
       training path (`build_sample`) and the eval/score path.
+
+    `inherit_map`/`inherit_z` enable shared anonymization across the two dual
+    towers: pass the anchor subgraph's `entity_map`/`z_remaining` so an entity
+    common to both subgraphs reuses the *same* `[Z_i]`, restoring cross-tower
+    variable binding. The shared labels are still randomized per draw — nothing
+    becomes a persistent per-entity embedding. The new `center` is re-keyed to
+    `[X]` and the other tower's center (its `[X]`) drops back to a fresh `[Z_i]`.
     """
     subgraph, entity_distance = k_hop_neighborhood(center, kg, k=subgraph_hops)
     # `subgraph` is the cached, read-only neighborhood — filter the excluded
@@ -180,9 +189,18 @@ def _build_subgraph_rows(
     else:
         subgraph_list = pool
 
-    z_indices = list(range(z_pool))
-    rng.shuffle(z_indices)
-    entity_map: dict[str, int] = {center: vocab["[X]"]}
+    x_id = vocab["[X]"]
+    if inherit_z is None:
+        z_indices = list(range(z_pool))
+        rng.shuffle(z_indices)
+    else:
+        z_indices = list(inherit_z)
+    if inherit_map is None:
+        entity_map: dict[str, int] = {center: x_id}
+    else:
+        entity_map = {e: tid for e, tid in inherit_map.items()
+                      if tid != x_id and e != center}
+        entity_map[center] = x_id
 
     def tok_entity(node: str) -> int:
         if node in entity_map:
@@ -250,6 +268,7 @@ def build_sample(
     subgraph_hops: int = 2,
     use_hop_distance_tokens: bool = False,
     dual_subgraph: bool = False,
+    shared_anonymization: bool = False,
 ) -> dict[str, torch.Tensor]:
     """Build one anonymized sample anchored on `anchor`.
 
@@ -270,6 +289,11 @@ def build_sample(
     own independent anonymization, same `exclude_triple` so the target edge is
     never leaked). The model's candidate tower consumes these to ground
     candidates that fall outside the anchor's neighborhood.
+
+    `shared_anonymization` (dual only): label the candidate subgraph from the
+    anchor subgraph's `[Z_i]` assignment so entities shared by both towers map
+    to the same slot — restoring cross-tower variable binding. Still randomized
+    per draw; no persistent per-entity embedding.
     """
     rng = rng or random
     triples_tok, hop_tok, tok_entity, _entity_map, _z_remaining, none_id = _build_subgraph_rows(
@@ -294,6 +318,8 @@ def build_sample(
         c_triples_tok, c_hop_tok, *_ = _build_subgraph_rows(
             candidate, kg, vocab, fixed_values, max_triples, z_pool, rng,
             exclude_triple, collapse_z, subgraph_hops, use_hop_distance_tokens,
+            inherit_map=_entity_map if shared_anonymization else None,
+            inherit_z=_z_remaining if shared_anonymization else None,
         )
         c_triples_t, c_hop_t, c_mask_t = _pad_subgraph(
             c_triples_tok, c_hop_tok, max_triples, none_id
@@ -493,6 +519,7 @@ class InductiveKGDataset(Dataset):
         subgraph_hops: int = 2,
         use_hop_distance_tokens: bool = False,
         dual_subgraph: bool = False,
+        shared_anonymization: bool = False,
     ):
         self.pos = list(positive_triples)
         self.kg = kg
@@ -509,6 +536,7 @@ class InductiveKGDataset(Dataset):
         self.subgraph_hops = subgraph_hops
         self.use_hop_distance_tokens = use_hop_distance_tokens
         self.dual_subgraph = dual_subgraph
+        self.shared_anonymization = shared_anonymization
 
     def __len__(self) -> int:
         return len(self.pos) * (1 + self.neg_per_pos)
@@ -541,6 +569,7 @@ class InductiveKGDataset(Dataset):
                 subgraph_hops=self.subgraph_hops,
                 use_hop_distance_tokens=self.use_hop_distance_tokens,
                 dual_subgraph=self.dual_subgraph,
+                shared_anonymization=self.shared_anonymization,
             )
 
         candidate = self.neg_sampler(anchor, r_use, candidate, rng)
@@ -551,6 +580,7 @@ class InductiveKGDataset(Dataset):
             subgraph_hops=self.subgraph_hops,
             use_hop_distance_tokens=self.use_hop_distance_tokens,
             dual_subgraph=self.dual_subgraph,
+            shared_anonymization=self.shared_anonymization,
         )
 
 

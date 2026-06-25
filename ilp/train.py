@@ -42,6 +42,7 @@ from .dataset import (
 )
 from .eval import load_eval_inputs, print_eval_results, run_eval
 from .model import build_model, resolve_device
+from .util.check_reachability import reachable_fraction
 from .vocab import build_vocab, format_vocab_summary, load_vocab, save_vocab
 
 # Canonical defaults. A YAML --config overrides these; explicit CLI flags
@@ -60,7 +61,7 @@ DEFAULT_CFG: dict = {
     "cardinality_cutoff": 0, "tail_diversity_cutoff": 0.0,
     "neg_samples_per_pos": 4, "neg_sampler": "uniform",
     "subgraph_hops": 2, "use_hop_distance_tokens": False, "collapse_z": False,
-    "dual_subgraph": False,
+    "dual_subgraph": False, "shared_anonymization": False,
     # Data
     "triple_format": "head_relation_tail", "type_relation": "",
     # Runtime / checkpointing
@@ -161,6 +162,11 @@ def train_model(
     print(f"Vocab size: {len(vocab)} (|fixed_values|={len(fixed_values)})")
 
     train_kg = KnowledgeGraph(augment_with_inverse(train_triples))
+    hops = cfg.get("subgraph_hops", 2)
+    reach, n_reach = reachable_fraction(train_triples, train_kg, hops,
+                                        sample=2000, seed=cfg["seed"])
+    print(f"Subgraph reachability ({hops}-hop, train n={n_reach}): "
+          f"{reach:.1%} of answers lie in the anchor's subgraph")
     neg_sampler = build_negative_sampler(cfg.get("neg_sampler"), train_kg, train_kg.entities)
     train_ds = InductiveKGDataset(
         positive_triples=train_triples,
@@ -177,6 +183,7 @@ def train_model(
         subgraph_hops=cfg.get("subgraph_hops", 2),
         use_hop_distance_tokens=cfg.get("use_hop_distance_tokens", False),
         dual_subgraph=cfg.get("dual_subgraph", False),
+        shared_anonymization=cfg.get("shared_anonymization", False),
     )
     loader = DataLoader(
         train_ds,
@@ -401,6 +408,11 @@ def build_parser() -> argparse.ArgumentParser:
                    default=argparse.SUPPRESS,
                    help="Anchor in both entities: represent the candidate by its own "
                         "k-hop subgraph (candidate tower). Eval precomputes one vector per entity.")
+    g.add_argument("--shared-anonymization", dest="shared_anonymization", action="store_true",
+                   default=argparse.SUPPRESS,
+                   help="Dual only: label the candidate subgraph from the anchor's [Z] "
+                        "assignment so shared entities bind across towers. Disables the "
+                        "candidate-table cache at eval (slower, anchor-dependent).")
     return ap
 
 

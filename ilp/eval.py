@@ -32,7 +32,6 @@ from .dataset import (
     augment_with_inverse,
     build_sample,
     collate,
-    k_hop_neighborhood,
     read_triples,
 )
 from .model import InductiveKGModel, load_bundle
@@ -41,6 +40,7 @@ from .scoring import (
     score_candidates,
     score_candidates_dual,
 )
+from .util.check_reachability import is_reachable
 from .vocab import hop_distance_token, inverse_relation, z_token_ids
 
 
@@ -62,6 +62,7 @@ def evaluate_direction(
     use_hop_distance_tokens: bool = False,
     eval_mc: int = 1,
     dual_subgraph: bool = False,
+    shared_anonymization: bool = False,
     cand_index: dict[str, int] | None = None,
     cand_table: torch.Tensor | None = None,
 ) -> dict[str, float]:
@@ -80,6 +81,7 @@ def evaluate_direction(
                 true_cand=true_cand, exclude_triple=(h, r, t),
                 collapse_z=collapse_z, subgraph_hops=subgraph_hops,
                 use_hop_distance_tokens=use_hop_distance_tokens,
+                shared_anonymization=shared_anonymization,
             )
         return score_candidates(
             model, anchor, rel_q, cands, kg, vocab, fixed_values,
@@ -98,17 +100,9 @@ def evaluate_direction(
         else:
             anchor, true_cand, rel_q = t, h, inverse_relation(r)
         rels.append(r)
-        # Is true_cand reachable in anchor's k-hop AFTER excluding the test triple?
-        # Mirrors score_candidates' subgraph construction. Used downstream to
-        # report stratified MRR (reachable vs unreachable) so per-relation gaps
-        # aren't masked by ties on out-of-subgraph candidates (eval.py:115).
-        nb, _ = k_hop_neighborhood(anchor, kg, k=subgraph_hops)
-        # `nb` is the cached, read-only neighborhood: exclude the test triple
-        # without mutating it.
-        excluded = {(h, r, t), (t, inverse_relation(r), h)}
-        nb_ents = {e for s, rr, o in nb if (s, rr, o) not in excluded
-                   for e in (s, o)}
-        reachable_flags.append(true_cand in nb_ents)
+        # Reachable vs unreachable stratifies MRR so per-relation gaps aren't
+        # masked by ties on out-of-subgraph candidates (eval.py:115).
+        reachable_flags.append(is_reachable(h, r, t, anchor, true_cand, kg, subgraph_hops))
         if true_cand not in pool_set:
             # Ensure the true candidate is always rankable.
             cands = entity_pool + [true_cand]
@@ -223,6 +217,7 @@ def evaluate(
     use_hop_distance_tokens: bool = False,
     eval_mc: int = 1,
     dual_subgraph: bool = False,
+    shared_anonymization: bool = False,
 ) -> dict[str, float]:
     eval_triples, dropped = filter_known_relations(eval_triples, vocab)
     if dropped:
@@ -232,9 +227,10 @@ def evaluate(
 
     # Candidate tower: encode every entity's subgraph ONCE and reuse the table
     # across all queries (both directions) — the precompute that keeps dual eval
-    # fast. Skipped entirely in single mode (cand_index/cand_table stay None).
+    # fast. Skipped in single mode, and under shared anonymization where each
+    # candidate is anchor-dependent and re-encoded per query.
     cand_index = cand_table = None
-    if dual_subgraph:
+    if dual_subgraph and not shared_anonymization:
         cand_index, cand_table = build_candidate_table(
             model, kg, entity_pool, vocab, fixed_values, max_triples, z_pool, device,
             collapse_z=collapse_z, subgraph_hops=subgraph_hops,
@@ -246,6 +242,7 @@ def evaluate(
         "tail", max_triples, z_pool, device, cand_batch_size, collapse_z,
         subgraph_hops=subgraph_hops, use_hop_distance_tokens=use_hop_distance_tokens,
         eval_mc=eval_mc, dual_subgraph=dual_subgraph,
+        shared_anonymization=shared_anonymization,
         cand_index=cand_index, cand_table=cand_table,
     )
     head = evaluate_direction(
@@ -253,6 +250,7 @@ def evaluate(
         "head", max_triples, z_pool, device, cand_batch_size, collapse_z,
         subgraph_hops=subgraph_hops, use_hop_distance_tokens=use_hop_distance_tokens,
         eval_mc=eval_mc, dual_subgraph=dual_subgraph,
+        shared_anonymization=shared_anonymization,
         cand_index=cand_index, cand_table=cand_table,
     )
     avg = {k: 0.5 * (tail[k] + head[k]) for k in ("MRR", "Hits@1", "Hits@3", "Hits@10")}
@@ -409,6 +407,7 @@ def run_eval(
         use_hop_distance_tokens=cfg.get("use_hop_distance_tokens", False),
         eval_mc=cfg.get("eval_mc", 8),  # runtime MC draws; ignored for learned
         dual_subgraph=cfg.get("dual_subgraph", False),
+        shared_anonymization=cfg.get("shared_anonymization", False),
     )
 
 
@@ -474,6 +473,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--context-with-test", action="store_true",
                     help="Also fold the query (test) triples into the context graph "
                          "(each query's own triple is still excluded).")
+    ap.add_argument("--eval-mc", type=int, default=None,
+                    help="Override MC draws for runtime z_mode (ignored for learned). "
+                         "Default: the checkpoint's cfg eval_mc (else 8).")
     ap.add_argument("--json-out", default=None,
                     help="If set, dump the full results dict (incl. per-relation MRR) as JSON.")
     ap.add_argument("--per-relation", action="store_true",
@@ -490,6 +492,8 @@ def main():
     if args.device or (device.type == "cpu" and torch.cuda.is_available()):
         device = torch.device(args.device or "cuda")
         model.to(device)
+    if args.eval_mc is not None:
+        cfg["eval_mc"] = args.eval_mc
     fmt = cfg.get("triple_format", "head_relation_tail")
     test, known, context = load_eval_inputs(
         fmt, args.obs_file, args.test_file,

@@ -17,6 +17,7 @@ Run from the repo root (the dir containing the `ilp/` package):
 from __future__ import annotations
 
 import argparse
+import random
 from collections import defaultdict
 from pathlib import Path
 
@@ -29,21 +30,31 @@ from ilp.dataset import (
 from ilp.vocab import inverse_relation
 
 
-def reachable_flags(test, kg, hops):
-    """Per-query reachability for both directions, mirroring eval.evaluate_direction.
+def is_reachable(h, r, t, anchor, true_cand, kg, hops) -> bool:
+    """True if `true_cand` is in `anchor`'s k-hop subgraph after excluding (h,r,t)."""
+    nb, _ = k_hop_neighborhood(anchor, kg, k=hops)
+    excluded = {(h, r, t), (t, inverse_relation(r), h)}
+    nb_ents = {e for s, rr, o in nb if (s, rr, o) not in excluded for e in (s, o)}
+    return true_cand in nb_ents
 
-    Returns rows of (relation, direction, reachable_bool).
-    """
+
+def reachable_flags(triples, kg, hops):
+    """Rows of (relation, direction, reachable_bool), both directions per triple."""
     rows = []
-    for h, r, t in test:
+    for h, r, t in triples:
         for direction in ("tail", "head"):
             anchor, true_cand = (h, t) if direction == "tail" else (t, h)
-            nb, _ = k_hop_neighborhood(anchor, kg, k=hops)
-            excluded = {(h, r, t), (t, inverse_relation(r), h)}
-            nb_ents = {e for s, rr, o in nb if (s, rr, o) not in excluded
-                       for e in (s, o)}
-            rows.append((r, direction, true_cand in nb_ents))
+            rows.append((r, direction, is_reachable(h, r, t, anchor, true_cand, kg, hops)))
     return rows
+
+
+def reachable_fraction(triples, kg, hops, sample=None, seed=0) -> tuple[float, int]:
+    """Overall reachable fraction (both directions), optionally on a random sample."""
+    triples = list(triples)
+    if sample is not None and len(triples) > sample:
+        triples = random.Random(seed).sample(triples, sample)
+    flags = [r for _, _, r in reachable_flags(triples, kg, hops)]
+    return (sum(flags) / len(flags), len(flags)) if flags else (0.0, 0)
 
 
 def frac(rows, direction=None):

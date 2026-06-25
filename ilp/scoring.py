@@ -43,6 +43,8 @@ def _tokenize_center(
     collapse_z: bool = False,
     subgraph_hops: int = 2,
     use_hop_distance_tokens: bool = False,
+    inherit_map: dict[str, int] | None = None,
+    inherit_z: list[int] | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, dict[str, int], list[int]]:
     """Tokenize `center`'s anonymized k-hop subgraph into batched tensors.
 
@@ -52,10 +54,14 @@ def _tokenize_center(
     caller can both encode the subgraph and assign candidate tokens consistently
     with the anonymization. Replaces the assign/BFS blocks formerly copy-pasted
     into `score_candidates` and `_encode_center`.
+
+    `inherit_map`/`inherit_z` (shared anonymization) seed the labeling from
+    another tower's subgraph so shared entities reuse the same `[Z_i]`.
     """
     triples_tok, hop_tok, _tok, entity_map, z_remaining, none_id = _build_subgraph_rows(
         center, kg, vocab, fixed_values, max_triples, z_pool, random.Random(),
         exclude_triple, collapse_z, subgraph_hops, use_hop_distance_tokens,
+        inherit_map=inherit_map, inherit_z=inherit_z,
     )
     triples_t, hop_t, mask_t = _pad_subgraph(triples_tok, hop_tok, max_triples, none_id)
     return (
@@ -170,17 +176,21 @@ def _encode_center(
     subgraph_hops: int = 2,
     use_hop_distance_tokens: bool = False,
     rand_bank: torch.Tensor | None = None,
+    inherit_map: dict[str, int] | None = None,
+    inherit_z: list[int] | None = None,
 ) -> torch.Tensor:                    # [d]
     """Encode `center`'s anonymized k-hop subgraph into a pooled vector.
 
     Shared by the candidate-table builder and the anchor side of the dual
     scorer. Uses the same `_tokenize_center` tokenizer as `score_candidates`,
     but returns only the pooled [X] representation (no candidate scoring).
+    `inherit_map`/`inherit_z` seed shared anonymization from the anchor tower.
     """
     triples_t, hop_t, mask_t, _entity_map, _z_remaining = _tokenize_center(
         center, kg, vocab, fixed_values, max_triples, z_pool, device,
         exclude_triple=exclude_triple, collapse_z=collapse_z,
         subgraph_hops=subgraph_hops, use_hop_distance_tokens=use_hop_distance_tokens,
+        inherit_map=inherit_map, inherit_z=inherit_z,
     )
     return model._encode_subgraph(
         triples_t, mask_t, hop_t if use_hop_distance_tokens else None, rand_bank
@@ -240,13 +250,14 @@ def score_candidates_dual(
     z_pool: int,
     device: torch.device,
     *,
-    cand_index: dict[str, int],
-    cand_table: torch.Tensor,
+    cand_index: dict[str, int] | None,
+    cand_table: torch.Tensor | None,
     true_cand: str | None = None,
     exclude_triple: Triple | None = None,
     collapse_z: bool = False,
     subgraph_hops: int = 2,
     use_hop_distance_tokens: bool = False,
+    shared_anonymization: bool = False,
 ) -> dict[str, float]:
     """Dual-anchored scoring with a precomputed candidate table.
 
@@ -254,11 +265,39 @@ def score_candidates_dual(
     each candidate by its precomputed tower vector. The gold `true_cand` is
     re-encoded WITH `exclude_triple` so the held-out edge can't leak into its own
     subgraph; candidates missing from the table are encoded on the fly.
+
+    `shared_anonymization`: the candidate labeling is seeded from the anchor's,
+    so candidate vectors are anchor-dependent and the precomputed `cand_table`
+    can't be reused — every candidate subgraph is re-encoded per query.
     """
     rand_bank = (
         model._make_rand_bank(device=device)
         if getattr(model, "z_mode", "learned") == "runtime" else None
     )
+
+    if shared_anonymization:
+        # Anchor labeling must be available to seed each candidate, so tokenize
+        # explicitly (cand_table is invalid under shared anonymization).
+        a_tr, a_hop, a_mask, a_map, a_zrem = _tokenize_center(
+            anchor, kg, vocab, fixed_values, max_triples, z_pool, device,
+            exclude_triple=exclude_triple, collapse_z=collapse_z,
+            subgraph_hops=subgraph_hops, use_hop_distance_tokens=use_hop_distance_tokens,
+        )
+        pooled = model._encode_subgraph(
+            a_tr, a_mask, a_hop if use_hop_distance_tokens else None, rand_bank
+        ).squeeze(0)
+        C = len(candidates)
+        cand_mat = torch.empty(C, model.d_model, device=device)
+        for i, c in enumerate(candidates):
+            cand_mat[i] = _encode_center(
+                model, c, kg, vocab, fixed_values, max_triples, z_pool, device,
+                exclude_triple=exclude_triple if c == true_cand else None,
+                collapse_z=collapse_z, subgraph_hops=subgraph_hops,
+                use_hop_distance_tokens=use_hop_distance_tokens, rand_bank=rand_bank,
+                inherit_map=a_map, inherit_z=a_zrem,
+            )
+        return _score_dual_feats(model, pooled, cand_mat, candidates, relation, vocab, device)
+
     pooled = _encode_center(
         model, anchor, kg, vocab, fixed_values, max_triples, z_pool, device,
         exclude_triple=exclude_triple, collapse_z=collapse_z, subgraph_hops=subgraph_hops,
@@ -286,9 +325,14 @@ def score_candidates_dual(
             torch.tensor(hit_rows, device=device)
         ]
 
-    rel_id = vocab[f"[REL_{relation}]"]
-    rel_t = torch.full((C,), rel_id, dtype=torch.long, device=device)
+    return _score_dual_feats(model, pooled, cand_mat, candidates, relation, vocab, device)
 
+
+def _score_dual_feats(model, pooled, cand_mat, candidates, relation, vocab, device):
+    """Classifier over [pooled, tr+cand, pooled*(tr+cand)] for each candidate vector."""
+    rel_id = vocab[f"[REL_{relation}]"]
+    C = len(candidates)
+    rel_t = torch.full((C,), rel_id, dtype=torch.long, device=device)
     chunk = 4096
     out: list[float] = []
     for i in range(0, C, chunk):
@@ -299,5 +343,4 @@ def score_candidates_dual(
         feats = torch.cat([pooled_b, target_emb, pooled_b * target_emb], dim=-1)
         logits = model.classifier(feats).squeeze(-1)
         out.extend(logits.float().cpu().tolist())
-
     return dict(zip(candidates, out))
