@@ -8,8 +8,8 @@ consume (see TRIPLE_FORMATS and the ``--obs-file`` flow in eval.py):
 
   inductive       KGs/{name}_inductive/{train,valid}.txt        (entity set A)
                   KGs/{name}_inductive_ind/{train,test}.txt     (entity set B, A∩B=∅)
-                  GraIL-style: train on graph A; at eval the queries live on a
-                  disjoint inference graph B whose observed part is *_ind/train.txt.
+                  Train on graph A; at eval the queries live on a disjoint
+                  inference graph B whose observed part is *_ind/train.txt.
 
   semi_inductive  KGs/{name}_semi_inductive/{train,valid,test,context}.txt
                   each valid/test triple has exactly one unseen endpoint; train
@@ -22,16 +22,22 @@ Usage:
 Then train (auto-evaluates the test split when training finishes), e.g.:
     python -m ilp.train --config ilp/configs/kg_transductive.yaml --save runs/kg.pt
 
-Standalone eval of a saved bundle (single dir):
-    python -m ilp.eval --model <bundle> --kg-dir KGs/kg_transductive
+Standalone eval of a saved bundle (transductive: rank test against itself):
+    python -m ilp.eval --model <bundle> \
+        --obs-file KGs/kg_transductive/test.txt \
+        --test-file KGs/kg_transductive/test.txt \
+        --filter-file KGs/kg_transductive/train.txt KGs/kg_transductive/valid.txt
 
-Eval (inductive, GraIL-style):
-    python -m ilp.eval --model <bundle> --kg-dir KGs/kg_inductive \
-        --obs-file KGs/kg_inductive_ind/train.txt --test-file KGs/kg_inductive_ind/test.txt
+Eval (inductive: observed context = the disjoint inference graph's train.txt):
+    python -m ilp.eval --model <bundle> \
+        --obs-file  KGs/kg_inductive_ind/train.txt \
+        --test-file KGs/kg_inductive_ind/test.txt
 
 Eval (semi-inductive, with observed context):
-    python -m ilp.eval --model <bundle> --kg-dir KGs/kg_semi_inductive \
-        --obs-file KGs/kg_semi_inductive/context.txt
+    python -m ilp.eval --model <bundle> \
+        --obs-file  KGs/kg_semi_inductive/context.txt \
+        --test-file KGs/kg_semi_inductive/test.txt \
+        --filter-file KGs/kg_semi_inductive/train.txt KGs/kg_semi_inductive/valid.txt
 """
 from __future__ import annotations
 
@@ -126,7 +132,7 @@ def split_transductive(
     return {"train": train, "valid": valid, "test": test}
 
 
-# --- fully inductive (GraIL-style) ----------------------------------------
+# --- fully inductive (disjoint train / inference entity sets) -------------
 
 def split_inductive(
     triples: list[Triple],

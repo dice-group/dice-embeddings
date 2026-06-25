@@ -12,9 +12,12 @@ which overrides the built-in defaults):
     # config + targeted overrides
     python -m ilp.train --config ilp/configs/kg_transductive.yaml --epochs 50 --lr 3e-4
 
-    # GraIL-style inductive: train on graph A, eval on the disjoint inference graph
+    # inductive: train on graph A, eval on a disjoint inference graph whose
+    # train.txt is the observed context and test.txt holds the queries
     python -m ilp.train --data-dir KGs/kg_inductive --save runs/kg_ind.pt \\
-        --test-file KGs/kg_inductive_ind/test.txt --obs-file KGs/kg_inductive_ind/train.txt
+        --obs-file  KGs/kg_inductive_ind/train.txt \\
+        --test-file KGs/kg_inductive_ind/test.txt \\
+        --filter-file KGs/kg_inductive_ind/valid.txt
 """
 from __future__ import annotations
 
@@ -49,6 +52,9 @@ DEFAULT_CFG: dict = {
     # Optimization (epoch-based; max_steps is derived at runtime)
     "epochs": 100, "batch_size": 128, "lr": 1.0e-4, "weight_decay": 1.0e-2,
     "warmup_steps": 1000, "grad_clip": 1.0,
+    # Mixed precision: bf16 autocast on CUDA (no GradScaler needed). Default on;
+    # silently no-ops on CPU or hardware without bf16 support.
+    "amp": True,
     # Sampling
     "max_triples": 128, "z_pool_size": 300,
     "cardinality_cutoff": 0, "tail_diversity_cutoff": 0.0,
@@ -83,8 +89,10 @@ def train_model(
     save_path: str | Path | None = None,
     run_dir: str | Path | None = None,
     eval_after: bool = True,
-    eval_test_file: str | Path | None = None,
-    eval_obs_file: str | Path | None = None,
+    eval_test_files: list[str | Path] | None = None,
+    eval_obs_files: list[str | Path] | None = None,
+    eval_filter_files: list[str | Path] | None = None,
+    eval_context_with_test: bool = False,
     eval_per_relation: bool = False,
 ) -> dict:
     """Train a model from a config dict, then (optionally) evaluate on test.
@@ -100,8 +108,12 @@ def train_model(
         checkpoints, and `model_final.pt` here (reproducible-experiment flow).
 
     eval_after:
-        After training, if a test split is available (eval_test_file, else
-        {data_dir}/test.txt), run filtered MRR/Hits@K and print the metrics.
+        After training, run filtered MRR/Hits@K and print the metrics. The
+        query files default to [{data_dir}/test.txt] and the context to those
+        same queries (transductive self-context) unless `eval_obs_files` is
+        given (inductive: a disjoint observed graph); `eval_filter_files`
+        defaults to the data_dir's train.txt/valid.txt. Skipped if the resolved
+        files don't all exist.
     """
     random.seed(cfg["seed"])
     torch.manual_seed(cfg["seed"])
@@ -196,6 +208,18 @@ def train_model(
     )
     loss_fn = torch.nn.BCEWithLogitsLoss()
 
+    # bf16 autocast: ~1.5-2x on Ampere+; bf16's fp32 exponent range means no
+    # loss scaling is required, so backward/clip/step stay in their fp32 path.
+    use_amp = (
+        cfg.get("amp", True)
+        and device.type == "cuda"
+        and torch.cuda.is_bf16_supported()
+    )
+    if cfg.get("amp", True) and not use_amp:
+        print("[amp] requested but unavailable (needs CUDA + bf16); running fp32.")
+    elif use_amp:
+        print("[amp] bf16 autocast enabled.")
+
     step = 0
     use_hop = cfg.get("use_hop_distance_tokens", False)
     use_dual = cfg.get("dual_subgraph", False)
@@ -208,15 +232,16 @@ def train_model(
                          leave=False, dynamic_ncols=True)
         for batch in batch_bar:
             batch = {k: v.to(device, non_blocking=True) for k, v in batch.items()}
-            logits = model(
-                batch["triples"], batch["mask"],
-                batch["target_relation"], batch["target_tail"],
-                hop_distances=batch.get("hop_distances") if use_hop else None,
-                cand_triples=batch.get("cand_triples") if use_dual else None,
-                cand_mask=batch.get("cand_mask") if use_dual else None,
-                cand_hop_distances=batch.get("cand_hop_distances") if (use_dual and use_hop) else None,
-            )
-            loss = loss_fn(logits, batch["label"])
+            with torch.autocast("cuda", dtype=torch.bfloat16, enabled=use_amp):
+                logits = model(
+                    batch["triples"], batch["mask"],
+                    batch["target_relation"], batch["target_tail"],
+                    hop_distances=batch.get("hop_distances") if use_hop else None,
+                    cand_triples=batch.get("cand_triples") if use_dual else None,
+                    cand_mask=batch.get("cand_mask") if use_dual else None,
+                    cand_hop_distances=batch.get("cand_hop_distances") if (use_dual and use_hop) else None,
+                )
+                loss = loss_fn(logits, batch["label"])
             opt.zero_grad(set_to_none=True)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), cfg["grad_clip"])
@@ -254,12 +279,25 @@ def train_model(
     print("training done.")
 
     if eval_after:
-        test_path = Path(eval_test_file) if eval_test_file else data_dir / "test.txt"
-        if test_path.exists():
+        # Resolve explicit file lists. Default: queries = {data_dir}/test.txt,
+        # context = those same queries (transductive self-context), filter =
+        # data_dir's train.txt/valid.txt. eval_obs_files overrides the context
+        # with a disjoint observed graph (inductive eval).
+        test_files = [Path(p) for p in eval_test_files] if eval_test_files else [data_dir / "test.txt"]
+        obs_files = [Path(p) for p in eval_obs_files] if eval_obs_files else list(test_files)
+        if eval_filter_files is not None:
+            filter_files = [Path(p) for p in eval_filter_files]
+        else:
+            filter_files = [data_dir / n for n in ("train.txt", "valid.txt")
+                            if (data_dir / n).exists()]
+        missing = [p for p in test_files + obs_files if not p.exists()]
+        if not missing:
             print("\n" + "=" * 60 + "\nEvaluation (filtered MRR / Hits@K)\n" + "=" * 60)
             model.eval()
             test, known, context = load_eval_inputs(
-                data_dir, fmt, test_file=test_path, obs_file=eval_obs_file
+                fmt, obs_files, test_files,
+                include_test_in_context=eval_context_with_test,
+                filter_files=filter_files,
             )
             results = run_eval(
                 model, vocab, fixed_values, cfg, device,
@@ -267,7 +305,7 @@ def train_model(
             )
             print_eval_results(results, per_relation=eval_per_relation)
         else:
-            print(f"[eval] no test split at {test_path}; skipping auto-eval.")
+            print(f"[eval] missing eval file(s) {missing}; skipping auto-eval.")
 
     return bundle
 
@@ -306,10 +344,16 @@ def build_parser() -> argparse.ArgumentParser:
     # Auto-eval
     ap.add_argument("--no-eval", dest="eval_after", action="store_false",
                     help="Skip the automatic post-training evaluation.")
-    ap.add_argument("--test-file", default=None,
-                    help="Eval split for auto-eval (default: {data-dir}/test.txt).")
-    ap.add_argument("--obs-file", default=None,
-                    help="Observed-graph triples for subgraph context at eval (GraIL-style).")
+    ap.add_argument("--test-file", nargs="+", default=None, metavar="FILE",
+                    help="Query file(s) for auto-eval (default: {data-dir}/test.txt).")
+    ap.add_argument("--obs-file", nargs="+", default=None, metavar="FILE",
+                    help="Observed-graph file(s) for subgraph context at eval (inductive: a "
+                         "disjoint graph). Default: the query files themselves (transductive self-context).")
+    ap.add_argument("--filter-file", nargs="*", default=None, metavar="FILE",
+                    help="Extra filter-only file(s) for the known set at eval "
+                         "(default: {data-dir}/train.txt and valid.txt).")
+    ap.add_argument("--context-with-test", action="store_true",
+                    help="Fold the query (test) triples into the eval context graph.")
     ap.add_argument("--per-relation", action="store_true",
                     help="Print a per-relation MRR table after evaluation.")
 
@@ -350,6 +394,9 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Add per-entity BFS-distance tokens.")
     g.add_argument("--collapse-z", dest="collapse_z", action="store_true",
                    default=argparse.SUPPRESS, help="Collapse Z pool on exhaustion (z_pool=1 ablation).")
+    g.add_argument("--no-amp", dest="amp", action="store_false",
+                   default=argparse.SUPPRESS,
+                   help="Disable bf16 autocast (default: on when CUDA+bf16 available).")
     g.add_argument("--dual-subgraph", dest="dual_subgraph", action="store_true",
                    default=argparse.SUPPRESS,
                    help="Anchor in both entities: represent the candidate by its own "
@@ -374,8 +421,10 @@ def main():
         save_path=save_path,
         run_dir=run_dir,
         eval_after=args.eval_after,
-        eval_test_file=args.test_file,
-        eval_obs_file=args.obs_file,
+        eval_test_files=args.test_file,
+        eval_obs_files=args.obs_file,
+        eval_filter_files=args.filter_file,
+        eval_context_with_test=args.context_with_test,
         eval_per_relation=args.per_relation,
     )
 

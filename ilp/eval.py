@@ -2,9 +2,17 @@
 
 CLI-first: evaluate a self-contained model bundle on a held-out split.
 
-    python -m ilp.eval --model checkpoints/run/model_final.pt --kg-dir KGs/mykg
-    python -m ilp.eval --model bundle.pt --kg-dir KGs/kg_inductive \\
-        --obs-file KGs/kg_inductive_ind/train.txt --test-file KGs/kg_inductive_ind/test.txt
+    # inductive: observed graph = inference train.txt (context),
+    # queries = inference test.txt; valid.txt only filters the ranking.
+    python -m ilp.eval --model bundle.pt \\
+        --obs-file  KGs/WN18RR_v1_ind/train.txt \\
+        --test-file KGs/WN18RR_v1_ind/test.txt \\
+        --filter-file KGs/WN18RR_v1_ind/valid.txt
+
+    # transductive: rank test.txt against itself as context
+    python -m ilp.eval --model checkpoints/run/model_final.pt \\
+        --obs-file KGs/mykg/test.txt --test-file KGs/mykg/test.txt \\
+        --filter-file KGs/mykg/train.txt KGs/mykg/valid.txt
 """
 from __future__ import annotations
 
@@ -320,38 +328,58 @@ def test_z_relabeling_invariance(
 # --- reusable eval driver (shared by this CLI and train.py auto-eval) ------
 
 def load_eval_inputs(
-    kg_dir: str | Path,
     fmt: str,
-    test_file: str | Path | None = None,
-    obs_file: str | Path | None = None,
+    obs_files: Sequence[str | Path],
+    test_files: Sequence[str | Path],
+    *,
+    include_test_in_context: bool = False,
+    filter_files: Sequence[str | Path] = (),
 ) -> tuple[list[Triple], list[Triple], list[Triple]]:
-    """Resolve (test, known, context) triple lists for evaluation.
+    """Resolve (test, known, context) triple lists from explicit file lists.
 
-    - test     : the queries (kg_dir/test.txt unless `test_file` overrides).
-    - known    : the filter set for filtered ranking — train + valid + test, plus
-      the observed inference graph (`obs_file`) when given, so other true facts
-      in the inference graph aren't counted as ranking competitors.
-    - context  : triples used to build the subgraph KG. Defaults to the test
-      split; with `obs_file` (GraIL-style) it is obs_file + test.
+    Nothing is inferred from a directory: you state exactly which files are the
+    observed graph and which are the queries, so what we evaluate on is
+    unambiguous. Both lists are required — an empty one raises rather than
+    silently evaluating on a guessed default.
+
+    - obs_files  : one or more files whose triples form the *observed graph*
+      (the subgraph KG / message-passing context). REQUIRED (>=1).
+    - test_files : one or more files of *query* triples to rank. REQUIRED (>=1).
+    - filter_files: extra files contributing to the filtered-ranking `known`
+      set only (e.g. an inference graph's valid.txt). Never added to context.
+    - include_test_in_context: if True, also fold the query triples into the
+      context graph (each query's own triple is still excluded at scoring time).
+      Default False: test facts never leak into a subgraph (the strict
+      inductive setting), so the model can only use the observed graph.
+
+    Returns:
+    - test    : concatenated query triples (from `test_files`).
+    - known   : filter set = obs ∪ test ∪ filter_files.
+    - context : obs (plus test when `include_test_in_context`).
     """
-    kg_dir = Path(kg_dir)
-    test_path = Path(test_file) if test_file else kg_dir / "test.txt"
-    test = read_triples(test_path, fmt=fmt)
+    obs_files = list(obs_files)
+    test_files = list(test_files)
+    if not obs_files:
+        raise ValueError(
+            "load_eval_inputs requires at least one obs_file (the observed graph "
+            "used as subgraph context); none were given."
+        )
+    if not test_files:
+        raise ValueError(
+            "load_eval_inputs requires at least one test_file (the query triples); "
+            "none were given."
+        )
 
-    known: list[Triple] = list(test)
-    for name in ("train.txt", "valid.txt"):
-        p = kg_dir / name
-        if p.exists():
-            known += read_triples(p, fmt=fmt)
+    def _read_all(paths: Sequence[str | Path]) -> list[Triple]:
+        out: list[Triple] = []
+        for p in paths:
+            out += read_triples(Path(p), fmt=fmt)
+        return out
 
-    if obs_file:
-        obs = read_triples(Path(obs_file), fmt=fmt)
-        known += obs
-        # Include the queries so test-internal facts also enter the subgraph;
-        # each query's own triple is excluded inside score_candidates.
-        context = obs + test
-    else:
-        context = list(test)
+    obs = _read_all(obs_files)
+    test = _read_all(test_files)
+    known = obs + test + _read_all(filter_files)
+    context = (obs + test) if include_test_in_context else list(obs)
     return test, known, context
 
 
@@ -435,13 +463,17 @@ def build_parser() -> argparse.ArgumentParser:
         description="Filtered MRR / Hits@K evaluation of a model bundle on a held-out split.",
     )
     ap.add_argument("--model", required=True, help="Bundled .pt (model + vocab + cfg).")
-    ap.add_argument("--kg-dir", required=True,
-                    help="Directory with test.txt (and optionally train.txt/valid.txt for the filter set).")
-    ap.add_argument("--test-file", default=None,
-                    help="Override path to the eval split (default: {kg-dir}/test.txt).")
-    ap.add_argument("--obs-file", default=None,
-                    help="Observed-graph triples for subgraph context (GraIL-style inductive eval). "
-                         "If omitted, the test split is used as context.")
+    ap.add_argument("--obs-file", nargs="+", required=True, metavar="FILE",
+                    help="One or more files forming the observed graph used as subgraph "
+                         "context (e.g. an inference graph's train.txt). Required.")
+    ap.add_argument("--test-file", nargs="+", required=True, metavar="FILE",
+                    help="One or more files of query triples to rank. Required.")
+    ap.add_argument("--filter-file", nargs="*", default=[], metavar="FILE",
+                    help="Extra files added to the filtered-ranking 'known' set only "
+                         "(e.g. valid.txt). Never added to the context graph.")
+    ap.add_argument("--context-with-test", action="store_true",
+                    help="Also fold the query (test) triples into the context graph "
+                         "(each query's own triple is still excluded).")
     ap.add_argument("--json-out", default=None,
                     help="If set, dump the full results dict (incl. per-relation MRR) as JSON.")
     ap.add_argument("--per-relation", action="store_true",
@@ -459,7 +491,11 @@ def main():
         device = torch.device(args.device or "cuda")
         model.to(device)
     fmt = cfg.get("triple_format", "head_relation_tail")
-    test, known, context = load_eval_inputs(args.kg_dir, fmt, args.test_file, args.obs_file)
+    test, known, context = load_eval_inputs(
+        fmt, args.obs_file, args.test_file,
+        include_test_in_context=args.context_with_test,
+        filter_files=args.filter_file,
+    )
     results = run_eval(
         model, vocab, fixed_values, cfg, device,
         test_triples=test, known_triples=known, context_triples=context,
