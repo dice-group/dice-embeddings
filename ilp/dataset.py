@@ -152,6 +152,7 @@ def _build_subgraph_rows(
     collapse_z: bool,
     subgraph_hops: int,
     use_hop_distance_tokens: bool,
+    center_mode: str = "xtoken",
     inherit_map: dict[str, int] | None = None,
     inherit_z: list[int] | None = None,
 ):
@@ -160,19 +161,28 @@ def _build_subgraph_rows(
     Returns `(triples_tok, hop_tok, tok_entity, entity_map, z_remaining, none_id)`:
     - `tok_entity` is the (stateful) closure that mapped this subgraph's entities
       to token ids — the caller reuses it so the candidate token is consistent
-      with the anonymization (single-tower behaviour). `center` always gets `[X]`.
+      with the anonymization (single-tower behaviour).
     - `entity_map` is the same dict the closure mutates (entity → token id), and
       `z_remaining` the still-unused `[Z_i]` indices. Scoring callers read these
       to assign candidate tokens without re-running the closure (see
       `eval._tokenize_center`). This is the single tokenizer shared by the
       training path (`build_sample`) and the eval/score path.
 
+    `center_mode` controls how the subgraph root is tokenized:
+    - `xtoken`  (default): the center gets the special `[X]` token (which is also
+      the SAB's prepended CLS), so it has a role marker but no shareable identity.
+    - `cls_role`: the center gets an ordinary `[Z_i]` like any other entity, so it
+      has a *shareable* identity that binds across the dual towers. `[X]` is then
+      used only as the CLS pool token. Rooting is carried by the `HOP_DIST_0`
+      hop-distance token, so this mode requires `use_hop_distance_tokens=True`.
+
     `inherit_map`/`inherit_z` enable shared anonymization across the two dual
     towers: pass the anchor subgraph's `entity_map`/`z_remaining` so an entity
     common to both subgraphs reuses the *same* `[Z_i]`, restoring cross-tower
     variable binding. The shared labels are still randomized per draw — nothing
-    becomes a persistent per-entity embedding. The new `center` is re-keyed to
-    `[X]` and the other tower's center (its `[X]`) drops back to a fresh `[Z_i]`.
+    becomes a persistent per-entity embedding. Under `xtoken` the new `center` is
+    re-keyed to `[X]` and the other tower's center drops back to a fresh `[Z_i]`;
+    under `cls_role` the inherited map is reused as-is, so *both* centers bind too.
     """
     subgraph, entity_distance = k_hop_neighborhood(center, kg, k=subgraph_hops)
     # `subgraph` is the cached, read-only neighborhood — filter the excluded
@@ -195,8 +205,13 @@ def _build_subgraph_rows(
         rng.shuffle(z_indices)
     else:
         z_indices = list(inherit_z)
-    if inherit_map is None:
-        entity_map: dict[str, int] = {center: x_id}
+    if center_mode == "cls_role":
+        # Center is an ordinary (shareable) [Z]; [X] is reserved for the CLS pool.
+        # Reuse the inherited map wholesale so both centers bind across towers;
+        # the center's own [Z] is assigned lazily by tok_entity (inherited if shared).
+        entity_map: dict[str, int] = dict(inherit_map) if inherit_map is not None else {}
+    elif inherit_map is None:
+        entity_map = {center: x_id}
     else:
         entity_map = {e: tid for e, tid in inherit_map.items()
                       if tid != x_id and e != center}
@@ -269,11 +284,13 @@ def build_sample(
     use_hop_distance_tokens: bool = False,
     dual_subgraph: bool = False,
     shared_anonymization: bool = False,
+    center_mode: str = "xtoken",
 ) -> dict[str, torch.Tensor]:
     """Build one anonymized sample anchored on `anchor`.
 
-    `anchor` gets the [X] token. `candidate` gets either its [VAL_*] (schema)
-    or a [Z_i] consistent with the subgraph's anonymization.
+    `anchor` is the subgraph center (`[X]` under `center_mode='xtoken'`, else a
+    shareable `[Z_i]`). `candidate` gets either its [VAL_*] (schema) or a [Z_i]
+    consistent with the subgraph's anonymization.
 
     `exclude_triple`: drop this triple from the subgraph if present. For
     positive training samples pass (anchor, relation, candidate) so the
@@ -299,6 +316,7 @@ def build_sample(
     triples_tok, hop_tok, tok_entity, _entity_map, _z_remaining, none_id = _build_subgraph_rows(
         anchor, kg, vocab, fixed_values, max_triples, z_pool, rng,
         exclude_triple, collapse_z, subgraph_hops, use_hop_distance_tokens,
+        center_mode=center_mode,
     )
     # Candidate token consistent with the anchor subgraph's anonymization
     # (single-tower representation; unused but harmless under dual_subgraph).
@@ -318,6 +336,7 @@ def build_sample(
         c_triples_tok, c_hop_tok, *_ = _build_subgraph_rows(
             candidate, kg, vocab, fixed_values, max_triples, z_pool, rng,
             exclude_triple, collapse_z, subgraph_hops, use_hop_distance_tokens,
+            center_mode=center_mode,
             inherit_map=_entity_map if shared_anonymization else None,
             inherit_z=_z_remaining if shared_anonymization else None,
         )
@@ -520,6 +539,7 @@ class InductiveKGDataset(Dataset):
         use_hop_distance_tokens: bool = False,
         dual_subgraph: bool = False,
         shared_anonymization: bool = False,
+        center_mode: str = "xtoken",
     ):
         self.pos = list(positive_triples)
         self.kg = kg
@@ -537,6 +557,7 @@ class InductiveKGDataset(Dataset):
         self.use_hop_distance_tokens = use_hop_distance_tokens
         self.dual_subgraph = dual_subgraph
         self.shared_anonymization = shared_anonymization
+        self.center_mode = center_mode
 
     def __len__(self) -> int:
         return len(self.pos) * (1 + self.neg_per_pos)
@@ -570,6 +591,7 @@ class InductiveKGDataset(Dataset):
                 use_hop_distance_tokens=self.use_hop_distance_tokens,
                 dual_subgraph=self.dual_subgraph,
                 shared_anonymization=self.shared_anonymization,
+                center_mode=self.center_mode,
             )
 
         candidate = self.neg_sampler(anchor, r_use, candidate, rng)
@@ -581,6 +603,7 @@ class InductiveKGDataset(Dataset):
             use_hop_distance_tokens=self.use_hop_distance_tokens,
             dual_subgraph=self.dual_subgraph,
             shared_anonymization=self.shared_anonymization,
+            center_mode=self.center_mode,
         )
 
 

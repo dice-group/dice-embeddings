@@ -61,7 +61,7 @@ DEFAULT_CFG: dict = {
     "cardinality_cutoff": 0, "tail_diversity_cutoff": 0.0,
     "neg_samples_per_pos": 4, "neg_sampler": "uniform",
     "subgraph_hops": 2, "use_hop_distance_tokens": False, "collapse_z": False,
-    "dual_subgraph": False, "shared_anonymization": False,
+    "dual_subgraph": False, "shared_anonymization": False, "center_mode": "xtoken",
     # Data
     "triple_format": "head_relation_tail", "type_relation": "",
     # Runtime / checkpointing
@@ -118,6 +118,12 @@ def train_model(
     """
     random.seed(cfg["seed"])
     torch.manual_seed(cfg["seed"])
+
+    if cfg.get("center_mode", "xtoken") == "cls_role" and not cfg.get("use_hop_distance_tokens", False):
+        raise SystemExit(
+            "center_mode='cls_role' needs use_hop_distance_tokens=True: the center "
+            "is a plain [Z] and is rooted only by its HOP_DIST_0 token."
+        )
 
     data_dir = Path(cfg["data_dir"])
     fmt = cfg.get("triple_format", "head_relation_tail")
@@ -184,6 +190,7 @@ def train_model(
         use_hop_distance_tokens=cfg.get("use_hop_distance_tokens", False),
         dual_subgraph=cfg.get("dual_subgraph", False),
         shared_anonymization=cfg.get("shared_anonymization", False),
+        center_mode=cfg.get("center_mode", "xtoken"),
     )
     loader = DataLoader(
         train_ds,
@@ -413,6 +420,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Dual only: label the candidate subgraph from the anchor's [Z] "
                         "assignment so shared entities bind across towers. Disables the "
                         "candidate-table cache at eval (slower, anchor-dependent).")
+    opt("--center-mode", "center_mode", str,
+        "xtoken (center=[X]) | cls_role (center=shareable [Z], [X]=CLS; needs hop tokens)")
     return ap
 
 

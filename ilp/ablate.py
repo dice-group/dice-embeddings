@@ -12,6 +12,12 @@ Tower variants:
                [Z] assignment, so entities shared by both towers bind to the
                same slot (per-draw randomized; no persistent per-entity embed).
 
+Center modes (orthogonal axis, --center-modes):
+  xtoken       center entity = the special [X] token (role marker, no identity).
+  cls_role     center = a shareable [Z] (so centers bind across towers too) and
+               [X] is used only as the CLS pool token; rooting comes from the
+               HOP_DIST_0 hop token, so cls_role requires --hop-tokens.
+
 How the inductive setup works:
 
   - train on the transductive graph        `--data-dir KGs/WN18RR_v1`
@@ -31,8 +37,9 @@ Run from the repo root (the dir containing the `ilp/` package):
 
     python -m ilp.ablate \
         --data-dir KGs/WN18RR_v1 --ind-dir KGs/WN18RR_v1_ind \
-        --epochs 100 --max-triples 64 \
-        --z-modes learned,runtime --variants single,dual,dual_shared \
+        --epochs 100 --max-triples 64 --hop-tokens \
+        --z-modes learned --variants single,dual,dual_shared \
+        --center-modes xtoken,cls_role \
         --json-out checkpoints/ablate/results.json
 """
 from __future__ import annotations
@@ -47,11 +54,12 @@ from .model import load_bundle
 from .train import DEFAULT_CFG, train_model
 
 
-def build_cfg(args: argparse.Namespace, z_mode: str, dual: bool, shared: bool) -> dict:
+def build_cfg(args: argparse.Namespace, z_mode: str, dual: bool, shared: bool,
+              center_mode: str) -> dict:
     """One run's config: production defaults + this experiment's overrides.
 
-    Everything except `z_mode`, `dual_subgraph` and `shared_anonymization` is
-    held constant across the grid, and `type_relation=''` keeps the run purely
+    Only `z_mode`, the tower variant (`dual_subgraph`/`shared_anonymization`) and
+    `center_mode` vary across the grid; `type_relation=''` keeps the run purely
     anonymized (no [VAL_*] schema) — the regime where the tower change matters most.
     """
     cfg = dict(DEFAULT_CFG)
@@ -62,6 +70,8 @@ def build_cfg(args: argparse.Namespace, z_mode: str, dual: bool, shared: bool) -
         z_mode=z_mode,
         dual_subgraph=dual,
         shared_anonymization=shared,
+        center_mode=center_mode,
+        use_hop_distance_tokens=args.hop_tokens,
         epochs=args.epochs,
         batch_size=args.batch_size,
         lr=args.lr,
@@ -79,16 +89,18 @@ def build_cfg(args: argparse.Namespace, z_mode: str, dual: bool, shared: bool) -
     return cfg
 
 
-def run_combo(args: argparse.Namespace, z_mode: str, variant: str) -> tuple[str, dict]:
-    """Train one (z_mode, variant) arm, then eval it on the disjoint inference graph."""
+def run_combo(args: argparse.Namespace, z_mode: str, variant: str,
+              center_mode: str) -> tuple[str, dict]:
+    """Train one (z_mode, variant, center_mode) arm, then eval on the inference graph."""
     dual = variant in ("dual", "dual_shared")
     shared = variant == "dual_shared"
-    tag = f"{z_mode}/{variant}"
-    slug = f"{z_mode}_{variant}"
-    cfg = build_cfg(args, z_mode, dual, shared)
+    tag = f"{z_mode}/{variant}/{center_mode}"
+    slug = f"{z_mode}_{variant}_{center_mode}"
+    cfg = build_cfg(args, z_mode, dual, shared, center_mode)
     save_path = Path(args.ckpt_dir) / f"{slug}.pt"
 
-    print(f"\n{'#' * 72}\n# TRAIN  {tag}   (dual={dual}, shared={shared}, z_mode={z_mode})\n{'#' * 72}",
+    print(f"\n{'#' * 72}\n# TRAIN  {tag}   (dual={dual}, shared={shared}, "
+          f"z_mode={z_mode}, center={center_mode}, hop={args.hop_tokens})\n{'#' * 72}",
           flush=True)
     t0 = time.time()
     # eval_after=False: the bundle's own data_dir is the *transductive* graph;
@@ -125,20 +137,20 @@ def run_combo(args: argparse.Namespace, z_mode: str, variant: str) -> tuple[str,
 
 def print_summary(rows: list[tuple[str, dict]]) -> None:
     """Side-by-side averaged (head+tail) MRR / Hits / per-direction MRR table."""
-    print(f"\n{'=' * 90}")
+    print(f"\n{'=' * 96}")
     print("SUMMARY — filtered metrics, averaged over head+tail (inductive)")
-    print("=" * 90)
-    print(f"{'arm':22s}{'MRR':>9s}{'H@1':>8s}{'H@3':>8s}{'H@10':>8s}"
+    print("=" * 96)
+    print(f"{'arm (z/variant/center)':30s}{'MRR':>9s}{'H@1':>8s}{'H@3':>8s}{'H@10':>8s}"
           f"{'tMRR':>8s}{'hMRR':>8s}{'train_s':>10s}")
-    print("-" * 90)
+    print("-" * 96)
     for tag, r in rows:
         a = r["avg"]
-        print(f"{tag:22s}{a['MRR']:>9.4f}{a['Hits@1']:>8.4f}{a['Hits@3']:>8.4f}"
+        print(f"{tag:30s}{a['MRR']:>9.4f}{a['Hits@1']:>8.4f}{a['Hits@3']:>8.4f}"
               f"{a['Hits@10']:>8.4f}{r['tail']['MRR']:>8.4f}{r['head']['MRR']:>8.4f}"
               f"{r['_train_secs']:>10.1f}")
-    print("=" * 90)
-    print("single=candidate token; dual=independent candidate tower; "
-          "dual_shared=candidate tower with anchor-shared [Z] labels.")
+    print("=" * 96)
+    print("variant: single=cand token | dual=indep cand tower | dual_shared=anchor-shared [Z].")
+    print("center:  xtoken=center is [X] | cls_role=center is shareable [Z] (binds across towers).")
 
 
 def main() -> None:
@@ -154,6 +166,12 @@ def main() -> None:
                     help="Comma-separated z_modes to sweep (learned, runtime).")
     ap.add_argument("--variants", default="single,dual,dual_shared",
                     help="Comma-separated tower variants (single, dual, dual_shared).")
+    ap.add_argument("--center-modes", default="xtoken,cls_role",
+                    help="Comma-separated center-token modes (xtoken, cls_role). "
+                         "cls_role requires --hop-tokens.")
+    ap.add_argument("--hop-tokens", action="store_true",
+                    help="Use per-entity hop-distance tokens for all arms "
+                         "(required by center_mode=cls_role).")
     # Hyperparameters (held constant across the grid)
     ap.add_argument("--epochs", type=int, default=100)
     ap.add_argument("--batch-size", type=int, default=128)
@@ -184,14 +202,21 @@ def main() -> None:
     Path(args.ckpt_dir).mkdir(parents=True, exist_ok=True)
     z_modes = [m.strip() for m in args.z_modes.split(",") if m.strip()]
     variants = [v.strip() for v in args.variants.split(",") if v.strip()]
+    center_modes = [c.strip() for c in args.center_modes.split(",") if c.strip()]
     bad = set(variants) - {"single", "dual", "dual_shared"}
     if bad:
         raise SystemExit(f"--variants must be single/dual/dual_shared, got {sorted(bad)}")
+    bad_c = set(center_modes) - {"xtoken", "cls_role"}
+    if bad_c:
+        raise SystemExit(f"--center-modes must be xtoken/cls_role, got {sorted(bad_c)}")
+    if "cls_role" in center_modes and not args.hop_tokens:
+        raise SystemExit("center_mode 'cls_role' requires --hop-tokens.")
 
     rows: list[tuple[str, dict]] = []
     for z_mode in z_modes:
         for variant in variants:
-            rows.append(run_combo(args, z_mode, variant))
+            for center_mode in center_modes:
+                rows.append(run_combo(args, z_mode, variant, center_mode))
 
     print_summary(rows)
 

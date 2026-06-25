@@ -63,6 +63,7 @@ def evaluate_direction(
     eval_mc: int = 1,
     dual_subgraph: bool = False,
     shared_anonymization: bool = False,
+    center_mode: str = "xtoken",
     cand_index: dict[str, int] | None = None,
     cand_table: torch.Tensor | None = None,
 ) -> dict[str, float]:
@@ -82,6 +83,7 @@ def evaluate_direction(
                 collapse_z=collapse_z, subgraph_hops=subgraph_hops,
                 use_hop_distance_tokens=use_hop_distance_tokens,
                 shared_anonymization=shared_anonymization,
+                center_mode=center_mode,
             )
         return score_candidates(
             model, anchor, rel_q, cands, kg, vocab, fixed_values,
@@ -89,6 +91,7 @@ def evaluate_direction(
             exclude_triple=(h, r, t),
             collapse_z=collapse_z, subgraph_hops=subgraph_hops,
             use_hop_distance_tokens=use_hop_distance_tokens,
+            center_mode=center_mode,
         )
 
     rels: list[str] = []
@@ -218,6 +221,7 @@ def evaluate(
     eval_mc: int = 1,
     dual_subgraph: bool = False,
     shared_anonymization: bool = False,
+    center_mode: str = "xtoken",
 ) -> dict[str, float]:
     eval_triples, dropped = filter_known_relations(eval_triples, vocab)
     if dropped:
@@ -234,7 +238,7 @@ def evaluate(
         cand_index, cand_table = build_candidate_table(
             model, kg, entity_pool, vocab, fixed_values, max_triples, z_pool, device,
             collapse_z=collapse_z, subgraph_hops=subgraph_hops,
-            use_hop_distance_tokens=use_hop_distance_tokens,
+            use_hop_distance_tokens=use_hop_distance_tokens, center_mode=center_mode,
         )
 
     tail = evaluate_direction(
@@ -242,7 +246,7 @@ def evaluate(
         "tail", max_triples, z_pool, device, cand_batch_size, collapse_z,
         subgraph_hops=subgraph_hops, use_hop_distance_tokens=use_hop_distance_tokens,
         eval_mc=eval_mc, dual_subgraph=dual_subgraph,
-        shared_anonymization=shared_anonymization,
+        shared_anonymization=shared_anonymization, center_mode=center_mode,
         cand_index=cand_index, cand_table=cand_table,
     )
     head = evaluate_direction(
@@ -250,7 +254,7 @@ def evaluate(
         "head", max_triples, z_pool, device, cand_batch_size, collapse_z,
         subgraph_hops=subgraph_hops, use_hop_distance_tokens=use_hop_distance_tokens,
         eval_mc=eval_mc, dual_subgraph=dual_subgraph,
-        shared_anonymization=shared_anonymization,
+        shared_anonymization=shared_anonymization, center_mode=center_mode,
         cand_index=cand_index, cand_table=cand_table,
     )
     avg = {k: 0.5 * (tail[k] + head[k]) for k in ("MRR", "Hits@1", "Hits@3", "Hits@10")}
@@ -408,6 +412,7 @@ def run_eval(
         eval_mc=cfg.get("eval_mc", 8),  # runtime MC draws; ignored for learned
         dual_subgraph=cfg.get("dual_subgraph", False),
         shared_anonymization=cfg.get("shared_anonymization", False),
+        center_mode=cfg.get("center_mode", "xtoken"),
     )
 
 
