@@ -6,13 +6,15 @@ https://github.com/openai/gpt-2/blob/master/src/model.py
 2) huggingface/transformers PyTorch implementation:
 https://github.com/huggingface/transformers/blob/main/src/transformers/models/gpt2/modeling_gpt2.py
 """
-from .base_model import BaseKGE
-import math
 import inspect
+import math
 from dataclasses import dataclass
+
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+
+from .base_model import BaseKGE
 
 
 class BytE(BaseKGE):
@@ -292,7 +294,7 @@ class GPT(nn.Module):
         x = self.transformer.ln_f(x)
         logits = self.lm_head(x)
         """
-        
+
         if targets is not None:
             # if we are given some desired targets also calculate the loss
             logits = self.lm_head(x)

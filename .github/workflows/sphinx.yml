@@ -11,6 +11,8 @@ on:
 jobs:
   docs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     strategy:
       matrix:
         python-version: [ "3.11.14" ]
@@ -41,7 +43,7 @@ jobs:
         sphinx-build -M latex docs/ docs/_build/
 
     - name: Compile LaTeX document
-      uses: docker://texlive/texlive:latest
+      uses: docker://texlive/texlive:TL2024-historic
       with:
         args: make -C docs/_build/latex
     - name: Copy Latex pdf to ./html
@@ -49,6 +51,7 @@ jobs:
         cp docs/_build/latex/diceembeddings.pdf docs/_build/html/
 
     - name: Deploy to GitHub Pages
+      if: github.event_name == 'push'
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}

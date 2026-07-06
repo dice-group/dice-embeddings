@@ -9,6 +9,7 @@ Modules:
     ensemble: Functions for ensemble model evaluation
     evaluator: Main Evaluator class for integrated evaluation
     utils: Shared utility functions for evaluation
+    _filtering: Internal helpers for filtered ranking (not exported)
 
 Example:
     >>> from dicee.evaluation import Evaluator
@@ -16,26 +17,39 @@ Example:
     >>> from dicee.evaluation.ensemble import evaluate_ensemble_link_prediction_performance
 """
 
+from .ensemble import evaluate_ensemble_link_prediction_performance
 from .evaluator import Evaluator
 from .link_prediction import (
+    evaluate_bpe_lp,
     evaluate_link_prediction_performance,
-    evaluate_link_prediction_performance_with_reciprocals,
     evaluate_link_prediction_performance_with_bpe,
     evaluate_link_prediction_performance_with_bpe_reciprocals,
+    evaluate_link_prediction_performance_with_reciprocals,
     evaluate_lp,
     evaluate_lp_bpe_k_vs_all,
-    evaluate_bpe_lp,
 )
 from .literal_prediction import evaluate_literal_prediction
-from .ensemble import evaluate_ensemble_link_prediction_performance
+
+__all__ = [
+    "Evaluator",
+    "evaluate_link_prediction_performance",
+    "evaluate_link_prediction_performance_with_reciprocals",
+    "evaluate_link_prediction_performance_with_bpe",
+    "evaluate_link_prediction_performance_with_bpe_reciprocals",
+    "evaluate_lp",
+    "evaluate_lp_bpe_k_vs_all",
+    "evaluate_bpe_lp",
+    "evaluate_literal_prediction",
+    "evaluate_ensemble_link_prediction_performance",
+]
 from .utils import (
+    ALL_HITS_RANGE,
+    DEFAULT_HITS_RANGE,
     compute_metrics_from_ranks,
     compute_metrics_from_ranks_simple,
+    create_hits_dict,
     make_iterable_verbose,
     update_hits,
-    create_hits_dict,
-    DEFAULT_HITS_RANGE,
-    ALL_HITS_RANGE,
 )
 
 __all__ = [

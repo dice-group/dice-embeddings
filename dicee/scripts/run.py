@@ -1,9 +1,11 @@
-import json
-from dicee.executer import Execute, ContinuousExecute
 import argparse
+import json
+
+from dicee.executer import ContinuousExecute, Execute
+
 
 def get_default_arguments(description=None):
-    """ Extends pytorch_lightning Trainer's arguments with ours """
+    """ Extends lightning Trainer's arguments with ours """
     parser = argparse.ArgumentParser(add_help=False)
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Knowledge graph related arguments
@@ -27,8 +29,8 @@ def get_default_arguments(description=None):
     parser.add_argument("--backend", type=str, default="pandas",
                         choices=["pandas", "polars", "rdflib"],
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
-    parser.add_argument("--separator", type=str, default="\s+",
-                        help='Pandas \s+, t for \t polars works with the last two.')
+    parser.add_argument("--separator", type=str, default=r"\s+",
+                        help='Pandas \\s+, t for \t polars works with the last two.')
     parser.add_argument("--reuse_existing_run_dir", action="store_true",
                         help="If set, reuse the existing path_to_store_single_run directory if it exists. "
                              "If not set, the directory will be deleted and recreated if it exists.")
@@ -47,7 +49,7 @@ def get_default_arguments(description=None):
                              "**Pykeen_BoxE** and add this into choices")
     parser.add_argument('--optim', type=str, default='Adopt',
                         help='An optimizer',
-                        choices=['Adam', 'AdamW', 'SGD',"NAdam", "Adagrad", "ASGD", "Adopt"])
+                        choices=['Adam', 'AdamW', 'SGD', "NAdam", "Adagrad", "ASGD", "Adopt", "Muon"])
     parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
@@ -59,11 +61,16 @@ def get_default_arguments(description=None):
                         help='{"PPE":{ "last_percent_to_consider": 10}}'
                              '"Perturb": {"level": "out", "ratio": 0.2, "method": "RN", "scaler": 0.3}')
     parser.add_argument("--trainer", type=str, default='PL',
-                        choices=['torchCPUTrainer', 'PL', 'torchDDP', "TP"],
-                        help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only), TP (Model Paralelisim)')
+                        choices=['torchCPUTrainer', 'PL', 'torchDDP', 'torchFSDP', "TP"],
+                        help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchFSDP (row-wise sharded entity embeddings + FSDP dense params, multi-GPU), torchCPUTrainer (custom cpu only), TP (Model Parallelism)')
+    parser.add_argument("--fsdp_trainer_kwargs", type=json.loads, default={},
+                        help='JSON config for the torchFSDP trainer. '
+                             'Example: {"precision": "float32", "fsdp_optim_device": "cpu"}. '
+                             'precision: float32 (default) | bfloat16 | float16. '
+                             'fsdp_optim_device: cpu (default, saves GPU RAM) | gpu (zero-cost Adam steps).')
     parser.add_argument('--scoring_technique', default="NegSample",
                         help="Training technique for knowledge graph embedding model",
-                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "FixedNegSample", "1vsSample", "KvsSample"])
+                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "FixedNegSample", "1vsSample", "KvsSample", "FSDP1vsSample"])
     parser.add_argument('--neg_ratio', type=int, default=2,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
@@ -92,13 +99,17 @@ def get_default_arguments(description=None):
     parser.add_argument('--q', type=int, default=1,
                         help='Q for Clifford Algebra')
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
+    parser.add_argument("--pl_trainer_kwargs",type=json.loads, default={},
+        help='Additional PyTorch Lightning Trainer keyword arguments as JSON. '
+             'Example: {"accelerator": "gpu", "strategy": "ddp", "precision": "16-mixed"}'
+    )
 
     # Evaluation Related
     parser.add_argument('--num_folds_for_cv', type=int, default=0,
                         help='Number of folds in k-fold cross validation.'
                              'If >2 ,no evaluation scenario is applied implies no evaluation.')
     parser.add_argument("--eval_model", type=str, default="train_val_test",
-                        choices=["None", "train", "train_val", "train_val_test", "test"],
+                        choices=["None", "train", "train_val", "train_val_test", "test", "val_test", "val", "train_test"],
                         help='Evaluating link prediction performance on data splits. ')
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
                         help='At every X number of epochs model will be saved. If None, we save 4 times.')
@@ -140,7 +151,7 @@ def get_default_arguments(description=None):
                         help="Find a batch size fitting in GPUs. Only available for TP trainer")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
-    
+
     # Learning rate scheduling with configuration
     parser.add_argument("--adaptive_lr", type=json.loads, default={},
                         help='Enable adaptive learning rate scheduling with configuration. '

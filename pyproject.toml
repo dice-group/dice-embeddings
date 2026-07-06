@@ -1,0 +1,75 @@
+[tool.mypy]
+# Mypy type checking configuration for DICE Embeddings
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # Start lenient, will tighten later
+disallow_incomplete_defs = false
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+# Output configuration
+show_error_codes = true
+show_error_context = true
+pretty = true
+
+# Module-specific overrides
+[[tool.mypy.overrides]]
+module = "dicee.knowledge_graph_embeddings"
+disallow_untyped_defs = false  # Has type hints but not complete yet
+disallow_incomplete_defs = false
+
+[[tool.mypy.overrides]]
+module = "dicee.executer"
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+# Ignore missing imports for third-party libraries without stubs
+[[tool.mypy.overrides]]
+module = [
+    "lightning.*",
+    "polars.*",
+    "rdflib.*",
+    "psutil.*",
+    "owlready2.*",
+    "pykeen.*",
+    "gradio.*",
+]
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 200
+target-version = "py311"
+
+[tool.ruff.lint]
+# Enable pycodestyle (E), Pyflakes (F), and isort (I) rules
+select = ["E", "F", "I", "W"]
+ignore = [
+    "E501",  # Line too long (handled by line-length)
+    "E741",  # Ambiguous variable name
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py files
+
+[tool.ruff.lint.isort]
+known-first-party = ["dicee"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[tool.pytest.ini_options]
+# Pytest configuration
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-p no:warnings -x --tb=short"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]

@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class LiteralEmbeddings(nn.Module):
     """
     A model for learning and predicting numerical literals using pre-trained KGE.
@@ -84,7 +85,7 @@ class LiteralEmbeddings(nn.Module):
         # Output scalar prediction and flatten to 1D
         out = self.fc_out(residual).flatten()  # [batch]
         return out
-    
+
     @property
     def device(self):
         return next(self.parameters()).device

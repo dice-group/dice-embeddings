@@ -14,10 +14,9 @@ from types import SimpleNamespace
 from typing import Dict, Optional
 
 import numpy as np
-import torch
 import torch.distributed as dist
-from pytorch_lightning import seed_everything
-from pytorch_lightning.utilities.rank_zero import rank_zero_only
+from lightning import seed_everything
+from lightning.pytorch.utilities.rank_zero import rank_zero_only
 
 from .evaluator import Evaluator
 from .knowledge_graph import KG
@@ -25,6 +24,7 @@ from .static_funcs import (
     create_experiment_folder,
     load_json,
     read_or_load_kg,
+    setup_distributed_training,
     store,
     timeit,
 )
@@ -32,7 +32,7 @@ from .static_preprocess_funcs import preprocesses_input_args
 from .trainer import DICE_Trainer
 
 # Configure logging
-logging.getLogger('pytorch_lightning').setLevel(logging.WARNING)
+logging.getLogger('lightning').setLevel(logging.WARNING)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "INFO"
 
@@ -64,19 +64,24 @@ class Execute:
             args: Configuration arguments (Namespace or similar).
             continuous_training: Whether this is continual training.
         """
-        # Check if we need distributed training
-        self.distributed = getattr(args, "trainer", None) == "torchDDP"
-        # Initialize distributed training if required
-        self._setup_distributed_training()
-
+        # Setup distributed and device ranks before training
+        distributed_setup = setup_distributed_training(args)
+        # Checks if the current training setup is distributed
+        self.distributed = distributed_setup["distributed"]
+        # Rank of the current process/GPU globally
+        self.rank = distributed_setup["rank"]
+        # Total number of nodes in the training
+        self.world_size = distributed_setup["world_size"]
+        # Rank of the current process/GPU within the node
+        self.local_rank = distributed_setup["local_rank"]
         # (1) Process arguments and sanity checking
         self.args = preprocesses_input_args(args)
         # (2) Ensure reproducibility
         seed_everything(args.random_seed, workers=True)
         # (3) Set the continual training flag
         self.is_continual_training = continuous_training
-        # (4) Create an experiment folder or use the previous one
-        if self.rank == 0:
+        # (4) Set up the run directory once per node.
+        if self.is_local_rank_zero():
             self.setup_executor()
         # (5) Initialize trainer and model placeholders
         self.trainer: Optional[DICE_Trainer] = None
@@ -90,27 +95,13 @@ class Execute:
         # (9) Execution start time
         self.start_time: Optional[float] = None
 
-    def _setup_distributed_training(self) -> None:
-        """Set up distributed training environment if enabled."""
-        if self.distributed:
-            if not dist.is_initialized():
-                dist.init_process_group(backend="nccl", init_method="env://")
-            self.rank = dist.get_rank()
-            self.world_size = dist.get_world_size()
-            self.local_rank = int(os.environ["LOCAL_RANK"])
-            torch.cuda.set_device(self.local_rank)
-            print(f"[Rank {self.rank}] mapped to GPU {self.local_rank}", flush=True)
-        else:
-            self.rank, self.world_size, self.local_rank = 0, 1, 0
-
-    def is_rank_zero(self) -> bool:
-        return self.rank == 0
+    def is_local_rank_zero(self) -> bool:
+        return self.local_rank == 0
 
     def cleanup(self):
         if self.distributed and dist.is_initialized():
             dist.destroy_process_group()
-    
-    @rank_zero_only
+
     def setup_executor(self) -> None:
         """Set up storage directories for the experiment.
 
@@ -118,6 +109,9 @@ class Execute:
         Saves the configuration to a JSON file.
         """
         if self.is_continual_training:
+            return
+
+        if not self.is_local_rank_zero():
             return
 
         # Determine storage path
@@ -155,10 +149,10 @@ class Execute:
     def create_and_store_kg(self) -> None:
         """Create knowledge graph and store as memory-mapped file.
 
-        Only executed on rank 0 in distributed training.
+        Only executed on local rank 0 in distributed training.
         Skips if memmap already exists.
         """
-        if not self.is_rank_zero():
+        if not self.is_local_rank_zero():
             return
 
         memmap_path = os.path.join(
@@ -169,7 +163,7 @@ class Execute:
         )
 
         if os.path.exists(memmap_path) and os.path.exists(details_path):
-            print("KG memmap already exists, skipping.")
+            print("KG already exists, skipping creation.")
             return
 
         print("Creating knowledge graph...")
@@ -214,21 +208,35 @@ class Execute:
         memmap_kg[:] = kg.train_set[:]
         memmap_kg.flush()
         del memmap_kg
-    
+
     def load_from_memmap(self) -> None:
         """Load knowledge graph from memory-mapped file."""
         base_path = self.args.path_to_store_single_run
         details_path = os.path.join(base_path, 'memory_map_details.json')
-        memmap_path = os.path.join(base_path, 'memory_map_train_set.npy')
 
         with open(details_path, 'r') as f:
             memory_map_details = json.load(f)
 
-        self.knowledge_graph = np.memmap(
-            memmap_path,
-            mode='r',
-            dtype=memory_map_details["dtype"],
-                                            shape=tuple(memory_map_details["shape"]))
+        if self.is_local_rank_zero() or self.args.byte_pair_encoding:
+            self.args.path_experiment_folder = self.args.path_to_store_single_run
+            self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
+        else:
+            memmap_path = os.path.join(base_path, 'memory_map_train_set.npy')
+            self.knowledge_graph = np.memmap(
+                memmap_path,
+                mode='r',
+                dtype=memory_map_details["dtype"],
+                shape=tuple(memory_map_details["shape"]),
+            )
+
+        # memmap_path = os.path.join(base_path, 'memory_map_train_set.npy')
+        # self.knowledge_graph = np.memmap(
+        #     memmap_path,
+        #     mode='r',
+        #     dtype=memory_map_details["dtype"],
+        #     shape=tuple(memory_map_details["shape"]),
+        # )
+
         self.args.num_entities = memory_map_details["num_entities"]
         self.args.num_relations = memory_map_details["num_relations"]
         self.args.num_tokens = None
@@ -332,30 +340,34 @@ class Execute:
         A dict containing information about the training and/or evaluation
 
         """
-        self.start_time = time.time()
-        print(f"Start time:{datetime.datetime.now()}")
-        # (1) Create knowledge graph
-        self.create_and_store_kg()
-        # (2) Synchronize processes if distributed training is used
-        if self.distributed and dist.is_initialized():
-            dist.barrier()
+        try:
+            self.start_time = time.time()
+            print(f"Start time:{datetime.datetime.now()}")
+            # (1) Create knowledge graph
+            self.create_and_store_kg()
+            # (2) Synchronize processes if distributed training is used
+            if self.distributed and dist.is_initialized():
+                dist.barrier()
 
-        # (3) Reload the memory-map of index knowledge graph stored as a numpy ndarray
-        if self.knowledge_graph is None:
-            self.load_from_memmap()
+            # (3) Reload the memory-map of index knowledge graph stored as a numpy ndarray
+            if not getattr(self.args, "full_storage_path", None):
+                self.args.full_storage_path = self.args.path_to_store_single_run
+            if self.knowledge_graph is None:
+                self.load_from_memmap()
 
-        # (4) Create an evaluator object.
-        self.evaluator = Evaluator(args=self.args)
-        # (5) Create a trainer object.
-        if not getattr(self.args, "full_storage_path", None):
-            self.args.full_storage_path = self.args.path_to_store_single_run
-        self.trainer = DICE_Trainer(args=self.args,
-                                    is_continual_training=self.is_continual_training,
-                                    storage_path=self.args.full_storage_path,
-                                    evaluator=self.evaluator)
-        # (6) Start the training
-        self.trained_model, form_of_labelling = self.trainer.start(knowledge_graph=self.knowledge_graph)
-        return self.end(form_of_labelling)
+            # (4) Create an evaluator object.
+            self.evaluator = Evaluator(args=self.args)
+            # (5) Create a trainer object.
+
+            self.trainer = DICE_Trainer(args=self.args,
+                                        is_continual_training=self.is_continual_training,
+                                        storage_path=self.args.full_storage_path,
+                                        evaluator=self.evaluator)
+            # (6) Start the training
+            self.trained_model, form_of_labelling = self.trainer.start(knowledge_graph=self.knowledge_graph)
+            return self.end(form_of_labelling)
+        finally:
+            self.cleanup()
 
 
 class ContinuousExecute(Execute):

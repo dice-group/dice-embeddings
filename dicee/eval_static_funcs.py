@@ -9,15 +9,15 @@ new dicee.evaluation module.
 """
 
 # Re-export from new evaluation module for backward compatibility
+from .evaluation.ensemble import evaluate_ensemble_link_prediction_performance
 from .evaluation.link_prediction import (
     evaluate_link_prediction_performance,
-    evaluate_link_prediction_performance_with_reciprocals,
     evaluate_link_prediction_performance_with_bpe,
     evaluate_link_prediction_performance_with_bpe_reciprocals,
+    evaluate_link_prediction_performance_with_reciprocals,
     evaluate_lp_bpe_k_vs_all,
 )
 from .evaluation.literal_prediction import evaluate_literal_prediction
-from .evaluation.ensemble import evaluate_ensemble_link_prediction_performance
 
 __all__ = [
     "evaluate_link_prediction_performance",

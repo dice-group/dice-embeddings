@@ -276,3 +276,121 @@ class KvsSampleDataset(torch.utils.data.Dataset):
             (torch.ones(num_positive_class), torch.zeros(num_negative_class)), 0
         )
         return x, y_idx, y_vec
+
+
+class FSDP1vsSampleDataset(torch.utils.data.Dataset):
+    """Positive-triple dataset for FSDP 1vsSample training with true-negative sampling.
+
+    Each dataset item is a single positive triple (h, r, t).  The collate_fn
+    builds the full (source, target_idx, labels) batch in a DataLoader worker,
+    sampling true negatives via index remapping so they never coincide with any
+    known positive tail for that (h, r) pair.
+
+    Fixed batch width follows KvsSample:
+        max_num_of_classes = max_positives_per_pair + neg_ratio
+    Each sample contributes 1 positive and (max_num_of_classes - 1) negatives.
+    """
+
+    def __init__(
+        self,
+        train_set_idx: np.ndarray,
+        entity_idxs,
+        relation_idxs,
+        form,
+        neg_ratio=None,
+        label_smoothing_rate: float = 0.0,
+    ):
+        super().__init__()
+        assert len(train_set_idx) > 0
+        assert isinstance(train_set_idx, (np.memmap, np.ndarray))
+        assert form == "EntityPrediction"
+        assert neg_ratio is not None
+
+        self.train_data = train_set_idx
+        self.num_entities = len(entity_idxs)
+        self.num_relations = len(relation_idxs)
+        self.neg_ratio = neg_ratio
+        self.label_smoothing_rate = label_smoothing_rate
+
+        # Build er_vocab: (h_idx, r_idx) -> sorted list of positive tail indices
+        er_vocab = mapping_from_first_two_cols_to_third(train_set_idx)
+
+        # Fixed row width: same formula as KvsSample
+        self.max_num_of_classes = max(len(v) for v in er_vocab.values()) + neg_ratio
+        self.num_negatives = self.max_num_of_classes - 1  # 1 slot taken by the positive
+
+        # Build padded positive table for vectorised index remapping.
+        # Sentinel = num_entities (valid IDs are [0, num_entities-1]).
+        # Rows where the pad fires (negs >= num_entities) never exist after remapping,
+        # so the sentinel is naturally a no-op in the increment loop.
+        max_pos = max(len(v) for v in er_vocab.values())
+        self._pos_table = np.full(
+            (len(er_vocab), max_pos),
+            fill_value=self.num_entities,
+            dtype=np.int32,
+        )
+        self._pair_to_id: dict = {}
+        for i, (pair, tails) in enumerate(er_vocab.items()):
+            self._pair_to_id[pair] = i
+            sorted_tails = sorted(tails)
+            self._pos_table[i, :len(sorted_tails)] = sorted_tails
+        self._max_pos = max_pos
+
+        self.collate_fn = self._collate
+
+    def __len__(self):
+        return len(self.train_data)
+
+    def __getitem__(self, idx):
+        return torch.from_numpy(self.train_data[idx].copy()).long()
+
+    def _collate(self, batch):
+        """Build a fixed-width (source, target_idx, labels) batch.
+
+        Runs in a DataLoader worker, overlapped with GPU compute.
+        Negative sampling uses index remapping: sample from [0, N-k) then
+        slide each value past the k sorted true positives for that (h, r) pair.
+        No rejection needed; output is always exactly num_negatives per row.
+        """
+        triples = np.stack([t.numpy() for t in batch])   # (B, 3)
+        B = triples.shape[0]
+        h, r, pos_t = triples[:, 0], triples[:, 1], triples[:, 2]
+
+        # Python loop only for dict lookups (trivial body, ~100 ns/item)
+        pair_ids = np.array(
+            [self._pair_to_id.get((int(h[i]), int(r[i])), 0) for i in range(B)],
+            dtype=np.int32,
+        )
+
+        # Padded positive table for this batch: (B, max_pos)
+        pos_pad = self._pos_table[pair_ids].astype(np.int64)   # sentinel = num_entities
+
+        # Per-item actual positive count (non-sentinel entries)
+        k_per_item = np.sum(pos_pad < self.num_entities, axis=1)   # (B,)
+
+        # Sample negatives from reduced range [0, num_entities - k_i) per item
+        upper = (self.num_entities - k_per_item).astype(np.float64)  # (B,)
+        negs = (
+            np.random.uniform(size=(B, self.num_negatives)) * upper[:, np.newaxis]
+        ).astype(np.int64)   # (B, num_negatives)
+
+        # Index remapping: for each positive p (sorted), increment every neg >= p.
+        # Sentinel comparisons (neg >= num_entities) are always False — no-op.
+        for j in range(self._max_pos):
+            negs += negs >= pos_pad[:, j : j + 1]
+
+        source = torch.from_numpy(triples[:, :2].astype(np.int64))
+        target_idx = torch.from_numpy(
+            np.concatenate([pos_t.reshape(-1, 1), negs], axis=1)   # (B, max_num_of_classes)
+        )
+
+        ls = self.label_smoothing_rate
+        labels = torch.cat(
+            [
+                torch.full((B, 1), 1.0 - ls, dtype=torch.float32),
+                torch.full((B, self.num_negatives), ls, dtype=torch.float32),
+            ],
+            dim=1,
+        )   # (B, max_num_of_classes)
+
+        return source, target_idx, labels

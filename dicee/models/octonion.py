@@ -1,4 +1,5 @@
 import torch
+
 from .base_model import BaseKGE, IdentityClass
 
 
@@ -144,7 +145,7 @@ class OMult(BaseKGE):
         return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
 
     def forward_k_vs_all(self, x):
-        """
+        r"""
         Completed.
         Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
         [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
@@ -255,7 +256,7 @@ class ConvO(BaseKGE):
         return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
 
     def forward_k_vs_all(self, x: torch.Tensor):
-        """
+        r"""
         Given a head entity and a relation (h,r), we compute scores for all entities.
         [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
         Given a batch of head entities and relations => shape (size of batch,| Entities|)
@@ -416,7 +417,7 @@ class AConvO(BaseKGE):
         return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
 
     def forward_k_vs_all(self, x: torch.Tensor):
-        """
+        r"""
         Given a head entity and a relation (h,r), we compute scores for all entities.
         [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
         Given a batch of head entities and relations => shape (size of batch,| Entities|)

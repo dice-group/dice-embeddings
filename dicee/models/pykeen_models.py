@@ -1,9 +1,11 @@
-import torch
-import torch.utils.data
-from .base_model import BaseKGE
+import traceback
 from collections import namedtuple
 
-import traceback
+import torch
+import torch.utils.data
+
+from .base_model import BaseKGE
+
 
 class PykeenKGE(BaseKGE):
     """ A class for using knowledge graph embedding models implemented in Pykeen
@@ -56,12 +58,12 @@ class PykeenKGE(BaseKGE):
         elif self.name == "RotatE":
             pass
         elif self.name == "TransD":
-            #TransD does not support a 'regularizer' 
+            #TransD does not support a 'regularizer'
             pass
         elif self.name == "TransE":
             self.model_kwargs["regularizer"] = None
         elif self.name == "TransF":
-            #TransF does not support a 'regularizer' 
+            #TransF does not support a 'regularizer'
             pass
         elif self.name == "TransH":
             self.model_kwargs["regularizer"] = None
