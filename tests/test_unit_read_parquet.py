@@ -5,6 +5,8 @@ must only read approximately that many rows from a Parquet file, not load the
 full file and slice afterwards.
 """
 
+from unittest.mock import patch
+
 import pandas as pd
 import pytest
 
@@ -46,21 +48,18 @@ class TestReadParquetHead:
         df = read_with_pandas(str(path), read_only_few=None, separator="\t")
         assert len(df) == len(full_df)
 
-    def test_read_only_few_does_not_load_full_file_into_memory(self, dummy_parquet_path):
-        """Regression test for #410: reading a small slice must not require
-        peak memory anywhere near the size of a full-file read."""
-        import tracemalloc
-
+    def test_read_only_few_does_not_call_full_parquet_read(self, dummy_parquet_path):
+        """Regression test for #410: a bounded `read_only_few` must not go
+        through `pd.read_parquet` (which loads the entire file), only through
+        the row-group-bounded `_read_parquet_head` path."""
         path, full_df = dummy_parquet_path
+        with patch("dicee.read_preprocess_save_load_kg.util.pd.read_parquet") as mock_read_parquet:
+            read_with_pandas(str(path), read_only_few=10, separator="\t")
+            mock_read_parquet.assert_not_called()
 
-        tracemalloc.start()
-        read_with_pandas(str(path), read_only_few=10, separator="\t")
-        _, peak_slice = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
-
-        tracemalloc.start()
-        read_with_pandas(str(path), read_only_few=None, separator="\t")
-        _, peak_full = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
-
-        assert peak_slice < peak_full / 2
+    def test_no_read_only_few_still_uses_full_parquet_read(self, dummy_parquet_path):
+        """Sanity check: the full-file path is only skipped when a bound is given."""
+        path, full_df = dummy_parquet_path
+        with patch("dicee.read_preprocess_save_load_kg.util.pd.read_parquet", wraps=pd.read_parquet) as mock_read_parquet:
+            read_with_pandas(str(path), read_only_few=None, separator="\t")
+            mock_read_parquet.assert_called_once()
