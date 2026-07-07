@@ -174,12 +174,12 @@ with FSDP and updated by the standard dense optimizer.</p>
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
 <dl class="py data">
 <dt class="sig sig-object py" id="dicee.trainer.torch_trainer_fsdp.OptimizedModule">
-<span class="sig-prename descclassname"><span class="pre">dicee.trainer.torch_trainer_fsdp.</span></span><span class="sig-name descname"><span class="pre">OptimizedModule</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="reference internal" href="../../../../_modules/torch/_dynamo/eval_frame.html#OptimizedModule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer_fsdp.OptimizedModule" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">dicee.trainer.torch_trainer_fsdp.</span></span><span class="sig-name descname"><span class="pre">OptimizedModule</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_fsdp.OptimizedModule" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.trainer.torch_trainer_fsdp.TorchFSDPTrainer">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.trainer.torch_trainer_fsdp.</span></span><span class="sig-name descname"><span class="pre">TorchFSDPTrainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer_fsdp.html#TorchFSDPTrainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer_fsdp.TorchFSDPTrainer" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.trainer.torch_trainer_fsdp.</span></span><span class="sig-name descname"><span class="pre">TorchFSDPTrainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.trainer.torch_trainer_fsdp.TorchFSDPTrainer" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../../abstracts/index.html#dicee.abstracts.AbstractTrainer" title="dicee.abstracts.AbstractTrainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractTrainer</span></code></a></p>
 <p>Single-node multi-GPU trainer: row-wise sharded entity embeddings + FSDP.</p>
 <section id="entity-embeddings">
@@ -291,12 +291,12 @@ not O(shard_size).  Each entity receives gradient from every rank’s batches.</
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.trainer.torch_trainer_fsdp.TorchFSDPTrainer.fit">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer_fsdp.html#TorchFSDPTrainer.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer_fsdp.TorchFSDPTrainer.fit" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.trainer.torch_trainer_fsdp.TorchFSDPTrainer.fit" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.trainer.torch_trainer_fsdp.TorchFSDPTrainer.extract_input_outputs">
-<span class="sig-name descname"><span class="pre">extract_input_outputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer_fsdp.html#TorchFSDPTrainer.extract_input_outputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer_fsdp.TorchFSDPTrainer.extract_input_outputs" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">extract_input_outputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.trainer.torch_trainer_fsdp.TorchFSDPTrainer.extract_input_outputs" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </section>
