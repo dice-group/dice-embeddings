@@ -1,4 +1,5 @@
 import functools
+import logging
 import time
 from collections import defaultdict
 from typing import Tuple
@@ -6,6 +7,8 @@ from typing import Tuple
 import numpy as np
 
 from .sanity_checkers import sanity_check_callback_args, sanity_checking_with_arguments
+
+logger = logging.getLogger(__name__)
 
 enable_log = False
 def timeit(func):
@@ -24,9 +27,9 @@ def timeit(func):
                 s_kwargs = {k: type(v) for k, v in kwargs.items()}
             else:
                 s_kwargs = kwargs
-            print(f'Function {func.__name__} with  Args:{s_args} | Kwargs:{s_kwargs} took {total_time:.4f} seconds')
+            logger.info(f'Function {func.__name__} with  Args:{s_args} | Kwargs:{s_kwargs} took {total_time:.4f} seconds')
         else:
-            print(f'Took {total_time:.4f} seconds')
+            logger.info(f'Took {total_time:.4f} seconds')
 
         return result
 
@@ -94,7 +97,7 @@ def create_constraints(triples: np.ndarray) -> Tuple[dict, dict, dict, dict]:
     domain_constraints_per_rel = dict()
     set_of_entities = set()
     set_of_relations = set()
-    print(f'Constructing domain and range information by iterating over {len(triples)} triples...', end='\t')
+    logger.info(f'Constructing domain and range information by iterating over {len(triples)} triples...')
     for (e1, p, e2) in triples:
         # e1, p, e2 have numpy.int16 or else types.
         domain_per_rel.setdefault(p, set()).add(e1)
@@ -102,8 +105,7 @@ def create_constraints(triples: np.ndarray) -> Tuple[dict, dict, dict, dict]:
         set_of_entities.add(e1)
         set_of_relations.add(p)
         set_of_entities.add(e2)
-    print(f'Creating constraints based on {len(set_of_relations)} relations and {len(set_of_entities)} entities...',
-          end='\t')
+    logger.info(f'Creating constraints based on {len(set_of_relations)} relations and {len(set_of_entities)} entities...')
     for rel in set_of_relations:
         range_constraints_per_rel[rel] = list(set_of_entities - range_per_rel[rel])
         domain_constraints_per_rel[rel] = list(set_of_entities - domain_per_rel[rel])
