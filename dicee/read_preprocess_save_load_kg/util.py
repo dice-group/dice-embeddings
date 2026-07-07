@@ -12,6 +12,8 @@ import pandas as pd
 import polars
 import polars as pl
 import psutil
+import pyarrow as pa
+import pyarrow.parquet as pq
 import requests
 from tqdm import tqdm
 
@@ -186,6 +188,24 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
     return _filter_literal_triples(df, "polars")
 
 
+def _read_parquet_head(data_path: str, read_only_few: int) -> pd.DataFrame:
+    """Read at most `read_only_few` rows from a Parquet file without materializing the full file in memory.
+
+    Stops pulling row groups as soon as enough rows have been accumulated, unlike
+    `pd.read_parquet(...).head(n)` which first loads the entire file.
+    """
+    parquet_file = pq.ParquetFile(data_path)
+    batches = []
+    num_rows = 0
+    for batch in parquet_file.iter_batches(batch_size=read_only_few):
+        batches.append(batch)
+        num_rows += batch.num_rows
+        if num_rows >= read_only_few:
+            break
+    table = pa.Table.from_batches(batches)
+    return table.to_pandas().head(read_only_few)
+
+
 @timeit
 def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator:str=None):
     """Load and Preprocess via Pandas"""
@@ -201,10 +221,11 @@ def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio:
                          names=['subject', 'relation', 'object'],
                          dtype=str)
     else:
-        df = pd.read_parquet(data_path, engine='pyarrow')
         if read_only_few and read_only_few > 0:
             print(f'Reading only few input data {read_only_few}...')
-            df = df.head(read_only_few)
+            df = _read_parquet_head(data_path, read_only_few)
+        else:
+            df = pd.read_parquet(data_path, engine='pyarrow')
 
     if sample_triples_ratio:
         print(f'Subsampling {sample_triples_ratio} of input data...')
