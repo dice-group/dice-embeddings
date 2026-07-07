@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Iterable
 
@@ -8,6 +9,8 @@ from tqdm import tqdm
 
 from dicee.abstracts import AbstractTrainer
 from dicee.trainer.auto_batch_finder import find_good_batch_size
+
+logger = logging.getLogger(__name__)
 
 torch.set_float32_matmul_precision('high')
 
@@ -162,7 +165,7 @@ class NodeTrainer:
 
             except Exception as e:
                 if self.local_rank == 0:
-                    print(f"[DDP ERROR] Broadcast failed: {e}")
+                    logger.error(f"[DDP ERROR] Broadcast failed: {e}")
 
                 if dist.is_initialized():
                     dist.destroy_process_group()

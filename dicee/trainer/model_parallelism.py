@@ -7,6 +7,7 @@ This module implements the tensor parallelism training strategy described in:
 The TensorParallel trainer creates an ensemble of models, each trained on a separate GPU,
 allowing efficient utilization of multi-GPU systems through model parallelism.
 """
+import logging
 from typing import Tuple
 
 import torch
@@ -15,6 +16,8 @@ from ..abstracts import AbstractTrainer
 from ..models.ensemble import EnsembleKGE
 from ..static_funcs_training import make_iterable_verbose
 from .auto_batch_finder import find_good_batch_size
+
+logger = logging.getLogger(__name__)
 
 
 def extract_input_outputs(z: list, device=None):
@@ -238,7 +241,7 @@ class TensorParallel(AbstractTrainer):
 
     combined_model.eval()
     combined_model.to("cpu")
-    print(f"Evaluating combined Ensemble of {combined_model_args['model']}")
+    logger.info(f"Evaluating combined Ensemble of {combined_model_args['model']}")
     eval_result = trainer.evaluator.eval(dataset=trainer.dataset,
                                         trained_model=combined_model,
                                         form_of_labelling=form_of_labelling,

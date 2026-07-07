@@ -1,3 +1,4 @@
+import logging
 import sys
 import traceback
 from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
@@ -8,6 +9,8 @@ import torch
 from .abstracts import BaseInteractiveKGE, BaseInteractiveTrainKGE, InteractiveQueryDecomposition
 from .evaluation.link_prediction import evaluate_lp
 from .static_funcs import load_pickle
+
+logger = logging.getLogger(__name__)
 
 
 class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrainKGE):
@@ -27,7 +30,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         return "KGE | " + str(self.model)
 
     def to(self, device: str) -> None:
-        assert "cpu" in device or "cuda" in device, "Device must be either cpu or cuda"
+        if "cpu" not in device and "cuda" not in device:
+            raise ValueError(f"Device must be either cpu or cuda, got {device!r}")
         self.model.to(device)
 
     def get_transductive_entity_embeddings(self,
@@ -39,7 +43,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         if isinstance(indices, torch.LongTensor):
             """ Do nothing"""
         else:
-            assert isinstance(indices, list), f"indices must be either torch.LongTensor or list of strings{indices}"
+            if not isinstance(indices, list):
+                raise TypeError(f"indices must be either torch.LongTensor or list of strings, got {indices}")
             indices = torch.LongTensor([self.entity_to_idx[i] for i in indices])
 
         if as_pytorch:
@@ -54,13 +59,14 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
     def create_vector_database(self, collection_name: str, distance: str,
                                location: str = "localhost",
                                port: int = 6333):
-        assert distance in ["cosine", "dot"]
+        if distance not in ["cosine", "dot"]:
+            raise ValueError(f"distance must be one of ['cosine', 'dot'], got {distance!r}")
         # lazy imports
         try:
             from qdrant_client import QdrantClient
         except ModuleNotFoundError:
             traceback.print_exc()
-            print("Please install qdrant_client: pip install qdrant_client")
+            logger.error("Please install qdrant_client: pip install qdrant_client")
             exit(1)
 
         from qdrant_client.http.models import Distance, PointStruct, VectorParams
@@ -69,27 +75,28 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         client = QdrantClient(location=location, port=port)
         # If the collection is not created, create it
         if collection_name in [i.name for i in client.get_collections().collections]:
-            print("Deleting existing collection ", collection_name)
+            logger.info(f"Deleting existing collection {collection_name}")
             client.delete_collection(collection_name=collection_name)
 
-        print(f"Creating a collection {collection_name} with distance metric:Cosine")
+        logger.info(f"Creating a collection {collection_name} with distance metric:Cosine")
         client.create_collection(collection_name=collection_name,
                                  vectors_config=VectorParams(size=self.model.embedding_dim, distance=Distance.COSINE))
 
         entities = list(self.idx_to_entity.values())
-        print("Fetching entity embeddings..")
+        logger.info("Fetching entity embeddings..")
         vectors = self.get_transductive_entity_embeddings(indices=entities, as_list=True)
-        print("Indexing....")
+        logger.info("Indexing....")
         points = []
         for str_ent, vec in zip(entities, vectors):
             points.append(PointStruct(id=self.entity_to_idx[str_ent],
                                       vector=vec, payload={"name": str_ent}))
         operation_info = client.upsert(collection_name=collection_name, wait=True,
                                        points=points)
-        print(operation_info)
+        logger.info(operation_info)
 
     def generate(self, h="", r=""):
-        assert self.configs["byte_pair_encoding"]
+        if not self.configs["byte_pair_encoding"]:
+            raise ValueError("generate() requires a model trained with byte_pair_encoding=True")
 
         h_encode = self.enc.encode(h)
         r_encode = self.enc.encode(r)
@@ -123,11 +130,12 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             X[:, pointer] = id_next_token
             pointer += 1
             counter += 1
-            print(self.enc.decode(tokens), end=f"\t {score}\n")
+            logger.info(f"{self.enc.decode(tokens)}\t {score}")
 
     # given a string, return is bpe encoded embeddings
     def eval_lp_performance(self, dataset=List[Tuple[str, str, str]], filtered=True):
-        assert isinstance(dataset, list) and len(dataset) > 0
+        if not isinstance(dataset, list) or len(dataset) == 0:
+            raise TypeError("dataset must be a non-empty list of (head, relation, tail) triples")
         idx_dataset = np.array(
             [(self.entity_to_idx[s], self.relation_to_idx[p], self.entity_to_idx[o]) for s, p, o in dataset])
         if filtered:
@@ -435,7 +443,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             - Missing element: vector of all possible scores
 
         Raises:
-            AssertionError: If inputs are not strings or lists of strings.
+            TypeError: If inputs are not strings or lists of strings.
+            ValueError: If a required argument for the query type is missing.
 
         Examples:
             >>> # Score a specific triple
@@ -448,31 +457,37 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         """
         # (1) Sanity checking.
         if h is not None:
-            assert isinstance(h, list) or isinstance(h, str)
-            assert isinstance(h[0], str)
+            if not isinstance(h, (list, str)):
+                raise TypeError(f"h must be a str or list of str, got {type(h)}")
+            if not isinstance(h[0], str):
+                raise TypeError(f"h must contain str entities, got {type(h[0])}")
         if r is not None:
-            assert isinstance(r, list) or isinstance(r, str)
-            assert isinstance(r[0], str)
+            if not isinstance(r, (list, str)):
+                raise TypeError(f"r must be a str or list of str, got {type(r)}")
+            if not isinstance(r[0], str):
+                raise TypeError(f"r must contain str relations, got {type(r[0])}")
         if t is not None:
-            assert isinstance(t, list) or isinstance(t, str)
-            assert isinstance(t[0], str)
+            if not isinstance(t, (list, str)):
+                raise TypeError(f"t must be a str or list of str, got {type(t)}")
+            if not isinstance(t[0], str):
+                raise TypeError(f"t must contain str entities, got {type(t[0])}")
 
         # (2) Predict missing head entity given a relation and a tail entity.
         if h is None:
-            assert r is not None
-            assert t is not None
+            if r is None or t is None:
+                raise ValueError("r and t must both be provided when predicting a missing head entity")
             # ? r, t
             scores = self.predict_missing_head_entity(r, t, within, batch_size=2, topk=len(self.entity_to_idx), return_indices=False)
         # (3) Predict missing relation given a head entity and a tail entity.
         elif r is None:
-            assert h is not None
-            assert t is not None
+            if h is None or t is None:
+                raise ValueError("h and t must both be provided when predicting a missing relation")
             # h ? t
             scores = self.predict_missing_relations(h, t, within, batch_size=2, topk=len(self.relation_to_idx), return_indices=False)
         # (4) Predict missing tail entity given a head entity and a relation
         elif t is None:
-            assert h is not None
-            assert r is not None
+            if h is None or r is None:
+                raise ValueError("h and r must both be provided when predicting a missing tail entity")
             # h r ?
             scores = self.predict_missing_tail_entity(h, r, within, batch_size=2, topk=len(self.entity_to_idx), return_indices=False)
         else:
@@ -509,8 +524,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             For batch query: List of such lists, one per query.
 
         Raises:
-            AssertionError: If more than one of h, r, t is None.
-            AssertionError: If the required arguments for a query type are None.
+            TypeError: If h, r, or t is not a str or list of str.
+            ValueError: If the required arguments for a query type are None.
 
         Examples:
             >>> model.predict_topk(h=["Mongolia"], r=["isLocatedIn"], topk=3)
@@ -521,16 +536,17 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         """
 
         # (1) Sanity checking
-        if h is not None:
-            assert isinstance(h, (list, str))
-        if r is not None:
-            assert isinstance(r, (list, str))
-        if t is not None:
-            assert isinstance(t, (list, str))
+        if h is not None and not isinstance(h, (list, str)):
+            raise TypeError(f"h must be a str or list of str, got {type(h)}")
+        if r is not None and not isinstance(r, (list, str)):
+            raise TypeError(f"r must be a str or list of str, got {type(r)}")
+        if t is not None and not isinstance(t, (list, str)):
+            raise TypeError(f"t must be a str or list of str, got {type(t)}")
 
         # --- Missing HEAD: (?, r, t) ---
         if h is None:
-            assert r is not None and t is not None
+            if r is None or t is None:
+                raise ValueError("r and t must both be provided when predicting a missing head entity")
             # Convert input to lists if they're strings
             if isinstance(r, str):
                 r = [r]
@@ -556,7 +572,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
         # --- Missing RELATION: (h, ?, t) ---
         elif r is None:
-            assert h is not None and t is not None
+            if h is None or t is None:
+                raise ValueError("h and t must both be provided when predicting a missing relation")
             flat_scores, flat_indices = self.predict_missing_relations(h, t, within, batch_size, topk, return_indices=True)
 
             # Convert input to lists if they're strings
@@ -584,7 +601,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
         # --- Missing TAIL: (h, r, ?) ---
         elif t is None:
-            assert h is not None and r is not None
+            if h is None or r is None:
+                raise ValueError("h and r must both be provided when predicting a missing tail entity")
 
             # predict_missing_tail_entity now returns both scores and indices
             flat_scores, flat_indices = self.predict_missing_tail_entity(h, r, within, batch_size, topk, return_indices=True)
@@ -782,16 +800,18 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         """
 
         if queries is not None:
+            if query is not None:
+                raise ValueError("Provide either 'query' or 'queries', not both")
             results = []
             for i in queries:
-                assert query is None
                 results.append(
                     self.answer_multi_hop_query(query_type=query_type, query=i, tnorm=tnorm, neg_norm=neg_norm,
                                                 lambda_=lambda_, k=k, only_scores=only_scores,
                                                 use_logits=use_logits))
             return results
 
-        assert len(self.entity_to_idx) >= k >= 0
+        if not (len(self.entity_to_idx) >= k >= 0):
+            raise ValueError(f"k must satisfy 0 <= k <= {len(self.entity_to_idx)}, got {k}")
 
         query_name_dict = {
             ("e", ("r",)): "1p",
@@ -1290,8 +1310,10 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         {(e,r,x) | f(e,r,x) > confidence \\land (e,r,x) \not\\in G
         """
 
-        assert 1.0 >= confidence >= 0.0
-        assert topk >= 1
+        if not (1.0 >= confidence >= 0.0):
+            raise ValueError(f"confidence must be in [0.0, 1.0], got {confidence}")
+        if topk < 1:
+            raise ValueError(f"topk must be >= 1, got {topk}")
 
         def select(items: List[str], item_mapping: Dict[str, int]) -> Iterable[Tuple[str, int]]:
             """
@@ -1315,11 +1337,11 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
                 return ((i, item_mapping[i]) for i in items)
 
         extended_triples = set()
-        print(f'Number of entities:{len(self.entity_to_idx)} \t Number of relations:{len(self.relation_to_idx)}')
+        logger.info(f'Number of entities:{len(self.entity_to_idx)} \t Number of relations:{len(self.relation_to_idx)}')
 
         # (5) Cartesian Product over entities and relations
         # (5.1) Iterate over entities
-        print('Finding missing triples..')
+        logger.info('Finding missing triples..')
         for str_head_entity, idx_entity in select(entities, self.entity_to_idx):
             # (5.1) Iterate over relations
             for str_relation, idx_relation in select(relations, self.relation_to_idx):
@@ -1334,7 +1356,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
                     else:
                         # (5.8) Remember it
                         extended_triples.add((str_head_entity, str_relation, str_entity))
-                        print(f'Number of found missing triples: {len(extended_triples)}')
+                        logger.info(f'Number of found missing triples: {len(extended_triples)}')
                         if len(extended_triples) == at_most:
                             return extended_triples
                         # No need to store a large KG into memory
@@ -1348,7 +1370,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
                         else:
                             # (5.8) Remember it
                             extended_triples.add((str_head_entity, str_relation, str_entity))
-                            print(f'Number of found missing triples: {len(extended_triples)}')
+                            logger.info(f'Number of found missing triples: {len(extended_triples)}')
                             if len(extended_triples) == at_most:
                                 return extended_triples
         return extended_triples
@@ -1387,13 +1409,14 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             attribute = [attribute]
 
         # Validate that entity and attribute are lists of strings
-        assert isinstance(entity, list)
-        assert isinstance(attribute, list)
-        assert all(isinstance(e, str) for e in entity)      # Ensure all elements in entity are strings
-        assert all(isinstance(a, str) for a in attribute)   # Ensure all elements in attribute are strings
+        if not isinstance(entity, list) or not all(isinstance(e, str) for e in entity):
+            raise TypeError(f"entity must be a str or list of str, got {entity}")
+        if not isinstance(attribute, list) or not all(isinstance(a, str) for a in attribute):
+            raise TypeError(f"attribute must be a str or list of str, got {attribute}")
 
         # Ensure entity and attribute lists are the same length
-        assert len(entity) == len(attribute), "Entity and attribute lists must be of equal length"
+        if len(entity) != len(attribute):
+            raise ValueError("Entity and attribute lists must be of equal length")
 
         # Convert entity and attribute names to their corresponding index tensor
         entity_idx = torch.LongTensor([self.entity_to_idx[i] for i in entity])

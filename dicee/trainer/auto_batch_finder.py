@@ -1,7 +1,10 @@
+import logging
 import time
 from typing import Callable, Optional, Tuple
 
 import torch
+
+logger = logging.getLogger(__name__)
 
 
 def find_good_batch_size(
@@ -39,10 +42,10 @@ def find_good_batch_size(
         device = torch.device(device)
 
     if device.type != "cuda":
-        print("Auto batch finding requires a CUDA device — skipping.")
+        logger.warning("Auto batch finding requires a CUDA device — skipping.")
         return initial_batch_size, None
 
-    print(f"Auto batch finding — training data points: {training_dataset_size}")
+    logger.info(f"Auto batch finding — training data points: {training_dataset_size}")
 
     def _try_increasing(batch_size: int, delta: int):
         """Increase batch_size until OOM or >90 % GPU memory, return history."""
@@ -69,7 +72,7 @@ def find_good_batch_size(
                 pct_used = (total - free) / total
                 rt = time.time() - start
 
-                print(
+                logger.info(
                     f"Batch Loss: {batch_loss:.4f}\t"
                     f"GPU Usage: {pct_used:.3f}\t"
                     f"Runtime: {rt:.3f}s\t"
@@ -89,7 +92,7 @@ def find_good_batch_size(
         except torch.OutOfMemoryError:
             gpu_mem = torch.cuda.get_device_properties(device).total_memory / (1024 ** 3)
             allocated = torch.cuda.memory_allocated(device) / (1024 ** 3)
-            print(
+            logger.error(
                 f"CUDA OOM at batch_size={batch_size} "
                 f"({gpu_mem:.2f} GB total, {allocated:.2f} GB allocated)"
             )

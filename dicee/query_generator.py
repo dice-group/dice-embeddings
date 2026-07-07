@@ -1,3 +1,4 @@
+import logging
 import os
 import pickle
 import random
@@ -8,6 +9,8 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 
 from .static_funcs import load_pickle, save_pickle
+
+logger = logging.getLogger(__name__)
 
 
 class QueryGenerator:
@@ -250,7 +253,7 @@ class QueryGenerator:
 
             if max(len(answer_set - small_answer_set), len(small_answer_set - answer_set)) > self.max_ans_num:
                 num_more_answer += 1
-                print(num_more_answer)
+                logger.info(num_more_answer)
                 continue
 
             if self.list2tuple(query) in queries[self.list2tuple(query_structure)]:
@@ -468,7 +471,7 @@ class QueryGenerator:
         # @TODO: test_queries has keys that are tuple ,e.g. ('e', ('r',))
         # Yet, query structure defined as a list ['e', ['r']].
         # Fix this inconsistency
-        print(
+        logger.info(
             f"General structure is {query_struct} with name {query_type}. Number of queries generated: {len(test_tp_answers)}")
         return test_queries, test_tp_answers, test_fp_answers, test_fn_answers
 
@@ -481,7 +484,7 @@ class QueryGenerator:
         try:
             gen_id = self.query_names.index(query_type)
         except ValueError:
-            print(f"Invalid query_type: {query_type}")
+            logger.warning(f"Invalid query_type: {query_type}")
             return []
         queries, tp_answers, fp_answers, fn_answers = self.generate_queries(self.query_structures[gen_id:gen_id + 1],
                                                                             gen_num, query_type)
@@ -522,7 +525,7 @@ class QueryGenerator:
     @staticmethod
     def load_queries_and_answers(path: str) -> List[Tuple[str, Tuple[defaultdict]]]:
         """ Load Queries from Disk to Memory"""
-        print("Loading...")
+        logger.info("Loading...")
         data = load_pickle(file_path=path)
         assert isinstance(data, list)
         assert isinstance(data[0], tuple)

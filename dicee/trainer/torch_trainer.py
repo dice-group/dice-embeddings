@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 from typing import Tuple
@@ -8,6 +9,8 @@ from tqdm import tqdm
 
 from dicee.abstracts import AbstractTrainer
 from dicee.trainer.auto_batch_finder import find_good_batch_size
+
+logger = logging.getLogger(__name__)
 
 
 class TorchTrainer(AbstractTrainer):
@@ -106,7 +109,7 @@ class TorchTrainer(AbstractTrainer):
                     persistent_workers=False,
                 )
 
-        print(f'NumOfDataPoints:{len(self.train_dataloaders.dataset)} '
+        logger.info(f'NumOfDataPoints:{len(self.train_dataloaders.dataset)} '
               f'| NumOfEpochs:{self.attributes.max_epochs} '
               f'| LearningRate:{self.model.learning_rate} '
               f'| BatchSize:{self.train_dataloaders.batch_size} '
@@ -200,6 +203,6 @@ class TorchTrainer(AbstractTrainer):
                 self.device)
             return (x_batch, y_idx_batch), y_batch
         else:
-            print(len(batch))
-            print("Unexpected batch shape..")
+            logger.error(len(batch))
+            logger.error("Unexpected batch shape..")
             raise RuntimeError

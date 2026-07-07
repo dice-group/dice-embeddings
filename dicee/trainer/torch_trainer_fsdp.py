@@ -11,6 +11,7 @@ Dense parameters (relation embeddings, Clifford coefficients, …) are wrapped
 with FSDP and updated by the standard dense optimizer.
 """
 
+import logging
 import math
 import os
 import threading
@@ -30,6 +31,8 @@ from torch.utils.data import DataLoader
 
 from dicee.abstracts import AbstractTrainer
 from dicee.static_funcs_training import make_iterable_verbose
+
+logger = logging.getLogger(__name__)
 
 try:
     from torch._dynamo.eval_frame import OptimizedModule
@@ -228,7 +231,7 @@ class TorchFSDPTrainer(AbstractTrainer):
 
         if self.use_compile and hasattr(torch, "compile"):
             if self.local_rank == 0:
-                print("Compiling model with torch.compile...")
+                logger.info("Compiling model with torch.compile...")
             self.model = torch.compile(self.model, mode="reduce-overhead")
 
         num_of_batches = len(self.train_dataset_loader)

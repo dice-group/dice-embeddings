@@ -1,3 +1,4 @@
+import logging
 import os
 
 import numpy as np
@@ -7,6 +8,8 @@ import polars
 from dicee.static_funcs import save_numpy_ndarray, save_pickle
 
 from .util import load_numpy_ndarray, load_pickle
+
+logger = logging.getLogger(__name__)
 
 
 class LoadSaveToDisk:
@@ -22,7 +25,7 @@ class LoadSaveToDisk:
 
         if self.kg.byte_pair_encoding:
             save_numpy_ndarray(data=self.kg.train_set, file_path=self.kg.path_for_serialization + '/train_set.npy')
-            print("NO SAVING for BPE at save_load_disk.py")
+            logger.warning("NO SAVING for BPE at save_load_disk.py")
             save_pickle(data=self.kg.ordered_bpe_entities, file_path=self.kg.path_for_serialization + '/ordered_bpe_entities.p')
             save_pickle(data=self.kg.ordered_bpe_relations, file_path=self.kg.path_for_serialization + '/ordered_bpe_relations.p')
         else:

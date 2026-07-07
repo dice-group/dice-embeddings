@@ -1,6 +1,10 @@
+import logging
+
 import torch
 
 from .base_model import BaseKGE
+
+logger = logging.getLogger(__name__)
 
 
 class Keci(BaseKGE):
@@ -845,7 +849,7 @@ class CKeci(Keci):
         super().__init__(args)
         self.name = 'CKeci'
         self.requires_grad_for_interactions = False
-        print(f'r:{self.r}\t p:{self.p}\t q:{self.q}')
+        logger.info(f'r:{self.r}\t p:{self.p}\t q:{self.q}')
         if self.p > 0:
             self.p_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.p,_freeze=self.requires_grad_for_interactions)
             torch.nn.init.ones_(self.p_coefficients.weight)
