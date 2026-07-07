@@ -423,6 +423,124 @@
 </div>
 
 
+
+<div class="viewcode-block" id="RotatE">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.complex.RotatE">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RotatE</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;RotatE: knowledge graph embedding by relational rotation in complex space.</span>
+
+<span class="sd">    Represents each entity as a complex vector in ℂ^(d/2), obtained by</span>
+<span class="sd">    splitting its ``d``-dimensional embedding into a real half and an</span>
+<span class="sd">    imaginary half.  Each relation is represented by ``d/2`` phase angles</span>
+<span class="sd">    θ that define a unit-modulus rotation ``r_i = e^{iθ_i}``; since a phase</span>
+<span class="sd">    angle needs only one real number, the relation embedding table is</span>
+<span class="sd">    reinitialised at half of the entity embedding size.  A true triple</span>
+<span class="sd">    ``(h, r, t)`` should satisfy ``h ∘ r ≈ t`` under element-wise complex</span>
+<span class="sd">    multiplication, giving the score::</span>
+
+<span class="sd">        f(h, r, t) = margin - ||h ∘ r - t||_2</span>
+
+<span class="sd">    Unlike TransE, RotatE can model symmetric, antisymmetric, inverse, and</span>
+<span class="sd">    composition relation patterns.</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    Sun et al., *RotatE: Knowledge Graph Embedding by Relational Rotation in</span>
+<span class="sd">    Complex Space*, ICLR 2019.  https://arxiv.org/abs/1902.10197</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;RotatE&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">margin</span> <span class="o">=</span> <span class="mf">6.0</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;RotatE requires an even embedding_dim (got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="si">}</span><span class="s2">). &quot;</span>
+                <span class="s2">&quot;Entities are split evenly into real and imaginary halves.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">half_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">2</span>
+
+        <span class="c1"># Relations only need d/2 phase angles, so the full-size relation</span>
+        <span class="c1"># embedding table created by BaseKGE is reinitialised at half width.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">half_dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="c1"># Rebuild relation normalisation to match the halved embedding width.</span>
+        <span class="n">normalizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;normalization&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">normalizer</span> <span class="o">==</span> <span class="s2">&quot;LayerNorm&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">normalize_relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">half_dim</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">normalizer</span> <span class="o">==</span> <span class="s2">&quot;BatchNorm1d&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">normalize_relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">half_dim</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_rotate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">phase</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply a complex rotation ``ent ∘ e^{i·phase}`` and return the result as a real vector.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        ent_emb : torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, embedding_dim)`` -- ``[real (d/2) | imag (d/2)]``.</span>
+<span class="sd">        phase : torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, d/2)`` relation phase angles θ.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, embedding_dim)`` rotated ``[real | imag]`` vector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ent_re</span><span class="p">,</span> <span class="n">ent_im</span> <span class="o">=</span> <span class="n">ent_emb</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">half_dim</span><span class="p">],</span> <span class="n">ent_emb</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">half_dim</span><span class="p">:]</span>
+        <span class="n">rel_re</span><span class="p">,</span> <span class="n">rel_im</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">phase</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">phase</span><span class="p">)</span>
+        <span class="n">rot_re</span> <span class="o">=</span> <span class="n">ent_re</span> <span class="o">*</span> <span class="n">rel_re</span> <span class="o">-</span> <span class="n">ent_im</span> <span class="o">*</span> <span class="n">rel_im</span>
+        <span class="n">rot_im</span> <span class="o">=</span> <span class="n">ent_re</span> <span class="o">*</span> <span class="n">rel_im</span> <span class="o">+</span> <span class="n">ent_im</span> <span class="o">*</span> <span class="n">rel_re</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">rot_re</span><span class="p">,</span> <span class="n">rot_im</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RotatE.score">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.complex.RotatE.score">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
+              <span class="n">tail_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Score a batch of triples using the RotatE margin-distance formula.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        head_ent_emb, tail_ent_emb : torch.FloatTensor</span>
+<span class="sd">            Each has shape ``(batch_size, embedding_dim)``.</span>
+<span class="sd">        rel_ent_emb : torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, d/2)`` relation phase angles θ.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size,)`` scores equal to</span>
+<span class="sd">            ``margin - ||h ∘ r - t||_2``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotate</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">margin</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">pairwise_distance</span><span class="p">(</span><span class="n">hr</span><span class="p">,</span> <span class="n">tail_ent_emb</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RotatE.forward_k_vs_all">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.complex.RotatE.forward_k_vs_all">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;KvsAll forward pass: score head/relation against all entities.</span>
+
+<span class="sd">        Computes ``margin - ||h ∘ r - e||_2`` for every entity embedding *e*.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : torch.Tensor</span>
+<span class="sd">            Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, num_entities)`` score matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_rel_real</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">hr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotate</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_rel_real</span><span class="p">)</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">pairwise_distance</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">hr</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                                          <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">margin</span> <span class="o">-</span> <span class="n">distance</span></div>
+</div>
+
+
 </pre></div>
 
            </div>

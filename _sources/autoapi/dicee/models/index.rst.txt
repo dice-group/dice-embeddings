@@ -58,6 +58,7 @@ Classes
    dicee.models.ConEx
    dicee.models.AConEx
    dicee.models.ComplEx
+   dicee.models.RotatE
    dicee.models.BaseKGE
    dicee.models.IdentityClass
    dicee.models.QMult
@@ -2191,6 +2192,80 @@ Package Contents
 
       :returns: Shape ``(batch_size, k)`` score matrix where *k* is the number
                 of sampled target entities.
+      :rtype: torch.FloatTensor
+
+
+
+.. py:class:: RotatE(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   RotatE: knowledge graph embedding by relational rotation in complex space.
+
+   Represents each entity as a complex vector in ℂ^(d/2), obtained by
+   splitting its ``d``-dimensional embedding into a real half and an
+   imaginary half.  Each relation is represented by ``d/2`` phase angles
+   θ that define a unit-modulus rotation ``r_i = e^{iθ_i}``; since a phase
+   angle needs only one real number, the relation embedding table is
+   reinitialised at half of the entity embedding size.  A true triple
+   ``(h, r, t)`` should satisfy ``h ∘ r ≈ t`` under element-wise complex
+   multiplication, giving the score::
+
+       f(h, r, t) = margin - ||h ∘ r - t||_2
+
+   Unlike TransE, RotatE can model symmetric, antisymmetric, inverse, and
+   composition relation patterns.
+
+   .. rubric:: References
+
+   Sun et al., *RotatE: Knowledge Graph Embedding by Relational Rotation in
+   Complex Space*, ICLR 2019.  https://arxiv.org/abs/1902.10197
+
+
+   .. py:attribute:: name
+      :value: 'RotatE'
+
+
+
+   .. py:attribute:: margin
+      :value: 6.0
+
+
+
+   .. py:attribute:: half_dim
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor) -> torch.FloatTensor
+
+      Score a batch of triples using the RotatE margin-distance formula.
+
+      :param head_ent_emb: Each has shape ``(batch_size, embedding_dim)``.
+      :type head_ent_emb: torch.FloatTensor
+      :param tail_ent_emb: Each has shape ``(batch_size, embedding_dim)``.
+      :type tail_ent_emb: torch.FloatTensor
+      :param rel_ent_emb: Shape ``(batch_size, d/2)`` relation phase angles θ.
+      :type rel_ent_emb: torch.FloatTensor
+
+      :returns: Shape ``(batch_size,)`` scores equal to
+                ``margin - ||h ∘ r - t||_2``.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+
+      KvsAll forward pass: score head/relation against all entities.
+
+      Computes ``margin - ||h ∘ r - e||_2`` for every entity embedding *e*.
+
+      :param x: Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+      :type x: torch.Tensor
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
       :rtype: torch.FloatTensor
 
 

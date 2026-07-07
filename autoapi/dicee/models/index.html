@@ -369,6 +369,15 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.ComplEx.forward_k_vs_sample"><code class="docutils literal notranslate"><span class="pre">ComplEx.forward_k_vs_sample()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.models.RotatE"><code class="docutils literal notranslate"><span class="pre">RotatE</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.RotatE.name"><code class="docutils literal notranslate"><span class="pre">RotatE.name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.RotatE.margin"><code class="docutils literal notranslate"><span class="pre">RotatE.margin</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.RotatE.half_dim"><code class="docutils literal notranslate"><span class="pre">RotatE.half_dim</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.RotatE.relation_embeddings"><code class="docutils literal notranslate"><span class="pre">RotatE.relation_embeddings</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.RotatE.score"><code class="docutils literal notranslate"><span class="pre">RotatE.score()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.RotatE.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">RotatE.forward_k_vs_all()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l5"><a class="reference internal" href="#id98"><code class="docutils literal notranslate"><span class="pre">BaseKGE</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#id99"><code class="docutils literal notranslate"><span class="pre">BaseKGE.args</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#id100"><code class="docutils literal notranslate"><span class="pre">BaseKGE.embedding_dim</span></code></a></li>
@@ -937,20 +946,8 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.ComplEx" title="dicee.models.ComplEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ComplEx</span></code></a></p></td>
 <td><p>Base class for all Knowledge Graph Embedding models.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id240" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
-<td><p>Base class for all Knowledge Graph Embedding models.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id188" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
-<td><p>No-op normalisation / dropout placeholder.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.QMult" title="dicee.models.QMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QMult</span></code></a></p></td>
-<td><p>Base class for all Knowledge Graph Embedding models.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.ConvQ" title="dicee.models.ConvQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvQ</span></code></a></p></td>
-<td><p>Convolutional Quaternion Knowledge Graph Embeddings</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.AConvQ" title="dicee.models.AConvQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConvQ</span></code></a></p></td>
-<td><p>Additive Convolutional Quaternion Knowledge Graph Embeddings</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.RotatE" title="dicee.models.RotatE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RotatE</span></code></a></p></td>
+<td><p>RotatE: knowledge graph embedding by relational rotation in complex space.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#id240" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all Knowledge Graph Embedding models.</p></td>
@@ -958,52 +955,67 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#id188" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
 <td><p>No-op normalisation / dropout placeholder.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.OMult" title="dicee.models.OMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OMult</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.QMult" title="dicee.models.QMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QMult</span></code></a></p></td>
 <td><p>Base class for all Knowledge Graph Embedding models.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.ConvO" title="dicee.models.ConvO"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvO</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.ConvQ" title="dicee.models.ConvQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvQ</span></code></a></p></td>
+<td><p>Convolutional Quaternion Knowledge Graph Embeddings</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.AConvQ" title="dicee.models.AConvQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConvQ</span></code></a></p></td>
+<td><p>Additive Convolutional Quaternion Knowledge Graph Embeddings</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id240" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all Knowledge Graph Embedding models.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.AConvO" title="dicee.models.AConvO"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConvO</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#id188" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
+<td><p>No-op normalisation / dropout placeholder.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.OMult" title="dicee.models.OMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OMult</span></code></a></p></td>
+<td><p>Base class for all Knowledge Graph Embedding models.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.ConvO" title="dicee.models.ConvO"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvO</span></code></a></p></td>
+<td><p>Base class for all Knowledge Graph Embedding models.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.AConvO" title="dicee.models.AConvO"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConvO</span></code></a></p></td>
 <td><p>Additive Convolutional Octonion Knowledge Graph Embeddings</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.Keci" title="dicee.models.Keci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keci</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.Keci" title="dicee.models.Keci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keci</span></code></a></p></td>
 <td><p>Keci: Knowledge Graph Embedding via Clifford Algebra.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.CKeci" title="dicee.models.CKeci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CKeci</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.CKeci" title="dicee.models.CKeci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CKeci</span></code></a></p></td>
 <td><p>Without learning dimension scaling</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.DeCaL" title="dicee.models.DeCaL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeCaL</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.DeCaL" title="dicee.models.DeCaL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeCaL</span></code></a></p></td>
 <td><p>Base class for all Knowledge Graph Embedding models.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.KeciTransformer" title="dicee.models.KeciTransformer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KeciTransformer</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.KeciTransformer" title="dicee.models.KeciTransformer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KeciTransformer</span></code></a></p></td>
 <td><p>Keci with Transformer architecture.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id240" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#id240" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all Knowledge Graph Embedding models.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.PykeenKGE" title="dicee.models.PykeenKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PykeenKGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.PykeenKGE" title="dicee.models.PykeenKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PykeenKGE</span></code></a></p></td>
 <td><p>A class for using knowledge graph embedding models implemented in Pykeen</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id240" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#id240" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all Knowledge Graph Embedding models.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.FMult" title="dicee.models.FMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FMult</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.FMult" title="dicee.models.FMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FMult</span></code></a></p></td>
 <td><p>Learning Knowledge Neural Graphs</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.GFMult" title="dicee.models.GFMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GFMult</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.GFMult" title="dicee.models.GFMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GFMult</span></code></a></p></td>
 <td><p>Learning Knowledge Neural Graphs</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.FMult2" title="dicee.models.FMult2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FMult2</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.FMult2" title="dicee.models.FMult2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FMult2</span></code></a></p></td>
 <td><p>Learning Knowledge Neural Graphs</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.LFMult1" title="dicee.models.LFMult1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFMult1</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.LFMult1" title="dicee.models.LFMult1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFMult1</span></code></a></p></td>
 <td><p>Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.LFMult" title="dicee.models.LFMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFMult</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.LFMult" title="dicee.models.LFMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFMult</span></code></a></p></td>
 <td><p>Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.DualE" title="dicee.models.DualE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DualE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.DualE" title="dicee.models.DualE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DualE</span></code></a></p></td>
 <td><p>Dual Quaternion Knowledge Graph Embeddings (<a class="reference external" href="https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657">https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657</a>)</p></td>
 </tr>
 </tbody>
@@ -3523,6 +3535,89 @@ of sampled target entities.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>torch.FloatTensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.RotatE">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">RotatE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/complex.html#RotatE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.RotatE" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
+<p>RotatE: knowledge graph embedding by relational rotation in complex space.</p>
+<p>Represents each entity as a complex vector in ℂ^(d/2), obtained by
+splitting its <code class="docutils literal notranslate"><span class="pre">d</span></code>-dimensional embedding into a real half and an
+imaginary half.  Each relation is represented by <code class="docutils literal notranslate"><span class="pre">d/2</span></code> phase angles
+θ that define a unit-modulus rotation <code class="docutils literal notranslate"><span class="pre">r_i</span> <span class="pre">=</span> <span class="pre">e^{iθ_i}</span></code>; since a phase
+angle needs only one real number, the relation embedding table is
+reinitialised at half of the entity embedding size.  A true triple
+<code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> should satisfy <code class="docutils literal notranslate"><span class="pre">h</span> <span class="pre">∘</span> <span class="pre">r</span> <span class="pre">≈</span> <span class="pre">t</span></code> under element-wise complex
+multiplication, giving the score:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>f(h, r, t) = margin - ||h ∘ r - t||_2
+</pre></div>
+</div>
+<p>Unlike TransE, RotatE can model symmetric, antisymmetric, inverse, and
+composition relation patterns.</p>
+<p class="rubric">References</p>
+<p>Sun et al., <em>RotatE: Knowledge Graph Embedding by Relational Rotation in
+Complex Space</em>, ICLR 2019.  <a class="reference external" href="https://arxiv.org/abs/1902.10197">https://arxiv.org/abs/1902.10197</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.RotatE.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'RotatE'</span></span><a class="headerlink" href="#dicee.models.RotatE.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.RotatE.margin">
+<span class="sig-name descname"><span class="pre">margin</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">6.0</span></span><a class="headerlink" href="#dicee.models.RotatE.margin" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.RotatE.half_dim">
+<span class="sig-name descname"><span class="pre">half_dim</span></span><a class="headerlink" href="#dicee.models.RotatE.half_dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.RotatE.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.RotatE.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.RotatE.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">head_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/complex.html#RotatE.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.RotatE.score" title="Link to this definition"></a></dt>
+<dd><p>Score a batch of triples using the RotatE margin-distance formula.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>head_ent_emb</strong> (<em>torch.FloatTensor</em>) – Each has shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">embedding_dim)</span></code>.</p></li>
+<li><p><strong>tail_ent_emb</strong> (<em>torch.FloatTensor</em>) – Each has shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">embedding_dim)</span></code>.</p></li>
+<li><p><strong>rel_ent_emb</strong> (<em>torch.FloatTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">d/2)</span></code> relation phase angles θ.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code> scores equal to
+<code class="docutils literal notranslate"><span class="pre">margin</span> <span class="pre">-</span> <span class="pre">||h</span> <span class="pre">∘</span> <span class="pre">r</span> <span class="pre">-</span> <span class="pre">t||_2</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.RotatE.forward_k_vs_all">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/complex.html#RotatE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.RotatE.forward_k_vs_all" title="Link to this definition"></a></dt>
+<dd><p>KvsAll forward pass: score head/relation against all entities.</p>
+<p>Computes <code class="docutils literal notranslate"><span class="pre">margin</span> <span class="pre">-</span> <span class="pre">||h</span> <span class="pre">∘</span> <span class="pre">r</span> <span class="pre">-</span> <span class="pre">e||_2</span></code> for every entity embedding <em>e</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">2)</span></code> integer tensor <code class="docutils literal notranslate"><span class="pre">[head_idx,</span> <span class="pre">relation_idx]</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">num_entities)</span></code> score matrix.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
 </dd>
 </dl>
 </dd></dl>
