@@ -24,7 +24,7 @@ import torch
 import torch.distributed as dist
 from lightning.pytorch.utilities.rank_zero import rank_zero_only
 
-from .models import AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ, DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, OMult, Pyke, QMult, Shallom, TransE
+from .models import AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ, DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, OMult, Pyke, QMult, RotatE, Shallom, TransE
 from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
 from .models.fsdp_models import create_fsdp_sharded_model_class
@@ -47,6 +47,7 @@ MODEL_REGISTRY: Dict[str, Tuple[Type, str]] = {
     'ComplEx': (ComplEx, 'EntityPrediction'),
     'DistMult': (DistMult, 'EntityPrediction'),
     'TransE': (TransE, 'EntityPrediction'),
+    'RotatE': (RotatE, 'EntityPrediction'),
     'Pyke': (Pyke, 'EntityPrediction'),
     'Keci': (Keci, 'EntityPrediction'),
     'KeciTransformer': (KeciTransformer, 'EntityPrediction'),
@@ -628,6 +629,9 @@ def _legacy_intialize_model(args: dict, verbose: int = 0) -> Tuple[object, str]:
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'TransE':
         model = TransE(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'RotatE':
+        model = RotatE(args=args)
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'Pyke':
         model = Pyke(args=args)

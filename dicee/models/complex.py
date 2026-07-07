@@ -288,3 +288,112 @@ class ComplEx(BaseKGE):
         imag_imag_real = torch.einsum("bd, bkd -> bk",emb_head_imag * emb_rel_imag, emb_tail_real)
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
 
+
+class RotatE(BaseKGE):
+    """RotatE: knowledge graph embedding by relational rotation in complex space.
+
+    Represents each entity as a complex vector in ℂ^(d/2), obtained by
+    splitting its ``d``-dimensional embedding into a real half and an
+    imaginary half.  Each relation is represented by ``d/2`` phase angles
+    θ that define a unit-modulus rotation ``r_i = e^{iθ_i}``; since a phase
+    angle needs only one real number, the relation embedding table is
+    reinitialised at half of the entity embedding size.  A true triple
+    ``(h, r, t)`` should satisfy ``h ∘ r ≈ t`` under element-wise complex
+    multiplication, giving the score::
+
+        f(h, r, t) = margin - ||h ∘ r - t||_2
+
+    Unlike TransE, RotatE can model symmetric, antisymmetric, inverse, and
+    composition relation patterns.
+
+    References
+    ----------
+    Sun et al., *RotatE: Knowledge Graph Embedding by Relational Rotation in
+    Complex Space*, ICLR 2019.  https://arxiv.org/abs/1902.10197
+    """
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'RotatE'
+        self.margin = 6.0
+
+        if self.embedding_dim % 2 != 0:
+            raise ValueError(
+                f"RotatE requires an even embedding_dim (got {self.embedding_dim}). "
+                "Entities are split evenly into real and imaginary halves.")
+        self.half_dim = self.embedding_dim // 2
+
+        # Relations only need d/2 phase angles, so the full-size relation
+        # embedding table created by BaseKGE is reinitialised at half width.
+        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.half_dim)
+        self.param_init(self.relation_embeddings.weight.data)
+
+        # Rebuild relation normalisation to match the halved embedding width.
+        normalizer = self.args.get("normalization")
+        if normalizer == "LayerNorm":
+            self.normalize_relation_embeddings = torch.nn.LayerNorm(self.half_dim)
+        elif normalizer == "BatchNorm1d":
+            self.normalize_relation_embeddings = torch.nn.BatchNorm1d(self.half_dim, affine=False)
+
+    def _rotate(self, ent_emb: torch.FloatTensor, phase: torch.FloatTensor) -> torch.FloatTensor:
+        """Apply a complex rotation ``ent ∘ e^{i·phase}`` and return the result as a real vector.
+
+        Parameters
+        ----------
+        ent_emb : torch.FloatTensor
+            Shape ``(batch_size, embedding_dim)`` -- ``[real (d/2) | imag (d/2)]``.
+        phase : torch.FloatTensor
+            Shape ``(batch_size, d/2)`` relation phase angles θ.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Shape ``(batch_size, embedding_dim)`` rotated ``[real | imag]`` vector.
+        """
+        ent_re, ent_im = ent_emb[:, :self.half_dim], ent_emb[:, self.half_dim:]
+        rel_re, rel_im = torch.cos(phase), torch.sin(phase)
+        rot_re = ent_re * rel_re - ent_im * rel_im
+        rot_im = ent_re * rel_im + ent_im * rel_re
+        return torch.cat((rot_re, rot_im), dim=1)
+
+    def score(self, head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor,
+              tail_ent_emb: torch.FloatTensor) -> torch.FloatTensor:
+        """Score a batch of triples using the RotatE margin-distance formula.
+
+        Parameters
+        ----------
+        head_ent_emb, tail_ent_emb : torch.FloatTensor
+            Each has shape ``(batch_size, embedding_dim)``.
+        rel_ent_emb : torch.FloatTensor
+            Shape ``(batch_size, d/2)`` relation phase angles θ.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Shape ``(batch_size,)`` scores equal to
+            ``margin - ||h ∘ r - t||_2``.
+        """
+        hr = self._rotate(head_ent_emb, rel_ent_emb)
+        return self.margin - torch.nn.functional.pairwise_distance(hr, tail_ent_emb, p=2)
+
+    def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
+        """KvsAll forward pass: score head/relation against all entities.
+
+        Computes ``margin - ||h ∘ r - e||_2`` for every entity embedding *e*.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Shape ``(batch_size, num_entities)`` score matrix.
+        """
+        emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
+        hr = self._rotate(emb_head_real, emb_rel_real)
+        distance = torch.nn.functional.pairwise_distance(torch.unsqueeze(hr, 1),
+                                                          self.entity_embeddings.weight, p=2)
+        return self.margin - distance
+
