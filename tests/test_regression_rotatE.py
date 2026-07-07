@@ -1,10 +1,4 @@
-"""Regression tests for the RotatE model.
-
-These tests verify:
-- NegSample scoring produces non-trivial link-prediction results
-- KvsAll scoring produces non-trivial link-prediction results
-- H@k ordering invariant: H@10 >= H@3 >= H@1
-"""
+"""Regression tests for the RotatE model."""
 
 import pytest
 from dicee.executer import Execute
