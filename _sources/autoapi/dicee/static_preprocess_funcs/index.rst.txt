@@ -9,6 +9,7 @@ Attributes
 
 .. autoapisummary::
 
+   dicee.static_preprocess_funcs.logger
    dicee.static_preprocess_funcs.enable_log
 
 
@@ -28,6 +29,8 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:data:: enable_log
    :value: False

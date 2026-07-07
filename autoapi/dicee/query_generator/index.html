@@ -79,8 +79,10 @@
 <li class="toctree-l3"><a class="reference internal" href="../knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../models/index.html">dicee.models</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">dicee.query_generator</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#attributes">Attributes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.query_generator.logger"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.query_generator.QueryGenerator"><code class="docutils literal notranslate"><span class="pre">QueryGenerator</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.train_path"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.train_path</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.val_path"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.val_path</span></code></a></li>
@@ -161,6 +163,16 @@
              
   <section id="module-dicee.query_generator">
 <span id="dicee-query-generator"></span><h1>dicee.query_generator<a class="headerlink" href="#module-dicee.query_generator" title="Link to this heading"></a></h1>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.query_generator.logger" title="dicee.query_generator.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
@@ -173,6 +185,11 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="dicee.query_generator.logger">
+<span class="sig-prename descclassname"><span class="pre">dicee.query_generator.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#dicee.query_generator.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.query_generator.QueryGenerator">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.query_generator.</span></span><span class="sig-name descname"><span class="pre">QueryGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ent2id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel2id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gen_valid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gen_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.query_generator.QueryGenerator" title="Link to this definition"></a></dt>

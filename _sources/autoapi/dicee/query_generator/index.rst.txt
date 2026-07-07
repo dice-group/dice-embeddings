@@ -4,6 +4,14 @@ dicee.query_generator
 .. py:module:: dicee.query_generator
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.query_generator.logger
+
+
 Classes
 -------
 
@@ -14,6 +22,8 @@ Classes
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:class:: QueryGenerator(train_path, val_path: str, test_path: str, ent2id: Dict = None, rel2id: Dict = None, seed: int = 1, gen_valid: bool = False, gen_test: bool = True)
 

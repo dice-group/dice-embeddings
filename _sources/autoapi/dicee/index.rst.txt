@@ -380,7 +380,8 @@ Package Contents
                 - Missing element: vector of all possible scores
       :rtype: torch.FloatTensor of scores. Shape depends on the query type
 
-      :raises AssertionError: If inputs are not strings or lists of strings.
+      :raises TypeError: If inputs are not strings or lists of strings.
+      :raises ValueError: If a required argument for the query type is missing.
 
       .. rubric:: Examples
 
@@ -409,8 +410,8 @@ Package Contents
                 For batch query: List of such lists, one per query.
       :rtype: For single query
 
-      :raises AssertionError: If more than one of h, r, t is None.
-      :raises AssertionError: If the required arguments for a query type are None.
+      :raises TypeError: If h, r, or t is not a str or list of str.
+      :raises ValueError: If the required arguments for a query type are None.
 
       .. rubric:: Examples
 

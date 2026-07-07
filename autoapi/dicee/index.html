@@ -680,7 +680,10 @@ Skips if memmap already exists.</p>
 <dd class="field-odd"><p>torch.FloatTensor of scores. Shape depends on the query type</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>AssertionError</strong> – If inputs are not strings or lists of strings.</p>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError</strong> – If inputs are not strings or lists of strings.</p></li>
+<li><p><strong>ValueError</strong> – If a required argument for the query type is missing.</p></li>
+</ul>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
@@ -720,8 +723,8 @@ For batch query: List of such lists, one per query.</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><strong>AssertionError</strong> – If more than one of h, r, t is None.</p></li>
-<li><p><strong>AssertionError</strong> – If the required arguments for a query type are None.</p></li>
+<li><p><strong>TypeError</strong> – If h, r, or t is not a str or list of str.</p></li>
+<li><p><strong>ValueError</strong> – If the required arguments for a query type are None.</p></li>
 </ul>
 </dd>
 </dl>

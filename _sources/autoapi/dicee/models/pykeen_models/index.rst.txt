@@ -4,6 +4,14 @@ dicee.models.pykeen_models
 .. py:module:: dicee.models.pykeen_models
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.models.pykeen_models.logger
+
+
 Classes
 -------
 
@@ -14,6 +22,8 @@ Classes
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:class:: PykeenKGE(args: dict)
 

@@ -4,6 +4,14 @@ dicee.trainer.torch_trainer_ddp
 .. py:module:: dicee.trainer.torch_trainer_ddp
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.trainer.torch_trainer_ddp.logger
+
+
 Classes
 -------
 
@@ -23,6 +31,8 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:function:: make_iterable_verbose(iterable_object, verbose, desc='Default', position=None, leave=True) -> Iterable
 

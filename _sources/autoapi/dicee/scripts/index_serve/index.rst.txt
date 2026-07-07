@@ -15,6 +15,7 @@ Attributes
 
 .. autoapisummary::
 
+   dicee.scripts.index_serve.logger
    dicee.scripts.index_serve.app
    dicee.scripts.index_serve.neural_searcher
 
@@ -45,6 +46,8 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:function:: get_default_arguments()
 

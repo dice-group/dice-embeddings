@@ -77,8 +77,10 @@
 <li class="toctree-l3"><a class="reference internal" href="../executer/index.html">dicee.executer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">dicee.knowledge_graph_embeddings</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#attributes">Attributes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.knowledge_graph_embeddings.logger"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.knowledge_graph_embeddings.KGE"><code class="docutils literal notranslate"><span class="pre">KGE</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.knowledge_graph_embeddings.KGE.__str__"><code class="docutils literal notranslate"><span class="pre">KGE.__str__()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.knowledge_graph_embeddings.KGE.to"><code class="docutils literal notranslate"><span class="pre">KGE.to()</span></code></a></li>
@@ -149,6 +151,16 @@
              
   <section id="module-dicee.knowledge_graph_embeddings">
 <span id="dicee-knowledge-graph-embeddings"></span><h1>dicee.knowledge_graph_embeddings<a class="headerlink" href="#module-dicee.knowledge_graph_embeddings" title="Link to this heading"></a></h1>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.knowledge_graph_embeddings.logger" title="dicee.knowledge_graph_embeddings.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
@@ -161,6 +173,11 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="dicee.knowledge_graph_embeddings.logger">
+<span class="sig-prename descclassname"><span class="pre">dicee.knowledge_graph_embeddings.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#dicee.knowledge_graph_embeddings.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.knowledge_graph_embeddings.KGE">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.knowledge_graph_embeddings.</span></span><span class="sig-name descname"><span class="pre">KGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">construct_ensemble</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.knowledge_graph_embeddings.KGE" title="Link to this definition"></a></dt>
@@ -279,7 +296,10 @@
 <dd class="field-odd"><p>torch.FloatTensor of scores. Shape depends on the query type</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>AssertionError</strong> – If inputs are not strings or lists of strings.</p>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>TypeError</strong> – If inputs are not strings or lists of strings.</p></li>
+<li><p><strong>ValueError</strong> – If a required argument for the query type is missing.</p></li>
+</ul>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
@@ -319,8 +339,8 @@ For batch query: List of such lists, one per query.</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><strong>AssertionError</strong> – If more than one of h, r, t is None.</p></li>
-<li><p><strong>AssertionError</strong> – If the required arguments for a query type are None.</p></li>
+<li><p><strong>TypeError</strong> – If h, r, or t is not a str or list of str.</p></li>
+<li><p><strong>ValueError</strong> – If the required arguments for a query type are None.</p></li>
 </ul>
 </dd>
 </dl>

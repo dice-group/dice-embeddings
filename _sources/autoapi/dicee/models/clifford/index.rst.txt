@@ -4,6 +4,14 @@ dicee.models.clifford
 .. py:module:: dicee.models.clifford
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.models.clifford.logger
+
+
 Classes
 -------
 
@@ -20,6 +28,8 @@ Classes
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:class:: Keci(args)
 

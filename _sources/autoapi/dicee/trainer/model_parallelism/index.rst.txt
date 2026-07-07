@@ -16,6 +16,14 @@ dicee.trainer.model_parallelism
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.trainer.model_parallelism.logger
+
+
 Classes
 -------
 
@@ -35,6 +43,8 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:function:: extract_input_outputs(z: list, device=None)
 

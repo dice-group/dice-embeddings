@@ -12,6 +12,14 @@ dicee.trainer.dice_trainer
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.trainer.dice_trainer.logger
+
+
 Classes
 -------
 
@@ -32,6 +40,8 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:function:: load_term_mapping(file_path: str) -> polars.DataFrame
 

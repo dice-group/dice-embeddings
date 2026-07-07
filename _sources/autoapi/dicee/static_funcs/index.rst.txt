@@ -17,6 +17,7 @@ Attributes
 
 .. autoapisummary::
 
+   dicee.static_funcs.logger
    dicee.static_funcs.MODEL_REGISTRY
 
 
@@ -61,6 +62,8 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:data:: MODEL_REGISTRY
    :type:  Dict[str, Tuple[Type, str]]

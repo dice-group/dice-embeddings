@@ -4,6 +4,14 @@ dicee.read_preprocess_save_load_kg.util
 .. py:module:: dicee.read_preprocess_save_load_kg.util
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.read_preprocess_save_load_kg.util.logger
+
+
 Functions
 ---------
 
@@ -35,6 +43,8 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:function:: polars_dataframe_indexer(df_polars: polars.DataFrame, idx_entity: polars.DataFrame, idx_relation: polars.DataFrame) -> polars.DataFrame
 

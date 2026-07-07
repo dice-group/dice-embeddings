@@ -11,6 +11,14 @@ dicee.analyse_experiments
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.analyse_experiments.logger
+
+
 Classes
 -------
 
@@ -30,6 +38,8 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:function:: get_default_arguments()
 

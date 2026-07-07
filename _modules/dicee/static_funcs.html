@@ -98,6 +98,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
@@ -119,6 +120,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.models.fsdp_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_fsdp_sharded_model_class</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.models.pykeen_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">PykeenKGE</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.models.transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">BytE</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="c1"># Model registry mapping model names to their classes and labelling types</span>
 <span class="n">MODEL_REGISTRY</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Type</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
@@ -247,7 +250,7 @@
         <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">total_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span>
         <span class="n">memory_mb</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">())</span><span class="o">.</span><span class="n">memory_info</span><span class="p">()</span><span class="o">.</span><span class="n">rss</span> <span class="o">/</span> <span class="mi">1_000_000</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Took </span><span class="si">{</span><span class="n">total_time</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1"> secs | Current Memory Usage </span><span class="si">{</span><span class="n">memory_mb</span><span class="si">:</span><span class="s1">.5f</span><span class="si">}</span><span class="s1"> MB&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Took </span><span class="si">{</span><span class="n">total_time</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1"> secs | Current Memory Usage </span><span class="si">{</span><span class="n">memory_mb</span><span class="si">:</span><span class="s1">.5f</span><span class="si">}</span><span class="s1"> MB&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span>
     <span class="k">return</span> <span class="n">timeit_wrapper</span></div>
 
@@ -290,7 +293,7 @@
                 <span class="p">)</span>
             <span class="n">rank</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">get_rank</span><span class="p">()</span>
             <span class="n">world_size</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">get_world_size</span><span class="p">()</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Rank </span><span class="si">{</span><span class="n">rank</span><span class="si">}</span><span class="s2">] mapped to GPU </span><span class="si">{</span><span class="n">local_rank</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Rank </span><span class="si">{</span><span class="n">rank</span><span class="si">}</span><span class="s2">] mapped to GPU </span><span class="si">{</span><span class="n">local_rank</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">distributed</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">rank</span><span class="p">,</span> <span class="n">world_size</span><span class="p">,</span> <span class="n">local_rank</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span>
@@ -318,7 +321,7 @@
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Input data is None. Nothing to save.&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Input data is None. Nothing to save.&quot;</span><span class="p">)</span></div>
 
 
 
@@ -356,7 +359,7 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">load_pickle</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="n">pickle_path</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Pickle file not found: </span><span class="si">{</span><span class="n">pickle_path</span><span class="si">}</span><span class="s2">, loading from CSV&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Pickle file not found: </span><span class="si">{</span><span class="n">pickle_path</span><span class="si">}</span><span class="s2">, loading from CSV&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">pl</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">.csv&quot;</span><span class="p">)</span></div>
 
 
@@ -385,7 +388,7 @@
                 <span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">EnsembleKGE</span><span class="p">(</span><span class="n">pretrained_models</span><span class="o">=</span><span class="n">models</span><span class="p">),</span> <span class="n">labelling_flag</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loading pre-trained model...&#39;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Loading pre-trained model...&#39;</span><span class="p">)</span>
             <span class="n">model</span><span class="p">,</span> <span class="n">labelling_flag</span> <span class="o">=</span> <span class="n">intialize_model</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">storage_path</span> <span class="o">+</span> <span class="s1">&#39;/model.pt&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">))</span>
@@ -394,7 +397,7 @@
                     <span class="n">parameter</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
             <span class="k">except</span> <span class="ne">FileNotFoundError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">storage_path</span><span class="si">}</span><span class="s2">/model.pt is not found. The model will be trained with random weights&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">storage_path</span><span class="si">}</span><span class="s2">/model.pt is not found. The model will be trained with random weights&quot;</span><span class="p">)</span>
                 <span class="k">raise</span> <span class="n">e</span>
             <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">labelling_flag</span>
     <span class="k">else</span><span class="p">:</span>
@@ -418,7 +421,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">load_model</span><span class="p">(</span><span class="n">path_of_experiment_folder</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;model.pt&#39;</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Load weights and initialize pytorch module from namespace arguments&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">verbose</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Loading model </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Loading model </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
     <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
     <span class="c1"># (1) Load weights..</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path_of_experiment_folder</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;/</span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">))</span>
@@ -442,7 +445,7 @@
         <span class="n">configs</span><span class="p">[</span><span class="s2">&quot;num_entities&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">num_ent</span>
         <span class="n">configs</span><span class="p">[</span><span class="s2">&quot;num_relations&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">num_rel</span>
     <span class="k">if</span> <span class="n">verbose</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Done! It took </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Done! It took </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="c1"># (4) Select the model</span>
     <span class="n">model</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">intialize_model</span><span class="p">(</span><span class="n">configs</span><span class="p">,</span><span class="n">verbose</span><span class="p">)</span>
     <span class="c1"># (5) Put (1) into (4)</span>
@@ -459,7 +462,7 @@
         <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="kc">None</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">verbose</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loading entity and relation indexes...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Loading entity and relation indexes...&#39;</span><span class="p">)</span>
 
         <span class="c1"># Use per-column dtype to avoid pandas&gt;=3.0.0 applying dtype=str to the index column</span>
         <span class="c1"># (which would make index values strings instead of ints, breaking downstream assertions)</span>
@@ -469,7 +472,7 @@
 
 
         <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Done! It took </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Done! It took </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="p">(</span><span class="n">entity_to_idx</span><span class="p">,</span> <span class="n">relation_to_idx</span><span class="p">)</span></div>
 
 
@@ -484,18 +487,19 @@
 <span class="sd">    (3) Normalize parameters</span>
 <span class="sd">    (4) Insert (3) into model.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Constructing Ensemble of &#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Constructing Ensemble of models...&#39;</span><span class="p">)</span>
     <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
     <span class="c1"># (1) Detect models under given path.</span>
     <span class="n">paths_for_loading</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">path_of_experiment_folder</span> <span class="o">+</span> <span class="s1">&#39;/model*&#39;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">paths_for_loading</span><span class="p">)</span><span class="si">}</span><span class="s1"> models...&#39;</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">paths_for_loading</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">paths_for_loading</span><span class="p">)</span><span class="si">}</span><span class="s1"> models...&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">paths_for_loading</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No model files found under </span><span class="si">{</span><span class="n">path_of_experiment_folder</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="n">num_of_models</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">paths_for_loading</span><span class="p">)</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="c1"># (2) Accumulate parameters of detected models.</span>
     <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">paths_for_loading</span><span class="p">):</span>
         <span class="n">p</span> <span class="o">=</span> <span class="n">paths_for_loading</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Model: </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Model: </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
@@ -514,18 +518,18 @@
     <span class="n">report</span> <span class="o">=</span> <span class="n">load_json</span><span class="p">(</span><span class="n">path_of_experiment_folder</span> <span class="o">+</span> <span class="s1">&#39;/report.json&#39;</span><span class="p">)</span>
     <span class="n">configs</span><span class="p">[</span><span class="s2">&quot;num_entities&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">&quot;num_entities&quot;</span><span class="p">]</span>
     <span class="n">configs</span><span class="p">[</span><span class="s2">&quot;num_relations&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">&quot;num_relations&quot;</span><span class="p">]</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Done! It took </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> seconds.&#39;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Done! It took </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> seconds.&#39;</span><span class="p">)</span>
     <span class="c1"># (4.2) Select the model</span>
     <span class="n">model</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">intialize_model</span><span class="p">(</span><span class="n">configs</span><span class="p">)</span>
     <span class="c1"># (4.3) Put (3) into their places</span>
     <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="c1"># (6) Set it into eval model.</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Setting Eval mode &amp; requires_grad params to False&#39;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Setting Eval mode &amp; requires_grad params to False&#39;</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
         <span class="n">parameter</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
     <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loading entity and relation indexes...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Loading entity and relation indexes...&#39;</span><span class="p">)</span>
     <span class="c1"># TODO: CD: We do not need to keep the mapping in memory</span>
     <span class="c1"># TODO:CD: Deprecate the pickle usage for data serialization.</span>
 
@@ -538,7 +542,7 @@
 
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_to_idx</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">relation_to_idx</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Done! It took </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Done! It took </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="p">(</span><span class="n">entity_to_idx</span><span class="p">,</span> <span class="n">relation_to_idx</span><span class="p">)</span></div>
 
 
@@ -603,13 +607,13 @@
 
     <span class="k">if</span> <span class="n">save_embeddings_as_csv</span><span class="p">:</span>
         <span class="n">entity_emb</span><span class="p">,</span> <span class="n">relation_ebm</span> <span class="o">=</span> <span class="n">trained_model</span><span class="o">.</span><span class="n">get_embeddings</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Saving entity embeddings...&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saving entity embeddings...&quot;</span><span class="p">)</span>
         <span class="n">entity</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">full_storage_path</span><span class="si">}</span><span class="s2">/entity_to_idx.csv&quot;</span><span class="p">,</span><span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="s2">&quot;entity&quot;</span><span class="p">]</span>
         <span class="k">assert</span> <span class="n">entity</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">is_monotonic_increasing</span>
         <span class="n">save_embeddings</span><span class="p">(</span><span class="n">entity_emb</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">indexes</span><span class="o">=</span><span class="n">entity</span><span class="o">.</span><span class="n">to_list</span><span class="p">(),</span> <span class="n">path</span><span class="o">=</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">trained_model</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_entity_embeddings.csv&#39;</span><span class="p">)</span>
         <span class="k">del</span> <span class="n">entity</span><span class="p">,</span> <span class="n">entity_emb</span>
         <span class="k">if</span> <span class="n">relation_ebm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Saving relation embeddings...&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saving relation embeddings...&quot;</span><span class="p">)</span>
             <span class="n">relations</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">full_storage_path</span><span class="si">}</span><span class="s2">/relation_to_idx.csv&quot;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="s2">&quot;relation&quot;</span><span class="p">]</span>
             <span class="k">assert</span> <span class="n">relations</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">is_monotonic_increasing</span>
             <span class="n">save_embeddings</span><span class="p">(</span><span class="n">relation_ebm</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">indexes</span><span class="o">=</span><span class="n">relations</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">trained_model</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;_relation_embeddings.csv&#39;</span><span class="p">)</span>
@@ -628,7 +632,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">num_triples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_set</span><span class="p">)</span>
     <span class="n">num_noisy_triples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">num_triples</span> <span class="o">*</span> <span class="n">add_noise_rate</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[4 / 14] Generating </span><span class="si">{</span><span class="n">num_noisy_triples</span><span class="si">}</span><span class="s1"> noisy triples for training data...&#39;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[4 / 14] Generating </span><span class="si">{</span><span class="n">num_noisy_triples</span><span class="si">}</span><span class="s1"> noisy triples for training data...&#39;</span><span class="p">)</span>
 
     <span class="n">list_of_entities</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">train_set</span><span class="p">[[</span><span class="s1">&#39;subject&#39;</span><span class="p">,</span> <span class="s1">&#39;object&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span>
 
@@ -652,7 +656,7 @@
 <div class="viewcode-block" id="read_or_load_kg">
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.static_funcs.read_or_load_kg">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">read_or_load_kg</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;*** Read or Load Knowledge Graph  ***&#39;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;*** Read or Load Knowledge Graph  ***&#39;</span><span class="p">)</span>
     <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
     <span class="n">kg</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">dataset_dir</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="p">,</span>
              <span class="n">byte_pair_encoding</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">byte_pair_encoding</span><span class="p">,</span>
@@ -669,9 +673,9 @@
              <span class="n">backend</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">backend</span><span class="p">,</span>
              <span class="n">training_technique</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="p">,</span>
              <span class="n">separator</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">separator</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Preprocessing took: </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> seconds&#39;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Preprocessing took: </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> seconds&#39;</span><span class="p">)</span>
     <span class="c1"># (2) Share some info about data for easy access.</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">kg</span><span class="o">.</span><span class="n">description_of_input</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">kg</span><span class="o">.</span><span class="n">description_of_input</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">kg</span></div>
 
 
@@ -692,7 +696,7 @@
 <span class="sd">        ValueError: If the model name is not recognized.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initializing </span><span class="si">{</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initializing </span><span class="si">{</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
     <span class="n">model_name</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span>
 
     <span class="c1"># Handle PyKEEN models</span>
@@ -731,7 +735,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_legacy_intialize_model</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">object</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Legacy model initialization (deprecated, use intialize_model instead).&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initializing </span><span class="si">{</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initializing </span><span class="si">{</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
     <span class="n">model_name</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span>
     <span class="k">if</span> <span class="s2">&quot;pykeen&quot;</span> <span class="ow">in</span> <span class="n">model_name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
         <span class="n">model</span> <span class="o">=</span> <span class="n">PykeenKGE</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
@@ -837,8 +841,8 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">embeddings</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">indexes</span><span class="p">)</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Exception occurred while saving embeddings: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Computation will continue.&#39;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Exception occurred while saving embeddings: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Computation will continue.&#39;</span><span class="p">)</span></div>
 
 
 
@@ -847,9 +851,9 @@
 <span class="nd">@timeit</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">vocab_to_parquet</span><span class="p">(</span><span class="n">vocab_to_idx</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">path_for_serialization</span><span class="p">,</span> <span class="n">print_into</span><span class="p">):</span>
     <span class="c1"># @TODO: This function should take any DASK/Pandas DataFrame or Series.</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">print_into</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">print_into</span><span class="p">)</span>
     <span class="n">vocab_to_idx</span><span class="o">.</span><span class="n">to_parquet</span><span class="p">(</span><span class="n">path_for_serialization</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;/</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;pyarrow&#39;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done !</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span></div>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Done !&#39;</span><span class="p">)</span></div>
 
 
 
@@ -909,7 +913,7 @@
 <a class="viewcode-back" href="../../autoapi/dicee/static_funcs/index.html#dicee.static_funcs.load_numpy">[docs]</a>
 <span class="nd">@timeit</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_numpy</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loading indexed training data...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Loading indexed training data...&#39;</span><span class="p">)</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">data</span></div>
@@ -993,9 +997,9 @@
             <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">iter_content</span><span class="p">(</span><span class="n">chunk_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">chunk</span><span class="p">:</span>
                     <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downloaded: </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Downloaded: </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to download: </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to download: </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 
@@ -1018,7 +1022,7 @@
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">bs4</span><span class="w"> </span><span class="kn">import</span> <span class="n">BeautifulSoup</span>
     <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Please install the &#39;beautifulsoup4&#39; package by running: pip install beautifulsoup4&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Please install the &#39;beautifulsoup4&#39; package by running: pip install beautifulsoup4&quot;</span><span class="p">)</span>
         <span class="k">raise</span>
     <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">base_url</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span><span class="p">:</span>
@@ -1032,7 +1036,7 @@
         <span class="k">for</span> <span class="n">file_url</span> <span class="ow">in</span> <span class="n">hrefs</span><span class="p">:</span>
             <span class="n">download_file</span><span class="p">(</span><span class="n">base_url</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">file_url</span><span class="p">,</span> <span class="n">destination_folder</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERROR:&quot;</span><span class="p">,</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ERROR: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="download_pretrained_model">
@@ -1042,7 +1046,7 @@
     <span class="n">dir_name</span> <span class="o">=</span> <span class="n">url</span><span class="p">[</span><span class="n">url</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]</span>
     <span class="n">url_to_download_from</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://files.dice-research.org/projects/DiceEmbeddings/</span><span class="si">{</span><span class="n">dir_name</span><span class="si">}</span><span class="s2">&quot;</span>
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dir_name</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Path exists&quot;</span><span class="p">,</span> <span class="n">dir_name</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Path exists: </span><span class="si">{</span><span class="n">dir_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">dir_name</span><span class="p">)</span>
         <span class="n">download_files_from_url</span><span class="p">(</span><span class="n">url_to_download_from</span><span class="p">,</span> <span class="n">destination_folder</span><span class="o">=</span><span class="n">dir_name</span><span class="p">)</span>

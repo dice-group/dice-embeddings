@@ -23,6 +23,7 @@ Attributes
 
 .. autoapisummary::
 
+   dicee.trainer.torch_trainer_fsdp.logger
    dicee.trainer.torch_trainer_fsdp.OptimizedModule
 
 
@@ -36,6 +37,8 @@ Classes
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:data:: OptimizedModule
    :value: None

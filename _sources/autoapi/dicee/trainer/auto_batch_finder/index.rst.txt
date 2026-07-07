@@ -4,6 +4,14 @@ dicee.trainer.auto_batch_finder
 .. py:module:: dicee.trainer.auto_batch_finder
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.trainer.auto_batch_finder.logger
+
+
 Functions
 ---------
 
@@ -14,6 +22,8 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:function:: find_good_batch_size(train_loader: torch.utils.data.DataLoader, training_step_fn: Callable, device) -> Tuple[int, Optional[float]]
 

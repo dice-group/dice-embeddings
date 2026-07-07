@@ -12,6 +12,14 @@ dicee.executer
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.executer.logger
+
+
 Classes
 -------
 
@@ -23,6 +31,8 @@ Classes
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:class:: Execute(args, continuous_training: bool = False)
 

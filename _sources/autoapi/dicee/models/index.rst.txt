@@ -27,6 +27,16 @@ Submodules
    /autoapi/dicee/models/transformers/index
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.models.logger
+   dicee.models.logger
+   dicee.models.logger
+
+
 Classes
 -------
 
@@ -280,6 +290,8 @@ Package Contents
          - The method is thread-safe for different parameter groups
 
 
+
+.. py:data:: logger
 
 .. py:class:: BaseKGELightning(*args, **kwargs)
 
@@ -4214,6 +4226,8 @@ Package Contents
 
 
 
+.. py:data:: logger
+
 .. py:class:: PykeenKGE(args: dict)
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
@@ -4637,6 +4651,8 @@ Package Contents
                 * **relation_embeddings** (*numpy.ndarray*) -- Shape ``(num_relations, embedding_dim)``.
 
 
+
+.. py:data:: logger
 
 .. py:class:: FMult(args)
 

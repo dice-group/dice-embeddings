@@ -4,6 +4,14 @@ dicee.sanity_checkers
 .. py:module:: dicee.sanity_checkers
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.sanity_checkers.logger
+
+
 Functions
 ---------
 
@@ -17,6 +25,8 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:function:: is_sparql_endpoint_alive(sparql_endpoint: str = None)
 

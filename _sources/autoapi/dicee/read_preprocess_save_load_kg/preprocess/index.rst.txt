@@ -4,6 +4,14 @@ dicee.read_preprocess_save_load_kg.preprocess
 .. py:module:: dicee.read_preprocess_save_load_kg.preprocess
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.read_preprocess_save_load_kg.preprocess.logger
+
+
 Classes
 -------
 
@@ -14,6 +22,8 @@ Classes
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:class:: PreprocessKG(kg)
 

@@ -95,10 +95,14 @@
 <span class="sd">pair and the target is a label vector over all entities (or relations).</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">..static_preprocess_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">mapping_from_first_two_cols_to_third</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="OnevsAllDataset">
@@ -213,7 +217,7 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_target</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
             <span class="k">except</span> <span class="p">(</span><span class="ne">IndexError</span><span class="p">,</span> <span class="ne">AssertionError</span><span class="p">):</span>
-                <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_target</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_target</span><span class="p">)</span>
                 <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">train_target</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
@@ -279,12 +283,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">target_dim</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">entity_idxs</span><span class="p">)</span>
         <span class="c1"># mapping_from_first_two_cols_to_third already returns sorted dict</span>
         <span class="n">store</span> <span class="o">=</span> <span class="n">mapping_from_first_two_cols_to_third</span><span class="p">(</span><span class="n">train_set_idx</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of unique pairs:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">store</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of unique pairs: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">store</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">entity_idxs</span><span class="p">)):</span>
             <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">relation_idxs</span><span class="p">)):</span>
                 <span class="k">if</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">store</span><span class="p">[(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of unique augmented pairs:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">store</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of unique augmented pairs: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">store</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="c1"># Re-sort after adding new keys to maintain consistent ordering</span>
         <span class="n">store</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">items</span><span class="p">()))</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">store</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>

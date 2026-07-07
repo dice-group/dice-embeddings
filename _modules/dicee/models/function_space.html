@@ -88,10 +88,14 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.models.function_space</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.base_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseKGE</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="FMult">
@@ -259,7 +263,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="n">tuned_embedding_dim</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="n">tuned_embedding_dim</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">*****Embedding dimension reset to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="si">}</span><span class="s2"> to fit model architecture!*****</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Embedding dimension reset to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="si">}</span><span class="s2"> to fit model architecture!&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_layers</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="mi">50</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span>

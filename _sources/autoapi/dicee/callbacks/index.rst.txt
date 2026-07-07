@@ -12,6 +12,14 @@ dicee.callbacks
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.callbacks.logger
+
+
 Classes
 -------
 
@@ -39,6 +47,8 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:class:: AccumulateEpochLossCallback(path: str)
 

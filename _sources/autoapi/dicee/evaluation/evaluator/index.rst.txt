@@ -18,6 +18,7 @@ Attributes
 
 .. autoapisummary::
 
+   dicee.evaluation.evaluator.logger
    dicee.evaluation.evaluator.VALID_SCORING_TECHNIQUES
 
 
@@ -31,6 +32,8 @@ Classes
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:data:: VALID_SCORING_TECHNIQUES
 

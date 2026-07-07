@@ -14,6 +14,14 @@ dicee.models.transformers
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.models.transformers.logger
+
+
 Classes
 -------
 
@@ -30,6 +38,8 @@ Classes
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:class:: BytE(*args, **kwargs)
 

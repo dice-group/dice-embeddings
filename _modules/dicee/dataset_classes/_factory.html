@@ -95,6 +95,7 @@
 <span class="sd">requested scoring technique and labelling strategy.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -108,6 +109,8 @@
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">._label_based</span><span class="w"> </span><span class="kn">import</span> <span class="n">AllvsAll</span><span class="p">,</span> <span class="n">FSDP1vsSampleDataset</span><span class="p">,</span> <span class="n">KvsAll</span><span class="p">,</span> <span class="n">KvsSampleDataset</span><span class="p">,</span> <span class="n">OnevsAllDataset</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">._negative_sampling</span><span class="w"> </span><span class="kn">import</span> <span class="n">FixedNegSampleDataset</span><span class="p">,</span> <span class="n">OnevsSample</span><span class="p">,</span> <span class="n">TriplePredictionDataset</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="reload_dataset">
@@ -290,7 +293,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Illegal input.&quot;</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of datapoints: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">train_set</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of datapoints: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">train_set</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">train_set</span></div>
 
 </pre></div>

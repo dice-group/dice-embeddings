@@ -97,6 +97,7 @@
 <li class="toctree-l5"><a class="reference internal" href="transformers/index.html">dicee.models.transformers</a></li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="#attributes">Attributes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#package-contents">Package Contents</a><ul>
@@ -106,6 +107,7 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.ADOPT.step"><code class="docutils literal notranslate"><span class="pre">ADOPT.step()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.models.logger"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.models.BaseKGELightning"><code class="docutils literal notranslate"><span class="pre">BaseKGELightning</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.BaseKGELightning.training_step_outputs"><code class="docutils literal notranslate"><span class="pre">BaseKGELightning.training_step_outputs</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.BaseKGELightning.mem_of_model"><code class="docutils literal notranslate"><span class="pre">BaseKGELightning.mem_of_model()</span></code></a></li>
@@ -653,6 +655,7 @@
 <li class="toctree-l6"><a class="reference internal" href="#id238"><code class="docutils literal notranslate"><span class="pre">BaseKGE.get_embeddings()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="#id239"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.models.PykeenKGE"><code class="docutils literal notranslate"><span class="pre">PykeenKGE</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.PykeenKGE.model_kwargs"><code class="docutils literal notranslate"><span class="pre">PykeenKGE.model_kwargs</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.PykeenKGE.name"><code class="docutils literal notranslate"><span class="pre">PykeenKGE.name</span></code></a></li>
@@ -666,51 +669,52 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.PykeenKGE.forward_k_vs_sample"><code class="docutils literal notranslate"><span class="pre">PykeenKGE.forward_k_vs_sample()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l5"><a class="reference internal" href="#id239"><code class="docutils literal notranslate"><span class="pre">BaseKGE</span></code></a><ul>
-<li class="toctree-l6"><a class="reference internal" href="#id240"><code class="docutils literal notranslate"><span class="pre">BaseKGE.args</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id241"><code class="docutils literal notranslate"><span class="pre">BaseKGE.embedding_dim</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id242"><code class="docutils literal notranslate"><span class="pre">BaseKGE.num_entities</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id243"><code class="docutils literal notranslate"><span class="pre">BaseKGE.num_relations</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id244"><code class="docutils literal notranslate"><span class="pre">BaseKGE.num_tokens</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id245"><code class="docutils literal notranslate"><span class="pre">BaseKGE.learning_rate</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id246"><code class="docutils literal notranslate"><span class="pre">BaseKGE.apply_unit_norm</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id247"><code class="docutils literal notranslate"><span class="pre">BaseKGE.input_dropout_rate</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id248"><code class="docutils literal notranslate"><span class="pre">BaseKGE.hidden_dropout_rate</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id249"><code class="docutils literal notranslate"><span class="pre">BaseKGE.optimizer_name</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id250"><code class="docutils literal notranslate"><span class="pre">BaseKGE.feature_map_dropout_rate</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id251"><code class="docutils literal notranslate"><span class="pre">BaseKGE.kernel_size</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id252"><code class="docutils literal notranslate"><span class="pre">BaseKGE.num_of_output_channels</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id253"><code class="docutils literal notranslate"><span class="pre">BaseKGE.weight_decay</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id254"><code class="docutils literal notranslate"><span class="pre">BaseKGE.loss</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id255"><code class="docutils literal notranslate"><span class="pre">BaseKGE.selected_optimizer</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id256"><code class="docutils literal notranslate"><span class="pre">BaseKGE.normalizer_class</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id257"><code class="docutils literal notranslate"><span class="pre">BaseKGE.normalize_head_entity_embeddings</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id258"><code class="docutils literal notranslate"><span class="pre">BaseKGE.normalize_relation_embeddings</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id259"><code class="docutils literal notranslate"><span class="pre">BaseKGE.normalize_tail_entity_embeddings</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id260"><code class="docutils literal notranslate"><span class="pre">BaseKGE.hidden_normalizer</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id261"><code class="docutils literal notranslate"><span class="pre">BaseKGE.param_init</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id262"><code class="docutils literal notranslate"><span class="pre">BaseKGE.input_dp_ent_real</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id263"><code class="docutils literal notranslate"><span class="pre">BaseKGE.input_dp_rel_real</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id264"><code class="docutils literal notranslate"><span class="pre">BaseKGE.hidden_dropout</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id265"><code class="docutils literal notranslate"><span class="pre">BaseKGE.loss_history</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id266"><code class="docutils literal notranslate"><span class="pre">BaseKGE.byte_pair_encoding</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id267"><code class="docutils literal notranslate"><span class="pre">BaseKGE.max_length_subword_tokens</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id268"><code class="docutils literal notranslate"><span class="pre">BaseKGE.block_size</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id269"><code class="docutils literal notranslate"><span class="pre">BaseKGE.defer_large_embeddings</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id270"><code class="docutils literal notranslate"><span class="pre">BaseKGE.forward_byte_pair_encoded_k_vs_all()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id271"><code class="docutils literal notranslate"><span class="pre">BaseKGE.forward_byte_pair_encoded_triple()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id272"><code class="docutils literal notranslate"><span class="pre">BaseKGE.init_params_with_sanity_checking()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id273"><code class="docutils literal notranslate"><span class="pre">BaseKGE.forward()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id274"><code class="docutils literal notranslate"><span class="pre">BaseKGE.forward_triples()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id275"><code class="docutils literal notranslate"><span class="pre">BaseKGE.forward_k_vs_all()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id276"><code class="docutils literal notranslate"><span class="pre">BaseKGE.forward_k_vs_sample()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id277"><code class="docutils literal notranslate"><span class="pre">BaseKGE.get_triple_representation()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id278"><code class="docutils literal notranslate"><span class="pre">BaseKGE.get_head_relation_representation()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id279"><code class="docutils literal notranslate"><span class="pre">BaseKGE.get_sentence_representation()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id280"><code class="docutils literal notranslate"><span class="pre">BaseKGE.get_bpe_head_and_relation_representation()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id281"><code class="docutils literal notranslate"><span class="pre">BaseKGE.get_embeddings()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#id240"><code class="docutils literal notranslate"><span class="pre">BaseKGE</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#id241"><code class="docutils literal notranslate"><span class="pre">BaseKGE.args</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id242"><code class="docutils literal notranslate"><span class="pre">BaseKGE.embedding_dim</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id243"><code class="docutils literal notranslate"><span class="pre">BaseKGE.num_entities</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id244"><code class="docutils literal notranslate"><span class="pre">BaseKGE.num_relations</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id245"><code class="docutils literal notranslate"><span class="pre">BaseKGE.num_tokens</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id246"><code class="docutils literal notranslate"><span class="pre">BaseKGE.learning_rate</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id247"><code class="docutils literal notranslate"><span class="pre">BaseKGE.apply_unit_norm</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id248"><code class="docutils literal notranslate"><span class="pre">BaseKGE.input_dropout_rate</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id249"><code class="docutils literal notranslate"><span class="pre">BaseKGE.hidden_dropout_rate</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id250"><code class="docutils literal notranslate"><span class="pre">BaseKGE.optimizer_name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id251"><code class="docutils literal notranslate"><span class="pre">BaseKGE.feature_map_dropout_rate</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id252"><code class="docutils literal notranslate"><span class="pre">BaseKGE.kernel_size</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id253"><code class="docutils literal notranslate"><span class="pre">BaseKGE.num_of_output_channels</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id254"><code class="docutils literal notranslate"><span class="pre">BaseKGE.weight_decay</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id255"><code class="docutils literal notranslate"><span class="pre">BaseKGE.loss</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id256"><code class="docutils literal notranslate"><span class="pre">BaseKGE.selected_optimizer</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id257"><code class="docutils literal notranslate"><span class="pre">BaseKGE.normalizer_class</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id258"><code class="docutils literal notranslate"><span class="pre">BaseKGE.normalize_head_entity_embeddings</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id259"><code class="docutils literal notranslate"><span class="pre">BaseKGE.normalize_relation_embeddings</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id260"><code class="docutils literal notranslate"><span class="pre">BaseKGE.normalize_tail_entity_embeddings</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id261"><code class="docutils literal notranslate"><span class="pre">BaseKGE.hidden_normalizer</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id262"><code class="docutils literal notranslate"><span class="pre">BaseKGE.param_init</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id263"><code class="docutils literal notranslate"><span class="pre">BaseKGE.input_dp_ent_real</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id264"><code class="docutils literal notranslate"><span class="pre">BaseKGE.input_dp_rel_real</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id265"><code class="docutils literal notranslate"><span class="pre">BaseKGE.hidden_dropout</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id266"><code class="docutils literal notranslate"><span class="pre">BaseKGE.loss_history</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id267"><code class="docutils literal notranslate"><span class="pre">BaseKGE.byte_pair_encoding</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id268"><code class="docutils literal notranslate"><span class="pre">BaseKGE.max_length_subword_tokens</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id269"><code class="docutils literal notranslate"><span class="pre">BaseKGE.block_size</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id270"><code class="docutils literal notranslate"><span class="pre">BaseKGE.defer_large_embeddings</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id271"><code class="docutils literal notranslate"><span class="pre">BaseKGE.forward_byte_pair_encoded_k_vs_all()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id272"><code class="docutils literal notranslate"><span class="pre">BaseKGE.forward_byte_pair_encoded_triple()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id273"><code class="docutils literal notranslate"><span class="pre">BaseKGE.init_params_with_sanity_checking()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id274"><code class="docutils literal notranslate"><span class="pre">BaseKGE.forward()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id275"><code class="docutils literal notranslate"><span class="pre">BaseKGE.forward_triples()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id276"><code class="docutils literal notranslate"><span class="pre">BaseKGE.forward_k_vs_all()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id277"><code class="docutils literal notranslate"><span class="pre">BaseKGE.forward_k_vs_sample()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id278"><code class="docutils literal notranslate"><span class="pre">BaseKGE.get_triple_representation()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id279"><code class="docutils literal notranslate"><span class="pre">BaseKGE.get_head_relation_representation()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id280"><code class="docutils literal notranslate"><span class="pre">BaseKGE.get_sentence_representation()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id281"><code class="docutils literal notranslate"><span class="pre">BaseKGE.get_bpe_head_and_relation_representation()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id282"><code class="docutils literal notranslate"><span class="pre">BaseKGE.get_embeddings()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="#id283"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.models.FMult"><code class="docutils literal notranslate"><span class="pre">FMult</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.FMult.name"><code class="docutils literal notranslate"><span class="pre">FMult.name</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.FMult.entity_embeddings"><code class="docutils literal notranslate"><span class="pre">FMult.entity_embeddings</span></code></a></li>
@@ -865,6 +869,22 @@
 </ul>
 </div>
 </section>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id283" title="dicee.models.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id283" title="dicee.models.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id283" title="dicee.models.logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logger</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
@@ -875,7 +895,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.BaseKGELightning" title="dicee.models.BaseKGELightning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGELightning</span></code></a></p></td>
 <td><p>Thin PyTorch Lightning wrapper shared by all KGE models.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id239" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id240" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all Knowledge Graph Embedding models.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#id188" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
@@ -884,7 +904,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.Block" title="dicee.models.Block"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Block</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id239" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#id240" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all Knowledge Graph Embedding models.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.DistMult" title="dicee.models.DistMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DistMult</span></code></a></p></td>
@@ -905,7 +925,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.CoKE" title="dicee.models.CoKE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CoKE</span></code></a></p></td>
 <td><p>Contextualized Knowledge Graph Embedding (CoKE) model.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id239" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id240" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all Knowledge Graph Embedding models.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.ConEx" title="dicee.models.ConEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConEx</span></code></a></p></td>
@@ -917,7 +937,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.ComplEx" title="dicee.models.ComplEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ComplEx</span></code></a></p></td>
 <td><p>Base class for all Knowledge Graph Embedding models.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id239" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id240" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all Knowledge Graph Embedding models.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#id188" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
@@ -932,7 +952,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.AConvQ" title="dicee.models.AConvQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConvQ</span></code></a></p></td>
 <td><p>Additive Convolutional Quaternion Knowledge Graph Embeddings</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id239" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#id240" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all Knowledge Graph Embedding models.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#id188" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
@@ -959,13 +979,13 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.KeciTransformer" title="dicee.models.KeciTransformer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KeciTransformer</span></code></a></p></td>
 <td><p>Keci with Transformer architecture.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id239" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id240" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all Knowledge Graph Embedding models.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.PykeenKGE" title="dicee.models.PykeenKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PykeenKGE</span></code></a></p></td>
 <td><p>A class for using knowledge graph embedding models implemented in Pykeen</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id239" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id240" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all Knowledge Graph Embedding models.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.FMult" title="dicee.models.FMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FMult</span></code></a></p></td>
@@ -1213,6 +1233,11 @@ Default: None</p>
 
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="dicee.models.logger">
+<span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#dicee.models.logger" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.BaseKGELightning">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">BaseKGELightning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGELightning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.BaseKGELightning" title="Link to this definition"></a></dt>
@@ -1221,7 +1246,7 @@ Default: None</p>
 <p>Provides the standard Lightning training loop hooks (<code class="docutils literal notranslate"><span class="pre">training_step</span></code>,
 <code class="docutils literal notranslate"><span class="pre">on_train_epoch_end</span></code>, <code class="docutils literal notranslate"><span class="pre">configure_optimizers</span></code>) as well as a helper
 for reporting model size.  All concrete KGE models should extend
-<a class="reference internal" href="#id239" title="dicee.models.BaseKGE"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseKGE</span></code></a> rather than this class directly.</p>
+<a class="reference internal" href="#id240" title="dicee.models.BaseKGE"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseKGE</span></code></a> rather than this class directly.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.BaseKGELightning.training_step_outputs">
 <span class="sig-name descname"><span class="pre">training_step_outputs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></span><a class="headerlink" href="#dicee.models.BaseKGELightning.training_step_outputs" title="Link to this definition"></a></dt>
@@ -1432,7 +1457,7 @@ There is no need to set it yourself.</p>
 <span class="sig-name descname"><span class="pre">configure_optimizers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGELightning.configure_optimizers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.BaseKGELightning.configure_optimizers" title="Link to this definition"></a></dt>
 <dd><p>Instantiate and return the optimiser for training.</p>
 <p>The optimiser type is taken from <code class="docutils literal notranslate"><span class="pre">self.optimizer_name</span></code> which is set
-in <a class="reference internal" href="#id272" title="dicee.models.BaseKGE.init_params_with_sanity_checking"><code class="xref py py-meth docutils literal notranslate"><span class="pre">BaseKGE.init_params_with_sanity_checking()</span></code></a> from the
+in <a class="reference internal" href="#id273" title="dicee.models.BaseKGE.init_params_with_sanity_checking"><code class="xref py py-meth docutils literal notranslate"><span class="pre">BaseKGE.init_params_with_sanity_checking()</span></code></a> from the
 <code class="docutils literal notranslate"><span class="pre">--optim</span></code> argument.  Supported values: <code class="docutils literal notranslate"><span class="pre">'SGD'</span></code>, <code class="docutils literal notranslate"><span class="pre">'Adam'</span></code>,
 <code class="docutils literal notranslate"><span class="pre">'Adopt'</span></code>, <code class="docutils literal notranslate"><span class="pre">'AdamW'</span></code>, <code class="docutils literal notranslate"><span class="pre">'NAdam'</span></code>, <code class="docutils literal notranslate"><span class="pre">'Adagrad'</span></code>, <code class="docutils literal notranslate"><span class="pre">'ASGD'</span></code>,
 <code class="docutils literal notranslate"><span class="pre">'Muon'</span></code>.</p>
@@ -1463,8 +1488,8 @@ routing logic that dispatches <code class="docutils literal notranslate"><span c
 scoring method.</p>
 <p>Sub-classes must implement at minimum:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="#id274" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a> — score a batch of <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> triples.</p></li>
-<li><p><a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a> — score a <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r)</span></code> batch against every entity.</p></li>
+<li><p><a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a> — score a batch of <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> triples.</p></li>
+<li><p><a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a> — score a <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r)</span></code> batch against every entity.</p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1683,18 +1708,18 @@ that minimal <code class="docutils literal notranslate"><span class="pre">args</
 <p>Inspects the shape and type of <em>x</em> to decide which low-level scorer
 to call:</p>
 <ul class="simple">
-<li><p>Tuple <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y_idx)</span></code>   → <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">3)</span></code> tensor  → <a class="reference internal" href="#id274" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">2)</span></code> tensor  → <a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a></p></li>
-<li><p>BPE triple tensor      → <a class="reference internal" href="#id271" title="dicee.models.BaseKGE.forward_byte_pair_encoded_triple"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_triple()</span></code></a></p></li>
-<li><p>BPE pair tensor        → <a class="reference internal" href="#id270" title="dicee.models.BaseKGE.forward_byte_pair_encoded_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_k_vs_all()</span></code></a></p></li>
+<li><p>Tuple <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y_idx)</span></code>   → <a class="reference internal" href="#id277" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">3)</span></code> tensor  → <a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">2)</span></code> tensor  → <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a></p></li>
+<li><p>BPE triple tensor      → <a class="reference internal" href="#id272" title="dicee.models.BaseKGE.forward_byte_pair_encoded_triple"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_triple()</span></code></a></p></li>
+<li><p>BPE pair tensor        → <a class="reference internal" href="#id271" title="dicee.models.BaseKGE.forward_byte_pair_encoded_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_k_vs_all()</span></code></a></p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<em>torch.LongTensor</em><em> or </em><em>Tuple</em><em>[</em><em>torch.LongTensor</em><em>, </em><em>torch.LongTensor</em><em>]</em>) – Either a plain index tensor or a <code class="docutils literal notranslate"><span class="pre">(triple_idx,</span> <span class="pre">target_idx)</span></code>
 tuple for sample-based labelling.</p></li>
-<li><p><strong>y_idx</strong> (<em>torch.LongTensor</em><em>, </em><em>optional</em>) – Target entity indices used by <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a>.
+<li><p><strong>y_idx</strong> (<em>torch.LongTensor</em><em>, </em><em>optional</em>) – Target entity indices used by <a class="reference internal" href="#id277" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a>.
 Ignored when <em>x</em> is a plain tensor.</p></li>
 </ul>
 </dd>
@@ -1953,8 +1978,8 @@ routing logic that dispatches <code class="docutils literal notranslate"><span c
 scoring method.</p>
 <p>Sub-classes must implement at minimum:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="#id274" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a> — score a batch of <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> triples.</p></li>
-<li><p><a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a> — score a <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r)</span></code> batch against every entity.</p></li>
+<li><p><a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a> — score a batch of <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> triples.</p></li>
+<li><p><a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a> — score a <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r)</span></code> batch against every entity.</p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -2173,18 +2198,18 @@ that minimal <code class="docutils literal notranslate"><span class="pre">args</
 <p>Inspects the shape and type of <em>x</em> to decide which low-level scorer
 to call:</p>
 <ul class="simple">
-<li><p>Tuple <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y_idx)</span></code>   → <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">3)</span></code> tensor  → <a class="reference internal" href="#id274" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">2)</span></code> tensor  → <a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a></p></li>
-<li><p>BPE triple tensor      → <a class="reference internal" href="#id271" title="dicee.models.BaseKGE.forward_byte_pair_encoded_triple"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_triple()</span></code></a></p></li>
-<li><p>BPE pair tensor        → <a class="reference internal" href="#id270" title="dicee.models.BaseKGE.forward_byte_pair_encoded_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_k_vs_all()</span></code></a></p></li>
+<li><p>Tuple <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y_idx)</span></code>   → <a class="reference internal" href="#id277" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">3)</span></code> tensor  → <a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">2)</span></code> tensor  → <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a></p></li>
+<li><p>BPE triple tensor      → <a class="reference internal" href="#id272" title="dicee.models.BaseKGE.forward_byte_pair_encoded_triple"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_triple()</span></code></a></p></li>
+<li><p>BPE pair tensor        → <a class="reference internal" href="#id271" title="dicee.models.BaseKGE.forward_byte_pair_encoded_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_k_vs_all()</span></code></a></p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<em>torch.LongTensor</em><em> or </em><em>Tuple</em><em>[</em><em>torch.LongTensor</em><em>, </em><em>torch.LongTensor</em><em>]</em>) – Either a plain index tensor or a <code class="docutils literal notranslate"><span class="pre">(triple_idx,</span> <span class="pre">target_idx)</span></code>
 tuple for sample-based labelling.</p></li>
-<li><p><strong>y_idx</strong> (<em>torch.LongTensor</em><em>, </em><em>optional</em>) – Target entity indices used by <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a>.
+<li><p><strong>y_idx</strong> (<em>torch.LongTensor</em><em>, </em><em>optional</em>) – Target entity indices used by <a class="reference internal" href="#id277" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a>.
 Ignored when <em>x</em> is a plain tensor.</p></li>
 </ul>
 </dd>
@@ -2828,8 +2853,8 @@ routing logic that dispatches <code class="docutils literal notranslate"><span c
 scoring method.</p>
 <p>Sub-classes must implement at minimum:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="#id274" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a> — score a batch of <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> triples.</p></li>
-<li><p><a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a> — score a <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r)</span></code> batch against every entity.</p></li>
+<li><p><a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a> — score a batch of <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> triples.</p></li>
+<li><p><a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a> — score a <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r)</span></code> batch against every entity.</p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -3048,18 +3073,18 @@ that minimal <code class="docutils literal notranslate"><span class="pre">args</
 <p>Inspects the shape and type of <em>x</em> to decide which low-level scorer
 to call:</p>
 <ul class="simple">
-<li><p>Tuple <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y_idx)</span></code>   → <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">3)</span></code> tensor  → <a class="reference internal" href="#id274" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">2)</span></code> tensor  → <a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a></p></li>
-<li><p>BPE triple tensor      → <a class="reference internal" href="#id271" title="dicee.models.BaseKGE.forward_byte_pair_encoded_triple"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_triple()</span></code></a></p></li>
-<li><p>BPE pair tensor        → <a class="reference internal" href="#id270" title="dicee.models.BaseKGE.forward_byte_pair_encoded_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_k_vs_all()</span></code></a></p></li>
+<li><p>Tuple <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y_idx)</span></code>   → <a class="reference internal" href="#id277" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">3)</span></code> tensor  → <a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">2)</span></code> tensor  → <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a></p></li>
+<li><p>BPE triple tensor      → <a class="reference internal" href="#id272" title="dicee.models.BaseKGE.forward_byte_pair_encoded_triple"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_triple()</span></code></a></p></li>
+<li><p>BPE pair tensor        → <a class="reference internal" href="#id271" title="dicee.models.BaseKGE.forward_byte_pair_encoded_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_k_vs_all()</span></code></a></p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<em>torch.LongTensor</em><em> or </em><em>Tuple</em><em>[</em><em>torch.LongTensor</em><em>, </em><em>torch.LongTensor</em><em>]</em>) – Either a plain index tensor or a <code class="docutils literal notranslate"><span class="pre">(triple_idx,</span> <span class="pre">target_idx)</span></code>
 tuple for sample-based labelling.</p></li>
-<li><p><strong>y_idx</strong> (<em>torch.LongTensor</em><em>, </em><em>optional</em>) – Target entity indices used by <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a>.
+<li><p><strong>y_idx</strong> (<em>torch.LongTensor</em><em>, </em><em>optional</em>) – Target entity indices used by <a class="reference internal" href="#id277" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a>.
 Ignored when <em>x</em> is a plain tensor.</p></li>
 </ul>
 </dd>
@@ -3515,8 +3540,8 @@ routing logic that dispatches <code class="docutils literal notranslate"><span c
 scoring method.</p>
 <p>Sub-classes must implement at minimum:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="#id274" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a> — score a batch of <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> triples.</p></li>
-<li><p><a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a> — score a <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r)</span></code> batch against every entity.</p></li>
+<li><p><a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a> — score a batch of <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> triples.</p></li>
+<li><p><a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a> — score a <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r)</span></code> batch against every entity.</p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -3735,18 +3760,18 @@ that minimal <code class="docutils literal notranslate"><span class="pre">args</
 <p>Inspects the shape and type of <em>x</em> to decide which low-level scorer
 to call:</p>
 <ul class="simple">
-<li><p>Tuple <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y_idx)</span></code>   → <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">3)</span></code> tensor  → <a class="reference internal" href="#id274" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">2)</span></code> tensor  → <a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a></p></li>
-<li><p>BPE triple tensor      → <a class="reference internal" href="#id271" title="dicee.models.BaseKGE.forward_byte_pair_encoded_triple"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_triple()</span></code></a></p></li>
-<li><p>BPE pair tensor        → <a class="reference internal" href="#id270" title="dicee.models.BaseKGE.forward_byte_pair_encoded_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_k_vs_all()</span></code></a></p></li>
+<li><p>Tuple <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y_idx)</span></code>   → <a class="reference internal" href="#id277" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">3)</span></code> tensor  → <a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">2)</span></code> tensor  → <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a></p></li>
+<li><p>BPE triple tensor      → <a class="reference internal" href="#id272" title="dicee.models.BaseKGE.forward_byte_pair_encoded_triple"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_triple()</span></code></a></p></li>
+<li><p>BPE pair tensor        → <a class="reference internal" href="#id271" title="dicee.models.BaseKGE.forward_byte_pair_encoded_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_k_vs_all()</span></code></a></p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<em>torch.LongTensor</em><em> or </em><em>Tuple</em><em>[</em><em>torch.LongTensor</em><em>, </em><em>torch.LongTensor</em><em>]</em>) – Either a plain index tensor or a <code class="docutils literal notranslate"><span class="pre">(triple_idx,</span> <span class="pre">target_idx)</span></code>
 tuple for sample-based labelling.</p></li>
-<li><p><strong>y_idx</strong> (<em>torch.LongTensor</em><em>, </em><em>optional</em>) – Target entity indices used by <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a>.
+<li><p><strong>y_idx</strong> (<em>torch.LongTensor</em><em>, </em><em>optional</em>) – Target entity indices used by <a class="reference internal" href="#id277" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a>.
 Ignored when <em>x</em> is a plain tensor.</p></li>
 </ul>
 </dd>
@@ -4052,7 +4077,7 @@ The tail representations.</p></li>
 <span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/quaternion.html#QMult.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.QMult.forward_k_vs_sample" title="Link to this definition"></a></dt>
 <dd><p>Completed.
 Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
-[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id286"><span class="problematic" id="id287">|Entities|</span></a>)
+[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id288"><span class="problematic" id="id289">|Entities|</span></a>)
 Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</p>
 </dd></dl>
 
@@ -4135,7 +4160,7 @@ Given a batch of head entities and relations =&gt; shape (size of batch,| Entiti
 <dt class="sig sig-object py" id="dicee.models.ConvQ.forward_k_vs_all">
 <span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/quaternion.html#ConvQ.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ConvQ.forward_k_vs_all" title="Link to this definition"></a></dt>
 <dd><p>Given a head entity and a relation (h,r), we compute scores for all entities.
-[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id288"><span class="problematic" id="id289">|Entities|</span></a>)
+[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id290"><span class="problematic" id="id291">|Entities|</span></a>)
 Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</p>
 </dd></dl>
 
@@ -4218,7 +4243,7 @@ Given a batch of head entities and relations =&gt; shape (size of batch,| Entiti
 <dt class="sig sig-object py" id="dicee.models.AConvQ.forward_k_vs_all">
 <span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/quaternion.html#AConvQ.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.AConvQ.forward_k_vs_all" title="Link to this definition"></a></dt>
 <dd><p>Given a head entity and a relation (h,r), we compute scores for all entities.
-[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id290"><span class="problematic" id="id291">|Entities|</span></a>)
+[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id292"><span class="problematic" id="id293">|Entities|</span></a>)
 Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</p>
 </dd></dl>
 
@@ -4235,8 +4260,8 @@ routing logic that dispatches <code class="docutils literal notranslate"><span c
 scoring method.</p>
 <p>Sub-classes must implement at minimum:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="#id274" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a> — score a batch of <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> triples.</p></li>
-<li><p><a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a> — score a <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r)</span></code> batch against every entity.</p></li>
+<li><p><a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a> — score a batch of <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> triples.</p></li>
+<li><p><a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a> — score a <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r)</span></code> batch against every entity.</p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -4455,18 +4480,18 @@ that minimal <code class="docutils literal notranslate"><span class="pre">args</
 <p>Inspects the shape and type of <em>x</em> to decide which low-level scorer
 to call:</p>
 <ul class="simple">
-<li><p>Tuple <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y_idx)</span></code>   → <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">3)</span></code> tensor  → <a class="reference internal" href="#id274" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">2)</span></code> tensor  → <a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a></p></li>
-<li><p>BPE triple tensor      → <a class="reference internal" href="#id271" title="dicee.models.BaseKGE.forward_byte_pair_encoded_triple"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_triple()</span></code></a></p></li>
-<li><p>BPE pair tensor        → <a class="reference internal" href="#id270" title="dicee.models.BaseKGE.forward_byte_pair_encoded_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_k_vs_all()</span></code></a></p></li>
+<li><p>Tuple <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y_idx)</span></code>   → <a class="reference internal" href="#id277" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">3)</span></code> tensor  → <a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">2)</span></code> tensor  → <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a></p></li>
+<li><p>BPE triple tensor      → <a class="reference internal" href="#id272" title="dicee.models.BaseKGE.forward_byte_pair_encoded_triple"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_triple()</span></code></a></p></li>
+<li><p>BPE pair tensor        → <a class="reference internal" href="#id271" title="dicee.models.BaseKGE.forward_byte_pair_encoded_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_k_vs_all()</span></code></a></p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<em>torch.LongTensor</em><em> or </em><em>Tuple</em><em>[</em><em>torch.LongTensor</em><em>, </em><em>torch.LongTensor</em><em>]</em>) – Either a plain index tensor or a <code class="docutils literal notranslate"><span class="pre">(triple_idx,</span> <span class="pre">target_idx)</span></code>
 tuple for sample-based labelling.</p></li>
-<li><p><strong>y_idx</strong> (<em>torch.LongTensor</em><em>, </em><em>optional</em>) – Target entity indices used by <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a>.
+<li><p><strong>y_idx</strong> (<em>torch.LongTensor</em><em>, </em><em>optional</em>) – Target entity indices used by <a class="reference internal" href="#id277" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a>.
 Ignored when <em>x</em> is a plain tensor.</p></li>
 </ul>
 </dd>
@@ -4708,7 +4733,7 @@ Required keys: <code class="docutils literal notranslate"><span class="pre">embe
 <span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/octonion.html#OMult.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.OMult.forward_k_vs_all" title="Link to this definition"></a></dt>
 <dd><p>Completed.
 Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
-[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id292"><span class="problematic" id="id293">|Entities|</span></a>)
+[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id294"><span class="problematic" id="id295">|Entities|</span></a>)
 Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</p>
 </dd></dl>
 
@@ -4803,7 +4828,7 @@ Required keys: <code class="docutils literal notranslate"><span class="pre">embe
 <dt class="sig sig-object py" id="dicee.models.ConvO.forward_k_vs_all">
 <span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/octonion.html#ConvO.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ConvO.forward_k_vs_all" title="Link to this definition"></a></dt>
 <dd><p>Given a head entity and a relation (h,r), we compute scores for all entities.
-[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id294"><span class="problematic" id="id295">|Entities|</span></a>)
+[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id296"><span class="problematic" id="id297">|Entities|</span></a>)
 Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</p>
 </dd></dl>
 
@@ -4881,7 +4906,7 @@ Given a batch of head entities and relations =&gt; shape (size of batch,| Entiti
 <dt class="sig sig-object py" id="dicee.models.AConvO.forward_k_vs_all">
 <span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/octonion.html#AConvO.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.AConvO.forward_k_vs_all" title="Link to this definition"></a></dt>
 <dd><p>Given a head entity and a relation (h,r), we compute scores for all entities.
-[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id296"><span class="problematic" id="id297">|Entities|</span></a>)
+[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id298"><span class="problematic" id="id299">|Entities|</span></a>)
 Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</p>
 </dd></dl>
 
@@ -4905,7 +4930,7 @@ the resulting quotient is stored as <code class="docutils literal notranslate"><
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>args</strong> (<em>dict</em>) – Configuration dictionary.  Recognised keys (beyond those in
-<a class="reference internal" href="#id239" title="dicee.models.BaseKGE"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseKGE</span></code></a>): <code class="docutils literal notranslate"><span class="pre">p</span></code> (int, default 0) and <code class="docutils literal notranslate"><span class="pre">q</span></code> (int, default 0).</p>
+<a class="reference internal" href="#id240" title="dicee.models.BaseKGE"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseKGE</span></code></a>): <code class="docutils literal notranslate"><span class="pre">p</span></code> (int, default 0) and <code class="docutils literal notranslate"><span class="pre">q</span></code> (int, default 0).</p>
 </dd>
 </dl>
 <p class="rubric">References</p>
@@ -5128,7 +5153,7 @@ result against the entity embedding matrix <em>E</em>.</p>
 Parameter
 ———
 x: torch.LongTensor with (n,2) shape
-:rtype: torch.FloatTensor with (n, <a href="#id298"><span class="problematic" id="id299">|E|</span></a>) shape</p>
+:rtype: torch.FloatTensor with (n, <a href="#id300"><span class="problematic" id="id301">|E|</span></a>) shape</p>
 </dd></dl>
 
 <dl class="py method">
@@ -5339,7 +5364,7 @@ s3, s4 and s5\]</div>
 Parameter
 ———
 x: torch.LongTensor with (n, ) shape
-:rtype: torch.FloatTensor with (n, <a href="#id300"><span class="problematic" id="id301">|E|</span></a>) shape</p>
+:rtype: torch.FloatTensor with (n, <a href="#id302"><span class="problematic" id="id303">|E|</span></a>) shape</p>
 </dd></dl>
 
 <dl class="py method">
@@ -5532,7 +5557,7 @@ for i in range(p):</p>
 <p>x: torch.LongTensor with (n,2) shape</p>
 <dl class="field-list simple">
 <dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor with (n, <a href="#id302"><span class="problematic" id="id303">|E|</span></a>) shape</p>
+<dd class="field-odd"><p>torch.FloatTensor with (n, <a href="#id304"><span class="problematic" id="id305">|E|</span></a>) shape</p>
 </dd>
 </dl>
 </section>
@@ -5551,8 +5576,8 @@ routing logic that dispatches <code class="docutils literal notranslate"><span c
 scoring method.</p>
 <p>Sub-classes must implement at minimum:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="#id274" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a> — score a batch of <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> triples.</p></li>
-<li><p><a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a> — score a <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r)</span></code> batch against every entity.</p></li>
+<li><p><a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a> — score a batch of <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> triples.</p></li>
+<li><p><a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a> — score a <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r)</span></code> batch against every entity.</p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5771,18 +5796,18 @@ that minimal <code class="docutils literal notranslate"><span class="pre">args</
 <p>Inspects the shape and type of <em>x</em> to decide which low-level scorer
 to call:</p>
 <ul class="simple">
-<li><p>Tuple <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y_idx)</span></code>   → <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">3)</span></code> tensor  → <a class="reference internal" href="#id274" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">2)</span></code> tensor  → <a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a></p></li>
-<li><p>BPE triple tensor      → <a class="reference internal" href="#id271" title="dicee.models.BaseKGE.forward_byte_pair_encoded_triple"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_triple()</span></code></a></p></li>
-<li><p>BPE pair tensor        → <a class="reference internal" href="#id270" title="dicee.models.BaseKGE.forward_byte_pair_encoded_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_k_vs_all()</span></code></a></p></li>
+<li><p>Tuple <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y_idx)</span></code>   → <a class="reference internal" href="#id277" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">3)</span></code> tensor  → <a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">2)</span></code> tensor  → <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a></p></li>
+<li><p>BPE triple tensor      → <a class="reference internal" href="#id272" title="dicee.models.BaseKGE.forward_byte_pair_encoded_triple"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_triple()</span></code></a></p></li>
+<li><p>BPE pair tensor        → <a class="reference internal" href="#id271" title="dicee.models.BaseKGE.forward_byte_pair_encoded_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_k_vs_all()</span></code></a></p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<em>torch.LongTensor</em><em> or </em><em>Tuple</em><em>[</em><em>torch.LongTensor</em><em>, </em><em>torch.LongTensor</em><em>]</em>) – Either a plain index tensor or a <code class="docutils literal notranslate"><span class="pre">(triple_idx,</span> <span class="pre">target_idx)</span></code>
 tuple for sample-based labelling.</p></li>
-<li><p><strong>y_idx</strong> (<em>torch.LongTensor</em><em>, </em><em>optional</em>) – Target entity indices used by <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a>.
+<li><p><strong>y_idx</strong> (<em>torch.LongTensor</em><em>, </em><em>optional</em>) – Target entity indices used by <a class="reference internal" href="#id277" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a>.
 Ignored when <em>x</em> is a plain tensor.</p></li>
 </ul>
 </dd>
@@ -5942,6 +5967,11 @@ over the <code class="docutils literal notranslate"><span class="pre">(T,</span>
 
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="id239">
+<span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#id239" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.PykeenKGE">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">PykeenKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/pykeen_models.html#PykeenKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.PykeenKGE" title="Link to this definition"></a></dt>
@@ -6058,8 +6088,8 @@ of sampled target entities.</p>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="id239">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">BaseKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id239" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id240">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">BaseKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id240" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#dicee.models.BaseKGELightning" title="dicee.models.BaseKGELightning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGELightning</span></code></a></p>
 <p>Base class for all Knowledge Graph Embedding models.</p>
 <p>Inherits the Lightning training loop from <a class="reference internal" href="#dicee.models.BaseKGELightning" title="dicee.models.BaseKGELightning"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseKGELightning</span></code></a> and
@@ -6068,8 +6098,8 @@ routing logic that dispatches <code class="docutils literal notranslate"><span c
 scoring method.</p>
 <p>Sub-classes must implement at minimum:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="#id274" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a> — score a batch of <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> triples.</p></li>
-<li><p><a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a> — score a <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r)</span></code> batch against every entity.</p></li>
+<li><p><a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a> — score a batch of <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> triples.</p></li>
+<li><p><a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a> — score a <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r)</span></code> batch against every entity.</p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -6080,158 +6110,158 @@ Required keys: <code class="docutils literal notranslate"><span class="pre">embe
 </dd>
 </dl>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id240">
-<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#id240" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
 <dt class="sig sig-object py" id="id241">
-<span class="sig-name descname"><span class="pre">embedding_dim</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id241" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#id241" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id242">
-<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id242" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">embedding_dim</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id242" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id243">
-<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id243" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id243" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id244">
-<span class="sig-name descname"><span class="pre">num_tokens</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id244" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id244" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id245">
-<span class="sig-name descname"><span class="pre">learning_rate</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id245" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_tokens</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id245" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id246">
-<span class="sig-name descname"><span class="pre">apply_unit_norm</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id246" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">learning_rate</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id246" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id247">
-<span class="sig-name descname"><span class="pre">input_dropout_rate</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id247" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply_unit_norm</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id247" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id248">
-<span class="sig-name descname"><span class="pre">hidden_dropout_rate</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id248" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">input_dropout_rate</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id248" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id249">
-<span class="sig-name descname"><span class="pre">optimizer_name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id249" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">hidden_dropout_rate</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id249" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id250">
-<span class="sig-name descname"><span class="pre">feature_map_dropout_rate</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id250" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">optimizer_name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id250" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id251">
-<span class="sig-name descname"><span class="pre">kernel_size</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id251" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">feature_map_dropout_rate</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id251" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id252">
-<span class="sig-name descname"><span class="pre">num_of_output_channels</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id252" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">kernel_size</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id252" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id253">
-<span class="sig-name descname"><span class="pre">weight_decay</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id253" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_of_output_channels</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id253" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id254">
-<span class="sig-name descname"><span class="pre">loss</span></span><a class="headerlink" href="#id254" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">weight_decay</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id254" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id255">
-<span class="sig-name descname"><span class="pre">selected_optimizer</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id255" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">loss</span></span><a class="headerlink" href="#id255" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id256">
-<span class="sig-name descname"><span class="pre">normalizer_class</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id256" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">selected_optimizer</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id256" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id257">
-<span class="sig-name descname"><span class="pre">normalize_head_entity_embeddings</span></span><a class="headerlink" href="#id257" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">normalizer_class</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id257" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id258">
-<span class="sig-name descname"><span class="pre">normalize_relation_embeddings</span></span><a class="headerlink" href="#id258" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">normalize_head_entity_embeddings</span></span><a class="headerlink" href="#id258" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id259">
-<span class="sig-name descname"><span class="pre">normalize_tail_entity_embeddings</span></span><a class="headerlink" href="#id259" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">normalize_relation_embeddings</span></span><a class="headerlink" href="#id259" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id260">
-<span class="sig-name descname"><span class="pre">hidden_normalizer</span></span><a class="headerlink" href="#id260" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">normalize_tail_entity_embeddings</span></span><a class="headerlink" href="#id260" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id261">
-<span class="sig-name descname"><span class="pre">param_init</span></span><a class="headerlink" href="#id261" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">hidden_normalizer</span></span><a class="headerlink" href="#id261" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id262">
-<span class="sig-name descname"><span class="pre">input_dp_ent_real</span></span><a class="headerlink" href="#id262" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">param_init</span></span><a class="headerlink" href="#id262" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id263">
-<span class="sig-name descname"><span class="pre">input_dp_rel_real</span></span><a class="headerlink" href="#id263" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">input_dp_ent_real</span></span><a class="headerlink" href="#id263" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id264">
-<span class="sig-name descname"><span class="pre">hidden_dropout</span></span><a class="headerlink" href="#id264" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">input_dp_rel_real</span></span><a class="headerlink" href="#id264" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id265">
-<span class="sig-name descname"><span class="pre">loss_history</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></span><a class="headerlink" href="#id265" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">hidden_dropout</span></span><a class="headerlink" href="#id265" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id266">
-<span class="sig-name descname"><span class="pre">byte_pair_encoding</span></span><a class="headerlink" href="#id266" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">loss_history</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></span><a class="headerlink" href="#id266" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id267">
-<span class="sig-name descname"><span class="pre">max_length_subword_tokens</span></span><a class="headerlink" href="#id267" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">byte_pair_encoding</span></span><a class="headerlink" href="#id267" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id268">
-<span class="sig-name descname"><span class="pre">block_size</span></span><a class="headerlink" href="#id268" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">max_length_subword_tokens</span></span><a class="headerlink" href="#id268" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id269">
-<span class="sig-name descname"><span class="pre">defer_large_embeddings</span></span><a class="headerlink" href="#id269" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">block_size</span></span><a class="headerlink" href="#id269" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id270">
+<span class="sig-name descname"><span class="pre">defer_large_embeddings</span></span><a class="headerlink" href="#id270" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id270">
-<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id270" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id271">
+<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id271" title="Link to this definition"></a></dt>
 <dd><p>KvsAll scoring for BPE-encoded head entities and relations.</p>
 <p>Retrieves subword-unit embeddings for the head entity and relation,
 reduces them to fixed-size vectors via a linear projection, then
@@ -6252,8 +6282,8 @@ indexes <code class="docutils literal notranslate"><span class="pre">[head,</spa
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id271">
-<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_triple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_triple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id271" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id272">
+<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_triple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_triple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id272" title="Link to this definition"></a></dt>
 <dd><p>NegSample scoring for BPE-encoded <code class="docutils literal notranslate"><span class="pre">(head,</span> <span class="pre">relation,</span> <span class="pre">tail)</span></code> triples.</p>
 <p>Retrieves subword-unit embeddings for all three elements and reduces
 them to fixed-size vectors via a linear projection before computing
@@ -6272,8 +6302,8 @@ the triple score.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id272">
-<span class="sig-name descname"><span class="pre">init_params_with_sanity_checking</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.init_params_with_sanity_checking"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id272" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id273">
+<span class="sig-name descname"><span class="pre">init_params_with_sanity_checking</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.init_params_with_sanity_checking"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id273" title="Link to this definition"></a></dt>
 <dd><p>Populate model hyper-parameters from <code class="docutils literal notranslate"><span class="pre">self.args</span></code> with safe defaults.</p>
 <p>Reads embedding dimension, learning rate, dropout rates, normalisation
 strategy, optimizer name, and parameter initialisation scheme from the
@@ -6282,24 +6312,24 @@ that minimal <code class="docutils literal notranslate"><span class="pre">args</
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id273">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id273" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id274">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id274" title="Link to this definition"></a></dt>
 <dd><p>Route the forward pass to the appropriate scoring method.</p>
 <p>Inspects the shape and type of <em>x</em> to decide which low-level scorer
 to call:</p>
 <ul class="simple">
-<li><p>Tuple <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y_idx)</span></code>   → <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">3)</span></code> tensor  → <a class="reference internal" href="#id274" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">2)</span></code> tensor  → <a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a></p></li>
-<li><p>BPE triple tensor      → <a class="reference internal" href="#id271" title="dicee.models.BaseKGE.forward_byte_pair_encoded_triple"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_triple()</span></code></a></p></li>
-<li><p>BPE pair tensor        → <a class="reference internal" href="#id270" title="dicee.models.BaseKGE.forward_byte_pair_encoded_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_k_vs_all()</span></code></a></p></li>
+<li><p>Tuple <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y_idx)</span></code>   → <a class="reference internal" href="#id277" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">3)</span></code> tensor  → <a class="reference internal" href="#id275" title="dicee.models.BaseKGE.forward_triples"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_triples()</span></code></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">2)</span></code> tensor  → <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a></p></li>
+<li><p>BPE triple tensor      → <a class="reference internal" href="#id272" title="dicee.models.BaseKGE.forward_byte_pair_encoded_triple"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_triple()</span></code></a></p></li>
+<li><p>BPE pair tensor        → <a class="reference internal" href="#id271" title="dicee.models.BaseKGE.forward_byte_pair_encoded_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_byte_pair_encoded_k_vs_all()</span></code></a></p></li>
 </ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>x</strong> (<em>torch.LongTensor</em><em> or </em><em>Tuple</em><em>[</em><em>torch.LongTensor</em><em>, </em><em>torch.LongTensor</em><em>]</em>) – Either a plain index tensor or a <code class="docutils literal notranslate"><span class="pre">(triple_idx,</span> <span class="pre">target_idx)</span></code>
 tuple for sample-based labelling.</p></li>
-<li><p><strong>y_idx</strong> (<em>torch.LongTensor</em><em>, </em><em>optional</em>) – Target entity indices used by <a class="reference internal" href="#id276" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a>.
+<li><p><strong>y_idx</strong> (<em>torch.LongTensor</em><em>, </em><em>optional</em>) – Target entity indices used by <a class="reference internal" href="#id277" title="dicee.models.BaseKGE.forward_k_vs_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_sample()</span></code></a>.
 Ignored when <em>x</em> is a plain tensor.</p></li>
 </ul>
 </dd>
@@ -6313,8 +6343,8 @@ Ignored when <em>x</em> is a plain tensor.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id274">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id274" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id275">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id275" title="Link to this definition"></a></dt>
 <dd><p>Score a batch of <code class="docutils literal notranslate"><span class="pre">(head,</span> <span class="pre">relation,</span> <span class="pre">tail)</span></code> index triples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -6331,8 +6361,8 @@ Ignored when <em>x</em> is a plain tensor.</p></li>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id275">
-<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id275" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id276">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id276" title="Link to this definition"></a></dt>
 <dd><p>Score a <code class="docutils literal notranslate"><span class="pre">(head,</span> <span class="pre">relation)</span></code> batch against every entity.</p>
 <p>Sub-classes must override this method.  The default implementation
 raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> to make missing overrides obvious at runtime.</p>
@@ -6347,8 +6377,8 @@ raises <code class="docutils literal notranslate"><span class="pre">ValueError</
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id276">
-<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id276" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id277">
+<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id277" title="Link to this definition"></a></dt>
 <dd><p>Score a <code class="docutils literal notranslate"><span class="pre">(head,</span> <span class="pre">relation)</span></code> batch against a sampled subset of entities.</p>
 <p>Used by <code class="docutils literal notranslate"><span class="pre">KvsSample</span></code> and <code class="docutils literal notranslate"><span class="pre">1vsSample</span></code> datasets.  Sub-classes that
 support sample-based labelling must override this method.</p>
@@ -6364,8 +6394,8 @@ of sampled target entities.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id277">
-<span class="sig-name descname"><span class="pre">get_triple_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_hrt</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_triple_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id277" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id278">
+<span class="sig-name descname"><span class="pre">get_triple_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_hrt</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_triple_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id278" title="Link to this definition"></a></dt>
 <dd><p>Retrieve and normalise embedding vectors for a triple index batch.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -6383,8 +6413,8 @@ configured dropout and normalisation.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id278">
-<span class="sig-name descname"><span class="pre">get_head_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_head_relation_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id278" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id279">
+<span class="sig-name descname"><span class="pre">get_head_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_head_relation_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id279" title="Link to this definition"></a></dt>
 <dd><p>Retrieve and normalise embedding vectors for head entities and relations.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -6402,8 +6432,8 @@ configured dropout and normalisation.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id279">
-<span class="sig-name descname"><span class="pre">get_sentence_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_sentence_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id279" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id280">
+<span class="sig-name descname"><span class="pre">get_sentence_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_sentence_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id280" title="Link to this definition"></a></dt>
 <dd><p>Retrieve BPE subword-unit embeddings for a batch of triples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -6420,8 +6450,8 @@ configured dropout and normalisation.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id280">
-<span class="sig-name descname"><span class="pre">get_bpe_head_and_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_bpe_head_and_relation_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id280" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id281">
+<span class="sig-name descname"><span class="pre">get_bpe_head_and_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_bpe_head_and_relation_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id281" title="Link to this definition"></a></dt>
 <dd><p>Retrieve unit-normalised BPE embeddings for head entities and relations.</p>
 <p>Each entity/relation is represented as a sequence of <em>T</em> subword
 tokens.  Their token embeddings are L2-normalised across the
@@ -6443,8 +6473,8 @@ over the <code class="docutils literal notranslate"><span class="pre">(T,</span>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id281">
-<span class="sig-name descname"><span class="pre">get_embeddings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id281" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id282">
+<span class="sig-name descname"><span class="pre">get_embeddings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id282" title="Link to this definition"></a></dt>
 <dd><p>Return the entity and relation embedding matrices as numpy arrays.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -6458,6 +6488,11 @@ over the <code class="docutils literal notranslate"><span class="pre">(T,</span>
 </dd></dl>
 
 </dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="id283">
+<span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#id283" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.FMult">
@@ -6931,12 +6966,12 @@ it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  a
 <dt class="sig sig-object py" id="dicee.models.DualE.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/dualE.html#DualE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DualE.forward_triples" title="Link to this definition"></a></dt>
 <dd><p>Negative Sampling forward pass:</p>
-<section id="id282">
-<h3>Input<a class="headerlink" href="#id282" title="Link to this heading"></a></h3>
+<section id="id284">
+<h3>Input<a class="headerlink" href="#id284" title="Link to this heading"></a></h3>
 <p>x: torch.LongTensor with (n, ) shape</p>
 </section>
-<section id="id283">
-<h3>Output<a class="headerlink" href="#id283" title="Link to this heading"></a></h3>
+<section id="id285">
+<h3>Output<a class="headerlink" href="#id285" title="Link to this heading"></a></h3>
 <p>torch.FloatTensor with (n) shape</p>
 </section>
 </dd></dl>
@@ -6945,12 +6980,12 @@ it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  a
 <dt class="sig sig-object py" id="dicee.models.DualE.forward_k_vs_all">
 <span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/dualE.html#DualE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DualE.forward_k_vs_all" title="Link to this definition"></a></dt>
 <dd><p>KvsAll forward pass</p>
-<section id="id284">
-<h3>Input<a class="headerlink" href="#id284" title="Link to this heading"></a></h3>
+<section id="id286">
+<h3>Input<a class="headerlink" href="#id286" title="Link to this heading"></a></h3>
 <p>x: torch.LongTensor with (n, ) shape</p>
 </section>
-<section id="id285">
-<h3>Output<a class="headerlink" href="#id285" title="Link to this heading"></a></h3>
+<section id="id287">
+<h3>Output<a class="headerlink" href="#id287" title="Link to this heading"></a></h3>
 <p>torch.FloatTensor with (n) shape</p>
 </section>
 </dd></dl>

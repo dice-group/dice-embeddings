@@ -4,6 +4,14 @@ dicee.abstracts
 .. py:module:: dicee.abstracts
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.abstracts.logger
+
+
 Classes
 -------
 
@@ -19,6 +27,8 @@ Classes
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:class:: AbstractTrainer(args, callbacks)
 

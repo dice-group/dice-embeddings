@@ -4,6 +4,14 @@ dicee.models.base_model
 .. py:module:: dicee.models.base_model
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.models.base_model.logger
+
+
 Classes
 -------
 
@@ -16,6 +24,8 @@ Classes
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:class:: BaseKGELightning(*args, **kwargs)
 

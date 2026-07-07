@@ -12,6 +12,14 @@ dicee.evaluation.literal_prediction
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.evaluation.literal_prediction.logger
+
+
 Functions
 ---------
 
@@ -22,6 +30,8 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:function:: evaluate_literal_prediction(kge_model, eval_file_path: str = None, store_lit_preds: bool = True, eval_literals: bool = True, loader_backend: str = 'pandas', return_attr_error_metrics: bool = False) -> Optional[pandas.DataFrame]
 

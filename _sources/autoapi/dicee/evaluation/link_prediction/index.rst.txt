@@ -12,6 +12,14 @@ dicee.evaluation.link_prediction
 
 
 
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.evaluation.link_prediction.logger
+
+
 Functions
 ---------
 
@@ -28,6 +36,8 @@ Functions
 
 Module Contents
 ---------------
+
+.. py:data:: logger
 
 .. py:function:: evaluate_link_prediction_performance(model, triples, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List]) -> Dict[str, float]
 
