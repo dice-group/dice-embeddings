@@ -1,16 +1,16 @@
-"""Regression tests for the RotatE model."""
+"""Regression tests for the TransH model."""
 
 import pytest
 from dicee.executer import Execute
 from dicee.config import Namespace
 
 
-class TestRegressionRotatE:
+class TestRegressionTransH:
 
     @pytest.mark.filterwarnings("ignore::UserWarning")
     def test_k_vs_all(self):
         args = Namespace()
-        args.model = "RotatE"
+        args.model = "TransH"
         args.dataset_dir = "KGs/UMLS"
         args.optim = "Adam"
         args.num_epochs = 50
@@ -25,14 +25,14 @@ class TestRegressionRotatE:
         args.trainer = "torchCPUTrainer"
         result = Execute(args).start()
 
-        assert 0.9 >= result["Train"]["MRR"] >= 0.8
-        assert 0.85 >= result["Val"]["MRR"] >= 0.75
-        assert 0.85 >= result["Test"]["MRR"] >= 0.75
+        assert 0.8 >= result["Train"]["MRR"] >= 0.7
+        assert 0.75 >= result["Val"]["MRR"] >= 0.65
+        assert 0.75 >= result["Test"]["MRR"] >= 0.65
 
     @pytest.mark.filterwarnings("ignore::UserWarning")
     def test_neg_sample(self):
         args = Namespace()
-        args.model = "RotatE"
+        args.model = "TransH"
         args.dataset_dir = "KGs/UMLS"
         args.optim = "Adam"
         args.num_epochs = 50
@@ -48,15 +48,15 @@ class TestRegressionRotatE:
         args.trainer = "torchCPUTrainer"
         result = Execute(args).start()
 
-        assert 0.9 >= result["Train"]["MRR"] >= 0.8
-        assert 0.85 >= result["Val"]["MRR"] >= 0.75
-        assert 0.85 >= result["Test"]["MRR"] >= 0.75
+        assert 0.75 >= result["Train"]["MRR"] >= 0.65
+        assert 0.75 >= result["Val"]["MRR"] >= 0.65
+        assert 0.75 >= result["Test"]["MRR"] >= 0.6
 
 
     @pytest.mark.filterwarnings("ignore::UserWarning")
     def test_neg_sample_with_layer_norm(self):
         args = Namespace()
-        args.model = "RotatE"
+        args.model = "TransH"
         args.dataset_dir = "KGs/UMLS"
         args.optim = "Adam"
         args.num_epochs = 50
@@ -73,13 +73,13 @@ class TestRegressionRotatE:
         args.trainer = "torchCPUTrainer"
         result = Execute(args).start()
 
-        assert 0.85 >= result["Val"]["MRR"] >= 0.75
-        assert 0.85 >= result["Test"]["MRR"] >= 0.75
+        assert 0.85 >= result["Val"]["MRR"] >= 0.7
+        assert 0.85 >= result["Test"]["MRR"] >= 0.7
 
     @pytest.mark.filterwarnings("ignore::UserWarning")
     def test_kvs_sample(self):
         args = Namespace()
-        args.model = "RotatE"
+        args.model = "TransH"
         args.dataset_dir = "KGs/UMLS"
         args.optim = "Adam"
         args.num_epochs = 50
@@ -95,6 +95,6 @@ class TestRegressionRotatE:
         args.trainer = "torchCPUTrainer"
         result = Execute(args).start()
 
-        assert 0.9 >= result["Train"]["MRR"] >= 0.8
-        assert 0.85 >= result["Val"]["MRR"] >= 0.75
-        assert 0.85 >= result["Test"]["MRR"] >= 0.75
+        assert 0.8 >= result["Train"]["MRR"] >= 0.7
+        assert 0.75 >= result["Val"]["MRR"] >= 0.65
+        assert 0.75 >= result["Test"]["MRR"] >= 0.65
