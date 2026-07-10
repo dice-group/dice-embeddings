@@ -84,6 +84,8 @@ from .mymodel import MyModel  # noqa
 
 The model is then selectable via `--model MyModel` on the CLI or `args.model = "MyModel"` in Python.
 
+Also add `MyModel` to the `--model` list in `README.md` (search for the line starting with `` * ```--model `` under "Knowledge Graph Embedding Models").
+
 ### Step 3 — (Optional) Add custom config params
 
 If the model needs new hyperparameters, add them to `dicee/config.py` inside the `Namespace.__init__` method:
