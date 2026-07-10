@@ -4,6 +4,7 @@ from typing import Tuple
 import numpy as np
 import torch
 from torch import nn
+from torch.nn import functional as F
 
 from dicee.models.transformers import Block
 
@@ -178,6 +179,250 @@ class TransE(BaseKGE):
         distance = torch.nn.functional.pairwise_distance(torch.unsqueeze(emb_head_real + emb_rel_real, 1),
                                                          self.entity_embeddings.weight, p=self._norm)
         return self.margin - distance
+
+
+class TransH(BaseKGE):
+    """TransH: translation-based knowledge graph embedding on relation-specific hyperplanes.
+
+    Addresses TransE's inability to model one-to-many, many-to-one, and
+    many-to-many relations by letting each relation *r* define its own
+    hyperplane. An entity is first projected onto that hyperplane before
+    the translation is applied, so the same entity can be positioned
+    differently depending on the relation. Concretely, for a triple
+    ``(h, r, t)`` with unit-norm hyperplane normal ``r_w`` and in-hyperplane
+    translation vector ``r_d``::
+
+        h_r = h - (r_w^T h) * r_w
+        t_r = t - (r_w^T t) * r_w
+        f(h, r, t) = -||h_r + r_d - t_r||_2^2
+
+    ``r_w`` reuses the inherited ``relation_embeddings`` table and is
+    normalised to unit norm before every use, since only a unit-norm normal
+    yields a true orthogonal projection onto the hyperplane. ``r_d`` is a
+    second, relation-specific embedding table analogous to TransE's
+    relation vector.
+
+    References
+    ----------
+    Wang et al., *Knowledge Graph Embedding by Translating on Hyperplanes*,
+    AAAI 2014.
+    https://aaai.org/papers/8870-knowledge-graph-embedding-by-translating-on-hyperplanes/
+    """
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'TransH'
+        # In-hyperplane translation vector r_d (like TransE's relation
+        # embedding). self.relation_embeddings (from BaseKGE) is reused as
+        # the raw hyperplane normal r_w (normalised to unit norm before
+        # use); this second table stores the additive translation. Both are
+        # shaped (num_relations, embedding_dim).
+        self.relation_normal_translations = torch.nn.Embedding(self.num_relations, self.embedding_dim)
+        self.param_init(self.relation_normal_translations.weight.data)
+
+    def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
+        """Score a batch of ``(head, relation, tail)`` index triples.
+
+        Parameters
+        ----------
+        x : torch.LongTensor
+            Shape ``(batch_size, 3)`` integer tensor
+            ``[head_idx, relation_idx, tail_idx]``.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Shape ``(batch_size,)`` triple scores.
+        """
+        idx_relation = x[:, 1]
+        head_ent_emb, rel_normal_emb, tail_ent_emb = self.get_triple_representation(x)
+        rel_translation = self.relation_normal_translations(idx_relation)
+        # Only a unit-norm normal defines a true orthogonal projection onto the hyperplane.
+        rel_normal = F.normalize(rel_normal_emb, p=2, dim=-1)
+        head_proj = head_ent_emb - (rel_normal * head_ent_emb).sum(dim=1, keepdim=True) * rel_normal
+        tail_proj = tail_ent_emb - (rel_normal * tail_ent_emb).sum(dim=1, keepdim=True) * rel_normal
+        return -torch.sum((head_proj + rel_translation - tail_proj) ** 2, dim=1)
+
+    def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
+        """KvsAll forward pass: score head/relation against all entities.
+
+        Every candidate tail entity must be projected onto the batch row's
+        relation-specific hyperplane, and the hyperplane normal differs per
+        batch row, so unlike TransE this materialises a full
+        ``(batch_size, num_entities, embedding_dim)`` tensor of projected
+        tail candidates -- O(B * E * D) memory, versus TransE's O(B * E).
+
+        Parameters
+        ----------
+        x : torch.LongTensor
+            Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Shape ``(batch_size, num_entities)`` score matrix.
+        """
+        idx_relation = x[:, 1]
+        head_ent_emb, rel_normal_emb = self.get_head_relation_representation(x)
+        rel_translation = self.relation_normal_translations(idx_relation)
+        rel_normal = F.normalize(rel_normal_emb, p=2, dim=-1)
+
+        head_proj = head_ent_emb - (rel_normal * head_ent_emb).sum(dim=1, keepdim=True) * rel_normal
+
+        E = self.entity_embeddings.weight  # (num_entities, d)
+        dot = rel_normal @ E.transpose(0, 1)  # (B, num_entities)
+        tail_proj = E.unsqueeze(0) - dot.unsqueeze(-1) * rel_normal.unsqueeze(1)  # (B, num_entities, d)
+
+        diff = (head_proj + rel_translation).unsqueeze(1) - tail_proj  # (B, num_entities, d)
+        return -(diff ** 2).sum(dim=-1)
+
+    def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor:
+        """KvsSample forward pass: score head/relation against a sampled entity subset.
+
+        Same hyperplane-projection logic as :meth:`forward_k_vs_all`, but
+        restricted to the *k* sampled tail candidates instead of every
+        entity, so it costs ``O(B * k * D)`` memory instead of
+        ``O(B * E * D)``.
+
+        Parameters
+        ----------
+        x : torch.LongTensor
+            Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+        target_entity_idx : torch.LongTensor
+            Shape ``(batch_size, k)`` indices of the *k* target entities per sample.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Shape ``(batch_size, k)`` score matrix.
+        """
+        idx_relation = x[:, 1]
+        head_ent_emb, rel_normal_emb = self.get_head_relation_representation(x)
+        rel_translation = self.relation_normal_translations(idx_relation)
+        rel_normal = F.normalize(rel_normal_emb, p=2, dim=-1)  # (B, d)
+
+        head_proj = head_ent_emb - (rel_normal * head_ent_emb).sum(dim=1, keepdim=True) * rel_normal
+
+        tail_ent_emb = self.entity_embeddings(target_entity_idx)  # (B, k, d)
+        dot = (rel_normal.unsqueeze(1) * tail_ent_emb).sum(dim=-1)  # (B, k)
+        tail_proj = tail_ent_emb - dot.unsqueeze(-1) * rel_normal.unsqueeze(1)  # (B, k, d)
+
+        diff = (head_proj + rel_translation).unsqueeze(1) - tail_proj  # (B, k, d)
+        return -(diff ** 2).sum(dim=-1)
+
+
+class MuRE(BaseKGE):
+    """MuRE: multi-relational graph embedding with relation-specific diagonal scaling, translation, and entity biases.
+
+    Scores a triple ``(h, r, t)`` as::
+
+        f(h, r, t) = -||R_r \\odot h + t_r - t||_2 + b_h + b_t
+
+    ``R_r`` is a relation-specific diagonal matrix applied to the head via
+    an element-wise (Hadamard) product; it reuses the inherited
+    ``relation_embeddings`` table directly, shape
+    ``(num_relations, embedding_dim)``. ``t_r`` is a second,
+    relation-specific translation vector (own embedding table, same shape
+    convention: ``(num_relations, embedding_dim)``) analogous to TransE's
+    relation vector. ``b_h`` and ``b_t`` are learnable scalar biases
+    indexed per entity (head and tail respectively), not per relation.
+
+    References
+    ----------
+    Balažević et al., *Multi-relational Poincaré Graph Embeddings*,
+    NeurIPS 2019. https://arxiv.org/abs/1905.09791
+    """
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'MuRE'
+        # Relation-specific translation vector t_r (like TransE's relation
+        # embedding). self.relation_embeddings (from BaseKGE) is reused as
+        # the diagonal scaling vector R_r; this second table stores the
+        # additive translation. Both are shaped (num_relations, embedding_dim).
+        self.relation_translations = torch.nn.Embedding(self.num_relations, self.embedding_dim)
+        self.param_init(self.relation_translations.weight.data)
+        # Per-entity scalar biases b_h, b_t (Balažević et al., Eq. 1).
+        self.b_h = torch.nn.Embedding(self.num_entities, 1)
+        self.b_t = torch.nn.Embedding(self.num_entities, 1)
+        self.param_init(self.b_h.weight.data)
+        self.param_init(self.b_t.weight.data)
+
+    def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
+        """Score a batch of ``(head, relation, tail)`` index triples.
+
+        Parameters
+        ----------
+        x : torch.LongTensor
+            Shape ``(batch_size, 3)`` integer tensor
+            ``[head_idx, relation_idx, tail_idx]``.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Shape ``(batch_size,)`` triple scores.
+        """
+        idx_head_entity, idx_relation, idx_tail_entity = x[:, 0], x[:, 1], x[:, 2]
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
+        rel_translation = self.relation_translations(idx_relation)
+        distance = torch.nn.functional.pairwise_distance(head_ent_emb * rel_ent_emb + rel_translation,
+                                                          tail_ent_emb, p=2)
+        b_h = self.b_h(idx_head_entity).squeeze(1)
+        b_t = self.b_t(idx_tail_entity).squeeze(1)
+        return -distance + b_h + b_t
+
+    def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
+        """KvsAll forward pass: score head/relation against all entities.
+
+        Computes ``-||R_r \\odot h + t_r - e||_2 + b_h + b_e`` for every
+        entity embedding *e*.
+
+        Parameters
+        ----------
+        x : torch.LongTensor
+            Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Shape ``(batch_size, num_entities)`` score matrix.
+        """
+        idx_head_entity, idx_relation = x[:, 0], x[:, 1]
+        emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
+        rel_translation = self.relation_translations(idx_relation)
+        hr = emb_head_real * emb_rel_real + rel_translation
+        # (B, 1, d) vs (num_entities, d) broadcasts to (B, num_entities).
+        distance = torch.nn.functional.pairwise_distance(torch.unsqueeze(hr, 1),
+                                                          self.entity_embeddings.weight, p=2)
+        b_h = self.b_h(idx_head_entity)          # (B, 1) broadcasts over num_entities
+        b_t = self.b_t.weight.view(1, -1)         # (1, num_entities) broadcasts over batch
+        return -distance + b_h + b_t
+
+    def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor:
+        """KvsSample forward pass: score head/relation against a sampled entity subset.
+
+        Parameters
+        ----------
+        x : torch.LongTensor
+            Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+        target_entity_idx : torch.LongTensor
+            Shape ``(batch_size, k)`` indices of the *k* target entities per sample.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Shape ``(batch_size, k)`` score matrix.
+        """
+        idx_head_entity, idx_relation = x[:, 0], x[:, 1]
+        emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
+        rel_translation = self.relation_translations(idx_relation)
+        hr = emb_head_real * emb_rel_real + rel_translation  # (B, d)
+        emb_tail = self.entity_embeddings(target_entity_idx)  # (B, k, d)
+        # (B, 1, d) vs (B, k, d) broadcasts to (B, k).
+        distance = torch.nn.functional.pairwise_distance(hr.unsqueeze(1), emb_tail, p=2)
+        b_h = self.b_h(idx_head_entity)                       # (B, 1) broadcasts over k
+        b_t = self.b_t(target_entity_idx).squeeze(-1)          # (B, k)
+        return -distance + b_h + b_t
 
 
 class Shallom(BaseKGE):

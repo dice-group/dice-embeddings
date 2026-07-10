@@ -397,3 +397,27 @@ class RotatE(BaseKGE):
                                                           self.entity_embeddings.weight, p=2)
         return self.margin - distance
 
+    def forward_k_vs_sample(self, x: torch.Tensor, target_entity_idx: torch.Tensor) -> torch.FloatTensor:
+        """KvsSample forward pass: score head/relation against a sampled entity subset.
+
+        Computes ``margin - ||h ∘ r - e||_2`` for each of the *k* sampled
+        entities *e*.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+        target_entity_idx : torch.Tensor
+            Shape ``(batch_size, k)`` indices of the *k* target entities per sample.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Shape ``(batch_size, k)`` score matrix.
+        """
+        emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
+        hr = self._rotate(emb_head_real, emb_rel_real)  # (B, d)
+        emb_tail = self.entity_embeddings(target_entity_idx)  # (B, k, d)
+        distance = torch.nn.functional.pairwise_distance(hr.unsqueeze(1), emb_tail, p=2)
+        return self.margin - distance
+
