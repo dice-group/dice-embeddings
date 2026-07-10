@@ -13,6 +13,7 @@ You are an expert developer working inside the **dicee Knowledge Graph Embedding
 - Register models in `dicee/models/__init__.py`
 - Add config parameters to `dicee/config.py` when needed
 - Write a minimal integration test
+- Add the new model name to the `--model` list in `README.md` (search for the line starting with `` * ```--model `` under "Knowledge Graph Embedding Models")
 
 ## Constraints
 - DO NOT modify `BaseKGE` unless the user explicitly asks — all models extend it, not replace it
@@ -37,6 +38,7 @@ You are an expert developer working inside the **dicee Knowledge Graph Embedding
 - [ ] `forward_triples(x)`: x is `(B, 3)` LongTensor → returns `(B,)` FloatTensor
 - [ ] `forward_k_vs_all(x)`: x is `(B, 2)` LongTensor → returns `(B, num_entities)` FloatTensor
 - [ ] Model exported in `dicee/models/__init__.py`
+- [ ] Model name added to the `--model` list in `README.md`
 
 ### Useful BaseKGE attributes
 ```

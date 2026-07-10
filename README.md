@@ -67,7 +67,7 @@ python -m pytest -p no:warnings --ff # to run the failures first and then the re
 ## Knowledge Graph Embedding Models
 <details> <summary> To see available Models</summary>
 
-* ```--model Decal | Keci | DualE | ComplEx | QMult | OMult | ConvQ | ConvO | ConEx | TransE | DistMult | Shallom```
+* ```--model Decal | Keci | DualE | ComplEx | QMult | OMult | ConvQ | ConvO | ConEx | TransE | TransH | DistMult | Shallom | MuRE | RotatE```
 * ```--model Pykeen_QuatE | Pykeen_Mure ``` all embedding models available in https://github.com/pykeen/pykeen#models can be selected. **📖 [PyKEEN integration →](docs/guides/pykeen_integration.md)** | **📖 [Examples →](tests/test_pykeen.py)**
 
 Training and scoring techniques
