@@ -538,6 +538,33 @@
         <span class="n">distance</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">pairwise_distance</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">hr</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
                                                           <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">margin</span> <span class="o">-</span> <span class="n">distance</span></div>
+
+
+<div class="viewcode-block" id="RotatE.forward_k_vs_sample">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.complex.RotatE.forward_k_vs_sample">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;KvsSample forward pass: score head/relation against a sampled entity subset.</span>
+
+<span class="sd">        Computes ``margin - ||h ∘ r - e||_2`` for each of the *k* sampled</span>
+<span class="sd">        entities *e*.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : torch.Tensor</span>
+<span class="sd">            Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.</span>
+<span class="sd">        target_entity_idx : torch.Tensor</span>
+<span class="sd">            Shape ``(batch_size, k)`` indices of the *k* target entities per sample.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            Shape ``(batch_size, k)`` score matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_rel_real</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">hr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotate</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_rel_real</span><span class="p">)</span>  <span class="c1"># (B, d)</span>
+        <span class="n">emb_tail</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span><span class="n">target_entity_idx</span><span class="p">)</span>  <span class="c1"># (B, k, d)</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">pairwise_distance</span><span class="p">(</span><span class="n">hr</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">emb_tail</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">margin</span> <span class="o">-</span> <span class="n">distance</span></div>
 </div>
 
 

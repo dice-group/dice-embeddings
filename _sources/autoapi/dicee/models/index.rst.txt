@@ -50,6 +50,8 @@ Classes
    dicee.models.BaseKGE
    dicee.models.DistMult
    dicee.models.TransE
+   dicee.models.TransH
+   dicee.models.MuRE
    dicee.models.Shallom
    dicee.models.Pyke
    dicee.models.CoKEConfig
@@ -1395,6 +1397,178 @@ Package Contents
 
 
 
+.. py:class:: TransH(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   TransH: translation-based knowledge graph embedding on relation-specific hyperplanes.
+
+   Addresses TransE's inability to model one-to-many, many-to-one, and
+   many-to-many relations by letting each relation *r* define its own
+   hyperplane. An entity is first projected onto that hyperplane before
+   the translation is applied, so the same entity can be positioned
+   differently depending on the relation. Concretely, for a triple
+   ``(h, r, t)`` with unit-norm hyperplane normal ``r_w`` and in-hyperplane
+   translation vector ``r_d``::
+
+       h_r = h - (r_w^T h) * r_w
+       t_r = t - (r_w^T t) * r_w
+       f(h, r, t) = -||h_r + r_d - t_r||_2^2
+
+   ``r_w`` reuses the inherited ``relation_embeddings`` table and is
+   normalised to unit norm before every use, since only a unit-norm normal
+   yields a true orthogonal projection onto the hyperplane. ``r_d`` is a
+   second, relation-specific embedding table analogous to TransE's
+   relation vector.
+
+   .. rubric:: References
+
+   Wang et al., *Knowledge Graph Embedding by Translating on Hyperplanes*,
+   AAAI 2014.
+   https://aaai.org/papers/8870-knowledge-graph-embedding-by-translating-on-hyperplanes/
+
+
+   .. py:attribute:: name
+      :value: 'TransH'
+
+
+
+   .. py:attribute:: relation_normal_translations
+
+
+   .. py:method:: forward_triples(x: torch.LongTensor) -> torch.FloatTensor
+
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
+
+      KvsAll forward pass: score head/relation against all entities.
+
+      Every candidate tail entity must be projected onto the batch row's
+      relation-specific hyperplane, and the hyperplane normal differs per
+      batch row, so unlike TransE this materialises a full
+      ``(batch_size, num_entities, embedding_dim)`` tensor of projected
+      tail candidates -- O(B * E * D) memory, versus TransE's O(B * E).
+
+      :param x: Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor
+
+      KvsSample forward pass: score head/relation against a sampled entity subset.
+
+      Same hyperplane-projection logic as :meth:`forward_k_vs_all`, but
+      restricted to the *k* sampled tail candidates instead of every
+      entity, so it costs ``O(B * k * D)`` memory instead of
+      ``O(B * E * D)``.
+
+      :param x: Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+      :type x: torch.LongTensor
+      :param target_entity_idx: Shape ``(batch_size, k)`` indices of the *k* target entities per sample.
+      :type target_entity_idx: torch.LongTensor
+
+      :returns: Shape ``(batch_size, k)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
+
+.. py:class:: MuRE(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   MuRE: multi-relational graph embedding with relation-specific diagonal scaling, translation, and entity biases.
+
+   Scores a triple ``(h, r, t)`` as::
+
+       f(h, r, t) = -||R_r \odot h + t_r - t||_2 + b_h + b_t
+
+   ``R_r`` is a relation-specific diagonal matrix applied to the head via
+   an element-wise (Hadamard) product; it reuses the inherited
+   ``relation_embeddings`` table directly, shape
+   ``(num_relations, embedding_dim)``. ``t_r`` is a second,
+   relation-specific translation vector (own embedding table, same shape
+   convention: ``(num_relations, embedding_dim)``) analogous to TransE's
+   relation vector. ``b_h`` and ``b_t`` are learnable scalar biases
+   indexed per entity (head and tail respectively), not per relation.
+
+   .. rubric:: References
+
+   Balažević et al., *Multi-relational Poincaré Graph Embeddings*,
+   NeurIPS 2019. https://arxiv.org/abs/1905.09791
+
+
+   .. py:attribute:: name
+      :value: 'MuRE'
+
+
+
+   .. py:attribute:: relation_translations
+
+
+   .. py:attribute:: b_h
+
+
+   .. py:attribute:: b_t
+
+
+   .. py:method:: forward_triples(x: torch.LongTensor) -> torch.FloatTensor
+
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
+
+      KvsAll forward pass: score head/relation against all entities.
+
+      Computes ``-||R_r \odot h + t_r - e||_2 + b_h + b_e`` for every
+      entity embedding *e*.
+
+      :param x: Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor
+
+      KvsSample forward pass: score head/relation against a sampled entity subset.
+
+      :param x: Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+      :type x: torch.LongTensor
+      :param target_entity_idx: Shape ``(batch_size, k)`` indices of the *k* target entities per sample.
+      :type target_entity_idx: torch.LongTensor
+
+      :returns: Shape ``(batch_size, k)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
+
 .. py:class:: Shallom(args)
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
@@ -2266,6 +2440,23 @@ Package Contents
       :type x: torch.Tensor
 
       :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor) -> torch.FloatTensor
+
+      KvsSample forward pass: score head/relation against a sampled entity subset.
+
+      Computes ``margin - ||h ∘ r - e||_2`` for each of the *k* sampled
+      entities *e*.
+
+      :param x: Shape ``(batch_size, 2)`` integer tensor ``[head_idx, relation_idx]``.
+      :type x: torch.Tensor
+      :param target_entity_idx: Shape ``(batch_size, k)`` indices of the *k* target entities per sample.
+      :type target_entity_idx: torch.Tensor
+
+      :returns: Shape ``(batch_size, k)`` score matrix.
       :rtype: torch.FloatTensor
 
 

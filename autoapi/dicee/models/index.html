@@ -241,6 +241,24 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.TransE.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">TransE.forward_k_vs_all()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.models.TransH"><code class="docutils literal notranslate"><span class="pre">TransH</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.TransH.name"><code class="docutils literal notranslate"><span class="pre">TransH.name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.TransH.relation_normal_translations"><code class="docutils literal notranslate"><span class="pre">TransH.relation_normal_translations</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.TransH.forward_triples"><code class="docutils literal notranslate"><span class="pre">TransH.forward_triples()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.TransH.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">TransH.forward_k_vs_all()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.TransH.forward_k_vs_sample"><code class="docutils literal notranslate"><span class="pre">TransH.forward_k_vs_sample()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.models.MuRE"><code class="docutils literal notranslate"><span class="pre">MuRE</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.MuRE.name"><code class="docutils literal notranslate"><span class="pre">MuRE.name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.MuRE.relation_translations"><code class="docutils literal notranslate"><span class="pre">MuRE.relation_translations</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.MuRE.b_h"><code class="docutils literal notranslate"><span class="pre">MuRE.b_h</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.MuRE.b_t"><code class="docutils literal notranslate"><span class="pre">MuRE.b_t</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.MuRE.forward_triples"><code class="docutils literal notranslate"><span class="pre">MuRE.forward_triples()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.MuRE.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">MuRE.forward_k_vs_all()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.MuRE.forward_k_vs_sample"><code class="docutils literal notranslate"><span class="pre">MuRE.forward_k_vs_sample()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.models.Shallom"><code class="docutils literal notranslate"><span class="pre">Shallom</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.Shallom.name"><code class="docutils literal notranslate"><span class="pre">Shallom.name</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.Shallom.shallom"><code class="docutils literal notranslate"><span class="pre">Shallom.shallom</span></code></a></li>
@@ -376,6 +394,7 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.RotatE.relation_embeddings"><code class="docutils literal notranslate"><span class="pre">RotatE.relation_embeddings</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.RotatE.score"><code class="docutils literal notranslate"><span class="pre">RotatE.score()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.RotatE.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">RotatE.forward_k_vs_all()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.RotatE.forward_k_vs_sample"><code class="docutils literal notranslate"><span class="pre">RotatE.forward_k_vs_sample()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l5"><a class="reference internal" href="#id98"><code class="docutils literal notranslate"><span class="pre">BaseKGE</span></code></a><ul>
@@ -921,6 +940,12 @@
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.TransE" title="dicee.models.TransE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransE</span></code></a></p></td>
 <td><p>TransE: translation-based knowledge graph embedding.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.TransH" title="dicee.models.TransH"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransH</span></code></a></p></td>
+<td><p>TransH: translation-based knowledge graph embedding on relation-specific hyperplanes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.MuRE" title="dicee.models.MuRE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MuRE</span></code></a></p></td>
+<td><p>MuRE: multi-relational graph embedding with relation-specific diagonal scaling, translation, and entity biases.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.Shallom" title="dicee.models.Shallom"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shallom</span></code></a></p></td>
 <td><p>Shallom: shallow neural model for relation prediction.</p></td>
@@ -2556,6 +2581,207 @@ Data</em>, NeurIPS 2013.
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.TransH">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">TransH</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/real.html#TransH"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.TransH" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
+<p>TransH: translation-based knowledge graph embedding on relation-specific hyperplanes.</p>
+<p>Addresses TransE’s inability to model one-to-many, many-to-one, and
+many-to-many relations by letting each relation <em>r</em> define its own
+hyperplane. An entity is first projected onto that hyperplane before
+the translation is applied, so the same entity can be positioned
+differently depending on the relation. Concretely, for a triple
+<code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> with unit-norm hyperplane normal <code class="docutils literal notranslate"><span class="pre">r_w</span></code> and in-hyperplane
+translation vector <code class="docutils literal notranslate"><span class="pre">r_d</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">h_r</span> <span class="o">=</span> <span class="n">h</span> <span class="o">-</span> <span class="p">(</span><span class="n">r_w</span><span class="o">^</span><span class="n">T</span> <span class="n">h</span><span class="p">)</span> <span class="o">*</span> <span class="n">r_w</span>
+<span class="n">t_r</span> <span class="o">=</span> <span class="n">t</span> <span class="o">-</span> <span class="p">(</span><span class="n">r_w</span><span class="o">^</span><span class="n">T</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">r_w</span>
+<span class="n">f</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="o">-||</span><span class="n">h_r</span> <span class="o">+</span> <span class="n">r_d</span> <span class="o">-</span> <span class="n">t_r</span><span class="o">||</span><span class="n">_2</span><span class="o">^</span><span class="mi">2</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">r_w</span></code> reuses the inherited <code class="docutils literal notranslate"><span class="pre">relation_embeddings</span></code> table and is
+normalised to unit norm before every use, since only a unit-norm normal
+yields a true orthogonal projection onto the hyperplane. <code class="docutils literal notranslate"><span class="pre">r_d</span></code> is a
+second, relation-specific embedding table analogous to TransE’s
+relation vector.</p>
+<p class="rubric">References</p>
+<p>Wang et al., <em>Knowledge Graph Embedding by Translating on Hyperplanes</em>,
+AAAI 2014.
+<a class="reference external" href="https://aaai.org/papers/8870-knowledge-graph-embedding-by-translating-on-hyperplanes/">https://aaai.org/papers/8870-knowledge-graph-embedding-by-translating-on-hyperplanes/</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.TransH.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'TransH'</span></span><a class="headerlink" href="#dicee.models.TransH.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.TransH.relation_normal_translations">
+<span class="sig-name descname"><span class="pre">relation_normal_translations</span></span><a class="headerlink" href="#dicee.models.TransH.relation_normal_translations" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.TransH.forward_triples">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/real.html#TransH.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.TransH.forward_triples" title="Link to this definition"></a></dt>
+<dd><p>Score a batch of <code class="docutils literal notranslate"><span class="pre">(head,</span> <span class="pre">relation,</span> <span class="pre">tail)</span></code> index triples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.LongTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">3)</span></code> integer tensor
+<code class="docutils literal notranslate"><span class="pre">[head_idx,</span> <span class="pre">relation_idx,</span> <span class="pre">tail_idx]</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code> triple scores.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.TransH.forward_k_vs_all">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/real.html#TransH.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.TransH.forward_k_vs_all" title="Link to this definition"></a></dt>
+<dd><p>KvsAll forward pass: score head/relation against all entities.</p>
+<p>Every candidate tail entity must be projected onto the batch row’s
+relation-specific hyperplane, and the hyperplane normal differs per
+batch row, so unlike TransE this materialises a full
+<code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">num_entities,</span> <span class="pre">embedding_dim)</span></code> tensor of projected
+tail candidates – O(B * E * D) memory, versus TransE’s O(B * E).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.LongTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">2)</span></code> integer tensor <code class="docutils literal notranslate"><span class="pre">[head_idx,</span> <span class="pre">relation_idx]</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">num_entities)</span></code> score matrix.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.TransH.forward_k_vs_sample">
+<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/real.html#TransH.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.TransH.forward_k_vs_sample" title="Link to this definition"></a></dt>
+<dd><p>KvsSample forward pass: score head/relation against a sampled entity subset.</p>
+<p>Same hyperplane-projection logic as <a class="reference internal" href="#dicee.models.TransH.forward_k_vs_all" title="dicee.models.TransH.forward_k_vs_all"><code class="xref py py-meth docutils literal notranslate"><span class="pre">forward_k_vs_all()</span></code></a>, but
+restricted to the <em>k</em> sampled tail candidates instead of every
+entity, so it costs <code class="docutils literal notranslate"><span class="pre">O(B</span> <span class="pre">*</span> <span class="pre">k</span> <span class="pre">*</span> <span class="pre">D)</span></code> memory instead of
+<code class="docutils literal notranslate"><span class="pre">O(B</span> <span class="pre">*</span> <span class="pre">E</span> <span class="pre">*</span> <span class="pre">D)</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>torch.LongTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">2)</span></code> integer tensor <code class="docutils literal notranslate"><span class="pre">[head_idx,</span> <span class="pre">relation_idx]</span></code>.</p></li>
+<li><p><strong>target_entity_idx</strong> (<em>torch.LongTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">k)</span></code> indices of the <em>k</em> target entities per sample.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">k)</span></code> score matrix.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.MuRE">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">MuRE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/real.html#MuRE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.MuRE" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
+<p>MuRE: multi-relational graph embedding with relation-specific diagonal scaling, translation, and entity biases.</p>
+<p>Scores a triple <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">r,</span> <span class="pre">t)</span></code> as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">f</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="o">-||</span><span class="n">R_r</span> \<span class="n">odot</span> <span class="n">h</span> <span class="o">+</span> <span class="n">t_r</span> <span class="o">-</span> <span class="n">t</span><span class="o">||</span><span class="n">_2</span> <span class="o">+</span> <span class="n">b_h</span> <span class="o">+</span> <span class="n">b_t</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">R_r</span></code> is a relation-specific diagonal matrix applied to the head via
+an element-wise (Hadamard) product; it reuses the inherited
+<code class="docutils literal notranslate"><span class="pre">relation_embeddings</span></code> table directly, shape
+<code class="docutils literal notranslate"><span class="pre">(num_relations,</span> <span class="pre">embedding_dim)</span></code>. <code class="docutils literal notranslate"><span class="pre">t_r</span></code> is a second,
+relation-specific translation vector (own embedding table, same shape
+convention: <code class="docutils literal notranslate"><span class="pre">(num_relations,</span> <span class="pre">embedding_dim)</span></code>) analogous to TransE’s
+relation vector. <code class="docutils literal notranslate"><span class="pre">b_h</span></code> and <code class="docutils literal notranslate"><span class="pre">b_t</span></code> are learnable scalar biases
+indexed per entity (head and tail respectively), not per relation.</p>
+<p class="rubric">References</p>
+<p>Balažević et al., <em>Multi-relational Poincaré Graph Embeddings</em>,
+NeurIPS 2019. <a class="reference external" href="https://arxiv.org/abs/1905.09791">https://arxiv.org/abs/1905.09791</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.MuRE.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'MuRE'</span></span><a class="headerlink" href="#dicee.models.MuRE.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.MuRE.relation_translations">
+<span class="sig-name descname"><span class="pre">relation_translations</span></span><a class="headerlink" href="#dicee.models.MuRE.relation_translations" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.MuRE.b_h">
+<span class="sig-name descname"><span class="pre">b_h</span></span><a class="headerlink" href="#dicee.models.MuRE.b_h" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.MuRE.b_t">
+<span class="sig-name descname"><span class="pre">b_t</span></span><a class="headerlink" href="#dicee.models.MuRE.b_t" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.MuRE.forward_triples">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/real.html#MuRE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.MuRE.forward_triples" title="Link to this definition"></a></dt>
+<dd><p>Score a batch of <code class="docutils literal notranslate"><span class="pre">(head,</span> <span class="pre">relation,</span> <span class="pre">tail)</span></code> index triples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.LongTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">3)</span></code> integer tensor
+<code class="docutils literal notranslate"><span class="pre">[head_idx,</span> <span class="pre">relation_idx,</span> <span class="pre">tail_idx]</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,)</span></code> triple scores.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.MuRE.forward_k_vs_all">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/real.html#MuRE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.MuRE.forward_k_vs_all" title="Link to this definition"></a></dt>
+<dd><p>KvsAll forward pass: score head/relation against all entities.</p>
+<p>Computes <code class="docutils literal notranslate"><span class="pre">-||R_r</span> <span class="pre">\odot</span> <span class="pre">h</span> <span class="pre">+</span> <span class="pre">t_r</span> <span class="pre">-</span> <span class="pre">e||_2</span> <span class="pre">+</span> <span class="pre">b_h</span> <span class="pre">+</span> <span class="pre">b_e</span></code> for every
+entity embedding <em>e</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.LongTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">2)</span></code> integer tensor <code class="docutils literal notranslate"><span class="pre">[head_idx,</span> <span class="pre">relation_idx]</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">num_entities)</span></code> score matrix.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.MuRE.forward_k_vs_sample">
+<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/real.html#MuRE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.MuRE.forward_k_vs_sample" title="Link to this definition"></a></dt>
+<dd><p>KvsSample forward pass: score head/relation against a sampled entity subset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>torch.LongTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">2)</span></code> integer tensor <code class="docutils literal notranslate"><span class="pre">[head_idx,</span> <span class="pre">relation_idx]</span></code>.</p></li>
+<li><p><strong>target_entity_idx</strong> (<em>torch.LongTensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">k)</span></code> indices of the <em>k</em> target entities per sample.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">k)</span></code> score matrix.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.Shallom">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">Shallom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/real.html#Shallom"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.Shallom" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
@@ -3615,6 +3841,28 @@ Complex Space</em>, ICLR 2019.  <a class="reference external" href="https://arxi
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">num_entities)</span></code> score matrix.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.RotatE.forward_k_vs_sample">
+<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/complex.html#RotatE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.RotatE.forward_k_vs_sample" title="Link to this definition"></a></dt>
+<dd><p>KvsSample forward pass: score head/relation against a sampled entity subset.</p>
+<p>Computes <code class="docutils literal notranslate"><span class="pre">margin</span> <span class="pre">-</span> <span class="pre">||h</span> <span class="pre">∘</span> <span class="pre">r</span> <span class="pre">-</span> <span class="pre">e||_2</span></code> for each of the <em>k</em> sampled
+entities <em>e</em>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>torch.Tensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">2)</span></code> integer tensor <code class="docutils literal notranslate"><span class="pre">[head_idx,</span> <span class="pre">relation_idx]</span></code>.</p></li>
+<li><p><strong>target_entity_idx</strong> (<em>torch.Tensor</em>) – Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">k)</span></code> indices of the <em>k</em> target entities per sample.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">k)</span></code> score matrix.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>torch.FloatTensor</p>
