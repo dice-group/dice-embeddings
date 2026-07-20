@@ -22,6 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tests validate exact exception messages for `predict_topk()` and `predict()` methods
   - Validation tests verify conditional branching logic for missing head/relation/tail predictions
   - Addresses IMPROVEMENTS.md #3 ("Core modules lack dedicated unit tests")
+- Type hint improvements and gradual mypy enforcement roadmap (IMPROVEMENTS.md #5):
+  - Fixed Optional type annotations in `dicee/config.py` (11 fields now properly annotated as `Optional[T]`)
+  - Created `docs/TYPING_ROADMAP.md` documenting 3-tier type hint enforcement strategy
+  - CI matrix now tests Python 3.11, 3.12, and 3.13 (IMPROVEMENTS.md #6)
+- TODO/FIXME backlog organization and categorization (IMPROVEMENTS.md #7):
+  - Created `docs/TODO_BACKLOG.md` cataloging 56+ TODO/FIXME markers by priority
+  - Categorized by impact: 6 Medium-priority items (performance/design), 25+ Low-priority (refactoring)
 
 ### Changed
 - **Breaking change**: Converted 298 `assert` statements to explicit exceptions (`ValueError`, `TypeError`) in public API paths:
