@@ -1,0 +1,307 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Type Hints Roadmap for dicee &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=c6726a90"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Type Hints Roadmap for dicee</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/TYPING_ROADMAP.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="type-hints-roadmap-for-dicee">
+<h1>Type Hints Roadmap for dicee<a class="headerlink" href="#type-hints-roadmap-for-dicee" title="Link to this heading"></a></h1>
+<p>This document outlines the strategy for gradually enforcing type hints across the dicee codebase using mypy.</p>
+<section id="motivation">
+<h2>Motivation<a class="headerlink" href="#motivation" title="Link to this heading"></a></h2>
+<p>Type hints improve:</p>
+<ul class="simple">
+<li><p>Code readability and IDE support</p></li>
+<li><p>Detection of logic errors before runtime</p></li>
+<li><p>API documentation clarity</p></li>
+<li><p>Maintenance and refactoring safety</p></li>
+</ul>
+</section>
+<section id="current-status">
+<h2>Current Status<a class="headerlink" href="#current-status" title="Link to this heading"></a></h2>
+<p><strong>mypy Results:</strong></p>
+<ul class="simple">
+<li><p><strong>Total errors</strong>: ~150+ type issues across the codebase</p></li>
+<li><p><strong>CI status</strong>: Mypy now blocking (as of this PR) but focuses on priority modules first</p></li>
+<li><p><strong>Coverage</strong>: ~40% of modules have basic type hints</p></li>
+</ul>
+</section>
+<section id="priority-tiers">
+<h2>Priority Tiers<a class="headerlink" href="#priority-tiers" title="Link to this heading"></a></h2>
+<section id="tier-1-public-api-core-inference-high-priority">
+<h3>Tier 1: Public API &amp; Core Inference (HIGH PRIORITY)<a class="headerlink" href="#tier-1-public-api-core-inference-high-priority" title="Link to this heading"></a></h3>
+<p>Critical paths that users interact with directly. Should have complete type hints.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dicee/knowledge_graph_embeddings.py</span></code> (1423 lines, main inference API)</p>
+<ul>
+<li><p>Status: ⏳ Partial (public methods typed, internal utilities need work)</p></li>
+<li><p>Goal: 100% before next minor release</p></li>
+<li><p>Impact: Highest - users rely on this for link prediction, embeddings</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dicee/config.py</span></code></p>
+<ul>
+<li><p>Status: 🔴 Issues with Optional types (fields assigned None but not Optional[T])</p></li>
+<li><p>Goal: Complete by next release</p></li>
+<li><p>Fix: Use <code class="docutils literal notranslate"><span class="pre">Optional[Type]</span></code> for nullable fields</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dicee/executer.py</span></code></p>
+<ul>
+<li><p>Status: ⏳ Minimal typing</p></li>
+<li><p>Goal: Function signatures typed by next patch</p></li>
+<li><p>Impact: Training entry point</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="tier-2-core-utilities-trainers-medium-priority">
+<h3>Tier 2: Core Utilities &amp; Trainers (MEDIUM PRIORITY)<a class="headerlink" href="#tier-2-core-utilities-trainers-medium-priority" title="Link to this heading"></a></h3>
+<p>Internal functions that support public APIs. Type hints reduce integration bugs.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dicee/trainer/</span></code> (all trainers)</p>
+<ul>
+<li><p>Status: ⏳ Partial</p></li>
+<li><p>Target: 80% within 2 releases</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dicee/models/base_model.py</span></code></p>
+<ul>
+<li><p>Status: ⏳ Partial (abstract methods need types)</p></li>
+<li><p>Target: Next patch</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dicee/read_preprocess_save_load_kg/</span></code></p>
+<ul>
+<li><p>Status: 🔴 Minimal typing</p></li>
+<li><p>Target: Next minor</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="tier-3-scripts-experimental-low-priority">
+<h3>Tier 3: Scripts &amp; Experimental (LOW PRIORITY)<a class="headerlink" href="#tier-3-scripts-experimental-low-priority" title="Link to this heading"></a></h3>
+<p>Ad-hoc utilities and optional features. Type hints optional.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">dicee/scripts/</span></code></p>
+<ul>
+<li><p>Status: 🔴 Minimal typing</p></li>
+<li><p>Target: Nice-to-have, low impact</p></li>
+</ul>
+</li>
+<li><p>Analysis scripts, helpers</p>
+<ul>
+<li><p>Status: 🔴 Minimal typing</p></li>
+<li><p>Target: When convenient</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+<section id="implementation-strategy">
+<h2>Implementation Strategy<a class="headerlink" href="#implementation-strategy" title="Link to this heading"></a></h2>
+<section id="phase-1-foundation-this-pr">
+<h3>Phase 1: Foundation (This PR)<a class="headerlink" href="#phase-1-foundation-this-pr" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>[x] Make mypy blocking in CI</p></li>
+<li><p>[x] Create this roadmap</p></li>
+<li><p>[ ] Fix config.py Optional types (quick win)</p></li>
+<li><p>[ ] Add py.typed marker to package</p></li>
+</ul>
+</section>
+<section id="phase-2-priority-modules-next-pr">
+<h3>Phase 2: Priority Modules (Next PR)<a class="headerlink" href="#phase-2-priority-modules-next-pr" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>[ ] Complete type hints for <code class="docutils literal notranslate"><span class="pre">knowledge_graph_embeddings.py</span></code></p></li>
+<li><p>[ ] Fix <code class="docutils literal notranslate"><span class="pre">config.py</span></code> Optional issues</p></li>
+<li><p>[ ] Add types to <code class="docutils literal notranslate"><span class="pre">executer.py</span></code> public interface</p></li>
+</ul>
+</section>
+<section id="phase-3-utilities-following-releases">
+<h3>Phase 3: Utilities (Following Releases)<a class="headerlink" href="#phase-3-utilities-following-releases" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>[ ] Type trainers and models</p></li>
+<li><p>[ ] Update preprocessing pipeline</p></li>
+</ul>
+</section>
+<section id="phase-4-coverage-long-term">
+<h3>Phase 4: Coverage (Long-term)<a class="headerlink" href="#phase-4-coverage-long-term" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>[ ] Gradual coverage of scripts and helpers</p></li>
+<li><p>[ ] Consider <code class="docutils literal notranslate"><span class="pre">disallow_untyped_defs</span> <span class="pre">=</span> <span class="pre">true</span></code> for key modules</p></li>
+</ul>
+</section>
+</section>
+<section id="mypy-configuration">
+<h2>mypy Configuration<a class="headerlink" href="#mypy-configuration" title="Link to this heading"></a></h2>
+<section id="current-approach-per-module-strictness">
+<h3>Current Approach: Per-Module Strictness<a class="headerlink" href="#current-approach-per-module-strictness" title="Link to this heading"></a></h3>
+<p>Instead of global <code class="docutils literal notranslate"><span class="pre">disallow_untyped_defs</span> <span class="pre">=</span> <span class="pre">true/false</span></code>, we use mypy’s <code class="docutils literal notranslate"><span class="pre">per_module_options</span></code> to enforce different levels for different parts of the code.</p>
+<div class="highlight-toml notranslate"><div class="highlight"><pre><span></span><span class="c1"># pyproject.toml [tool.mypy]</span>
+
+<span class="c1"># Tier 1: Strict enforcement</span>
+<span class="k">[[tool.mypy.overrides]]</span>
+<span class="n">module</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="s2">&quot;dicee.knowledge_graph_embeddings&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;dicee.config&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;dicee.executer&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+<span class="n">disallow_untyped_defs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="w">        </span><span class="c1"># Functions must be typed</span>
+
+<span class="c1"># Tier 2: Relaxed for now (warnings only)</span>
+<span class="k">[[tool.mypy.overrides]]</span>
+<span class="n">module</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="s2">&quot;dicee.trainer.*&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">&quot;dicee.models.*&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+<span class="n">disallow_untyped_defs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="w">       </span><span class="c1"># Warnings but not required</span>
+<span class="n">warn_return_any</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+
+<span class="c1"># Tier 3: Scripts (pass for now)</span>
+<span class="k">[[tool.mypy.overrides]]</span>
+<span class="n">module</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;dicee.scripts.*&quot;</span>
+<span class="n">ignore_errors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="w">               </span><span class="c1"># Revisit later</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="file-tracker">
+<h2>File Tracker<a class="headerlink" href="#file-tracker" title="Link to this heading"></a></h2>
+<p>Run this to see current state:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mypy<span class="w"> </span>dicee/<span class="w"> </span>--config-file<span class="o">=</span>pyproject.toml<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s2">&quot;error:&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span><span class="p">|</span><span class="w"> </span>uniq<span class="w"> </span>-c<span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-rn
+</pre></div>
+</div>
+</section>
+<section id="contributing">
+<h2>Contributing<a class="headerlink" href="#contributing" title="Link to this heading"></a></h2>
+<p>When adding new code:</p>
+<ol class="arabic simple">
+<li><p>Always include type hints on public function signatures</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">Optional[T]</span></code> for nullable parameters/returns</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">Union</span></code>, <code class="docutils literal notranslate"><span class="pre">Protocol</span></code>, and <code class="docutils literal notranslate"><span class="pre">Generic</span></code> when appropriate</p></li>
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">mypy</span> <span class="pre">dicee/</span> <span class="pre">--config-file=pyproject.toml</span></code> before committing</p></li>
+</ol>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.python.org/dev/peps/pep-0484/">PEP 484: Type Hints</a></p></li>
+<li><p><a class="reference external" href="https://mypy.readthedocs.io/">mypy Documentation</a></p></li>
+<li><p><a class="reference external" href="https://peps.python.org/pep-0586/">Python typing best practices</a></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

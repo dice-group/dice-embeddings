@@ -36,7 +36,7 @@ Module Contents
 
 
    .. py:attribute:: dataset_dir
-      :type:  str
+      :type:  Optional[str]
       :value: None
 
 
@@ -60,7 +60,7 @@ Module Contents
 
 
    .. py:attribute:: path_to_store_single_run
-      :type:  str
+      :type:  Optional[str]
       :value: None
 
 
@@ -130,7 +130,7 @@ Module Contents
 
 
    .. py:attribute:: add_noise_rate
-      :type:  float
+      :type:  Optional[float]
       :value: None
 
 
@@ -212,7 +212,7 @@ Module Contents
 
 
    .. py:attribute:: init_param
-      :type:  str
+      :type:  Optional[str]
       :value: None
 
 
@@ -246,7 +246,7 @@ Module Contents
 
 
    .. py:attribute:: save_model_at_every_epoch
-      :type:  int
+      :type:  Optional[int]
       :value: None
 
 
@@ -276,7 +276,7 @@ Module Contents
 
 
    .. py:attribute:: sample_triples_ratio
-      :type:  float
+      :type:  Optional[float]
       :value: None
 
 
@@ -284,7 +284,7 @@ Module Contents
 
 
    .. py:attribute:: read_only_few
-      :type:  int
+      :type:  Optional[int]
       :value: None
 
 
@@ -408,7 +408,7 @@ Module Contents
 
 
    .. py:attribute:: block_size
-      :type:  int
+      :type:  Optional[int]
       :value: None
 
 
@@ -416,6 +416,7 @@ Module Contents
 
 
    .. py:attribute:: continual_learning
+      :type:  Optional[str]
       :value: None
 
 
@@ -423,6 +424,7 @@ Module Contents
 
 
    .. py:attribute:: auto_batch_finding
+      :type:  bool
       :value: False
 
 
@@ -446,7 +448,7 @@ Module Contents
 
 
    .. py:attribute:: eval_at_epochs
-      :type:  list
+      :type:  Optional[list]
       :value: None
 
 
@@ -469,7 +471,7 @@ Module Contents
 
 
    .. py:attribute:: swa_start_epoch
-      :type:  int
+      :type:  Optional[int]
       :value: None
 
 
