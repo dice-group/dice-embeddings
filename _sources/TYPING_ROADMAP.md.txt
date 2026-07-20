@@ -13,9 +13,9 @@ Type hints improve:
 ## Current Status
 
 **mypy Results:**
-- **Total errors**: ~150+ type issues across the codebase
-- **CI status**: Mypy now blocking (as of this PR) but focuses on priority modules first
-- **Coverage**: ~40% of modules have basic type hints
+- **Total errors**: 1358 type issues across 47 files (`mypy dicee/ --config-file=pyproject.toml`)
+- **CI status**: Non-blocking (`continue-on-error: true` in `.github/workflows/github-actions-python-package.yml`) — errors are visible in CI logs but don't fail the build
+- **Coverage**: partial; growing gradually per the tiers below
 
 ## Priority Tiers
 
@@ -66,9 +66,9 @@ Ad-hoc utilities and optional features. Type hints optional.
 ## Implementation Strategy
 
 ### Phase 1: Foundation (This PR)
-- [x] Make mypy blocking in CI
+- [ ] Make mypy blocking in CI (still `continue-on-error: true`; blocking now would fail the build on 1358 pre-existing errors)
 - [x] Create this roadmap
-- [ ] Fix config.py Optional types (quick win)
+- [x] Fix config.py Optional types (quick win)
 - [ ] Add py.typed marker to package
 
 ### Phase 2: Priority Modules (Next PR)
