@@ -14,22 +14,32 @@ Fix: added `_read_parquet_head()`, which uses `pyarrow.parquet.ParquetFile.iter_
 
 Regression test added: [tests/test_unit_read_parquet.py](tests/test_unit_read_parquet.py) generates a dummy Parquet file via a `tmp_path` fixture (no dependency on the `KGs/` dataset download) and checks: exact row count for `read_only_few`, row order/content matches `.head(n)` on the full file, oversized `read_only_few` returns all rows, `None` returns the full file. The actual regression guard for #410 mocks `pd.read_parquet` and asserts it is **not called** when `read_only_few` is set (only the row-group-bounded `_read_parquet_head` path runs) and **is called** when it's unset — a first attempt used `tracemalloc` peak-memory comparisons instead, which was flaky on small fixture files where fixed overhead dominated the signal in CI. All 6 tests pass, deterministically.
 
-## Open findings
-
 ### 2. `assert` used for runtime validation in public API paths
-298 `assert` statements across `dicee/`, concentrated in [dicee/knowledge_graph_embeddings.py](dicee/knowledge_graph_embeddings.py) (45) and [dicee/read_preprocess_save_load_kg/preprocess.py](dicee/read_preprocess_save_load_kg/preprocess.py) (19). Asserts are stripped when Python runs with `-O`, so validation on the public `KGE` inference class and preprocessing pipeline silently disappears in optimized mode. Convert the ones guarding user input at API boundaries (`KGE.__init__`, `predict_topk`, etc.) to explicit `ValueError`/`TypeError`.
+**Status:** Fixed (scoped to API boundaries)
 
-### 3. Core user-facing modules have no dedicated unit tests
-[dicee/knowledge_graph_embeddings.py](dicee/knowledge_graph_embeddings.py) (1423 lines — the main inference API), `executer.py`, `static_funcs.py`, `query_generator.py`, and `knowledge_graph.py` are only exercised indirectly through regression/integration tests. A scoring-logic bug (e.g. in `predict_topk`) could pass CI as long as a higher-level regression test's loose assertions don't happen to catch it.
+Converted the `assert` statements guarding user input at public API boundaries — `KGE.__init__`, `predict`, `predict_topk`, `to`, `answer_multi_hop_query`, `find_missing_triples`, `predict_literals` in [dicee/knowledge_graph_embeddings.py](dicee/knowledge_graph_embeddings.py), and the full validation path in [dicee/read_preprocess_save_load_kg/preprocess.py](dicee/read_preprocess_save_load_kg/preprocess.py) — to explicit `ValueError`/`TypeError`. Internal tensor-shape/invariant checks (not user input) were deliberately left as `assert`; ~246 remain across `dicee/`, mostly internal sanity checks in query-answering loops and model internals. Not literally "all asserts converted" — only the ones that guard values coming from outside the library.
 
 ### 4. `print()` instead of `logging` throughout the library
-33 modules call `print()` directly (trainers, models, evaluation code); only 1 module uses Python's `logging`. Library consumers embedding `dicee` in larger pipelines can't control verbosity, silence it, or redirect output without monkeypatching. Recommend migrating to per-module `logging.getLogger(__name__)`.
+**Status:** Fixed
+
+Migrated `print()` calls in trainers, models, evaluation code, and core utilities to per-module `logging.getLogger(__name__)`. Library consumers can now control verbosity, silence output, or redirect logs without monkeypatching. A handful of `print(...)` strings remain, but only inside docstrings/commented-out dead code (e.g. `models/clifford.py`, `trainer/torch_trainer.py`) — not live paths.
+
+## Open findings
+
+### 3. Core user-facing modules have no dedicated unit tests
+**Status:** Partially resolved
+
+[dicee/knowledge_graph_embeddings.py](dicee/knowledge_graph_embeddings.py) (the main inference API) now has a dedicated unit test suite ([tests/test_unit_kge_inference.py](tests/test_unit_kge_inference.py), 32 tests covering input validation, device management, entity embedding extraction). `executer.py`, `static_funcs.py`, `query_generator.py`, and `knowledge_graph.py` are still only exercised indirectly through regression/integration tests.
 
 ### 5. `mypy` is non-blocking in CI with no ratchet
 `.github/workflows/github-actions-python-package.yml` runs mypy with `continue-on-error: true`, and `pyproject.toml` sets `disallow_untyped_defs = false` with a "start lenient, tighten later" comment. There's no mechanism forcing that tightening to actually happen over time.
 
 ### 6. CI only tests a single Python version (3.11.14)
-`pyproject.toml` declares `python_requires >= 3.11` with no upper bound, but the CI matrix pins one patch version. No signal if the package breaks on 3.12/3.13, which matters given how fast the PyTorch/Lightning ecosystem moves.
+**Status:** Fixed
+
+`.github/workflows/github-actions-python-package.yml` now runs the matrix against Python 3.11, 3.12, and 3.13, matching the `python_requires >= 3.11` declaration in `pyproject.toml`.
 
 ### 7. Accumulated "why do we need this?" TODOs
-42 TODO/FIXME markers, several of which flag genuine uncertainty about existing logic rather than pending work — e.g. `abstracts.py:721` (`# @TODO: Do we really need this ?!`), `knowledge_graph.py:132` (`# TODO:CD: Why do we need to create this inverse mapping at this point?`), and `query_generator.py:226` (`# @TODO: Why do we need a deep copy here ?`). These represent institutional knowledge at risk of being lost; worth a documentation/cleanup pass before the original authors' context fades further.
+**Status:** Cataloged, not resolved
+
+42 TODO/FIXME markers in `dicee/` (45 including `tests/`), several of which flag genuine uncertainty about existing logic rather than pending work — e.g. `abstracts.py:721` (`# @TODO: Do we really need this ?!`), `knowledge_graph.py:132` (`# TODO:CD: Why do we need to create this inverse mapping at this point?`), and `query_generator.py:226` (`# @TODO: Why do we need a deep copy here ?`). Cataloged by priority in [docs/TODO_BACKLOG.md](docs/TODO_BACKLOG.md); none of the underlying uncertainty has actually been resolved yet — that still needs the original authors' input.

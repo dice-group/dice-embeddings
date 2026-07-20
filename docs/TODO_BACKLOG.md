@@ -1,6 +1,6 @@
 # TODO/FIXME Backlog
 
-This document catalogs and organizes the 56+ TODO/FIXME markers scattered throughout the dicee codebase. Keeping them in one place prevents institutional knowledge loss and improves maintainability.
+This document catalogs and organizes the 42 TODO/FIXME markers scattered throughout `dicee/` (45 including `tests/`), per `grep -rn "TODO\|FIXME" dicee/`. Keeping them in one place prevents institutional knowledge loss and improves maintainability.
 
 **Last Updated:** 2026-07-20
 

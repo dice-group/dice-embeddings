@@ -7,14 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [1.0.3.3] - 2026-07-20
 
 ### Added
 - FSDP (Fully Sharded Data Parallel) trainer for distributed training across multiple GPUs with model sharding
 - `FSDP1vsSampleDataset` for FSDP-compatible 1-vs-sample scoring technique
-- New embedding models:
-  - **RotaE**: Rotation-based translation model with learnable rotations in the embedding space
-  - Additional models in `dicee/models/real.py` (DistMult, TransE, Pyke, Shallom, CoKE)
+- New embedding models in `dicee/models/real.py`:
+  - **TransH**: translation-based embedding on relation-specific hyperplanes (addresses TransE's limitations on 1-N/N-1/N-N relations)
+  - **MuRE**: multi-relational embedding with relation-specific diagonal scaling, translation, and per-entity biases
 - Claude Code integration: project memory, specialized subagents, and skills for model development and training workflows
 - Deterministic unit test for Parquet reading regression (`test_unit_read_parquet.py`)
 - Comprehensive unit test suite for KGE inference API validation (`test_unit_kge_inference.py`):
@@ -27,17 +27,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Created `docs/TYPING_ROADMAP.md` documenting 3-tier type hint enforcement strategy
   - CI matrix now tests Python 3.11, 3.12, and 3.13 (IMPROVEMENTS.md #6)
 - TODO/FIXME backlog organization and categorization (IMPROVEMENTS.md #7):
-  - Created `docs/TODO_BACKLOG.md` cataloging 56+ TODO/FIXME markers by priority
-  - Categorized by impact: 6 Medium-priority items (performance/design), 25+ Low-priority (refactoring)
+  - Created `docs/TODO_BACKLOG.md` cataloging the 42 TODO/FIXME markers in `dicee/` by priority
+  - Categorized by impact: 6 Medium-priority items (performance/design), remaining Low-priority (refactoring)
 
 ### Changed
-- **Breaking change**: Converted 298 `assert` statements to explicit exceptions (`ValueError`, `TypeError`) in public API paths:
-  - [dicee/knowledge_graph_embeddings.py](dicee/knowledge_graph_embeddings.py) (45 asserts)
-  - [dicee/read_preprocess_save_load_kg/preprocess.py](dicee/read_preprocess_save_load_kg/preprocess.py) (19 asserts)
-  - User-facing validation on `KGE.__init__`, `predict_topk`, preprocessing pipeline now works in Python optimized mode (`-O`)
-- **Breaking change**: Migrated 33 modules from `print()` to Python's `logging` module:
-  - Trainers, models, evaluation code, and core utilities now use per-module `logging.getLogger(__name__)`
-  - Library consumers can now control verbosity, silence output, or redirect logs without monkeypatching
+- **Breaking change**: Converted `assert` statements guarding user input at public API boundaries to explicit exceptions (`ValueError`, `TypeError`):
+  - [dicee/knowledge_graph_embeddings.py](dicee/knowledge_graph_embeddings.py) (`__init__`, `predict`, `predict_topk`, `to`, `answer_multi_hop_query`, `find_missing_triples`, `predict_literals`)
+  - [dicee/read_preprocess_save_load_kg/preprocess.py](dicee/read_preprocess_save_load_kg/preprocess.py) (all preprocessing-pipeline validation)
+  - User-facing validation now works in Python optimized mode (`-O`), where `assert` is stripped
+  - Internal tensor-shape/invariant checks (not user input) intentionally remain as `assert` — ~246 remain across `dicee/` by design
+- **Breaking change**: Migrated `print()` calls to Python's `logging` module across trainers, models, evaluation code, and core utilities:
+  - Per-module `logging.getLogger(__name__)` lets consumers control verbosity, silence output, or redirect logs without monkeypatching stdout
 - Improved TP (Tensor Parallel) trainer error message when insufficient GPUs are available
 - Updated README with FSDP trainer documentation
 
@@ -74,16 +74,12 @@ The following issues are being tracked for future resolution:
 ### Priority: Low  
 - **mypy is non-blocking in CI** (#5)
   - `.github/workflows/github-actions-python-package.yml` runs with `continue-on-error: true`
-  - No mechanism to enforce gradual type coverage improvement
+  - 1358 errors currently reported (non-fatal); no mechanism yet to enforce gradual tightening — see `docs/TYPING_ROADMAP.md`
 
-- **CI only tests one Python version** (#6)
-  - Package declares `python >= 3.11` but only tests 3.11.14
-  - No signal if it breaks on 3.12/3.13
-
-- **42 accumulated TODO/FIXME markers** (#7)
+- **42 accumulated TODO/FIXME markers, cataloged but not resolved** (#7)
   - Several flag uncertainty about existing logic rather than pending work
   - Examples: `abstracts.py:721`, `knowledge_graph.py:132`, `query_generator.py:226`
-  - Worth a documentation/cleanup pass before original authors' context fades
+  - Cataloged by priority in `docs/TODO_BACKLOG.md`; still needs original authors' input to actually resolve
 
 ---
 
