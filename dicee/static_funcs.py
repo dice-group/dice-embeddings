@@ -287,9 +287,17 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
     else:
         if args["trainer"]=="TP":
             # If it is tensor parallelized KGE, then we need to create ensemble of models.
+            num_gpus = torch.cuda.device_count()
+            if num_gpus < 2:
+                raise RuntimeError(
+                    f"Tensor Parallelism (TP) trainer requires at least 2 GPUs, but found {num_gpus}. "
+                    f"To use TP trainer, ensure your system has multiple GPUs available or switch to a different "
+                    f"trainer (e.g., 'torchCPUTrainer', 'PL', 'torchDDP', 'torchFSDP'). "
+                    f"Available GPUs: {torch.cuda.get_device_name(0) if num_gpus > 0 else 'None'}"
+                )
             models = []
             labelling_flag = None
-            for i in range(torch.cuda.device_count()):
+            for i in range(num_gpus):
                 args["random_seed"] = i
                 model, labelling_flag = intialize_model(args)
                 models.append(model)
