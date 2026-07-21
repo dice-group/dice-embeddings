@@ -4,6 +4,7 @@ This module provides various functions for evaluating link prediction
 performance of knowledge graph embedding models.
 """
 
+import logging
 from typing import Callable, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -22,6 +23,8 @@ from .utils import (
     create_hits_dict,
     update_hits,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @torch.no_grad()
@@ -336,8 +339,8 @@ def evaluate_lp(
     assert re_vocab is not None, "re_vocab must be provided"
 
     model.eval()
-    print(info)
-    print(f'Num of triples {len(triple_idx)}')
+    logger.info(info)
+    logger.info(f'Num of triples {len(triple_idx)}')
 
     hits = {}
     reciprocal_ranks = []
@@ -406,7 +409,7 @@ def evaluate_lp(
         scale_factor=2
     ) | {'MRR': sum(reciprocal_ranks) / (float(len(triple_idx) * 2))}
 
-    print(results)
+    logger.info(results)
     return results
 
 
@@ -437,8 +440,8 @@ def evaluate_bpe_lp(
     assert len(triple_idx[0]) == 3
 
     model.eval()
-    print(info)
-    print(f'Num of triples {len(triple_idx)}')
+    logger.info(info)
+    logger.info(f'Num of triples {len(triple_idx)}')
 
     hits = {}
     reciprocal_ranks = []
@@ -490,7 +493,7 @@ def evaluate_bpe_lp(
         scale_factor=2
     ) | {'MRR': sum(reciprocal_ranks) / (float(len(triple_idx) * 2))}
 
-    print(results)
+    logger.info(results)
     return results
 
 

@@ -1,5 +1,6 @@
 import functools
 import glob
+import logging
 import os
 import pickle
 import time
@@ -12,8 +13,12 @@ import pandas as pd
 import polars
 import polars as pl
 import psutil
+import pyarrow as pa
+import pyarrow.parquet as pq
 import requests
 from tqdm import tqdm
+
+logger = logging.getLogger(__name__)
 
 
 def polars_dataframe_indexer(df_polars:polars.DataFrame, idx_entity:polars.DataFrame, idx_relation:polars.DataFrame)->polars.DataFrame:
@@ -128,7 +133,7 @@ def pandas_dataframe_indexer(df_pandas: pd.DataFrame, idx_entity: pd.DataFrame, 
 def apply_reciprocal_or_noise(add_reciprocal: bool, eval_model: str, df: object = None, info: str = None):
     """Add reciprocal triples if conditions are met"""
     if add_reciprocal and eval_model and df is not None:
-        print(f'Adding reciprocal triples to {info}, e.g. KG:= (s, p, o) union (o, p_inverse, s)')
+        logger.info(f'Adding reciprocal triples to {info}, e.g. KG:= (s, p, o) union (o, p_inverse, s)')
         return create_recipriocal_triples(df)
     return df
 
@@ -140,7 +145,7 @@ def timeit(func):
         result = func(*args, **kwargs)
         end_time = time.perf_counter()
         total_time = end_time - start_time
-        print(
+        logger.info(
             f'{func.__name__} took {total_time:.4f} seconds '
             f'| Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
         return result
@@ -152,7 +157,7 @@ def _filter_literal_triples(df, backend: str):
     """Remove triples with literal values if RDF format detected"""
     sample = df.head().to_pandas() if backend == "polars" else df.head()
     if sum(sample["subject"].str.startswith('<')) + sum(sample["relation"].str.startswith('<')) > 2:
-        print('Removing triples with literal values...')
+        logger.info('Removing triples with literal values...')
         if backend == "polars":
             return df.filter(polars.col("object").str.starts_with('<'))
         else:
@@ -164,7 +169,7 @@ def _filter_literal_triples(df, backend: str):
 def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator:str=None) -> polars.DataFrame:
     """Load and Preprocess via Polars"""
     assert separator is not None, "separator cannot be None"
-    print(f'*** Reading {data_path} with Polars ***')
+    logger.info(f'*** Reading {data_path} with Polars ***')
 
     if ".zst" in data_path:
         df = polars.read_csv(data_path, n_rows=read_only_few)
@@ -179,18 +184,36 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
                              separator=separator)
 
     if sample_triples_ratio:
-        print(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')
+        logger.info(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')
         df = df.sample(frac=sample_triples_ratio)
-        print(df.shape)
+        logger.info(df.shape)
 
     return _filter_literal_triples(df, "polars")
+
+
+def _read_parquet_head(data_path: str, read_only_few: int) -> pd.DataFrame:
+    """Read at most `read_only_few` rows from a Parquet file without materializing the full file in memory.
+
+    Stops pulling row groups as soon as enough rows have been accumulated, unlike
+    `pd.read_parquet(...).head(n)` which first loads the entire file.
+    """
+    parquet_file = pq.ParquetFile(data_path)
+    batches = []
+    num_rows = 0
+    for batch in parquet_file.iter_batches(batch_size=read_only_few):
+        batches.append(batch)
+        num_rows += batch.num_rows
+        if num_rows >= read_only_few:
+            break
+    table = pa.Table.from_batches(batches)
+    return table.to_pandas().head(read_only_few)
 
 
 @timeit
 def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator:str=None):
     """Load and Preprocess via Pandas"""
     assert separator is not None, "separator cannot be None"
-    print(f'*** Reading {data_path} with Pandas ***')
+    logger.info(f'*** Reading {data_path} with Pandas ***')
 
     if data_path[-3:] in [".nt", "ttl", 'txt', 'csv', 'zst']:
         df = pd.read_csv(data_path,
@@ -201,13 +224,14 @@ def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio:
                          names=['subject', 'relation', 'object'],
                          dtype=str)
     else:
-        df = pd.read_parquet(data_path, engine='pyarrow')
         if read_only_few and read_only_few > 0:
-            print(f'Reading only few input data {read_only_few}...')
-            df = df.head(read_only_few)
+            logger.info(f'Reading only few input data {read_only_few}...')
+            df = _read_parquet_head(data_path, read_only_few)
+        else:
+            df = pd.read_parquet(data_path, engine='pyarrow')
 
     if sample_triples_ratio:
-        print(f'Subsampling {sample_triples_ratio} of input data...')
+        logger.info(f'Subsampling {sample_triples_ratio} of input data...')
         df = df.sample(frac=sample_triples_ratio)
 
     return _filter_literal_triples(df, "pandas")
@@ -278,7 +302,7 @@ def fetch_worker(endpoint: str, offsets: list[int], chunk_size: int, output_dir:
         """
         response = requests.post(endpoint, data={"query": query}, headers=headers)
         if not response.ok:
-            print(f"[Worker {worker_id}] Query failed at offset {offset}: {response.status_code}")
+            logger.warning(f"[Worker {worker_id}] Query failed at offset {offset}: {response.status_code}")
             continue
 
         bindings = response.json()["results"]["bindings"]
@@ -297,18 +321,18 @@ def read_from_triple_store_with_polars(endpoint: str, chunk_size: int = 500000, 
     if os.path.exists(output_dir):
         files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith(".parquet")]
         if files:
-            print(f"\n*** Found parquet files in folder `{output_dir}`, will read from those. Otherwise, delete the folder.***\n")
+            logger.info(f"Found parquet files in folder `{output_dir}`, will read from those. Otherwise, delete the folder.")
             parquet_files = sorted(files)
             df_polars = pl.read_parquet(parquet_files)
             return df_polars
 
     total_triples = count_triples(endpoint)
     total_chunks = (total_triples + chunk_size - 1) // chunk_size
-    print(f"Total triples: {total_triples}, total chunks: {total_chunks}")
+    logger.info(f"Total triples: {total_triples}, total chunks: {total_chunks}")
 
     # Determine number of workers
     num_workers = max(1, cpu_count())
-    print(f"Using {num_workers} worker processes.")
+    logger.info(f"Using {num_workers} worker processes.")
 
     # Generate all offsets
     all_offsets = [i * chunk_size for i in range(total_chunks)]
@@ -423,46 +447,46 @@ def create_constraints(triples, file_path: str = None):
 @timeit
 def load_with_pandas(self) -> None:
     """ Deserialize data """
-    print(f'Deserialization Path: {self.kg.deserialize_flag}\n')
+    logger.info(f'Deserialization Path: {self.kg.deserialize_flag}')
     start_time = time.time()
-    print('[1 / 4] Deserializing compressed entity integer mapping...')
+    logger.info('[1 / 4] Deserializing compressed entity integer mapping...')
     self.kg.entity_to_idx = pd.read_parquet(self.kg.deserialize_flag + '/entity_to_idx.gzip')
-    print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+    logger.info(f'Done !\t{time.time() - start_time:.3f} seconds')
     self.kg.num_entities = len(self.kg.entity_to_idx)
 
-    print('[2 / ] Deserializing compressed relation integer mapping...')
+    logger.info('[2 / ] Deserializing compressed relation integer mapping...')
     start_time = time.time()
     self.kg.relation_to_idx = pd.read_parquet(self.kg.deserialize_flag + '/relation_to_idx.gzip')
-    print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+    logger.info(f'Done !\t{time.time() - start_time:.3f} seconds')
 
     self.kg.num_relations = len(self.kg.relation_to_idx)
-    print(
+    logger.info(
         '[3 / 4] Converting integer and relation mappings '
         'from from pandas dataframe to dictionaries for an easy access...',
     )
     start_time = time.time()
     self.kg.entity_to_idx = self.kg.entity_to_idx.to_dict()['entity']
     self.kg.relation_to_idx = self.kg.relation_to_idx.to_dict()['relation']
-    print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+    logger.info(f'Done !\t{time.time() - start_time:.3f} seconds')
     # 10. Serialize (9).
-    print('[4 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
+    logger.info('[4 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
     start_time = time.time()
     self.kg.train_set = pd.read_parquet(self.kg.deserialize_flag + '/idx_train_df.gzip').values
-    print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+    logger.info(f'Done !\t{time.time() - start_time:.3f} seconds')
     try:
-        print('[5 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
+        logger.info('[5 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
         self.kg.valid_set = pd.read_parquet(self.kg.deserialize_flag + '/idx_valid_df.gzip').values
-        print('Done!\n')
+        logger.info('Done!')
     except FileNotFoundError:
-        print('No valid data found!\n')
+        logger.info('No valid data found!')
         self.kg.valid_set = None  # pd.DataFrame()
 
     try:
-        print('[6 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
+        logger.info('[6 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
         self.kg.test_set = pd.read_parquet(self.kg.deserialize_flag + '/idx_test_df.gzip').values
-        print('Done!\n')
+        logger.info('Done!')
     except FileNotFoundError:
-        print('No test data found\n')
+        logger.info('No test data found')
         self.kg.test_set = None
 
     if self.kg.eval_model:
@@ -471,7 +495,7 @@ def load_with_pandas(self) -> None:
             data = np.concatenate([self.kg.train_set, self.kg.valid_set, self.kg.test_set])
         else:
             data = self.kg.train_set
-        print('[7 / 4] Creating er,re, and ee type vocabulary for evaluation...')
+        logger.info('[7 / 4] Creating er,re, and ee type vocabulary for evaluation...')
         start_time = time.time()
         self.kg.er_vocab = get_er_vocab(data)
         self.kg.re_vocab = get_re_vocab(data)
@@ -479,7 +503,7 @@ def load_with_pandas(self) -> None:
         self.kg.ee_vocab = get_ee_vocab(data)
         self.kg.domain_constraints_per_rel, self.kg.range_constraints_per_rel = create_constraints(
             self.kg.train_set)
-        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+        logger.info(f'Done !\t{time.time() - start_time:.3f} seconds')
 
 
 def save_numpy_ndarray(*, data: np.ndarray, file_path: str):
@@ -542,7 +566,7 @@ def dataset_sanity_checking(train_set: np.ndarray, num_entities: int, num_relati
     try:
         assert num_relations >= max(train_set[:, 1])
     except AssertionError:
-        print(
+        logger.warning(
             f'Relation Indexing Error:\n'
             f'Max ID of a relation in train set:{max(train_set[:, 1])} is greater than num_entities:{num_relations}')
     # 13. Sanity checking: data types

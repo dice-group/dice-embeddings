@@ -5,6 +5,7 @@ select the appropriate ``torch.utils.data.Dataset`` sub-class based on the
 requested scoring technique and labelling strategy.
 """
 
+import logging
 from typing import Union
 
 import numpy as np
@@ -18,6 +19,8 @@ from ._bpe import (
 )
 from ._label_based import AllvsAll, FSDP1vsSampleDataset, KvsAll, KvsSampleDataset, OnevsAllDataset
 from ._negative_sampling import FixedNegSampleDataset, OnevsSample, TriplePredictionDataset
+
+logger = logging.getLogger(__name__)
 
 
 @timeit
@@ -195,5 +198,5 @@ def construct_dataset(
     else:
         raise KeyError("Illegal input.")
 
-    print(f"Number of datapoints: {len(train_set)}")
+    logger.info(f"Number of datapoints: {len(train_set)}")
     return train_set

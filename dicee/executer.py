@@ -36,6 +36,9 @@ logging.getLogger('lightning').setLevel(logging.WARNING)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "INFO"
 
+logger = logging.getLogger(__name__)
+
+
 class Execute:
     """Executor class for training, retraining and evaluating KGE models.
 
@@ -136,11 +139,11 @@ class Execute:
 
         if os.path.exists(path):
             if not reuse_existing:
-                print(f"Deleting existing directory: {path}")
+                logger.info(f"Deleting existing directory: {path}")
                 shutil.rmtree(path)
                 os.makedirs(path, exist_ok=False)
             else:
-                print(f"Reusing existing directory: {path}")
+                logger.info(f"Reusing existing directory: {path}")
         else:
             os.makedirs(path, exist_ok=False)
 
@@ -163,10 +166,10 @@ class Execute:
         )
 
         if os.path.exists(memmap_path) and os.path.exists(details_path):
-            print("KG already exists, skipping creation.")
+            logger.info("KG already exists, skipping creation.")
             return
 
-        print("Creating knowledge graph...")
+        logger.info("Creating knowledge graph...")
         self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
         self._update_args_from_kg()
         self._save_kg_memmap(memmap_path, details_path)
@@ -260,7 +263,7 @@ class Execute:
         None
 
         """
-        print('*** Save Trained Model ***')
+        logger.info('*** Save Trained Model ***')
         self.trained_model.eval()
         self.trained_model.to('cpu')
         # Save the epoch loss
@@ -319,7 +322,7 @@ class Execute:
         # @TODO: Move to static funcs
         # Report total runtime.
         self.report['Runtime'] = time.time() - self.start_time
-        print(f"Total Runtime: {self.report['Runtime']:.3f} seconds")
+        logger.info(f"Total Runtime: {self.report['Runtime']:.3f} seconds")
         with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor, indent=4)
 
@@ -342,7 +345,7 @@ class Execute:
         """
         try:
             self.start_time = time.time()
-            print(f"Start time:{datetime.datetime.now()}")
+            logger.info(f"Start time:{datetime.datetime.now()}")
             # (1) Create knowledge graph
             self.create_and_store_kg()
             # (2) Synchronize processes if distributed training is used
@@ -393,16 +396,16 @@ class ContinuousExecute(Execute):
         previous_args["num_epochs"]=args["num_epochs"]
         previous_args["continual_learning"]=args["continual_learning"]
         previous_args["path_experiment_folder"]=args["continual_learning"]
-        print("Updated configuration:",previous_args)
+        logger.info(f"Updated configuration: {previous_args}")
         try:
             report = load_json(args['continual_learning'] + '/report.json')
             previous_args['num_entities'] = report['num_entities']
             previous_args['num_relations'] = report['num_relations']
         except AssertionError:
-            print("Couldn't find report.json.")
+            logger.warning("Couldn't find report.json.")
         previous_args = SimpleNamespace(**previous_args)
-        print('ContinuousExecute starting...')
-        print(previous_args)
+        logger.info('ContinuousExecute starting...')
+        logger.info(previous_args)
         super().__init__(previous_args, continuous_training=True)
 
     def continual_start(self) -> dict:

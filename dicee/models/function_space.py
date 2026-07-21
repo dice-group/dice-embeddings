@@ -1,7 +1,11 @@
+import logging
+
 import numpy as np
 import torch
 
 from .base_model import BaseKGE
+
+logger = logging.getLogger(__name__)
 
 
 class FMult(BaseKGE):
@@ -143,7 +147,7 @@ class FMult2(BaseKGE):
             self.embedding_dim += 1
             tuned_embedding_dim = True
         if tuned_embedding_dim:
-            print(f"\n\n*****Embedding dimension reset to {self.embedding_dim} to fit model architecture!*****\n")
+            logger.warning(f"Embedding dimension reset to {self.embedding_dim} to fit model architecture!")
         self.k = int(np.sqrt((self.embedding_dim - 1) // self.n_layers))
         self.n = 50
         self.a, self.b = -1.0, 1.0

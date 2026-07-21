@@ -1,8 +1,11 @@
 import glob
+import logging
 import os
 
 import requests
 import torch
+
+logger = logging.getLogger(__name__)
 
 
 def is_sparql_endpoint_alive(sparql_endpoint: str = None):
@@ -10,7 +13,7 @@ def is_sparql_endpoint_alive(sparql_endpoint: str = None):
         query = """SELECT (COUNT(*) as ?num_triples) WHERE {  ?s ?p ?o .} """
         response = requests.post(sparql_endpoint, data={'query': query})
         assert response.ok
-        print('SPARQL connection is successful')
+        logger.info('SPARQL connection is successful')
         return response.ok
     else:
         return False

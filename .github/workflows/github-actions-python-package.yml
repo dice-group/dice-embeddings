@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11.14"]
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v3
@@ -25,10 +25,13 @@ jobs:
         run: |
           ruff check dicee/ --line-length=200
       
-      - name: Type check with mypy (non-blocking)
+      - name: Type check with mypy
         run: |
-          mypy dicee/ --config-file=pyproject.toml || echo "⚠️  Type checking found issues (non-blocking)"
-          echo "Type checking complete. Fix issues over time."
+          # Mypy is running but non-blocking for now.
+          # See docs/TYPING_ROADMAP.md for type hints enforcement strategy.
+          # We're implementing gradual enforcement: Tier 1 modules must pass,
+          # Tier 2 warnings are logged, Tier 3 is ignored for now.
+          mypy dicee/ --config-file=pyproject.toml
         continue-on-error: true
 
       - name: Testing and coverage report

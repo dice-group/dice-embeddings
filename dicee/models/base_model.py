@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, List, Tuple, Union
 
 import lightning as pl
@@ -7,6 +8,8 @@ from torch import nn
 from torch.nn import functional as F
 
 from .adopt import ADOPT
+
+logger = logging.getLogger(__name__)
 
 
 class BaseKGELightning(pl.LightningModule):
@@ -176,7 +179,7 @@ class BaseKGELightning(pl.LightningModule):
                                                        weight_decay=self.weight_decay)
         else:
             raise KeyError(f"{self.optimizer_name} is not found!")
-        print(self.selected_optimizer)
+        logger.info(self.selected_optimizer)
         return self.selected_optimizer
 
 
@@ -411,7 +414,7 @@ class BaseKGE(BaseKGELightning):
         elif self.args['init_param'] == 'xavier_normal':
             self.param_init = torch.nn.init.xavier_normal_
         else:
-            print(f'--init_param (***{self.args.get("init_param")}***) not found')
+            logger.warning(f'--init_param (***{self.args.get("init_param")}***) not found')
             self.optimizer_name = IdentityClass
 
     def forward(self, x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]],
