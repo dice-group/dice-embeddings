@@ -6,14 +6,18 @@ Covers (non-distributed, single-process — no torchrun / GPU required):
   round trip: weights and optimizer state survive a save+load cycle unchanged
 - load_local_shard_checkpoint rejects a checkpoint saved with a different
   world_size (shard-layout mismatch), instead of silently loading wrong rows
+- intialize_model(..., for_inference=True) never builds the FSDP sharded shell,
+  so a completed torchFSDP model.pt (plain entity_embeddings.weight) can
+  actually be loaded back via load_model()/KGE (see static_funcs.py)
 """
 import os
 
 import pytest
 import torch
 
-from dicee.models.fsdp_models import _LocalSparseAdam, create_fsdp_sharded_model_class
+from dicee.models.fsdp_models import FSDPShardedEntityModel, _LocalSparseAdam, create_fsdp_sharded_model_class
 from dicee.models.real import DistMult
+from dicee.static_funcs import intialize_model
 
 
 def _minimal_args(num_entities: int = 37, num_relations: int = 5, embedding_dim: int = 8) -> dict:
@@ -115,3 +119,38 @@ class TestShardCheckpointRoundTrip:
         model = sharded_cls(args)  # setup_fsdp_training() not called yet
         with pytest.raises(RuntimeError, match="setup_fsdp_training"):
             model.save_local_shard_checkpoint(os.path.join(tmp_path, "shard.pt"))
+
+
+class TestInitializeModelForInference:
+    """A completed torchFSDP run's model.pt has a plain, full entity_embeddings.weight —
+    loading it must build the plain model class, not the sharded shell (which defers
+    entity_embeddings until setup_fsdp_training(), and so has nowhere to load that key)."""
+
+    def _fsdp_args(self, **overrides) -> dict:
+        args = _minimal_args(**overrides)
+        args["trainer"] = "torchFSDP"
+        return args
+
+    def test_for_inference_true_builds_plain_model(self):
+        model, form_of_labelling = intialize_model(self._fsdp_args(), for_inference=True)
+        assert not isinstance(model, FSDPShardedEntityModel)
+        assert form_of_labelling == "EntityPrediction"
+        assert model.entity_embeddings is not None
+        assert isinstance(model.entity_embeddings, torch.nn.Embedding)
+
+    def test_for_inference_false_builds_sharded_model(self):
+        model, _ = intialize_model(self._fsdp_args())  # default: for_inference=False
+        assert isinstance(model, FSDPShardedEntityModel)
+        assert model.entity_embeddings is None  # deferred until setup_fsdp_training()
+
+    def test_plain_model_state_dict_loads_into_for_inference_model(self):
+        """Round-trip: what TorchFSDPTrainer._materialize_model() produces (a plain
+        model's state_dict, with a full entity_embeddings.weight) must load cleanly
+        into the for_inference=True shell — this is exactly load_model()'s path."""
+        args = self._fsdp_args()
+        plain_model, _ = intialize_model(dict(args, trainer=None))  # trainer=None -> plain, unsharded
+        state_dict = plain_model.state_dict()
+        assert "entity_embeddings.weight" in state_dict
+
+        loaded_model, _ = intialize_model(args, for_inference=True)
+        loaded_model.load_state_dict(state_dict)  # must not raise

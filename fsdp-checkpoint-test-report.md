@@ -175,7 +175,22 @@ this project's default logging config):
 tests/test_custom_trainer.py` (47 tests) and `ruff check` on the touched
 files both pass after the §1 fix.
 
-## 5. New finding: FSDP models can't currently be loaded for inference — unrelated pre-existing bug
+### 4.5 FSDP inference-loading fix (§5), real-GPU verification — **passed**
+
+Trained a fresh `torchFSDP` model on UMLS (10 epochs, no checkpoint feature
+involved), then loaded it with `KGE(path=...)` and ran `predict_topk`:
+```
+Loaded OK. Entities: 135 Relations: 46
+[[('fully_formed_anatomical_structure', 0.895935595035553), ('tissue', 0.8415135145187378), ('pathologic_function', 0.8298479914665222)]]
+```
+Confirmed this failed before the §5 fix and succeeds after it. Added 3 unit
+tests (`TestInitializeModelForInference` in `test_fsdp_shard_checkpoint.py`)
+covering: `for_inference=True` builds the plain class, `for_inference=False`
+(default) still builds the sharded shell for training, and a plain model's
+`state_dict()` loads cleanly into a `for_inference=True` shell. 50/50 tests
+pass; `ruff` clean.
+
+## 5. Fixed: FSDP models couldn't be loaded for inference — unrelated pre-existing bug
 
 While sanity-checking the final resumed `model.pt` via `KGE(path=...)`
 (`dicee/knowledge_graph_embeddings.py`), loading failed:
@@ -185,19 +200,19 @@ RuntimeError: Error(s) in loading state_dict for FSDPKeci:
 ```
 Root cause: `load_model()` (`dicee/static_funcs.py`) calls `intialize_model(configs)`
 using `configuration.json`, which still says `"trainer": "torchFSDP"` from the
-original training run. `intialize_model()` doesn't distinguish "building a
+original training run. `intialize_model()` didn't distinguish "building a
 shell for FSDP *training*" (needs the sharded, entity-less shell) from
 "loading a *completed* `model.pt` for inference" (needs the plain class,
 since a materialized `model.pt` already has a normal, full `entity_embeddings.weight`).
-So it always rebuilds the sharded shell, which has no `entity_embeddings`
-submodule to load that key into — this happens for **every** completed
+So it always rebuilt the sharded shell, which has no `entity_embeddings`
+submodule to load that key into — this happened for **every** completed
 `torchFSDP` run, not just ones that used the new checkpoint feature. It
 predates this branch entirely; it just hadn't been exercised end-to-end
-before.
+before this test session.
 
-**Not fixed in this session** — it's outside the "sharded checkpoint
-save/resume" scope this branch targets, and is a decision point on its own
-(likely fix: an explicit `for_inference` flag threaded through
-`intialize_model()`/`load_model()`/`load_model_ensemble()` that skips the
-FSDP-sharding branch when loading a finished model). Flagging it here so it
-isn't lost.
+**Fixed** (same session, once discovered): `intialize_model()` gained a
+`for_inference: bool = False` parameter that skips the FSDP-sharding branch
+entirely when set. `load_model()` and `load_model_ensemble()` now pass
+`for_inference=True`; `select_model()`'s training/continual-learning paths
+are unchanged (still build the sharded shell when appropriate). Verified
+with a real GPU end-to-end (§4.5) and 3 new unit tests.
