@@ -160,16 +160,20 @@ checkpointing cost stays proportional to `num_entities / world_size`, not
 torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
   dicee --dataset_dir "KGs/YAGO3-10" --model Keci \
   --trainer "torchFSDP" --scoring_technique "NegSample" \
-  --path_to_store_single_run "YAGO_fsdp" --num_epochs 500 \
+  --path_to_store_single_run "YAGO_fsdp" --num_epochs 500 --reuse_existing_run_dir true \
   --fsdp_trainer_kwargs '{"checkpoint_every_n_epochs": 10}'
 
 # If this run is killed (OOM, preemption, node failure) and restarted with the
 # SAME --path_to_store_single_run and the SAME number of ranks, it picks up
 # from the last checkpoint automatically — no --continual_learning needed.
+# --reuse_existing_run_dir true is REQUIRED for this: without it, Execute
+# deletes path_to_store_single_run before training starts if it already
+# exists (see executer.py:_setup_single_run_directory), wiping the checkpoint
+# before the trainer ever gets a chance to look for it.
 torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
   dicee --dataset_dir "KGs/YAGO3-10" --model Keci \
   --trainer "torchFSDP" --scoring_technique "NegSample" \
-  --path_to_store_single_run "YAGO_fsdp" --num_epochs 500 \
+  --path_to_store_single_run "YAGO_fsdp" --num_epochs 500 --reuse_existing_run_dir true \
   --fsdp_trainer_kwargs '{"checkpoint_every_n_epochs": 10}'
 
 # To resume into a NEW output directory instead, point --continual_learning at
@@ -182,6 +186,7 @@ torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
 
 Notes:
 
+- **`--reuse_existing_run_dir true` is required for same-directory auto-resume.** Without it, a fresh (non-`--continual_learning`) run always deletes `path_to_store_single_run` first if it already exists, before the trainer gets a chance to check for a checkpoint there.
 - Resuming requires launching with the same world_size (rank count) used to save the checkpoint — shard boundaries are a deterministic function of `(num_entities, world_size)`, so a different rank count means a different, incompatible partition. Re-sharding across a different world_size isn't supported yet.
 - Resuming from a fully-materialized `model.pt` (the classic continual-learning path used by other trainers) is not supported for `torchFSDP` — only from a checkpoint a `torchFSDP` run wrote itself via `checkpoint_every_n_epochs`.
 

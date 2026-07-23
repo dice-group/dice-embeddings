@@ -607,7 +607,7 @@ class TorchFSDPTrainer(AbstractTrainer):
 
         # _gather_full_state_dict() is a collective — every rank must call it, even
         # though only rank 0's return value is populated (rank0_only=True below it).
-        dense_state = self._gather_full_state_dict()
+        dense_state = self._strip_entity_keys(self._gather_full_state_dict())
         if self.is_global_zero:
             dense_tmp = os.path.join(self._checkpoint_dir, "dense_state.pt.tmp")
             dense_path = os.path.join(self._checkpoint_dir, "dense_state.pt")
@@ -657,12 +657,7 @@ class TorchFSDPTrainer(AbstractTrainer):
         trained_model.entity_embeddings = full_entity_emb
         trained_model.loss_history = list(self.raw_model.loss_history)
 
-        # Strip adapter keys that live outside the plain model before loading.
-        _excluded = ("entity_embeddings.", "_fsdp_adapter.", "_fsdp_dmp.")
-        dense_state_dict = {
-            k: v for k, v in state_dict.items()
-            if not any(k.startswith(p) for p in _excluded)
-        }
+        dense_state_dict = self._strip_entity_keys(state_dict)
         self._load_dense_state_dict_for_materialized_model(trained_model, dense_state_dict)
         return trained_model
 
@@ -672,6 +667,20 @@ class TorchFSDPTrainer(AbstractTrainer):
         fsdp_model = self._unwrap_compiled(self.model)
         with FSDP.state_dict_type(fsdp_model, StateDictType.FULL_STATE_DICT, cfg):
             return fsdp_model.state_dict()
+
+    @staticmethod
+    def _strip_entity_keys(state_dict: dict) -> dict:
+        """Drop entity-shard keys that ride along in state_dict() once entity_embeddings
+        is attached to raw_model (it's added *after* FSDP wraps raw_model, so FSDP never
+        manages it — but a plain nn.Module.state_dict() walk still finds it sitting there).
+
+        Used both for the final materialized model (entity table is wired in separately
+        via gather_entity_embeddings_on_rank_zero) and for the periodic dense checkpoint
+        (which must stay entity-free — the whole point of sharded checkpointing is to
+        never require a full-table gather except once, at the very end of training).
+        """
+        excluded = ("entity_embeddings.", "_fsdp_adapter.", "_fsdp_dmp.")
+        return {k: v for k, v in state_dict.items() if not any(k.startswith(p) for p in excluded)}
 
     @staticmethod
     def _load_dense_state_dict_for_materialized_model(
