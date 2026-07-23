@@ -27,7 +27,7 @@ from lightning.pytorch.utilities.rank_zero import rank_zero_only
 from .models import AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ, DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, MuRE, OMult, Pyke, QMult, RotatE, Shallom, TransE, TransH
 from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
-from .models.fsdp_models import create_fsdp_sharded_model_class
+from .models.fsdp_models import FSDPShardedEntityModel, create_fsdp_sharded_model_class
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
 
@@ -272,8 +272,28 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
                 models.append(model)
             return EnsembleKGE(pretrained_models=models), labelling_flag
         else:
-            logger.info('Loading pre-trained model...')
             model, labelling_flag = intialize_model(args)
+            if isinstance(model, FSDPShardedEntityModel):
+                # The sharded entity table doesn't exist yet at this point (it's
+                # created later by setup_fsdp_training(), once the trainer knows the
+                # per-rank row range) — there is no entity_embeddings submodule to
+                # load model.pt's full state dict into here.
+                #
+                # TorchFSDPTrainer.fit() resumes from a *sharded* checkpoint itself
+                # (see _resolve_resume_checkpoint_dir / fsdp_shard_checkpoint dir).
+                # Resuming FSDP training from a fully-materialized model.pt (the
+                # classic continual-learning case) is not supported yet — only
+                # from a checkpoint a previous torchFSDP run wrote itself.
+                logger.info(
+                    'torchFSDP continual learning: deferring weight loading to '
+                    'TorchFSDPTrainer\'s sharded checkpoint resume...'
+                )
+                for parameter in model.parameters():
+                    parameter.requires_grad = True
+                model.train()
+                return model, labelling_flag
+
+            logger.info('Loading pre-trained model...')
             try:
                 weights = torch.load(storage_path + '/model.pt', torch.device('cpu'))
                 model.load_state_dict(weights)

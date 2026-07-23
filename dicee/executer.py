@@ -401,6 +401,17 @@ class ContinuousExecute(Execute):
             report = load_json(args['continual_learning'] + '/report.json')
             previous_args['num_entities'] = report['num_entities']
             previous_args['num_relations'] = report['num_relations']
+        except FileNotFoundError:
+            # report.json is only written once a run completes (see Execute.end()),
+            # so it won't exist yet when --continual_learning points at a run that
+            # crashed or was preempted mid-training. entity_to_idx.csv /
+            # relation_to_idx.csv are written during preprocessing, well before
+            # training starts, so they're a reliable fallback for a partial run.
+            logger.warning("Couldn't find report.json — counting entity/relation indexes instead.")
+            with open(args['continual_learning'] + '/entity_to_idx.csv') as f:
+                previous_args['num_entities'] = sum(1 for _ in f) - 1
+            with open(args['continual_learning'] + '/relation_to_idx.csv') as f:
+                previous_args['num_relations'] = sum(1 for _ in f) - 1
         except AssertionError:
             logger.warning("Couldn't find report.json.")
         previous_args = SimpleNamespace(**previous_args)

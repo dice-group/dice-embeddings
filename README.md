@@ -133,6 +133,7 @@ FSDP-specific options are passed via `--fsdp_trainer_kwargs` (JSON dict):
 | `gradient_clip_val` | `null` | Optional gradient norm clipping |
 | `num_workers` | `num_core` | DataLoader worker count |
 | `prefetch_factor` | `4` | DataLoader prefetch depth |
+| `checkpoint_every_n_epochs` | `null` | Save a resumable sharded checkpoint every N epochs (see below) |
 
 ```bash
 torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
@@ -143,6 +144,46 @@ torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
 ```
 
 Compatible scoring techniques: `NegSample`, `FixedNegSample`, `KvsSample`, `FSDP1vsSample`. Mid-epoch evaluation (`--eval_every_n_epochs`, `--eval_at_epochs`) is not supported — entity embeddings are gathered on rank 0 only after training completes.
+
+##### Resuming an interrupted FSDP run
+
+The entity table is sharded across ranks, so a plain `model.pt` (only written once
+training finishes) can't be used to recover a run that crashed or was preempted
+partway through — for a large enough table, even reconstructing that single file
+can exceed one node's RAM (see [issue #422](https://github.com/dice-group/dice-embeddings/issues/422)).
+Set `checkpoint_every_n_epochs` to write a *sharded* checkpoint instead: each rank
+saves only its own slice of the entity table plus its own optimizer state, so
+checkpointing cost stays proportional to `num_entities / world_size`, not
+`num_entities`.
+
+```bash
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
+  dicee --dataset_dir "KGs/YAGO3-10" --model Keci \
+  --trainer "torchFSDP" --scoring_technique "NegSample" \
+  --path_to_store_single_run "YAGO_fsdp" --num_epochs 500 \
+  --fsdp_trainer_kwargs '{"checkpoint_every_n_epochs": 10}'
+
+# If this run is killed (OOM, preemption, node failure) and restarted with the
+# SAME --path_to_store_single_run and the SAME number of ranks, it picks up
+# from the last checkpoint automatically — no --continual_learning needed.
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
+  dicee --dataset_dir "KGs/YAGO3-10" --model Keci \
+  --trainer "torchFSDP" --scoring_technique "NegSample" \
+  --path_to_store_single_run "YAGO_fsdp" --num_epochs 500 \
+  --fsdp_trainer_kwargs '{"checkpoint_every_n_epochs": 10}'
+
+# To resume into a NEW output directory instead, point --continual_learning at
+# the old one (it must contain a fsdp_shard_checkpoint/ dir, not just model.pt):
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
+  dicee --dataset_dir "KGs/YAGO3-10" --model Keci \
+  --trainer "torchFSDP" --scoring_technique "NegSample" \
+  --continual_learning "YAGO_fsdp" --num_epochs 500
+```
+
+Notes:
+
+- Resuming requires launching with the same world_size (rank count) used to save the checkpoint — shard boundaries are a deterministic function of `(num_entities, world_size)`, so a different rank count means a different, incompatible partition. Re-sharding across a different world_size isn't supported yet.
+- Resuming from a fully-materialized `model.pt` (the classic continual-learning path used by other trainers) is not supported for `torchFSDP` — only from a checkpoint a `torchFSDP` run wrote itself via `checkpoint_every_n_epochs`.
 
 On large knowledge graphs, this configurations should be used.
 Note: When training with multi-GPU or Distributed Data Parallel (DDP) settings, you must provide the `--path_to_store_single_run` argument to specify where to store the results of a single training run. This ensures that all processes write to the correct directory and prevents conflicts.

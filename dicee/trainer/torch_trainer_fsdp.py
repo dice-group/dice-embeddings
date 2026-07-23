@@ -11,10 +11,12 @@ Dense parameters (relation embeddings, Clifford coefficients, …) are wrapped
 with FSDP and updated by the standard dense optimizer.
 """
 
+import json
 import logging
 import math
 import os
 import threading
+from typing import Optional
 
 import numpy as np
 import torch
@@ -176,6 +178,15 @@ class TorchFSDPTrainer(AbstractTrainer):
             else torch.device("cpu")
         )
 
+        # Mid-run checkpointing: save every N epochs so a killed/preempted run
+        # (e.g. OOM, node failure, SLURM preemption) can be resumed instead of
+        # restarting from scratch. None (default) disables periodic saving.
+        self.checkpoint_every_n_epochs = fsdp_kwargs.get("checkpoint_every_n_epochs", None)
+        self._checkpoint_dir = os.path.join(self.attributes.full_storage_path, "fsdp_shard_checkpoint")
+        # Set while a resume load is in flight, between setup_fsdp_training() and
+        # the dense optimizer being constructed — see fit().
+        self._pending_resume_dir: Optional[str] = None
+
     # ------------------------------------------------------------------
     # Main entry point
     # ------------------------------------------------------------------
@@ -208,6 +219,16 @@ class TorchFSDPTrainer(AbstractTrainer):
         self.raw_model = model
         self.raw_model.to(self.device)
 
+        # Resolve a checkpoint to resume from (if any) BEFORE dense params are
+        # wrapped: rank 0 loads the saved dense weights directly into raw_model,
+        # and FSDP's sync_module_states=True (below) broadcasts them to every
+        # other rank as part of the normal wrap — no extra collective needed.
+        resume_dir = self._resolve_resume_checkpoint_dir()
+        start_epoch = 0
+        if resume_dir is not None:
+            logger.info(f"[Rank {self.global_rank}] Resuming FSDP training from {resume_dir}")
+            self._load_dense_checkpoint(resume_dir)
+
         # 1. FSDP-wrap dense parameters FIRST, while entity_embeddings is still None.
         #    FSDP init (sync_module_states, device_id broadcast) never sees the large
         #    entity shard — avoids the double-allocation that caused OOM.
@@ -222,12 +243,21 @@ class TorchFSDPTrainer(AbstractTrainer):
             adam_device=self.entity_optim_device,
         )
 
+        if resume_dir is not None:
+            self.raw_model.load_local_shard_checkpoint(self._entity_shard_path(resume_dir))
+            meta = self._load_meta(resume_dir)
+            start_epoch = meta["epoch"]
+            self.raw_model.loss_history = list(meta["loss_history"])
+
         self.loss_func = model.loss
 
         # 3. Dense optimizer covers relation embeddings + model-specific params.
         #    Entity embedding weight is excluded (handled by _LocalSparseAdam).
         dense_params = self._collect_dense_params()
         self.optimizer = model.configure_optimizers(parameters=dense_params)
+
+        if resume_dir is not None:
+            self._load_optimizer_and_scaler_checkpoint(resume_dir)
 
         if self.use_compile and hasattr(torch, "compile"):
             if self.local_rank == 0:
@@ -241,7 +271,7 @@ class TorchFSDPTrainer(AbstractTrainer):
 
         # Training loop
         for epoch in (tqdm_bar := make_iterable_verbose(
-            range(self.attributes.num_epochs),
+            range(start_epoch, self.attributes.num_epochs),
             verbose=self.is_global_zero,
             position=0,
             leave=True,
@@ -268,6 +298,11 @@ class TorchFSDPTrainer(AbstractTrainer):
             dist.all_reduce(loss_t, op=dist.ReduceOp.AVG)
             avg_epoch_loss = loss_t.item()
             self.raw_model.loss_history.append(avg_epoch_loss)
+
+            # Collective — every rank must participate, so this runs unconditionally
+            # (unlike the is_global_zero-gated callbacks below).
+            if self.checkpoint_every_n_epochs and (epoch + 1) % self.checkpoint_every_n_epochs == 0:
+                self._save_sharded_checkpoint(epoch + 1)
 
             if self.is_global_zero:
                 self.on_train_epoch_end(self, self.raw_model)
@@ -440,6 +475,162 @@ class TorchFSDPTrainer(AbstractTrainer):
                 entity_param_ids.add(id(p))
 
         return [p for p in self.model.parameters() if id(p) not in entity_param_ids]
+
+    # ------------------------------------------------------------------
+    # Mid-run checkpoint (crash / preemption recovery)
+    # ------------------------------------------------------------------
+    #
+    # Unlike _materialize_model() (which gathers the full entity table onto
+    # rank 0's CPU — fine once, at the very end, but O(num_entities) memory
+    # on a single host), these checkpoints are O(local shard) per rank:
+    # each rank writes only its own slice of the entity table + its own
+    # local Adam state + its own (already-sharded) dense-optimizer state.
+    # Only the dense *parameters* are gathered (small — relation embeddings
+    # etc., not the entity table) so they can be reloaded before the model
+    # is wrapped with FSDP and broadcast via sync_module_states.
+    #
+    # Resuming requires the same world_size used to save: shard boundaries
+    # are a deterministic function of (num_entities, world_size), so a
+    # different world_size means a different, incompatible partition.
+
+    def _rank_state_path(self, checkpoint_dir: str) -> str:
+        return os.path.join(
+            checkpoint_dir, f"rank_state_rank{self.global_rank}_of_{dist.get_world_size()}.pt"
+        )
+
+    def _entity_shard_path(self, checkpoint_dir: str) -> str:
+        return os.path.join(
+            checkpoint_dir, f"entity_shard_rank{self.global_rank}_of_{dist.get_world_size()}.pt"
+        )
+
+    @staticmethod
+    def _load_meta(checkpoint_dir: str) -> dict:
+        with open(os.path.join(checkpoint_dir, "meta.json")) as f:
+            return json.load(f)
+
+    def _resolve_resume_checkpoint_dir(self) -> Optional[str]:
+        """Return a checkpoint directory to resume from, or None for a fresh run.
+
+        Checked, in order:
+          1. This run's own experiment folder — auto-resume after a
+             crash/preemption that restarted into the same output dir.
+             Nothing found here is not an error: it just means a fresh run.
+          2. --continual_learning's folder — an explicit resume request. If the
+             user pointed at this path, silently falling back to random init
+             would be a much worse failure mode than a loud error, so a missing
+             checkpoint here *is* an error (see the message below for why a
+             fully-materialized model.pt alone isn't enough).
+
+        meta.json is written last during save (see _save_sharded_checkpoint),
+        so its presence means a complete checkpoint.
+        """
+        world_size = dist.get_world_size()
+
+        if os.path.isfile(os.path.join(self._checkpoint_dir, "meta.json")):
+            return self._validate_checkpoint_world_size(self._checkpoint_dir, world_size)
+
+        cl = getattr(self.attributes, "continual_learning", None)
+        if cl:
+            cl_dir = os.path.join(cl, "fsdp_shard_checkpoint")
+            if not os.path.isfile(os.path.join(cl_dir, "meta.json")):
+                raise RuntimeError(
+                    f"--continual_learning was set to '{cl}' but no sharded FSDP checkpoint "
+                    f"was found at '{cl_dir}'. Resuming torchFSDP training is only supported "
+                    f"from a checkpoint a previous torchFSDP run wrote itself (enable it with "
+                    f"--fsdp_trainer_kwargs '{{\"checkpoint_every_n_epochs\": N}}'), not from a "
+                    f"fully-materialized model.pt."
+                )
+            return self._validate_checkpoint_world_size(cl_dir, world_size)
+
+        return None
+
+    @staticmethod
+    def _validate_checkpoint_world_size(checkpoint_dir: str, world_size: int) -> str:
+        meta = TorchFSDPTrainer._load_meta(checkpoint_dir)
+        if meta["world_size"] != world_size:
+            raise RuntimeError(
+                f"Cannot resume FSDP checkpoint at {checkpoint_dir}: it was saved with "
+                f"world_size={meta['world_size']} but this run was launched with "
+                f"world_size={world_size}. Resuming a sharded FSDP checkpoint requires "
+                f"launching with the same number of ranks used to save it."
+            )
+        return checkpoint_dir
+
+    def _load_dense_checkpoint(self, checkpoint_dir: str) -> None:
+        """Rank 0 loads dense params into raw_model, pre-FSDP-wrap.
+
+        sync_module_states=True (in _wrap_dense_with_fsdp) broadcasts these
+        values to every other rank as part of the FSDP() constructor call —
+        no separate collective load is needed here.
+        """
+        if self.global_rank != 0:
+            return
+        dense_state = torch.load(os.path.join(checkpoint_dir, "dense_state.pt"), map_location="cpu")
+        self.raw_model.load_state_dict(dense_state, strict=True)
+
+    def _load_optimizer_and_scaler_checkpoint(self, checkpoint_dir: str) -> None:
+        """Every rank restores its own (already-sharded) dense optimizer + GradScaler state."""
+        rank_state = torch.load(self._rank_state_path(checkpoint_dir), map_location="cpu")
+        self.optimizer.load_state_dict(rank_state["dense_optimizer"])
+        self.scaler.load_state_dict(rank_state["scaler"])
+
+    def _save_sharded_checkpoint(self, epoch: int) -> None:
+        """Collective: every rank must call this together.
+
+        Write order matters for crash-safety: every per-rank/temp file is
+        written and renamed into place first, then meta.json is written last
+        as the commit marker. _resolve_resume_checkpoint_dir() only looks at
+        meta.json, so a crash mid-save leaves no resumable (but truncated)
+        checkpoint behind — the next attempt just overwrites the tmp files.
+        """
+        # The async Adam thread from the last batch of this epoch may still be
+        # mutating entity weight/optimizer state — must finish before saving.
+        if self._adam_thread is not None:
+            self._adam_thread.join()
+            self._adam_thread = None
+
+        os.makedirs(self._checkpoint_dir, exist_ok=True)
+        dist.barrier()
+
+        rank_state_path = self._rank_state_path(self._checkpoint_dir)
+        tmp = rank_state_path + ".tmp"
+        torch.save({
+            "dense_optimizer": self.optimizer.state_dict(),
+            "scaler": self.scaler.state_dict(),
+        }, tmp)
+        os.replace(tmp, rank_state_path)
+
+        entity_shard_path = self._entity_shard_path(self._checkpoint_dir)
+        entity_shard_tmp = entity_shard_path + ".tmp"
+        self.raw_model.save_local_shard_checkpoint(entity_shard_tmp)
+        os.replace(entity_shard_tmp, entity_shard_path)
+
+        # _gather_full_state_dict() is a collective — every rank must call it, even
+        # though only rank 0's return value is populated (rank0_only=True below it).
+        dense_state = self._gather_full_state_dict()
+        if self.is_global_zero:
+            dense_tmp = os.path.join(self._checkpoint_dir, "dense_state.pt.tmp")
+            dense_path = os.path.join(self._checkpoint_dir, "dense_state.pt")
+            torch.save(dense_state, dense_tmp)
+            os.replace(dense_tmp, dense_path)
+
+        dist.barrier()
+
+        if self.is_global_zero:
+            meta_tmp = os.path.join(self._checkpoint_dir, "meta.json.tmp")
+            meta_path = os.path.join(self._checkpoint_dir, "meta.json")
+            with open(meta_tmp, "w") as f:
+                json.dump({
+                    "epoch": epoch,
+                    "world_size": dist.get_world_size(),
+                    "num_entities": self.raw_model.num_entities,
+                    "embedding_dim": self.raw_model.embedding_dim,
+                    "loss_history": list(self.raw_model.loss_history),
+                }, f)
+            os.replace(meta_tmp, meta_path)
+            logger.info(f"Saved FSDP shard checkpoint at epoch {epoch} → {self._checkpoint_dir}")
+
+        dist.barrier()
 
     # ------------------------------------------------------------------
     # Materialization after training
