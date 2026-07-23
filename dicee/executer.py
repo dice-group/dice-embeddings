@@ -83,8 +83,8 @@ class Execute:
         seed_everything(args.random_seed, workers=True)
         # (3) Set the continual training flag
         self.is_continual_training = continuous_training
-        # (4) Set up the run directory once per node.
-        if self.is_local_rank_zero():
+        # (4) Set up the run directory exactly once for the whole job.
+        if self.is_global_rank_zero():
             self.setup_executor()
         # (5) Initialize trainer and model placeholders
         self.trainer: Optional[DICE_Trainer] = None
@@ -101,6 +101,9 @@ class Execute:
     def is_local_rank_zero(self) -> bool:
         return self.local_rank == 0
 
+    def is_global_rank_zero(self) -> bool:
+        return self.rank == 0
+
     def cleanup(self):
         if self.distributed and dist.is_initialized():
             dist.destroy_process_group()
@@ -114,7 +117,7 @@ class Execute:
         if self.is_continual_training:
             return
 
-        if not self.is_local_rank_zero():
+        if not self.is_global_rank_zero():
             return
 
         # Determine storage path
@@ -152,10 +155,11 @@ class Execute:
     def create_and_store_kg(self) -> None:
         """Create knowledge graph and store as memory-mapped file.
 
-        Only executed on local rank 0 in distributed training.
-        Skips if memmap already exists.
+        Only executed on global rank 0 in distributed training, so exactly
+        one process writes the shared memmap/vocab files regardless of how
+        many nodes are involved. Skips if memmap already exists.
         """
-        if not self.is_local_rank_zero():
+        if not self.is_global_rank_zero():
             return
 
         memmap_path = os.path.join(
@@ -401,6 +405,17 @@ class ContinuousExecute(Execute):
             report = load_json(args['continual_learning'] + '/report.json')
             previous_args['num_entities'] = report['num_entities']
             previous_args['num_relations'] = report['num_relations']
+        except FileNotFoundError:
+            # report.json is only written once a run completes (see Execute.end()),
+            # so it won't exist yet when --continual_learning points at a run that
+            # crashed or was preempted mid-training. entity_to_idx.csv /
+            # relation_to_idx.csv are written during preprocessing, well before
+            # training starts, so they're a reliable fallback for a partial run.
+            logger.warning("Couldn't find report.json — counting entity/relation indexes instead.")
+            with open(args['continual_learning'] + '/entity_to_idx.csv') as f:
+                previous_args['num_entities'] = sum(1 for _ in f) - 1
+            with open(args['continual_learning'] + '/relation_to_idx.csv') as f:
+                previous_args['num_relations'] = sum(1 for _ in f) - 1
         except AssertionError:
             logger.warning("Couldn't find report.json.")
         previous_args = SimpleNamespace(**previous_args)
