@@ -13,9 +13,11 @@ dicee.models.fsdp_models
      - _LocalSparseAdam updates only the rows that received a non-zero gradient
 
    Public API:
-     model.setup_fsdp_training(device, lr)          — called by trainer before loop
-     model.gather_entity_embeddings_on_rank_zero()      — called by trainer after loop
-     create_fsdp_sharded_model_class(ModelClass)    — factory used by static_funcs.py
+     model.setup_fsdp_training(device, lr)              — called by trainer before loop
+     model.gather_entity_embeddings_on_rank_zero()       — called by trainer after loop
+     model.save_local_shard_checkpoint(path)             — per-rank, called periodically during loop
+     model.load_local_shard_checkpoint(path)             — per-rank, called by trainer on resume
+     create_fsdp_sharded_model_class(ModelClass)         — factory used by static_funcs.py
 
 
 
@@ -111,6 +113,27 @@ Module Contents
    .. py:method:: gather_entity_embeddings_on_rank_zero() -> Optional[torch.nn.Embedding]
 
       Gather the full entity table on rank 0; return None on other ranks.
+
+
+
+   .. py:method:: save_local_shard_checkpoint(path: str) -> None
+
+      Save this rank's entity embedding shard + its local Adam state to *path*.
+
+      Cheap and O(local_rows) — unlike gather_entity_embeddings_on_rank_zero(),
+      no collective communication is involved, so this is safe to call
+      periodically even when the full table is too large to gather.
+
+
+
+   .. py:method:: load_local_shard_checkpoint(path: str) -> None
+
+      Load this rank's entity embedding shard + local Adam state from *path*.
+
+      The checkpoint must have been saved by a run with the same world_size:
+      shard boundaries (start_row/local_rows) are derived from world_size and
+      num_entities, so a mismatch means this rank does not own the same rows
+      as when the checkpoint was written.
 
 
 

@@ -132,6 +132,9 @@ Module Contents
    .. py:attribute:: entity_optim_device
 
 
+   .. py:attribute:: checkpoint_every_n_epochs
+
+
    .. py:method:: fit(*args, **kwargs)
 
 

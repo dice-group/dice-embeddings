@@ -103,6 +103,7 @@
 <li class="toctree-l6"><a class="reference internal" href="#id9"><code class="docutils literal notranslate"><span class="pre">Execute.evaluator</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.start_time"><code class="docutils literal notranslate"><span class="pre">Execute.start_time</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.is_local_rank_zero"><code class="docutils literal notranslate"><span class="pre">Execute.is_local_rank_zero()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.is_global_rank_zero"><code class="docutils literal notranslate"><span class="pre">Execute.is_global_rank_zero()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.cleanup"><code class="docutils literal notranslate"><span class="pre">Execute.cleanup()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.setup_executor"><code class="docutils literal notranslate"><span class="pre">Execute.setup_executor()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.create_and_store_kg"><code class="docutils literal notranslate"><span class="pre">Execute.create_and_store_kg()</span></code></a></li>
@@ -336,6 +337,11 @@ the full lifecycle of knowledge graph embedding model training.</p>
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Execute.is_global_rank_zero">
+<span class="sig-name descname"><span class="pre">is_global_rank_zero</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#dicee.executer.Execute.is_global_rank_zero" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.Execute.cleanup">
 <span class="sig-name descname"><span class="pre">cleanup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#dicee.executer.Execute.cleanup" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -352,8 +358,9 @@ Saves the configuration to a JSON file.</p>
 <dt class="sig sig-object py" id="dicee.executer.Execute.create_and_store_kg">
 <span class="sig-name descname"><span class="pre">create_and_store_kg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.executer.Execute.create_and_store_kg" title="Link to this definition"></a></dt>
 <dd><p>Create knowledge graph and store as memory-mapped file.</p>
-<p>Only executed on local rank 0 in distributed training.
-Skips if memmap already exists.</p>
+<p>Only executed on global rank 0 in distributed training, so exactly
+one process writes the shared memmap/vocab files regardless of how
+many nodes are involved. Skips if memmap already exists.</p>
 </dd></dl>
 
 <dl class="py method">

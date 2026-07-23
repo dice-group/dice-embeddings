@@ -177,6 +177,9 @@ Package Contents
    .. py:method:: is_local_rank_zero() -> bool
 
 
+   .. py:method:: is_global_rank_zero() -> bool
+
+
    .. py:method:: cleanup()
 
 
@@ -193,8 +196,9 @@ Package Contents
 
       Create knowledge graph and store as memory-mapped file.
 
-      Only executed on local rank 0 in distributed training.
-      Skips if memmap already exists.
+      Only executed on global rank 0 in distributed training, so exactly
+      one process writes the shared memmap/vocab files regardless of how
+      many nodes are involved. Skips if memmap already exists.
 
 
 

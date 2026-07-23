@@ -161,9 +161,11 @@
 <li><p>_LocalSparseAdam updates only the rows that received a non-zero gradient</p></li>
 </ul>
 </dd>
-<dt>Public API:</dt><dd><p>model.setup_fsdp_training(device, lr)          — called by trainer before loop
-model.gather_entity_embeddings_on_rank_zero()      — called by trainer after loop
-create_fsdp_sharded_model_class(ModelClass)    — factory used by static_funcs.py</p>
+<dt>Public API:</dt><dd><p>model.setup_fsdp_training(device, lr)              — called by trainer before loop
+model.gather_entity_embeddings_on_rank_zero()       — called by trainer after loop
+model.save_local_shard_checkpoint(path)             — per-rank, called periodically during loop
+model.load_local_shard_checkpoint(path)             — per-rank, called by trainer on resume
+create_fsdp_sharded_model_class(ModelClass)         — factory used by static_funcs.py</p>
 </dd>
 </dl>
 <section id="classes">
@@ -283,6 +285,25 @@ CPU            : lower GPU footprint, PCIe transfer each step.</p>
 <dt class="sig sig-object py" id="dicee.models.fsdp_models.FSDPShardedEntityModel.gather_entity_embeddings_on_rank_zero">
 <span class="sig-name descname"><span class="pre">gather_entity_embeddings_on_rank_zero</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.nn.Embedding</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/fsdp_models.html#FSDPShardedEntityModel.gather_entity_embeddings_on_rank_zero"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.fsdp_models.FSDPShardedEntityModel.gather_entity_embeddings_on_rank_zero" title="Link to this definition"></a></dt>
 <dd><p>Gather the full entity table on rank 0; return None on other ranks.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.fsdp_models.FSDPShardedEntityModel.save_local_shard_checkpoint">
+<span class="sig-name descname"><span class="pre">save_local_shard_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/fsdp_models.html#FSDPShardedEntityModel.save_local_shard_checkpoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.fsdp_models.FSDPShardedEntityModel.save_local_shard_checkpoint" title="Link to this definition"></a></dt>
+<dd><p>Save this rank’s entity embedding shard + its local Adam state to <em>path</em>.</p>
+<p>Cheap and O(local_rows) — unlike gather_entity_embeddings_on_rank_zero(),
+no collective communication is involved, so this is safe to call
+periodically even when the full table is too large to gather.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.fsdp_models.FSDPShardedEntityModel.load_local_shard_checkpoint">
+<span class="sig-name descname"><span class="pre">load_local_shard_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/fsdp_models.html#FSDPShardedEntityModel.load_local_shard_checkpoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.fsdp_models.FSDPShardedEntityModel.load_local_shard_checkpoint" title="Link to this definition"></a></dt>
+<dd><p>Load this rank’s entity embedding shard + local Adam state from <em>path</em>.</p>
+<p>The checkpoint must have been saved by a run with the same world_size:
+shard boundaries (start_row/local_rows) are derived from world_size and
+num_entities, so a mismatch means this rank does not own the same rows
+as when the checkpoint was written.</p>
 </dd></dl>
 
 <dl class="py method">
