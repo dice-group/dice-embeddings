@@ -1,3 +1,11 @@
+<div align="center">
+
+![dicee_logo](docs/_static/images/dicee_logo.png)
+
+# DICE Embeddings
+
+**Hardware-agnostic Framework for Large-scale Knowledge Graph Embeddings**
+
 [![Downloads](https://static.pepy.tech/badge/dicee)](https://pepy.tech/project/dicee)
 [![Downloads](https://img.shields.io/pypi/dm/dicee)](https://pypi.org/project/dicee/)
 [![Coverage](https://img.shields.io/badge/coverage-54%25-green)](https://dice-group.github.io/dice-embeddings/usage/main.html#coverage-report)
@@ -5,26 +13,28 @@
 [![Docs](https://img.shields.io/badge/documentation-0.3.2-yellow)](https://dice-group.github.io/dice-embeddings/index.html)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dice-group/dice-embeddings)
 
-![dicee_logo](docs/_static/images/dicee_logo.png)
+</div>
 
-# DICE Embeddings: Hardware-agnostic Framework for Large-scale Knowledge Graph Embeddings
+Knowledge graph embedding research has mainly focused on learning continuous representations of knowledge graphs towards the link prediction problem. Recently developed frameworks can be effectively applied in a wide range of research-related applications, yet using them in real-world settings becomes more challenging as the knowledge graph grows.
+
+**dicee** computes embeddings for knowledge graphs of any size — from a few hundred triples to knowledge graphs with hundreds of millions of entities — running on a single CPU or scaled across GPUs and nodes, without changing a line of model code.
+
+- 🧩 **30+ models** — real, complex, quaternion, octonion, and Clifford-algebra scoring functions, plus any [PyKEEN](https://github.com/pykeen/pykeen) model
+- ⚙️ **Any hardware** — CPU, single/multi-GPU, native DDP, FSDP, and Tensor Parallelism
+- 📈 **Scales up** — row-wise sharded entity tables and distributed optimizer states for very large knowledge graphs
+- 🔌 **Two entry points** — the `dicee` CLI for quick runs, and a Python API (`Execute`, `KGE`) for programmatic control
 
 ## Quick Reference
 
-| Feature | Command/Code |
-|---------|-------------|
-| **Install (CPU)** | `pip install dicee --extra-index-url https://download.pytorch.org/whl/cpu` |
-| **Install (GPU)** | `pip install dicee` |
-| **Train model** | `dicee --dataset_dir "KGs/UMLS" --model Keci` |
-| **Load pretrained** | `from dicee import KGE; model = KGE(path='...')` |
-| **Predict links** | `model.predict_topk(h=["entity"], r=["relation"], topk=10)` |
+| Task | Command |
+|------|---------|
+| 📦 **Install (CPU)** | `pip install dicee --extra-index-url https://download.pytorch.org/whl/cpu` |
+| 📦 **Install (GPU)** | `pip install dicee` |
+| 🚀 **Train a model** | `dicee --dataset_dir "KGs/UMLS" --model Keci` |
+| 📂 **Load a pretrained model** | `from dicee import KGE; model = KGE(path='...')` |
+| 🔮 **Predict links** | `model.predict_topk(h=["entity"], r=["relation"], topk=10)` |
 
-Knowledge graph embedding research has mainly focused on learning continuous representations of knowledge graphs towards the link prediction problem. 
-Recently developed frameworks can be effectively applied in a wide range of research-related applications.
-Yet, using these frameworks in real-world applications becomes more challenging as the size of the knowledge graph grows.
-
-We developed the DICE Embeddings framework (dicee) to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
-## For more please visit [dice-embeddings](https://dice-group.github.io/dice-embeddings/)!
+📖 For more, visit the [dicee documentation](https://dice-group.github.io/dice-embeddings/)!
 
 ## Installation
 <details><summary> Click me! </summary>
@@ -94,6 +104,37 @@ OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --
 
 ```
 
+#### Logging
+<details><summary> Click me! </summary>
+
+Progress, timing, and checkpoint messages (dataset info, epoch loss, "Saving model...", etc.) are emitted through Python's standard `logging` module rather than `print()`. By default `--log_level` is `INFO`, so these messages are shown, matching the classic CLI output.
+
+```bash
+# Default: INFO messages (dataset stats, timings, checkpoints, ...) are printed to stderr
+dicee --dataset_dir "KGs/UMLS" --model Keci
+
+# Quieter: only show warnings and errors (e.g. on noisy multi-node/multi-GPU logs)
+dicee --dataset_dir "KGs/UMLS" --model Keci --log_level WARNING
+
+# Silent: only errors are shown
+dicee --dataset_dir "KGs/UMLS" --model Keci --log_level ERROR
+
+# Verbose: include DEBUG-level messages too
+dicee --dataset_dir "KGs/UMLS" --model Keci --log_level DEBUG
+```
+
+`--log_level` accepts `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`. The same setting is available when training from Python via `dicee.config.Namespace`:
+
+```python
+from dicee.executer import Execute
+from dicee.config import Namespace
+args = Namespace()
+args.dataset_dir = "KGs/UMLS"
+args.log_level = "WARNING"  # silence INFO-level progress messages
+Execute(args).start()
+```
+Since every rank in a distributed run (`torchDDP`/`torchFSDP`/`PL` with multiple GPUs or nodes) configures its own logger, each process prints its own messages; lower the level to `WARNING` or `ERROR` to cut down on duplicate output across ranks.
+
 A KGE model model can also be trained in multi-node multi-gpu DDP setting. 
 ```bash
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_torchDDP"
@@ -104,6 +145,7 @@ Multi-node training is also possible with the `PL` trainer
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "PL" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_PL"
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "PL" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_PL"
 ```
+</details>
 
 #### FSDP Training (large entity tables)
 
