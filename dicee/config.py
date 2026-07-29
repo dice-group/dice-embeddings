@@ -105,6 +105,10 @@ class Namespace(argparse.Namespace):
         self.random_seed: int = 0
         "Random Seed"
 
+        self.log_level: str = "INFO"
+        """Logging verbosity: DEBUG, INFO, WARNING, ERROR, or CRITICAL. Dataset info, timing, and
+        checkpoint messages are logged at INFO; set to WARNING or higher to silence them."""
+
         self.sample_triples_ratio: Optional[float] = None
         """Read some triples that are uniformly at random sampled. Ratio being between 0 and 1"""
 

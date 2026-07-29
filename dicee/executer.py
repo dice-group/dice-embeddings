@@ -67,6 +67,13 @@ class Execute:
             args: Configuration arguments (Namespace or similar).
             continuous_training: Whether this is continual training.
         """
+        # Configure logging verbosity as early as possible so that dataset/timing/checkpoint
+        # messages logged during distributed setup and KG loading are not silently dropped.
+        logging.basicConfig(
+            level=getattr(logging, str(getattr(args, "log_level", "INFO")).upper(), logging.INFO),
+            format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+            force=True,
+        )
         # Setup distributed and device ranks before training
         distributed_setup = setup_distributed_training(args)
         # Checks if the current training setup is distributed
