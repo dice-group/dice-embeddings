@@ -24,15 +24,17 @@ Converted the `assert` statements guarding user input at public API boundaries �
 
 Migrated `print()` calls in trainers, models, evaluation code, and core utilities to per-module `logging.getLogger(__name__)`. Library consumers can now control verbosity, silence output, or redirect logs without monkeypatching. A handful of `print(...)` strings remain, but only inside docstrings/commented-out dead code (e.g. `models/clifford.py`, `trainer/torch_trainer.py`) — not live paths.
 
+### 5. `mypy` is non-blocking in CI with no ratchet
+**Status:** Fixed
+
+`continue-on-error: true` is removed from the mypy step in [.github/workflows/github-actions-python-package.yml](.github/workflows/github-actions-python-package.yml). The step now runs mypy, compares the `Found N errors` count against a baseline recorded in [.github/mypy-baseline.txt](.github/mypy-baseline.txt) (1367, the count at the time this was added), and fails the build only if the count increases — new code can no longer add fresh type errors, while the existing 1367 stay non-blocking until someone pays them down deliberately (lowering the baseline file locks in each improvement). `pyproject.toml`'s `disallow_untyped_defs = false` and the "start lenient, tighten later" comment are unchanged; this is a regression gate, not a rewrite of the strictness config. Also removed two dead `ignore_missing_imports` entries (`gradio.*`, `owlready2.*`) that mypy itself flagged as "unused section(s)" — neither package is imported or declared as a dependency anywhere in the repo.
+
 ## Open findings
 
 ### 3. Core user-facing modules have no dedicated unit tests
 **Status:** Partially resolved
 
 [dicee/knowledge_graph_embeddings.py](dicee/knowledge_graph_embeddings.py) (the main inference API) now has a dedicated unit test suite ([tests/test_unit_kge_inference.py](tests/test_unit_kge_inference.py), 32 tests covering input validation, device management, entity embedding extraction). `executer.py`, `static_funcs.py`, `query_generator.py`, and `knowledge_graph.py` are still only exercised indirectly through regression/integration tests.
-
-### 5. `mypy` is non-blocking in CI with no ratchet
-`.github/workflows/github-actions-python-package.yml` runs mypy with `continue-on-error: true`, and `pyproject.toml` sets `disallow_untyped_defs = false` with a "start lenient, tighten later" comment. There's no mechanism forcing that tightening to actually happen over time.
 
 ### 6. CI only tests a single Python version (3.11.14)
 **Status:** Fixed

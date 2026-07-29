@@ -36,9 +36,7 @@ module = [
     "polars.*",
     "rdflib.*",
     "psutil.*",
-    "owlready2.*",
     "pykeen.*",
-    "gradio.*",
 ]
 ignore_missing_imports = true
 
