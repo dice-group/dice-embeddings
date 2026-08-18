@@ -88,11 +88,11 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.evaluation.utils</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Utility functions for evaluation module.</span>
+<span></span><span class="sd">"""Utility functions for evaluation module.</span>
 
 <span class="sd">This module contains shared helper functions used across different</span>
 <span class="sd">evaluation components.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
@@ -109,11 +109,11 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">make_iterable_verbose</span><span class="p">(</span>
     <span class="n">iterable_object</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">,</span>
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-    <span class="n">desc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Default&quot;</span><span class="p">,</span>
+    <span class="n">desc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"Default"</span><span class="p">,</span>
     <span class="n">position</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">leave</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrap an iterable with tqdm progress bar if verbose is True.</span>
+<span class="w">    </span><span class="sd">"""Wrap an iterable with tqdm progress bar if verbose is True.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        iterable_object: The iterable to potentially wrap.</span>
@@ -124,7 +124,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The original iterable or a tqdm-wrapped version.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">iterable_object</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="n">desc</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">position</span><span class="p">,</span> <span class="n">leave</span><span class="o">=</span><span class="n">leave</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">iterable_object</span></div>
@@ -139,7 +139,7 @@
     <span class="n">hits_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
     <span class="n">scale_factor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute standard link prediction metrics from ranks.</span>
+<span class="w">    </span><span class="sd">"""Compute standard link prediction metrics from ranks.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        ranks: List of ranks for each prediction.</span>
@@ -149,7 +149,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dictionary containing H@1, H@3, H@10, and MRR metrics.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">divisor</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">num_triples</span> <span class="o">*</span> <span class="n">scale_factor</span><span class="p">)</span>
 
     <span class="n">hit_1</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[]))</span> <span class="o">/</span> <span class="n">divisor</span> <span class="k">if</span> <span class="mi">1</span> <span class="ow">in</span> <span class="n">hits_dict</span> <span class="k">else</span> <span class="mf">0.0</span>
@@ -158,10 +158,10 @@
     <span class="n">mean_reciprocal_rank</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">ranks</span><span class="p">)</span> <span class="o">/</span> <span class="n">divisor</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s1">&#39;H@1&#39;</span><span class="p">:</span> <span class="n">hit_1</span><span class="p">,</span>
-        <span class="s1">&#39;H@3&#39;</span><span class="p">:</span> <span class="n">hit_3</span><span class="p">,</span>
-        <span class="s1">&#39;H@10&#39;</span><span class="p">:</span> <span class="n">hit_10</span><span class="p">,</span>
-        <span class="s1">&#39;MRR&#39;</span><span class="p">:</span> <span class="n">mean_reciprocal_rank</span>
+        <span class="s1">'H@1'</span><span class="p">:</span> <span class="n">hit_1</span><span class="p">,</span>
+        <span class="s1">'H@3'</span><span class="p">:</span> <span class="n">hit_3</span><span class="p">,</span>
+        <span class="s1">'H@10'</span><span class="p">:</span> <span class="n">hit_10</span><span class="p">,</span>
+        <span class="s1">'MRR'</span><span class="p">:</span> <span class="n">mean_reciprocal_rank</span>
     <span class="p">}</span></div>
 
 
@@ -173,7 +173,7 @@
     <span class="n">num_triples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">hits_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute link prediction metrics without scaling factor.</span>
+<span class="w">    </span><span class="sd">"""Compute link prediction metrics without scaling factor.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        ranks: List of ranks for each prediction.</span>
@@ -182,17 +182,17 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dictionary containing H@1, H@3, H@10, and MRR metrics.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">hit_1</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[]))</span> <span class="o">/</span> <span class="n">num_triples</span> <span class="k">if</span> <span class="mi">1</span> <span class="ow">in</span> <span class="n">hits_dict</span> <span class="k">else</span> <span class="mf">0.0</span>
     <span class="n">hit_3</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="p">[]))</span> <span class="o">/</span> <span class="n">num_triples</span> <span class="k">if</span> <span class="mi">3</span> <span class="ow">in</span> <span class="n">hits_dict</span> <span class="k">else</span> <span class="mf">0.0</span>
     <span class="n">hit_10</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="p">[]))</span> <span class="o">/</span> <span class="n">num_triples</span> <span class="k">if</span> <span class="mi">10</span> <span class="ow">in</span> <span class="n">hits_dict</span> <span class="k">else</span> <span class="mf">0.0</span>
     <span class="n">mean_reciprocal_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ranks</span><span class="p">))</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s1">&#39;H@1&#39;</span><span class="p">:</span> <span class="n">hit_1</span><span class="p">,</span>
-        <span class="s1">&#39;H@3&#39;</span><span class="p">:</span> <span class="n">hit_3</span><span class="p">,</span>
-        <span class="s1">&#39;H@10&#39;</span><span class="p">:</span> <span class="n">hit_10</span><span class="p">,</span>
-        <span class="s1">&#39;MRR&#39;</span><span class="p">:</span> <span class="n">mean_reciprocal_rank</span>
+        <span class="s1">'H@1'</span><span class="p">:</span> <span class="n">hit_1</span><span class="p">,</span>
+        <span class="s1">'H@3'</span><span class="p">:</span> <span class="n">hit_3</span><span class="p">,</span>
+        <span class="s1">'H@10'</span><span class="p">:</span> <span class="n">hit_10</span><span class="p">,</span>
+        <span class="s1">'MRR'</span><span class="p">:</span> <span class="n">mean_reciprocal_rank</span>
     <span class="p">}</span></div>
 
 
@@ -204,13 +204,13 @@
     <span class="n">rank</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">hits_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update hits dictionary based on rank.</span>
+<span class="w">    </span><span class="sd">"""Update hits dictionary based on rank.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        hits: Dictionary to update in-place.</span>
 <span class="sd">        rank: The rank to check against hit levels.</span>
 <span class="sd">        hits_range: List of hit levels to check (default: ALL_HITS_RANGE).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">hits_range</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">hits_range</span> <span class="o">=</span> <span class="n">ALL_HITS_RANGE</span>
 
@@ -223,14 +223,14 @@
 <div class="viewcode-block" id="create_hits_dict">
 <a class="viewcode-back" href="../../../autoapi/dicee/evaluation/utils/index.html#dicee.evaluation.utils.create_hits_dict">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">create_hits_dict</span><span class="p">(</span><span class="n">hits_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create an initialized hits dictionary.</span>
+<span class="w">    </span><span class="sd">"""Create an initialized hits dictionary.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        hits_range: List of hit levels to initialize (default: ALL_HITS_RANGE).</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dictionary with empty lists for each hit level.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">hits_range</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">hits_range</span> <span class="o">=</span> <span class="n">ALL_HITS_RANGE</span>
     <span class="k">return</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">hits_range</span><span class="p">}</span></div>
@@ -240,7 +240,7 @@
 <div class="viewcode-block" id="efficient_zero_grad">
 <a class="viewcode-back" href="../../../autoapi/dicee/evaluation/utils/index.html#dicee.evaluation.utils.efficient_zero_grad">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">efficient_zero_grad</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Efficiently zero gradients using parameter.grad = None.</span>
+<span class="w">    </span><span class="sd">"""Efficiently zero gradients using parameter.grad = None.</span>
 
 <span class="sd">    This is more efficient than optimizer.zero_grad() as it avoids</span>
 <span class="sd">    memory operations.</span>
@@ -249,7 +249,7 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        model: PyTorch model to zero gradients for.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
         <span class="n">param</span><span class="o">.</span><span class="n">grad</span> <span class="o">=</span> <span class="kc">None</span></div>
 

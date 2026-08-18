@@ -96,7 +96,7 @@
 <div class="viewcode-block" id="LiteralEmbeddings">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/literal/index.html#dicee.models.literal.LiteralEmbeddings">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LiteralEmbeddings</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A model for learning and predicting numerical literals using pre-trained KGE.</span>
 
 <span class="sd">    Attributes:</span>
@@ -106,7 +106,7 @@
 <span class="sd">        dropout (float): Dropout rate for regularization.</span>
 <span class="sd">        gate_residual (bool): Whether to use gated residual connections.</span>
 <span class="sd">        freeze_entity_embeddings (bool): Whether to freeze the entity embeddings during training.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -148,14 +148,14 @@
 <div class="viewcode-block" id="LiteralEmbeddings.forward">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/literal/index.html#dicee.models.literal.LiteralEmbeddings.forward">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_idx</span><span class="p">,</span> <span class="n">attr_idx</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Args:</span>
 <span class="sd">            entity_idx (Tensor): Entity indices (batch).</span>
 <span class="sd">            attr_idx (Tensor): Attribute (Data property)  indices (batch).</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Tensor: scalar predictions.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># embeddings lookup</span>
         <span class="n">e_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span><span class="n">entity_idx</span><span class="p">)</span>  <span class="c1"># [batch, emb_dim]</span>
         <span class="n">a_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_property_embeddings</span><span class="p">(</span><span class="n">attr_idx</span><span class="p">)</span>  <span class="c1"># [batch, emb_dim]</span>

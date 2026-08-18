@@ -104,7 +104,7 @@
 <div class="viewcode-block" id="DistMult">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.DistMult">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DistMult</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;DistMult: bilinear diagonal knowledge graph embedding.</span>
+<span class="w">    </span><span class="sd">"""DistMult: bilinear diagonal knowledge graph embedding.</span>
 
 <span class="sd">    Scores a triple ``(h, r, t)`` as the element-wise product of the head,</span>
 <span class="sd">    relation, and tail embeddings summed over the embedding dimension::</span>
@@ -119,17 +119,17 @@
 <span class="sd">    Yang et al., *Embedding Entities and Relations for Learning and Inference</span>
 <span class="sd">    in Knowledge Bases*, ICLR 2015.</span>
 <span class="sd">    https://arxiv.org/abs/1412.6575</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;DistMult&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">'DistMult'</span>
 
 <div class="viewcode-block" id="DistMult.k_vs_all_score">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.DistMult.k_vs_all_score">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">k_vs_all_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emb_h</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">emb_r</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
                        <span class="n">emb_E</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Score a head/relation batch against all entity embeddings.</span>
+<span class="w">        </span><span class="sd">"""Score a head/relation batch against all entity embeddings.</span>
 
 <span class="sd">        Computes ``(h * r) @ E^T`` after applying hidden dropout and</span>
 <span class="sd">        normalisation to the element-wise product.</span>
@@ -147,14 +147,14 @@
 <span class="sd">        -------</span>
 <span class="sd">        torch.FloatTensor</span>
 <span class="sd">            Shape ``(batch_size, num_entities)`` score matrix.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dropout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_normalizer</span><span class="p">(</span><span class="n">emb_h</span> <span class="o">*</span> <span class="n">emb_r</span><span class="p">)),</span> <span class="n">emb_E</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="DistMult.forward_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.DistMult.forward_k_vs_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;KvsAll forward pass: score head/relation against all entities.</span>
+<span class="w">        </span><span class="sd">"""KvsAll forward pass: score head/relation against all entities.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -165,7 +165,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        torch.FloatTensor</span>
 <span class="sd">            Shape ``(batch_size, num_entities)`` score matrix.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">emb_head</span><span class="p">,</span> <span class="n">emb_rel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_vs_all_score</span><span class="p">(</span><span class="n">emb_h</span><span class="o">=</span><span class="n">emb_head</span><span class="p">,</span> <span class="n">emb_r</span><span class="o">=</span><span class="n">emb_rel</span><span class="p">,</span> <span class="n">emb_E</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span></div>
 
@@ -173,7 +173,7 @@
 <div class="viewcode-block" id="DistMult.forward_k_vs_sample">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.DistMult.forward_k_vs_sample">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;KvsSample forward pass: score head/relation against a sampled entity subset.</span>
+<span class="w">        </span><span class="sd">"""KvsSample forward pass: score head/relation against a sampled entity subset.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -187,21 +187,21 @@
 <span class="sd">        -------</span>
 <span class="sd">        torch.FloatTensor</span>
 <span class="sd">            Shape ``(batch_size, k)`` score matrix.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># (b,d),     (b,d)</span>
         <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_rel_real</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1"># (b, d)</span>
-        <span class="n">hr</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd, bd -&gt; bd&#39;</span><span class="p">,</span> <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_rel_real</span><span class="p">)</span>
+        <span class="n">hr</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">'bd, bd -&gt; bd'</span><span class="p">,</span> <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_rel_real</span><span class="p">)</span>
         <span class="c1"># (b, k, d)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span><span class="n">target_entity_idx</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd, bkd -&gt; bk&#39;</span><span class="p">,</span> <span class="n">hr</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">'bd, bkd -&gt; bk'</span><span class="p">,</span> <span class="n">hr</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="DistMult.score">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.DistMult.score">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Score a batch of ``(head, relation, tail)`` embedding triples.</span>
+<span class="w">        </span><span class="sd">"""Score a batch of ``(head, relation, tail)`` embedding triples.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -212,7 +212,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        torch.FloatTensor</span>
 <span class="sd">            Shape ``(batch_size,)`` triple scores.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dropout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_normalizer</span><span class="p">(</span><span class="n">h</span> <span class="o">*</span> <span class="n">r</span><span class="p">))</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 </div>
 
@@ -221,7 +221,7 @@
 <div class="viewcode-block" id="TransE">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.TransE">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TransE</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;TransE: translation-based knowledge graph embedding.</span>
+<span class="w">    </span><span class="sd">"""TransE: translation-based knowledge graph embedding.</span>
 
 <span class="sd">    Models a relation *r* as a translation in embedding space such that</span>
 <span class="sd">    ``h + r \u2248 t`` for a true triple ``(h, r, t)``.  The score function is</span>
@@ -237,11 +237,11 @@
 <span class="sd">    Bordes et al., *Translating Embeddings for Modeling Multi-relational</span>
 <span class="sd">    Data*, NeurIPS 2013.</span>
 <span class="sd">    https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;TransE&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">'TransE'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_norm</span> <span class="o">=</span> <span class="mi">2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">margin</span> <span class="o">=</span> <span class="mi">4</span>
 
@@ -249,7 +249,7 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.TransE.score">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
               <span class="n">tail_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Score a batch of triples using the TransE margin-distance formula.</span>
+<span class="w">        </span><span class="sd">"""Score a batch of triples using the TransE margin-distance formula.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -261,7 +261,7 @@
 <span class="sd">        torch.FloatTensor</span>
 <span class="sd">            Shape ``(batch_size,)`` scores equal to</span>
 <span class="sd">            ``margin - ||h + r - t||_2``.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Original d:=|| s+p - t||_2 \approx 0 distance, if true</span>
         <span class="c1"># if d =0 sigma(5-0) =&gt; 1</span>
         <span class="c1"># if d =5 sigma(5-5) =&gt; 0.5</span>
@@ -273,7 +273,7 @@
 <div class="viewcode-block" id="TransE.forward_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.TransE.forward_k_vs_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;KvsAll forward pass: score head/relation against all entities.</span>
+<span class="w">        </span><span class="sd">"""KvsAll forward pass: score head/relation against all entities.</span>
 
 <span class="sd">        Computes ``margin - ||h + r - e||_2`` for every entity embedding *e*.</span>
 
@@ -286,7 +286,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        torch.FloatTensor</span>
 <span class="sd">            Shape ``(batch_size, num_entities)`` score matrix.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_rel_real</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">distance</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">pairwise_distance</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">emb_head_real</span> <span class="o">+</span> <span class="n">emb_rel_real</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
                                                          <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_norm</span><span class="p">)</span>
@@ -298,9 +298,9 @@
 <div class="viewcode-block" id="TransH">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.TransH">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TransH</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;TransH: translation-based knowledge graph embedding on relation-specific hyperplanes.</span>
+<span class="w">    </span><span class="sd">"""TransH: translation-based knowledge graph embedding on relation-specific hyperplanes.</span>
 
-<span class="sd">    Addresses TransE&#39;s inability to model one-to-many, many-to-one, and</span>
+<span class="sd">    Addresses TransE's inability to model one-to-many, many-to-one, and</span>
 <span class="sd">    many-to-many relations by letting each relation *r* define its own</span>
 <span class="sd">    hyperplane. An entity is first projected onto that hyperplane before</span>
 <span class="sd">    the translation is applied, so the same entity can be positioned</span>
@@ -315,7 +315,7 @@
 <span class="sd">    ``r_w`` reuses the inherited ``relation_embeddings`` table and is</span>
 <span class="sd">    normalised to unit norm before every use, since only a unit-norm normal</span>
 <span class="sd">    yields a true orthogonal projection onto the hyperplane. ``r_d`` is a</span>
-<span class="sd">    second, relation-specific embedding table analogous to TransE&#39;s</span>
+<span class="sd">    second, relation-specific embedding table analogous to TransE's</span>
 <span class="sd">    relation vector.</span>
 
 <span class="sd">    References</span>
@@ -323,12 +323,12 @@
 <span class="sd">    Wang et al., *Knowledge Graph Embedding by Translating on Hyperplanes*,</span>
 <span class="sd">    AAAI 2014.</span>
 <span class="sd">    https://aaai.org/papers/8870-knowledge-graph-embedding-by-translating-on-hyperplanes/</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;TransH&#39;</span>
-        <span class="c1"># In-hyperplane translation vector r_d (like TransE&#39;s relation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">'TransH'</span>
+        <span class="c1"># In-hyperplane translation vector r_d (like TransE's relation</span>
         <span class="c1"># embedding). self.relation_embeddings (from BaseKGE) is reused as</span>
         <span class="c1"># the raw hyperplane normal r_w (normalised to unit norm before</span>
         <span class="c1"># use); this second table stores the additive translation. Both are</span>
@@ -339,7 +339,7 @@
 <div class="viewcode-block" id="TransH.forward_triples">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.TransH.forward_triples">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Score a batch of ``(head, relation, tail)`` index triples.</span>
+<span class="w">        </span><span class="sd">"""Score a batch of ``(head, relation, tail)`` index triples.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -351,7 +351,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        torch.FloatTensor</span>
 <span class="sd">            Shape ``(batch_size,)`` triple scores.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">idx_relation</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_normal_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">rel_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_normal_translations</span><span class="p">(</span><span class="n">idx_relation</span><span class="p">)</span>
@@ -365,13 +365,13 @@
 <div class="viewcode-block" id="TransH.forward_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.TransH.forward_k_vs_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;KvsAll forward pass: score head/relation against all entities.</span>
+<span class="w">        </span><span class="sd">"""KvsAll forward pass: score head/relation against all entities.</span>
 
-<span class="sd">        Every candidate tail entity must be projected onto the batch row&#39;s</span>
+<span class="sd">        Every candidate tail entity must be projected onto the batch row's</span>
 <span class="sd">        relation-specific hyperplane, and the hyperplane normal differs per</span>
 <span class="sd">        batch row, so unlike TransE this materialises a full</span>
 <span class="sd">        ``(batch_size, num_entities, embedding_dim)`` tensor of projected</span>
-<span class="sd">        tail candidates -- O(B * E * D) memory, versus TransE&#39;s O(B * E).</span>
+<span class="sd">        tail candidates -- O(B * E * D) memory, versus TransE's O(B * E).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -382,7 +382,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        torch.FloatTensor</span>
 <span class="sd">            Shape ``(batch_size, num_entities)`` score matrix.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">idx_relation</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_normal_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">rel_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_normal_translations</span><span class="p">(</span><span class="n">idx_relation</span><span class="p">)</span>
@@ -401,7 +401,7 @@
 <div class="viewcode-block" id="TransH.forward_k_vs_sample">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.TransH.forward_k_vs_sample">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;KvsSample forward pass: score head/relation against a sampled entity subset.</span>
+<span class="w">        </span><span class="sd">"""KvsSample forward pass: score head/relation against a sampled entity subset.</span>
 
 <span class="sd">        Same hyperplane-projection logic as :meth:`forward_k_vs_all`, but</span>
 <span class="sd">        restricted to the *k* sampled tail candidates instead of every</span>
@@ -419,7 +419,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        torch.FloatTensor</span>
 <span class="sd">            Shape ``(batch_size, k)`` score matrix.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">idx_relation</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_normal_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">rel_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_normal_translations</span><span class="p">(</span><span class="n">idx_relation</span><span class="p">)</span>
@@ -440,7 +440,7 @@
 <div class="viewcode-block" id="MuRE">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.MuRE">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MuRE</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;MuRE: multi-relational graph embedding with relation-specific diagonal scaling, translation, and entity biases.</span>
+<span class="w">    </span><span class="sd">"""MuRE: multi-relational graph embedding with relation-specific diagonal scaling, translation, and entity biases.</span>
 
 <span class="sd">    Scores a triple ``(h, r, t)`` as::</span>
 
@@ -451,7 +451,7 @@
 <span class="sd">    ``relation_embeddings`` table directly, shape</span>
 <span class="sd">    ``(num_relations, embedding_dim)``. ``t_r`` is a second,</span>
 <span class="sd">    relation-specific translation vector (own embedding table, same shape</span>
-<span class="sd">    convention: ``(num_relations, embedding_dim)``) analogous to TransE&#39;s</span>
+<span class="sd">    convention: ``(num_relations, embedding_dim)``) analogous to TransE's</span>
 <span class="sd">    relation vector. ``b_h`` and ``b_t`` are learnable scalar biases</span>
 <span class="sd">    indexed per entity (head and tail respectively), not per relation.</span>
 
@@ -459,12 +459,12 @@
 <span class="sd">    ----------</span>
 <span class="sd">    Balažević et al., *Multi-relational Poincaré Graph Embeddings*,</span>
 <span class="sd">    NeurIPS 2019. https://arxiv.org/abs/1905.09791</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;MuRE&#39;</span>
-        <span class="c1"># Relation-specific translation vector t_r (like TransE&#39;s relation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">'MuRE'</span>
+        <span class="c1"># Relation-specific translation vector t_r (like TransE's relation</span>
         <span class="c1"># embedding). self.relation_embeddings (from BaseKGE) is reused as</span>
         <span class="c1"># the diagonal scaling vector R_r; this second table stores the</span>
         <span class="c1"># additive translation. Both are shaped (num_relations, embedding_dim).</span>
@@ -479,7 +479,7 @@
 <div class="viewcode-block" id="MuRE.forward_triples">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.MuRE.forward_triples">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Score a batch of ``(head, relation, tail)`` index triples.</span>
+<span class="w">        </span><span class="sd">"""Score a batch of ``(head, relation, tail)`` index triples.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -491,7 +491,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        torch.FloatTensor</span>
 <span class="sd">            Shape ``(batch_size,)`` triple scores.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">idx_head_entity</span><span class="p">,</span> <span class="n">idx_relation</span><span class="p">,</span> <span class="n">idx_tail_entity</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">rel_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_translations</span><span class="p">(</span><span class="n">idx_relation</span><span class="p">)</span>
@@ -505,7 +505,7 @@
 <div class="viewcode-block" id="MuRE.forward_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.MuRE.forward_k_vs_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;KvsAll forward pass: score head/relation against all entities.</span>
+<span class="w">        </span><span class="sd">"""KvsAll forward pass: score head/relation against all entities.</span>
 
 <span class="sd">        Computes ``-||R_r \\odot h + t_r - e||_2 + b_h + b_e`` for every</span>
 <span class="sd">        entity embedding *e*.</span>
@@ -519,7 +519,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        torch.FloatTensor</span>
 <span class="sd">            Shape ``(batch_size, num_entities)`` score matrix.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">idx_head_entity</span><span class="p">,</span> <span class="n">idx_relation</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_rel_real</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">rel_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_translations</span><span class="p">(</span><span class="n">idx_relation</span><span class="p">)</span>
@@ -535,7 +535,7 @@
 <div class="viewcode-block" id="MuRE.forward_k_vs_sample">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.MuRE.forward_k_vs_sample">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;KvsSample forward pass: score head/relation against a sampled entity subset.</span>
+<span class="w">        </span><span class="sd">"""KvsSample forward pass: score head/relation against a sampled entity subset.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -548,7 +548,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        torch.FloatTensor</span>
 <span class="sd">            Shape ``(batch_size, k)`` score matrix.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">idx_head_entity</span><span class="p">,</span> <span class="n">idx_relation</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
         <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_rel_real</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">rel_translation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_translations</span><span class="p">(</span><span class="n">idx_relation</span><span class="p">)</span>
@@ -566,7 +566,7 @@
 <div class="viewcode-block" id="Shallom">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.Shallom">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Shallom</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Shallom: shallow neural model for relation prediction.</span>
+<span class="w">    </span><span class="sd">"""Shallom: shallow neural model for relation prediction.</span>
 
 <span class="sd">    Represents each triple as the concatenation of head and tail entity</span>
 <span class="sd">    embeddings and feeds it through a two-layer MLP to predict the</span>
@@ -576,11 +576,11 @@
 <span class="sd">    ----------</span>
 <span class="sd">    Demir et al., *A Shallow Neural Model for Relation Prediction*,</span>
 <span class="sd">    ISWC 2021.  https://arxiv.org/abs/2101.09090</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Shallom&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">'Shallom'</span>
         <span class="n">shallom_width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">shallom</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_dropout_rate</span><span class="p">),</span>
                                            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">shallom_width</span><span class="p">),</span>
@@ -608,7 +608,7 @@
 <div class="viewcode-block" id="Shallom.forward_triples">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.Shallom.forward_triples">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Score a batch of triples by looking up relation scores from ``forward_k_vs_all``.</span>
+<span class="w">        </span><span class="sd">"""Score a batch of triples by looking up relation scores from ``forward_k_vs_all``.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -620,7 +620,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        torch.FloatTensor</span>
 <span class="sd">            Shape ``(batch_size,)`` triple scores.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
         <span class="k">assert</span> <span class="n">d</span> <span class="o">==</span> <span class="mi">3</span>
         <span class="n">scores_for_all_relations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_k_vs_all</span><span class="p">(</span><span class="n">x</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]])</span>
@@ -632,7 +632,7 @@
 <div class="viewcode-block" id="Pyke">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.Pyke">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Pyke</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pyke: Physical Embedding Model for Knowledge Graphs.</span>
+<span class="w">    </span><span class="sd">"""Pyke: Physical Embedding Model for Knowledge Graphs.</span>
 
 <span class="sd">    Scores a triple ``(h, r, t)`` based on the average pairwise distance</span>
 <span class="sd">    between head-to-relation and relation-to-tail in embedding space::</span>
@@ -641,18 +641,18 @@
 
 <span class="sd">    The model encodes geometric proximity between entities and the</span>
 <span class="sd">    relations that connect them.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Pyke&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">'Pyke'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dist_func</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">PairwiseDistance</span><span class="p">(</span><span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">margin</span> <span class="o">=</span> <span class="mf">1.0</span>
 
 <div class="viewcode-block" id="Pyke.forward_triples">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.Pyke.forward_triples">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Score a batch of triples using the Pyke distance formula.</span>
+<span class="w">        </span><span class="sd">"""Score a batch of triples using the Pyke distance formula.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -664,7 +664,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        torch.FloatTensor</span>
 <span class="sd">            Shape ``(batch_size,)`` triple scores.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># (1) get embeddings for a batch of entities and relations</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1"># (2) Compute the Euclidean distance from head to relation</span>
@@ -679,7 +679,7 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.CoKEConfig">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CoKEConfig</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Configuration for the CoKE (Contextualized Knowledge Graph Embedding) model.</span>
 
 <span class="sd">    Attributes:</span>
@@ -691,7 +691,7 @@
 <span class="sd">        dropout: Dropout rate applied throughout the model</span>
 <span class="sd">        bias: Whether to use bias in linear layers</span>
 <span class="sd">        causal: Whether to use causal masking (False for bidirectional attention)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">block_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>           <span class="c1"># triples -&gt; TODO: LF: for multi-hop this needs to be bigger</span>
     <span class="n">vocab_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span>        <span class="c1"># Must be set to num_entities + num_relations before initializing CoKE</span>
     <span class="n">n_layer</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span>
@@ -705,20 +705,20 @@
 <div class="viewcode-block" id="CoKE">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.models.CoKE">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CoKE</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Contextualized Knowledge Graph Embedding (CoKE) model.</span>
 <span class="sd">    Based on: https://arxiv.org/pdf/1911.02168.</span>
 
 <span class="sd">    CoKE uses a transformer encoder to learn contextualized representations of entities and relations.</span>
 <span class="sd">    For link prediction, it predicts masked elements in (head, relation, tail) triples using</span>
-<span class="sd">    bidirectional attention, similar to BERT&#39;s masked language modeling approach.</span>
+<span class="sd">    bidirectional attention, similar to BERT's masked language modeling approach.</span>
 
 <span class="sd">    The model creates a sequence [head_emb, relation_emb, mask_emb], adds positional embeddings,</span>
 <span class="sd">    and processes it through transformer layers to predict the tail entity.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">CoKEConfig</span> <span class="o">=</span> <span class="n">CoKEConfig</span><span class="p">()):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;CoKE&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">'CoKE'</span>
 
         <span class="c1"># Configure model dimensions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
@@ -759,7 +759,7 @@
             <span class="n">x_tok</span> <span class="o">=</span> <span class="n">block</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span>
         <span class="n">x_tok</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ln_f</span><span class="p">(</span><span class="n">x_tok</span><span class="p">)</span>
 
-        <span class="c1"># Extract the mask token&#39;s hidden state (position 2)</span>
+        <span class="c1"># Extract the mask token's hidden state (position 2)</span>
         <span class="n">h_mask</span> <span class="o">=</span> <span class="n">x_tok</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:]</span>
         <span class="n">h_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coke_dropout</span><span class="p">(</span><span class="n">h_mask</span><span class="p">)</span>
 
@@ -796,7 +796,7 @@
         <span class="n">h_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coke_dropout</span><span class="p">(</span><span class="n">h_mask</span><span class="p">)</span>
 
         <span class="c1"># Compute similarity between mask representation and tail embedding</span>
-        <span class="n">score</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd -&gt; b&#39;</span><span class="p">,</span> <span class="n">h_mask</span><span class="p">,</span> <span class="n">emb_t</span><span class="p">)</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">'bd,bd -&gt; b'</span><span class="p">,</span> <span class="n">h_mask</span><span class="p">,</span> <span class="n">emb_t</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">score</span></div>
 
 
@@ -826,7 +826,7 @@
         <span class="n">h_mask</span> <span class="o">=</span> <span class="n">x_tok</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:]</span>
         <span class="n">h_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coke_dropout</span><span class="p">(</span><span class="n">h_mask</span><span class="p">)</span>
 
-        <span class="n">scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd, bkd -&gt; bk&#39;</span><span class="p">,</span> <span class="n">h_mask</span><span class="p">,</span> <span class="n">emb_tail</span><span class="p">)</span> <span class="c1"># dot product between each batch (how simlar is mask to all k tails in batch x)</span>
+        <span class="n">scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">'bd, bkd -&gt; bk'</span><span class="p">,</span> <span class="n">h_mask</span><span class="p">,</span> <span class="n">emb_tail</span><span class="p">)</span> <span class="c1"># dot product between each batch (how simlar is mask to all k tails in batch x)</span>
                                                          <span class="c1">#output: (b,k) -&gt; k scores per batch</span>
 
         <span class="k">return</span> <span class="n">scores</span></div>

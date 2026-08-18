@@ -106,7 +106,7 @@
     <span class="n">q</span> <span class="o">=</span> <span class="n">b_r</span> <span class="o">/</span> <span class="n">denominator</span>
     <span class="n">u</span> <span class="o">=</span> <span class="n">c_r</span> <span class="o">/</span> <span class="n">denominator</span>
     <span class="n">v</span> <span class="o">=</span> <span class="n">d_r</span> <span class="o">/</span> <span class="n">denominator</span>
-    <span class="c1">#  Q&#39;=E Hamilton product R</span>
+    <span class="c1">#  Q'=E Hamilton product R</span>
     <span class="n">r_val</span> <span class="o">=</span> <span class="n">a_h</span> <span class="o">*</span> <span class="n">p</span> <span class="o">-</span> <span class="n">b_h</span> <span class="o">*</span> <span class="n">q</span> <span class="o">-</span> <span class="n">c_h</span> <span class="o">*</span> <span class="n">u</span> <span class="o">-</span> <span class="n">d_h</span> <span class="o">*</span> <span class="n">v</span>
     <span class="n">i_val</span> <span class="o">=</span> <span class="n">a_h</span> <span class="o">*</span> <span class="n">q</span> <span class="o">+</span> <span class="n">b_h</span> <span class="o">*</span> <span class="n">p</span> <span class="o">+</span> <span class="n">c_h</span> <span class="o">*</span> <span class="n">v</span> <span class="o">-</span> <span class="n">d_h</span> <span class="o">*</span> <span class="n">u</span>
     <span class="n">j_val</span> <span class="o">=</span> <span class="n">a_h</span> <span class="o">*</span> <span class="n">u</span> <span class="o">-</span> <span class="n">b_h</span> <span class="o">*</span> <span class="n">v</span> <span class="o">+</span> <span class="n">c_h</span> <span class="o">*</span> <span class="n">p</span> <span class="o">+</span> <span class="n">d_h</span> <span class="o">*</span> <span class="n">q</span>
@@ -120,7 +120,7 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">QMult</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;QMult&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">'QMult'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">explicit</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">explicit</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
             <span class="n">_1</span><span class="p">,</span> <span class="n">_i</span><span class="p">,</span> <span class="n">_j</span><span class="p">,</span> <span class="n">_k</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span>
@@ -153,7 +153,7 @@
 <div class="viewcode-block" id="QMult.quaternion_multiplication_followed_by_inner_product">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.models.QMult.quaternion_multiplication_followed_by_inner_product">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">quaternion_multiplication_followed_by_inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        :param h: shape: (`*batch_dims`, dim)</span>
 <span class="sd">            The head representations.</span>
 <span class="sd">        :param r: shape: (`*batch_dims`, dim)</span>
@@ -162,19 +162,19 @@
 <span class="sd">            The tail representations.</span>
 <span class="sd">        :return:</span>
 <span class="sd">            Triple scores.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">shape</span>
         <span class="n">h</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-        <span class="k">return</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...di, ...dj, ...dk, ijk -&gt; ...&quot;</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiplication_table</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"...di, ...dj, ...dk, ijk -&gt; ..."</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiplication_table</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="QMult.quaternion_normalizer">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.models.QMult.quaternion_normalizer">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">quaternion_normalizer</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Normalize the length of relation vectors, if the forward constraint has not been applied yet.</span>
 
 <span class="sd">        Absolute value of a quaternion</span>
@@ -193,7 +193,7 @@
 
 <span class="sd">        :return:</span>
 <span class="sd">            The normalized vector.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Normalize relation embeddings</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">*</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
@@ -229,7 +229,7 @@
 <div class="viewcode-block" id="QMult.k_vs_all_score">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.models.QMult.k_vs_all_score">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">k_vs_all_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bpe_head_ent_emb</span><span class="p">,</span> <span class="n">bpe_rel_ent_emb</span><span class="p">,</span> <span class="n">E</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -240,7 +240,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># (1.1) If No normalization set, we need to apply quaternion normalization</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_relation_embeddings</span><span class="p">,</span> <span class="n">IdentityClass</span><span class="p">):</span>
             <span class="n">bpe_rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quaternion_normalizer</span><span class="p">(</span><span class="n">bpe_rel_ent_emb</span><span class="p">)</span>
@@ -266,7 +266,7 @@
 <div class="viewcode-block" id="QMult.forward_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.models.QMult.forward_k_vs_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -275,7 +275,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_vs_all_score</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span></div>
@@ -284,12 +284,12 @@
 <div class="viewcode-block" id="QMult.forward_k_vs_sample">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.models.QMult.forward_k_vs_sample">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Completed.</span>
 <span class="sd">        Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,</span>
 <span class="sd">        [score(h,r,x)|x \in Entities] =&gt; [0.0,0.1,...,0.8], shape=&gt; (1, |Entities|)</span>
 <span class="sd">        Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -332,13 +332,13 @@
 <div class="viewcode-block" id="ConvQ">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.models.ConvQ">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ConvQ</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Convolutional Quaternion Knowledge Graph Embeddings</span>
+<span class="w">    </span><span class="sd">""" Convolutional Quaternion Knowledge Graph Embeddings</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;ConvQ&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">'ConvQ'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
@@ -409,11 +409,11 @@
 <div class="viewcode-block" id="ConvQ.forward_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.models.ConvQ.forward_k_vs_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Given a head entity and a relation (h,r), we compute scores for all entities.</span>
 <span class="sd">        [score(h,r,x)|x \in Entities] =&gt; [0.0,0.1,...,0.8], shape=&gt; (1, |Entities|)</span>
 <span class="sd">        Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -451,11 +451,11 @@
 <div class="viewcode-block" id="AConvQ">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.models.AConvQ">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AConvQ</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Additive Convolutional Quaternion Knowledge Graph Embeddings &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">""" Additive Convolutional Quaternion Knowledge Graph Embeddings """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;AConvQ&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">'AConvQ'</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
@@ -526,11 +526,11 @@
 <div class="viewcode-block" id="AConvQ.forward_k_vs_all">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.models.AConvQ.forward_k_vs_all">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Given a head entity and a relation (h,r), we compute scores for all entities.</span>
 <span class="sd">        [score(h,r,x)|x \in Entities] =&gt; [0.0,0.1,...,0.8], shape=&gt; (1, |Entities|)</span>
 <span class="sd">        Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>

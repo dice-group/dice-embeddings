@@ -102,10 +102,10 @@
 <a class="viewcode-back" href="../../autoapi/dicee/sanity_checkers/index.html#dicee.sanity_checkers.is_sparql_endpoint_alive">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">is_sparql_endpoint_alive</span><span class="p">(</span><span class="n">sparql_endpoint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">sparql_endpoint</span><span class="p">:</span>
-        <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;SELECT (COUNT(*) as ?num_triples) WHERE {  ?s ?p ?o .} &quot;&quot;&quot;</span>
-        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">sparql_endpoint</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;query&#39;</span><span class="p">:</span> <span class="n">query</span><span class="p">})</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="s2">"""SELECT (COUNT(*) as ?num_triples) WHERE {  ?s ?p ?o .} """</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">sparql_endpoint</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">'query'</span><span class="p">:</span> <span class="n">query</span><span class="p">})</span>
         <span class="k">assert</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;SPARQL connection is successful&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">'SPARQL connection is successful'</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span></div>
@@ -115,28 +115,28 @@
 <div class="viewcode-block" id="validate_knowledge_graph">
 <a class="viewcode-back" href="../../autoapi/dicee/sanity_checkers/index.html#dicee.sanity_checkers.validate_knowledge_graph">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate_knowledge_graph</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Validating the source of knowledge graph &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">""" Validating the source of knowledge graph """</span>
     <span class="c1"># (1) Validate SPARQL endpoint</span>
     <span class="k">if</span> <span class="n">is_sparql_endpoint_alive</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeWarning</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The dataset_dir and path_single_kg arguments &#39;</span>
-                                 <span class="sa">f</span><span class="s1">&#39;must be None if sparql_endpoint is given.&#39;</span>
-                                 <span class="sa">f</span><span class="s1">&#39;***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="s1">***</span><span class="se">\n</span><span class="s1">&#39;</span>
-                                 <span class="sa">f</span><span class="s1">&#39;***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span><span class="si">}</span><span class="s1">***</span><span class="se">\n</span><span class="s1">&#39;</span>
-                                 <span class="sa">f</span><span class="s1">&#39;These two parameters are set to None.&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeWarning</span><span class="p">(</span><span class="sa">f</span><span class="s1">'The dataset_dir and path_single_kg arguments '</span>
+                                 <span class="sa">f</span><span class="s1">'must be None if sparql_endpoint is given.'</span>
+                                 <span class="sa">f</span><span class="s1">'***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="s1">***</span><span class="se">\n</span><span class="s1">'</span>
+                                 <span class="sa">f</span><span class="s1">'***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span><span class="si">}</span><span class="s1">***</span><span class="se">\n</span><span class="s1">'</span>
+                                 <span class="sa">f</span><span class="s1">'These two parameters are set to None.'</span><span class="p">)</span>
         <span class="c1"># Set None.</span>
         <span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1">#print(f&#39;The dataset_dir and sparql_endpoint arguments &#39;</span>
-            <span class="c1">#      f&#39;must be None if path_single_kg is given.&#39;</span>
-            <span class="c1">#      f&#39;***{args.dataset_dir}***\n&#39;</span>
-            <span class="c1">#      f&#39;***{args.sparql_endpoint}***\n&#39;</span>
-            <span class="c1">#      f&#39;These two parameters are set to None.&#39;)</span>
+            <span class="c1">#print(f'The dataset_dir and sparql_endpoint arguments '</span>
+            <span class="c1">#      f'must be None if path_single_kg is given.'</span>
+            <span class="c1">#      f'***{args.dataset_dir}***\n'</span>
+            <span class="c1">#      f'***{args.sparql_endpoint}***\n'</span>
+            <span class="c1">#      f'These two parameters are set to None.')</span>
             <span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -144,120 +144,120 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The dataset_dir must be string sparql_endpoint is not given.&#39;</span>
-                                 <span class="sa">f</span><span class="s1">&#39;***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="s1">***&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'The dataset_dir must be string sparql_endpoint is not given.'</span>
+                                 <span class="sa">f</span><span class="s1">'***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="s1">***'</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="p">)</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Dataset directory not found: </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Suggestions:</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;  1. Download datasets:</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;     wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;     unzip KGs.zip</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;  2. Use absolute path: --dataset_dir /absolute/path/to/KGs/UMLS</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;  3. Check current directory: </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"Dataset directory not found: </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Suggestions:</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"  1. Download datasets:</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"     wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"     unzip KGs.zip</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"  2. Use absolute path: --dataset_dir /absolute/path/to/KGs/UMLS</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"  3. Check current directory: </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
             <span class="p">)</span>
         <span class="c1"># Check whether the input parameter leads a standard data format (e.g. FOLDER/train.txt)</span>
-        <span class="k">if</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="o">+</span> <span class="s1">&#39;/train*&#39;</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot; all is good we have xxx/train.txt&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="o">+</span> <span class="s1">'/train*'</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">""" all is good we have xxx/train.txt"""</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Dataset directory must contain train.txt file: </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Expected structure:</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="s2">/</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;    ├── train.txt (required)</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;    ├── valid.txt (optional)</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;    └── test.txt (optional)</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">For single file datasets, use: --path_single_kg folder/dataset.owl</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;For SPARQL endpoints, use: --sparql_endpoint http://localhost:3030/dataset/</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"Dataset directory must contain train.txt file: </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Expected structure:</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="s2">/</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"    ├── train.txt (required)</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"    ├── valid.txt (optional)</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"    └── test.txt (optional)</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">For single file datasets, use: --path_single_kg folder/dataset.owl</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"For SPARQL endpoints, use: --sparql_endpoint http://localhost:3030/dataset/</span><span class="se">\n</span><span class="s2">"</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1">#print(f&#39;The sparql_endpoint and path_single_kg arguments &#39;</span>
-            <span class="c1">#      f&#39;must be None if dataset_dir is given.&#39;</span>
-            <span class="c1">#      f&#39;***{args.sparql_endpoint}***\n&#39;</span>
-            <span class="c1">#      f&#39;***{args.path_single_kg}***\n&#39;</span>
-            <span class="c1">#      f&#39;These two parameters are set to None.&#39;)</span>
+            <span class="c1">#print(f'The sparql_endpoint and path_single_kg arguments '</span>
+            <span class="c1">#      f'must be None if dataset_dir is given.'</span>
+            <span class="c1">#      f'***{args.sparql_endpoint}***\n'</span>
+            <span class="c1">#      f'***{args.path_single_kg}***\n'</span>
+            <span class="c1">#      f'These two parameters are set to None.')</span>
             <span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="o">=</span> <span class="kc">None</span>
 
 
     <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;No data source specified. You must provide ONE of the following:</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Option 1: Standard dataset folder</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;  --dataset_dir KGs/UMLS</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Option 2: Single RDF/OWL file</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;  --path_single_kg KGs/Family/family.owl --backend rdflib</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Option 3: SPARQL endpoint</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;  --sparql_endpoint http://localhost:3030/mydata/</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">For examples, see: tests/test_different_backends.py</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">"No data source specified. You must provide ONE of the following:</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="s2">"</span><span class="se">\n</span><span class="s2">Option 1: Standard dataset folder</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="s2">"  --dataset_dir KGs/UMLS</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="s2">"</span><span class="se">\n</span><span class="s2">Option 2: Single RDF/OWL file</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="s2">"  --path_single_kg KGs/Family/family.owl --backend rdflib</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="s2">"</span><span class="se">\n</span><span class="s2">Option 3: SPARQL endpoint</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="s2">"  --sparql_endpoint http://localhost:3030/mydata/</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="s2">"</span><span class="se">\n</span><span class="s2">For examples, see: tests/test_different_backends.py</span><span class="se">\n</span><span class="s2">"</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid computation flow!&#39;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">'Invalid computation flow!'</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="sanity_checking_with_arguments">
 <a class="viewcode-back" href="../../autoapi/dicee/sanity_checkers/index.html#dicee.sanity_checkers.sanity_checking_with_arguments">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">sanity_checking_with_arguments</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
-    <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;embedding_dim must be strictly positive. Currently:</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">embedding_dim</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="n">valid_techniques</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;AllvsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;1vsSample&quot;</span><span class="p">,</span> <span class="s2">&quot;KvsSample&quot;</span><span class="p">,</span> <span class="s2">&quot;FSDP1vsSample&quot;</span><span class="p">,</span> <span class="s2">&quot;KvsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;FixedNegSample&quot;</span><span class="p">,</span> <span class="s2">&quot;NegSample&quot;</span><span class="p">,</span> <span class="s2">&quot;1vsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;Pyke&quot;</span><span class="p">,</span> <span class="s2">&quot;Sentence&quot;</span><span class="p">]</span>
-    <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="n">valid_techniques</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Invalid training strategy =&gt; </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s2">.&quot;</span>
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">&quot;FSDP1vsSample&quot;</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s2">&quot;torchFSDP&quot;</span><span class="p">,</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s2"> is only supported with --trainer torchFSDP.&quot;</span>
+    <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"embedding_dim must be strictly positive. Currently:</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">embedding_dim</span><span class="si">}</span><span class="s2">"</span>
+    <span class="n">valid_techniques</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"AllvsAll"</span><span class="p">,</span> <span class="s2">"1vsSample"</span><span class="p">,</span> <span class="s2">"KvsSample"</span><span class="p">,</span> <span class="s2">"FSDP1vsSample"</span><span class="p">,</span> <span class="s2">"KvsAll"</span><span class="p">,</span> <span class="s2">"FixedNegSample"</span><span class="p">,</span> <span class="s2">"NegSample"</span><span class="p">,</span> <span class="s2">"1vsAll"</span><span class="p">,</span> <span class="s2">"Pyke"</span><span class="p">,</span> <span class="s2">"Sentence"</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="n">valid_techniques</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"Invalid training strategy =&gt; </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s2">."</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">"FSDP1vsSample"</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s2">"torchFSDP"</span><span class="p">,</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s2"> is only supported with --trainer torchFSDP."</span>
         <span class="p">)</span>
-        <span class="k">assert</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">byte_pair_encoding</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s2"> does not support byte pair encoding.&quot;</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">byte_pair_encoding</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s2"> does not support byte pair encoding."</span>
 
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s2">&quot;torchFSDP&quot;</span><span class="p">:</span>
-        <span class="n">_fsdp_supported_techniques</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;NegSample&quot;</span><span class="p">,</span> <span class="s2">&quot;FixedNegSample&quot;</span><span class="p">,</span> <span class="s2">&quot;KvsSample&quot;</span><span class="p">,</span> <span class="s2">&quot;FSDP1vsSample&quot;</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s2">"torchFSDP"</span><span class="p">:</span>
+        <span class="n">_fsdp_supported_techniques</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"NegSample"</span><span class="p">,</span> <span class="s2">"FixedNegSample"</span><span class="p">,</span> <span class="s2">"KvsSample"</span><span class="p">,</span> <span class="s2">"FSDP1vsSample"</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_fsdp_supported_techniques</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;torchFSDP only supports sample-based scoring techniques &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">_fsdp_supported_techniques</span><span class="p">))</span><span class="si">}</span><span class="s2">). &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Got: &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;AllvsAll / KvsAll / 1vsAll require the full entity table on every rank, &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;which is incompatible with row-wise entity sharding.&quot;</span>
+                <span class="sa">f</span><span class="s2">"torchFSDP only supports sample-based scoring techniques "</span>
+                <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">_fsdp_supported_techniques</span><span class="p">))</span><span class="si">}</span><span class="s2">). "</span>
+                <span class="sa">f</span><span class="s2">"Got: '</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s2">'. "</span>
+                <span class="sa">f</span><span class="s2">"AllvsAll / KvsAll / 1vsAll require the full entity table on every rank, "</span>
+                <span class="sa">f</span><span class="s2">"which is incompatible with row-wise entity sharding."</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">byte_pair_encoding</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;BytE&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">byte_pair_encoding</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">==</span> <span class="s2">"BytE"</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="s2">&quot;torchFSDP does not support byte pair encoding. &quot;</span>
-                <span class="s2">&quot;The entity embedding table must be a standard nn.Embedding for row-wise sharding.&quot;</span>
+                <span class="s2">"torchFSDP does not support byte pair encoding. "</span>
+                <span class="s2">"The entity embedding table must be a standard nn.Embedding for row-wise sharding."</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Pykeen_&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"Pykeen_"</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;torchFSDP does not support PyKEEN models (got &#39;</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">model</span><span class="si">}</span><span class="s2">&#39;). &quot;</span>
-                <span class="s2">&quot;PyKEEN models do not inherit from BaseKGE and cannot use row-wise entity sharding.&quot;</span>
+                <span class="sa">f</span><span class="s2">"torchFSDP does not support PyKEEN models (got '</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">model</span><span class="si">}</span><span class="s2">'). "</span>
+                <span class="s2">"PyKEEN models do not inherit from BaseKGE and cannot use row-wise entity sharding."</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;Shallom&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">==</span> <span class="s2">"Shallom"</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                <span class="s2">&quot;torchFSDP does not support Shallom. &quot;</span>
-                <span class="s2">&quot;Shallom uses RelationPrediction form; FSDP entity sharding requires EntityPrediction models.&quot;</span>
+                <span class="s2">"torchFSDP does not support Shallom. "</span>
+                <span class="s2">"Shallom uses RelationPrediction form; FSDP entity sharding requires EntityPrediction models."</span>
             <span class="p">)</span>
 
-    <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Learning rate must be greater than 0. Currently:</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"Learning rate must be greater than 0. Currently:</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span><span class="si">}</span><span class="s2">"</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">num_folds_for_cv</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">args</span><span class="o">.</span><span class="n">num_folds_for_cv</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">num_folds_for_cv</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;num_folds_for_cv can not be negative. Currently:</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">num_folds_for_cv</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">num_folds_for_cv</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"num_folds_for_cv can not be negative. Currently:</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">num_folds_for_cv</span><span class="si">}</span><span class="s2">"</span>
     <span class="n">validate_knowledge_graph</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="sanity_check_callback_args">
 <a class="viewcode-back" href="../../autoapi/dicee/sanity_checkers/index.html#dicee.sanity_checkers.sanity_check_callback_args">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">sanity_check_callback_args</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Perform sanity checks on callback-related arguments.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">gpu_count</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="mi">0</span>
     <span class="c1"># Check if any callbacks are requested</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s2">&quot;PL&quot;</span> <span class="ow">and</span> <span class="n">gpu_count</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">)</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;torchDDP&quot;</span><span class="p">,</span> <span class="s2">&quot;torchFSDP&quot;</span><span class="p">}:</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s2">"PL"</span> <span class="ow">and</span> <span class="n">gpu_count</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">)</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">"torchDDP"</span><span class="p">,</span> <span class="s2">"torchFSDP"</span><span class="p">}:</span>
         <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Path to store experiments must be provided for Multi-GPU training.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Path to store experiments must be provided for Multi-GPU training."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">adaptive_lr</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Adaptive learning rate is not supported with Multi-GPU training.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Adaptive learning rate is not supported with Multi-GPU training."</span><span class="p">)</span>
     <span class="n">has_callbacks</span> <span class="o">=</span> <span class="nb">any</span><span class="p">([</span><span class="n">args</span><span class="o">.</span><span class="n">swa</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">swag</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">ema</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">adaptive_swa</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">twa</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">adaptive_lr</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">eval_every_n_epochs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span>
                           <span class="n">args</span><span class="o">.</span><span class="n">eval_at_epochs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">])</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">has_callbacks</span><span class="p">:</span>
@@ -266,20 +266,20 @@
     <span class="c1"># SWA-related checks</span>
     <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">args</span><span class="o">.</span><span class="n">swa</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">swag</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">ema</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">twa</span><span class="p">]):</span>
         <span class="n">args</span><span class="o">.</span><span class="n">swa_start_epoch</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">swa_start_epoch</span> <span class="ow">or</span> <span class="mi">1</span>
-        <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">swa_start_epoch</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;SWA Start Epoch must be greater than 0&quot;</span>
+        <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">swa_start_epoch</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"SWA Start Epoch must be greater than 0"</span>
 
     <span class="c1"># TWA/SWAG trainer compatibility</span>
-    <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">args</span><span class="o">.</span><span class="n">twa</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">swag</span><span class="p">])</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;TP&quot;</span><span class="p">,</span> <span class="s2">&quot;torchDDP&quot;</span><span class="p">,</span> <span class="s2">&quot;torchFSDP&quot;</span><span class="p">}:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;TWA and SWAG are not supported with TP, torchDDP, or torchFSDP trainers.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">args</span><span class="o">.</span><span class="n">twa</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">swag</span><span class="p">])</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">"TP"</span><span class="p">,</span> <span class="s2">"torchDDP"</span><span class="p">,</span> <span class="s2">"torchFSDP"</span><span class="p">}:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"TWA and SWAG are not supported with TP, torchDDP, or torchFSDP trainers."</span><span class="p">)</span>
 
     <span class="c1"># Mid-epoch evaluation requires the full model on a single rank, which is not</span>
     <span class="c1"># possible with torchFSDP (entity embeddings are sharded; rank 0 holds only its</span>
     <span class="c1"># shard until _materialize_model() runs at the end of training).</span>
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s2">&quot;torchFSDP&quot;</span> <span class="ow">and</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">eval_every_n_epochs</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">eval_at_epochs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s2">"torchFSDP"</span> <span class="ow">and</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">eval_every_n_epochs</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">eval_at_epochs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="s2">&quot;Mid-epoch evaluation (eval_every_n_epochs / eval_at_epochs) is not supported &quot;</span>
-            <span class="s2">&quot;with torchFSDP. Entity embeddings are sharded across ranks and cannot be &quot;</span>
-            <span class="s2">&quot;gathered mid-training. Evaluate after training completes instead.&quot;</span>
+            <span class="s2">"Mid-epoch evaluation (eval_every_n_epochs / eval_at_epochs) is not supported "</span>
+            <span class="s2">"with torchFSDP. Entity embeddings are sharded across ranks and cannot be "</span>
+            <span class="s2">"gathered mid-training. Evaluate after training completes instead."</span>
         <span class="p">)</span></div>
 
 </pre></div>

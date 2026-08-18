@@ -298,7 +298,7 @@ provided or have wrong length.</p>
 <span class="gp">... </span>    <span class="n">models</span><span class="p">,</span> <span class="n">test_triples</span><span class="p">,</span> <span class="n">er_vocab</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">weighted_averaging</span><span class="o">=</span><span class="kc">True</span>
 <span class="gp">... </span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;MRR: </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;MRR&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"MRR: </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">'MRR'</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -360,8 +360,8 @@ including standard evaluation and byte-pair encoding based evaluation.</p>
 <p class="rubric">Example</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">dicee.evaluation</span><span class="w"> </span><span class="kn">import</span> <span class="n">Evaluator</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">evaluator</span> <span class="o">=</span> <span class="n">Evaluator</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="s1">&#39;EntityPrediction&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Test MRR: </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;Test&#39;</span><span class="p">][</span><span class="s1">&#39;MRR&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">results</span> <span class="o">=</span> <span class="n">evaluator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="s1">'EntityPrediction'</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Test MRR: </span><span class="si">{</span><span class="n">results</span><span class="p">[</span><span class="s1">'Test'</span><span class="p">][</span><span class="s1">'MRR'</span><span class="p">]</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="py attribute">
@@ -777,10 +777,10 @@ is True, otherwise None.</p>
 <p class="rubric">Example</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">dicee</span><span class="w"> </span><span class="kn">import</span> <span class="n">KGE</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">dicee.evaluation</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_literal_prediction</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;pretrained_model&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"pretrained_model"</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">metrics</span> <span class="o">=</span> <span class="n">evaluate_literal_prediction</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">model</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">eval_file_path</span><span class="o">=</span><span class="s2">&quot;test_literals.csv&quot;</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">eval_file_path</span><span class="o">=</span><span class="s2">"test_literals.csv"</span><span class="p">,</span>
 <span class="gp">... </span>    <span class="n">return_attr_error_metrics</span><span class="o">=</span><span class="kc">True</span>
 <span class="gp">... </span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>

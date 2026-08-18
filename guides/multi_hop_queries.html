@@ -175,14 +175,14 @@
 <p><strong>Example:</strong></p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dicee</span><span class="w"> </span><span class="kn">import</span> <span class="n">KGE</span>
 
-<span class="n">model</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;...&quot;</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"..."</span><span class="p">)</span>
 
 <span class="c1"># Question: Who are the siblings of F9M167?</span>
 <span class="c1"># Query: ?x : hasSibling(F9M167, x)</span>
 <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;1p&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;F9M167&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasSibling&quot;</span><span class="p">,)),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"1p"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">"F9M167"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"hasSibling"</span><span class="p">,)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span>
     <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
 <span class="p">)</span>
 
@@ -204,9 +204,9 @@ F9M167   --hasSibling-&gt; ?
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Question: Who is married to a sibling of F9M167?</span>
 <span class="c1"># Query: ?x : ∃y. hasSibling(F9M167, y) ∧ married(y, x)</span>
 <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;F9M167&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasSibling&quot;</span><span class="p">,</span> <span class="s2">&quot;married&quot;</span><span class="p">)),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"2p"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">"F9M167"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"hasSibling"</span><span class="p">,</span> <span class="s2">"married"</span><span class="p">)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span>
     <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
 <span class="p">)</span>
 
@@ -228,9 +228,9 @@ F9M167   --hasSibling-&gt; y --married-&gt; ?
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Question: What types are married to a sibling of F9M167?</span>
 <span class="c1"># Query: ?x : ∃y,z. hasSibling(F9M167, y) ∧ married(y, z) ∧ type(z, x)</span>
 <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;3p&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;F9M167&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasSibling&quot;</span><span class="p">,</span> <span class="s2">&quot;married&quot;</span><span class="p">,</span> <span class="s2">&quot;rdf:type&quot;</span><span class="p">)),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"3p"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">"F9M167"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"hasSibling"</span><span class="p">,</span> <span class="s2">"married"</span><span class="p">,</span> <span class="s2">"rdf:type"</span><span class="p">)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span>
     <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
 <span class="p">)</span>
 
@@ -252,10 +252,10 @@ F9M167   --hasSibling-&gt; y --married-&gt; z --type-&gt; ?
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Question: Who is both a child of PersonA AND a spouse of PersonB?</span>
 <span class="c1"># Query: ?x : hasChild(PersonA, x) ∧ married(PersonB, x)</span>
 <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2i&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;PersonA&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasChild&quot;</span><span class="p">,)),</span> 
-           <span class="p">(</span><span class="s2">&quot;PersonB&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;married&quot;</span><span class="p">,))),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"2i"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">"PersonA"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"hasChild"</span><span class="p">,)),</span> 
+           <span class="p">(</span><span class="s2">"PersonB"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"married"</span><span class="p">,))),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span>
     <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
 <span class="p">)</span>
 </pre></div>
@@ -275,11 +275,11 @@ PersonA   --hasChild-&gt; ? &lt;-married- PersonB
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Question: Who is a friend of A, colleague of B, and neighbor of C?</span>
 <span class="c1"># Query: ?x : friend(A, x) ∧ colleague(B, x) ∧ neighbor(C, x)</span>
 <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;3i&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;friend&quot;</span><span class="p">,)),</span> 
-           <span class="p">(</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;colleague&quot;</span><span class="p">,)),</span> 
-           <span class="p">(</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;neighbor&quot;</span><span class="p">,))),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"3i"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">"A"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"friend"</span><span class="p">,)),</span> 
+           <span class="p">(</span><span class="s2">"B"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"colleague"</span><span class="p">,)),</span> 
+           <span class="p">(</span><span class="s2">"C"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"neighbor"</span><span class="p">,))),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span>
     <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
 <span class="p">)</span>
 </pre></div>
@@ -304,11 +304,11 @@ PersonA   --hasChild-&gt; ? &lt;-married- PersonB
 <span class="c1">#           - children of PersonA AND friends of PersonB?</span>
 <span class="c1"># Query: ?x : ∃y. (hasChild(PersonA, y) ∧ friend(PersonB, y)) ∧ hasParent(y, x)</span>
 <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;ip&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">(((</span><span class="s2">&quot;PersonA&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasChild&quot;</span><span class="p">,)),</span> 
-            <span class="p">(</span><span class="s2">&quot;PersonB&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;friend&quot;</span><span class="p">,))),</span> 
-           <span class="p">(</span><span class="s2">&quot;hasParent&quot;</span><span class="p">,)),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"ip"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(((</span><span class="s2">"PersonA"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"hasChild"</span><span class="p">,)),</span> 
+            <span class="p">(</span><span class="s2">"PersonB"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"friend"</span><span class="p">,))),</span> 
+           <span class="p">(</span><span class="s2">"hasParent"</span><span class="p">,)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span>
     <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
 <span class="p">)</span>
 </pre></div>
@@ -332,10 +332,10 @@ PersonA   --hasChild-&gt; ? &lt;-married- PersonB
 <span class="c1"># Path 1: F9M167 --hasSibling-&gt; y --hasChild-&gt; ?</span>
 <span class="c1"># Path 2: F9M167 --hasSpouse-&gt; z --hasChild-&gt; ?</span>
 <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;pi&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;F9M167&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasSibling&quot;</span><span class="p">,</span> <span class="s2">&quot;hasChild&quot;</span><span class="p">)),</span>
-           <span class="p">(</span><span class="s2">&quot;F9M167&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasSpouse&quot;</span><span class="p">,</span> <span class="s2">&quot;hasChild&quot;</span><span class="p">))),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"pi"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">"F9M167"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"hasSibling"</span><span class="p">,</span> <span class="s2">"hasChild"</span><span class="p">)),</span>
+           <span class="p">(</span><span class="s2">"F9M167"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"hasSpouse"</span><span class="p">,</span> <span class="s2">"hasChild"</span><span class="p">))),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span>
     <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
 <span class="p">)</span>
 </pre></div>
@@ -358,10 +358,10 @@ PersonA   --hasChild-&gt; ? &lt;-married- PersonB
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Question: Who is either a friend of PersonA OR a colleague of PersonB?</span>
 <span class="c1"># Query: ?x : friend(PersonA, x) ∨ colleague(PersonB, x)</span>
 <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2u&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;PersonA&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;friend&quot;</span><span class="p">,)),</span> 
-           <span class="p">(</span><span class="s2">&quot;PersonB&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;colleague&quot;</span><span class="p">,))),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"2u"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">"PersonA"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"friend"</span><span class="p">,)),</span> 
+           <span class="p">(</span><span class="s2">"PersonB"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"colleague"</span><span class="p">,))),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span>
     <span class="n">k</span><span class="o">=</span><span class="mi">10</span>
 <span class="p">)</span>
 </pre></div>
@@ -383,11 +383,11 @@ PersonA   --hasChild-&gt; ? &lt;-married- PersonB
 <span class="c1">#           - friends of PersonA OR colleagues of PersonB?</span>
 <span class="c1"># Query: ?x : ∃y. (friend(PersonA, y) ∨ colleague(PersonB, y)) ∧ married(y, x)</span>
 <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;up&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">(((</span><span class="s2">&quot;PersonA&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;friend&quot;</span><span class="p">,)),</span> 
-            <span class="p">(</span><span class="s2">&quot;PersonB&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;colleague&quot;</span><span class="p">,))),</span> 
-           <span class="p">(</span><span class="s2">&quot;married&quot;</span><span class="p">,)),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"up"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(((</span><span class="s2">"PersonA"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"friend"</span><span class="p">,)),</span> 
+            <span class="p">(</span><span class="s2">"PersonB"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"colleague"</span><span class="p">,))),</span> 
+           <span class="p">(</span><span class="s2">"married"</span><span class="p">,)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span>
     <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
 <span class="p">)</span>
 </pre></div>
@@ -411,11 +411,11 @@ PersonA   --hasChild-&gt; ? &lt;-married- PersonB
 
 <span class="c1"># Step 1: Train a model</span>
 <span class="n">args</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">()</span>
-<span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="s1">&#39;Keci&#39;</span>
-<span class="n">args</span><span class="o">.</span><span class="n">optim</span> <span class="o">=</span> <span class="s1">&#39;Adam&#39;</span>
-<span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">=</span> <span class="s2">&quot;AllvsAll&quot;</span>
-<span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="o">=</span> <span class="s2">&quot;KGs/Family/family-benchmark_rich_background.owl&quot;</span>
-<span class="n">args</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="s2">&quot;rdflib&quot;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="s1">'Keci'</span>
+<span class="n">args</span><span class="o">.</span><span class="n">optim</span> <span class="o">=</span> <span class="s1">'Adam'</span>
+<span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">=</span> <span class="s2">"AllvsAll"</span>
+<span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="o">=</span> <span class="s2">"KGs/Family/family-benchmark_rich_background.owl"</span>
+<span class="n">args</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="s2">"rdflib"</span>
 <span class="n">args</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">=</span> <span class="mi">200</span>
 <span class="n">args</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1024</span>
 <span class="n">args</span><span class="o">.</span><span class="n">lr</span> <span class="o">=</span> <span class="mf">0.1</span>
@@ -424,38 +424,38 @@ PersonA   --hasChild-&gt; ? &lt;-married- PersonB
 <span class="n">result</span> <span class="o">=</span> <span class="n">Execute</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
 <span class="c1"># Step 2: Load trained model</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;path_experiment_folder&#39;</span><span class="p">])</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s1">'path_experiment_folder'</span><span class="p">])</span>
 
 <span class="c1"># Step 3: Answer queries</span>
 <span class="c1"># 1-hop: Who are the siblings of F9M167?</span>
 <span class="n">q1</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;1p&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#F9M167&quot;</span><span class="p">,</span>
-           <span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#hasSibling&quot;</span><span class="p">,)),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"1p"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">"http://www.benchmark.org/family#F9M167"</span><span class="p">,</span>
+           <span class="p">(</span><span class="s2">"http://www.benchmark.org/family#hasSibling"</span><span class="p">,)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Siblings:&quot;</span><span class="p">,</span> <span class="n">q1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Siblings:"</span><span class="p">,</span> <span class="n">q1</span><span class="p">)</span>
 
 <span class="c1"># 2-hop: To whom is a sibling married?</span>
 <span class="n">q2</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#F9M167&quot;</span><span class="p">,</span>
-           <span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#hasSibling&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;http://www.benchmark.org/family#married&quot;</span><span class="p">)),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"2p"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">"http://www.benchmark.org/family#F9M167"</span><span class="p">,</span>
+           <span class="p">(</span><span class="s2">"http://www.benchmark.org/family#hasSibling"</span><span class="p">,</span>
+            <span class="s2">"http://www.benchmark.org/family#married"</span><span class="p">)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sibling spouses:&quot;</span><span class="p">,</span> <span class="n">q2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Sibling spouses:"</span><span class="p">,</span> <span class="n">q2</span><span class="p">)</span>
 
 <span class="c1"># 3-hop: What types of people are married to siblings?</span>
 <span class="n">q3</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;3p&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#F9M167&quot;</span><span class="p">,</span>
-           <span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#hasSibling&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;http://www.benchmark.org/family#married&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&quot;</span><span class="p">)),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"3p"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">"http://www.benchmark.org/family#F9M167"</span><span class="p">,</span>
+           <span class="p">(</span><span class="s2">"http://www.benchmark.org/family#hasSibling"</span><span class="p">,</span>
+            <span class="s2">"http://www.benchmark.org/family#married"</span><span class="p">,</span>
+            <span class="s2">"http://www.w3.org/1999/02/22-rdf-syntax-ns#type"</span><span class="p">)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Types:&quot;</span><span class="p">,</span> <span class="n">q3</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Types:"</span><span class="p">,</span> <span class="n">q3</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -463,9 +463,9 @@ PersonA   --hasChild-&gt; ? &lt;-married- PersonB
 <h3>Batch Query Processing<a class="headerlink" href="#batch-query-processing" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define multiple queries</span>
 <span class="n">queries</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">(</span><span class="s2">&quot;1p&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;EntityA&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;relation1&quot;</span><span class="p">,))),</span>
-    <span class="p">(</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;EntityB&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;relation2&quot;</span><span class="p">,</span> <span class="s2">&quot;relation3&quot;</span><span class="p">))),</span>
-    <span class="p">(</span><span class="s2">&quot;2i&quot;</span><span class="p">,</span> <span class="p">((</span><span class="s2">&quot;EntityC&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;relation4&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;EntityD&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;relation5&quot;</span><span class="p">,)))),</span>
+    <span class="p">(</span><span class="s2">"1p"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"EntityA"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"relation1"</span><span class="p">,))),</span>
+    <span class="p">(</span><span class="s2">"2p"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"EntityB"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"relation2"</span><span class="p">,</span> <span class="s2">"relation3"</span><span class="p">))),</span>
+    <span class="p">(</span><span class="s2">"2i"</span><span class="p">,</span> <span class="p">((</span><span class="s2">"EntityC"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"relation4"</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">"EntityD"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"relation5"</span><span class="p">,)))),</span>
 <span class="p">]</span>
 
 <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
@@ -473,16 +473,16 @@ PersonA   --hasChild-&gt; ? &lt;-married- PersonB
     <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
         <span class="n">query_type</span><span class="o">=</span><span class="n">query_type</span><span class="p">,</span>
         <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
-        <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+        <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span>
         <span class="n">k</span><span class="o">=</span><span class="mi">10</span>
     <span class="p">)</span>
-    <span class="n">results</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">query_type</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">predictions</span>
+    <span class="n">results</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">query_type</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">predictions</span>
 
 <span class="c1"># Analyze results</span>
 <span class="k">for</span> <span class="n">query_id</span><span class="p">,</span> <span class="n">preds</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">query_id</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="n">query_id</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">entity</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">preds</span><span class="p">[:</span><span class="mi">3</span><span class="p">]:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">entity</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">score</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">entity</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">score</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -494,10 +494,10 @@ PersonA   --hasChild-&gt; ? &lt;-married- PersonB
 <h3>T-norm Selection<a class="headerlink" href="#t-norm-selection" title="Link to this heading"></a></h3>
 <p>The <code class="docutils literal notranslate"><span class="pre">tnorm</span></code> parameter controls how conjunctions are computed:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Minimum t-norm (default, most commonly used)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">)</span>
 
 <span class="c1"># Product t-norm (multiplicative semantics)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;prod&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">tnorm</span><span class="o">=</span><span class="s2">"prod"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p><strong>When to use:</strong></p>
@@ -509,9 +509,9 @@ PersonA   --hasChild-&gt; ? &lt;-married- PersonB
 <section id="filtering-results">
 <h3>Filtering Results<a class="headerlink" href="#filtering-results" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;EntityA&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;relation1&quot;</span><span class="p">,</span> <span class="s2">&quot;relation2&quot;</span><span class="p">)),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"2p"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">"EntityA"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"relation1"</span><span class="p">,</span> <span class="s2">"relation2"</span><span class="p">)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span>
     <span class="n">k</span><span class="o">=</span><span class="mi">100</span>  <span class="c1"># Get more candidates</span>
 <span class="p">)</span>
 
@@ -520,7 +520,7 @@ PersonA   --hasChild-&gt; ? &lt;-married- PersonB
 
 <span class="c1"># Filter by entity type</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">is_person</span><span class="p">(</span><span class="n">entity</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">entity</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;Person&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">entity</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"Person"</span><span class="p">)</span>
 
 <span class="n">people_only</span> <span class="o">=</span> <span class="p">[(</span><span class="n">e</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">predictions</span> <span class="k">if</span> <span class="n">is_person</span><span class="p">(</span><span class="n">e</span><span class="p">)]</span>
 </pre></div>
@@ -530,27 +530,27 @@ PersonA   --hasChild-&gt; ? &lt;-married- PersonB
 <h3>Query Composition<a class="headerlink" href="#query-composition" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build complex queries programmatically</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_common_friends</span><span class="p">(</span><span class="n">person1</span><span class="p">,</span> <span class="n">person2</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find people who are friends with both person1 and person2.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Find people who are friends with both person1 and person2."""</span>
     <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-        <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2i&quot;</span><span class="p">,</span>
-        <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="n">person1</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasFriend&quot;</span><span class="p">,)),</span> 
-               <span class="p">(</span><span class="n">person2</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasFriend&quot;</span><span class="p">,))),</span>
-        <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+        <span class="n">query_type</span><span class="o">=</span><span class="s2">"2i"</span><span class="p">,</span>
+        <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="n">person1</span><span class="p">,</span> <span class="p">(</span><span class="s2">"hasFriend"</span><span class="p">,)),</span> 
+               <span class="p">(</span><span class="n">person2</span><span class="p">,</span> <span class="p">(</span><span class="s2">"hasFriend"</span><span class="p">,))),</span>
+        <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span>
         <span class="n">k</span><span class="o">=</span><span class="n">k</span>
     <span class="p">)</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">find_friends_of_friends</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find friends of friends.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Find friends of friends."""</span>
     <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-        <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span>
-        <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasFriend&quot;</span><span class="p">,</span> <span class="s2">&quot;hasFriend&quot;</span><span class="p">)),</span>
-        <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+        <span class="n">query_type</span><span class="o">=</span><span class="s2">"2p"</span><span class="p">,</span>
+        <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="p">(</span><span class="s2">"hasFriend"</span><span class="p">,</span> <span class="s2">"hasFriend"</span><span class="p">)),</span>
+        <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span>
         <span class="n">k</span><span class="o">=</span><span class="n">k</span>
     <span class="p">)</span>
 
 <span class="c1"># Use the functions</span>
-<span class="n">common</span> <span class="o">=</span> <span class="n">find_common_friends</span><span class="p">(</span><span class="s2">&quot;Alice&quot;</span><span class="p">,</span> <span class="s2">&quot;Bob&quot;</span><span class="p">)</span>
-<span class="n">fof</span> <span class="o">=</span> <span class="n">find_friends_of_friends</span><span class="p">(</span><span class="s2">&quot;Alice&quot;</span><span class="p">)</span>
+<span class="n">common</span> <span class="o">=</span> <span class="n">find_common_friends</span><span class="p">(</span><span class="s2">"Alice"</span><span class="p">,</span> <span class="s2">"Bob"</span><span class="p">)</span>
+<span class="n">fof</span> <span class="o">=</span> <span class="n">find_friends_of_friends</span><span class="p">(</span><span class="s2">"Alice"</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -596,7 +596,7 @@ dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/Family<spa
     <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
         <span class="n">query_type</span><span class="o">=</span><span class="n">query_type</span><span class="p">,</span>
         <span class="n">query</span><span class="o">=</span><span class="n">query_tuple</span><span class="p">,</span>
-        <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+        <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span>
         <span class="n">k</span><span class="o">=</span><span class="n">k</span>
     <span class="p">))</span>
 </pre></div>
@@ -607,23 +607,23 @@ dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/Family<spa
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">benchmark_query</span><span class="p">(</span><span class="n">query_type</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">n_runs</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Benchmark query performance.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Benchmark query performance."""</span>
     <span class="n">times</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_runs</span><span class="p">):</span>
         <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
             <span class="n">query_type</span><span class="o">=</span><span class="n">query_type</span><span class="p">,</span>
             <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
-            <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span>
+            <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span>
             <span class="n">k</span><span class="o">=</span><span class="n">k</span>
         <span class="p">)</span>
         <span class="n">times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
     
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Query type </span><span class="si">{</span><span class="n">query_type</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Mean: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Std:  </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Min:  </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Max:  </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Query type </span><span class="si">{</span><span class="n">query_type</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Mean: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Std:  </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Min:  </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s"</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Max:  </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">times</span><span class="p">)</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s"</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -635,16 +635,16 @@ dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/Family<spa
 <h3>Social Network Analysis<a class="headerlink" href="#social-network-analysis" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Find mutual friends</span>
 <span class="n">mutual_friends</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2i&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;Alice&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;friend&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;Bob&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;friend&quot;</span><span class="p">,))),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"2i"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">"Alice"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"friend"</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">"Bob"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"friend"</span><span class="p">,))),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span>
 <span class="p">)</span>
 
 <span class="c1"># Find friend recommendations (friends of friends, excluding direct friends)</span>
 <span class="n">fof</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;Alice&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;friend&quot;</span><span class="p">,</span> <span class="s2">&quot;friend&quot;</span><span class="p">)),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">20</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"2p"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">"Alice"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"friend"</span><span class="p">,</span> <span class="s2">"friend"</span><span class="p">)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">20</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -653,11 +653,11 @@ dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/Family<spa
 <h3>Knowledge Graph Completion<a class="headerlink" href="#knowledge-graph-completion" title="Link to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Find potential new facts</span>
 <span class="c1"># Question: What companies might PersonX work for?</span>
-<span class="c1"># Based on: PersonX&#39;s colleagues work for CompanyY</span>
+<span class="c1"># Based on: PersonX's colleagues work for CompanyY</span>
 <span class="n">potential_employers</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;PersonX&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;colleague&quot;</span><span class="p">,</span> <span class="s2">&quot;worksFor&quot;</span><span class="p">)),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"2p"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">"PersonX"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"colleague"</span><span class="p">,</span> <span class="s2">"worksFor"</span><span class="p">)),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -667,10 +667,10 @@ dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/Family<spa
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Find drugs that treat diseases via protein interactions</span>
 <span class="c1"># Query: ?drug : ∃protein. treats(drug, protein) ∧ causedBy(disease, protein)</span>
 <span class="n">candidate_drugs</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;pi&quot;</span><span class="p">,</span>
-    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;Drug&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;treats&quot;</span><span class="p">,</span> <span class="s2">&quot;interactsWith&quot;</span><span class="p">)),</span>
-           <span class="p">(</span><span class="s2">&quot;Disease&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;causedBy&quot;</span><span class="p">,</span> <span class="s2">&quot;interactsWith&quot;</span><span class="p">))),</span>
-    <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span>
+    <span class="n">query_type</span><span class="o">=</span><span class="s2">"pi"</span><span class="p">,</span>
+    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">"Drug"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"treats"</span><span class="p">,</span> <span class="s2">"interactsWith"</span><span class="p">)),</span>
+           <span class="p">(</span><span class="s2">"Disease"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"causedBy"</span><span class="p">,</span> <span class="s2">"interactsWith"</span><span class="p">))),</span>
+    <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">10</span>
 <span class="p">)</span>
 </pre></div>
 </div>

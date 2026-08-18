@@ -181,16 +181,16 @@ python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> <
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dicee.executer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Execute</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dicee.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Namespace</span>
 <span class="n">args</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">()</span>
-<span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="s1">&#39;Keci&#39;</span>
-<span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">=</span> <span class="s2">&quot;KvsAll&quot;</span>  <span class="c1"># 1vsAll, or AllvsAll, or NegSample</span>
-<span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="o">=</span> <span class="s2">&quot;KGs/UMLS&quot;</span>
-<span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span> <span class="o">=</span> <span class="s2">&quot;Keci_UMLS&quot;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="s1">'Keci'</span>
+<span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">=</span> <span class="s2">"KvsAll"</span>  <span class="c1"># 1vsAll, or AllvsAll, or NegSample</span>
+<span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="o">=</span> <span class="s2">"KGs/UMLS"</span>
+<span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span> <span class="o">=</span> <span class="s2">"Keci_UMLS"</span>
 <span class="n">args</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">=</span> <span class="mi">100</span>
 <span class="n">args</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">=</span> <span class="mi">32</span>
 <span class="n">args</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1024</span>
 <span class="n">reports</span> <span class="o">=</span> <span class="n">Execute</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">reports</span><span class="p">[</span><span class="s2">&quot;Train&quot;</span><span class="p">][</span><span class="s2">&quot;MRR&quot;</span><span class="p">])</span> <span class="c1"># =&gt; 0.9912</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">reports</span><span class="p">[</span><span class="s2">&quot;Test&quot;</span><span class="p">][</span><span class="s2">&quot;MRR&quot;</span><span class="p">])</span> <span class="c1"># =&gt; 0.8155</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">reports</span><span class="p">[</span><span class="s2">"Train"</span><span class="p">][</span><span class="s2">"MRR"</span><span class="p">])</span> <span class="c1"># =&gt; 0.9912</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">reports</span><span class="p">[</span><span class="s2">"Test"</span><span class="p">][</span><span class="s2">"MRR"</span><span class="p">])</span> <span class="c1"># =&gt; 0.8155</span>
 <span class="c1"># See the Keci_UMLS folder embeddings and all other files</span>
 </pre></div>
 </div>
@@ -202,47 +202,47 @@ alga<span class="w">    </span>isa<span class="w">     </span>entity
 </pre></div>
 </div>
 <p>A KGE model can also be trained from the command line</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">&quot;KGs/UMLS&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">&quot;train_val_test&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">"KGs/UMLS"</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">"train_val_test"</span>
 </pre></div>
 </div>
 <p>dicee automaticaly detects available GPUs and trains a model with distributed data parallels technique. Under the hood, dicee uses lighning as a default trainer.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Train a model by only using the GPU-0</span>
-<span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">0</span><span class="w"> </span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">&quot;KGs/UMLS&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">&quot;train_val_test&quot;</span>
+<span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">0</span><span class="w"> </span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">"KGs/UMLS"</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">"train_val_test"</span>
 <span class="c1"># Train a model by only using GPU-1</span>
-<span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">&quot;KGs/UMLS&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">&quot;train_val_test&quot;</span>
-<span class="nv">NCCL_P2P_DISABLE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">0</span>,1<span class="w"> </span>python<span class="w"> </span>dicee/scripts/run.py<span class="w"> </span>--trainer<span class="w"> </span>PL<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">&quot;KGs/UMLS&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">&quot;train_val_test&quot;</span>
+<span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">"KGs/UMLS"</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">"train_val_test"</span>
+<span class="nv">NCCL_P2P_DISABLE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">0</span>,1<span class="w"> </span>python<span class="w"> </span>dicee/scripts/run.py<span class="w"> </span>--trainer<span class="w"> </span>PL<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">"KGs/UMLS"</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">"train_val_test"</span>
 </pre></div>
 </div>
 <p>Under the hood, dicee executes run.py script and uses lighning as a default trainer</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Two equivalent executions</span>
 <span class="c1"># (1)</span>
-dicee<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">&quot;KGs/UMLS&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">&quot;train_val_test&quot;</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">"KGs/UMLS"</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">"train_val_test"</span>
 <span class="c1"># Evaluate Keci on Train set: Evaluate Keci on Train set</span>
-<span class="c1"># {&#39;H@1&#39;: 0.9518788343558282, &#39;H@3&#39;: 0.9988496932515337, &#39;H@10&#39;: 1.0, &#39;MRR&#39;: 0.9753123402351737}</span>
+<span class="c1"># {'H@1': 0.9518788343558282, 'H@3': 0.9988496932515337, 'H@10': 1.0, 'MRR': 0.9753123402351737}</span>
 <span class="c1"># Evaluate Keci on Validation set: Evaluate Keci on Validation set</span>
-<span class="c1"># {&#39;H@1&#39;: 0.6932515337423313, &#39;H@3&#39;: 0.9041411042944786, &#39;H@10&#39;: 0.9754601226993865, &#39;MRR&#39;: 0.8072362996241839}</span>
+<span class="c1"># {'H@1': 0.6932515337423313, 'H@3': 0.9041411042944786, 'H@10': 0.9754601226993865, 'MRR': 0.8072362996241839}</span>
 <span class="c1"># Evaluate Keci on Test set: Evaluate Keci on Test set</span>
-<span class="c1"># {&#39;H@1&#39;: 0.6951588502269289, &#39;H@3&#39;: 0.9039334341906202, &#39;H@10&#39;: 0.9750378214826021, &#39;MRR&#39;: 0.8064032293278861}</span>
+<span class="c1"># {'H@1': 0.6951588502269289, 'H@3': 0.9039334341906202, 'H@10': 0.9750378214826021, 'MRR': 0.8064032293278861}</span>
 
 <span class="c1"># (2)</span>
-<span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">0</span>,1<span class="w"> </span>python<span class="w"> </span>dicee/scripts/run.py<span class="w"> </span>--trainer<span class="w"> </span>PL<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">&quot;KGs/UMLS&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">&quot;train_val_test&quot;</span>
+<span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">0</span>,1<span class="w"> </span>python<span class="w"> </span>dicee/scripts/run.py<span class="w"> </span>--trainer<span class="w"> </span>PL<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">"KGs/UMLS"</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">"train_val_test"</span>
 <span class="c1"># Evaluate Keci on Train set: Evaluate Keci on Train set</span>
-<span class="c1"># {&#39;H@1&#39;: 0.9518788343558282, &#39;H@3&#39;: 0.9988496932515337, &#39;H@10&#39;: 1.0, &#39;MRR&#39;: 0.9753123402351737}</span>
+<span class="c1"># {'H@1': 0.9518788343558282, 'H@3': 0.9988496932515337, 'H@10': 1.0, 'MRR': 0.9753123402351737}</span>
 <span class="c1"># Evaluate Keci on Train set: Evaluate Keci on Train set</span>
 <span class="c1"># Evaluate Keci on Validation set: Evaluate Keci on Validation set</span>
-<span class="c1"># {&#39;H@1&#39;: 0.6932515337423313, &#39;H@3&#39;: 0.9041411042944786, &#39;H@10&#39;: 0.9754601226993865, &#39;MRR&#39;: 0.8072362996241839}</span>
+<span class="c1"># {'H@1': 0.6932515337423313, 'H@3': 0.9041411042944786, 'H@10': 0.9754601226993865, 'MRR': 0.8072362996241839}</span>
 <span class="c1"># Evaluate Keci on Test set: Evaluate Keci on Test set</span>
-<span class="c1"># {&#39;H@1&#39;: 0.6951588502269289, &#39;H@3&#39;: 0.9039334341906202, &#39;H@10&#39;: 0.9750378214826021, &#39;MRR&#39;: 0.8064032293278861}</span>
+<span class="c1"># {'H@1': 0.6951588502269289, 'H@3': 0.9039334341906202, 'H@10': 0.9750378214826021, 'MRR': 0.8064032293278861}</span>
 </pre></div>
 </div>
 <p>Similarly, models can be easily trained with torchrun</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>torchrun<span class="w"> </span>--standalone<span class="w"> </span>--nnodes<span class="o">=</span><span class="m">1</span><span class="w"> </span>--nproc_per_node<span class="o">=</span>gpu<span class="w"> </span>dicee/scripts/run.py<span class="w"> </span>--trainer<span class="w"> </span>torchDDP<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">&quot;KGs/UMLS&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">&quot;train_val_test&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>torchrun<span class="w"> </span>--standalone<span class="w"> </span>--nnodes<span class="o">=</span><span class="m">1</span><span class="w"> </span>--nproc_per_node<span class="o">=</span>gpu<span class="w"> </span>dicee/scripts/run.py<span class="w"> </span>--trainer<span class="w"> </span>torchDDP<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">"KGs/UMLS"</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">"train_val_test"</span>
 <span class="c1"># Evaluate Keci on Train set: Evaluate Keci on Train set: Evaluate Keci on Train set</span>
-<span class="c1"># {&#39;H@1&#39;: 0.9518788343558282, &#39;H@3&#39;: 0.9988496932515337, &#39;H@10&#39;: 1.0, &#39;MRR&#39;: 0.9753123402351737}</span>
+<span class="c1"># {'H@1': 0.9518788343558282, 'H@3': 0.9988496932515337, 'H@10': 1.0, 'MRR': 0.9753123402351737}</span>
 <span class="c1"># Evaluate Keci on Validation set: Evaluate Keci on Validation set</span>
-<span class="c1"># {&#39;H@1&#39;: 0.6932515337423313, &#39;H@3&#39;: 0.9041411042944786, &#39;H@10&#39;: 0.9754601226993865, &#39;MRR&#39;: 0.8072499937521418}</span>
+<span class="c1"># {'H@1': 0.6932515337423313, 'H@3': 0.9041411042944786, 'H@10': 0.9754601226993865, 'MRR': 0.8072499937521418}</span>
 <span class="c1"># Evaluate Keci on Test set: Evaluate Keci on Test set</span>
-<span class="o">{</span><span class="s1">&#39;H@1&#39;</span>:<span class="w"> </span><span class="m">0</span>.6951588502269289,<span class="w"> </span><span class="s1">&#39;H@3&#39;</span>:<span class="w"> </span><span class="m">0</span>.9039334341906202,<span class="w"> </span><span class="s1">&#39;H@10&#39;</span>:<span class="w"> </span><span class="m">0</span>.9750378214826021,<span class="w"> </span><span class="s1">&#39;MRR&#39;</span>:<span class="w"> </span><span class="m">0</span>.8064032293278861<span class="o">}</span>
+<span class="o">{</span><span class="s1">'H@1'</span>:<span class="w"> </span><span class="m">0</span>.6951588502269289,<span class="w"> </span><span class="s1">'H@3'</span>:<span class="w"> </span><span class="m">0</span>.9039334341906202,<span class="w"> </span><span class="s1">'H@10'</span>:<span class="w"> </span><span class="m">0</span>.9750378214826021,<span class="w"> </span><span class="s1">'MRR'</span>:<span class="w"> </span><span class="m">0</span>.8064032293278861<span class="o">}</span>
 </pre></div>
 </div>
 <p>You can also train a model in multi-node multi-gpu setting.</p>
@@ -252,7 +252,7 @@ torchrun<span class="w"> </span>--nnodes<span class="w"> </span><span class="m">
 </div>
 <p>Train a KGE model by providing the path of a single file and store all parameters under newly created directory
 called <code class="docutils literal notranslate"><span class="pre">KeciFamilyRun</span></code>.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--path_single_kg<span class="w"> </span><span class="s2">&quot;KGs/Family/family-benchmark_rich_background.owl&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--path_to_store_single_run<span class="w"> </span>KeciFamilyRun<span class="w"> </span>--backend<span class="w"> </span>rdflib
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--path_single_kg<span class="w"> </span><span class="s2">"KGs/Family/family-benchmark_rich_background.owl"</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--path_to_store_single_run<span class="w"> </span>KeciFamilyRun<span class="w"> </span>--backend<span class="w"> </span>rdflib
 </pre></div>
 </div>
 <p>where the data is in the following form</p>
@@ -264,7 +264,7 @@ _:1<span class="w"> </span>&lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&g
 </div>
 <p><strong>Apart from n-triples or standard link prediction dataset formats, we support [“owl”, “nt”, “turtle”, “rdf/xml”, “n3”]</strong>*.
 Moreover, a KGE model can be also trained  by providing <strong>an endpoint of a triple store</strong>.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--sparql_endpoint<span class="w"> </span><span class="s2">&quot;http://localhost:3030/mutagenesis/&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--sparql_endpoint<span class="w"> </span><span class="s2">"http://localhost:3030/mutagenesis/"</span><span class="w"> </span>--model<span class="w"> </span>Keci
 </pre></div>
 </div>
 <p>For more, please refer to <code class="docutils literal notranslate"><span class="pre">examples</span></code>.</p>
@@ -282,28 +282,28 @@ dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/Countries-
 <h2>Loading Embeddings into Qdrant Vector Database<a class="headerlink" href="#loading-embeddings-into-qdrant-vector-database" title="Link to this heading"></a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Ensure that Qdrant available</span>
 <span class="c1"># docker pull qdrant/qdrant &amp;&amp; docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant</span>
-diceeindex<span class="w"> </span>--path_model<span class="w"> </span><span class="s2">&quot;CountryEmbeddings&quot;</span><span class="w"> </span>--collection_name<span class="w"> </span><span class="s2">&quot;dummy&quot;</span><span class="w"> </span>--location<span class="w"> </span><span class="s2">&quot;localhost&quot;</span>
+diceeindex<span class="w"> </span>--path_model<span class="w"> </span><span class="s2">"CountryEmbeddings"</span><span class="w"> </span>--collection_name<span class="w"> </span><span class="s2">"dummy"</span><span class="w"> </span>--location<span class="w"> </span><span class="s2">"localhost"</span>
 </pre></div>
 </div>
 </section>
 <section id="launching-webservice">
 <h2>Launching Webservice<a class="headerlink" href="#launching-webservice" title="Link to this heading"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>diceeserve<span class="w"> </span>--path_model<span class="w"> </span><span class="s2">&quot;CountryEmbeddings&quot;</span><span class="w"> </span>--collection_name<span class="w"> </span><span class="s2">&quot;dummy&quot;</span><span class="w"> </span>--collection_location<span class="w"> </span><span class="s2">&quot;localhost&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>diceeserve<span class="w"> </span>--path_model<span class="w"> </span><span class="s2">"CountryEmbeddings"</span><span class="w"> </span>--collection_name<span class="w"> </span><span class="s2">"dummy"</span><span class="w"> </span>--collection_location<span class="w"> </span><span class="s2">"localhost"</span>
 </pre></div>
 </div>
 <section id="retrieve-and-search">
 <h3>Retrieve and Search<a class="headerlink" href="#retrieve-and-search" title="Link to this heading"></a></h3>
 <p>Get embedding of germany</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-X<span class="w"> </span><span class="s1">&#39;GET&#39;</span><span class="w"> </span><span class="s1">&#39;http://0.0.0.0:8000/api/get?q=germany&#39;</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">&#39;accept: application/json&#39;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-X<span class="w"> </span><span class="s1">'GET'</span><span class="w"> </span><span class="s1">'http://0.0.0.0:8000/api/get?q=germany'</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'accept: application/json'</span>
 </pre></div>
 </div>
 <p>Get most similar things to europe</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-X<span class="w"> </span><span class="s1">&#39;GET&#39;</span><span class="w"> </span><span class="s1">&#39;http://0.0.0.0:8000/api/search?q=europe&#39;</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">&#39;accept: application/json&#39;</span>
-<span class="o">{</span><span class="s2">&quot;result&quot;</span>:<span class="o">[{</span><span class="s2">&quot;hit&quot;</span>:<span class="s2">&quot;europe&quot;</span>,<span class="s2">&quot;score&quot;</span>:1.0<span class="o">}</span>,
-<span class="o">{</span><span class="s2">&quot;hit&quot;</span>:<span class="s2">&quot;northern_europe&quot;</span>,<span class="s2">&quot;score&quot;</span>:0.67126536<span class="o">}</span>,
-<span class="o">{</span><span class="s2">&quot;hit&quot;</span>:<span class="s2">&quot;western_europe&quot;</span>,<span class="s2">&quot;score&quot;</span>:0.6010134<span class="o">}</span>,
-<span class="o">{</span><span class="s2">&quot;hit&quot;</span>:<span class="s2">&quot;puerto_rico&quot;</span>,<span class="s2">&quot;score&quot;</span>:0.5051694<span class="o">}</span>,
-<span class="o">{</span><span class="s2">&quot;hit&quot;</span>:<span class="s2">&quot;southern_europe&quot;</span>,<span class="s2">&quot;score&quot;</span>:0.4829831<span class="o">}]}</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-X<span class="w"> </span><span class="s1">'GET'</span><span class="w"> </span><span class="s1">'http://0.0.0.0:8000/api/search?q=europe'</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">'accept: application/json'</span>
+<span class="o">{</span><span class="s2">"result"</span>:<span class="o">[{</span><span class="s2">"hit"</span>:<span class="s2">"europe"</span>,<span class="s2">"score"</span>:1.0<span class="o">}</span>,
+<span class="o">{</span><span class="s2">"hit"</span>:<span class="s2">"northern_europe"</span>,<span class="s2">"score"</span>:0.67126536<span class="o">}</span>,
+<span class="o">{</span><span class="s2">"hit"</span>:<span class="s2">"western_europe"</span>,<span class="s2">"score"</span>:0.6010134<span class="o">}</span>,
+<span class="o">{</span><span class="s2">"hit"</span>:<span class="s2">"puerto_rico"</span>,<span class="s2">"score"</span>:0.5051694<span class="o">}</span>,
+<span class="o">{</span><span class="s2">"hit"</span>:<span class="s2">"southern_europe"</span>,<span class="s2">"score"</span>:0.4829831<span class="o">}]}</span>
 </pre></div>
 </div>
 </section>
@@ -318,58 +318,58 @@ diceeindex<span class="w"> </span>--path_model<span class="w"> </span><span clas
 <span class="kn">from</span><span class="w"> </span><span class="nn">dicee.knowledge_graph_embeddings</span><span class="w"> </span><span class="kn">import</span> <span class="n">KGE</span>
 <span class="c1"># (1) Train a KGE model</span>
 <span class="n">args</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">()</span>
-<span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="s1">&#39;Keci&#39;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="s1">'Keci'</span>
 <span class="n">args</span><span class="o">.</span><span class="n">p</span><span class="o">=</span><span class="mi">0</span>
 <span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="o">=</span><span class="mi">1</span>
-<span class="n">args</span><span class="o">.</span><span class="n">optim</span> <span class="o">=</span> <span class="s1">&#39;Adam&#39;</span>
-<span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">=</span> <span class="s2">&quot;AllvsAll&quot;</span>
-<span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="o">=</span> <span class="s2">&quot;KGs/Family/family-benchmark_rich_background.owl&quot;</span>
-<span class="n">args</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="s2">&quot;rdflib&quot;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">optim</span> <span class="o">=</span> <span class="s1">'Adam'</span>
+<span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">=</span> <span class="s2">"AllvsAll"</span>
+<span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="o">=</span> <span class="s2">"KGs/Family/family-benchmark_rich_background.owl"</span>
+<span class="n">args</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="s2">"rdflib"</span>
 <span class="n">args</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">=</span> <span class="mi">200</span>
 <span class="n">args</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1024</span>
 <span class="n">args</span><span class="o">.</span><span class="n">lr</span> <span class="o">=</span> <span class="mf">0.1</span>
 <span class="n">args</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">=</span> <span class="mi">512</span>
 <span class="n">result</span> <span class="o">=</span> <span class="n">Execute</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 <span class="c1"># (2) Load the pre-trained model</span>
-<span class="n">pre_trained_kge</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;path_experiment_folder&#39;</span><span class="p">])</span>
+<span class="n">pre_trained_kge</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s1">'path_experiment_folder'</span><span class="p">])</span>
 <span class="c1"># (3) Single-hop query answering</span>
 <span class="c1"># Query: ?E : \exist E.hasSibling(E, F9M167)</span>
 <span class="c1"># Question: Who are the siblings of F9M167?</span>
 <span class="c1"># Answer: [F9M157, F9F141], as (F9M167, hasSibling, F9M157) and (F9M167, hasSibling, F9F141)</span>
-<span class="n">predictions</span> <span class="o">=</span> <span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;1p&quot;</span><span class="p">,</span>
-                                                     <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;http://www.benchmark.org/family#F9M167&#39;</span><span class="p">,</span>
-                                                            <span class="p">(</span><span class="s1">&#39;http://www.benchmark.org/family#hasSibling&#39;</span><span class="p">,)),</span>
-                                                     <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="n">query_type</span><span class="o">=</span><span class="s2">"1p"</span><span class="p">,</span>
+                                                     <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s1">'http://www.benchmark.org/family#F9M167'</span><span class="p">,</span>
+                                                            <span class="p">(</span><span class="s1">'http://www.benchmark.org/family#hasSibling'</span><span class="p">,)),</span>
+                                                     <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 <span class="n">top_entities</span> <span class="o">=</span> <span class="p">[</span><span class="n">topk_entity</span> <span class="k">for</span> <span class="n">topk_entity</span><span class="p">,</span> <span class="n">query_score</span> <span class="ow">in</span> <span class="n">predictions</span><span class="p">]</span>
-<span class="k">assert</span> <span class="s2">&quot;http://www.benchmark.org/family#F9F141&quot;</span> <span class="ow">in</span> <span class="n">top_entities</span>
-<span class="k">assert</span> <span class="s2">&quot;http://www.benchmark.org/family#F9M157&quot;</span> <span class="ow">in</span> <span class="n">top_entities</span>
+<span class="k">assert</span> <span class="s2">"http://www.benchmark.org/family#F9F141"</span> <span class="ow">in</span> <span class="n">top_entities</span>
+<span class="k">assert</span> <span class="s2">"http://www.benchmark.org/family#F9M157"</span> <span class="ow">in</span> <span class="n">top_entities</span>
 <span class="c1"># (2) Two-hop query answering</span>
 <span class="c1"># Query: ?D : \exist E.Married(D, E) \land hasSibling(E, F9M167)</span>
 <span class="c1"># Question: To whom a sibling of F9M167 is married to?</span>
 <span class="c1"># Answer: [F9F158, F9M142] as (F9M157 #married F9F158) and (F9F141 #married F9M142)</span>
-<span class="n">predictions</span> <span class="o">=</span> <span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span>
-                                                     <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#F9M167&quot;</span><span class="p">,</span>
-                                                            <span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#hasSibling&quot;</span><span class="p">,</span>
-                                                             <span class="s2">&quot;http://www.benchmark.org/family#married&quot;</span><span class="p">)),</span>
-                                                     <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="n">query_type</span><span class="o">=</span><span class="s2">"2p"</span><span class="p">,</span>
+                                                     <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">"http://www.benchmark.org/family#F9M167"</span><span class="p">,</span>
+                                                            <span class="p">(</span><span class="s2">"http://www.benchmark.org/family#hasSibling"</span><span class="p">,</span>
+                                                             <span class="s2">"http://www.benchmark.org/family#married"</span><span class="p">)),</span>
+                                                     <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 <span class="n">top_entities</span> <span class="o">=</span> <span class="p">[</span><span class="n">topk_entity</span> <span class="k">for</span> <span class="n">topk_entity</span><span class="p">,</span> <span class="n">query_score</span> <span class="ow">in</span> <span class="n">predictions</span><span class="p">]</span>
-<span class="k">assert</span> <span class="s2">&quot;http://www.benchmark.org/family#F9M142&quot;</span> <span class="ow">in</span> <span class="n">top_entities</span>
-<span class="k">assert</span> <span class="s2">&quot;http://www.benchmark.org/family#F9F158&quot;</span> <span class="ow">in</span> <span class="n">top_entities</span>
+<span class="k">assert</span> <span class="s2">"http://www.benchmark.org/family#F9M142"</span> <span class="ow">in</span> <span class="n">top_entities</span>
+<span class="k">assert</span> <span class="s2">"http://www.benchmark.org/family#F9F158"</span> <span class="ow">in</span> <span class="n">top_entities</span>
 <span class="c1"># (3) Three-hop query answering</span>
 <span class="c1"># Query: ?T : \exist D.type(D,T) \land Married(D,E) \land hasSibling(E, F9M167)</span>
 <span class="c1"># Question: What are the type of people who are married to a sibling of F9M167?</span>
 <span class="c1"># (3) Answer: [Person, Male, Father] since  F9M157 is [Brother Father Grandfather Male] and F9M142 is [Male Grandfather Father]</span>
 
-<span class="n">predictions</span> <span class="o">=</span> <span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;3p&quot;</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#F9M167&quot;</span><span class="p">,</span>
-                                                                             <span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#hasSibling&quot;</span><span class="p">,</span>
-                                                                             <span class="s2">&quot;http://www.benchmark.org/family#married&quot;</span><span class="p">,</span>
-                                                                             <span class="s2">&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&quot;</span><span class="p">)),</span>
-                                                     <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="n">query_type</span><span class="o">=</span><span class="s2">"3p"</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">"http://www.benchmark.org/family#F9M167"</span><span class="p">,</span>
+                                                                             <span class="p">(</span><span class="s2">"http://www.benchmark.org/family#hasSibling"</span><span class="p">,</span>
+                                                                             <span class="s2">"http://www.benchmark.org/family#married"</span><span class="p">,</span>
+                                                                             <span class="s2">"http://www.w3.org/1999/02/22-rdf-syntax-ns#type"</span><span class="p">)),</span>
+                                                     <span class="n">tnorm</span><span class="o">=</span><span class="s2">"min"</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 <span class="n">top_entities</span> <span class="o">=</span> <span class="p">[</span><span class="n">topk_entity</span> <span class="k">for</span> <span class="n">topk_entity</span><span class="p">,</span> <span class="n">query_score</span> <span class="ow">in</span> <span class="n">predictions</span><span class="p">]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">top_entities</span><span class="p">)</span>
-<span class="k">assert</span> <span class="s2">&quot;http://www.benchmark.org/family#Person&quot;</span> <span class="ow">in</span> <span class="n">top_entities</span>
-<span class="k">assert</span> <span class="s2">&quot;http://www.benchmark.org/family#Father&quot;</span> <span class="ow">in</span> <span class="n">top_entities</span>
-<span class="k">assert</span> <span class="s2">&quot;http://www.benchmark.org/family#Male&quot;</span> <span class="ow">in</span> <span class="n">top_entities</span>
+<span class="k">assert</span> <span class="s2">"http://www.benchmark.org/family#Person"</span> <span class="ow">in</span> <span class="n">top_entities</span>
+<span class="k">assert</span> <span class="s2">"http://www.benchmark.org/family#Father"</span> <span class="ow">in</span> <span class="n">top_entities</span>
+<span class="k">assert</span> <span class="s2">"http://www.benchmark.org/family#Male"</span> <span class="ow">in</span> <span class="n">top_entities</span>
 </pre></div>
 </div>
 <p>For more, please refer to <code class="docutils literal notranslate"><span class="pre">examples/multi_hop_query_answering</span></code>.</p>
@@ -379,13 +379,13 @@ diceeindex<span class="w"> </span>--path_model<span class="w"> </span><span clas
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dicee</span><span class="w"> </span><span class="kn">import</span> <span class="n">KGE</span>
 <span class="c1"># (1) Train a knowledge graph embedding model..</span>
 <span class="c1"># (2) Load a pretrained model</span>
-<span class="n">pre_trained_kge</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;..&#39;</span><span class="p">)</span>
+<span class="n">pre_trained_kge</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">'..'</span><span class="p">)</span>
 <span class="c1"># (3) Predict missing links through head entity rankings</span>
-<span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">predict_topk</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;..&quot;</span><span class="p">],</span><span class="n">r</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;..&quot;</span><span class="p">],</span><span class="n">topk</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">predict_topk</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="p">[</span><span class="s2">".."</span><span class="p">],</span><span class="n">r</span><span class="o">=</span><span class="p">[</span><span class="s2">".."</span><span class="p">],</span><span class="n">topk</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="c1"># (4) Predict missing links through relation rankings</span>
-<span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">predict_topk</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;..&quot;</span><span class="p">],</span><span class="n">t</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;..&quot;</span><span class="p">],</span><span class="n">topk</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">predict_topk</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="p">[</span><span class="s2">".."</span><span class="p">],</span><span class="n">t</span><span class="o">=</span><span class="p">[</span><span class="s2">".."</span><span class="p">],</span><span class="n">topk</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="c1"># (5) Predict missing links through tail entity rankings</span>
-<span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">predict_topk</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;..&quot;</span><span class="p">],</span><span class="n">t</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;..&quot;</span><span class="p">],</span><span class="n">topk</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">predict_topk</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="p">[</span><span class="s2">".."</span><span class="p">],</span><span class="n">t</span><span class="o">=</span><span class="p">[</span><span class="s2">".."</span><span class="p">],</span><span class="n">topk</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -393,7 +393,7 @@ diceeindex<span class="w"> </span>--path_model<span class="w"> </span><span clas
 <h1>Downloading Pretrained Models<a class="headerlink" href="#downloading-pretrained-models" title="Link to this heading"></a></h1>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dicee</span><span class="w"> </span><span class="kn">import</span> <span class="n">KGE</span>
 <span class="c1"># (1) Load a pretrained ConEx on DBpedia </span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://files.dice-research.org/projects/DiceEmbeddings/KINSHIP-Keci-dim128-epoch256-KvsAll&quot;</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s2">"https://files.dice-research.org/projects/DiceEmbeddings/KINSHIP-Keci-dim128-epoch256-KvsAll"</span><span class="p">)</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -403,7 +403,7 @@ diceeindex<span class="w"> </span>--path_model<span class="w"> </span><span clas
 <section id="how-to-deploy">
 <h1>How to Deploy<a class="headerlink" href="#how-to-deploy" title="Link to this heading"></a></h1>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dicee</span><span class="w"> </span><span class="kn">import</span> <span class="n">KGE</span>
-<span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;...&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">deploy</span><span class="p">(</span><span class="n">share</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">top_k</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">'...'</span><span class="p">)</span><span class="o">.</span><span class="n">deploy</span><span class="p">(</span><span class="n">share</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">top_k</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>

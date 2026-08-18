@@ -88,11 +88,11 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.dataset_classes._bpe</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Byte-pair encoding (BPE) related dataset classes.</span>
+<span></span><span class="sd">"""Byte-pair encoding (BPE) related dataset classes.</span>
 
 <span class="sd">Provides datasets for training knowledge graph embedding models that operate</span>
 <span class="sd">on byte-pair encoded entity and relation representations.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -103,7 +103,7 @@
 <div class="viewcode-block" id="BPE_NegativeSamplingDataset">
 <a class="viewcode-back" href="../../../autoapi/dicee/dataset_classes/index.html#dicee.dataset_classes.BPE_NegativeSamplingDataset">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BPE_NegativeSamplingDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dataset for negative sampling with byte-pair encoded triples.</span>
+<span class="w">    </span><span class="sd">"""Dataset for negative sampling with byte-pair encoded triples.</span>
 
 <span class="sd">    Each sample is a BPE-encoded triple. The custom ``collate_fn`` constructs</span>
 <span class="sd">    negatives by corrupting head or tail entities with random BPE entities.</span>
@@ -116,7 +116,7 @@
 <span class="sd">        All BPE entity representations, ordered by entity index.</span>
 <span class="sd">    neg_ratio : int</span>
 <span class="sd">        Number of negative samples per positive triple.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -216,7 +216,7 @@
 <div class="viewcode-block" id="MultiLabelDataset">
 <a class="viewcode-back" href="../../../autoapi/dicee/dataset_classes/index.html#dicee.dataset_classes.MultiLabelDataset">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MultiLabelDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Multi-label dataset for BPE-based KvsAll / AllvsAll training.</span>
+<span class="w">    </span><span class="sd">"""Multi-label dataset for BPE-based KvsAll / AllvsAll training.</span>
 
 <span class="sd">    Each sample is a BPE-encoded ``(head, relation)`` pair together with a</span>
 <span class="sd">    binary multi-label target vector over all entities.</span>
@@ -231,7 +231,7 @@
 <span class="sd">        Dimensionality of the target vector (number of entities).</span>
 <span class="sd">    torch_ordered_shaped_bpe_entities : torch.LongTensor</span>
 <span class="sd">        Ordered BPE entity representations.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -274,7 +274,7 @@
 <div class="viewcode-block" id="MultiClassClassificationDataset">
 <a class="viewcode-back" href="../../../autoapi/dicee/dataset_classes/index.html#dicee.dataset_classes.MultiClassClassificationDataset">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MultiClassClassificationDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dataset for autoregressive multi-class classification on sub-word units.</span>
+<span class="w">    </span><span class="sd">"""Dataset for autoregressive multi-class classification on sub-word units.</span>
 
 <span class="sd">    Splits a flat sequence of sub-word token ids into overlapping windows of</span>
 <span class="sd">    size ``block_size`` for next-token prediction.</span>
@@ -285,7 +285,7 @@
 <span class="sd">        1-D array of sub-word token ids.</span>
 <span class="sd">    block_size : int, optional</span>
 <span class="sd">        Context window length (default ``8``).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subword_units</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">block_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>

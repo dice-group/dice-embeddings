@@ -103,19 +103,19 @@ pip3<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </
 <section id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># (1) Fetch a tabular data (Regression Benchmark)</span>
-python<span class="w"> </span>vectograph/create_toy_data.py<span class="w"> </span>--toy_dataset_name<span class="w"> </span><span class="s2">&quot;california&quot;</span>
+python<span class="w"> </span>vectograph/create_toy_data.py<span class="w"> </span>--toy_dataset_name<span class="w"> </span><span class="s2">"california"</span>
 <span class="c1"># (2) Remove labels signals to ensure </span>
-python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import pandas as pd;df=pd.read_csv(&#39;california.csv&#39;,index_col=0);df.drop(columns=[&#39;labels&#39;],inplace=True);df.to_csv(&#39;california_wo_labels.csv&#39;)&quot;</span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">"import pandas as pd;df=pd.read_csv('california.csv',index_col=0);df.drop(columns=['labels'],inplace=True);df.to_csv('california_wo_labels.csv')"</span>
 <span class="c1"># (3) Create a knowledge graph from a tabular data</span>
-python<span class="w"> </span>vectograph/main.py<span class="w"> </span>--tabularpath<span class="w"> </span><span class="s2">&quot;california_wo_labels.csv&quot;</span><span class="w"> </span>--kg_name<span class="w"> </span><span class="s2">&quot;california_wo_labels.nt&quot;</span><span class="w"> </span>--num_quantile<span class="o">=</span><span class="m">10</span><span class="w"> </span>--min_unique_val_per_column<span class="o">=</span><span class="m">12</span>
+python<span class="w"> </span>vectograph/main.py<span class="w"> </span>--tabularpath<span class="w"> </span><span class="s2">"california_wo_labels.csv"</span><span class="w"> </span>--kg_name<span class="w"> </span><span class="s2">"california_wo_labels.nt"</span><span class="w"> </span>--num_quantile<span class="o">=</span><span class="m">10</span><span class="w"> </span>--min_unique_val_per_column<span class="o">=</span><span class="m">12</span>
 <span class="c1"># (4) Preparation for KGE</span>
 <span class="c1"># (4.1) Create an experiment folder and Move the RDF knowledge graph into (6.1) and rename it</span>
 mkdir<span class="w"> </span>Example<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>mv<span class="w"> </span>california_wo_labels.nt<span class="w"> </span>Example/train.txt
 <span class="c1"># (5) Generate Embeddings</span>
-python<span class="w"> </span>dice-embeddings/main.py<span class="w"> </span>--path_dataset_folder<span class="w"> </span><span class="s2">&quot;Example&quot;</span><span class="w"> </span>--model<span class="w"> </span><span class="s2">&quot;QMult&quot;</span><span class="w"> </span>--embedding_dim<span class="w"> </span><span class="m">4</span><span class="w"> </span>--num_epochs<span class="w"> </span><span class="m">1</span><span class="w"> </span>--save_embeddings_as_csv<span class="w"> </span>True
+python<span class="w"> </span>dice-embeddings/main.py<span class="w"> </span>--path_dataset_folder<span class="w"> </span><span class="s2">"Example"</span><span class="w"> </span>--model<span class="w"> </span><span class="s2">"QMult"</span><span class="w"> </span>--embedding_dim<span class="w"> </span><span class="m">4</span><span class="w"> </span>--num_epochs<span class="w"> </span><span class="m">1</span><span class="w"> </span>--save_embeddings_as_csv<span class="w"> </span>True
 <span class="c1"># e.g. see Experiments folder</span>
 <span class="c1"># (6)</span>
-python<span class="w">  </span>regression.py<span class="w"> </span>--path_kg<span class="w"> </span><span class="s2">&quot;Example/train.txt&quot;</span><span class="w"> </span>--path_tabular_csv<span class="w"> </span><span class="s2">&quot;california.csv&quot;</span><span class="w"> </span>--path_entity_embeddings<span class="w"> </span><span class="s2">&quot;Experiments/2022-12-06 16:27:18.133871/QMult_entity_embeddings.csv&quot;</span>
+python<span class="w">  </span>regression.py<span class="w"> </span>--path_kg<span class="w"> </span><span class="s2">"Example/train.txt"</span><span class="w"> </span>--path_tabular_csv<span class="w"> </span><span class="s2">"california.csv"</span><span class="w"> </span>--path_entity_embeddings<span class="w"> </span><span class="s2">"Experiments/2022-12-06 16:27:18.133871/QMult_entity_embeddings.csv"</span>
 </pre></div>
 </div>
 </section>

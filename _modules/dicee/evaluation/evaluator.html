@@ -88,12 +88,12 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.evaluation.evaluator</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Main Evaluator class for KGE model evaluation.</span>
+<span></span><span class="sd">"""Main Evaluator class for KGE model evaluation.</span>
 
 <span class="sd">This module provides the Evaluator class which orchestrates evaluation</span>
 <span class="sd">of knowledge graph embedding models across different datasets and</span>
 <span class="sd">scoring techniques.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
@@ -117,15 +117,15 @@
 
 <span class="c1"># Valid scoring techniques</span>
 <span class="n">VALID_SCORING_TECHNIQUES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">([</span>
-    <span class="s2">&quot;AllvsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;KvsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;1vsSample&quot;</span><span class="p">,</span> <span class="s2">&quot;KvsSample&quot;</span><span class="p">,</span> <span class="s2">&quot;FSDP1vsSample&quot;</span><span class="p">,</span> <span class="s2">&quot;1vsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;NegSample&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;BatchRelaxedKvsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;BatchRelaxed1vsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;PvsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;CCvsAll&quot;</span>
+    <span class="s2">"AllvsAll"</span><span class="p">,</span> <span class="s2">"KvsAll"</span><span class="p">,</span> <span class="s2">"1vsSample"</span><span class="p">,</span> <span class="s2">"KvsSample"</span><span class="p">,</span> <span class="s2">"FSDP1vsSample"</span><span class="p">,</span> <span class="s2">"1vsAll"</span><span class="p">,</span> <span class="s2">"NegSample"</span><span class="p">,</span>
+    <span class="s2">"BatchRelaxedKvsAll"</span><span class="p">,</span> <span class="s2">"BatchRelaxed1vsAll"</span><span class="p">,</span> <span class="s2">"PvsAll"</span><span class="p">,</span> <span class="s2">"CCvsAll"</span>
 <span class="p">])</span>
 
 
 <div class="viewcode-block" id="Evaluator">
 <a class="viewcode-back" href="../../../autoapi/dicee/evaluator/index.html#dicee.evaluation.evaluator.Evaluator">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Evaluator</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluator class for KGE models in various downstream tasks.</span>
+<span class="w">    </span><span class="sd">"""Evaluator class for KGE models in various downstream tasks.</span>
 
 <span class="sd">    Orchestrates link prediction evaluation with different scoring techniques</span>
 <span class="sd">    including standard evaluation and byte-pair encoding based evaluation.</span>
@@ -143,17 +143,17 @@
 <span class="sd">    Example:</span>
 <span class="sd">        &gt;&gt;&gt; from dicee.evaluation import Evaluator</span>
 <span class="sd">        &gt;&gt;&gt; evaluator = Evaluator(args)</span>
-<span class="sd">        &gt;&gt;&gt; results = evaluator.eval(dataset, model, &#39;EntityPrediction&#39;)</span>
-<span class="sd">        &gt;&gt;&gt; print(f&quot;Test MRR: {results[&#39;Test&#39;][&#39;MRR&#39;]:.4f}&quot;)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        &gt;&gt;&gt; results = evaluator.eval(dataset, model, 'EntityPrediction')</span>
+<span class="sd">        &gt;&gt;&gt; print(f"Test MRR: {results['Test']['MRR']:.4f}")</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">is_continual_training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the evaluator.</span>
+<span class="w">        </span><span class="sd">"""Initialize the evaluator.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            args: Configuration arguments containing evaluation settings.</span>
 <span class="sd">            is_continual_training: Whether this is continual training mode.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -170,13 +170,13 @@
 <div class="viewcode-block" id="Evaluator.vocab_preparation">
 <a class="viewcode-back" href="../../../autoapi/dicee/evaluator/index.html#dicee.evaluation.evaluator.Evaluator.vocab_preparation">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">vocab_preparation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare vocabularies from the dataset for evaluation.</span>
+<span class="w">        </span><span class="sd">"""Prepare vocabularies from the dataset for evaluation.</span>
 
 <span class="sd">        Resolves any future objects and saves vocabularies to disk.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            dataset: Knowledge graph dataset with vocabulary attributes.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">er_vocab</span>
         <span class="k">else</span><span class="p">:</span>
@@ -197,15 +197,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">func_triple_to_bpe_representation</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">func_triple_to_bpe_representation</span>
 
         <span class="c1"># Save vocabularies to disk</span>
-        <span class="n">er_vocab_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">&quot;er_vocab.p&quot;</span><span class="p">)</span>
-        <span class="n">re_vocab_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">&quot;re_vocab.p&quot;</span><span class="p">)</span>
-        <span class="n">ee_vocab_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">&quot;ee_vocab.p&quot;</span><span class="p">)</span>
+        <span class="n">er_vocab_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">"er_vocab.p"</span><span class="p">)</span>
+        <span class="n">re_vocab_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">"re_vocab.p"</span><span class="p">)</span>
+        <span class="n">ee_vocab_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">"ee_vocab.p"</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">er_vocab_path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">er_vocab_path</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">re_vocab_path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">re_vocab_path</span><span class="p">,</span> <span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">ee_vocab_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">ee_vocab_path</span><span class="p">,</span> <span class="s1">'wb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
 
 
@@ -218,17 +218,17 @@
         <span class="n">form_of_labelling</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">during_training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate the trained model on the dataset.</span>
+<span class="w">        </span><span class="sd">"""Evaluate the trained model on the dataset.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            dataset: Knowledge graph dataset (KG instance).</span>
 <span class="sd">            trained_model: The trained KGE model.</span>
-<span class="sd">            form_of_labelling: Type of labelling (&#39;EntityPrediction&#39; or &#39;RelationPrediction&#39;).</span>
+<span class="sd">            form_of_labelling: Type of labelling ('EntityPrediction' or 'RelationPrediction').</span>
 <span class="sd">            during_training: Whether evaluation is during training.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Dictionary of evaluation metrics, or None if evaluation is skipped.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span> <span class="o">=</span> <span class="n">during_training</span>
 
         <span class="c1"># Exit if evaluation is not requested</span>
@@ -241,11 +241,11 @@
             <span class="k">return</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Wrong input:RESET&#39;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="o">=</span> <span class="s1">&#39;train_val_test&#39;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">'Wrong input:RESET'</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="o">=</span> <span class="s1">'train_val_test'</span>
 
         <span class="c1"># Route to appropriate evaluation method based on scoring technique</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">==</span> <span class="s1">&#39;NegSample&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">byte_pair_encoding</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">==</span> <span class="s1">'NegSample'</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">byte_pair_encoding</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">eval_rank_of_head_and_tail_byte_pair_encoded_entity</span><span class="p">(</span>
                 <span class="n">train_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span>
                 <span class="n">valid_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">valid_set</span><span class="p">,</span>
@@ -253,9 +253,9 @@
                 <span class="n">ordered_bpe_entities</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">ordered_bpe_entities</span><span class="p">,</span>
                 <span class="n">trained_model</span><span class="o">=</span><span class="n">trained_model</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;AllvsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;KvsAll&quot;</span><span class="p">,</span> <span class="s1">&#39;1vsSample&#39;</span><span class="p">,</span> <span class="s2">&quot;1vsAll&quot;</span><span class="p">]</span> \
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"AllvsAll"</span><span class="p">,</span> <span class="s2">"KvsAll"</span><span class="p">,</span> <span class="s1">'1vsSample'</span><span class="p">,</span> <span class="s2">"1vsAll"</span><span class="p">]</span> \
                 <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">byte_pair_encoding</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">!=</span> <span class="s2">&quot;BytE&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">!=</span> <span class="s2">"BytE"</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">eval_with_bpe_vs_all</span><span class="p">(</span>
                     <span class="n">raw_train_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">,</span>
                     <span class="n">raw_valid_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="p">,</span>
@@ -271,14 +271,14 @@
                     <span class="n">trained_model</span><span class="o">=</span><span class="n">trained_model</span><span class="p">,</span>
                     <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span>
                 <span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;NegSample&#39;</span><span class="p">,</span> <span class="s1">&#39;FixedNegSample&#39;</span><span class="p">]:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'NegSample'</span><span class="p">,</span> <span class="s1">'FixedNegSample'</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">eval_rank_of_head_and_tail_entity</span><span class="p">(</span>
                 <span class="n">train_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span>
                 <span class="n">valid_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">valid_set</span><span class="p">,</span>
                 <span class="n">test_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">test_set</span><span class="p">,</span>
                 <span class="n">trained_model</span><span class="o">=</span><span class="n">trained_model</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;AllvsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;KvsAll&quot;</span><span class="p">,</span> <span class="s1">&#39;1vsSample&#39;</span><span class="p">,</span> <span class="s2">&quot;KvsSample&quot;</span><span class="p">,</span> <span class="s2">&quot;FSDP1vsSample&quot;</span><span class="p">,</span> <span class="s2">&quot;1vsAll&quot;</span><span class="p">]:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"AllvsAll"</span><span class="p">,</span> <span class="s2">"KvsAll"</span><span class="p">,</span> <span class="s1">'1vsSample'</span><span class="p">,</span> <span class="s2">"KvsSample"</span><span class="p">,</span> <span class="s2">"FSDP1vsSample"</span><span class="p">,</span> <span class="s2">"1vsAll"</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">eval_with_vs_all</span><span class="p">(</span>
                 <span class="n">train_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span>
                 <span class="n">valid_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">valid_set</span><span class="p">,</span>
@@ -287,62 +287,62 @@
                 <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid scoring technique: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Invalid scoring technique: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 
         <span class="c1"># Save evaluation report</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span><span class="p">:</span>
-            <span class="n">report_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s1">&#39;eval_report.json&#39;</span><span class="p">)</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">report_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">report_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s1">'eval_report.json'</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">report_path</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_load_indexed_datasets</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load indexed datasets based on evaluation settings.</span>
+<span class="w">        </span><span class="sd">"""Load indexed datasets based on evaluation settings.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Tuple of (train_set, valid_set, test_set) arrays, with None for</span>
 <span class="sd">            datasets not requested in eval_model.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">train_set</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">valid_set</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">test_set</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
-            <span class="n">train_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">&quot;train_set.npy&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">'train'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="n">train_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">"train_set.npy"</span><span class="p">)</span>
             <span class="n">train_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">train_path</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="s1">&#39;val&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
-            <span class="n">valid_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">&quot;valid_set.npy&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">'val'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="n">valid_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">"valid_set.npy"</span><span class="p">)</span>
             <span class="n">valid_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">valid_path</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
-            <span class="n">test_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">&quot;test_set.npy&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">'test'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="n">test_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">"test_set.npy"</span><span class="p">)</span>
             <span class="n">test_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">test_path</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">valid_set</span><span class="p">,</span> <span class="n">test_set</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_load_and_set_mappings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load vocabularies and mappings from disk.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Load vocabularies and mappings from disk."""</span>
         <span class="c1"># Import here to avoid circular imports</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">..static_funcs</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_json</span>
 
-        <span class="n">er_vocab_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">&quot;er_vocab.p&quot;</span><span class="p">)</span>
-        <span class="n">re_vocab_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">&quot;re_vocab.p&quot;</span><span class="p">)</span>
-        <span class="n">ee_vocab_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">&quot;ee_vocab.p&quot;</span><span class="p">)</span>
-        <span class="n">report_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">&quot;report.json&quot;</span><span class="p">)</span>
+        <span class="n">er_vocab_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">"er_vocab.p"</span><span class="p">)</span>
+        <span class="n">re_vocab_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">"re_vocab.p"</span><span class="p">)</span>
+        <span class="n">ee_vocab_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">"ee_vocab.p"</span><span class="p">)</span>
+        <span class="n">report_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s2">"report.json"</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">er_vocab_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">er_vocab_path</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">re_vocab_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">re_vocab_path</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">ee_vocab_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">ee_vocab_path</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
         <span class="n">report</span> <span class="o">=</span> <span class="n">load_json</span><span class="p">(</span><span class="n">report_path</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">&quot;num_entities&quot;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">&quot;num_relations&quot;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">"num_entities"</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">"num_relations"</span><span class="p">]</span>
 
 <div class="viewcode-block" id="Evaluator.eval_rank_of_head_and_tail_entity">
 <a class="viewcode-back" href="../../../autoapi/dicee/evaluator/index.html#dicee.evaluation.evaluator.Evaluator.eval_rank_of_head_and_tail_entity">[docs]</a>
@@ -354,24 +354,24 @@
         <span class="n">test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">trained_model</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate with negative sampling scoring.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Evaluate with negative sampling scoring."""</span>
+        <span class="k">if</span> <span class="s1">'train'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
             <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span>
-                <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on Train set&#39;</span>
+                <span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on Train set'</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Train&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Train'</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span>
 
-        <span class="k">if</span> <span class="s1">&#39;val&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">and</span> <span class="n">valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Val&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp</span><span class="p">(</span>
+        <span class="k">if</span> <span class="s1">'val'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">and</span> <span class="n">valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Val'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">valid_set</span><span class="p">,</span>
-                <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> of Validation set&#39;</span>
+                <span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> of Validation set'</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp</span><span class="p">(</span>
+        <span class="k">if</span> <span class="n">test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">'test'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Test'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">test_set</span><span class="p">,</span>
-                <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> of Test set&#39;</span>
+                <span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> of Test set'</span>
             <span class="p">)</span></div>
 
 
@@ -386,26 +386,26 @@
         <span class="n">ordered_bpe_entities</span><span class="p">,</span>
         <span class="n">trained_model</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate with BPE-encoded entities and negative sampling.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Train&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_bpe_lp</span><span class="p">(</span>
+<span class="w">        </span><span class="sd">"""Evaluate with BPE-encoded entities and negative sampling."""</span>
+        <span class="k">if</span> <span class="s1">'train'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Train'</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_bpe_lp</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">ordered_bpe_entities</span><span class="p">,</span>
                 <span class="n">er_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span> <span class="n">re_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span><span class="p">,</span>
-                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on NegSample BPE Train set&#39;</span>
+                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on NegSample BPE Train set'</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="s1">&#39;val&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">and</span> <span class="n">valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Val&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_bpe_lp</span><span class="p">(</span>
+        <span class="k">if</span> <span class="s1">'val'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">and</span> <span class="n">valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Val'</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_bpe_lp</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">valid_set</span><span class="p">,</span> <span class="n">ordered_bpe_entities</span><span class="p">,</span>
                 <span class="n">er_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span> <span class="n">re_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span><span class="p">,</span>
-                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on NegSample BPE Valid set&#39;</span>
+                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on NegSample BPE Valid set'</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_bpe_lp</span><span class="p">(</span>
+        <span class="k">if</span> <span class="n">test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">'test'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Test'</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_bpe_lp</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">test_set</span><span class="p">,</span> <span class="n">ordered_bpe_entities</span><span class="p">,</span>
                 <span class="n">er_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span> <span class="n">re_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span><span class="p">,</span>
-                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on NegSample BPE Test set&#39;</span>
+                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on NegSample BPE Test set'</span>
             <span class="p">)</span></div>
 
 
@@ -420,21 +420,21 @@
         <span class="n">trained_model</span><span class="p">,</span>
         <span class="n">form_of_labelling</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate BytE model with generation.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Train&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="w">        </span><span class="sd">"""Evaluate BytE model with generation."""</span>
+        <span class="k">if</span> <span class="s1">'train'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Train'</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
-        <span class="k">if</span> <span class="s1">&#39;val&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">and</span> <span class="n">raw_valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">'val'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">and</span> <span class="n">raw_valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_valid_set</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Val&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_with_byte</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Val'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_with_byte</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">raw_valid_set</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on BytE Validation set&#39;</span>
+                <span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on BytE Validation set'</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">raw_test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_with_byte</span><span class="p">(</span>
+        <span class="k">if</span> <span class="n">raw_test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">'test'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Test'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_with_byte</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">raw_test_set</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on BytE Test set&#39;</span>
+                <span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on BytE Test set'</span>
             <span class="p">)</span></div>
 
 
@@ -449,26 +449,26 @@
         <span class="n">trained_model</span><span class="p">,</span>
         <span class="n">form_of_labelling</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate with BPE and KvsAll scoring.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Train&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_bpe_k_vs_all</span><span class="p">(</span>
+<span class="w">        </span><span class="sd">"""Evaluate with BPE and KvsAll scoring."""</span>
+        <span class="k">if</span> <span class="s1">'train'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Train'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_bpe_k_vs_all</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">raw_train_set</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on BPE Train set&#39;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on BPE Train set'</span><span class="p">,</span>
                 <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="s1">&#39;val&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">and</span> <span class="n">raw_valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">'val'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">and</span> <span class="n">raw_valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_valid_set</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Val&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_bpe_k_vs_all</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Val'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_bpe_k_vs_all</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">raw_valid_set</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on BPE Validation set&#39;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on BPE Validation set'</span><span class="p">,</span>
                 <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">raw_test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_bpe_k_vs_all</span><span class="p">(</span>
+        <span class="k">if</span> <span class="n">raw_test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">'test'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Test'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_bpe_k_vs_all</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">raw_test_set</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on BPE Test set&#39;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on BPE Test set'</span><span class="p">,</span>
                 <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span>
             <span class="p">)</span></div>
 
@@ -484,25 +484,25 @@
         <span class="n">trained_model</span><span class="p">,</span>
         <span class="n">form_of_labelling</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate with KvsAll or 1vsAll scoring.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Train&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_k_vs_all</span><span class="p">(</span>
+<span class="w">        </span><span class="sd">"""Evaluate with KvsAll or 1vsAll scoring."""</span>
+        <span class="k">if</span> <span class="s1">'train'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Train'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_k_vs_all</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span>
-                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on Train set&#39;</span><span class="p">,</span>
+                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on Train set'</span><span class="p">,</span>
                 <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="s1">&#39;val&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">and</span> <span class="n">valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Val&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_k_vs_all</span><span class="p">(</span>
+        <span class="k">if</span> <span class="s1">'val'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">and</span> <span class="n">valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Val'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_k_vs_all</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">valid_set</span><span class="p">,</span>
-                <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on Validation set&#39;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on Validation set'</span><span class="p">,</span>
                 <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_k_vs_all</span><span class="p">(</span>
+        <span class="k">if</span> <span class="n">test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">'test'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Test'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_k_vs_all</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">test_set</span><span class="p">,</span>
-                <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on Test set&#39;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on Test set'</span><span class="p">,</span>
                 <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span>
             <span class="p">)</span></div>
 
@@ -516,17 +516,17 @@
         <span class="n">info</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">form_of_labelling</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Filtered link prediction evaluation with KvsAll scoring.</span>
+<span class="w">        </span><span class="sd">"""Filtered link prediction evaluation with KvsAll scoring.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            model: The trained model to evaluate.</span>
 <span class="sd">            triple_idx: Integer-indexed test triples.</span>
 <span class="sd">            info: Description to print.</span>
-<span class="sd">            form_of_labelling: &#39;EntityPrediction&#39; or &#39;RelationPrediction&#39;.</span>
+<span class="sd">            form_of_labelling: 'EntityPrediction' or 'RelationPrediction'.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Dictionary with H@1, H@3, H@10, and MRR metrics.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
         <span class="n">num_triples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">triple_idx</span><span class="p">)</span>
         <span class="n">ranks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -534,9 +534,9 @@
         <span class="n">hits</span> <span class="o">=</span> <span class="n">create_hits_dict</span><span class="p">(</span><span class="n">hits_range</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">info</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">info</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">info</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">form_of_labelling</span> <span class="o">==</span> <span class="s1">&#39;RelationPrediction&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">form_of_labelling</span> <span class="o">==</span> <span class="s1">'RelationPrediction'</span><span class="p">:</span>
             <span class="n">ranks</span><span class="p">,</span> <span class="n">hits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_evaluate_relation_prediction</span><span class="p">(</span>
                 <span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span> <span class="n">num_triples</span><span class="p">,</span> <span class="n">hits_range</span>
             <span class="p">)</span>
@@ -563,7 +563,7 @@
         <span class="n">num_triples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">hits_range</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate relation prediction task.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Evaluate relation prediction task."""</span>
         <span class="n">ranks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">hits</span> <span class="o">=</span> <span class="n">create_hits_dict</span><span class="p">(</span><span class="n">hits_range</span><span class="p">)</span>
 
@@ -596,7 +596,7 @@
         <span class="n">num_triples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">hits_range</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate entity prediction task.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Evaluate entity prediction task."""</span>
         <span class="n">ranks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">hits</span> <span class="o">=</span> <span class="n">create_hits_dict</span><span class="p">(</span><span class="n">hits_range</span><span class="p">)</span>
 
@@ -614,7 +614,7 @@
                 <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
                 <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">filt</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
 
-                <span class="k">if</span> <span class="s1">&#39;constraint&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+                <span class="k">if</span> <span class="s1">'constraint'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
                     <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">range_constraints_per_rel</span><span class="p">[</span><span class="n">data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
 
                 <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
@@ -637,7 +637,7 @@
         <span class="n">triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
         <span class="n">info</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate BytE model with text generation.</span>
+<span class="w">        </span><span class="sd">"""Evaluate BytE model with text generation.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            model: BytE model.</span>
@@ -646,30 +646,30 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Dictionary with placeholder metrics (-1 values).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">tiktoken</span>
 
         <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
         <span class="n">num_triples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span>
-        <span class="n">enc</span> <span class="o">=</span> <span class="n">tiktoken</span><span class="o">.</span><span class="n">get_encoding</span><span class="p">(</span><span class="s2">&quot;gpt2&quot;</span><span class="p">)</span>
+        <span class="n">enc</span> <span class="o">=</span> <span class="n">tiktoken</span><span class="o">.</span><span class="n">get_encoding</span><span class="p">(</span><span class="s2">"gpt2"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">info</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">info</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">info</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_triples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">):</span>
             <span class="n">str_data_batch</span> <span class="o">=</span> <span class="n">triples</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">triple</span> <span class="ow">in</span> <span class="n">str_data_batch</span><span class="p">:</span>
                 <span class="n">s</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">o</span> <span class="o">=</span> <span class="n">triple</span>
-                <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="n">enc</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">s</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="n">p</span><span class="p">)])</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Triple: </span><span class="si">{</span><span class="n">triple</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="n">enc</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">s</span> <span class="o">+</span> <span class="s2">" "</span> <span class="o">+</span> <span class="n">p</span><span class="p">)])</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Triple: </span><span class="si">{</span><span class="n">triple</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="n">y</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span>
                     <span class="n">x</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
                     <span class="n">temperature</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span>
                     <span class="n">top_k</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">topk</span>
                 <span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generated: </span><span class="si">{</span><span class="n">enc</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Generated: </span><span class="si">{</span><span class="n">enc</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;H@1&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;H@3&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;H@10&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;MRR&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">}</span></div>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">'H@1'</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'H@3'</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'H@10'</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'MRR'</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">}</span></div>
 
 
 <div class="viewcode-block" id="Evaluator.evaluate_lp_bpe_k_vs_all">
@@ -682,7 +682,7 @@
         <span class="n">info</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">form_of_labelling</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate BPE model with KvsAll scoring.</span>
+<span class="w">        </span><span class="sd">"""Evaluate BPE model with KvsAll scoring.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            model: BPE-enabled model.</span>
@@ -692,7 +692,7 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Dictionary with H@1, H@3, H@10, and MRR metrics.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
         <span class="n">num_triples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span>
         <span class="n">ranks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -700,7 +700,7 @@
         <span class="n">hits</span> <span class="o">=</span> <span class="n">create_hits_dict</span><span class="p">(</span><span class="n">hits_range</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">info</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">info</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">info</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_triples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">):</span>
             <span class="n">str_data_batch</span> <span class="o">=</span> <span class="n">triples</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">]</span>
@@ -747,7 +747,7 @@
 <div class="viewcode-block" id="Evaluator.evaluate_lp">
 <a class="viewcode-back" href="../../../autoapi/dicee/evaluator/index.html#dicee.evaluation.evaluator.Evaluator.evaluate_lp">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_lp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate link prediction with negative sampling.</span>
+<span class="w">        </span><span class="sd">"""Evaluate link prediction with negative sampling.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            model: The model to evaluate.</span>
@@ -756,10 +756,10 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Dictionary with H@1, H@3, H@10, and MRR metrics.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;self.num_entities cannot be None&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;self.er_vocab cannot be None&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;self.re_vocab cannot be None&quot;</span>
+<span class="sd">        """</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"self.num_entities cannot be None"</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"self.er_vocab cannot be None"</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"self.re_vocab cannot be None"</span>
 
         <span class="k">return</span> <span class="n">evaluate_lp</span><span class="p">(</span>
             <span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span>
@@ -773,12 +773,12 @@
 <div class="viewcode-block" id="Evaluator.dummy_eval">
 <a class="viewcode-back" href="../../../autoapi/dicee/evaluator/index.html#dicee.evaluation.evaluator.Evaluator.dummy_eval">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">dummy_eval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run evaluation from saved data (for continual training).</span>
+<span class="w">        </span><span class="sd">"""Run evaluation from saved data (for continual training).</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            trained_model: The trained model.</span>
 <span class="sd">            form_of_labelling: Type of labelling.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">assert</span> <span class="n">trained_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_continual_training</span><span class="p">:</span>
@@ -786,14 +786,14 @@
 
         <span class="n">train_set</span><span class="p">,</span> <span class="n">valid_set</span><span class="p">,</span> <span class="n">test_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_indexed_datasets</span><span class="p">()</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;NegSample&#39;</span><span class="p">,</span> <span class="s1">&#39;FixedNegSample&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'NegSample'</span><span class="p">,</span> <span class="s1">'FixedNegSample'</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">eval_rank_of_head_and_tail_entity</span><span class="p">(</span>
                 <span class="n">train_set</span><span class="o">=</span><span class="n">train_set</span><span class="p">,</span>
                 <span class="n">valid_set</span><span class="o">=</span><span class="n">valid_set</span><span class="p">,</span>
                 <span class="n">test_set</span><span class="o">=</span><span class="n">test_set</span><span class="p">,</span>
                 <span class="n">trained_model</span><span class="o">=</span><span class="n">trained_model</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;AllvsAll&quot;</span><span class="p">,</span> <span class="s1">&#39;KvsAll&#39;</span><span class="p">,</span> <span class="s1">&#39;1vsSample&#39;</span><span class="p">,</span> <span class="s2">&quot;KvsSample&quot;</span><span class="p">,</span> <span class="s2">&quot;FSDP1vsSample&quot;</span><span class="p">,</span> <span class="s1">&#39;1vsAll&#39;</span><span class="p">]:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"AllvsAll"</span><span class="p">,</span> <span class="s1">'KvsAll'</span><span class="p">,</span> <span class="s1">'1vsSample'</span><span class="p">,</span> <span class="s2">"KvsSample"</span><span class="p">,</span> <span class="s2">"FSDP1vsSample"</span><span class="p">,</span> <span class="s1">'1vsAll'</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">eval_with_vs_all</span><span class="p">(</span>
                 <span class="n">train_set</span><span class="o">=</span><span class="n">train_set</span><span class="p">,</span>
                 <span class="n">valid_set</span><span class="o">=</span><span class="n">valid_set</span><span class="p">,</span>
@@ -802,10 +802,10 @@
                 <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid scoring technique: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Invalid scoring technique: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 
-        <span class="n">report_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s1">&#39;eval_report.json&#39;</span><span class="p">)</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">report_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">report_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span><span class="p">,</span> <span class="s1">'eval_report.json'</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">report_path</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
 
 
@@ -818,7 +818,7 @@
         <span class="n">triple_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">form_of_labelling</span><span class="p">:</span> <span class="nb">str</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate a trained model on a given dataset.</span>
+<span class="w">        </span><span class="sd">"""Evaluate a trained model on a given dataset.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            dataset: Knowledge graph dataset.</span>
@@ -831,28 +831,28 @@
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If scoring technique is invalid.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">vocab_preparation</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">==</span> <span class="s1">&#39;NegSample&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">==</span> <span class="s1">'NegSample'</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span>
-                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on a given dataset&#39;</span>
+                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on a given dataset'</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;KvsAll&#39;</span><span class="p">,</span> <span class="s1">&#39;KvsSample&#39;</span><span class="p">,</span> <span class="s1">&#39;FSDP1vsSample&#39;</span><span class="p">,</span> <span class="s1">&#39;1vsSample&#39;</span><span class="p">,</span> <span class="s1">&#39;1vsAll&#39;</span><span class="p">,</span> <span class="s1">&#39;PvsAll&#39;</span><span class="p">,</span> <span class="s1">&#39;CCvsAll&#39;</span><span class="p">]:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'KvsAll'</span><span class="p">,</span> <span class="s1">'KvsSample'</span><span class="p">,</span> <span class="s1">'FSDP1vsSample'</span><span class="p">,</span> <span class="s1">'1vsSample'</span><span class="p">,</span> <span class="s1">'1vsAll'</span><span class="p">,</span> <span class="s1">'PvsAll'</span><span class="p">,</span> <span class="s1">'CCvsAll'</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_k_vs_all</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span>
-                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on a given dataset&#39;</span><span class="p">,</span>
+                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on a given dataset'</span><span class="p">,</span>
                 <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;BatchRelaxedKvsAll&#39;</span><span class="p">,</span> <span class="s1">&#39;BatchRelaxed1vsAll&#39;</span><span class="p">]:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'BatchRelaxedKvsAll'</span><span class="p">,</span> <span class="s1">'BatchRelaxed1vsAll'</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_k_vs_all</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span>
-                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on a given dataset&#39;</span><span class="p">,</span>
+                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on a given dataset'</span><span class="p">,</span>
                 <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid scoring technique: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Invalid scoring technique: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

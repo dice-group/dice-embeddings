@@ -106,12 +106,12 @@
 </ol>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ python
 Python 3.10.11 (main, Apr 20 2023, 19:02:41) [GCC 11.2.0] on linux
-Type &quot;help&quot;, &quot;copyright&quot;, &quot;credits&quot; or &quot;license&quot; for more information.
+Type "help", "copyright", "credits" or "license" for more information.
 &gt;&gt;&gt; import pandas as pd
-&gt;&gt;&gt; df = pd.read_csv(&#39;KGs/YAGO3-10/train.txt&#39;,sep=&quot;\s+&quot;,header=None,usecols=[0, 1, 2],names=[&#39;subject&#39;, &#39;relation&#39;, &#39;object&#39;],dtype=str)
+&gt;&gt;&gt; df = pd.read_csv('KGs/YAGO3-10/train.txt',sep="\s+",header=None,usecols=[0, 1, 2],names=['subject', 'relation', 'object'],dtype=str)
 &gt;&gt;&gt; df.shape
 (1079040, 3)
-&gt;&gt;&gt; df.to_parquet(&#39;train.parquet&#39;)
+&gt;&gt;&gt; df.to_parquet('train.parquet')
 &gt;&gt;&gt; exit(1)
 $ mkdir LargeKGE &amp;&amp; mv large_kg.parquet LargeKGE
 $ python main.py --path_dataset_folder LargeKGE

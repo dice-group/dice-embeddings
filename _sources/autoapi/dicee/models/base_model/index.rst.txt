@@ -397,6 +397,34 @@ Module Contents
    .. py:attribute:: defer_large_embeddings
 
 
+   .. py:method:: init_entity_embeddings(embedding_dim: Optional[int] = None) -> None
+
+      Create (or re-create) the entity embedding table.
+
+      This is the single place that honours :attr:`defer_large_embeddings`:
+      when entity rows are sharded across FSDP ranks the table must stay
+      ``None`` until the trainer allocates the sharded adapter.  Subclasses
+      that need an entity table of a non-default width must call this method
+      instead of assigning ``self.entity_embeddings`` directly, so the
+      deferral is never silently undone.
+
+      :param embedding_dim: Width of the table.  Defaults to :attr:`embedding_dim`.
+      :type embedding_dim: Optional[int]
+
+
+
+   .. py:method:: init_relation_embeddings(embedding_dim: Optional[int] = None) -> None
+
+      Create (or re-create) the relation embedding table.
+
+      Relation tables are never deferred - they are small enough to be
+      replicated on every rank.
+
+      :param embedding_dim: Width of the table.  Defaults to :attr:`embedding_dim`.
+      :type embedding_dim: Optional[int]
+
+
+
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
 
       KvsAll scoring for BPE-encoded head entities and relations.

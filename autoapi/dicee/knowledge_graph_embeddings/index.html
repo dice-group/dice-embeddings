@@ -304,12 +304,12 @@
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Score a specific triple</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="s2">&quot;Mongolia&quot;</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="s2">&quot;isLocatedIn&quot;</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="s2">&quot;Asia&quot;</span><span class="p">,</span> <span class="n">logits</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="s2">"Mongolia"</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="s2">"isLocatedIn"</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="s2">"Asia"</span><span class="p">,</span> <span class="n">logits</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="go">tensor(0.9523)</span>
 </pre></div>
 </div>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get scores for all possible tail entities</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="s2">&quot;Mongolia&quot;</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="s2">&quot;isLocatedIn&quot;</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="s2">"Mongolia"</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="s2">"isLocatedIn"</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 <span class="go">tensor([0.21, 0.95, 0.03, ...])  # One score per entity</span>
 </pre></div>
 </div>
@@ -345,12 +345,12 @@ For batch query: List of such lists, one per query.</p>
 </dd>
 </dl>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">predict_topk</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Mongolia&quot;</span><span class="p">],</span> <span class="n">r</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;isLocatedIn&quot;</span><span class="p">],</span> <span class="n">topk</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-<span class="go">[(&#39;Asia&#39;, 0.99), (&#39;Europe&#39;, 0.02), ...]</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">predict_topk</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="p">[</span><span class="s2">"Mongolia"</span><span class="p">],</span> <span class="n">r</span><span class="o">=</span><span class="p">[</span><span class="s2">"isLocatedIn"</span><span class="p">],</span> <span class="n">topk</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">[('Asia', 0.99), ('Europe', 0.02), ...]</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">predict_topk</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;isLocatedIn&quot;</span><span class="p">],</span> <span class="n">t</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Asia&quot;</span><span class="p">],</span> <span class="n">topk</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-<span class="go">[(&#39;Mongolia&#39;, 0.85), (&#39;China&#39;, 0.82), ...]</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">predict_topk</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="p">[</span><span class="s2">"isLocatedIn"</span><span class="p">],</span> <span class="n">t</span><span class="o">=</span><span class="p">[</span><span class="s2">"Asia"</span><span class="p">],</span> <span class="n">topk</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="go">[('Mongolia', 0.85), ('China', 0.82), ...]</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -432,29 +432,29 @@ For batch queries: List of such lists, one per query.</p>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># 1p: Find entities located in Asia</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;1p&quot;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;Asia&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;isLocatedIn&quot;</span><span class="p">,)),</span>
+<span class="gp">... </span>    <span class="n">query_type</span><span class="o">=</span><span class="s2">"1p"</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">"Asia"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"isLocatedIn"</span><span class="p">,)),</span>
 <span class="gp">... </span>    <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
 <span class="gp">... </span><span class="p">)</span>
-<span class="go">[(&quot;Mongolia&quot;, 0.92), (&quot;China&quot;, 0.89), ...]</span>
+<span class="go">[("Mongolia", 0.92), ("China", 0.89), ...]</span>
 </pre></div>
 </div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># 2p: Two-hop query (e.g., &quot;capital of countries in Europe&quot;)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># 2p: Two-hop query (e.g., "capital of countries in Europe")</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;Europe&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;isLocatedIn&quot;</span><span class="p">,</span> <span class="s2">&quot;hasCapital&quot;</span><span class="p">)),</span>
+<span class="gp">... </span>    <span class="n">query_type</span><span class="o">=</span><span class="s2">"2p"</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">"Europe"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"isLocatedIn"</span><span class="p">,</span> <span class="s2">"hasCapital"</span><span class="p">)),</span>
 <span class="gp">... </span>    <span class="n">k</span><span class="o">=</span><span class="mi">3</span>
 <span class="gp">... </span><span class="p">)</span>
-<span class="go">[(&quot;Paris&quot;, 0.85), (&quot;Berlin&quot;, 0.82), ...]</span>
+<span class="go">[("Paris", 0.85), ("Berlin", 0.82), ...]</span>
 </pre></div>
 </div>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># 2i: Intersection query</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span>
-<span class="gp">... </span>    <span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2i&quot;</span><span class="p">,</span>
-<span class="gp">... </span>    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;Asia&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;isLocatedIn&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;Mountains&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;hasGeography&quot;</span><span class="p">,))),</span>
+<span class="gp">... </span>    <span class="n">query_type</span><span class="o">=</span><span class="s2">"2i"</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">query</span><span class="o">=</span><span class="p">((</span><span class="s2">"Asia"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"isLocatedIn"</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">"Mountains"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"hasGeography"</span><span class="p">,))),</span>
 <span class="gp">... </span>    <span class="n">k</span><span class="o">=</span><span class="mi">5</span>
 <span class="gp">... </span><span class="p">)</span>
-<span class="go">[(&quot;Nepal&quot;, 0.78), (&quot;Tibet&quot;, 0.65), ...]</span>
+<span class="go">[("Nepal", 0.78), ("Tibet", 0.65), ...]</span>
 </pre></div>
 </div>
 <div class="admonition seealso">

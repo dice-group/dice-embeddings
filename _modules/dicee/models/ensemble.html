@@ -102,8 +102,8 @@
         <span class="k">if</span> <span class="n">models</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">models</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;EnsembleKGE requires at least one model. The models list is empty. &quot;</span>
-                    <span class="s2">&quot;This typically occurs when using Tensor Parallelism (TP) trainer without sufficient GPUs.&quot;</span>
+                    <span class="s2">"EnsembleKGE requires at least one model. The models list is empty. "</span>
+                    <span class="s2">"This typically occurs when using Tensor Parallelism (TP) trainer without sufficient GPUs."</span>
                 <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span> <span class="o">=</span> <span class="p">[]</span>
@@ -112,23 +112,23 @@
                 <span class="n">i_model</span> <span class="o">=</span> <span class="n">models</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
                 <span class="c1"># TODO: Why we cant send the compile model to cpu ?</span>
                 <span class="c1">#i_model = torch.compile(i_model)</span>
-                <span class="n">i_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+                <span class="n">i_model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="sa">f</span><span class="s2">"cuda:</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i_model</span><span class="o">.</span><span class="n">configure_optimizers</span><span class="p">())</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i_model</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">pretrained_models</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pretrained_models</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;EnsembleKGE requires at least one pretrained model. The pretrained_models list is empty.&quot;</span>
+                    <span class="s2">"EnsembleKGE requires at least one pretrained model. The pretrained_models list is empty."</span>
                 <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="n">pretrained_models</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">loss_history</span> <span class="o">=</span> <span class="p">[]</span>
 
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">device_count</span><span class="p">()):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="sa">f</span><span class="s2">"cuda:</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">configure_optimizers</span><span class="p">())</span>
-            <span class="c1"># Maybe use the original model&#39;s name ?</span>
+            <span class="c1"># Maybe use the original model's name ?</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train_mode</span><span class="o">=</span><span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">args</span>
@@ -179,7 +179,7 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.to">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">device</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">)):</span>
-            <span class="k">if</span> <span class="n">device</span> <span class="o">==</span> <span class="s2">&quot;cpu&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">device</span> <span class="o">==</span> <span class="s2">"cpu"</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
@@ -188,14 +188,14 @@
 <div class="viewcode-block" id="EnsembleKGE.state_dict">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.state_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the state dict of the ensemble.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Return the state dict of the ensemble."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="EnsembleKGE.load_state_dict">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.load_state_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the state dict into the ensemble.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Load the state dict into the ensemble."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">)</span></div>
 
 
@@ -203,7 +203,7 @@
 <div class="viewcode-block" id="EnsembleKGE.mem_of_model">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.mem_of_model">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">mem_of_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">mem_of_ensemble</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;EstimatedSizeMB&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;NumParam&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="n">mem_of_ensemble</span><span class="o">=</span><span class="p">{</span><span class="s1">'EstimatedSizeMB'</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">'NumParam'</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">i</span><span class="o">.</span><span class="n">mem_of_model</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">mem_of_ensemble</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">v</span>
@@ -225,13 +225,13 @@
             <span class="k">for</span> <span class="n">gpu_id</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">):</span>
                 <span class="c1"># Move batch into the GPU where the i.th model resides</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x_batch</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
-                    <span class="n">x_batch</span><span class="o">=</span><span class="p">(</span><span class="n">x_batch</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">gpu_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span><span class="n">x_batch</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">gpu_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+                    <span class="n">x_batch</span><span class="o">=</span><span class="p">(</span><span class="n">x_batch</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="sa">f</span><span class="s2">"cuda:</span><span class="si">{</span><span class="n">gpu_id</span><span class="si">}</span><span class="s2">"</span><span class="p">),</span><span class="n">x_batch</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="sa">f</span><span class="s2">"cuda:</span><span class="si">{</span><span class="n">gpu_id</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">x_batch</span><span class="o">=</span><span class="n">x_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="n">gpu_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">x_batch</span><span class="o">=</span><span class="n">x_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="sa">f</span><span class="s2">"cuda:</span><span class="si">{</span><span class="n">gpu_id</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">yhat</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">yhat</span><span class="o">=</span><span class="n">model</span><span class="p">(</span><span class="n">x_batch</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">yhat</span><span class="o">+=</span><span class="n">model</span><span class="p">(</span><span class="n">x_batch</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cuda:0&quot;</span><span class="p">)</span>
+                    <span class="n">yhat</span><span class="o">+=</span><span class="n">model</span><span class="p">(</span><span class="n">x_batch</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">"cuda:0"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">yhat</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">)</span></div>
 
 
@@ -264,7 +264,7 @@
         <span class="k">return</span> <span class="n">entity_embeddings</span><span class="p">,</span> <span class="n">relation_embeddings</span></div>
 
 
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    def __getattr__(self, name):</span>
 <span class="sd">        # Create a function that will call the same attribute/method on each model</span>
 <span class="sd">        def method(*args, **kwargs):</span>
@@ -272,18 +272,18 @@
 <span class="sd">            for model in self.models:</span>
 <span class="sd">                attr = getattr(model, name)</span>
 <span class="sd">                if callable(attr):</span>
-<span class="sd">                    # If it&#39;s a method, call it with provided arguments</span>
+<span class="sd">                    # If it's a method, call it with provided arguments</span>
 <span class="sd">                    results.append(attr(*args, **kwargs))</span>
 <span class="sd">                else:</span>
-<span class="sd">                    # If it&#39;s an attribute, just get its value</span>
+<span class="sd">                    # If it's an attribute, just get its value</span>
 <span class="sd">                    results.append(attr)</span>
 <span class="sd">            return results</span>
 <span class="sd">        return method</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 <div class="viewcode-block" id="EnsembleKGE.__str__">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/ensemble/index.html#dicee.models.ensemble.EnsembleKGE.__str__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;EnsembleKGE of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span></div>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"EnsembleKGE of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span></div>
 </div>
 
 </pre></div>

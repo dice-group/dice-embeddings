@@ -262,17 +262,17 @@ Must have columns: ‘relation’ and ‘index’.</p>
 <section id="example-usage">
 <h3>Example Usage:<a class="headerlink" href="#example-usage" title="Link to this heading"></a></h3>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df_polars</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
-<span class="go">        &quot;subject&quot;: [&quot;Alice&quot;, &quot;Bob&quot;, &quot;Charlie&quot;],</span>
-<span class="go">        &quot;relation&quot;: [&quot;knows&quot;, &quot;works_with&quot;, &quot;lives_in&quot;],</span>
-<span class="go">        &quot;object&quot;: [&quot;Dave&quot;, &quot;Eve&quot;, &quot;Frank&quot;]</span>
+<span class="go">        "subject": ["Alice", "Bob", "Charlie"],</span>
+<span class="go">        "relation": ["knows", "works_with", "lives_in"],</span>
+<span class="go">        "object": ["Dave", "Eve", "Frank"]</span>
 <span class="go">    })</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">idx_entity</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
-<span class="go">        &quot;entity&quot;: [&quot;Alice&quot;, &quot;Bob&quot;, &quot;Charlie&quot;, &quot;Dave&quot;, &quot;Eve&quot;, &quot;Frank&quot;],</span>
-<span class="go">        &quot;index&quot;: [0, 1, 2, 3, 4, 5]</span>
+<span class="go">        "entity": ["Alice", "Bob", "Charlie", "Dave", "Eve", "Frank"],</span>
+<span class="go">        "index": [0, 1, 2, 3, 4, 5]</span>
 <span class="go">    })</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">idx_relation</span> <span class="o">=</span> <span class="n">pl</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
-<span class="go">        &quot;relation&quot;: [&quot;knows&quot;, &quot;works_with&quot;, &quot;lives_in&quot;],</span>
-<span class="go">        &quot;index&quot;: [0, 1, 2]</span>
+<span class="go">        "relation": ["knows", "works_with", "lives_in"],</span>
+<span class="go">        "index": [0, 1, 2]</span>
 <span class="go">    })</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">polars_dataframe_indexer</span><span class="p">(</span><span class="n">df_polars</span><span class="p">,</span> <span class="n">idx_entity</span><span class="p">,</span> <span class="n">idx_relation</span><span class="p">)</span>
 </pre></div>

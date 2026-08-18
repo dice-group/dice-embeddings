@@ -88,12 +88,12 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.dataset_classes._negative_sampling</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Negative-sampling based dataset classes.</span>
+<span></span><span class="sd">"""Negative-sampling based dataset classes.</span>
 
 <span class="sd">Provides ``TriplePredictionDataset``, ``FixedNegSampleDataset``, and</span>
 <span class="sd">``OnevsSample`` — datasets that generate negative triples by corrupting</span>
 <span class="sd">head or tail entities at training time.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -104,7 +104,7 @@
 <div class="viewcode-block" id="OnevsSample">
 <a class="viewcode-back" href="../../../autoapi/dicee/dataset_classes/index.html#dicee.dataset_classes.OnevsSample">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">OnevsSample</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dataset for 1-vs-Sample training (dynamic multi-class with negatives).</span>
+<span class="w">    </span><span class="sd">"""Dataset for 1-vs-Sample training (dynamic multi-class with negatives).</span>
 
 <span class="sd">    For every positive triple ``(h, r, t)`` the dataset draws</span>
 <span class="sd">    ``neg_sample_ratio`` random entities as negatives and returns a label</span>
@@ -122,7 +122,7 @@
 <span class="sd">        Number of negative samples per positive.</span>
 <span class="sd">    label_smoothing_rate : float, optional</span>
 <span class="sd">        Label smoothing coefficient (default ``0.0``).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -133,21 +133,21 @@
         <span class="n">label_smoothing_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">),</span> <span class="s2">&quot;train_set must be a numpy array.&quot;</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">neg_sample_ratio</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="s2">&quot;neg_sample_ratio must be an integer.&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">),</span> <span class="s2">"train_set must be a numpy array."</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">neg_sample_ratio</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="s2">"neg_sample_ratio must be an integer."</span>
         <span class="k">assert</span> <span class="p">(</span>
             <span class="nb">isinstance</span><span class="p">(</span><span class="n">num_entities</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">num_entities</span> <span class="o">&gt;</span> <span class="mi">0</span>
-        <span class="p">),</span> <span class="s2">&quot;num_entities must be a positive integer.&quot;</span>
+        <span class="p">),</span> <span class="s2">"num_entities must be a positive integer."</span>
         <span class="k">assert</span> <span class="p">(</span>
             <span class="nb">isinstance</span><span class="p">(</span><span class="n">num_relations</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">num_relations</span> <span class="o">&gt;</span> <span class="mi">0</span>
-        <span class="p">),</span> <span class="s2">&quot;num_relations must be a positive integer.&quot;</span>
+        <span class="p">),</span> <span class="s2">"num_relations must be a positive integer."</span>
         <span class="k">assert</span> <span class="n">neg_sample_ratio</span> <span class="o">&lt;</span> <span class="n">num_entities</span><span class="p">,</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Negative sample ratio </span><span class="si">{</span><span class="n">neg_sample_ratio</span><span class="si">}</span><span class="s2"> cannot be larger &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;than the number of entities (</span><span class="si">{</span><span class="n">num_entities</span><span class="si">}</span><span class="s2">).&quot;</span>
+            <span class="sa">f</span><span class="s2">"Negative sample ratio </span><span class="si">{</span><span class="n">neg_sample_ratio</span><span class="si">}</span><span class="s2"> cannot be larger "</span>
+            <span class="sa">f</span><span class="s2">"than the number of entities (</span><span class="si">{</span><span class="n">num_entities</span><span class="si">}</span><span class="s2">)."</span>
         <span class="p">)</span>
         <span class="k">assert</span> <span class="p">(</span>
             <span class="n">neg_sample_ratio</span> <span class="o">&gt;</span> <span class="mi">0</span>
-        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Negative sample ratio </span><span class="si">{</span><span class="n">neg_sample_ratio</span><span class="si">}</span><span class="s2"> must be greater than 0.&quot;</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">"Negative sample ratio </span><span class="si">{</span><span class="n">neg_sample_ratio</span><span class="si">}</span><span class="s2"> must be greater than 0."</span>
 
         <span class="c1"># Sort by (head, relation, tail) to ensure order-independent training</span>
         <span class="n">sorted_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lexsort</span><span class="p">(</span>
@@ -198,7 +198,7 @@
 <div class="viewcode-block" id="FixedNegSampleDataset">
 <a class="viewcode-back" href="../../../autoapi/dicee/dataset_classes/index.html#dicee.dataset_classes.FixedNegSampleDataset">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">FixedNegSampleDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pre-computed (fixed) negative sampling dataset.</span>
+<span class="w">    </span><span class="sd">"""Pre-computed (fixed) negative sampling dataset.</span>
 
 <span class="sd">    At construction time every positive triple is paired with one random</span>
 <span class="sd">    negative (head- or tail-corrupted) using vectorized operations for</span>
@@ -220,7 +220,7 @@
 <span class="sd">        Number of negative samples per positive triple (default ``1``).</span>
 <span class="sd">    label_smoothing_rate : float, optional</span>
 <span class="sd">        Label smoothing coefficient (default ``0.0``).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -251,7 +251,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_precompute_negatives</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_precompute_negatives</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Vectorized pre-computation of negative triples.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Vectorized pre-computation of negative triples."""</span>
         <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span>
 
         <span class="c1"># Set the random seed for reproducibility if provided</span>
@@ -319,7 +319,7 @@
 <div class="viewcode-block" id="TriplePredictionDataset">
 <a class="viewcode-back" href="../../../autoapi/dicee/dataset_classes/index.html#dicee.dataset_classes.TriplePredictionDataset">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TriplePredictionDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dataset for triple prediction with on-the-fly negative sampling.</span>
+<span class="w">    </span><span class="sd">"""Dataset for triple prediction with on-the-fly negative sampling.</span>
 
 <span class="sd">    Each item is a single positive triple; the custom ``collate_fn``</span>
 <span class="sd">    generates a batch of mixed positive and negative triples.</span>
@@ -336,7 +336,7 @@
 <span class="sd">        Number of negative samples per positive triple (default ``1``).</span>
 <span class="sd">    label_smoothing_rate : float, optional</span>
 <span class="sd">        Label smoothing coefficient (default ``0.0``).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -372,9 +372,9 @@
         <span class="k">assert</span> <span class="n">num_entities</span> <span class="o">&gt;=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="ow">and</span> <span class="n">num_entities</span> <span class="o">&gt;=</span> <span class="nb">max</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
         <span class="p">),</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;num_entities: </span><span class="si">{</span><span class="n">num_entities</span><span class="si">}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;max(self.train_set[:, 0]): </span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;max(self.train_set[:, 2]): </span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">[:,</span><span class="w"> </span><span class="mi">2</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"num_entities: </span><span class="si">{</span><span class="n">num_entities</span><span class="si">}</span><span class="s2">, "</span>
+            <span class="sa">f</span><span class="s2">"max(self.train_set[:, 0]): </span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">[:,</span><span class="w"> </span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s2">, "</span>
+            <span class="sa">f</span><span class="s2">"max(self.train_set[:, 2]): </span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">[:,</span><span class="w"> </span><span class="mi">2</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">num_entities</span><span class="p">)</span>

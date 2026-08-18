@@ -88,12 +88,12 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.dataset_classes._factory</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Factory functions for constructing training datasets.</span>
+<span></span><span class="sd">"""Factory functions for constructing training datasets.</span>
 
 <span class="sd">The two public functions — ``reload_dataset`` and ``construct_dataset`` —</span>
 <span class="sd">select the appropriate ``torch.utils.data.Dataset`` sub-class based on the</span>
 <span class="sd">requested scoring technique and labelling strategy.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
@@ -123,13 +123,13 @@
     <span class="n">neg_ratio</span><span class="p">,</span>
     <span class="n">label_smoothing_rate</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reload training data from disk and construct a Pytorch dataset.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Reload training data from disk and construct a Pytorch dataset."""</span>
     <span class="k">return</span> <span class="n">construct_dataset</span><span class="p">(</span>
-        <span class="n">train_set</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span> <span class="o">+</span> <span class="s2">&quot;/train_set.npy&quot;</span><span class="p">),</span>
+        <span class="n">train_set</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span> <span class="o">+</span> <span class="s2">"/train_set.npy"</span><span class="p">),</span>
         <span class="n">valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">entity_to_idx</span><span class="o">=</span><span class="n">load_term_mapping</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="n">path</span> <span class="o">+</span> <span class="s2">&quot;/entity_to_idx&quot;</span><span class="p">),</span>
-        <span class="n">relation_to_idx</span><span class="o">=</span><span class="n">load_term_mapping</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="n">path</span> <span class="o">+</span> <span class="s2">&quot;/relation_to_idx&quot;</span><span class="p">),</span>
+        <span class="n">entity_to_idx</span><span class="o">=</span><span class="n">load_term_mapping</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="n">path</span> <span class="o">+</span> <span class="s2">"/entity_to_idx"</span><span class="p">),</span>
+        <span class="n">relation_to_idx</span><span class="o">=</span><span class="n">load_term_mapping</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="n">path</span> <span class="o">+</span> <span class="s2">"/relation_to_idx"</span><span class="p">),</span>
         <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span><span class="p">,</span>
         <span class="n">scoring_technique</span><span class="o">=</span><span class="n">scoring_technique</span><span class="p">,</span>
         <span class="n">neg_ratio</span><span class="o">=</span><span class="n">neg_ratio</span><span class="p">,</span>
@@ -160,7 +160,7 @@
     <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">sort_train_set</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the appropriate dataset for the given training configuration.</span>
+<span class="w">    </span><span class="sd">"""Build the appropriate dataset for the given training configuration.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -169,10 +169,10 @@
 <span class="sd">    entity_to_idx, relation_to_idx : dict</span>
 <span class="sd">        Name → index mappings.</span>
 <span class="sd">    form_of_labelling : str</span>
-<span class="sd">        ``&#39;EntityPrediction&#39;`` or ``&#39;RelationPrediction&#39;``.</span>
+<span class="sd">        ``'EntityPrediction'`` or ``'RelationPrediction'``.</span>
 <span class="sd">    scoring_technique : str</span>
-<span class="sd">        One of ``&#39;NegSample&#39;``, ``&#39;FixedNegSample&#39;``, ``&#39;1vsAll&#39;``, ``&#39;1vsSample&#39;``, ``&#39;KvsAll&#39;``,</span>
-<span class="sd">        ``&#39;AllvsAll&#39;``, ``&#39;KvsSample&#39;``.</span>
+<span class="sd">        One of ``'NegSample'``, ``'FixedNegSample'``, ``'1vsAll'``, ``'1vsSample'``, ``'KvsAll'``,</span>
+<span class="sd">        ``'AllvsAll'``, ``'KvsSample'``.</span>
 <span class="sd">    neg_ratio : int</span>
 <span class="sd">        Negative sample ratio.</span>
 <span class="sd">    label_smoothing_rate : float</span>
@@ -181,11 +181,11 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    torch.utils.data.Dataset</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="p">(</span>
         <span class="n">ordered_bpe_entities</span>
         <span class="ow">and</span> <span class="n">byte_pair_encoding</span>
-        <span class="ow">and</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">&quot;NegSample&quot;</span>
+        <span class="ow">and</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">"NegSample"</span>
     <span class="p">):</span>
         <span class="n">train_set</span> <span class="o">=</span> <span class="n">BPE_NegativeSamplingDataset</span><span class="p">(</span>
             <span class="n">train_set</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">),</span>
@@ -200,7 +200,7 @@
     <span class="k">elif</span> <span class="p">(</span>
         <span class="n">ordered_bpe_entities</span>
         <span class="ow">and</span> <span class="n">byte_pair_encoding</span>
-        <span class="ow">and</span> <span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;KvsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;AllvsAll&quot;</span><span class="p">]</span>
+        <span class="ow">and</span> <span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"KvsAll"</span><span class="p">,</span> <span class="s2">"AllvsAll"</span><span class="p">]</span>
     <span class="p">):</span>
         <span class="n">train_set</span> <span class="o">=</span> <span class="n">MultiLabelDataset</span><span class="p">(</span>
             <span class="n">train_set</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">),</span>
@@ -217,7 +217,7 @@
         <span class="n">train_set</span> <span class="o">=</span> <span class="n">MultiClassClassificationDataset</span><span class="p">(</span>
             <span class="n">train_set</span><span class="p">,</span> <span class="n">block_size</span><span class="o">=</span><span class="n">block_size</span>
         <span class="p">)</span>
-    <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">&quot;NegSample&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">"NegSample"</span><span class="p">:</span>
         <span class="n">train_set</span> <span class="o">=</span> <span class="n">TriplePredictionDataset</span><span class="p">(</span>
             <span class="n">train_set</span><span class="o">=</span><span class="n">train_set</span><span class="p">,</span>
             <span class="n">num_entities</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">entity_to_idx</span><span class="p">),</span>
@@ -227,7 +227,7 @@
             <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
             <span class="n">sort_train_set</span><span class="o">=</span><span class="n">sort_train_set</span><span class="p">,</span>
         <span class="p">)</span>
-    <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">&quot;FSDP1vsSample&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">"FSDP1vsSample"</span><span class="p">:</span>
         <span class="n">train_set</span> <span class="o">=</span> <span class="n">FSDP1vsSampleDataset</span><span class="p">(</span>
             <span class="n">train_set_idx</span><span class="o">=</span><span class="n">train_set</span><span class="p">,</span>
             <span class="n">entity_idxs</span><span class="o">=</span><span class="n">entity_to_idx</span><span class="p">,</span>
@@ -236,7 +236,7 @@
             <span class="n">neg_ratio</span><span class="o">=</span><span class="n">neg_ratio</span><span class="p">,</span>
             <span class="n">label_smoothing_rate</span><span class="o">=</span><span class="n">label_smoothing_rate</span><span class="p">,</span>
         <span class="p">)</span>
-    <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">&quot;FixedNegSample&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">"FixedNegSample"</span><span class="p">:</span>
         <span class="n">train_set</span> <span class="o">=</span> <span class="n">FixedNegSampleDataset</span><span class="p">(</span>
             <span class="n">train_set</span><span class="o">=</span><span class="n">train_set</span><span class="p">,</span>
             <span class="n">num_entities</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">entity_to_idx</span><span class="p">),</span>
@@ -245,10 +245,10 @@
             <span class="n">label_smoothing_rate</span><span class="o">=</span><span class="n">label_smoothing_rate</span><span class="p">,</span>
             <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
         <span class="p">)</span>
-    <span class="k">elif</span> <span class="n">form_of_labelling</span> <span class="o">==</span> <span class="s2">&quot;EntityPrediction&quot;</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">&quot;1vsAll&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">form_of_labelling</span> <span class="o">==</span> <span class="s2">"EntityPrediction"</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">"1vsAll"</span><span class="p">:</span>
             <span class="n">train_set</span> <span class="o">=</span> <span class="n">OnevsAllDataset</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">entity_idxs</span><span class="o">=</span><span class="n">entity_to_idx</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">&quot;1vsSample&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">"1vsSample"</span><span class="p">:</span>
             <span class="n">train_set</span> <span class="o">=</span> <span class="n">OnevsSample</span><span class="p">(</span>
                 <span class="n">train_set</span><span class="o">=</span><span class="n">train_set</span><span class="p">,</span>
                 <span class="n">num_entities</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">entity_to_idx</span><span class="p">),</span>
@@ -256,7 +256,7 @@
                 <span class="n">neg_sample_ratio</span><span class="o">=</span><span class="n">neg_ratio</span><span class="p">,</span>
                 <span class="n">label_smoothing_rate</span><span class="o">=</span><span class="n">label_smoothing_rate</span><span class="p">,</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">&quot;KvsAll&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">"KvsAll"</span><span class="p">:</span>
             <span class="n">train_set</span> <span class="o">=</span> <span class="n">KvsAll</span><span class="p">(</span>
                 <span class="n">train_set</span><span class="p">,</span>
                 <span class="n">entity_idxs</span><span class="o">=</span><span class="n">entity_to_idx</span><span class="p">,</span>
@@ -264,14 +264,14 @@
                 <span class="n">form</span><span class="o">=</span><span class="n">form_of_labelling</span><span class="p">,</span>
                 <span class="n">label_smoothing_rate</span><span class="o">=</span><span class="n">label_smoothing_rate</span><span class="p">,</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">&quot;AllvsAll&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">"AllvsAll"</span><span class="p">:</span>
             <span class="n">train_set</span> <span class="o">=</span> <span class="n">AllvsAll</span><span class="p">(</span>
                 <span class="n">train_set</span><span class="p">,</span>
                 <span class="n">entity_idxs</span><span class="o">=</span><span class="n">entity_to_idx</span><span class="p">,</span>
                 <span class="n">relation_idxs</span><span class="o">=</span><span class="n">relation_to_idx</span><span class="p">,</span>
                 <span class="n">label_smoothing_rate</span><span class="o">=</span><span class="n">label_smoothing_rate</span><span class="p">,</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">&quot;KvsSample&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">"KvsSample"</span><span class="p">:</span>
             <span class="n">train_set</span> <span class="o">=</span> <span class="n">KvsSampleDataset</span><span class="p">(</span>
                 <span class="n">train_set</span><span class="p">,</span>
                 <span class="n">entity_idxs</span><span class="o">=</span><span class="n">entity_to_idx</span><span class="p">,</span>
@@ -281,8 +281,8 @@
                 <span class="n">label_smoothing_rate</span><span class="o">=</span><span class="n">label_smoothing_rate</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid scoring technique : </span><span class="si">{</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">form_of_labelling</span> <span class="o">==</span> <span class="s2">&quot;RelationPrediction&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid scoring technique : </span><span class="si">{</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">form_of_labelling</span> <span class="o">==</span> <span class="s2">"RelationPrediction"</span><span class="p">:</span>
         <span class="n">train_set</span> <span class="o">=</span> <span class="n">KvsAll</span><span class="p">(</span>
             <span class="n">train_set</span><span class="p">,</span>
             <span class="n">entity_idxs</span><span class="o">=</span><span class="n">entity_to_idx</span><span class="p">,</span>
@@ -291,9 +291,9 @@
             <span class="n">label_smoothing_rate</span><span class="o">=</span><span class="n">label_smoothing_rate</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Illegal input.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">"Illegal input."</span><span class="p">)</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of datapoints: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">train_set</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of datapoints: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">train_set</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">train_set</span></div>
 
 </pre></div>

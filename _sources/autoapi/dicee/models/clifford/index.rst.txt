@@ -465,12 +465,6 @@ Module Contents
 
 
 
-   .. py:attribute:: entity_embeddings
-
-
-   .. py:attribute:: relation_embeddings
-
-
    .. py:attribute:: p
 
 

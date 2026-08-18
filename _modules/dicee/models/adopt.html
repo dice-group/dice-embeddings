@@ -88,7 +88,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.models.adopt</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;ADOPT Optimizer Implementation.</span>
+<span></span><span class="sd">"""ADOPT Optimizer Implementation.</span>
 
 <span class="sd">This module implements the ADOPT (Adaptive Optimization with Precise Tracking) algorithm,</span>
 <span class="sd">an advanced optimization method for training neural networks.</span>
@@ -155,7 +155,7 @@
 <span class="sd">-----</span>
 <span class="sd">This implementation is based on the original ADOPT implementation and adapted to work</span>
 <span class="sd">with the PyTorch optimizer interface and the dicee framework.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="c1"># CD: copy pasted from https://raw.githubusercontent.com/iShohei220/adopt/refs/heads/main/adopt.py</span>
 <span class="c1"># mypy: allow-untyped-decorators</span>
 <span class="c1"># mypy: allow-untyped-defs</span>
@@ -183,13 +183,13 @@
     <span class="n">_view_as_real</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ADOPT&quot;</span><span class="p">,</span> <span class="s2">&quot;adopt&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"ADOPT"</span><span class="p">,</span> <span class="s2">"adopt"</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="ADOPT">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.adopt.ADOPT">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ADOPT</span><span class="p">(</span><span class="n">Optimizer</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;ADOPT  Optimizer.</span>
+<span class="w">    </span><span class="sd">"""ADOPT  Optimizer.</span>
 
 <span class="sd">    ADOPT is an adaptive learning rate optimization algorithm that combines momentum-based</span>
 <span class="sd">    updates with adaptive per-parameter learning rates. It uses exponential moving averages</span>
@@ -271,7 +271,7 @@
 <span class="sd">        - For most use cases, the default hyperparameters work well</span>
 <span class="sd">        - Consider using decouple=True for better generalization (similar to AdamW)</span>
 <span class="sd">        - The clip_lambda function helps stabilize training in early steps</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -292,20 +292,20 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">foreach</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">capturable</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;lr as a Tensor is not supported for capturable=False and foreach=True&quot;</span>
+                    <span class="s2">"lr as a Tensor is not supported for capturable=False and foreach=True"</span>
                 <span class="p">)</span>
             <span class="k">if</span> <span class="n">lr</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tensor lr must be 1-element&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Tensor lr must be 1-element"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">lr</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid learning rate: </span><span class="si">{</span><span class="n">lr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid learning rate: </span><span class="si">{</span><span class="n">lr</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">eps</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid epsilon value: </span><span class="si">{</span><span class="n">eps</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid epsilon value: </span><span class="si">{</span><span class="n">eps</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">betas</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid beta parameter at index 0: </span><span class="si">{</span><span class="n">betas</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid beta parameter at index 0: </span><span class="si">{</span><span class="n">betas</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">betas</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mf">1.0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid beta parameter at index 1: </span><span class="si">{</span><span class="n">betas</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid beta parameter at index 1: </span><span class="si">{</span><span class="n">betas</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">weight_decay</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid weight_decay value: </span><span class="si">{</span><span class="n">weight_decay</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid weight_decay value: </span><span class="si">{</span><span class="n">weight_decay</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">clip_lambda</span> <span class="o">=</span> <span class="n">clip_lambda</span>
 
@@ -325,22 +325,22 @@
 
         <span class="k">if</span> <span class="n">fused</span><span class="p">:</span>
             <span class="c1"># TODO: support fused</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;`fused` is not currently supported&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"`fused` is not currently supported"</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">differentiable</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;`fused` does not support `differentiable`&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"`fused` does not support `differentiable`"</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_step_supports_amp_scaling</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="c1"># TODO(crcrpar): [low prec params &amp; their higher prec copy]</span>
             <span class="c1"># Support AMP with FP16/BF16 model params which would need</span>
             <span class="c1"># higher prec copy of params to do update math in higher prec to</span>
             <span class="c1"># alleviate the loss of information.</span>
             <span class="k">if</span> <span class="n">foreach</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;`fused` and `foreach` cannot be `True` together.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"`fused` and `foreach` cannot be `True` together."</span><span class="p">)</span>
 
 <div class="viewcode-block" id="ADOPT.__setstate__">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.adopt.ADOPT.__setstate__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Restore optimizer state from a checkpoint.</span>
+<span class="w">        </span><span class="sd">"""Restore optimizer state from a checkpoint.</span>
 
 <span class="sd">        This method handles backward compatibility when loading optimizer state from</span>
 <span class="sd">        older versions. It ensures all required fields are present with default values</span>
@@ -358,30 +358,30 @@
 <span class="sd">            - This enables loading checkpoints saved with older ADOPT versions</span>
 <span class="sd">            - Step counters are converted to appropriate device/dtype for compatibility</span>
 <span class="sd">            - Capturable and fused modes require step tensors on parameter devices</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__setstate__</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
 
         <span class="c1"># Set defaults for parameters that may not exist in older checkpoints</span>
         <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_groups</span><span class="p">:</span>
-            <span class="n">group</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;maximize&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-            <span class="n">group</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;foreach&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="n">group</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;capturable&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-            <span class="n">group</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;differentiable&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-            <span class="n">fused</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;fused&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">group</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"maximize"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="n">group</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"foreach"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">group</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"capturable"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="n">group</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"differentiable"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="n">fused</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"fused"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
             <span class="c1"># Convert old scalar step counters to tensor format</span>
-            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">group</span><span class="p">[</span><span class="s2">"params"</span><span class="p">]:</span>
                 <span class="n">p_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="p">[])</span>
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">p_state</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">p_state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]):</span>
-                    <span class="n">step_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">p_state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">p_state</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">p_state</span><span class="p">[</span><span class="s2">"step"</span><span class="p">]):</span>
+                    <span class="n">step_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">p_state</span><span class="p">[</span><span class="s2">"step"</span><span class="p">])</span>
                     <span class="c1"># Place step on parameter device if capturable/fused, else CPU</span>
-                    <span class="n">p_state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">p_state</span><span class="p">[</span><span class="s2">"step"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
                             <span class="n">step_val</span><span class="p">,</span>
                             <span class="n">dtype</span><span class="o">=</span><span class="n">_get_scalar_dtype</span><span class="p">(</span><span class="n">is_fused</span><span class="o">=</span><span class="n">fused</span><span class="p">),</span>
                             <span class="n">device</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
                         <span class="p">)</span>
-                        <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;capturable&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;fused&quot;</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">"capturable"</span><span class="p">]</span> <span class="ow">or</span> <span class="n">group</span><span class="p">[</span><span class="s2">"fused"</span><span class="p">]</span>
                         <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">step_val</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">_get_scalar_dtype</span><span class="p">())</span>
                     <span class="p">)</span></div>
 
@@ -395,7 +395,7 @@
         <span class="n">exp_avg_sqs</span><span class="p">,</span>
         <span class="n">state_steps</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize optimizer state for a parameter group.</span>
+<span class="w">        </span><span class="sd">"""Initialize optimizer state for a parameter group.</span>
 
 <span class="sd">        This method performs lazy state initialization for parameters that have gradients.</span>
 <span class="sd">        It sets up the exponential moving averages and step counters needed for the ADOPT</span>
@@ -435,70 +435,70 @@
 <span class="sd">              fused are False to avoid expensive CUDA kernel launches</span>
 <span class="sd">            - Complex parameters are internally represented as real tensors with an</span>
 <span class="sd">              extra dimension, requiring special view handling</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">has_complex</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">group</span><span class="p">[</span><span class="s2">"params"</span><span class="p">]:</span>
             <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">has_complex</span> <span class="o">|=</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_complex</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
                 <span class="n">params_with_grad</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="o">.</span><span class="n">is_sparse</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                        <span class="s2">&quot;ADOPT does not support sparse gradients&quot;</span>
+                        <span class="s2">"ADOPT does not support sparse gradients"</span>
                     <span class="p">)</span>
                 <span class="n">grads</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">grad</span><span class="p">)</span>
 
                 <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
                 <span class="c1"># Lazy state initialization</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;fused&quot;</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">"fused"</span><span class="p">]:</span>
                         <span class="n">_device_dtype_check_for_fused</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
                     <span class="c1"># note(crcrpar): [special device hosting for step]</span>
                     <span class="c1"># Deliberately host `step` on CPU if both capturable and fused are off.</span>
                     <span class="c1"># This is because kernel launches are costly on CUDA and XLA.</span>
-                    <span class="n">state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">state</span><span class="p">[</span><span class="s2">"step"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
                         <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
                             <span class="p">(),</span>
-                            <span class="n">dtype</span><span class="o">=</span><span class="n">_get_scalar_dtype</span><span class="p">(</span><span class="n">is_fused</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;fused&quot;</span><span class="p">]),</span>
+                            <span class="n">dtype</span><span class="o">=</span><span class="n">_get_scalar_dtype</span><span class="p">(</span><span class="n">is_fused</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">"fused"</span><span class="p">]),</span>
                             <span class="n">device</span><span class="o">=</span><span class="n">p</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
                         <span class="p">)</span>
-                        <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;capturable&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;fused&quot;</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">"capturable"</span><span class="p">]</span> <span class="ow">or</span> <span class="n">group</span><span class="p">[</span><span class="s2">"fused"</span><span class="p">]</span>
                         <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">_get_scalar_dtype</span><span class="p">())</span>
                     <span class="p">)</span>
                     <span class="c1"># Exponential moving average of gradient values</span>
-                    <span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span>
+                    <span class="n">state</span><span class="p">[</span><span class="s2">"exp_avg"</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span>
                         <span class="n">p</span><span class="p">,</span> <span class="n">memory_format</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">preserve_format</span>
                     <span class="p">)</span>
                     <span class="c1"># Exponential moving average of squared gradient values</span>
-                    <span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg_sq&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span>
+                    <span class="n">state</span><span class="p">[</span><span class="s2">"exp_avg_sq"</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span>
                         <span class="n">p</span><span class="p">,</span> <span class="n">memory_format</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">preserve_format</span>
                     <span class="p">)</span>
 
-                <span class="n">exp_avgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg&quot;</span><span class="p">])</span>
-                <span class="n">exp_avg_sqs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;exp_avg_sq&quot;</span><span class="p">])</span>
+                <span class="n">exp_avgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"exp_avg"</span><span class="p">])</span>
+                <span class="n">exp_avg_sqs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"exp_avg_sq"</span><span class="p">])</span>
 
-                <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;differentiable&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">group</span><span class="p">[</span><span class="s2">"differentiable"</span><span class="p">]</span> <span class="ow">and</span> <span class="n">state</span><span class="p">[</span><span class="s2">"step"</span><span class="p">]</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                        <span class="s2">&quot;`requires_grad` is not supported for `step` in differentiable mode&quot;</span>
+                        <span class="s2">"`requires_grad` is not supported for `step` in differentiable mode"</span>
                     <span class="p">)</span>
 
                 <span class="c1"># Foreach without capturable does not support a tensor lr</span>
                 <span class="k">if</span> <span class="p">(</span>
-                    <span class="n">group</span><span class="p">[</span><span class="s2">&quot;foreach&quot;</span><span class="p">]</span>
-                    <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;lr&quot;</span><span class="p">])</span>
-                    <span class="ow">and</span> <span class="ow">not</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;capturable&quot;</span><span class="p">]</span>
+                    <span class="n">group</span><span class="p">[</span><span class="s2">"foreach"</span><span class="p">]</span>
+                    <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="s2">"lr"</span><span class="p">])</span>
+                    <span class="ow">and</span> <span class="ow">not</span> <span class="n">group</span><span class="p">[</span><span class="s2">"capturable"</span><span class="p">]</span>
                 <span class="p">):</span>
                     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                        <span class="s2">&quot;lr as a Tensor is not supported for capturable=False and foreach=True&quot;</span>
+                        <span class="s2">"lr as a Tensor is not supported for capturable=False and foreach=True"</span>
                     <span class="p">)</span>
 
-                <span class="n">state_steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">])</span>
+                <span class="n">state_steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">"step"</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">has_complex</span>
 
 <div class="viewcode-block" id="ADOPT.step">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.adopt.ADOPT.step">[docs]</a>
     <span class="nd">@_use_grad_for_differentiable</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">closure</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform a single optimization step.</span>
+<span class="w">        </span><span class="sd">"""Perform a single optimization step.</span>
 
 <span class="sd">        This method executes one iteration of the ADOPT optimization algorithm across</span>
 <span class="sd">        all parameter groups. It orchestrates the following workflow:</span>
@@ -555,13 +555,13 @@
 <span class="sd">            - Call zero_grad() before computing gradients for the next step</span>
 <span class="sd">            - CUDA graph capture is checked for safety when capturable=True</span>
 <span class="sd">            - The method is thread-safe for different parameter groups</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># _accelerator_graph_capture_health_check was renamed to</span>
         <span class="c1"># _cuda_graph_capture_health_check in older PyTorch builds;</span>
         <span class="c1"># fall back gracefully so the optimizer works across versions.</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_accelerator_graph_capture_health_check&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_accelerator_graph_capture_health_check"</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_accelerator_graph_capture_health_check</span><span class="p">()</span>
-        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_cuda_graph_capture_health_check&quot;</span><span class="p">):</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_cuda_graph_capture_health_check"</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_cuda_graph_capture_health_check</span><span class="p">()</span>
 
         <span class="n">loss</span> <span class="o">=</span> <span class="kc">None</span>
@@ -575,7 +575,7 @@
             <span class="n">exp_avgs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">exp_avg_sqs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">state_steps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">beta1</span><span class="p">,</span> <span class="n">beta2</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s2">&quot;betas&quot;</span><span class="p">]</span>
+            <span class="n">beta1</span><span class="p">,</span> <span class="n">beta2</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s2">"betas"</span><span class="p">]</span>
 
             <span class="n">has_complex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_group</span><span class="p">(</span>
                 <span class="n">group</span><span class="p">,</span>
@@ -595,18 +595,18 @@
                 <span class="n">has_complex</span><span class="o">=</span><span class="n">has_complex</span><span class="p">,</span>
                 <span class="n">beta1</span><span class="o">=</span><span class="n">beta1</span><span class="p">,</span>
                 <span class="n">beta2</span><span class="o">=</span><span class="n">beta2</span><span class="p">,</span>
-                <span class="n">lr</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;lr&quot;</span><span class="p">],</span>
+                <span class="n">lr</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">"lr"</span><span class="p">],</span>
                 <span class="n">clip_lambda</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clip_lambda</span><span class="p">,</span>
-                <span class="n">weight_decay</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;weight_decay&quot;</span><span class="p">],</span>
-                <span class="n">decouple</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;decouple&quot;</span><span class="p">],</span>
-                <span class="n">eps</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;eps&quot;</span><span class="p">],</span>
-                <span class="n">maximize</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;maximize&quot;</span><span class="p">],</span>
-                <span class="n">foreach</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;foreach&quot;</span><span class="p">],</span>
-                <span class="n">capturable</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;capturable&quot;</span><span class="p">],</span>
-                <span class="n">differentiable</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;differentiable&quot;</span><span class="p">],</span>
-                <span class="n">fused</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">&quot;fused&quot;</span><span class="p">],</span>
-                <span class="n">grad_scale</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;grad_scale&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-                <span class="n">found_inf</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;found_inf&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                <span class="n">weight_decay</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">"weight_decay"</span><span class="p">],</span>
+                <span class="n">decouple</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">"decouple"</span><span class="p">],</span>
+                <span class="n">eps</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">"eps"</span><span class="p">],</span>
+                <span class="n">maximize</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">"maximize"</span><span class="p">],</span>
+                <span class="n">foreach</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">"foreach"</span><span class="p">],</span>
+                <span class="n">capturable</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">"capturable"</span><span class="p">],</span>
+                <span class="n">differentiable</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">"differentiable"</span><span class="p">],</span>
+                <span class="n">fused</span><span class="o">=</span><span class="n">group</span><span class="p">[</span><span class="s2">"fused"</span><span class="p">],</span>
+                <span class="n">grad_scale</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"grad_scale"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                <span class="n">found_inf</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"found_inf"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">loss</span></div>
@@ -635,9 +635,9 @@
     <span class="n">capturable</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">differentiable</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Single-tensor implementation of ADOPT optimization algorithm.</span>
+<span class="w">    </span><span class="sd">"""Single-tensor implementation of ADOPT optimization algorithm.</span>
 
-<span class="sd">    This function updates parameters one at a time using the ADOPT algorithm. It&#39;s the</span>
+<span class="sd">    This function updates parameters one at a time using the ADOPT algorithm. It's the</span>
 <span class="sd">    default implementation used when foreach=False, and is compatible with TorchScript</span>
 <span class="sd">    compilation (torch.jit.script).</span>
 
@@ -684,12 +684,12 @@
 <span class="sd">        - Compatible with torch.jit.script for potential speedups</span>
 <span class="sd">        - First step only updates second moment, not parameters (warmup)</span>
 <span class="sd">        - Complex parameters are internally handled as real tensors</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">assert</span> <span class="n">grad_scale</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">found_inf</span> <span class="ow">is</span> <span class="kc">None</span>
 
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="c1"># this assert is due to JIT being dumb and not realizing that the ops below</span>
-        <span class="c1"># have overloads to handle both float and Tensor lrs, so we just assert it&#39;s</span>
+        <span class="c1"># have overloads to handle both float and Tensor lrs, so we just assert it's</span>
         <span class="c1"># a float since most people using JIT are using floats</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
 
@@ -707,7 +707,7 @@
             <span class="k">assert</span> <span class="p">(</span>
                 <span class="n">param</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">step_t</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span>
                 <span class="ow">and</span> <span class="n">param</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="n">capturable_supported_devices</span>
-            <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;If capturable=True, params and state_steps must be on supported devices: </span><span class="si">{</span><span class="n">capturable_supported_devices</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">),</span> <span class="sa">f</span><span class="s2">"If capturable=True, params and state_steps must be on supported devices: </span><span class="si">{</span><span class="n">capturable_supported_devices</span><span class="si">}</span><span class="s2">."</span>
 
         <span class="c1"># Extract step value: keep as tensor for capturable/differentiable, else convert to scalar</span>
         <span class="n">step</span> <span class="o">=</span> <span class="n">step_t</span> <span class="k">if</span> <span class="n">capturable</span> <span class="ow">or</span> <span class="n">differentiable</span> <span class="k">else</span> <span class="n">_get_value</span><span class="p">(</span><span class="n">step_t</span><span class="p">)</span>
@@ -725,7 +725,7 @@
                 <span class="n">exp_avg_sq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_real</span><span class="p">(</span><span class="n">exp_avg_sq</span><span class="p">)</span>
             <span class="n">param</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">view_as_real</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
 
-        <span class="c1"># First step: Only initialize variance estimate, don&#39;t update parameters</span>
+        <span class="c1"># First step: Only initialize variance estimate, don't update parameters</span>
         <span class="c1"># This warmup step helps stabilize early training</span>
         <span class="k">if</span> <span class="n">step</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">exp_avg_sq</span><span class="o">.</span><span class="n">addcmul_</span><span class="p">(</span><span class="n">grad</span><span class="p">,</span> <span class="n">grad</span><span class="o">.</span><span class="n">conj</span><span class="p">())</span>  <span class="c1"># v_0 = g_0²</span>
@@ -786,9 +786,9 @@
     <span class="n">capturable</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">differentiable</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Multi-tensor (foreach) implementation of ADOPT optimization algorithm.</span>
+<span class="w">    </span><span class="sd">"""Multi-tensor (foreach) implementation of ADOPT optimization algorithm.</span>
 
-<span class="sd">    This function implements the ADOPT algorithm using PyTorch&#39;s foreach operations,</span>
+<span class="sd">    This function implements the ADOPT algorithm using PyTorch's foreach operations,</span>
 <span class="sd">    which batch multiple tensor operations together for better performance. This is</span>
 <span class="sd">    typically 2-3x faster than the single-tensor implementation on GPU.</span>
 
@@ -841,20 +841,20 @@
 
 <span class="sd">    Raises:</span>
 <span class="sd">        RuntimeError: If lr is a Tensor with capturable=False.</span>
-<span class="sd">        AssertionError: If differentiable=True (foreach ops don&#39;t support autograd).</span>
+<span class="sd">        AssertionError: If differentiable=True (foreach ops don't support autograd).</span>
 
 <span class="sd">    Note:</span>
 <span class="sd">        - Significantly faster than single-tensor on GPU (2-3x speedup typical)</span>
 <span class="sd">        - Not compatible with torch.jit.script</span>
 <span class="sd">        - Automatically falls back to slower path for CPU step counters</span>
 <span class="sd">        - Complex parameters require special view handling</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lr</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">capturable</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-            <span class="s2">&quot;lr as a Tensor is not supported for capturable=False and foreach=True&quot;</span>
+            <span class="s2">"lr as a Tensor is not supported for capturable=False and foreach=True"</span>
         <span class="p">)</span>
 
     <span class="c1"># If compiling, the compiler will handle cudagraph checks, see note [torch.compile x capturable]</span>
@@ -866,11 +866,11 @@
             <span class="n">p</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">step</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span>
             <span class="ow">and</span> <span class="n">p</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="n">capturable_supported_devices</span>
             <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">state_steps</span><span class="p">)</span>
-        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;If capturable=True, params and state_steps must be on supported devices: </span><span class="si">{</span><span class="n">capturable_supported_devices</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">"If capturable=True, params and state_steps must be on supported devices: </span><span class="si">{</span><span class="n">capturable_supported_devices</span><span class="si">}</span><span class="s2">."</span>
 
     <span class="k">assert</span> <span class="n">grad_scale</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">found_inf</span> <span class="ow">is</span> <span class="kc">None</span>
 
-    <span class="k">assert</span> <span class="ow">not</span> <span class="n">differentiable</span><span class="p">,</span> <span class="s2">&quot;_foreach ops don&#39;t support autograd&quot;</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">differentiable</span><span class="p">,</span> <span class="s2">"_foreach ops don't support autograd"</span>
 
     <span class="n">grouped_tensors</span> <span class="o">=</span> <span class="n">Optimizer</span><span class="o">.</span><span class="n">_group_tensors_by_device_and_dtype</span><span class="p">(</span>
         <span class="p">[</span><span class="n">params</span><span class="p">,</span> <span class="n">grads</span><span class="p">,</span> <span class="n">exp_avgs</span><span class="p">,</span> <span class="n">exp_avg_sqs</span><span class="p">,</span> <span class="n">state_steps</span><span class="p">]</span>  <span class="c1"># type: ignore[list-item]</span>
@@ -915,7 +915,7 @@
             <span class="c1"># wrapped it once now. The alpha is required to assure we go to the right overload.</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">compiler</span><span class="o">.</span><span class="n">is_compiling</span><span class="p">()</span> <span class="ow">and</span> <span class="n">device_state_steps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">is_cpu</span><span class="p">:</span>
                 <span class="n">torch</span><span class="o">.</span><span class="n">_foreach_add_</span><span class="p">(</span>
-                    <span class="n">device_state_steps</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span>
+                    <span class="n">device_state_steps</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">"cpu"</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">torch</span><span class="o">.</span><span class="n">_foreach_add_</span><span class="p">(</span><span class="n">device_state_steps</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -948,7 +948,7 @@
         <span class="c1"># wrapped it once now. The alpha is required to assure we go to the right overload.</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">compiler</span><span class="o">.</span><span class="n">is_compiling</span><span class="p">()</span> <span class="ow">and</span> <span class="n">device_state_steps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">is_cpu</span><span class="p">:</span>
             <span class="n">torch</span><span class="o">.</span><span class="n">_foreach_add_</span><span class="p">(</span>
-                <span class="n">device_state_steps</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span>
+                <span class="n">device_state_steps</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">"cpu"</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">torch</span><span class="o">.</span><span class="n">_foreach_add_</span><span class="p">(</span><span class="n">device_state_steps</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -982,7 +982,7 @@
     <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">maximize</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Functional API that performs ADOPT algorithm computation.</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""Functional API that performs ADOPT algorithm computation.</span>
 
 <span class="sd">    This is the main functional interface for the ADOPT optimization algorithm. It</span>
 <span class="sd">    dispatches to one of three implementations based on the execution mode:</span>
@@ -1098,13 +1098,13 @@
 <span class="sd">        - For distributed training, this API is compatible with torch/distributed/optim</span>
 <span class="sd">        - The foreach mode is generally preferred for GPU training</span>
 <span class="sd">        - Complex parameters are handled transparently by viewing as real</span>
-<span class="sd">        - First optimization step only initializes variance, doesn&#39;t update parameters</span>
+<span class="sd">        - First optimization step only initializes variance, doesn't update parameters</span>
 
 <span class="sd">    See Also:</span>
 <span class="sd">        - ADOPT class: High-level optimizer interface</span>
 <span class="sd">        - _single_tensor_adopt: Single-tensor implementation details</span>
 <span class="sd">        - _multi_tensor_adopt: Multi-tensor implementation details</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Respect when the user inputs False/True for foreach or fused. We only want to change</span>
     <span class="c1"># the default when neither have been user-specified. Note that we default to foreach</span>
     <span class="c1"># and pass False to use_fused. This is not a mistake--we want to give the fused impl</span>
@@ -1122,18 +1122,18 @@
         <span class="n">foreach</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="c1"># this check is slow during compilation, so we skip it</span>
-    <span class="c1"># if it&#39;s strictly needed we can add this check back in dynamo</span>
+    <span class="c1"># if it's strictly needed we can add this check back in dynamo</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">compiler</span><span class="o">.</span><span class="n">is_compiling</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
         <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">state_steps</span>
     <span class="p">):</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-            <span class="s2">&quot;API has changed, `state_steps` argument must contain a list of singleton tensors&quot;</span>
+            <span class="s2">"API has changed, `state_steps` argument must contain a list of singleton tensors"</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">foreach</span> <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;torch.jit.script not supported with foreach optimizers&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"torch.jit.script not supported with foreach optimizers"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">fused</span> <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;torch.jit.script not supported with fused optimizers&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"torch.jit.script not supported with fused optimizers"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">fused</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">():</span>
         <span class="n">func</span> <span class="o">=</span> <span class="n">_fused_adopt</span> <span class="c1"># noqa: F821</span>

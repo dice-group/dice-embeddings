@@ -226,24 +226,24 @@
 <span class="c1"># Tier 1: Strict enforcement</span>
 <span class="k">[[tool.mypy.overrides]]</span>
 <span class="n">module</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-<span class="w">  </span><span class="s2">&quot;dicee.knowledge_graph_embeddings&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="s2">&quot;dicee.config&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="s2">&quot;dicee.executer&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">"dicee.knowledge_graph_embeddings"</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">"dicee.config"</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">"dicee.executer"</span><span class="p">,</span>
 <span class="p">]</span>
 <span class="n">disallow_untyped_defs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="w">        </span><span class="c1"># Functions must be typed</span>
 
 <span class="c1"># Tier 2: Relaxed for now (warnings only)</span>
 <span class="k">[[tool.mypy.overrides]]</span>
 <span class="n">module</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-<span class="w">  </span><span class="s2">&quot;dicee.trainer.*&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="s2">&quot;dicee.models.*&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">"dicee.trainer.*"</span><span class="p">,</span>
+<span class="w">  </span><span class="s2">"dicee.models.*"</span><span class="p">,</span>
 <span class="p">]</span>
 <span class="n">disallow_untyped_defs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="w">       </span><span class="c1"># Warnings but not required</span>
 <span class="n">warn_return_any</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
 
 <span class="c1"># Tier 3: Scripts (pass for now)</span>
 <span class="k">[[tool.mypy.overrides]]</span>
-<span class="n">module</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;dicee.scripts.*&quot;</span>
+<span class="n">module</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"dicee.scripts.*"</span>
 <span class="n">ignore_errors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="w">               </span><span class="c1"># Revisit later</span>
 </pre></div>
 </div>
@@ -252,7 +252,7 @@
 <section id="file-tracker">
 <h2>File Tracker<a class="headerlink" href="#file-tracker" title="Link to this heading"></a></h2>
 <p>Run this to see current state:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mypy<span class="w"> </span>dicee/<span class="w"> </span>--config-file<span class="o">=</span>pyproject.toml<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s2">&quot;error:&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span><span class="p">|</span><span class="w"> </span>uniq<span class="w"> </span>-c<span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-rn
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mypy<span class="w"> </span>dicee/<span class="w"> </span>--config-file<span class="o">=</span>pyproject.toml<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="s2">"error:"</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span><span class="p">|</span><span class="w"> </span>uniq<span class="w"> </span>-c<span class="w"> </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-rn
 </pre></div>
 </div>
 </section>
