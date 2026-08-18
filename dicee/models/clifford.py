@@ -862,8 +862,6 @@ class DeCaL(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'DeCaL'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.p = self.args.get("p", 0)
         self.q = self.args.get("q", 0)
         self.r = self.args.get("r", 0)

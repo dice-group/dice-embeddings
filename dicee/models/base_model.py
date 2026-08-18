@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import lightning as pl
 import numpy as np
@@ -257,14 +257,45 @@ class BaseKGE(BaseKGELightning):
         elif self.byte_pair_encoding and self.args['model'] == "BytE":
             """ Transformer implements token embeddings"""
         else:
-            if self.defer_large_embeddings:
-                self.entity_embeddings = None
-                self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-                self.param_init(self.relation_embeddings.weight.data)
-            else:
-                self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-                self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-                self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+            self.init_entity_embeddings()
+            self.init_relation_embeddings()
+
+    def init_entity_embeddings(self, embedding_dim: Optional[int] = None) -> None:
+        """Create (or re-create) the entity embedding table.
+
+        This is the single place that honours :attr:`defer_large_embeddings`:
+        when entity rows are sharded across FSDP ranks the table must stay
+        ``None`` until the trainer allocates the sharded adapter.  Subclasses
+        that need an entity table of a non-default width must call this method
+        instead of assigning ``self.entity_embeddings`` directly, so the
+        deferral is never silently undone.
+
+        Parameters
+        ----------
+        embedding_dim : Optional[int]
+            Width of the table.  Defaults to :attr:`embedding_dim`.
+        """
+        if self.defer_large_embeddings:
+            self.entity_embeddings = None
+            return
+        dim = self.embedding_dim if embedding_dim is None else embedding_dim
+        self.entity_embeddings = torch.nn.Embedding(self.num_entities, dim)
+        self.param_init(self.entity_embeddings.weight.data)
+
+    def init_relation_embeddings(self, embedding_dim: Optional[int] = None) -> None:
+        """Create (or re-create) the relation embedding table.
+
+        Relation tables are never deferred - they are small enough to be
+        replicated on every rank.
+
+        Parameters
+        ----------
+        embedding_dim : Optional[int]
+            Width of the table.  Defaults to :attr:`embedding_dim`.
+        """
+        dim = self.embedding_dim if embedding_dim is None else embedding_dim
+        self.relation_embeddings = torch.nn.Embedding(self.num_relations, dim)
+        self.param_init(self.relation_embeddings.weight.data)
 
     def forward_byte_pair_encoded_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
         """KvsAll scoring for BPE-encoded head entities and relations.
