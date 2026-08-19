@@ -24,7 +24,7 @@ import torch
 import torch.distributed as dist
 from lightning.pytorch.utilities.rank_zero import rank_zero_only
 
-from .models import AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ, DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, MuRE, OMult, Pyke, QMult, RotatE, Shallom, TransE, TransH
+from .models import AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ, DeCaL, DistMult, DualE, FullDeCaL, Keci, KeciTransformer, LFMult, MuRE, OMult, Pyke, QMult, RotatE, Shallom, TransE, TransH
 from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
 from .models.fsdp_models import FSDPShardedEntityModel, create_fsdp_sharded_model_class
@@ -57,6 +57,7 @@ MODEL_REGISTRY: Dict[str, Tuple[Type, str]] = {
     'BytE': (BytE, 'EntityPrediction'),
     'LFMult': (LFMult, 'EntityPrediction'),
     'DeCaL': (DeCaL, 'EntityPrediction'),
+    'FullDeCaL': (FullDeCaL, 'EntityPrediction'),
     'DualE': (DualE, 'EntityPrediction'),
     'CoKE': (CoKE, 'EntityPrediction'),
 }
@@ -698,7 +699,10 @@ def _legacy_intialize_model(args: dict, verbose: int = 0) -> Tuple[object, str]:
         model = LFMult(args=args)
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'DeCaL':
-        model =DeCaL(args=args)
+        model = DeCaL(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'FullDeCaL':
+        model = FullDeCaL(args=args)
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'DualE':
         model =DualE(args=args)

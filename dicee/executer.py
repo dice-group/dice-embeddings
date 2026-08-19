@@ -277,6 +277,10 @@ class Execute:
         logger.info('*** Save Trained Model ***')
         self.trained_model.eval()
         self.trained_model.to('cpu')
+        # If the model has a learned Clifford signature (FullDeCaL auto mode),
+        # always print it here so the user sees it regardless of --eval_model.
+        if hasattr(self.trained_model, 'learned_signature') and getattr(self.trained_model, '_auto', False):
+            self.trained_model.learned_signature()
         # Save the epoch loss
         # (2) Store NumParam and EstimatedSizeMB
         self.report.update(self.trained_model.mem_of_model())

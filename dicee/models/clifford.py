@@ -1372,3 +1372,316 @@ class DeCaL(BaseKGE):
         sigma_qr = torch.einsum('nrq,nrk->nrqk', hq, rk) - torch.einsum('nrk,nrq->nrqk', hk, rq)
         assert sigma_qr.shape[1:] == (self.re, self.q, self.r)
         return sigma_qr
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  FullDeCaL – Full Clifford Knowledge Graph Embedding
+#
+#  Two modes controlled by  --auto_signature:
+#
+#  FIXED MODE  (default, --auto_signature not set)
+#  ------------------------------------------------
+#  User provides --p / --q / --r.  The signature η is fixed to
+#      +1  (first p generators),  −1  (next q),  0  (last r).
+#  The coefficient table is precomputed once at __init__ as a frozen buffer
+#  → zero overhead per forward pass.
+#  Use this when you already know the right algebra for your dataset.
+#
+#  AUTO MODE  (--auto_signature)
+#  ------------------------------
+#  User provides only --embedding_dim.  n is derived automatically as
+#      n = floor(log2(embedding_dim) / 2)
+#  giving a balanced split between number of blades (d=2^n) and per-blade
+#  width (re = embedding_dim // d).  Examples:
+#      dim=64  → n=3, d=8,  re=8
+#      dim=128 → n=3, d=8,  re=16
+#      dim=256 → n=4, d=16, re=16
+#  η_1…η_n are free nn.Parameters initialized randomly to ±1 + small noise,
+#  so that gradients are non-zero from the start and convergence is
+#  dataset-dependent.  The coefficient table is rebuilt each forward pass
+#  (fully differentiable).  After training, `model.learned_signature()`
+#  reveals which Cl_{p,q,r} the model converged to — no search needed.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _build_sign_table(n: int):
+    """
+    Precompute the reordering-sign table σ(I,J) and structural index tables
+    for the n-generator Clifford algebra (2^n blades, bitmask ordering).
+
+    Returns
+    -------
+    sign_table        : FloatTensor (d, d)  – σ(I,J) ∈ {+1, −1}
+    K_table           : LongTensor  (d, d)  – output blade  K = I △ J
+    intersection_table: LongTensor  (d, d)  – I ∩ J  (bitmask)
+    bits              : FloatTensor (d, n)  – bits[K, k] = (K >> k) & 1
+    """
+    d = 1 << n
+    sign_table         = torch.zeros(d, d, dtype=torch.float32)
+    K_table            = torch.zeros(d, d, dtype=torch.long)
+    intersection_table = torch.zeros(d, d, dtype=torch.long)
+
+    for I in range(d):
+        for J in range(d):
+            swaps = 0
+            for i in range(n):
+                if I & (1 << i):
+                    swaps += bin(J & ((1 << i) - 1)).count('1')
+            sign_table[I, J]         = -1.0 if swaps % 2 else 1.0
+            K_table[I, J]            = I ^ J
+            intersection_table[I, J] = I & J
+
+    idx  = torch.arange(d, dtype=torch.long)
+    bits = ((idx.unsqueeze(1) >> torch.arange(n, dtype=torch.long).unsqueeze(0)) & 1).float()
+    return sign_table, K_table, intersection_table, bits
+
+
+def _auto_n_from_dim(embedding_dim: int) -> int:
+    """Derive n for FullDeCaL auto mode from embedding_dim.
+
+    Uses n = floor(log2(embedding_dim) / 2) as a balanced default, then
+    decrements until 2^n divides embedding_dim.
+    """
+    import math
+    n = max(1, int(math.log2(embedding_dim)) // 2)
+    while embedding_dim % (1 << n) != 0:
+        n -= 1
+    return n
+
+
+class FullDeCaL(BaseKGE):
+    """Full Clifford KGE – fixed or auto Clifford signature.
+
+    Scoring function
+    ----------------
+        f(h, r, t) = Σ_{I,J}  h_I r_J  σ(I,J)  [∏_{k∈I∩J} η_k]  t_{I△J}
+
+    Two modes
+    ---------
+    **Fixed mode** (default)::
+
+        dicee ... --model FullDeCaL --p 1 --q 1 --r 0 --embedding_dim 64
+
+        Signature η is frozen from (p,q,r).  Coefficient table precomputed
+        once at init → fastest possible forward pass.
+
+    **Auto mode**::
+
+        dicee ... --model FullDeCaL --auto_signature --embedding_dim 64
+
+        Only embedding_dim is needed.  n is derived automatically
+        (e.g. dim=64 → n=3, d=8, re=8).  η_1…η_n are free nn.Parameters
+        initialized randomly to ±1 + small noise, so gradients are
+        non-zero from the first step and the model finds the geometry
+        that best fits the dataset.
+
+    Embedding layout
+    ----------------
+    embedding_dim = 2^n · re.  Embeddings are split into 2^n blocks of size
+    re, one per blade in bitmask order (0=scalar, 1=e₁, 2=e₂, 3=e₁₂, …).
+    """
+
+    def __init__(self, args: dict):
+        super().__init__(args)
+        self.name = 'FullDeCaL'
+
+        self._auto = bool(self.args.get('auto_signature', False))
+
+        if self._auto:
+            # ── Auto mode ────────────────────────────────────────────────
+            # Parameterize via η_k = tanh(η_raw_k) ∈ (-1, 1), one value per
+            # generator.  α_K = ∏_{k∈K} η_k is computed in _coeff_table();
+            # α[∅] = 1 is automatic (empty product).
+            #
+            # Initialization: η_raw = ±2  →  tanh(±2) ≈ ±0.96.
+            # This forces the model to commit early: a generator either
+            # stays near ±1 (positive/negative type) or decays toward 0
+            # (null type).  A large magnitude init ensures the initial
+            # coefficient table is non-trivially structured.
+            n = _auto_n_from_dim(self.embedding_dim)
+            self.p, self.q, self.r = 0, 0, n   # bookkeeping only
+            eta_raw_init = torch.randint(0, 2, (n,)).float() * 4.0 - 2.0  # ±2
+        else:
+            self.p = int(self.args.get('p', 1))
+            self.q = int(self.args.get('q', 1))
+            self.r = int(self.args.get('r', 0))
+            n = self.p + self.q + self.r
+            eta_init = torch.tensor(
+                [1.0] * self.p + [-1.0] * self.q + [0.0] * self.r,
+                dtype=torch.float32,
+            )
+
+        d = 1 << n #(d = 2^n = number of blades in Cl_{p,q,r})
+        assert self.embedding_dim % d == 0, (
+            f"FullDeCaL requires embedding_dim ({self.embedding_dim}) "
+            f"divisible by 2^n = 2^{n} = {d}."
+        )
+        self.n  = n
+        self.d  = d
+        self.re = self.embedding_dim // d
+
+        self.entity_embeddings   = torch.nn.Embedding(self.num_entities,  self.embedding_dim)
+        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
+
+        # ── Structural buffers (always fixed, device-portable) ───────────
+        sign_table, K_table, intersection_table, bits = _build_sign_table(n)
+        self.register_buffer('_sign_table',         sign_table)          # (d,d)
+        self.register_buffer('_K_table',            K_table)             # (d,d)
+        self.register_buffer('_intersection_table', intersection_table)  # (d,d)
+        self.register_buffer('_bits',               bits)                # (d,n)
+
+        if self._auto:
+            # Learned: η_k = tanh(η_raw_k) for each of the n generators.
+            # α_K = ∏_{k∈K} η_k built in _coeff_table(); α[∅]=1 by construction.
+            self.eta_raw = torch.nn.Parameter(eta_raw_init)   # (n,)
+        else:
+            # Fixed: precompute the coefficient table once as a frozen buffer
+            eta_blade = (bits * eta_init + (1.0 - bits)).prod(dim=1)  # (d,)
+            coeff = sign_table * eta_blade[intersection_table]         # (d,d)
+            self.register_buffer('_coeff_fixed', coeff)
+
+        mode_str = (
+            f"auto (n={n}, d={d}, re={self.re}, η[{n}] learned via tanh)"
+            if self._auto else
+            f"fixed (p={self.p}, q={self.q}, r={self.r})"
+        )
+        logger.info(f"FullDeCaL mode: {mode_str}  |  embedding_dim={self.embedding_dim}")
+
+    # ------------------------------------------------------------------ #
+    #  Coefficient table (auto: differentiable; fixed: cached buffer)     #
+    # ------------------------------------------------------------------ #
+
+    def _coeff_table(self) -> torch.Tensor:
+        if self._auto:
+            # η_k = tanh(η_raw_k) ∈ (-1, 1)
+            eta = torch.tanh(self.eta_raw)   # (n,)
+            # α_K = ∏_{k∈K} η_k  via bit-mask product:
+            #   bits[K, k] = 1 if generator k is in blade K, else 0
+            #   eta_or_1[K, k] = η_k if k ∈ K, else 1
+            #   α[K] = ∏_k eta_or_1[K, k]
+            eta_or_1 = 1.0 - self._bits + self._bits * eta.unsqueeze(0)  # (d, n)
+            alpha    = eta_or_1.prod(dim=1)                               # (d,)
+            # coeff[I,J] = σ(I,J) · α[I∩J]
+            return self._sign_table * alpha[self._intersection_table]
+        else:
+            return self._coeff_fixed  # precomputed frozen buffer
+
+    # ------------------------------------------------------------------ #
+    #  Internal helpers                                                   #
+    # ------------------------------------------------------------------ #
+
+    def _split(self, emb: torch.Tensor) -> torch.Tensor:
+        """(B, d·re)  →  (B, d, re)"""
+        return emb.view(emb.size(0), self.d, self.re)
+
+    def _geo_product(self, h: torch.Tensor, r: torch.Tensor) -> torch.Tensor:
+        """Batched geometric product z = h ⊛ r.  Returns (B, d, re)."""
+        B     = h.size(0)
+        d, re = self.d, self.re
+        coeff = self._coeff_table()   # (d, d)
+
+        hr = (torch.einsum('bie,bje->bije', h, r)
+              * coeff.unsqueeze(0).unsqueeze(-1))   # (B, d, d, re)
+
+        z       = torch.zeros(B, d, re, device=h.device, dtype=h.dtype)
+        K_flat  = self._K_table.reshape(-1)
+        hr_flat = hr.reshape(B, d * d, re)
+        z.scatter_add_(
+            1,
+            K_flat.unsqueeze(0).unsqueeze(-1).expand(B, -1, re),
+            hr_flat,
+        )
+        return z
+
+    # ------------------------------------------------------------------ #
+    #  KvsAll  –  (B, 2) → (B, |E|)                                      #
+    # ------------------------------------------------------------------ #
+
+    def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        h = self._split(head_ent_emb)
+        r = self._split(rel_ent_emb)
+        z = self._geo_product(h, r)
+        T = self._split(self.entity_embeddings.weight)
+        return torch.einsum('bkr,ekr->be', z, T)
+
+    # ------------------------------------------------------------------ #
+    #  NegSample  –  (B, 3) → (B,)                                       #
+    # ------------------------------------------------------------------ #
+
+    def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
+        h = self._split(head_ent_emb)
+        r = self._split(rel_ent_emb)
+        t = self._split(tail_ent_emb)
+        z = self._geo_product(h, r)
+        return torch.einsum('bkr,bkr->b', z, t)
+
+    def learned_signature(self) -> dict:
+        """Return the learned geometry for auto mode, or fixed spec for fixed mode.
+
+        In auto mode, reports the learned α values (one per intersection-bitmask
+        subset K) and estimates the best-fit Clifford signature by reading off
+        η_k = α[{k}] (the singleton-subset coefficients, which equal η_k in any
+        true Clifford algebra).
+
+        Logs a human-readable summary.
+        """
+        if not self._auto:
+            info = {
+                'mode': 'fixed',
+                'p': self.p, 'q': self.q, 'r': self.r,
+                'n': self.n, 'd': self.d, 're': self.re,
+            }
+            logger.info(
+                f'FullDeCaL fixed signature: Cl_{{{self.p},{self.q},{self.r}}}  '
+                f'(n={self.n}, d={self.d}, re={self.re})'
+            )
+            return info
+
+        eta_raw = self.eta_raw.detach().cpu()
+        eta = torch.tanh(eta_raw).tolist()
+
+        # Reconstruct full alpha vector for logging
+        eta_t   = torch.tanh(eta_raw)           # (n,)
+        bits    = self._bits.cpu()              # (d, n)
+        eta_or_1 = 1.0 - bits + bits * eta_t.unsqueeze(0)  # (d, n)
+        alpha   = eta_or_1.prod(dim=1).tolist()             # (d,)
+
+        # Classify generators by sign; null if |\u03b7_k| < 0.15
+        threshold = 0.15
+        p = sum(1 for v in eta if v >  threshold)
+        q = sum(1 for v in eta if v < -threshold)
+        r = self.n - p - q
+
+        # Format \u03b1 values grouped by grade
+        grade_strs = []
+        for K in range(self.d):
+            bits_set = bin(K).count('1')
+            v = alpha[K]
+            grade_strs.append(f'  \u03b1[{K:0{self.n}b}] (grade {bits_set}) = {v:+.4f}')
+
+        eta_labels = []
+        for v in eta:
+            if   v >  threshold: eta_labels.append(f'{v:+.4f}(+)')
+            elif v < -threshold: eta_labels.append(f'{v:+.4f}(-)')
+            else:                eta_labels.append(f'{v:+.4f}(~0)')
+
+        logger.info(
+            f'FullDeCaL learned geometry (n={self.n}, d={self.d}, re={self.re}):\n'
+            f'  Learned η (tanh-bounded generator signatures):\n'
+            + '\n'.join(f'  η[{k+1}] = {v:+.4f}  (raw={float(eta_raw[k]):+.4f})' for k, v in enumerate(eta))
+            + '\n'
+            f'  Derived α (blade intersection coefficients):\n'
+            + '\n'.join(grade_strs) + '\n'
+            f'  Best-fit η = [{", ".join(eta_labels)}]\n'
+            f'  Best-fit algebra: Cl_{{{p},{q},{r}}}  '
+            f'(p={p} positive, q={q} negative, r={r} null)'
+        )
+        return {
+            'mode':       'auto',
+            'eta':        eta,
+            'eta_raw':    eta_raw.tolist(),
+            'alpha':      alpha,
+            'inferred_p': p, 'inferred_q': q, 'inferred_r': r,
+            'n': self.n, 'd': self.d, 're': self.re,
+        }

@@ -135,6 +135,13 @@ class Namespace(argparse.Namespace):
         self.q: int = 1
         "Q parameter of Clifford Embeddings"
 
+        self.auto_signature: bool = False
+        """FullDeCaL auto-mode: learn the Clifford signature η end-to-end.
+        When True, --p / --q / --r are ignored. n is derived automatically
+        from embedding_dim as floor(log2(embedding_dim) / 2), giving a
+        balanced split between number of blades (d=2^n) and per-blade width.
+        The model discovers which Cl_{p,q,r} best fits the dataset."""
+
         self.input_dropout_rate: float = 0.0
         """Dropout rate on embeddings of input triples"""
 

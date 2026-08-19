@@ -39,11 +39,11 @@ def get_default_arguments(description=None):
                         default="Keci",
                         choices=["ComplEx", "Keci", "KeciTransformer", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "MuRE", "TransH", "RotatE", "DualE",
-                                 "BytE", "CoKE",
+                                 "BytE", "CoKE", 
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
                                  "Pykeen_TransE", "Pykeen_TransF", "Pykeen_TransH",
-                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx","LFMult", "DeCaL"],
+                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx","LFMult", "DeCaL", "FullDeCaL"],
                         help="Available knowledge graph embedding models. "
                              "To use other knowledge graph embedding models available in python, e.g.,"
                              "**Pykeen_BoxE** and add this into choices")
@@ -99,9 +99,15 @@ def get_default_arguments(description=None):
                         help='Logging verbosity. Dataset info, timing, and checkpoint messages are '
                              'logged at INFO; set to WARNING or higher to silence them.')
     parser.add_argument('--p', type=int, default=0,
-                        help='P for Clifford Algebra')
+                        help='P for Clifford Algebra (FullDeCaL fixed mode)')
     parser.add_argument('--q', type=int, default=1,
-                        help='Q for Clifford Algebra')
+                        help='Q for Clifford Algebra (FullDeCaL fixed mode)')
+    parser.add_argument('--auto_signature', action='store_true', default=False,
+                        help='FullDeCaL auto mode: learn the Clifford signature η end-to-end. '
+                             'When set, --p/--q/--r are ignored. n is derived automatically '
+                             'from embedding_dim as floor(log2(embedding_dim)/2), giving a '
+                             'balanced split between number of blades and per-blade width. '
+                             'The model discovers which Cl_{p,q,r} best fits the dataset.')
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
     parser.add_argument("--pl_trainer_kwargs",type=json.loads, default={},
         help='Additional PyTorch Lightning Trainer keyword arguments as JSON. '

@@ -677,6 +677,10 @@ class Evaluator:
         else:
             raise ValueError(f'Invalid scoring technique: {self.args.scoring_technique}')
 
+        # Persist learned Clifford signature in eval_report when available
+        if hasattr(trained_model, '_auto') and trained_model._auto and hasattr(trained_model, 'alpha'):
+            self.report['learned_signature'] = trained_model.eta_raw.detach().cpu().tolist()
+
         report_path = os.path.join(self.args.full_storage_path, 'eval_report.json')
         with open(report_path, 'w') as f:
             json.dump(self.report, f, indent=4)
