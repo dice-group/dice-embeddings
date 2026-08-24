@@ -8,6 +8,7 @@ Covers:
   at the configured interval
 """
 
+import logging
 import os
 import tempfile
 import types
@@ -91,17 +92,17 @@ class TestAccumulateEpochLossCallback:
 
 class TestPrintCallback:
 
-    def test_on_fit_start_runs_without_error(self, capsys):
+    def test_on_fit_start_runs_without_error(self, caplog):
         cb = PrintCallback()
-        cb.on_fit_start(trainer=_make_trainer(), pl_module=types.SimpleNamespace())
-        captured = capsys.readouterr()
-        assert "Training is starting" in captured.out
+        with caplog.at_level(logging.INFO, logger="dicee.callbacks"):
+            cb.on_fit_start(trainer=_make_trainer(), pl_module=types.SimpleNamespace())
+        assert "Training is starting" in caplog.text
 
-    def test_on_fit_end_prints_runtime(self, capsys):
+    def test_on_fit_end_prints_runtime(self, caplog):
         cb = PrintCallback()
-        cb.on_fit_end(trainer=_make_trainer(), pl_module=types.SimpleNamespace())
-        captured = capsys.readouterr()
-        assert "Training Runtime" in captured.out
+        with caplog.at_level(logging.INFO, logger="dicee.callbacks"):
+            cb.on_fit_end(trainer=_make_trainer(), pl_module=types.SimpleNamespace())
+        assert "Training Runtime" in caplog.text
 
     def test_on_train_batch_end_returns_none(self):
         cb = PrintCallback()

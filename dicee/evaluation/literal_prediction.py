@@ -4,10 +4,13 @@ This module provides functions for evaluating literal/attribute prediction
 performance of knowledge graph embedding models.
 """
 
+import logging
 import os
 from typing import Optional
 
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 def evaluate_literal_prediction(
@@ -87,7 +90,7 @@ def evaluate_literal_prediction(
         prediction_df = test_df[["head", "attribute", "predictions"]]
         prediction_path = os.path.join(kge_model.path, "lit_predictions.csv")
         prediction_df.to_csv(prediction_path, index=False)
-        print(f"Literal predictions saved to {prediction_path}")
+        logger.info(f"Literal predictions saved to {prediction_path}")
     try:
         from sklearn.metrics import mean_absolute_error, root_mean_squared_error
     except ImportError:
@@ -107,12 +110,12 @@ def evaluate_literal_prediction(
         ).reset_index()
 
         pd.options.display.float_format = "{:.6f}".format
-        print("Literal-Prediction evaluation results on Test Set")
-        print(attr_error_metrics)
+        logger.info("Literal-Prediction evaluation results on Test Set")
+        logger.info(attr_error_metrics)
 
         results_path = os.path.join(kge_model.path, "lit_eval_results.csv")
         attr_error_metrics.to_csv(results_path, index=False)
-        print(f"Literal-Prediction evaluation results saved to {results_path}")
+        logger.info(f"Literal-Prediction evaluation results saved to {results_path}")
 
         if return_attr_error_metrics:
             return attr_error_metrics

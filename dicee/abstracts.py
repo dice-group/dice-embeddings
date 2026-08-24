@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 import random
 from abc import ABC
@@ -15,6 +16,8 @@ from tqdm import tqdm
 from .dataset_classes import LiteralDataset, TriplePredictionDataset
 from .models.literal import LiteralEmbeddings
 from .static_funcs import download_pretrained_model, load_json, load_model, load_model_ensemble, save_checkpoint_model
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractTrainer:
@@ -407,7 +410,7 @@ class BaseInteractiveKGE:
         assert isinstance(entity_name, str) and isinstance(embeddings, torch.FloatTensor)
 
         if entity_name in self.entity_to_idx:
-            print(f'Entity ({entity_name}) exists..')
+            logger.info(f'Entity ({entity_name}) exists..')
         else:
             self.entity_to_idx[entity_name] = len(self.entity_to_idx)
             self.idx_to_entity[self.entity_to_idx[entity_name]] = entity_name
@@ -704,7 +707,7 @@ class AbstractPPECallback(AbstractCallback):
             param_ensemble = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device("cpu"))
             model.load_state_dict(param_ensemble)
         else:
-            print(f"No parameter ensemble found at {self.path}/trainer_checkpoint_main.pt")
+            logger.warning(f"No parameter ensemble found at {self.path}/trainer_checkpoint_main.pt")
 
     def store_ensemble(self, param_ensemble) -> None:
         # (3) Save the updated parameter ensemble model.
@@ -730,13 +733,13 @@ class BaseInteractiveTrainKGE:
         self.set_model_train_mode()
         if optimizer is None:
             optimizer = optim.Adam(self.model.parameters(), lr=0.1)
-        print('Iteration starts...')
+        logger.info('Iteration starts...')
         # (4) Train.
         for epoch in range(iteration):
             optimizer.zero_grad()
             outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
-            print(f"Iteration:{epoch}\t Loss:{loss.item()}\t Outputs:{outputs.detach().mean()}")
+            logger.info(f"Iteration:{epoch}\t Loss:{loss.item()}\t Outputs:{outputs.detach().mean()}")
             loss.backward()
             optimizer.step()
         # (5) Eval
@@ -745,7 +748,7 @@ class BaseInteractiveTrainKGE:
             x = x.to(self.model.device)
             outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
-            print(f"Eval Mode:\tLoss:{loss.item()}")
+            logger.info(f"Eval Mode:\tLoss:{loss.item()}")
 
     def train_k_vs_all(self, h, r, iteration=1, lr=.001):
         """
@@ -767,19 +770,19 @@ class BaseInteractiveTrainKGE:
         # (3) Initialize optimizer # SGD considerably faster than ADAM.
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=.00001)
 
-        print('\nIteration starts.')
+        logger.info('Iteration starts.')
         # (3) Iterative training.
         for epoch in range(iteration):
             optimizer.zero_grad()
             outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
             if len(idx_tails) > 0:
-                print(
+                logger.info(
                     f"Iteration:{epoch}\t"
                     f"Loss:{loss.item()}\t"
                     f"Avg. Logits for correct tails: {outputs[0, idx_tails].flatten().mean().detach()}")
             else:
-                print(
+                logger.info(
                     f"Iteration:{epoch}\t"
                     f"Loss:{loss.item()}\t"
                     f"Avg. Logits for all negatives: {outputs[0].flatten().mean().detach()}")
@@ -787,25 +790,25 @@ class BaseInteractiveTrainKGE:
             loss.backward()
             optimizer.step()
             if loss.item() < .00001:
-                print(f'loss is {loss.item():.3f}. Converged !!!')
+                logger.info(f'loss is {loss.item():.3f}. Converged !!!')
                 break
         # (4) Eval mode
         self.set_model_eval_mode()
         with torch.no_grad():
             outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
-        print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}\n")
+        logger.info(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}")
 
     def train(self, kg, lr=.1, epoch=10, batch_size=32, neg_sample_ratio=10, num_workers=1) -> None:
         """ Retrained a pretrain model on an input KG via negative sampling."""
         # (1) Create Negative Sampling Setting for training
-        print('Creating Dataset...')
+        logger.info('Creating Dataset...')
         train_set = TriplePredictionDataset(kg.train_set,
                                             num_entities=len(kg.entity_to_idx),
                                             num_relations=len(kg.relation_to_idx),
                                             neg_sample_ratio=neg_sample_ratio)
         num_data_point = len(train_set)
-        print('Number of data points: ', num_data_point)
+        logger.info(f'Number of data points: {num_data_point}')
         train_dataloader = DataLoader(train_set, batch_size=batch_size,
                                       #  shuffle => to have the data reshuffled at every epoc
                                       shuffle=True, num_workers=num_workers,
@@ -813,18 +816,18 @@ class BaseInteractiveTrainKGE:
 
         # (2) Go through valid triples + corrupted triples and compute scores.
         # Average loss per triple is stored. This will be used  to indicate whether we learned something.
-        print('First Eval..')
+        logger.info('First Eval..')
         self.set_model_eval_mode()
         first_avg_loss_per_triple = 0
         for x, y in train_dataloader:
             pred = self.model(x)
             first_avg_loss_per_triple += self.model.loss(pred, y)
         first_avg_loss_per_triple /= num_data_point
-        print(first_avg_loss_per_triple)
+        logger.info(first_avg_loss_per_triple)
         # (3) Prepare Model for Training
         self.set_model_train_mode()
         optimizer = optim.Adam(self.model.parameters(), lr=lr)
-        print('Training Starts...')
+        logger.info('Training Starts...')
         for epoch in range(epoch):  # loop over the dataset multiple times
             epoch_loss = 0
             for x, y in train_dataloader:
@@ -836,17 +839,17 @@ class BaseInteractiveTrainKGE:
                 epoch_loss += loss.item()
                 loss.backward()
                 optimizer.step()
-            print(f'Epoch={epoch}\t Avg. Loss per epoch: {epoch_loss / num_data_point:.3f}')
+            logger.info(f'Epoch={epoch}\t Avg. Loss per epoch: {epoch_loss / num_data_point:.3f}')
         # (5) Prepare For Saving
         self.set_model_eval_mode()
-        print('Eval starts...')
+        logger.info('Eval starts...')
         # (6) Eval model on training data to check how much an Improvement
         last_avg_loss_per_triple = 0
         for x, y in train_dataloader:
             pred = self.model(x)
             last_avg_loss_per_triple += self.model.loss(pred, y)
         last_avg_loss_per_triple /= len(train_set)
-        print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple:.3f}')
+        logger.info(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple:.3f}')
 
     def train_literals(
         self,
@@ -919,7 +922,7 @@ class BaseInteractiveTrainKGE:
         loss_log = {"lit_loss": []}
         literal_model.train()
 
-        print(
+        logger.info(
             f"Training Literal Embedding model"
             f" using pre-trained '{self.model.name}' embeddings."
         )
@@ -945,9 +948,9 @@ class BaseInteractiveTrainKGE:
         self.literal_model = literal_model
         self.literal_dataset = literal_dataset
         torch.save(literal_model.state_dict(), self.path + "/literal_model.pt")
-        print(f"Literal Embedding model saved to {self.path}/literal_model.pt")
+        logger.info(f"Literal Embedding model saved to {self.path}/literal_model.pt")
         self.idx_to_data_property = {v: k for k, v in self.data_property_to_idx.items()}
         df = pd.DataFrame.from_dict(self.idx_to_data_property, orient="index", columns=["attribute"])
         df.to_csv(self.path + "/attribute_to_idx.csv")
-        print(f"Literal attributes indexing saved to {self.path}/attribute_to_idx.csv")
+        logger.info(f"Literal attributes indexing saved to {self.path}/attribute_to_idx.csv")
 

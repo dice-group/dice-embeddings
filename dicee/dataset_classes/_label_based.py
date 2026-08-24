@@ -5,10 +5,14 @@ Provides ``KvsAll``, ``AllvsAll``, ``KvsSampleDataset``, and
 pair and the target is a label vector over all entities (or relations).
 """
 
+import logging
+
 import numpy as np
 import torch
 
 from ..static_preprocess_funcs import mapping_from_first_two_cols_to_third
+
+logger = logging.getLogger(__name__)
 
 
 class OnevsAllDataset(torch.utils.data.Dataset):
@@ -112,7 +116,7 @@ class KvsAll(torch.utils.data.Dataset):
             try:
                 assert isinstance(self.train_target[0], np.ndarray)
             except (IndexError, AssertionError):
-                print(self.train_target)
+                logger.error(self.train_target)
                 exit(1)
         else:
             self.train_target = list(store.values())
@@ -169,12 +173,12 @@ class AllvsAll(torch.utils.data.Dataset):
         self.target_dim = len(entity_idxs)
         # mapping_from_first_two_cols_to_third already returns sorted dict
         store = mapping_from_first_two_cols_to_third(train_set_idx)
-        print("Number of unique pairs:", len(store))
+        logger.info(f"Number of unique pairs: {len(store)}")
         for i in range(len(entity_idxs)):
             for j in range(len(relation_idxs)):
                 if store.get((i, j), None) is None:
                     store[(i, j)] = list()
-        print("Number of unique augmented pairs:", len(store))
+        logger.info(f"Number of unique augmented pairs: {len(store)}")
         # Re-sort after adding new keys to maintain consistent ordering
         store = dict(sorted(store.items()))
         assert len(store) > 0

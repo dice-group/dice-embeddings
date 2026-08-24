@@ -4,9 +4,12 @@ python dicee/analyse_experiments.py --dir Experiments --features "model" "trainM
 """
 import argparse
 import json
+import logging
 import os
 
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 
 def get_default_arguments():
@@ -159,12 +162,12 @@ def analyse(args):
     try:
         df_features = df[args.features]
     except KeyError:
-        print(f"--features ({args.features}) is not a subset of {df.columns}")
+        logger.error(f"--features ({args.features}) is not a subset of {df.columns}")
         raise KeyError
-    print(df_features.to_latex(index=False, float_format="%.3f"))
+    logger.info(df_features.to_latex(index=False, float_format="%.3f"))
     path_to_save = args.dir + '/summary.csv'
     df_features.to_csv(path_or_buf=path_to_save)
-    print(f"Saved in {path_to_save}")
+    logger.info(f"Saved in {path_to_save}")
 
 
 if __name__ == '__main__':

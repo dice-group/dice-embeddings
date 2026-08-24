@@ -36,6 +36,9 @@ logging.getLogger('lightning').setLevel(logging.WARNING)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "INFO"
 
+logger = logging.getLogger(__name__)
+
+
 class Execute:
     """Executor class for training, retraining and evaluating KGE models.
 
@@ -64,6 +67,13 @@ class Execute:
             args: Configuration arguments (Namespace or similar).
             continuous_training: Whether this is continual training.
         """
+        # Configure logging verbosity as early as possible so that dataset/timing/checkpoint
+        # messages logged during distributed setup and KG loading are not silently dropped.
+        logging.basicConfig(
+            level=getattr(logging, str(getattr(args, "log_level", "INFO")).upper(), logging.INFO),
+            format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+            force=True,
+        )
         # Setup distributed and device ranks before training
         distributed_setup = setup_distributed_training(args)
         # Checks if the current training setup is distributed
@@ -80,8 +90,8 @@ class Execute:
         seed_everything(args.random_seed, workers=True)
         # (3) Set the continual training flag
         self.is_continual_training = continuous_training
-        # (4) Set up the run directory once per node.
-        if self.is_local_rank_zero():
+        # (4) Set up the run directory exactly once for the whole job.
+        if self.is_global_rank_zero():
             self.setup_executor()
         # (5) Initialize trainer and model placeholders
         self.trainer: Optional[DICE_Trainer] = None
@@ -98,6 +108,9 @@ class Execute:
     def is_local_rank_zero(self) -> bool:
         return self.local_rank == 0
 
+    def is_global_rank_zero(self) -> bool:
+        return self.rank == 0
+
     def cleanup(self):
         if self.distributed and dist.is_initialized():
             dist.destroy_process_group()
@@ -111,7 +124,7 @@ class Execute:
         if self.is_continual_training:
             return
 
-        if not self.is_local_rank_zero():
+        if not self.is_global_rank_zero():
             return
 
         # Determine storage path
@@ -136,11 +149,11 @@ class Execute:
 
         if os.path.exists(path):
             if not reuse_existing:
-                print(f"Deleting existing directory: {path}")
+                logger.info(f"Deleting existing directory: {path}")
                 shutil.rmtree(path)
                 os.makedirs(path, exist_ok=False)
             else:
-                print(f"Reusing existing directory: {path}")
+                logger.info(f"Reusing existing directory: {path}")
         else:
             os.makedirs(path, exist_ok=False)
 
@@ -149,10 +162,11 @@ class Execute:
     def create_and_store_kg(self) -> None:
         """Create knowledge graph and store as memory-mapped file.
 
-        Only executed on local rank 0 in distributed training.
-        Skips if memmap already exists.
+        Only executed on global rank 0 in distributed training, so exactly
+        one process writes the shared memmap/vocab files regardless of how
+        many nodes are involved. Skips if memmap already exists.
         """
-        if not self.is_local_rank_zero():
+        if not self.is_global_rank_zero():
             return
 
         memmap_path = os.path.join(
@@ -163,10 +177,10 @@ class Execute:
         )
 
         if os.path.exists(memmap_path) and os.path.exists(details_path):
-            print("KG already exists, skipping creation.")
+            logger.info("KG already exists, skipping creation.")
             return
 
-        print("Creating knowledge graph...")
+        logger.info("Creating knowledge graph...")
         self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
         self._update_args_from_kg()
         self._save_kg_memmap(memmap_path, details_path)
@@ -260,7 +274,7 @@ class Execute:
         None
 
         """
-        print('*** Save Trained Model ***')
+        logger.info('*** Save Trained Model ***')
         self.trained_model.eval()
         self.trained_model.to('cpu')
         # Save the epoch loss
@@ -319,7 +333,7 @@ class Execute:
         # @TODO: Move to static funcs
         # Report total runtime.
         self.report['Runtime'] = time.time() - self.start_time
-        print(f"Total Runtime: {self.report['Runtime']:.3f} seconds")
+        logger.info(f"Total Runtime: {self.report['Runtime']:.3f} seconds")
         with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor, indent=4)
 
@@ -342,7 +356,7 @@ class Execute:
         """
         try:
             self.start_time = time.time()
-            print(f"Start time:{datetime.datetime.now()}")
+            logger.info(f"Start time:{datetime.datetime.now()}")
             # (1) Create knowledge graph
             self.create_and_store_kg()
             # (2) Synchronize processes if distributed training is used
@@ -393,16 +407,27 @@ class ContinuousExecute(Execute):
         previous_args["num_epochs"]=args["num_epochs"]
         previous_args["continual_learning"]=args["continual_learning"]
         previous_args["path_experiment_folder"]=args["continual_learning"]
-        print("Updated configuration:",previous_args)
+        logger.info(f"Updated configuration: {previous_args}")
         try:
             report = load_json(args['continual_learning'] + '/report.json')
             previous_args['num_entities'] = report['num_entities']
             previous_args['num_relations'] = report['num_relations']
+        except FileNotFoundError:
+            # report.json is only written once a run completes (see Execute.end()),
+            # so it won't exist yet when --continual_learning points at a run that
+            # crashed or was preempted mid-training. entity_to_idx.csv /
+            # relation_to_idx.csv are written during preprocessing, well before
+            # training starts, so they're a reliable fallback for a partial run.
+            logger.warning("Couldn't find report.json — counting entity/relation indexes instead.")
+            with open(args['continual_learning'] + '/entity_to_idx.csv') as f:
+                previous_args['num_entities'] = sum(1 for _ in f) - 1
+            with open(args['continual_learning'] + '/relation_to_idx.csv') as f:
+                previous_args['num_relations'] = sum(1 for _ in f) - 1
         except AssertionError:
-            print("Couldn't find report.json.")
+            logger.warning("Couldn't find report.json.")
         previous_args = SimpleNamespace(**previous_args)
-        print('ContinuousExecute starting...')
-        print(previous_args)
+        logger.info('ContinuousExecute starting...')
+        logger.info(previous_args)
         super().__init__(previous_args, continuous_training=True)
 
     def continual_start(self) -> dict:

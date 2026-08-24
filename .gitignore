@@ -190,5 +190,6 @@ Literal_KGs/
 compute_fold_metrics.py
 
 
-# Claude local editor/runtime files
-.claude/
+# Claude local editor/runtime files (agents/skills/commands are shared, so not ignored)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock

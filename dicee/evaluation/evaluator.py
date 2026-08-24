@@ -6,6 +6,7 @@ scoring techniques.
 """
 
 import json
+import logging
 import os
 import pickle
 from typing import Dict, List, Optional, Tuple
@@ -21,6 +22,8 @@ from .utils import (
     create_hits_dict,
     update_hits,
 )
+
+logger = logging.getLogger(__name__)
 
 # Valid scoring techniques
 VALID_SCORING_TECHNIQUES = frozenset([
@@ -141,7 +144,7 @@ class Evaluator:
             return None
 
         if isinstance(self.args.eval_model, bool):
-            print('Wrong input:RESET')
+            logger.warning('Wrong input:RESET')
             self.args.eval_model = 'train_val_test'
 
         # Route to appropriate evaluation method based on scoring technique
@@ -416,7 +419,7 @@ class Evaluator:
         hits = create_hits_dict(hits_range)
 
         if info and not self.during_training:
-            print(info + ':', end=' ')
+            logger.info(f"{info}:")
 
         if form_of_labelling == 'RelationPrediction':
             ranks, hits = self._evaluate_relation_prediction(
@@ -432,8 +435,8 @@ class Evaluator:
         results = compute_metrics_from_ranks_simple(ranks, num_triples, hits)
 
         if info and not self.during_training:
-            print(info)
-            print(results)
+            logger.info(info)
+            logger.info(results)
 
         return results
 
@@ -533,20 +536,20 @@ class Evaluator:
         enc = tiktoken.get_encoding("gpt2")
 
         if info and not self.during_training:
-            print(info + ':', end=' ')
+            logger.info(f"{info}:")
 
         for i in range(0, num_triples, self.args.batch_size):
             str_data_batch = triples[i:i + self.args.batch_size]
             for triple in str_data_batch:
                 s, p, o = triple
                 x = torch.LongTensor([enc.encode(s + " " + p)])
-                print("Triple:", triple, end="\t")
+                logger.info(f"Triple: {triple}")
                 y = model.generate(
                     x, max_new_tokens=100,
                     temperature=model.temperature,
                     top_k=model.topk
                 ).tolist()
-                print("Generated:", enc.decode(y[0]))
+                logger.info(f"Generated: {enc.decode(y[0])}")
 
         return {'H@1': -1, 'H@3': -1, 'H@10': -1, 'MRR': -1}
 
@@ -576,7 +579,7 @@ class Evaluator:
         hits = create_hits_dict(hits_range)
 
         if info and not self.during_training:
-            print(info + ':', end=' ')
+            logger.info(f"{info}:")
 
         for i in range(0, num_triples, self.args.batch_size):
             str_data_batch = triples[i:i + self.args.batch_size]
@@ -614,8 +617,8 @@ class Evaluator:
         results = compute_metrics_from_ranks_simple(ranks, num_triples, hits)
 
         if info and not self.during_training:
-            print(info)
-            print(results)
+            logger.info(info)
+            logger.info(results)
 
         return results
 

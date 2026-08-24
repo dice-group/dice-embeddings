@@ -7,15 +7,17 @@ Entity embeddings are partitioned row-wise across ranks:
   - _LocalSparseAdam updates only the rows that received a non-zero gradient
 
 Public API:
-  model.setup_torchrec_training(device, lr)          — called by trainer before loop
-  model.gather_entity_embeddings_on_rank_zero()      — called by trainer after loop
-  create_torchrec_sharded_model_class(ModelClass)    — factory used by static_funcs.py
+  model.setup_fsdp_training(device, lr)              — called by trainer before loop
+  model.gather_entity_embeddings_on_rank_zero()       — called by trainer after loop
+  model.save_local_shard_checkpoint(path)             — per-rank, called periodically during loop
+  model.load_local_shard_checkpoint(path)             — per-rank, called by trainer on resume
+  create_fsdp_sharded_model_class(ModelClass)         — factory used by static_funcs.py
 """
 
 from __future__ import annotations
 
 import math
-from typing import Dict, Optional, Type
+from typing import Any, Dict, Optional, Type
 
 import torch
 import torch.distributed as dist
@@ -107,6 +109,20 @@ class _LocalSparseAdam:
             0, active_rows,
             update.to(device=weight.device, dtype=weight.dtype) * (-step_size),
         )
+
+    def state_dict(self) -> Dict[str, Any]:
+        """Return this rank's optimizer state (moment buffers + step count)."""
+        return {
+            "exp_avg": self.exp_avg.detach().cpu(),
+            "exp_avg_sq": self.exp_avg_sq.detach().cpu(),
+            "step_count": self.step_count,
+        }
+
+    def load_state_dict(self, state: Dict[str, Any]) -> None:
+        """Restore optimizer state saved by :meth:`state_dict`, in-place."""
+        self.exp_avg.copy_(state["exp_avg"].to(device=self.exp_avg.device, dtype=self.exp_avg.dtype))
+        self.exp_avg_sq.copy_(state["exp_avg_sq"].to(device=self.exp_avg_sq.device, dtype=self.exp_avg_sq.dtype))
+        self.step_count = state["step_count"]
 
 
 # ---------------------------------------------------------------------------
@@ -292,13 +308,13 @@ class RowWiseShardedEmbedding(nn.Module):
 # Model mixin
 # ---------------------------------------------------------------------------
 
-class TorchRecShardedEntityModel(BaseKGE):
+class FSDPShardedEntityModel(BaseKGE):
     """Mixin that defers entity embedding allocation and wires up row-wise sharding.
 
     Lifecycle
     ---------
     1. __init__()                         — entity_embeddings is None
-    2. setup_torchrec_training(dev, lr)   — creates RowWiseShardedEmbedding
+    2. setup_fsdp_training(dev, lr)   — creates RowWiseShardedEmbedding
     3. gather_entity_embeddings_on_rank_zero() — called by trainer after last epoch
     """
 
@@ -306,10 +322,10 @@ class TorchRecShardedEntityModel(BaseKGE):
         _args = dict(args)
         _args["fsdp_sharded_entity"] = True   # BaseKGE sets entity_embeddings=None
         super().__init__(_args)
-        self._torchrec_dmp     = None   # kept so existing trainer isinstance checks pass
-        self._torchrec_adapter: Optional[RowWiseShardedEmbedding] = None
+        self._fsdp_dmp     = None   # kept so existing trainer isinstance checks pass
+        self._fsdp_adapter: Optional[RowWiseShardedEmbedding] = None
 
-    def setup_torchrec_training(
+    def setup_fsdp_training(
         self,
         device: torch.device,
         lr: float,
@@ -347,14 +363,57 @@ class TorchRecShardedEntityModel(BaseKGE):
             state_dtype=torch.bfloat16,
         )
 
-        self._torchrec_adapter = sharded_emb
+        self._fsdp_adapter = sharded_emb
         self.entity_embeddings  = sharded_emb
 
     def gather_entity_embeddings_on_rank_zero(self) -> Optional[nn.Embedding]:
         """Gather the full entity table on rank 0; return None on other ranks."""
-        if self._torchrec_adapter is None:
-            raise RuntimeError("setup_torchrec_training() must be called before gathering.")
-        return _gather_shards(self._torchrec_adapter)
+        if self._fsdp_adapter is None:
+            raise RuntimeError("setup_fsdp_training() must be called before gathering.")
+        return _gather_shards(self._fsdp_adapter)
+
+    def save_local_shard_checkpoint(self, path: str) -> None:
+        """Save this rank's entity embedding shard + its local Adam state to *path*.
+
+        Cheap and O(local_rows) — unlike gather_entity_embeddings_on_rank_zero(),
+        no collective communication is involved, so this is safe to call
+        periodically even when the full table is too large to gather.
+        """
+        adapter = self._fsdp_adapter
+        if adapter is None or adapter._local_adam is None:
+            raise RuntimeError("setup_fsdp_training() must be called before checkpointing.")
+        torch.save({
+            "weight": adapter.weight.data.detach().cpu(),
+            "adam": adapter._local_adam.state_dict(),
+            "start_row": adapter.start_row,
+            "local_rows": adapter.local_rows,
+            "rank": adapter.rank,
+            "world_size": adapter.world_size,
+        }, path)
+
+    def load_local_shard_checkpoint(self, path: str) -> None:
+        """Load this rank's entity embedding shard + local Adam state from *path*.
+
+        The checkpoint must have been saved by a run with the same world_size:
+        shard boundaries (start_row/local_rows) are derived from world_size and
+        num_entities, so a mismatch means this rank does not own the same rows
+        as when the checkpoint was written.
+        """
+        adapter = self._fsdp_adapter
+        if adapter is None or adapter._local_adam is None:
+            raise RuntimeError("setup_fsdp_training() must be called before checkpointing.")
+        ckpt = torch.load(path, map_location="cpu")
+        if ckpt["start_row"] != adapter.start_row or ckpt["local_rows"] != adapter.local_rows:
+            raise RuntimeError(
+                f"Shard checkpoint layout mismatch on rank {adapter.rank}: checkpoint covers "
+                f"rows [{ckpt['start_row']}, {ckpt['start_row'] + ckpt['local_rows']}), but this "
+                f"run's shard is [{adapter.start_row}, {adapter.start_row + adapter.local_rows}). "
+                f"Resuming a sharded FSDP checkpoint requires launching with the same world_size "
+                f"used to save it (checkpoint world_size={ckpt['world_size']}, "
+                f"current world_size={adapter.world_size})."
+            )
+        adapter.weight.data.copy_(ckpt["weight"].to(device=adapter.weight.device, dtype=adapter.weight.dtype))
+        adapter._local_adam.load_state_dict(ckpt["adam"])
 
     def get_embeddings(self):
         raise RuntimeError(
@@ -432,18 +491,18 @@ def _gather_shards(sharded_emb: RowWiseShardedEmbedding) -> Optional[nn.Embeddin
 # Factory — API unchanged so static_funcs.py needs no edits
 # ---------------------------------------------------------------------------
 
-def create_torchrec_sharded_model_class(model_class: Type[BaseKGE]) -> Type[BaseKGE]:
+def create_fsdp_sharded_model_class(model_class: Type[BaseKGE]) -> Type[BaseKGE]:
     """Return a row-wise sharded variant of *model_class*.
 
     The returned class inherits all scoring functions from *model_class* unchanged.
     Only entity_embeddings is replaced at training time.
     """
-    if issubclass(model_class, TorchRecShardedEntityModel):
+    if issubclass(model_class, FSDPShardedEntityModel):
         return model_class
     if model_class not in _SHARDED_MODEL_CACHE:
         _SHARDED_MODEL_CACHE[model_class] = type(
-            f"TorchRec{model_class.__name__}",
-            (TorchRecShardedEntityModel, model_class),
+            f"FSDP{model_class.__name__}",
+            (FSDPShardedEntityModel, model_class),
             {
                 "__module__": model_class.__module__,
                 "__doc__": f"Row-wise sharded variant of {model_class.__name__}.",

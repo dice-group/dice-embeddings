@@ -43,11 +43,12 @@ When a task spans multiple domains, invoke sub-agents **sequentially** in depend
 ## Framework Quick Reference
 
 - **Models**: Keci, ComplEx, DistMult, TransE, QMult, OMult, BytE, CoKE, PykeenKGE (and more)
-- **Trainers**: `torchCPUTrainer` (default), `PL` (multi-GPU), `torchDDP` (native DDP), `TP` (tensor parallel)
+- **Trainers**: `torchCPUTrainer` (default), `PL` (multi-GPU), `torchDDP` (native DDP), `TP` (tensor parallel ensemble)
 - **Scoring techniques**: `KvsAll` (default), `NegSample`, `1vsAll`, `KvsSample`, `AllvsAll`
 - **Key entry point**: `dicee --dataset_dir "KGs/UMLS" --model Keci`
 - **Inference entry point**: `from dicee import KGE; model = KGE(path="Experiments/...")`
 - **Experiment output**: `Experiments/<timestamp>/` — `model.pt`, `eval_report.json`, `configuration.json`
+- **Tensor Parallelism**: `TP` trainer implements "Multiple Run Ensemble Learning with Low-Dimensional Knowledge Graph Embeddings"
 
 ## Constraints
 - ALWAYS delegate to a sub-agent rather than answering complex implementation questions yourself

@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11.14"]
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v3
@@ -25,11 +25,24 @@ jobs:
         run: |
           ruff check dicee/ --line-length=200
       
-      - name: Type check with mypy (non-blocking)
+      - name: Type check with mypy (ratchet: error count must not increase)
         run: |
-          mypy dicee/ --config-file=pyproject.toml || echo "⚠️  Type checking found issues (non-blocking)"
-          echo "Type checking complete. Fix issues over time."
-        continue-on-error: true
+          # See docs/TYPING_ROADMAP.md for the type hints enforcement strategy.
+          # The codebase isn't fully typed yet, so mypy isn't blocking on every
+          # pre-existing error. Instead, this step fails only if the total
+          # error count grows past the recorded baseline, so new code can't
+          # add fresh type errors while existing debt is paid down gradually.
+          # If you fix errors, lower .github/mypy-baseline.txt to lock in the
+          # improvement; only raise it if a change unavoidably adds errors.
+          mypy dicee/ --config-file=pyproject.toml > mypy_output.txt 2>&1 || true
+          cat mypy_output.txt
+          CURRENT_ERRORS=$(grep -oP 'Found \K[0-9]+(?= errors?)' mypy_output.txt || echo 0)
+          BASELINE_ERRORS=$(cat .github/mypy-baseline.txt)
+          echo "mypy errors: $CURRENT_ERRORS (baseline: $BASELINE_ERRORS)"
+          if [ "$CURRENT_ERRORS" -gt "$BASELINE_ERRORS" ]; then
+            echo "::error::mypy error count increased from $BASELINE_ERRORS to $CURRENT_ERRORS. Fix the newly introduced errors, or update .github/mypy-baseline.txt only if the increase is intentional and reviewed."
+            exit 1
+          fi
 
       - name: Testing and coverage report
         run: |

@@ -1,3 +1,11 @@
+<div align="center">
+
+![dicee_logo](docs/_static/images/dicee_logo.png)
+
+# DICE Embeddings
+
+**Hardware-agnostic Framework for Large-scale Knowledge Graph Embeddings**
+
 [![Downloads](https://static.pepy.tech/badge/dicee)](https://pepy.tech/project/dicee)
 [![Downloads](https://img.shields.io/pypi/dm/dicee)](https://pypi.org/project/dicee/)
 [![Coverage](https://img.shields.io/badge/coverage-54%25-green)](https://dice-group.github.io/dice-embeddings/usage/main.html#coverage-report)
@@ -5,26 +13,28 @@
 [![Docs](https://img.shields.io/badge/documentation-0.3.2-yellow)](https://dice-group.github.io/dice-embeddings/index.html)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dice-group/dice-embeddings)
 
-![dicee_logo](docs/_static/images/dicee_logo.png)
+</div>
 
-# DICE Embeddings: Hardware-agnostic Framework for Large-scale Knowledge Graph Embeddings
+Knowledge graph embedding research has mainly focused on learning continuous representations of knowledge graphs towards the link prediction problem. Recently developed frameworks can be effectively applied in a wide range of research-related applications, yet using them in real-world settings becomes more challenging as the knowledge graph grows.
+
+**dicee** computes embeddings for knowledge graphs of any size — from a few hundred triples to knowledge graphs with hundreds of millions of entities — running on a single CPU or scaled across GPUs and nodes, without changing a line of model code.
+
+- 🧩 **30+ models** — real, complex, quaternion, octonion, and Clifford-algebra scoring functions, plus any [PyKEEN](https://github.com/pykeen/pykeen) model
+- ⚙️ **Any hardware** — CPU, single/multi-GPU, native DDP, FSDP, and Tensor Parallelism
+- 📈 **Scales up** — row-wise sharded entity tables and distributed optimizer states for very large knowledge graphs
+- 🔌 **Two entry points** — the `dicee` CLI for quick runs, and a Python API (`Execute`, `KGE`) for programmatic control
 
 ## Quick Reference
 
-| Feature | Command/Code |
-|---------|-------------|
-| **Install (CPU)** | `pip install dicee --extra-index-url https://download.pytorch.org/whl/cpu` |
-| **Install (GPU)** | `pip install dicee` |
-| **Train model** | `dicee --dataset_dir "KGs/UMLS" --model Keci` |
-| **Load pretrained** | `from dicee import KGE; model = KGE(path='...')` |
-| **Predict links** | `model.predict_topk(h=["entity"], r=["relation"], topk=10)` |
+| Task | Command |
+|------|---------|
+| 📦 **Install (CPU)** | `pip install dicee --extra-index-url https://download.pytorch.org/whl/cpu` |
+| 📦 **Install (GPU)** | `pip install dicee` |
+| 🚀 **Train a model** | `dicee --dataset_dir "KGs/UMLS" --model Keci` |
+| 📂 **Load a pretrained model** | `from dicee import KGE; model = KGE(path='...')` |
+| 🔮 **Predict links** | `model.predict_topk(h=["entity"], r=["relation"], topk=10)` |
 
-Knowledge graph embedding research has mainly focused on learning continuous representations of knowledge graphs towards the link prediction problem. 
-Recently developed frameworks can be effectively applied in a wide range of research-related applications.
-Yet, using these frameworks in real-world applications becomes more challenging as the size of the knowledge graph grows.
-
-We developed the DICE Embeddings framework (dicee) to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
-## For more please visit [dice-embeddings](https://dice-group.github.io/dice-embeddings/)!
+📖 For more, visit the [dicee documentation](https://dice-group.github.io/dice-embeddings/)!
 
 ## Installation
 <details><summary> Click me! </summary>
@@ -67,12 +77,12 @@ python -m pytest -p no:warnings --ff # to run the failures first and then the re
 ## Knowledge Graph Embedding Models
 <details> <summary> To see available Models</summary>
 
-* ```--model Decal | Keci | DualE | ComplEx | QMult | OMult | ConvQ | ConvO | ConEx | TransE | DistMult | Shallom```
+* ```--model Decal | Keci | DualE | ComplEx | QMult | OMult | ConvQ | ConvO | ConEx | TransE | TransH | DistMult | Shallom | MuRE | RotatE```
 * ```--model Pykeen_QuatE | Pykeen_Mure ``` all embedding models available in https://github.com/pykeen/pykeen#models can be selected. **📖 [PyKEEN integration →](docs/guides/pykeen_integration.md)** | **📖 [Examples →](tests/test_pykeen.py)**
 
 Training and scoring techniques
-* ```--trainer torchCPUTrainer | PL | MP | torchDDP ```
-* ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample | FixedNegSample```
+* ```--trainer torchCPUTrainer | PL | MP | torchDDP | torchFSDP ```
+* ```--scoring_technique 1vsAll | KvsAll  | AllvsAll | KvsSample | NegSample | FixedNegSample | FSDP1vsSample```
 
 </details>
 
@@ -81,18 +91,49 @@ Training and scoring techniques
 
 #### Training Techniques
 
-A KGE model can be trained with a state-of-the-art training technique ```--trainer "torchCPUTrainer" | "PL" | "MP" | torchDDP ```
+A KGE model can be trained with a state-of-the-art training technique ```--trainer "torchCPUTrainer" | "PL" | "MP" | "torchDDP" | "torchFSDP" ```
 ```bash
 # CPU training
 dicee --dataset_dir "KGs/UMLS" --trainer "torchCPUTrainer" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism
 dicee --dataset_dir "KGs/UMLS" --trainer "PL" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
-# Tensor Parallelism
+# Tensor Parallelism (implements Multiple Run Ensemble Learning with Low-Dimensional Knowledge Graph Embeddings)
 dicee --dataset_dir "KGs/UMLS" --trainer "TP" --scoring_technique KvsAll --model "Keci" --eval_model "train_val_test"
 # Distributed Data Parallelism in native torch
 OMP_NUM_THREADS=1 torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" --trainer "torchDDP" --scoring_technique KvsAll --path_to_store_single_run "UMLS_torchDDP"
 
 ```
+
+#### Logging
+<details><summary> Click me! </summary>
+
+Progress, timing, and checkpoint messages (dataset info, epoch loss, "Saving model...", etc.) are emitted through Python's standard `logging` module rather than `print()`. By default `--log_level` is `INFO`, so these messages are shown, matching the classic CLI output.
+
+```bash
+# Default: INFO messages (dataset stats, timings, checkpoints, ...) are printed to stderr
+dicee --dataset_dir "KGs/UMLS" --model Keci
+
+# Quieter: only show warnings and errors (e.g. on noisy multi-node/multi-GPU logs)
+dicee --dataset_dir "KGs/UMLS" --model Keci --log_level WARNING
+
+# Silent: only errors are shown
+dicee --dataset_dir "KGs/UMLS" --model Keci --log_level ERROR
+
+# Verbose: include DEBUG-level messages too
+dicee --dataset_dir "KGs/UMLS" --model Keci --log_level DEBUG
+```
+
+`--log_level` accepts `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`. The same setting is available when training from Python via `dicee.config.Namespace`:
+
+```python
+from dicee.executer import Execute
+from dicee.config import Namespace
+args = Namespace()
+args.dataset_dir = "KGs/UMLS"
+args.log_level = "WARNING"  # silence INFO-level progress messages
+Execute(args).start()
+```
+Since every rank in a distributed run (`torchDDP`/`torchFSDP`/`PL` with multiple GPUs or nodes) configures its own logger, each process prints its own messages; lower the level to `WARNING` or `ERROR` to cut down on duplicate output across ranks.
 
 A KGE model model can also be trained in multi-node multi-gpu DDP setting. 
 ```bash
@@ -104,6 +145,92 @@ Multi-node training is also possible with the `PL` trainer
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "PL" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_PL"
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "PL" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_PL"
 ```
+</details>
+
+#### FSDP Training (large entity tables)
+
+`torchFSDP` is designed for knowledge graphs where the entity embedding table is too large to fit on a single GPU. Entity embeddings are sharded row-wise across all GPUs — each rank owns a contiguous slice of entity rows and serves lookup requests from other ranks via `all_to_all`. Dense model parameters (relation embeddings, scoring layers) are wrapped with PyTorch FSDP.
+
+```bash
+# Single-node multi-GPU FSDP (replace --nproc_per_node with your GPU count)
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
+  dicee --dataset_dir "KGs/YAGO3-10" --model Keci \
+  --trainer "torchFSDP" --scoring_technique "NegSample" \
+  --path_to_store_single_run "YAGO_fsdp" --num_epochs 100 --batch_size 200000
+
+# With FSDP1vsSample (GPU-efficient 1-vs-sample with true-negative sampling)
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
+  dicee --dataset_dir "KGs/YAGO3-10" --model Keci \
+  --trainer "torchFSDP" --scoring_technique "FSDP1vsSample" --neg_ratio 10 \
+  --path_to_store_single_run "YAGO_fsdp" --num_epochs 100 --batch_size 200000
+```
+
+FSDP-specific options are passed via `--fsdp_trainer_kwargs` (JSON dict):
+
+| Key | Default | Description |
+|---|---|---|
+| `precision` | `float32` | `float32 \| bfloat16 \| float16` |
+| `fsdp_optim_device` | `cpu` | Entity Adam state device — `cpu` saves GPU RAM, `gpu` is faster |
+| `sharding_strategy` | `FULL_SHARD` | FSDP sharding strategy |
+| `gradient_clip_val` | `null` | Optional gradient norm clipping |
+| `num_workers` | `num_core` | DataLoader worker count |
+| `prefetch_factor` | `4` | DataLoader prefetch depth |
+| `checkpoint_every_n_epochs` | `null` | Save a resumable sharded checkpoint every N epochs (see below) |
+
+```bash
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
+  dicee --dataset_dir "KGs/YAGO3-10" --model Keci \
+  --trainer "torchFSDP" --scoring_technique "NegSample" \
+  --path_to_store_single_run "YAGO_fsdp" \
+  --fsdp_trainer_kwargs '{"precision": "bfloat16", "fsdp_optim_device": "gpu"}'
+```
+
+Compatible scoring techniques: `NegSample`, `FixedNegSample`, `KvsSample`, `FSDP1vsSample`. Mid-epoch evaluation (`--eval_every_n_epochs`, `--eval_at_epochs`) is not supported — entity embeddings are gathered on rank 0 only after training completes.
+
+##### Resuming an interrupted FSDP run
+
+The entity table is sharded across ranks, so a plain `model.pt` (only written once
+training finishes) can't be used to recover a run that crashed or was preempted
+partway through — for a large enough table, even reconstructing that single file
+can exceed one node's RAM (see [issue #422](https://github.com/dice-group/dice-embeddings/issues/422)).
+Set `checkpoint_every_n_epochs` to write a *sharded* checkpoint instead: each rank
+saves only its own slice of the entity table plus its own optimizer state, so
+checkpointing cost stays proportional to `num_entities / world_size`, not
+`num_entities`.
+
+```bash
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
+  dicee --dataset_dir "KGs/YAGO3-10" --model Keci \
+  --trainer "torchFSDP" --scoring_technique "NegSample" \
+  --path_to_store_single_run "YAGO_fsdp" --num_epochs 500 --reuse_existing_run_dir true \
+  --fsdp_trainer_kwargs '{"checkpoint_every_n_epochs": 10}'
+
+# If this run is killed (OOM, preemption, node failure) and restarted with the
+# SAME --path_to_store_single_run and the SAME number of ranks, it picks up
+# from the last checkpoint automatically — no --continual_learning needed.
+# --reuse_existing_run_dir true is REQUIRED for this: without it, Execute
+# deletes path_to_store_single_run before training starts if it already
+# exists (see executer.py:_setup_single_run_directory), wiping the checkpoint
+# before the trainer ever gets a chance to look for it.
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
+  dicee --dataset_dir "KGs/YAGO3-10" --model Keci \
+  --trainer "torchFSDP" --scoring_technique "NegSample" \
+  --path_to_store_single_run "YAGO_fsdp" --num_epochs 500 --reuse_existing_run_dir true \
+  --fsdp_trainer_kwargs '{"checkpoint_every_n_epochs": 10}'
+
+# To resume into a NEW output directory instead, point --continual_learning at
+# the old one (it must contain a fsdp_shard_checkpoint/ dir, not just model.pt):
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu \
+  dicee --dataset_dir "KGs/YAGO3-10" --model Keci \
+  --trainer "torchFSDP" --scoring_technique "NegSample" \
+  --continual_learning "YAGO_fsdp" --num_epochs 500
+```
+
+Notes:
+
+- **`--reuse_existing_run_dir true` is required for same-directory auto-resume.** Without it, a fresh (non-`--continual_learning`) run always deletes `path_to_store_single_run` first if it already exists, before the trainer gets a chance to check for a checkpoint there.
+- Resuming requires launching with the same world_size (rank count) used to save the checkpoint — shard boundaries are a deterministic function of `(num_entities, world_size)`, so a different rank count means a different, incompatible partition. Re-sharding across a different world_size isn't supported yet.
+- Resuming from a fully-materialized `model.pt` (the classic continual-learning path used by other trainers) is not supported for `torchFSDP` — only from a checkpoint a `torchFSDP` run wrote itself via `checkpoint_every_n_epochs`.
 
 On large knowledge graphs, this configurations should be used.
 Note: When training with multi-GPU or Distributed Data Parallel (DDP) settings, you must provide the `--path_to_store_single_run` argument to specify where to store the results of a single training run. This ensures that all processes write to the correct directory and prevents conflicts.
@@ -319,7 +446,7 @@ dicee  --dataset_dir "KGs/UMLS" --model Keci --scoring_technique KvsAll --num_ep
 
 **📖 [See periodic evaluation examples →](tests/test_periodic_eval_callback.py)** | **📖 [Periodic eval with weight averaging →](tests/test_periodic_eval_weight_averaging.py)**
 
-Currently, Periodic Evaluations as well as Ensemble Models can only be used in combination with `torchCPUTrainer` or `PL` trainer with a single CUDA-capable device.
+Currently, Periodic Evaluations as well as Ensemble Models can only be used in combination with `torchCPUTrainer` or `PL` trainer with a single CUDA-capable device. They are not supported with `torchDDP`, `torchFSDP`, or `TP` trainers.
 </details>
 
 ## Link Prediction & Inference

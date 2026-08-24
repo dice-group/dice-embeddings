@@ -6,6 +6,7 @@ epoch end, model saving, weight averaging, and evaluation.
 import copy
 import datetime
 import json
+import logging
 import math
 import os
 import time
@@ -23,6 +24,8 @@ import dicee.models.base_model
 from .abstracts import AbstractCallback
 from .evaluation.ensemble import evaluate_ensemble_link_prediction_performance
 from .static_funcs import save_checkpoint_model, save_pickle
+
+logger = logging.getLogger(__name__)
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
@@ -58,7 +61,7 @@ class PrintCallback(AbstractCallback):
         # print(pl_module)
         # print(pl_module.summarize())
         # print(pl_module.selected_optimizer)
-        print(f"\nTraining is starting {datetime.datetime.now()}...")
+        logger.info(f"Training is starting {datetime.datetime.now()}...")
 
     def on_fit_end(self, trainer, pl_module):
         training_time = time.time() - self.start_time
@@ -70,7 +73,7 @@ class PrintCallback(AbstractCallback):
             message = f'{training_time / (60 * 60):.3f} hours.'
         else:
             message = f'{training_time:.3f} seconds.'
-        print(f"Training Runtime: {message}\n")
+        logger.info(f"Training Runtime: {message}")
 
     def on_train_batch_end(self, *args, **kwargs):
         return
@@ -117,7 +120,7 @@ class KGESaveCallback(AbstractCallback):
 
     def on_epoch_end(self, model, trainer, **kwargs):
         if self.epoch_counter % self.every_x_epoch == 0 and self.epoch_counter > 1:
-            print(f'\nStoring model {self.epoch_counter}...')
+            logger.info(f'Storing model {self.epoch_counter}...')
             save_checkpoint_model(model,
                                   path=self.path + f'/model_at_{str(self.epoch_counter)}_'
                                                    f'epoch_{str(str(datetime.datetime.now()))}.pt')
@@ -178,7 +181,7 @@ class PseudoLabellingCallback(AbstractCallback):
                 (self.data_module.train_set_idx, selected_triples.detach().numpy()),
                 axis=0)
             trainer.train_dataloader = self.data_module.train_dataloader()
-            print(f'\tEpoch:{trainer.current_epoch}: Pseudo-labelling\t |D|= {len(self.data_module.train_set_idx)}')
+            logger.info(f'Epoch:{trainer.current_epoch}: Pseudo-labelling\t |D|= {len(self.data_module.train_set_idx)}')
         model.train()
 
 
@@ -666,8 +669,8 @@ class LRScheduler(AbstractCallback):
         assert self.n_snapshots <= self.n_cycles, \
             f"n_snapshots ({self.n_snapshots}) must be less than or equal to num_cycles ({self.n_cycles})"
 
-        print(f"LRScheduler initialized with config: {config}")
-        print(f"Using: scheduler_name={self.scheduler_name}, eta_min={self.eta_min}, "
+        logger.info(f"LRScheduler initialized with config: {config}")
+        logger.info(f"Using: scheduler_name={self.scheduler_name}, eta_min={self.eta_min}, "
               f"n_cycles={self.n_cycles}, weighted_ensemble={self.weighted_ensemble}, "
               f"n_snapshots={self.n_snapshots}")
 
@@ -762,7 +765,7 @@ class LRScheduler(AbstractCallback):
         self.scheduler = LambdaLR(trainer.optimizers[0], lr_lambda=self.lr_lambda)
         self.step_count = 0
 
-        print(f"Using learning rate scheduler: {self.scheduler_name}")
+        logger.info(f"Using learning rate scheduler: {self.scheduler_name}")
 
     def on_train_batch_end(self, trainer, model, outputs, batch, batch_idx):
         """Step the LR scheduler and save model snapshot if needed after each batch."""
@@ -852,4 +855,4 @@ class LRScheduler(AbstractCallback):
         # Write the dictionary to the JSON file
         with open(ensemble_eval_report_path, 'w', encoding='utf-8') as f:
             json.dump(self.ensemble_eval_report, f, indent=4, ensure_ascii=False)
-        print(f"Ensemble Evaluations: Evaluate {model.name} on Test Set with an ensemble of {len(self.model_snapshots)} models: \n{ensemble_eval_report}")
+        logger.info(f"Ensemble Evaluations: Evaluate {model.name} on Test Set with an ensemble of {len(self.model_snapshots)} models: \n{ensemble_eval_report}")

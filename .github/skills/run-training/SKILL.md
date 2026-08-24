@@ -24,7 +24,9 @@ argument-hint: "Describe your setup: dataset, hardware (CPU/GPU count), scoring 
 | Multi-GPU (recommended) | `PL` | `dicee --trainer PL ...` |
 | Native DDP (multi-GPU) | `torchDDP` | `torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --trainer torchDDP ...` |
 | Multi-node DDP | `torchDDP` or `PL` | `torchrun --nnodes 2 --nproc_per_node=gpu ...` |
-| Tensor Parallelism | `TP` | `dicee --trainer TP ...` |
+| Tensor Parallelism (Ensemble) | `TP` | `dicee --trainer TP ...` |
+
+> **Note:** The `TP` (Tensor Parallelism) trainer implements the approach from "Multiple Run Ensemble Learning with Low-Dimensional Knowledge Graph Embeddings"
 
 **Rules:**
 - `PL` trainer uses all visible CUDA devices automatically — restrict with `CUDA_VISIBLE_DEVICES=0`

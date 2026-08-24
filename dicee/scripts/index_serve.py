@@ -4,6 +4,7 @@ $ dicee_vector_db --index --serve --path CountryEmbeddings --collection "countri
 
 """
 import argparse
+import logging
 import os
 from typing import List, Optional
 
@@ -14,6 +15,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, PointStruct, VectorParams
+
+logger = logging.getLogger(__name__)
 
 
 def get_default_arguments():
@@ -60,15 +63,15 @@ def index(args):
     assert embedding_dim > 0
     # If the collection is not created, create it
     if args.collection in [i.name for i in client.get_collections().collections]:
-        print("Deleting existing collection ", args.collection)
+        logger.info(f"Deleting existing collection {args.collection}")
         client.delete_collection(collection_name=args.collection)
 
-    print(f"Creating a collection {args.collection} with distance metric:Cosine")
+    logger.info(f"Creating a collection {args.collection} with distance metric:Cosine")
     client.create_collection(collection_name=args.collection,
                              vectors_config=VectorParams(size=embedding_dim,
                                                          distance=Distance.COSINE))
     client.upsert(collection_name=args.collection, points=points)
-    print("Completed!")
+    logger.info("Completed!")
 
 
 app = FastAPI()

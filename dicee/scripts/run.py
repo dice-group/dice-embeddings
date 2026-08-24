@@ -38,7 +38,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--model", type=str,
                         default="Keci",
                         choices=["ComplEx", "Keci", "KeciTransformer", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
-                                 "OMult", "Shallom", "DistMult", "TransE", "DualE",
+                                 "OMult", "Shallom", "DistMult", "TransE", "MuRE", "TransH", "RotatE", "DualE",
                                  "BytE", "CoKE",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
@@ -94,6 +94,10 @@ def get_default_arguments(description=None):
                         help='Number of cores to be used. 0 implies using single CPU')
     parser.add_argument("--random_seed", type=int, default=1,
                         help='Seed for all, see pl seed_everything().')
+    parser.add_argument("--log_level", type=str, default="INFO",
+                        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+                        help='Logging verbosity. Dataset info, timing, and checkpoint messages are '
+                             'logged at INFO; set to WARNING or higher to silence them.')
     parser.add_argument('--p', type=int, default=0,
                         help='P for Clifford Algebra')
     parser.add_argument('--q', type=int, default=1,

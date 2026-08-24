@@ -8,6 +8,11 @@ class EnsembleKGE:
     def __init__(self, models : list=None, seed_model=None, pretrained_models:List=None):
 
         if models is not None:
+            if len(models) == 0:
+                raise ValueError(
+                    "EnsembleKGE requires at least one model. The models list is empty. "
+                    "This typically occurs when using Tensor Parallelism (TP) trainer without sufficient GPUs."
+                )
             self.models = nn.ModuleList()
             self.optimizers = []
             self.loss_history = []
@@ -20,6 +25,10 @@ class EnsembleKGE:
                 self.models.append(i_model)
         else:
             assert pretrained_models is not None
+            if len(pretrained_models) == 0:
+                raise ValueError(
+                    "EnsembleKGE requires at least one pretrained model. The pretrained_models list is empty."
+                )
             self.models = pretrained_models
             self.optimizers = []
             self.loss_history = []

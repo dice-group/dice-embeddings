@@ -66,7 +66,7 @@ The `args` dict passed to `__init__` comes from `config.Namespace.__dict__`.
 | `torchCPUTrainer` | `TorchTrainer` | CPU or single GPU |
 | `PL` | PyTorch Lightning | Multi-GPU, recommended default |
 | `torchDDP` | `TorchDDPTrainer` | Native DDP via `torchrun` |
-| `TP` | `TensorParallel` | Tensor parallelism (1 model per GPU) |
+| `TP` | `TensorParallel` | Tensor parallelism (1 model per GPU) — implements "Multiple Run Ensemble Learning with Low-Dimensional Knowledge Graph Embeddings" |
 
 Multi-GPU with PL uses all visible CUDA devices automatically.
 Use `CUDA_VISIBLE_DEVICES=0` to restrict to one GPU.

@@ -1,9 +1,12 @@
 import glob
+import logging
 
 import numpy as np
 import pandas as pd
 
 from .util import read_from_disk, read_from_triple_store_with_pandas, read_from_triple_store_with_polars
+
+logger = logging.getLogger(__name__)
 
 
 class ReadFromDisk:
@@ -58,7 +61,7 @@ class ReadFromDisk:
                 elif 'valid' in i and self.kg.eval_model is not None:
                     self.kg.raw_valid_set = read_from_disk(i, backend=self.kg.backend, separator=self.kg.separator)
                 else:
-                    print(f'Not processed data: {i}')
+                    logger.warning(f'Not processed data: {i}')
         else:
             raise RuntimeError(f"Invalid data:{self.kg.data_dir}\t{self.kg.sparql_endpoint}\t{self.kg.path_single_kg}")
 

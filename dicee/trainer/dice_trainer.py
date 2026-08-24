@@ -4,6 +4,7 @@ Provides the DICE_Trainer class which supports multiple training backends
 including PyTorch Lightning, DDP, and custom CPU/GPU trainers.
 """
 import copy
+import logging
 import os
 from typing import List, Optional, Tuple, Union
 
@@ -34,6 +35,8 @@ from .model_parallelism import TensorParallel
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
 from .torch_trainer_fsdp import TorchFSDPTrainer
+
+logger = logging.getLogger(__name__)
 
 
 def load_term_mapping(file_path: str) -> polars.DataFrame:
@@ -102,21 +105,21 @@ def initialize_trainer(
     """
     trainer: Optional[Union[TorchTrainer, TensorParallel, TorchDDPTrainer, TorchFSDPTrainer, pl.Trainer]] = None
     if args.trainer == 'torchCPUTrainer':
-        print('Initializing TorchTrainer CPU Trainer...', end='\t')
+        logger.info('Initializing TorchTrainer CPU Trainer...')
         trainer = TorchTrainer(args, callbacks=callbacks)
     elif args.trainer == 'TP':
-        print('Initializing TensorParallel...', end='\t')
+        logger.info('Initializing TensorParallel...')
         trainer= TensorParallel(args, callbacks=callbacks)
     elif args.trainer == 'torchDDP':
         assert torch.cuda.is_available()
-        print('Initializing TorchDDPTrainer GPU', end='\t')
+        logger.info('Initializing TorchDDPTrainer GPU')
         trainer = TorchDDPTrainer(args, callbacks=callbacks)
     elif args.trainer == 'torchFSDP':
         assert torch.cuda.is_available()
-        print('Initializing TorchFSDPTrainer (row-wise sharded) GPU', end='\t')
+        logger.info('Initializing TorchFSDPTrainer (row-wise sharded) GPU')
         trainer = TorchFSDPTrainer(args, callbacks=callbacks)
     elif args.trainer == 'PL':
-        print('Initializing Pytorch-lightning Trainer', end='\t')
+        logger.info('Initializing Pytorch-lightning Trainer')
         kwargs = {**vars(args), **(getattr(args, "pl_trainer_kwargs", {}) or {})}
         # NOTE: PyTorch Lightning Trainer has many optional parameters
         # See: https://lightning.ai/docs/pytorch/stable/common/trainer.html
@@ -138,7 +141,7 @@ def initialize_trainer(
                           barebones=False,
                           enable_checkpointing=not kwargs.get('disable_checkpointing', False))
     else:
-        print('Initializing TorchTrainer CPU Trainer...', end='\t')
+        logger.info('Initializing TorchTrainer CPU Trainer...')
         trainer = TorchTrainer(args, callbacks=callbacks)
     assert trainer is not None
     return trainer
@@ -161,7 +164,7 @@ def get_callbacks(args) -> List:
 
     # Weight averaging callbacks (mutually exclusive)
     if args.swa:
-        print(f"Starting Stochastic Weight Averaging (SWA) at Epoch: {args.swa_start_epoch}")
+        logger.info(f"Starting Stochastic Weight Averaging (SWA) at Epoch: {args.swa_start_epoch}")
         callbacks.append(SWA(
             swa_start_epoch=args.swa_start_epoch,
             lr_init=args.lr,
@@ -169,7 +172,7 @@ def get_callbacks(args) -> List:
             swa_c_epochs=args.swa_c_epochs
         ))
     elif args.swag:
-        print(f"Starting Stochastic Weight Averaging-Gaussian (SWA-G) at Epoch: {args.swa_start_epoch}")
+        logger.info(f"Starting Stochastic Weight Averaging-Gaussian (SWA-G) at Epoch: {args.swa_start_epoch}")
         callbacks.append(SWAG(
             swa_start_epoch=args.swa_start_epoch,
             lr_init=args.lr,
@@ -177,14 +180,14 @@ def get_callbacks(args) -> List:
             swa_c_epochs=args.swa_c_epochs
         ))
     elif args.ema:
-        print(f"Starting Exponential Moving Average (EMA) at Epoch: {args.swa_start_epoch}")
+        logger.info(f"Starting Exponential Moving Average (EMA) at Epoch: {args.swa_start_epoch}")
         callbacks.append(EMA(
             ema_start_epoch=args.swa_start_epoch,
             max_epochs=args.num_epochs,
             ema_c_epochs=args.swa_c_epochs
         ))
     elif args.twa:
-        print(f"Starting Trainable Weight Averaging at Epoch: {args.swa_start_epoch}")
+        logger.info(f"Starting Trainable Weight Averaging at Epoch: {args.swa_start_epoch}")
         callbacks.append(TWA(
             twa_start_epoch=args.swa_start_epoch,
             lr_init=args.lr,
@@ -257,14 +260,14 @@ class DICE_Trainer:
         # Required for CV.
         self.evaluator = evaluator
         self.form_of_labelling = None
-        print(f'# of CPUs:{os.cpu_count()} |'
-              f' # of GPUs:{torch.cuda.device_count()} |'
-              f' # of CPUs for dataloader:{self.args.num_core}')
+        logger.info(f'# of CPUs:{os.cpu_count()} |'
+                    f' # of GPUs:{torch.cuda.device_count()} |'
+                    f' # of CPUs for dataloader:{self.args.num_core}')
         for i in range(torch.cuda.device_count()):
             try:
-                print(torch.cuda.get_device_name(i))
+                logger.info(torch.cuda.get_device_name(i))
             except Exception as exc:
-                print(f'GPU {i}: <unable to query name — {exc}>')
+                logger.warning(f'GPU {i}: <unable to query name — {exc}>')
 
     def continual_start(self,knowledge_graph):
         """
@@ -298,7 +301,7 @@ class DICE_Trainer:
 
     @timeit
     def initialize_or_load_model(self):
-        print('Initializing Model...', end='\t')
+        logger.info('Initializing Model...')
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         self.report['form_of_labelling'] = form_of_labelling
         assert form_of_labelling in ['EntityPrediction', 'RelationPrediction']
@@ -306,7 +309,7 @@ class DICE_Trainer:
 
     @timeit
     def init_dataloader(self, dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader:
-        print('Initializing Dataloader...', end='\t')
+        logger.info('Initializing Dataloader...')
         # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
         # https://github.com/pytorch/pytorch/issues/13246#issuecomment-905703662
         return torch.utils.data.DataLoader(dataset=dataset, batch_size=self.args.batch_size,
@@ -315,7 +318,7 @@ class DICE_Trainer:
 
     @timeit
     def init_dataset(self) -> torch.utils.data.Dataset:
-        print('Initializing Dataset...', end='\t')
+        logger.info('Initializing Dataset...')
         if isinstance(self.trainer.dataset,KG):
             sort_train_set = self.args.trainer not in {"torchFSDP"}
             # Create a memory map of training dataset to reduce the memory usage
@@ -385,7 +388,7 @@ class DICE_Trainer:
         in DDP setup, we need to load the memory map of already read/index KG.
         """
         """ Train selected model via the selected training strategy """
-        print('------------------- Train -------------------')
+        logger.info('------------------- Train -------------------')
         assert isinstance(knowledge_graph, np.memmap) or isinstance(knowledge_graph, KG), \
             f"knowledge_graph must be an instance of KG or np.memmap. Currently {type(knowledge_graph)}"
         if self.args.num_folds_for_cv == 0:
@@ -426,7 +429,7 @@ class DICE_Trainer:
         :param dataset:
         :return: model
         """
-        print(f'{self.args.num_folds_for_cv}-fold cross-validation')
+        logger.info(f'{self.args.num_folds_for_cv}-fold cross-validation')
         single_kg_cv = getattr(dataset, 'path_single_kg', None) is not None
         if single_kg_cv:
             print('Single-file KG: using train_set only for the CV pool.')
@@ -542,7 +545,7 @@ class DICE_Trainer:
             args = copy.copy(self.args)
             trainer = initialize_trainer(args, get_callbacks(args))
             model, form_of_labelling = select_model(vars(args), self.is_continual_training, self.storage_path)
-            print(f'{form_of_labelling} training starts: {model.name}')
+            logger.info(f'{form_of_labelling} training starts: {model.name}')
 
             # Save each fold split
             save_numpy_ndarray(data=train_set_for_i_th_fold, file_path=f'{cv_models_dir}/train_set_{ith}_fold.npy')
