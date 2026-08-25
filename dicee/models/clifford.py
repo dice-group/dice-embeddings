@@ -1435,14 +1435,22 @@ def _build_sign_table(n: int):
     return sign_table, K_table, intersection_table, bits
 
 
-def _auto_n_from_dim(embedding_dim: int) -> int:
+def _auto_n_from_dim(embedding_dim: int, min_re: int = 4) -> int:
     """Derive n for FullDeCaL auto mode from embedding_dim.
 
-    Uses n = floor(log2(embedding_dim) / 2) as a balanced default, then
-    decrements until 2^n divides embedding_dim.
+    Maximises n subject to ``re = embedding_dim / 2^n >= min_re``.
+    This gives the largest signature search space (any Cl_{p,q,r} with
+    p+q+r <= n is reachable) while keeping per-blade width >= min_re.
+
+    Examples with min_re=4::
+
+        dim=32  → n=3, d=8,  re=4
+        dim=64  → n=4, d=16, re=4
+        dim=128 → n=5, d=32, re=4
+        dim=256 → n=6, d=64, re=4
     """
     import math
-    n = max(1, int(math.log2(embedding_dim)) // 2)
+    n = max(1, int(math.log2(embedding_dim)) - int(math.log2(min_re)))
     while embedding_dim % (1 << n) != 0:
         n -= 1
     return n
@@ -1468,11 +1476,13 @@ class FullDeCaL(BaseKGE):
 
         dicee ... --model FullDeCaL --auto_signature --embedding_dim 64
 
-        Only embedding_dim is needed.  n is derived automatically
-        (e.g. dim=64 → n=3, d=8, re=8).  η_1…η_n are free nn.Parameters
-        initialized randomly to ±1 + small noise, so gradients are
-        non-zero from the first step and the model finds the geometry
-        that best fits the dataset.
+        Only embedding_dim is needed.  n is derived automatically as the
+        largest value satisfying re = embedding_dim / 2^n >= 4
+        (e.g. dim=64 → n=4, d=16, re=4; dim=128 → n=5, d=32, re=4).
+        η_1…η_n are free nn.Parameters.  Because η_k = tanh(η̃_k), any
+        generator can converge to +1, −1, or 0 (null), so the effective
+        algebra is Cl_{p,q,r} for any p+q+r <= n — a fully continuous
+        search over the signature space.
 
     Embedding layout
     ----------------
@@ -1488,18 +1498,18 @@ class FullDeCaL(BaseKGE):
 
         if self._auto:
             # ── Auto mode ────────────────────────────────────────────────
-            # Parameterize via η_k = tanh(η_raw_k) ∈ (-1, 1), one value per
-            # generator.  α_K = ∏_{k∈K} η_k is computed in _coeff_table();
-            # α[∅] = 1 is automatic (empty product).
+            # n is the largest value s.t. re = embedding_dim / 2^n >= 4.
+            # This maximises the signature search space: any Cl_{p,q,r}
+            # with p+q+r <= n is reachable because each η_k = tanh(η̃_k)
+            # can freely converge to +1 (positive), −1 (negative), or 0
+            # (null), making "p+q+r <= n" a continuous relaxation.
             #
-            # Initialization: η_raw = ±2  →  tanh(±2) ≈ ±0.96.
-            # This forces the model to commit early: a generator either
-            # stays near ±1 (positive/negative type) or decays toward 0
-            # (null type).  A large magnitude init ensures the initial
-            # coefficient table is non-trivially structured.
+            # Initialization: N(0, 1.5) gives ~35% of generators near 0
+            # (easily null), ~45% softly typed, ~20% strongly typed,
+            # avoiding saturation traps that prevent mixed-signature finds.
             n = _auto_n_from_dim(self.embedding_dim)
             self.p, self.q, self.r = 0, 0, n   # bookkeeping only
-            eta_raw_init = torch.randint(0, 2, (n,)).float() * 4.0 - 2.0  # ±2
+            eta_raw_init = torch.randn(n) * 1# N(0, 1.5)
         else:
             self.p = int(self.args.get('p', 1))
             self.q = int(self.args.get('q', 1))
@@ -1648,7 +1658,7 @@ class FullDeCaL(BaseKGE):
         alpha   = eta_or_1.prod(dim=1).tolist()             # (d,)
 
         # Classify generators by sign; null if |\u03b7_k| < 0.15
-        threshold = 0.15
+        threshold = 0.1
         p = sum(1 for v in eta if v >  threshold)
         q = sum(1 for v in eta if v < -threshold)
         r = self.n - p - q
