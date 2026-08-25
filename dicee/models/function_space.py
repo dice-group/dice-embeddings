@@ -299,187 +299,182 @@ class LFMult1(BaseKGE):
         return s
 
 class LFMult(BaseKGE):
+    r"""Learnable Function Multiplication for KGE.
 
-    r'''Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:
-      f(x) = \sum_{i=0}^{d-1} a_k x^{i%d} and use the three differents scoring function as in the paper to evaluate the score.
-      We also consider combining with Neural Networks.'''
+    Each entity/relation embedding is interpreted as the parameters of
+    **m independent single-input neural networks** evaluated over a shared
+    grid of ``n_quad`` quadrature points in [0, 1].  The triple score is the
+    numerical integral of the point-wise product of the three functions:
 
-    def __init__(self,args):
+    .. math::
+
+        f(h, r, t) = \int_0^1 \sum_{k=1}^m f_k^h(x)\, f_k^r(x)\, f_k^t(x)\, dx
+
+    The function at channel *k* is a depth-``degree`` network:
+
+    * ``degree=0``: :math:`f_k(x) = w_k \cdot x`  (linear)
+    * ``degree=1``: :math:`f_k(x) = \tanh(w_k x + b_k)`  (1-layer)
+    * ``degree≥2``: successive tanh layers, one per extra block
+
+    **Embedding layout** — the ``embedding_dim``-dimensional vector is split
+    evenly into ``degree+1`` blocks of size ``m = embedding_dim // (degree+1)``.
+    Block 0 is the slope, block 1 the bias, blocks 2…degree add depth.
+
+    **KvsAll scalability** — ``forward_k_vs_all`` avoids the cubic O(B·|E|·m)
+    loop by separating head×relation from tails:
+
+    .. math::
+
+        f(h, r, t_e) = \sum_j w_j \underbrace{\left[\sum_k f_k^h(x_j)
+        f_k^r(x_j)\right]}_{\text{HR}_{b,j}}\; \underbrace{\left[\sum_k
+        f_k^{t_e}(x_j)\right]}_{\text{T}_{e,j}}
+
+    This is a single matrix multiply :math:`\mathbf{HR}_w \, \mathbf{T}^\top`
+    of shape ``(B, n_quad) × (n_quad, |E|) = (B, |E|)``.
+
+    Parameters
+    ----------
+    args : dict
+        ``degree`` (int, default 1) — network depth per channel.
+        ``n_quad`` (int, default 100) — quadrature points; reduce for large |E|.
+    """
+
+    def __init__(self, args):
         super().__init__(args)
         self.name = 'LFMult'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+
+        self.degree = int(self.args.get("degree", 1))
+        self.n_quad = int(self.args.get("n_quad", 100))
+
+        assert self.embedding_dim % (self.degree + 1) == 0, (
+            f"LFMult: embedding_dim={self.embedding_dim} must be divisible by "
+            f"(degree+1)={self.degree + 1}."
+        )
+        self.m = self.embedding_dim // (self.degree + 1)
+
+        self.entity_embeddings   = torch.nn.Embedding(self.num_entities,  self.embedding_dim)
         self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.degree = self.args.get("degree",0)
-        self.m = int(self.embedding_dim/(1+self.degree))
-        self.x_values = torch.linspace(0, 1, 100)
 
-    def forward_triples(self, idx_triple): # idx_triplet = (h_idx, r_idx, t_idx) #change this to the forward_triples
+        # Quadrature grid — registered as a buffer so it moves with .to(device).
+        x = torch.linspace(0.0, 1.0, self.n_quad)
+        self.register_buffer("x_values", x)
 
-        head_ent_emb, rel_emb, tail_ent_emb = self.get_triple_representation(idx_triple)
+        # Precompute trapezoid weights once (uniform spacing, so dx is constant).
+        dx = x[1] - x[0]
+        trap_w = torch.ones(self.n_quad) * dx
+        trap_w[0]  *= 0.5
+        trap_w[-1] *= 0.5
+        self.register_buffer("trap_weights", trap_w)   # (n_quad,)
 
-        coeff_head, coeff_rel, coeff_tail = self.construct_multi_coeff(head_ent_emb), self.construct_multi_coeff(rel_emb), self.construct_multi_coeff(tail_ent_emb)
+        logger.info(
+            f"LFMult | m={self.m}  degree={self.degree}  n_quad={self.n_quad}"
+        )
 
-        ###### polynomial score with trilinear scoring
+    # ── Core: evaluate embeddings as functions at quadrature points ────────
 
-        # score = self.tri_score(coeff_head,coeff_rel,coeff_tail)
+    def _eval(self, emb: torch.Tensor) -> torch.Tensor:
+        """Map a batch of embeddings to function evaluations at quadrature points.
 
-        # score = score.reshape(-1,self.m).sum(dim=1)
+        Each embedding ``e ∈ ℝ^D`` parameterises *m* networks
+        ``f_k : [0,1] → ℝ``.  With ``D = m · (degree+1)`` the embedding is
+        split into ``(degree+1)`` blocks of size ``m``.
 
+        Parameters
+        ----------
+        emb : (B, D)
 
-        ##### polynomial score with NN
+        Returns
+        -------
+        (B, m, n_quad) — ``out[b, k, j] = f_k(x_j)``
+        """
+        B = emb.size(0)
+        # blocks[b, d, k] = d-th parameter of channel k for sample b
+        blocks = emb.view(B, self.degree + 1, self.m)  # (B, 1+deg, m)
+        # x broadcast shape: (1, 1, n_quad)
+        x = self.x_values.view(1, 1, -1)
 
-        score = torch.trapezoid(self.poly_NN(self.x_values,coeff_head, coeff_rel, coeff_tail),self.x_values)
-        # score = integral_value.reshape(1,-1).squeeze(0)
+        # First block: slope.  out = w0 * x  →  (B, m, n_quad)
+        out = blocks[:, 0, :].unsqueeze(2) * x   # (B, m, 1) × (1, 1, n_quad)
 
+        # Each subsequent block adds a tanh layer:
+        # out ← tanh(out + w_d)
+        for d in range(1, self.degree + 1):
+            wd = blocks[:, d, :].unsqueeze(2)     # (B, m, 1)
+            out = torch.tanh(out + wd)
 
-        return score
+        return out   # (B, m, n_quad)
 
-    def construct_multi_coeff(self, x):
+    # ── Scoring ────────────────────────────────────────────────────────────
 
-        coeffs = torch.hsplit(x,self.degree + 1)
-        coeffs = torch.stack(coeffs,dim=1)
+    def forward_triples(self, idx_triple: torch.Tensor) -> torch.Tensor:
+        """NegSample / trilinear scoring.
 
-        return coeffs.transpose(1,2)
+        .. math::
 
+            f(h,r,t) = \\int_0^1 \\sum_k f_k^h(x)\\, f_k^r(x)\\, f_k^t(x)\\, dx
 
+        Parameters
+        ----------
+        idx_triple : (B, 3)
 
-    def poly_NN(self, x, coefh, coefr, coeft):
+        Returns
+        -------
+        (B,)
+        """
+        h_emb, r_emb, t_emb = self.get_triple_representation(idx_triple)
 
-        r''' Constructing a 2 layers NN to represent the embeddings.
-         h = \sigma(wh^T x + bh ),  r = \sigma(wr^T x + br ),  t = \sigma(wt^T x + bt )'''
+        h = self._eval(h_emb)   # (B, m, n_quad)
+        r = self._eval(r_emb)   # (B, m, n_quad)
+        t = self._eval(t_emb)   # (B, m, n_quad)
 
-        wh, bh = coefh[:, :self.m,0], coefh[:, :self.m,1]
-        wr, br = coefr[:, :self.m,0], coefr[:, :self.m,1]
-        wt, bt = coeft[:, :self.m,0], coeft[:, :self.m,1]
+        # Point-wise product summed over channels → (B, n_quad)
+        integrand = (h * r * t).sum(dim=1)
 
-        h_emb = self.linear(x,wh,bh).reshape(-1,self.m,x.size(0))
-        r_emb = self.linear(x,wr,br).reshape(-1,self.m,x.size(0))
-        t_emb = self.linear(x,wt,bt).reshape(-1,self.m,x.size(0))
+        # Trapezoid integration: dot with precomputed weights
+        return integrand @ self.trap_weights   # (B,)
 
-        return self.scalar_batch_NN(h_emb, r_emb, t_emb)#(linear(x,wh,bh)*linear(x,wr,br)*linear(x,wt,bt))
+    def forward_k_vs_all(self, x: torch.Tensor) -> torch.Tensor:
+        """KvsAll scoring — scores every entity as tail in one matrix multiply.
 
-    def linear(self,x,w,b):
-        return torch.tanh((w.reshape(-1,1)*x.unsqueeze(0) + b.reshape(-1,1)))
+        Derivation
+        ----------
+        .. math::
 
+            f(h,r,t_e) &= \\int_0^1 \\underbrace{\\sum_k f_k^h(x)f_k^r(x)}_{\\text{HR}(x)}
+                          \\underbrace{\\sum_k f_k^{t_e}(x)}_{\\text{T}_e(x)}\\, dx \\\\
+                       &\\approx \\sum_j w_j \\, \\text{HR}_{b,j} \\, \\text{T}_{e,j}
+                        = \\mathbf{HR}_w \\, \\mathbf{T}^\\top
 
+        where :math:`\\mathbf{HR}_w \\in \\mathbb{R}^{B \\times n_q}` has the
+        trapezoid weights folded in, and :math:`\\mathbf{T} \\in
+        \\mathbb{R}^{|E| \\times n_q}`.
 
+        **Complexity**: O(B·m·n_q) + O(|E|·m·n_q) + O(B·|E|·n_q) — the last
+        term dominates but n_q is small (default 100), making it tractable
+        for datasets up to ~10k entities.  For larger KGs reduce ``n_quad``.
 
-    def scalar_batch_NN(self, a, b, c):
+        Parameters
+        ----------
+        x : (B, 2)  integer [head_idx, relation_idx]
 
-        '''element wise multiplication between a,b and c:
-        Inputs : a, b, c ====> torch.tensor of size batch_size x m x d
-        Output : a tensor of size batch_size x d'''
+        Returns
+        -------
+        (B, |E|)
+        """
+        h_emb, r_emb = self.get_head_relation_representation(x)
 
-        a_reshaped = a.transpose(1, 2).reshape(-1, a.size(-1), a.size(-2))
-        b_reshaped = b.transpose(1, 2).reshape(-1, b.size(-1), b.size(-2))
-        c_reshaped = c.transpose(1, 2).reshape(-1, c.size(-1), c.size(-2))
+        h = self._eval(h_emb)   # (B, m, n_quad)
+        r = self._eval(r_emb)   # (B, m, n_quad)
 
-        mul_result = a_reshaped * b_reshaped * c_reshaped
+        # HR[b, j] = Σ_k f_k^h(x_j) * f_k^r(x_j)
+        HR = (h * r).sum(dim=1)   # (B, n_quad)
 
-        return mul_result.sum(dim=-1)
+        # Evaluate ALL entity embeddings at quadrature points
+        T_all = self._eval(self.entity_embeddings.weight)   # (|E|, m, n_quad)
+        T_sum = T_all.sum(dim=1)                            # (|E|, n_quad)
 
+        # Fold trapezoid weights into HR: HR_w[b, j] = w_j * HR[b, j]
+        HR_w = HR * self.trap_weights.unsqueeze(0)   # (B, n_quad)
 
-
-
-    def tri_score(self, coeff_h, coeff_r, coeff_t):
-
-        r'''this part implement the trilinear scoring techniques:
-
-        score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d}
-
-        1. generate the range for i,j and k from [0 d-1]
-
-        2. perform
-        \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d} in parallel for every batch
-
-        3. take the sum over each batch
-
-        '''
-
-        i_range, j_range, k_range = torch.meshgrid(torch.arange(self.degree+1),torch.arange(self.degree+1),torch.arange(self.degree+1))
-
-        if self.degree == 0:
-            terms = 1 / (1 + i_range + j_range + k_range) #%self.degree
-        else:
-            terms = 1 / (1 + (i_range + j_range + k_range)%self.degree) #%self.degree
-
-
-
-
-        weighted_terms = terms.unsqueeze(0)*coeff_h.reshape(-1, 1, self.degree+1, 1) *coeff_r.reshape(-1, self.degree+1, 1, 1) * coeff_t.reshape(-1, 1, 1,self.degree+1)
-
-        result = torch.sum(weighted_terms, dim=[-3,-2,-1])
-
-        return result
-
-    def vtp_score(self, h, r, t):
-
-        r'''this part implement the vector triple product scoring techniques:
-
-        score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*c_j*b_k - b_i*c_j*a_k}{(1+(i+j)%d)(1+k)}
-
-        1. generate the range for i,j and k from [0 d-1]
-
-        2. Compute the first and second terms of the sum
-
-        3.  Multiply with then denominator and take the sum
-
-        4. take the sum over each batch
-
-        '''
-
-        i_range, j_range, k_range = torch.meshgrid(torch.arange(self.embedding_dim),torch.arange(self.embedding_dim),torch.arange(self.embedding_dim))
-
-        # terms = 1 / (1 + (i_range + j_range)%self.embedding_dim) / (1+ k_range) # with modulo
-
-        terms = 1 / (1 + i_range + j_range) / (1+ k_range)   #without dthe modulo
-
-
-        terms1 = h.view(-1, 1, self.embedding_dim, 1) * t.view(-1, self.embedding_dim, 1, 1) * r.view(-1, 1, 1,self.embedding_dim)
-        terms2 = r.view(-1, 1, self.embedding_dim, 1) * t.view(-1, self.embedding_dim, 1, 1) * h.view(-1, 1, 1,self.embedding_dim)
-
-        weighted_terms = terms * (terms1-terms2)
-
-        result = torch.sum(weighted_terms, dim=[-3,-2,-1])
-
-        return result
-
-    def comp_func(self,h,r,t):
-        '''this part implement the function composition scoring techniques: i.e. score = <hor, t>'''
-
-        degree = torch.arange(self.embedding_dim, dtype=torch.float32)
-
-        r_emb = self.polynomial(r,self.x_values,degree)
-
-        t_emb = self.polynomial(t,self.x_values,degree)
-
-        hor = self.pop(h,r_emb,degree)
-
-        score = torch.trapz(hor*t_emb , self.x_values) #Computing the score with the trapezoid method
-
-        return score
-
-    def polynomial(self,coeff,x,degree):
-        '''This function takes a matrix tensor of coefficients (coeff), a tensor vector of points x  and range of integer [0,1,...d]
-            and return a vector tensor (coeff[0][0] + coeff[0][1]x +...+ coeff[0][d]x^d,
-                                coeff[1][0] + coeff[1][1]x +...+ coeff[1][d]x^d)
-                                        ....'''
-
-        x_powers = x.unsqueeze(1) ** degree
-
-        vect = torch.matmul(coeff,x_powers.T)
-
-        return vect
-
-
-    def pop(self,coeff,x,degree):
-        '''This function allow us to evaluate the composition of two polynomes without for loops :)
-        it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  and range of integer [0,1,...d]
-            and return a tensor (coeff[0][0] + coeff[0][1]x +...+ coeff[0][d]x^d,
-                                coeff[1][0] + coeff[1][1]x +...+ coeff[1][d]x^d)
-                                        ....'''
-        x_powers = x.unsqueeze(2) ** degree
-
-        Mat = (coeff.unsqueeze(1)*x_powers).sum(dim=-1)
-
-        return Mat
+        # score[b, e] = Σ_j HR_w[b,j] * T_sum[e,j]
+        return HR_w @ T_sum.t()   # (B, |E|)
