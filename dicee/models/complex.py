@@ -315,7 +315,8 @@ class RotatE(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'RotatE'
-        self.margin = 6.0
+        margin = self.args.get("margin")
+        self.margin = margin if margin is not None else 6.0
 
         if self.embedding_dim % 2 != 0:
             raise ValueError(

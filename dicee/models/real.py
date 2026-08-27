@@ -136,7 +136,8 @@ class TransE(BaseKGE):
         super().__init__(args)
         self.name = 'TransE'
         self._norm = 2
-        self.margin = 4
+        margin = self.args.get("margin")
+        self.margin = margin if margin is not None else 4
 
     def score(self, head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor,
               tail_ent_emb: torch.FloatTensor) -> torch.FloatTensor:
@@ -194,7 +195,7 @@ class TransH(BaseKGE):
 
         h_r = h - (r_w^T h) * r_w
         t_r = t - (r_w^T t) * r_w
-        f(h, r, t) = -||h_r + r_d - t_r||_2^2
+        f(h, r, t) = margin - ||h_r + r_d - t_r||_2^2
 
     ``r_w`` reuses the inherited ``relation_embeddings`` table and is
     normalised to unit norm before every use, since only a unit-norm normal
@@ -212,6 +213,8 @@ class TransH(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'TransH'
+        margin = self.args.get("margin")
+        self.margin = margin if margin is not None else 4
         # In-hyperplane translation vector r_d (like TransE's relation
         # embedding). self.relation_embeddings (from BaseKGE) is reused as
         # the raw hyperplane normal r_w (normalised to unit norm before
@@ -241,7 +244,7 @@ class TransH(BaseKGE):
         rel_normal = F.normalize(rel_normal_emb, p=2, dim=-1)
         head_proj = head_ent_emb - (rel_normal * head_ent_emb).sum(dim=1, keepdim=True) * rel_normal
         tail_proj = tail_ent_emb - (rel_normal * tail_ent_emb).sum(dim=1, keepdim=True) * rel_normal
-        return -torch.sum((head_proj + rel_translation - tail_proj) ** 2, dim=1)
+        return self.margin - torch.sum((head_proj + rel_translation - tail_proj) ** 2, dim=1)
 
     def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
         """KvsAll forward pass: score head/relation against all entities.
@@ -274,7 +277,7 @@ class TransH(BaseKGE):
         tail_proj = E.unsqueeze(0) - dot.unsqueeze(-1) * rel_normal.unsqueeze(1)  # (B, num_entities, d)
 
         diff = (head_proj + rel_translation).unsqueeze(1) - tail_proj  # (B, num_entities, d)
-        return -(diff ** 2).sum(dim=-1)
+        return self.margin - (diff ** 2).sum(dim=-1)
 
     def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor:
         """KvsSample forward pass: score head/relation against a sampled entity subset.
@@ -308,7 +311,7 @@ class TransH(BaseKGE):
         tail_proj = tail_ent_emb - dot.unsqueeze(-1) * rel_normal.unsqueeze(1)  # (B, k, d)
 
         diff = (head_proj + rel_translation).unsqueeze(1) - tail_proj  # (B, k, d)
-        return -(diff ** 2).sum(dim=-1)
+        return self.margin - (diff ** 2).sum(dim=-1)
 
 
 class MuRE(BaseKGE):
@@ -495,7 +498,8 @@ class Pyke(BaseKGE):
         super().__init__(args)
         self.name = 'Pyke'
         self.dist_func = torch.nn.PairwiseDistance(p=2)
-        self.margin = 1.0
+        margin = self.args.get("margin")
+        self.margin = margin if margin is not None else 1.0
 
     def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
         """Score a batch of triples using the Pyke distance formula.
