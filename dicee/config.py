@@ -129,6 +129,9 @@ class Namespace(argparse.Namespace):
         self.num_of_output_channels: int = 32
         """Number of slices in the generated feature map by convolution."""
 
+        self.margin: float = 4.0
+        """Margin used by margin-based scoring functions (e.g. TransE, TransH, RotatE)"""
+
         self.p: int = 0
         "P parameter of Clifford Embeddings"
 
