@@ -462,7 +462,7 @@ Package Contents
    .. py:method:: single_hop_query_answering(query: tuple, only_scores: bool = True, k: int = None, use_logits: bool = True)
 
 
-   .. py:method:: answer_multi_hop_query(query_type: Optional[str] = None, query: Optional[Tuple[Union[str, Tuple[str, str]], Ellipsis]] = None, queries: Optional[List[Tuple[Union[str, Tuple[str, str]], Ellipsis]]] = None, tnorm: str = 'prod', neg_norm: str = 'standard', lambda_: float = 0.0, k: int = 10, only_scores: bool = False, use_logits: bool = True) -> Union[List[Tuple[str, torch.Tensor]], List[List[Tuple[str, torch.Tensor]]]]
+   .. py:method:: answer_multi_hop_query(query_type: Optional[str] = None, query: Optional[Tuple[Union[str, Tuple[str, str]], ...]] = None, queries: Optional[List[Tuple[Union[str, Tuple[str, str]], ...]]] = None, tnorm: str = 'prod', neg_norm: str = 'standard', lambda_: float = 0.0, k: int = 10, only_scores: bool = False, use_logits: bool = True) -> Union[List[Tuple[str, torch.Tensor]], List[List[Tuple[str, torch.Tensor]]]]
 
       Answer multi-hop EPFO (Existential Positive First-Order) queries.
 

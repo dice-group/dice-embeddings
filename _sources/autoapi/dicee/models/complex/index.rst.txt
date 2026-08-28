@@ -276,8 +276,6 @@ Module Contents
 
 
    .. py:attribute:: margin
-      :value: 6.0
-
 
 
    .. py:attribute:: half_dim

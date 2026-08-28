@@ -328,6 +328,14 @@ Module Contents
       Number of slices in the generated feature map by convolution.
 
 
+   .. py:attribute:: margin
+      :type:  float
+      :value: 4.0
+
+
+      Margin used by margin-based scoring functions (e.g. TransE, TransH, RotatE)
+
+
    .. py:attribute:: p
       :type:  int
       :value: 0

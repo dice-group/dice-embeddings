@@ -110,6 +110,7 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.pl_trainer_kwargs"><code class="docutils literal notranslate"><span class="pre">Namespace.pl_trainer_kwargs</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.kernel_size"><code class="docutils literal notranslate"><span class="pre">Namespace.kernel_size</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.num_of_output_channels"><code class="docutils literal notranslate"><span class="pre">Namespace.num_of_output_channels</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.margin"><code class="docutils literal notranslate"><span class="pre">Namespace.margin</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.p"><code class="docutils literal notranslate"><span class="pre">Namespace.p</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.q"><code class="docutils literal notranslate"><span class="pre">Namespace.q</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.input_dropout_rate"><code class="docutils literal notranslate"><span class="pre">Namespace.input_dropout_rate</span></code></a></li>
@@ -457,6 +458,12 @@ checkpoint messages are logged at INFO; set to WARNING or higher to silence them
 <dt class="sig sig-object py" id="dicee.config.Namespace.num_of_output_channels">
 <span class="sig-name descname"><span class="pre">num_of_output_channels</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">32</span></span><a class="headerlink" href="#dicee.config.Namespace.num_of_output_channels" title="Link to this definition"></a></dt>
 <dd><p>Number of slices in the generated feature map by convolution.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.config.Namespace.margin">
+<span class="sig-name descname"><span class="pre">margin</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4.0</span></span><a class="headerlink" href="#dicee.config.Namespace.margin" title="Link to this definition"></a></dt>
+<dd><p>Margin used by margin-based scoring functions (e.g. TransE, TransH, RotatE)</p>
 </dd></dl>
 
 <dl class="py attribute">

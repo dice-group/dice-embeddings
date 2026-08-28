@@ -314,7 +314,7 @@ Data</em>, NeurIPS 2013.
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.real.TransE.margin">
-<span class="sig-name descname"><span class="pre">margin</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></span><a class="headerlink" href="#dicee.models.real.TransE.margin" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">margin</span></span><a class="headerlink" href="#dicee.models.real.TransE.margin" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -373,7 +373,7 @@ differently depending on the relation. Concretely, for a triple
 translation vector <code class="docutils literal notranslate"><span class="pre">r_d</span></code>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">h_r</span> <span class="o">=</span> <span class="n">h</span> <span class="o">-</span> <span class="p">(</span><span class="n">r_w</span><span class="o">^</span><span class="n">T</span> <span class="n">h</span><span class="p">)</span> <span class="o">*</span> <span class="n">r_w</span>
 <span class="n">t_r</span> <span class="o">=</span> <span class="n">t</span> <span class="o">-</span> <span class="p">(</span><span class="n">r_w</span><span class="o">^</span><span class="n">T</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">r_w</span>
-<span class="n">f</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="o">-||</span><span class="n">h_r</span> <span class="o">+</span> <span class="n">r_d</span> <span class="o">-</span> <span class="n">t_r</span><span class="o">||</span><span class="n">_2</span><span class="o">^</span><span class="mi">2</span>
+<span class="n">f</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="o">=</span> <span class="n">margin</span> <span class="o">-</span> <span class="o">||</span><span class="n">h_r</span> <span class="o">+</span> <span class="n">r_d</span> <span class="o">-</span> <span class="n">t_r</span><span class="o">||</span><span class="n">_2</span><span class="o">^</span><span class="mi">2</span>
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">r_w</span></code> reuses the inherited <code class="docutils literal notranslate"><span class="pre">relation_embeddings</span></code> table and is
@@ -388,6 +388,11 @@ AAAI 2014.
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.real.TransH.name">
 <span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'TransH'</span></span><a class="headerlink" href="#dicee.models.real.TransH.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.real.TransH.margin">
+<span class="sig-name descname"><span class="pre">margin</span></span><a class="headerlink" href="#dicee.models.real.TransH.margin" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -656,7 +661,7 @@ relations that connect them.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.real.Pyke.margin">
-<span class="sig-name descname"><span class="pre">margin</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1.0</span></span><a class="headerlink" href="#dicee.models.real.Pyke.margin" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">margin</span></span><a class="headerlink" href="#dicee.models.real.Pyke.margin" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
