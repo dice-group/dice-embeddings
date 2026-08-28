@@ -136,8 +136,7 @@ class TransE(BaseKGE):
         super().__init__(args)
         self.name = 'TransE'
         self._norm = 2
-        margin = self.args.get("margin")
-        self.margin = margin if margin is not None else 4
+        self.margin = self.args.get("margin", 4.0)
 
     def score(self, head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor,
               tail_ent_emb: torch.FloatTensor) -> torch.FloatTensor:
@@ -213,8 +212,7 @@ class TransH(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'TransH'
-        margin = self.args.get("margin")
-        self.margin = margin if margin is not None else 4
+        self.margin = self.args.get("margin", 4.0)
         # In-hyperplane translation vector r_d (like TransE's relation
         # embedding). self.relation_embeddings (from BaseKGE) is reused as
         # the raw hyperplane normal r_w (normalised to unit norm before
@@ -498,8 +496,7 @@ class Pyke(BaseKGE):
         super().__init__(args)
         self.name = 'Pyke'
         self.dist_func = torch.nn.PairwiseDistance(p=2)
-        margin = self.args.get("margin")
-        self.margin = margin if margin is not None else 1.0
+        self.margin = self.args.get("margin", 1.0)
 
     def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
         """Score a batch of triples using the Pyke distance formula.

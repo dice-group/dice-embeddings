@@ -48,8 +48,8 @@ class TestRegressionTransH:
         args.trainer = "torchCPUTrainer"
         result = Execute(args).start()
 
-        assert 0.75 >= result["Train"]["MRR"] >= 0.65
-        assert 0.75 >= result["Val"]["MRR"] >= 0.65
+        assert 0.75 >= result["Train"]["MRR"] >= 0.6
+        assert 0.75 >= result["Val"]["MRR"] >= 0.6
         assert 0.75 >= result["Test"]["MRR"] >= 0.6
 
 

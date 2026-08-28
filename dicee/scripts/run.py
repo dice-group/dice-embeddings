@@ -98,7 +98,7 @@ def get_default_arguments(description=None):
                         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
                         help='Logging verbosity. Dataset info, timing, and checkpoint messages are '
                              'logged at INFO; set to WARNING or higher to silence them.')
-    parser.add_argument('--margin', type=float, default=None,
+    parser.add_argument('--margin', type=float, default=4.0,
                         help='Margin used by margin-based scoring functions (e.g. TransE, TransH, RotatE).')
     parser.add_argument('--p', type=int, default=0,
                         help='P for Clifford Algebra')
