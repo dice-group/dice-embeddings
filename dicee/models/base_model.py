@@ -237,7 +237,7 @@ class BaseKGE(BaseKGELightning):
         self.num_of_output_channels = None
         self.weight_decay = None
         if args.get("scoring_technique") == "NegSampleMargin":
-            self.loss = torch.nn.MarginRankingLoss(margin=args.get("margin", 1.0))
+            self.loss = torch.nn.MarginRankingLoss(margin=args.get("margin", 4.0))
         else:
             self.loss = torch.nn.BCEWithLogitsLoss()
         self.selected_optimizer = None
