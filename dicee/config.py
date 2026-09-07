@@ -76,6 +76,9 @@ class Namespace(argparse.Namespace):
         self.neg_ratio: int = 0
         """Negative ratio for a true triple in NegSample training_technique"""
 
+        self.margin: float = 1.0
+        """Margin for torch.nn.MarginRankingLoss, used only when scoring_technique='NegSampleMargin'"""
+
         self.weight_decay: float = 0.0
         """Weight decay for all trainable params"""
 

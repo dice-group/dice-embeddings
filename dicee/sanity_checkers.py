@@ -105,7 +105,7 @@ def validate_knowledge_graph(args):
 
 def sanity_checking_with_arguments(args):
     assert args.embedding_dim > 0, f"embedding_dim must be strictly positive. Currently:{args.embedding_dim}"
-    valid_techniques = ["AllvsAll", "1vsSample", "KvsSample", "FSDP1vsSample", "KvsAll", "FixedNegSample", "NegSample", "1vsAll", "Pyke", "Sentence"]
+    valid_techniques = ["AllvsAll", "1vsSample", "KvsSample", "FSDP1vsSample", "KvsAll", "FixedNegSample", "NegSample", "NegSampleMargin", "1vsAll", "Pyke", "Sentence"]
     assert args.scoring_technique in valid_techniques, f"Invalid training strategy => {args.scoring_technique}."
     if args.scoring_technique == "FSDP1vsSample":
         assert args.trainer == "torchFSDP", (
