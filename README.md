@@ -24,37 +24,6 @@ Knowledge graph embedding research has mainly focused on learning continuous rep
 - 📈 **Scales up** — row-wise sharded entity tables and distributed optimizer states for very large knowledge graphs
 - 🔌 **Two entry points** — the `dicee` CLI for quick runs, and a Python API (`Execute`, `KGE`) for programmatic control
 
-## Knowledge graph foundation models
-
-[ULTRA](docs/ultra.md) supports official pretrained checkpoints, zero-shot link prediction,
-fine-tuning, and native DICE training objectives using pure PyTorch.
-
-<details>
-<summary>ULTRA checkpoint downloads and inference</summary>
-
-Download any of the three official checkpoints:
-
-```bash
-wget -P checkpoints https://raw.githubusercontent.com/DeepGraphLearning/ULTRA/main/ckpts/ultra_3g.pth
-wget -P checkpoints https://raw.githubusercontent.com/DeepGraphLearning/ULTRA/main/ckpts/ultra_4g.pth
-wget -P checkpoints https://raw.githubusercontent.com/DeepGraphLearning/ULTRA/main/ckpts/ultra_50g.pth
-```
-
-Run zero-shot inference and filtered evaluation on the UMLS test set:
-
-```bash
-python -m dicee --model ULTRA --dataset_dir KGs/UMLS \
-  --ultra_checkpoint checkpoints/ultra_3g.pth --num_epochs 0 \
-  --trainer torchCPUTrainer --scoring_technique NegSample \
-  --batch_size 8 --eval_model test
-```
-
-Change `--ultra_checkpoint` to use another checkpoint and `--dataset_dir` to use
-your own graph with `train.txt` and `test.txt`. See the [ULTRA guide](docs/ultra.md)
-for training, fine-tuning, and prediction examples.
-
-</details>
-
 ## Quick Reference
 
 | Task | Command |
@@ -616,6 +585,37 @@ keci.predict_topk(h=["Mongolia"], r=["isLocatedIn"], topk=3)
 ```
 
 **📖 [See download & evaluation examples →](tests/test_download_and_eval.py)**
+
+</details>
+
+## Knowledge graph foundation models
+
+[ULTRA](docs/ultra.md) supports official pretrained checkpoints, zero-shot link prediction,
+fine-tuning, and native DICE training objectives using pure PyTorch.
+
+<details>
+<summary>ULTRA checkpoint downloads and inference</summary>
+
+Download any of the three official checkpoints:
+
+```bash
+wget -P checkpoints https://raw.githubusercontent.com/DeepGraphLearning/ULTRA/main/ckpts/ultra_3g.pth
+wget -P checkpoints https://raw.githubusercontent.com/DeepGraphLearning/ULTRA/main/ckpts/ultra_4g.pth
+wget -P checkpoints https://raw.githubusercontent.com/DeepGraphLearning/ULTRA/main/ckpts/ultra_50g.pth
+```
+
+Run zero-shot inference and filtered evaluation on the UMLS test set:
+
+```bash
+python -m dicee --model ULTRA --dataset_dir KGs/UMLS \
+  --ultra_checkpoint checkpoints/ultra_3g.pth --num_epochs 0 \
+  --trainer torchCPUTrainer --scoring_technique NegSample \
+  --batch_size 8 --eval_model test
+```
+
+Change `--ultra_checkpoint` to use another checkpoint and `--dataset_dir` to use
+your own graph with `train.txt` and `test.txt`. See the [ULTRA guide](docs/ultra.md)
+for training, fine-tuning, and prediction examples.
 
 </details>
 
