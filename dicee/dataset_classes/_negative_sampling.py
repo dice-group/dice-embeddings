@@ -316,3 +316,44 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
             label = torch.cat((label, label_tail_corr), 0)
 
         return x, label
+
+
+class GroupedNegativeSamplingDataset(TriplePredictionDataset):
+    """Positive-first negative groups reusable by any indexed triple scorer.
+
+    Strict filtering uses training facts only. Negative candidates are drawn
+    with replacement, so even dense queries can request many negatives.
+    """
+
+    def __init__(self, *args, strict_negative_sampling=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        if int(self.neg_sample_ratio) < 1:
+            raise ValueError('Grouped negative sampling requires neg_ratio > 0')
+        self.strict_negative_sampling = strict_negative_sampling
+        self.true_heads, self.true_tails = {}, {}
+        if strict_negative_sampling:
+            for h, r, t in self.train_set:
+                self.true_heads.setdefault((int(r), int(t)), set()).add(int(h))
+                self.true_tails.setdefault((int(h), int(r)), set()).add(int(t))
+
+    def collate_fn(self, batch):
+        positive = torch.stack(batch)
+        n, k = len(positive), int(self.neg_sample_ratio)
+        triples = positive[:, None].repeat(1, k + 1, 1)
+        for i, (h, r, t) in enumerate(positive.tolist()):
+            position = 2 if i < n // 2 else 0
+            if self.strict_negative_sampling:
+                forbidden = self.true_tails[(h, r)] if position == 2 else self.true_heads[(r, t)]
+                candidates = torch.ones(int(self.num_entities), dtype=torch.bool)
+                candidates[list(forbidden)] = False
+                candidates = candidates.nonzero().flatten()
+                if not len(candidates):
+                    raise ValueError(f'No valid negative candidates for training query {(h, r, t)}')
+                negative = candidates[torch.randint(len(candidates), (k,))]
+            else:
+                negative = torch.randint(int(self.num_entities), (k,))
+            triples[i, 1:, position] = negative
+        targets = torch.zeros(n, k + 1)
+        targets[:, 0] = 1
+        targets = targets * (1 - 2 * self.label_smoothing_rate) + self.label_smoothing_rate
+        return triples, targets

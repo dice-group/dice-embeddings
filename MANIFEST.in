@@ -5,3 +5,5 @@ recursive-include dicee *.png
 recursive-include documents *.ipynb
 recursive-include documents *.md
 recursive-include documents *.py
+
+include THIRD_PARTY_NOTICES.md

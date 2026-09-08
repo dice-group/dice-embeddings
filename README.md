@@ -1339,3 +1339,9 @@ url={https://openreview.net/forum?id=6T45-4TFqaX}}
   organization={IEEE}
 ```
 For any questions or wishes, please contact:  ```caglar.demir@upb.de```
+
+### Knowledge graph foundation models
+
+[ULTRA](docs/ultra.md) supports official pretrained checkpoints, zero-shot link prediction,
+fine-tuning, and native DICE objectives using pure PyTorch. Strict negative sampling
+and adversarial negative weighting are also reusable with existing embedding models.

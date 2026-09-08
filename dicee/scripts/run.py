@@ -34,10 +34,17 @@ def get_default_arguments(description=None):
     parser.add_argument("--reuse_existing_run_dir", action="store_true",
                         help="If set, reuse the existing path_to_store_single_run directory if it exists. "
                              "If not set, the directory will be deleted and recreated if it exists.")
+    parser.add_argument("--ultra_checkpoint", default=None, help="Official ULTRA checkpoint path")
+    parser.add_argument("--ultra_dim", type=int, default=64)
+    parser.add_argument("--ultra_num_layers", type=int, default=6)
+    parser.add_argument("--ultra_query_batch_size", type=int, default=8)
+    parser.add_argument("--grouped_negative_sampling", action="store_true")
+    parser.add_argument("--strict_negative_sampling", action="store_true")
+    parser.add_argument("--adversarial_temperature", type=float, default=None)
     # Model related arguments
     parser.add_argument("--model", type=str,
                         default="Keci",
-                        choices=["ComplEx", "Keci", "KeciTransformer", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
+                        choices=["ULTRA", "ComplEx", "Keci", "KeciTransformer", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "MuRE", "TransH", "RotatE", "DualE",
                                  "BytE", "CoKE",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",

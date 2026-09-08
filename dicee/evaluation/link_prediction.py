@@ -78,7 +78,10 @@ def evaluate_link_prediction_performance(
             torch.tensor(r).repeat(num_entities,),
             torch.tensor(t).repeat(num_entities)
         ), dim=1)
-        predictions_heads = model.model.forward_triples(x)
+        if hasattr(model.model, "forward_k_vs_all_heads"):
+            predictions_heads = model.model.forward_k_vs_all_heads(torch.tensor([[r, t]])).flatten().cpu()
+        else:
+            predictions_heads = model.model.forward_triples(x)
         del x
 
         # Compute filtered ranks
@@ -358,31 +361,36 @@ def evaluate_lp(
         predictions_tails = torch.zeros(batch_size_current, num_entities)
         predictions_heads = torch.zeros(batch_size_current, num_entities)
 
-        # Process entities in chunks
-        for chunk_start in range(0, num_entities, chunk_size):
-            chunk_end = min(chunk_start + chunk_size, num_entities)
-            entities_chunk = all_entities[chunk_start:chunk_end]
-            chunk_size_current = entities_chunk.size(0)
+        if hasattr(model, "forward_k_vs_all_heads"):
+            predictions_tails = model.forward_k_vs_all(torch.stack((h_batch, r_batch), 1)).cpu()
+            predictions_heads = model.forward_k_vs_all_heads(torch.stack((r_batch, t_batch), 1)).cpu()
 
-            # Tail prediction
-            x_tails = torch.stack((
-                h_batch.repeat_interleave(chunk_size_current),
-                r_batch.repeat_interleave(chunk_size_current),
-                entities_chunk.repeat(batch_size_current)
-            ), dim=1)
-            preds_tails = model(x_tails).view(batch_size_current, chunk_size_current)
-            predictions_tails[:, chunk_start:chunk_end] = preds_tails
-            del x_tails
+        else:
+            # Embedding models score entity candidates in chunks.
+            for chunk_start in range(0, num_entities, chunk_size):
+                chunk_end = min(chunk_start + chunk_size, num_entities)
+                entities_chunk = all_entities[chunk_start:chunk_end]
+                chunk_size_current = entities_chunk.size(0)
 
-            # Head prediction
-            x_heads = torch.stack((
-                entities_chunk.repeat(batch_size_current),
-                r_batch.repeat_interleave(chunk_size_current),
-                t_batch.repeat_interleave(chunk_size_current)
-            ), dim=1)
-            preds_heads = model(x_heads).view(batch_size_current, chunk_size_current)
-            predictions_heads[:, chunk_start:chunk_end] = preds_heads
-            del x_heads
+                # Tail prediction
+                x_tails = torch.stack((
+                    h_batch.repeat_interleave(chunk_size_current),
+                    r_batch.repeat_interleave(chunk_size_current),
+                    entities_chunk.repeat(batch_size_current)
+                ), dim=1)
+                preds_tails = model(x_tails).view(batch_size_current, chunk_size_current)
+                predictions_tails[:, chunk_start:chunk_end] = preds_tails
+                del x_tails
+
+                # Head prediction
+                x_heads = torch.stack((
+                    entities_chunk.repeat(batch_size_current),
+                    r_batch.repeat_interleave(chunk_size_current),
+                    t_batch.repeat_interleave(chunk_size_current)
+                ), dim=1)
+                preds_heads = model(x_heads).view(batch_size_current, chunk_size_current)
+                predictions_heads[:, chunk_start:chunk_end] = preds_heads
+                del x_heads
 
         # Compute filtered ranks
         for i in range(batch_size_current):

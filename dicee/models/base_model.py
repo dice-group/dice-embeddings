@@ -100,6 +100,10 @@ class BaseKGELightning(pl.LightningModule):
         torch.FloatTensor
             Scalar loss value.
         """
+        temperature = self.args.get("adversarial_temperature")
+        if temperature is not None:
+            from .sampled_loss import grouped_adversarial_bce
+            return grouped_adversarial_bce(yhat_batch, y_batch, temperature)
         return self.loss(yhat_batch, y_batch)
 
     def on_train_epoch_end(self, *args, **kwargs):
@@ -479,6 +483,8 @@ class BaseKGE(BaseKGELightning):
             x, y_idx = x
             return self.forward_k_vs_sample(x=x, target_entity_idx=y_idx)
         else:
+            if not self.byte_pair_encoding and x.ndim == 3 and x.shape[-1] == 3:
+                return self.forward_triples(x.reshape(-1, 3)).reshape(x.shape[:2])
             shape_info = x.shape
             if len(shape_info) == 2:
                 batch_size, dim = x.shape

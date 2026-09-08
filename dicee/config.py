@@ -34,6 +34,14 @@ class Namespace(argparse.Namespace):
         self.sparql_endpoint = None
         "An endpoint of a triple store."
 
+        self.ultra_checkpoint: Optional[str] = None
+        self.ultra_dim: int = 64
+        self.ultra_num_layers: int = 6
+        self.ultra_query_batch_size: int = 8
+        self.grouped_negative_sampling: bool = False
+        self.strict_negative_sampling: bool = False
+        self.adversarial_temperature: Optional[float] = None
+
         self.model: str = "Keci"
         "KGE model"
 

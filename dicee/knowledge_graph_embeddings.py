@@ -173,7 +173,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
         Highest K scores and entities
         """
-        if self.all_have_inverse:
+        if self.all_have_inverse and not hasattr(self.model, "forward_k_vs_all_heads"):
             if isinstance(relation, str):
                 relation = [f"{relation}_inverse"]
             else:
@@ -219,7 +219,11 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             triples = torch.stack([h, r, t], dim=1)
 
             # Compute scores and store
-            batch_scores = self.model(triples).view(B, H)
+            if hasattr(self.model, "forward_k_vs_all_heads"):
+                batch_scores = self.model.forward_k_vs_all_heads(
+                    torch.stack((r_batch, t_batch), 1).to(device), head_entity.to(device)).cpu()
+            else:
+                batch_scores = self.model(triples).view(B, H)
 
             if return_indices:
                 # Store top-k scores and indices

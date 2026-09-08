@@ -88,6 +88,7 @@ with open('README.md', 'r') as fh:
     long_description = fh.read()
 setup(
     name="dicee",
+    license_files=("LICENSE", "THIRD_PARTY_NOTICES.md"),
     description="Dice embedding is an hardware-agnostic framework for large-scale knowledge graph embedding applications",
     version="0.3.3",
     packages=find_packages(exclude=["tests", "tests.*"]),
