@@ -1,5 +1,7 @@
 # ULTRA in DICE
 
+[Official repository](https://github.com/DeepGraphLearning/ULTRA) · [Paper (ICLR 2024)](https://openreview.net/forum?id=jVEoydFOl9)
+
 ULTRA is a graph-conditioned link predictor implemented in pure PyTorch. It supports
 training, fine-tuning, and zero-shot inference with the official `ultra_3g.pth`,
 `ultra_4g.pth`, and `ultra_50g.pth` [checkpoints](https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90/ckpts).
