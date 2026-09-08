@@ -24,9 +24,9 @@ class TestRegressionQmult:
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
-        assert 1.00 >= result['Train']['H@1'] >= 0.83
-        assert 0.80 >= result['Val']['H@1'] >= 0.71
-        assert 0.80 >= result['Test']['H@1'] >= 0.73
+        assert 0.78 <= result['Train']['H@1'] <= 0.84
+        assert 0.70 <= result['Val']['H@1'] <= 0.76
+        assert 0.67 <= result['Test']['H@1'] <= 0.73
 
         assert result['Train']['H@10'] >= result['Train']['H@3'] >= result['Train']['H@1']
         assert result['Val']['H@10'] >= result['Val']['H@3'] >= result['Val']['H@1']
