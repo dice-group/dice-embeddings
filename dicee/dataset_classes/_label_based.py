@@ -184,12 +184,7 @@ class AllvsAll(torch.utils.data.Dataset):
         assert len(store) > 0
         self.train_data = torch.LongTensor(list(store.keys()))
 
-        if sum(len(i) for i in store.values()) == len(store):
-            self.train_target = np.array(list(store.values()))
-            assert isinstance(self.train_target[0], np.ndarray)
-        else:
-            self.train_target = list(store.values())
-            assert isinstance(self.train_target[0], list)
+        self.train_target = list(store.values())
         del store
 
     def __len__(self):
