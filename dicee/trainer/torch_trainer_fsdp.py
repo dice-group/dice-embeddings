@@ -160,9 +160,13 @@ class TorchFSDPTrainer(AbstractTrainer):
             "bfloat16": torch.bfloat16,
             "float16": torch.float16,
         }
-        self.ptdtype = ptdtype_map.get(fsdp_kwargs.get("precision", "float32"), torch.float32)
+        # bfloat16 by default: halves entity-table memory vs float32, same exponent
+        # range so no overflow risk.
+        self.ptdtype = ptdtype_map.get(fsdp_kwargs.get("precision", "bfloat16"), torch.bfloat16)
         self.ctx = torch.amp.autocast(device_type="cuda", dtype=self.ptdtype)
         self.scaler = torch.amp.GradScaler("cuda", enabled=(self.ptdtype == torch.float16))
+        # One dtype for both the entity table and the dense params.
+        self.entity_weight_dtype = self.ptdtype
 
         self.sharding_strategy = fsdp_kwargs.get("sharding_strategy", "FULL_SHARD")
         self.gradient_clip_val = fsdp_kwargs.get("gradient_clip_val", None)
@@ -241,6 +245,7 @@ class TorchFSDPTrainer(AbstractTrainer):
             device=self.device,
             lr=self.attributes.learning_rate,
             adam_device=self.entity_optim_device,
+            weight_dtype=self.entity_weight_dtype,
         )
 
         if resume_dir is not None:
@@ -639,12 +644,21 @@ class TorchFSDPTrainer(AbstractTrainer):
     def _materialize_model(self) -> torch.nn.Module:
         """Gather entity shards + dense FSDP state; rebuild a plain CPU model on rank 0.
 
-          1. (collective) gather entity shards → nn.Embedding on rank 0, None elsewhere
+          1. (collective) gather entity shards → nn.Embedding on rank 0, None elsewhere.
+             Backed by a file-mapped tensor, not anonymous RAM, so an arbitrarily large
+             table doesn't need to fit in rank 0's free RAM. The backing file is
+             unlinked as soon as it is mapped, so nothing is left in the run directory.
           2. (collective) gather FSDP full state dict, offloaded to CPU, rank-0-only
           3. rank 0 only: construct a plain (non-sharded) model, wire in entity embeddings,
              strip adapter keys, load dense state
+
+        The materialised model is always float32, regardless of the training `precision`.
+        CPU evaluation, CSV export, and KGE inference all require float32.
         """
-        full_entity_emb = self.raw_model.gather_entity_embeddings_on_rank_zero()
+        entity_mmap_path = os.path.join(self.attributes.full_storage_path, "entity_embeddings.mmap")
+        full_entity_emb = self.raw_model.gather_entity_embeddings_on_rank_zero(
+            mmap_path=entity_mmap_path, out_dtype=torch.float32
+        )
         state_dict = self._gather_full_state_dict()
 
         if self.global_rank != 0:
@@ -652,8 +666,13 @@ class TorchFSDPTrainer(AbstractTrainer):
 
         concrete_cls = self._concrete_model_class()
         plain_args = dict(self.raw_model.args)
-        plain_args["fsdp_sharded_entity"] = False
+        # Construct with entity allocation deferred, then attach the gathered table below.
+        plain_args["fsdp_sharded_entity"] = True
         trained_model = concrete_cls(plain_args)
+        plain_args["fsdp_sharded_entity"] = False
+        trained_model.defer_large_embeddings = False
+        # Dense params stay float32: FSDP's MixedPrecision keeps float32 master weights,
+        # so load_state_dict below restores full precision.
         trained_model.entity_embeddings = full_entity_emb
         trained_model.loss_history = list(self.raw_model.loss_history)
 
@@ -679,7 +698,7 @@ class TorchFSDPTrainer(AbstractTrainer):
         (which must stay entity-free — the whole point of sharded checkpointing is to
         never require a full-table gather except once, at the very end of training).
         """
-        excluded = ("entity_embeddings.", "_fsdp_adapter.", "_fsdp_dmp.")
+        excluded = ("entity_embeddings.", "_fsdp_adapter.")
         return {k: v for k, v in state_dict.items() if not any(k.startswith(p) for p in excluded)}
 
     @staticmethod

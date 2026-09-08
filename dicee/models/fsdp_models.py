@@ -8,7 +8,7 @@ Entity embeddings are partitioned row-wise across ranks:
 
 Public API:
   model.setup_fsdp_training(device, lr)              — called by trainer before loop
-  model.gather_entity_embeddings_on_rank_zero()       — called by trainer after loop
+  model.gather_entity_embeddings_on_rank_zero(...)    — called by trainer after loop
   model.save_local_shard_checkpoint(path)             — per-rank, called periodically during loop
   model.load_local_shard_checkpoint(path)             — per-rank, called by trainer on resume
   create_fsdp_sharded_model_class(ModelClass)         — factory used by static_funcs.py
@@ -16,7 +16,9 @@ Public API:
 
 from __future__ import annotations
 
+import logging
 import math
+import os
 from typing import Any, Dict, Optional, Type
 
 import torch
@@ -25,7 +27,13 @@ import torch.nn as nn
 
 from .base_model import BaseKGE
 
+logger = logging.getLogger(__name__)
+
 _SHARDED_MODEL_CACHE: Dict[Type[BaseKGE], Type[BaseKGE]] = {}
+
+# Rows moved per iteration when assembling the full table. Bounds the transient
+# device/host buffers so peak memory stays O(chunk * D), not O(num_entities * D).
+_GATHER_CHUNK_ROWS = 65_536
 
 
 # ---------------------------------------------------------------------------
@@ -322,16 +330,14 @@ class FSDPShardedEntityModel(BaseKGE):
         _args = dict(args)
         _args["fsdp_sharded_entity"] = True   # BaseKGE sets entity_embeddings=None
         super().__init__(_args)
-        self._fsdp_dmp     = None   # kept so existing trainer isinstance checks pass
         self._fsdp_adapter: Optional[RowWiseShardedEmbedding] = None
 
     def setup_fsdp_training(
         self,
         device: torch.device,
         lr: float,
-        optimizer_cls=None,       # unused — we always use _LocalSparseAdam
-        optimizer_kwargs: dict = None,
         adam_device: torch.device = None,
+        weight_dtype: torch.dtype = torch.bfloat16,
     ) -> None:
         """Create the per-rank embedding shard and its local sparse Adam.
 
@@ -349,16 +355,16 @@ class FSDPShardedEntityModel(BaseKGE):
             rank=rank,
             world_size=world_size,
             device=device,
+            weight_dtype=weight_dtype,
         )
         # Respect the model's weight initializer (xavier_normal or identity)
         self.param_init(sharded_emb.weight.data)
 
-        lr_eff = (optimizer_kwargs or {}).get("lr", lr)
         state_device = adam_device if adam_device is not None else device
         sharded_emb._local_adam = _LocalSparseAdam(
             local_rows=sharded_emb.local_rows,
             embedding_dim=self.embedding_dim,
-            lr=lr_eff,
+            lr=lr,
             device=state_device,
             state_dtype=torch.bfloat16,
         )
@@ -366,11 +372,21 @@ class FSDPShardedEntityModel(BaseKGE):
         self._fsdp_adapter = sharded_emb
         self.entity_embeddings  = sharded_emb
 
-    def gather_entity_embeddings_on_rank_zero(self) -> Optional[nn.Embedding]:
-        """Gather the full entity table on rank 0; return None on other ranks."""
+    def gather_entity_embeddings_on_rank_zero(
+        self,
+        mmap_path: Optional[str] = None,
+        out_dtype: Optional[torch.dtype] = None,
+    ) -> Optional[nn.Embedding]:
+        """Gather the full entity table on rank 0 (None elsewhere).
+
+        Args:
+            mmap_path: If given, back the assembled table with a file-mapped tensor
+                instead of anonymous memory, so it need not fit in rank 0's free RAM.
+            out_dtype: dtype of the assembled table. Defaults to the shard's own dtype.
+        """
         if self._fsdp_adapter is None:
             raise RuntimeError("setup_fsdp_training() must be called before gathering.")
-        return _gather_shards(self._fsdp_adapter)
+        return _gather_shards(self._fsdp_adapter, mmap_path=mmap_path, out_dtype=out_dtype)
 
     def save_local_shard_checkpoint(self, path: str) -> None:
         """Save this rank's entity embedding shard + its local Adam state to *path*.
@@ -429,22 +445,67 @@ class FSDPShardedEntityModel(BaseKGE):
 
 
 # ---------------------------------------------------------------------------
-# Gather helper
+# Gather helpers
 # ---------------------------------------------------------------------------
 
-def _gather_shards(sharded_emb: RowWiseShardedEmbedding) -> Optional[nn.Embedding]:
-    """Collect all per-rank shards and build a full nn.Embedding on rank 0."""
+def _allocate_full_table(
+    num_entities: int, embedding_dim: int, dtype: torch.dtype, mmap_path: Optional[str]
+) -> torch.Tensor:
+    """Allocate the destination for the assembled entity table.
+
+    Without *mmap_path*, an ordinary anonymous tensor. With it, a tensor backed by a
+    file that is unlinked right after mapping — the mapping stays valid for the
+    tensor's lifetime, so the pages are file-backed and reclaimable under memory
+    pressure, and no file remains in the run directory.
+    """
+    if mmap_path is None:
+        return torch.zeros(num_entities, embedding_dim, dtype=dtype)
+
+    full = torch.from_file(
+        mmap_path, shared=True, size=num_entities * embedding_dim, dtype=dtype
+    ).view(num_entities, embedding_dim)
+    try:
+        os.remove(mmap_path)
+    except OSError as err:  # pragma: no cover - platform dependent
+        logger.warning(f"Could not unlink the entity-table backing file {mmap_path}: {err}")
+    return full
+
+
+def _gather_shards(
+    sharded_emb: RowWiseShardedEmbedding,
+    mmap_path: Optional[str] = None,
+    out_dtype: Optional[torch.dtype] = None,
+) -> Optional[nn.Embedding]:
+    """Collect all per-rank shards and build a full nn.Embedding on rank 0 (None elsewhere).
+
+    Communication happens at the shard's own dtype (bfloat16 halves the wire traffic);
+    the assembled table is written out in *out_dtype*, defaulting to the shard dtype.
+    The trainer requests float32 so entity and dense params share one dtype.
+
+    *mmap_path* backs the assembled table with a file-mapped tensor instead of anonymous
+    memory, so an arbitrarily large table need not fit in rank 0's free RAM.
+    """
     world_size   = dist.get_world_size() if dist.is_initialized() else 1
     rank         = dist.get_rank()       if dist.is_initialized() else 0
-    local_w_cpu  = sharded_emb.weight.data.detach().cpu().float()
-    local_rows   = local_w_cpu.shape[0]
-    D            = local_w_cpu.shape[1]
+    weight_dtype = sharded_emb.weight.dtype
+    out_dtype    = weight_dtype if out_dtype is None else out_dtype
+    local_w      = sharded_emb.weight.data.detach()
+    local_rows   = local_w.shape[0]
+    D            = local_w.shape[1]
     num_entities = sharded_emb.num_embeddings
 
     if world_size == 1:
-        emb = nn.Embedding(num_entities, D)
-        emb.weight.data.copy_(local_w_cpu)
-        return emb
+        # Copy into the destination rather than return a view, so mmap_path is honored
+        # and later training can't mutate this snapshot. Chunked to bound host memory.
+        if local_rows != num_entities:
+            raise RuntimeError(f"Single-rank shard holds {local_rows} rows, expected {num_entities}.")
+        full_weight = _allocate_full_table(num_entities, D, out_dtype, mmap_path)
+        for start in range(0, num_entities, _GATHER_CHUNK_ROWS):
+            stop = min(start + _GATHER_CHUNK_ROWS, num_entities)
+            full_weight[start:stop] = local_w[start:stop].to(device="cpu", dtype=out_dtype)
+        return nn.Embedding.from_pretrained(full_weight, freeze=True)
+
+    local_w_cpu = local_w.cpu()   # a 1/world_size slice, not the full table
 
     # Exchange shard sizes so every rank knows the row offsets
     rows_t      = torch.tensor([local_rows], device=sharded_emb.device, dtype=torch.long)
@@ -456,18 +517,18 @@ def _gather_shards(sharded_emb: RowWiseShardedEmbedding) -> Optional[nn.Embeddin
         raise RuntimeError(f"Gathered {sum(all_rows)} rows, expected {num_entities}.")
 
     dest_starts = [sum(all_rows[:i]) for i in range(world_size)]
-    full_weight = torch.zeros(num_entities, D, dtype=torch.float32) if rank == 0 else None
+    full_weight = _allocate_full_table(num_entities, D, out_dtype, mmap_path) if rank == 0 else None
 
     max_rows = max(all_rows)
-    chunk    = min(65_536, max_rows)
+    chunk    = min(_GATHER_CHUNK_ROWS, max_rows)
     dev      = sharded_emb.device
     # gathered and buf must be on the same CUDA device as the input —
     # NCCL cannot write into CPU memory via all_gather (cudaErrorIllegalAddress).
-    gathered = [torch.empty(chunk, D, dtype=torch.float32, device=dev) for _ in range(world_size)]
+    gathered = [torch.empty(chunk, D, dtype=weight_dtype, device=dev) for _ in range(world_size)]
 
     for start in range(0, max_rows, chunk):
         cur   = min(chunk, max_rows - start)
-        buf   = torch.zeros(chunk, D, dtype=torch.float32, device=dev)
+        buf   = torch.zeros(chunk, D, dtype=weight_dtype, device=dev)
         valid = min(cur, max(0, local_rows - start))
         if valid > 0:
             buf[:valid].copy_(local_w_cpu[start: start + valid])
@@ -478,13 +539,14 @@ def _gather_shards(sharded_emb: RowWiseShardedEmbedding) -> Optional[nn.Embeddin
                 if v <= 0:
                     continue
                 dst = dest_starts[r] + start
-                full_weight[dst: dst + v] = shard_chunk[:v].cpu()
+                # Cast per chunk, not with one full-table .to(), to avoid a second
+                # full-size allocation.
+                full_weight[dst: dst + v] = shard_chunk[:v].cpu().to(out_dtype)
 
     if rank != 0:
         return None
-    emb = nn.Embedding(num_entities, D)
-    emb.weight.data.copy_(full_weight)
-    return emb
+    # from_pretrained wraps full_weight in place, avoiding a second full-size copy.
+    return nn.Embedding.from_pretrained(full_weight, freeze=True)
 
 
 # ---------------------------------------------------------------------------

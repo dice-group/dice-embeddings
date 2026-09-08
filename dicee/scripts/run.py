@@ -65,8 +65,8 @@ def get_default_arguments(description=None):
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchFSDP (row-wise sharded entity embeddings + FSDP dense params, multi-GPU), torchCPUTrainer (custom cpu only), TP (Model Parallelism)')
     parser.add_argument("--fsdp_trainer_kwargs", type=json.loads, default={},
                         help='JSON config for the torchFSDP trainer. '
-                             'Example: {"precision": "float32", "fsdp_optim_device": "cpu"}. '
-                             'precision: float32 (default) | bfloat16 | float16. '
+                             'Example: {"precision": "bfloat16", "fsdp_optim_device": "cpu"}. '
+                             'precision: bfloat16 (default) | float32 | float16. '
                              'fsdp_optim_device: cpu (default, saves GPU RAM) | gpu (zero-cost Adam steps).')
     parser.add_argument('--scoring_technique', default="NegSample",
                         help="Training technique for knowledge graph embedding model",

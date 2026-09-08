@@ -169,7 +169,7 @@ FSDP-specific options are passed via `--fsdp_trainer_kwargs` (JSON dict):
 
 | Key | Default | Description |
 |---|---|---|
-| `precision` | `float32` | `float32 \| bfloat16 \| float16` |
+| `precision` | `bfloat16` | Compute dtype *and* sharded entity-table dtype; `float32` or `float16` also accepted |
 | `fsdp_optim_device` | `cpu` | Entity Adam state device — `cpu` saves GPU RAM, `gpu` is faster |
 | `sharding_strategy` | `FULL_SHARD` | FSDP sharding strategy |
 | `gradient_clip_val` | `null` | Optional gradient norm clipping |
