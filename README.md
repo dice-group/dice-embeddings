@@ -24,6 +24,11 @@ Knowledge graph embedding research has mainly focused on learning continuous rep
 - 📈 **Scales up** — row-wise sharded entity tables and distributed optimizer states for very large knowledge graphs
 - 🔌 **Two entry points** — the `dicee` CLI for quick runs, and a Python API (`Execute`, `KGE`) for programmatic control
 
+## Knowledge graph foundation models
+
+[ULTRA](docs/ultra.md) supports official pretrained checkpoints, zero-shot link prediction,
+fine-tuning, and native DICE training objectives using pure PyTorch.
+
 ## Quick Reference
 
 | Task | Command |
@@ -1339,9 +1344,3 @@ url={https://openreview.net/forum?id=6T45-4TFqaX}}
   organization={IEEE}
 ```
 For any questions or wishes, please contact:  ```caglar.demir@upb.de```
-
-### Knowledge graph foundation models
-
-[ULTRA](docs/ultra.md) supports official pretrained checkpoints, zero-shot link prediction,
-fine-tuning, and native DICE objectives using pure PyTorch. Strict negative sampling
-and adversarial negative weighting are also reusable with existing embedding models.
