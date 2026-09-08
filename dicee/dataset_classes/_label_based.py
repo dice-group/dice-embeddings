@@ -272,7 +272,8 @@ class KvsSampleDataset(torch.utils.data.Dataset):
 
         y_idx = torch.cat((torch.LongTensor(y), negative_idx), 0)
         y_vec = torch.cat(
-            (torch.ones(num_positive_class), torch.zeros(num_negative_class)), 0
+            (torch.ones(num_positive_class) - self.label_smoothing_rate,
+             torch.zeros(num_negative_class) + self.label_smoothing_rate), 0
         )
         return x, y_idx, y_vec
 
