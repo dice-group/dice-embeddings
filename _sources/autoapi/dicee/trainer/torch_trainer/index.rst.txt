@@ -82,7 +82,7 @@ Module Contents
 
 
 
-   .. py:method:: forward_backward_update(x_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor
+   .. py:method:: forward_backward_update(x_batch: torch.Tensor, y_batch: torch.Tensor, *, loss_divisor: int = 1, update_weights: bool = True) -> float
 
        Compute forward, loss, backward, and parameter update
 
