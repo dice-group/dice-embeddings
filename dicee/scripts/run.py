@@ -38,13 +38,16 @@ def get_default_arguments(description=None):
     parser.add_argument("--ultra_dim", type=int, default=64)
     parser.add_argument("--ultra_num_layers", type=int, default=6)
     parser.add_argument("--ultra_query_batch_size", type=int, default=8)
+    parser.add_argument("--trix_checkpoint", default=None, help="Official TRIX entity/relation checkpoint path")
+    parser.add_argument("--trix_dim", type=int, default=32)
+    parser.add_argument("--trix_query_batch_size", type=int, default=8)
     parser.add_argument("--grouped_negative_sampling", action="store_true")
     parser.add_argument("--strict_negative_sampling", action="store_true")
     parser.add_argument("--adversarial_temperature", type=float, default=None)
     # Model related arguments
     parser.add_argument("--model", type=str,
                         default="Keci",
-                        choices=["ULTRA", "ComplEx", "Keci", "KeciTransformer", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
+                        choices=["ULTRA", "TRIX", "TRIXRelation", "ComplEx", "Keci", "KeciTransformer", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "MuRE", "TransH", "RotatE", "DualE",
                                  "BytE", "CoKE",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",

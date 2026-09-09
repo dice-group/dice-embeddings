@@ -301,13 +301,15 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             t_batch = batch_ht[:, 1]
             B = h_batch.size(0)
 
-            # Generate triples (h, r, t)
-            h = h_batch.repeat_interleave(R).to(device)
-            r = relation.repeat(B).to(device)
-            t = t_batch.repeat_interleave(R).to(device)
-            triples = torch.stack([h, r, t], dim=1)
-
-            batch_scores = self.model(triples).view(B, R)
+            if hasattr(self.model, "forward_k_vs_all_relations"):
+                batch_scores = self.model.forward_k_vs_all_relations(batch_ht.to(device)).cpu()
+            else:
+                # Generate triples (h, r, t) for triple-scoring models.
+                h = h_batch.repeat_interleave(R).to(device)
+                r = relation.repeat(B).to(device)
+                t = t_batch.repeat_interleave(R).to(device)
+                triples = torch.stack([h, r, t], dim=1)
+                batch_scores = self.model(triples).view(B, R)
 
             if return_indices:
                 # Store top-k scores and indices

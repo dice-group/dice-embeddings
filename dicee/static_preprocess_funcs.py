@@ -60,6 +60,10 @@ def preprocesses_input_args(args):
         args.apply_reciprical_or_noise = False
     else:
         raise KeyError(f'Unexpected input for scoring_technique \t{args.scoring_technique}')
+    if args.model == "TRIXRelation":
+        # Relation prediction ranks the supplied relation vocabulary. Inverses
+        # are internal message-passing edges, not additional prediction labels.
+        args.apply_reciprical_or_noise = False
     if args.sample_triples_ratio is not None:
         assert 1.0 >= args.sample_triples_ratio >= 0.0
     assert args.backend in ["pandas", "polars", "rdflib"]
@@ -67,7 +71,7 @@ def preprocesses_input_args(args):
                or getattr(args, "strict_negative_sampling", False)
                or getattr(args, "adversarial_temperature", None) is not None)
     if grouped:
-        if args.scoring_technique != "NegSample" or args.byte_pair_encoding or args.model == "Shallom":
+        if args.scoring_technique != "NegSample" or args.byte_pair_encoding or args.model in ("Shallom", "TRIXRelation"):
             raise ValueError("Grouped/strict/adversarial sampling requires indexed NegSample entity prediction")
         if args.trainer not in ("torchCPUTrainer", "PL"):
             raise ValueError("Grouped sampling currently supports native CPU/single GPU and Lightning trainers")
@@ -76,20 +80,22 @@ def preprocesses_input_args(args):
         temperature = getattr(args, "adversarial_temperature", None)
         if temperature is not None and (not np.isfinite(temperature) or temperature < 0):
             raise ValueError("adversarial_temperature must be finite and nonnegative")
-    if args.model == "ULTRA":
+    if args.model in ("ULTRA", "TRIX", "TRIXRelation"):
         if args.trainer not in ("torchCPUTrainer", "PL"):
-            raise ValueError("ULTRA currently supports CPU/single GPU native and Lightning trainers")
+            raise ValueError(f"{args.model} currently supports CPU/single GPU native and Lightning trainers")
         if args.byte_pair_encoding or args.num_folds_for_cv or args.save_embeddings_as_csv:
-            raise ValueError("ULTRA does not support BPE, cross-validation, or static embedding export")
+            raise ValueError(f"{args.model} does not support BPE, cross-validation, or static embedding export")
         pl_options = getattr(args, "pl_trainer_kwargs", {}) or {}
         devices = pl_options.get("devices", 1)
         if (pl_options.get("num_nodes", 1) != 1 or pl_options.get("strategy", "auto") != "auto"
                 or not (devices == 1 or isinstance(devices, list) and len(devices) == 1)):
-            raise ValueError("ULTRA requires a single device and automatic Lightning strategy")
+            raise ValueError(f"{args.model} requires a single device and automatic Lightning strategy")
         if args.normalization not in (None, "None"):
-            raise ValueError("ULTRA uses internal layer normalization; set normalization=None")
+            raise ValueError(f"{args.model} uses internal layer normalization; set normalization=None")
         if args.scoring_technique not in ("NegSample", "FixedNegSample", "KvsAll", "1vsAll", "1vsSample", "KvsSample"):
-            raise ValueError("Unsupported ULTRA scoring technique")
+            raise ValueError(f"Unsupported {args.model} scoring technique")
+    if args.model == "TRIXRelation" and args.scoring_technique != "KvsAll":
+        raise ValueError("TRIXRelation training/evaluation requires scoring_technique=KvsAll")
     sanity_checking_with_arguments(args)
     sanity_check_callback_args(args)
     if args.model == 'Shallom':

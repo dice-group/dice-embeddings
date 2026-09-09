@@ -38,6 +38,9 @@ class Namespace(argparse.Namespace):
         self.ultra_dim: int = 64
         self.ultra_num_layers: int = 6
         self.ultra_query_batch_size: int = 8
+        self.trix_checkpoint: Optional[str] = None
+        self.trix_dim: int = 32
+        self.trix_query_batch_size: int = 8
         self.grouped_negative_sampling: bool = False
         self.strict_negative_sampling: bool = False
         self.adversarial_temperature: Optional[float] = None

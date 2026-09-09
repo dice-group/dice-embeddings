@@ -619,6 +619,34 @@ for training, fine-tuning, and prediction examples.
 
 </details>
 
+[TRIX](docs/trix.md) supports the official entity- and relation-prediction
+checkpoints, with pure PyTorch training, fine-tuning, and zero-shot inference.
+Its scores and gradients are verified against the official implementation.
+
+<details>
+<summary>TRIX checkpoint downloads and inference</summary>
+
+```bash
+mkdir -p checkpoints/trix
+wget -P checkpoints/trix https://raw.githubusercontent.com/yuchengz99/TRIX/7596e14eefefe89e61396205a0550172cadeddb0/entity_prediction.pth
+wget -P checkpoints/trix https://raw.githubusercontent.com/yuchengz99/TRIX/7596e14eefefe89e61396205a0550172cadeddb0/relation_prediction.pth
+
+python -m dicee --model TRIX --dataset_dir KGs/UMLS \
+  --trix_checkpoint checkpoints/trix/entity_prediction.pth --num_epochs 0 \
+  --trainer torchCPUTrainer --scoring_technique NegSample \
+  --batch_size 8 --eval_model test
+
+python -m dicee --model TRIXRelation --dataset_dir KGs/UMLS \
+  --trix_checkpoint checkpoints/trix/relation_prediction.pth --num_epochs 0 \
+  --trainer torchCPUTrainer --scoring_technique KvsAll \
+  --batch_size 8 --eval_model test
+```
+
+See the [TRIX guide](docs/trix.md) for Python inference, training, checkpoint
+compatibility, and reproducible verification against the reference implementation.
+
+</details>
+
 ## Link Prediction Benchmarks
 
 In the below, we provide a brief overview of the link prediction results. Results are sorted in descending order of the size of the respective dataset.
