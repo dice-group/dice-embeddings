@@ -22,7 +22,7 @@ in the [result records](../benchmarks/results/kgfm-zero-shot). The existing link
 prediction benchmark results remain in their separate section.
 
 **Bold** marks the best completed result for each dataset and metric, including
-ties at the displayed precision. Highlights update as the remaining runs finish.
+ties at the displayed precision.
 
 ## Checkpoints and evaluation settings
 
@@ -81,12 +81,9 @@ The runner saves `configuration.json`, `command.txt`, `progress.json`,
 `eval_report.json`, and `result.json` alongside indexed splits and vocabularies.
 The two initial CLI UMLS runs retain their original configurations and reports;
 their saved model tensors were checked against the released checkpoint tensors.
-The [result publisher](../benchmarks/update_kgfm_results.py) copies completed records
-into the repository and fills only their KGFM table rows:
-
-```bash
-python benchmarks/update_kgfm_results.py --runs-dir Experiments/kgfm-zero-shot
-```
+To add a result, copy the completed `result.json` to
+`benchmarks/results/kgfm-zero-shot/<dataset>-<model>.json` and update the
+corresponding README row, including bold highlights for the best metrics.
 
 ## Prediction tie strategies
 
@@ -119,4 +116,4 @@ the sampled integer ranks, so random ties are not average-rank evaluation.
 The KGFM runner accepts `--tie-policy` and `--tie-seed` and saves the policy,
 seed, and random generator state for resumable runs. Use a new output directory
 when changing a run's settings. The README table retains its original `sort`
-policy; its publisher rejects results using a different tie policy.
+policy; report results using other tie policies separately.
