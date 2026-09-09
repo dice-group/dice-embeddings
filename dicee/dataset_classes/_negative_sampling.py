@@ -342,13 +342,16 @@ class GroupedNegativeSamplingDataset(TriplePredictionDataset):
         n, k = len(positive), int(self.neg_sample_ratio)
         triples = positive[:, None].repeat(1, k + 1, 1)
         if self.strict_negative_sampling:
-            tail_rows = self.true_tails.find_rows(positive[:n // 2, :2].numpy())
-            head_rows = self.true_heads.find_rows(positive[n // 2:, 1:].numpy())
+            true_tails, true_heads = self.true_tails, self.true_heads
+            assert true_tails is not None and true_heads is not None
+            tail_targets, head_targets = true_tails.targets, true_heads.targets
+            tail_rows = true_tails.find_rows(positive[:n // 2, :2].numpy())
+            head_rows = true_heads.find_rows(positive[n // 2:, 1:].numpy())
         for i, (h, r, t) in enumerate(positive.tolist()):
             position = 2 if i < n // 2 else 0
             if self.strict_negative_sampling:
-                forbidden = (self.true_tails.targets[int(tail_rows[i])] if position == 2
-                             else self.true_heads.targets[int(head_rows[i - n // 2])])
+                forbidden = (tail_targets[int(tail_rows[i])] if position == 2
+                             else head_targets[int(head_rows[i - n // 2])])
                 candidates = torch.ones(int(self.num_entities), dtype=torch.bool)
                 candidates[forbidden] = False
                 candidates = candidates.nonzero().flatten()

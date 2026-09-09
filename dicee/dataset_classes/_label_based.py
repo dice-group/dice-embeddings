@@ -86,8 +86,8 @@ class KvsAll(WorkerDataset):
         super().__init__()
         assert len(train_set_idx) > 0
         assert isinstance(train_set_idx, (np.memmap, np.ndarray))
-        self.train_data = None
-        self.train_target = None
+        self.train_data: torch.Tensor
+        self.train_target: RaggedIndices
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.collate_fn = None
 
@@ -146,8 +146,8 @@ class AllvsAll(WorkerDataset):
         super().__init__()
         assert len(train_set_idx) > 0
         assert isinstance(train_set_idx, (np.memmap, np.ndarray))
-        self.train_data = None
-        self.train_target = None
+        self.train_data: torch.Tensor
+        self.train_target: RaggedIndices
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.collate_fn = None
 
@@ -216,8 +216,8 @@ class KvsSampleDataset(WorkerDataset):
         assert len(train_set_idx) > 0
         assert isinstance(train_set_idx, np.ndarray)
         assert neg_ratio is not None
-        self.train_data = None
-        self.train_target = None
+        self.train_data: torch.Tensor
+        self.train_target: RaggedIndices
         self.neg_ratio = neg_ratio
         self.num_entities = len(entity_idxs)
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)

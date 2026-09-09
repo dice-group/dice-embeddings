@@ -93,6 +93,23 @@ class FlockBase(GraphKGE):
     relation_prediction = False
     checkpoint_hint = "official Flock requires dim=64, walk_len=128, refinements=6, num_layers=1, attention_heads=4 and the matching task"
 
+    # Registered by name below to preserve the official checkpoint keys.
+    emb_anon_node: nn.ModuleList
+    emb_anon_type: nn.ModuleList
+    emb_restart: nn.ModuleList
+    emb_neighbor: nn.ModuleList
+    emb_direction: nn.ModuleList
+    emb_head_is_query: nn.ModuleList
+    emb_tail_is_query: nn.ModuleList
+    emb_node_is_query: nn.ModuleList
+    emb_type_is_query: nn.ModuleList
+    from_node: nn.ModuleList
+    from_type: nn.ModuleList
+    to_node: nn.ModuleList
+    to_type: nn.ModuleList
+    node_logit: nn.ModuleList
+    type_logit: nn.ModuleList
+
     def __init__(self, args):
         args = dict(args)
         args.setdefault("flock_query_batch_size", 1)
@@ -126,11 +143,12 @@ class FlockBase(GraphKGE):
             self.head_to_query = nn.Linear(self.dim, self.dim)
             self.tail_to_query = nn.Linear(self.dim, self.dim)
         self.head = nn.Sequential(nn.Linear(self.dim, 128), nn.ReLU(), nn.Linear(128, 128), nn.ReLU(), nn.Linear(128, 1))
-        self._walk_graph = None
+        self._walk_graph: WalkGraph | None = None
 
     def _build_relation_graph(self):
         # Flock uses KG walks, without constructing a separate relation graph.
-        self._walk_graph = WalkGraph(self.edge_index, self.edge_type, self.num_entities, 2 * self.num_direct_relations)
+        num_entities, _ = self._require_graph()
+        self._walk_graph = WalkGraph(self.edge_index, self.edge_type, num_entities, 2 * self.num_direct_relations)
 
     def _generator(self):
         return None if self.seed is None else torch.Generator().manual_seed(self.seed)
@@ -145,10 +163,10 @@ class FlockBase(GraphKGE):
         anonymous relations, directions), each shaped [T,B,S,L]. Anonymous
         names start at 1; no-relation markers are 2*R and L+1 respectively.
         """
-        self._require_graph()
+        num_entities, _ = self._require_graph()
         if generator is None:
             generator = self._generator()
-        graph = self._walk_graph if edges is None else WalkGraph(*edges, self.num_entities, 2 * self.num_direct_relations)
+        graph = self._walk_graph if edges is None else WalkGraph(edges[0], edges[1], num_entities, 2 * self.num_direct_relations)
         return tuple(record.to(self.device) for record in self._draw_walks(graph, heads, tails, generator))
 
     def score_walks(self, heads, query, candidates, records):
@@ -158,7 +176,7 @@ class FlockBase(GraphKGE):
         query=tails, candidates=relations. This scores the supplied records;
         callers constructing training records must first remove target edges.
         """
-        self._require_graph()
+        num_entities, _ = self._require_graph()
         records = tuple(record.to(device=self.device, dtype=torch.long) for record in records)
         if len(records) != 7 or any(record.ndim != 4 or record.shape != records[0].shape for record in records):
             raise ValueError("Expected seven matching [T,B,S,L] walk records")
@@ -168,7 +186,7 @@ class FlockBase(GraphKGE):
         heads, query, candidates = (x.to(self.device, dtype=torch.long) for x in (heads, query, candidates))
         walks, named_walks, restarts, neighbors, types, named_types, directions = records
         nr = 2 * self.num_direct_relations
-        h_node = self.node_init[None, None].expand(batch, self.num_entities, -1)
+        h_node = self.node_init[None, None].expand(batch, num_entities, -1)
         h_type = self.type_init[None, None].expand(batch, nr + 1, -1)
         for step in range(steps):
             node_ids, type_ids = walks[step].flatten(1), types[step].flatten(1)
@@ -188,7 +206,7 @@ class FlockBase(GraphKGE):
             previous_types = h_type.gather(1, type_ids[..., None].expand(-1, -1, self.dim)).view(batch, samples, length, self.dim)
             x = x + self.from_node[step](previous_nodes) + self.from_type[step](previous_types)
             x = self.net[step](x.view(batch * samples, length, self.dim))
-            h_node = h_node + consensus(self.to_node[step](x), self.node_logit[step](x), walks[step], self.num_entities)
+            h_node = h_node + consensus(self.to_node[step](x), self.node_logit[step](x), walks[step], num_entities)
             h_type = h_type + consensus(self.to_type[step](x), self.type_logit[step](x), types[step], nr + 1)
         if self.relation_prediction:
             head = self.head_to_query(h_node.gather(1, heads[:, None, None].expand(-1, 1, self.dim)))
@@ -200,11 +218,12 @@ class FlockBase(GraphKGE):
         return self.head(features).squeeze(-1).float()
 
     def _run_queries(self, heads, query, candidates, edges):
+        num_entities, _ = self._require_graph()
         if not len(heads) or not candidates.shape[1]:
             return self.node_init.new_empty((len(heads), candidates.shape[1]))
         repeats = 1 if self.training else self.test_samples
         heads, query, candidates = (x.repeat_interleave(repeats, dim=0) for x in (heads, query, candidates))
-        graph = self._walk_graph if not self.training else WalkGraph(*edges, self.num_entities, 2 * self.num_direct_relations)
+        graph = self._walk_graph if not self.training else WalkGraph(edges[0], edges[1], num_entities, 2 * self.num_direct_relations)
         generator = self._generator()
         output = []
         for start in range(0, len(heads), self.query_batch_size):

@@ -5,7 +5,7 @@ import torch
 from torch.nn import functional as F
 
 
-def grouped_adversarial_bce(logits, targets, temperature):
+def grouped_adversarial_bce(logits: torch.Tensor, targets: torch.Tensor, temperature: float) -> torch.Tensor:
     """Balance the positive against a weighted negative group (ULTRA convention).
 
     Positive temperature uses detached softmax(logits / temperature); zero uses

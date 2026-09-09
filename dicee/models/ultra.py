@@ -28,6 +28,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from typing import cast
+
 import torch
 from torch import nn
 
@@ -68,7 +70,8 @@ class RelNBFNet(nn.Module):
         self.dim = dim
 
     def forward(self, edge_index, edge_type, num_relations, query):
-        boundary = self.layers[0].linear.weight.new_zeros(len(query), num_relations, self.dim)
+        first_layer = cast(RelationalConv, self.layers[0])
+        boundary = first_layer.linear.weight.new_zeros(len(query), num_relations, self.dim)
         boundary[torch.arange(len(query), device=query.device), query] = 1
         hidden = boundary
         for layer in self.layers:

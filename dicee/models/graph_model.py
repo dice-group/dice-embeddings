@@ -141,9 +141,10 @@ class GraphKGE(BaseKGE):
         self.load_state_dict(state, strict=True)
         return self
 
-    def _require_graph(self):
-        if self.graph_triples is None:
+    def _require_graph(self) -> tuple[int, int]:
+        if self.graph_triples is None or self.num_entities is None or self.num_relations is None:
             raise RuntimeError(f'Attach a training graph with set_graph() before scoring {self.name}')
+        return self.num_entities, self.num_relations
 
     def _convert(self, triples):
         self._require_graph()
@@ -162,9 +163,9 @@ class GraphKGE(BaseKGE):
             # Hide all observed positive tails for each query, even for sampled
             # objectives. Candidate lists may include every entity, so they
             # must not be interpreted as a list of targets to remove.
-            keys = graph[:, 0] * (2 * self.num_direct_relations) + graph[:, 1]
+            pair_keys = graph[:, 0] * (2 * self.num_direct_relations) + graph[:, 1]
             qkeys = queries[:, 0] * (2 * self.num_direct_relations) + queries[:, 1]
-            targets = graph[torch.isin(keys, qkeys)]
+            targets = graph[torch.isin(pair_keys, qkeys)]
         targets = targets.reshape(-1, 3)
         inverse = targets[:, [2, 1, 0]].clone()
         inverse[:, 1] = (inverse[:, 1] + self.num_direct_relations) % (2 * self.num_direct_relations)
@@ -229,16 +230,16 @@ class GraphKGE(BaseKGE):
         return self._score(queries[:, 0], queries[:, 1], candidates, queries[:, 1] % self.num_direct_relations, self._training_edges(queries=queries))
 
     def forward_k_vs_all(self, x):
-        self._require_graph()
-        return self.forward_k_vs_sample(x, torch.arange(self.num_entities, device=self.device).expand(len(x), -1))
+        num_entities, _ = self._require_graph()
+        return self.forward_k_vs_sample(x, torch.arange(num_entities, device=self.device).expand(len(x), -1))
 
     def forward_k_vs_all_heads(self, x, target_entity_idx=None):
         """Score head candidates for DICE pairs (relation, tail)."""
-        self._require_graph()
+        num_entities, _ = self._require_graph()
         x = x.to(device=self.device, dtype=torch.long)
         if x.ndim != 2 or x.shape[1] != 2:
             raise ValueError('Head queries must have shape [B, 2] in (relation, tail) order')
-        candidates = torch.arange(self.num_entities, device=self.device) if target_entity_idx is None else target_entity_idx.to(device=self.device, dtype=torch.long)
+        candidates = torch.arange(num_entities, device=self.device) if target_entity_idx is None else target_entity_idx.to(device=self.device, dtype=torch.long)
         if candidates.ndim == 1:
             candidates = candidates.expand(len(x), -1)
         triples = torch.stack((candidates, x[:, 0, None].expand_as(candidates), x[:, 1, None].expand_as(candidates)), -1)
@@ -303,15 +304,15 @@ class RelationGraphKGE(GraphKGE):
         return self._relation_score(pairs, self.relation_id_map[candidates], self._training_edges(targets=targets))
 
     def forward_k_vs_all(self, x):
-        self._require_graph()
-        return self.forward_k_vs_sample(x, torch.arange(self.num_relations, device=self.device))
+        _, num_relations = self._require_graph()
+        return self.forward_k_vs_sample(x, torch.arange(num_relations, device=self.device))
 
     forward_k_vs_all_relations = forward_k_vs_all
 
     def forward_k_vs_all_heads(self, x, target_entity_idx=None):
-        self._require_graph()
+        num_entities, _ = self._require_graph()
         x = x.to(self.device, dtype=torch.long)
-        candidates = (torch.arange(self.num_entities, device=self.device) if target_entity_idx is None
+        candidates = (torch.arange(num_entities, device=self.device) if target_entity_idx is None
                       else target_entity_idx.to(self.device, dtype=torch.long))
         if candidates.ndim == 1:
             candidates = candidates.expand(len(x), -1)

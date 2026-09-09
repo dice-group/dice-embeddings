@@ -66,7 +66,7 @@ def construct_dataset(
     sort_train_set: bool = True,
     grouped_negative_sampling: bool = False,
     strict_negative_sampling: bool = False,
-    adversarial_temperature: float = None,
+    adversarial_temperature: float | None = None,
 ) -> torch.utils.data.Dataset:
     """Build the appropriate dataset for the given training configuration.
 

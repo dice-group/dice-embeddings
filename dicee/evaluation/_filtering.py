@@ -4,8 +4,8 @@ This module provides low-level helper functions for filtered ranking,
 extracting common patterns shared across multiple evaluation functions.
 """
 
-from collections.abc import Mapping
-from typing import Dict, List, Optional, Tuple
+from collections.abc import Iterable, Mapping
+from typing import Dict, List, Optional, SupportsInt, Tuple
 
 import numpy as np
 import torch
@@ -44,7 +44,8 @@ class FilteredRanker:
             elif generator.device.type != "cpu":
                 raise ValueError("Tie-breaking requires a CPU torch.Generator")
 
-    def rank(self, predictions, target_idx, filter_indices, exclude_target=True):
+    def rank(self, predictions: torch.Tensor, target_idx: SupportsInt,
+             filter_indices: Iterable[int], exclude_target: bool = True) -> int:
         target_idx = int(target_idx)
         filtered = predictions.clone()
         filters = set(filter_indices)
@@ -56,7 +57,7 @@ class FilteredRanker:
         if self.tie_policy == "sort":
             # Preserve DICE's original per-vector torch.sort ordering.
             order = torch.sort(filtered, descending=True).indices
-            return torch.where(order == target_idx)[0].item() + 1
+            return int(torch.where(order == target_idx)[0].item()) + 1
 
         # An explicit mask also excludes filtered candidates when the target
         # itself has score -Inf. Masking scores alone would count false ties.
@@ -68,17 +69,18 @@ class FilteredRanker:
         target_score = filtered[target_idx]
         if torch.isnan(target_score) or torch.isnan(other_scores).any():
             raise ValueError("Cannot rank NaN prediction scores")
-        optimistic = 1 + (other_scores > target_score).sum().item()
+        optimistic = 1 + int((other_scores > target_score).sum().item())
         if self.tie_policy == "optimistic":
             return optimistic
-        tied = (other_scores == target_score).sum().item()
+        tied = int((other_scores == target_score).sum().item())
         if self.tie_policy == "pessimistic":
             return optimistic + tied
         if tied == 0:
             return optimistic
-        return optimistic + torch.randint(tied + 1, (), generator=self.generator).item()
+        return optimistic + int(torch.randint(tied + 1, (), generator=self.generator).item())
 
-    def rank_batch(self, predictions, target_indices, filter_indices_list):
+    def rank_batch(self, predictions: torch.Tensor, target_indices: Iterable[SupportsInt],
+                   filter_indices_list: List[List[int]]) -> List[int]:
         if self.tie_policy != "sort":
             return [self.rank(scores, target, filters) for scores, target, filters in
                     zip(predictions, target_indices, filter_indices_list)]
@@ -92,7 +94,7 @@ class FilteredRanker:
                 filtered[i, list(filters)] = -np.Inf
             filtered[i, target] = predictions[i, target]
         order = torch.sort(filtered, dim=1, descending=True).indices
-        return [torch.where(row == int(target))[0].item() + 1
+        return [int(torch.where(row == int(target))[0].item()) + 1
                 for row, target in zip(order, target_indices)]
 
 
@@ -172,7 +174,7 @@ def accumulate_bidirectional_hits(
     hits_dict: Dict[int, List],
     head_rank: int,
     tail_rank: int,
-    hits_range: List[int] = None
+    hits_range: Optional[List[int]] = None
 ) -> None:
     """Accumulate hits@k for bidirectional prediction (head + tail).
 

@@ -388,17 +388,21 @@ class DICE_Trainer:
         from dicee.models.graph_model import GraphKGE
         if not isinstance(model, GraphKGE):
             return
+        raw_mapping: Union[dict, polars.DataFrame, pd.DataFrame, None]
         if isinstance(knowledge_graph, KG):
             triples = knowledge_graph.train_set
-            mapping = knowledge_graph.relation_to_idx
+            raw_mapping = knowledge_graph.relation_to_idx
         else:
             triples = knowledge_graph
-            frame = pd.read_csv(os.path.join(self.storage_path, "relation_to_idx.csv"), index_col=0)
-            mapping = {name: int(idx) for idx, name in frame["relation"].items()}
-        if isinstance(mapping, polars.DataFrame):
-            mapping = {row["relation"]: int(row["index"]) for row in mapping.iter_rows(named=True)}
-        elif isinstance(mapping, pd.DataFrame):
-            mapping = {name: int(idx) for idx, name in mapping["relation"].items()}
+            raw_mapping = pd.read_csv(os.path.join(self.storage_path, "relation_to_idx.csv"), index_col=0)
+        if isinstance(raw_mapping, polars.DataFrame):
+            mapping = {row["relation"]: int(row["index"]) for row in raw_mapping.iter_rows(named=True)}
+        elif isinstance(raw_mapping, pd.DataFrame):
+            mapping = {name: int(idx) for idx, name in raw_mapping["relation"].items()}
+        elif raw_mapping is not None:
+            mapping = raw_mapping
+        else:
+            raise ValueError("Graph models require an indexed relation vocabulary")
         # Reciprocal preprocessing appends the suffix; pair only names that
         # actually have their base relation in this vocabulary.
         inverse = {int(idx): int(mapping[name + "_inverse"]) for name, idx in mapping.items()

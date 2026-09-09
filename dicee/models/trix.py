@@ -6,6 +6,7 @@ update schedule, binary entity-labelled relation edges, and fused convolution
 direction follow the released code/checkpoints (see docs/trix.md).
 """
 from collections import defaultdict
+from typing import cast
 
 import torch
 from torch import nn
@@ -119,8 +120,9 @@ class TRIX(TRIXBase):
         self.entity_model_2 = EntityReasoner(self.dim, 4)
 
     def _reason(self, heads, relations, query_relations, edges):
+        num_entities, _ = self._require_graph()
         weight = next(self.parameters())
-        entities = weight.new_ones(len(heads), self.num_entities, self.dim)
+        entities = weight.new_ones(len(heads), num_entities, self.dim)
         boundary = weight.new_zeros(len(heads), 2 * self.num_direct_relations, self.dim)
         boundary[torch.arange(len(heads), device=heads.device), query_relations] = 1
         hidden = boundary
@@ -158,17 +160,20 @@ class TRIXRelation(TRIXBase, RelationGraphKGE):
         self.mlp = nn.Sequential(nn.Linear(self.dim, self.dim), nn.ReLU(), nn.Linear(self.dim, 1))
 
     def _relation_score(self, pairs, candidates, edges):
+        num_entities, _ = self._require_graph()
         output = []
         for start in range(0, len(pairs), self.query_batch_size):
             sl = slice(start, start + self.query_batch_size)
             heads, tails = pairs[sl].unbind(-1)
             rels = next(self.parameters()).new_ones(len(heads), 2 * self.num_direct_relations, self.dim)
             boundary = torch.ones_like(rels)
-            entities = rels.new_zeros(len(heads), self.num_entities, self.dim)
+            entities = rels.new_zeros(len(heads), num_entities, self.dim)
             batch = torch.arange(len(heads), device=heads.device)
             entities[batch, heads] += 1
             entities[batch, tails] -= 1
-            for entity_model, relation_model in zip(self.entity_model, self.relation_model):
+            for entity_layer, relation_layer in zip(self.entity_model, self.relation_model):
+                entity_model = cast(EntityReasoner, entity_layer)
+                relation_model = cast(RelationReasoner, relation_layer)
                 features = entity_model.features(edges, self.num_entities, rels, heads, None, entities, tails)
                 entities = entity_model.mlp(features)
                 for i in range(2):

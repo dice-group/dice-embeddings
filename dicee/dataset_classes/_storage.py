@@ -46,6 +46,7 @@ class WorkerDataset(torch.utils.data.Dataset):
                 raise TypeError('Worker datasets require numeric arrays, not dtype=object')
             cached = cache.get(name)
             if cached is None or cached[0] is not array:
+                storage: _MemmapArray | _TensorArray
                 root = array
                 while isinstance(root.base, np.ndarray):
                     root = root.base
@@ -122,7 +123,7 @@ class RaggedIndices:
 class PairIndex:
     """Sorted integer pairs and their ragged targets, without a Python dict."""
 
-    def __init__(self, keys, targets, max_input_count=None):
+    def __init__(self, keys, targets: RaggedIndices, max_input_count=None):
         self.keys = torch.as_tensor(keys, dtype=torch.long).contiguous()
         self.targets = targets
         self.max_input_count = targets.max_length if max_input_count is None else max_input_count
