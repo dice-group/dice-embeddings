@@ -1,0 +1,20 @@
+{
+  "model": "ULTRA-3g",
+  "dataset": "WN18RR",
+  "queries": "First eight test triples in their original file order",
+  "upstream_commit": "427966ad8ed60420eef034063d44f3153addff90",
+  "device": "cpu",
+  "candidate_set": "All 40943 entities; both head and tail prediction",
+  "tail_max_absolute_score_error": 7.152557373046875e-06,
+  "head_max_absolute_score_error": 1.239776611328125e-05,
+  "tail_mean_absolute_score_error": 5.106893468109774e-07,
+  "head_mean_absolute_score_error": 6.870820357107732e-07,
+  "assert_close": {
+    "atol": 0.0002,
+    "rtol": 0.0002
+  },
+  "status": "passed",
+  "probe_sha256": "8de61aa66b10adf093c83eefa3163b0ff3be42cb065107a72dcad05fe2a2af8b",
+  "probe_source": "from pathlib import Path\nimport json\nimport numpy as np\nimport torch\nfrom torch_geometric.data import Data\nfrom ultra import tasks\nfrom ultra.models import Ultra\nfrom dicee.models import ULTRA\n\ntorch.set_num_threads(2)\nroot=Path('/home/lukef/Dokumente/GitHub/dice-embeddings')\np=root/'Experiments/kgfm-zero-shot-20260909/WN18RR/ULTRA'\nrecord=json.loads((p/'result.json').read_text())\nne,nr=record['num_entities'],record['num_relations']\nfacts=torch.from_numpy(np.load(p/'train_set.npy').astype(np.int64))\nqueries=torch.from_numpy(np.load(p/'test_set.npy')[:8].astype(np.int64))\ninverse=facts[:,[2,1,0]].clone();inverse[:,1]+=nr\nedges=torch.cat((facts,inverse)).unique(dim=0)\ngraph=Data(edge_index=edges[:,[0,2]].T,edge_type=edges[:,1],num_nodes=ne,num_relations=2*nr)\ntasks.build_relation_graph(graph)\nconfig=dict(input_dim=64,hidden_dims=[64]*6,message_func='distmult',aggregate_func='sum',short_cut=True,layer_norm=True)\nreference=Ultra(dict(config,**{'class':'RelNBFNet'}),dict(config,**{'class':'EntityNBFNet'}))\nreference.load_state_dict(torch.load(root/'checkpoints/ultra_3g.pth',weights_only=True,map_location='cpu')['model']);reference.eval()\nlocal=ULTRA(dict(num_entities=ne,num_relations=nr,ultra_query_batch_size=8)).load_pretrained(root/'checkpoints/ultra_3g.pth').set_graph(facts).eval()\ntails,heads=tasks.all_negative(graph,queries[:,[0,2,1]])\nwith torch.no_grad():\n for label,actual,expected in [('tail',local(queries[:,:2]),reference(graph,tails)),('head',local.forward_k_vs_all_heads(queries[:,1:]),reference(graph,heads))]:\n  delta=(actual-expected).abs()\n  print(label,'max absolute error',delta.max().item(),'mean',delta.mean().item(),flush=True)\n  torch.testing.assert_close(actual,expected,atol=2e-4,rtol=2e-4)\nprint('PASS: all-entity scores match the unmodified reference on eight real WN18RR queries.',flush=True)\n",
+  "log": "/tmp/dice-kgfm-ultra-reference/ultra/tasks.py:181: UserWarning: Sparse CSR tensor support is in beta state. If you miss a functionality in the sparse tensor support, please submit a feature request to https://github.com/pytorch/pytorch/issues. (Triggered internally at /opt/conda/conda-bld/pytorch_1729647329220/work/aten/src/ATen/SparseCsrTensorImpl.cpp:53.)\n  Ahh = torch.sparse.mm(EhT, Eh).coalesce()\nNo CUDA runtime is found, using CUDA_HOME='/opt/cuda'\nLoad rspmm extension. This may take a while...\ntail max absolute error 7.152557373046875e-06 mean 5.106893468109774e-07\nhead max absolute error 1.239776611328125e-05 mean 6.870820357107732e-07\nPASS: all-entity scores match the unmodified reference on eight real WN18RR queries.\n"
+}

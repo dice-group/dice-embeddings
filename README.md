@@ -675,6 +675,123 @@ sampling budgets, reproducibility, training, and verification against upstream.
 
 </details>
 
+## KGFM Link Prediction with Frozen Checkpoints
+
+This table covers **test-set entity prediction without fine-tuning** using the
+authors' released checkpoints. The inference graph contains only the target
+dataset's training triples and their inverse edges. Validation and test triples
+are excluded from the inference graph. We rank all entities for both head and
+tail prediction, filtering other known positives from train, validation, and
+test while retaining the query's correct answer.
+
+All three checkpoints below were pretrained on FB15k-237, WN18RR, and CoDEx
+Medium. Results on datasets outside that mixture measure zero-shot transfer;
+rows marked **Yes** measure frozen inference on a graph used in pretraining.
+The pretraining mixtures are documented in the official
+[ULTRA](https://github.com/DeepGraphLearning/ULTRA/blob/427966ad8ed60420eef034063d44f3153addff90/config/transductive/pretrain_3g.yaml),
+[TRIX](https://github.com/yuchengz99/TRIX/blob/7596e14eefefe89e61396205a0550172cadeddb0/config/pretrain_entity.yaml),
+and [Flock](https://github.com/jw9730/flock/blob/f35103d25a78bdf4075de5c673a51de4979aa4d7/src_entity/config/pretrain_3g.yaml) configurations.
+
+**Measured in DICE:** populated rows are completed evaluations of the full test
+set. `—` means the evaluation has not completed, not zero. Exact metrics,
+checkpoint/split hashes, source hashes, hardware, and configurations are saved
+in the [result records](benchmarks/results/kgfm-zero-shot). The existing link
+prediction benchmark results remain in their separate section.
+
+**Bold** marks the best completed result for each dataset and metric, including
+ties at the displayed precision. Highlights update as the remaining runs finish.
+
+| Dataset | Model | Target graph used in pretraining? | MRR | Hits@1 | Hits@3 | Hits@10 |
+|---|---|:---:|---:|---:|---:|---:|
+| YAGO3-10 | ULTRA-3g | No | **0.4800** | **0.3832** | **0.5347** | **0.6583** |
+| YAGO3-10 | TRIX | No | 0.4094 | 0.3024 | 0.4574 | 0.6266 |
+| YAGO3-10 | Flock | No | — | — | — | — |
+| FB15k-237 | ULTRA-3g | Yes | **0.3693** | **0.2718** | **0.4101** | **0.5620** |
+| FB15k-237 | TRIX | Yes | 0.3618 | 0.2649 | 0.3989 | 0.5546 |
+| FB15k-237 | Flock | Yes | — | — | — | — |
+| WN18RR | ULTRA-3g | Yes | 0.3708 | 0.2934 | 0.3947 | 0.5354 |
+| WN18RR | TRIX | Yes | 0.5083 | 0.4608 | 0.5233 | 0.6064 |
+| WN18RR | Flock | Yes | **0.5303** | **0.4783** | **0.5482** | **0.6367** |
+| UMLS | ULTRA-3g | No | 0.6960 | 0.5983 | 0.7474 | 0.8956 |
+| UMLS | TRIX | No | 0.7256 | 0.6430 | 0.7632 | 0.8986 |
+| UMLS | Flock | No | **0.7768** | **0.7005** | **0.8169** | **0.9244** |
+| Countries-S1 | ULTRA-3g | No | **0.9375** | **0.8750** | **1.0000** | **1.0000** |
+| Countries-S1 | TRIX | No | 0.9271 | 0.8542 | **1.0000** | **1.0000** |
+| Countries-S1 | Flock | No | 0.9271 | 0.8542 | **1.0000** | **1.0000** |
+| Countries-S2 | ULTRA-3g | No | 0.8715 | 0.7500 | **1.0000** | **1.0000** |
+| Countries-S2 | TRIX | No | **0.8854** | **0.7708** | **1.0000** | **1.0000** |
+| Countries-S2 | Flock | No | **0.8854** | **0.7708** | **1.0000** | **1.0000** |
+| Countries-S3 | ULTRA-3g | No | 0.2354 | **0.0625** | 0.2917 | 0.6458 |
+| Countries-S3 | TRIX | No | **0.3625** | **0.0625** | **0.5833** | **0.8958** |
+| Countries-S3 | Flock | No | 0.2533 | 0.0208 | 0.4583 | 0.5000 |
+
+<details>
+<summary>Checkpoints and evaluation settings</summary>
+
+| Model | Official checkpoint | DICE guide |
+|---|---|---|
+| ULTRA-3g | [ultra_3g.pth](https://github.com/DeepGraphLearning/ULTRA/blob/427966ad8ed60420eef034063d44f3153addff90/ckpts/ultra_3g.pth) | [ULTRA](docs/ultra.md) |
+| TRIX | [entity_prediction.pth](https://github.com/yuchengz99/TRIX/blob/7596e14eefefe89e61396205a0550172cadeddb0/entity_prediction.pth) | [TRIX](docs/trix.md) |
+| Flock | [flock_entity.pth](https://github.com/jw9730/flock/blob/f35103d25a78bdf4075de5c673a51de4979aa4d7/checkpoints/flock_entity.pth) | [Flock](docs/flock.md) |
+
+The [benchmark runner](benchmarks/kgfm_zero_shot.py) uses DICE's existing dataset
+loader and filtered ranking function, with an explicit inference device and no
+training or optimizer. It verifies that checkpoint weights remain unchanged and
+saves progress after each evaluation batch. Repeating an identical invocation
+resumes it; a completed run returns its saved result. Use a new output directory
+for a fresh run or changed settings.
+
+The initial ULTRA/TRIX UMLS and Countries runs used an AMD Ryzen 7 7800X3D CPU;
+Flock and the larger graph runs use an NVIDIA GeForce RTX 4070 Ti SUPER GPU.
+Flock samples walks on CPU and executes its neural network on GPU. Runs use four
+PyTorch CPU threads, float32, and 128 test triples per evaluation batch. Query
+batch sizes are recorded per run to bound memory use. GPU runner invocations
+disable TF32. Some GPU runs overlap, so recorded wall times are operational
+measurements rather than a controlled comparison of model speed.
+
+Download the checkpoints using the links above, then run, for example:
+
+```bash
+python benchmarks/kgfm_zero_shot.py --model Flock --dataset UMLS \
+  --device cuda:0 --query-batch-size 1 --batch-size 128 --threads 4 \
+  --walk-num 128 --test-samples 1 --seed 42 \
+  --output Experiments/kgfm-zero-shot/UMLS/Flock
+
+python benchmarks/kgfm_zero_shot.py --model ULTRA --dataset WN18RR \
+  --device cuda:0 --query-batch-size 8 --batch-size 128 --threads 4 \
+  --output Experiments/kgfm-zero-shot/WN18RR/ULTRA
+
+python benchmarks/kgfm_zero_shot.py --model TRIX --dataset WN18RR \
+  --device cuda:0 --query-batch-size 4 --batch-size 128 --threads 4 \
+  --output Experiments/kgfm-zero-shot/WN18RR/TRIX
+```
+
+Use `--device cpu` for CPU evaluation. Keep the original `train.txt`, `valid.txt`,
+and `test.txt` splits. Evaluation ranks all entities with the existing DICE
+evaluator, including its sort-position handling of tied scores. The earlier CLI
+runs used `--num_epochs 0 --scoring_technique NegSample --eval_model test`;
+`NegSample` selects head-and-tail evaluation, which still ranks all entities.
+
+Flock's initial setting uses a single sampling seed and one prediction per query,
+with 128 base walks of length 128 per refinement and six refinements. This is a
+single-run result, not a mean across seeds or a reproduction of the authors'
+dataset-specific inference ensembles. Record query ordering and batching with
+the sampling settings, since they affect the walks drawn. See the
+[Flock sampling notes](docs/flock.md#checkpoints-and-zero-shot-evaluation).
+
+The runner saves `configuration.json`, `command.txt`, `progress.json`,
+`eval_report.json`, and `result.json` alongside indexed splits and vocabularies.
+The two initial CLI UMLS runs retain their original configurations and reports;
+their saved model tensors were checked against the released checkpoint tensors.
+The [result publisher](benchmarks/update_kgfm_results.py) copies completed records
+into the repository and fills only their KGFM table rows:
+
+```bash
+python benchmarks/update_kgfm_results.py --runs-dir Experiments/kgfm-zero-shot
+```
+
+</details>
+
 ## Link Prediction Benchmarks
 
 In the below, we provide a brief overview of the link prediction results. Results are sorted in descending order of the size of the respective dataset.
