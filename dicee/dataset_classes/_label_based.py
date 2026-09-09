@@ -132,7 +132,7 @@ class KvsAll(torch.utils.data.Dataset):
         y_vec[self.train_target[idx]] = 1.0
 
         if self.label_smoothing_rate:
-            y_vec = y_vec * (1 - self.label_smoothing_rate) + (1 / y_vec.size(0))
+            y_vec = y_vec * (1 - self.label_smoothing_rate) + self.label_smoothing_rate / self.target_dim
         return self.train_data[idx], y_vec
 
 
@@ -184,12 +184,7 @@ class AllvsAll(torch.utils.data.Dataset):
         assert len(store) > 0
         self.train_data = torch.LongTensor(list(store.keys()))
 
-        if sum(len(i) for i in store.values()) == len(store):
-            self.train_target = np.array(list(store.values()))
-            assert isinstance(self.train_target[0], np.ndarray)
-        else:
-            self.train_target = list(store.values())
-            assert isinstance(self.train_target[0], list)
+        self.train_target = list(store.values())
         del store
 
     def __len__(self):
@@ -203,7 +198,7 @@ class AllvsAll(torch.utils.data.Dataset):
             y_vec[self.train_target[idx]] = 1.0
 
         if self.label_smoothing_rate:
-            y_vec = y_vec * (1 - self.label_smoothing_rate) + (1 / y_vec.size(0))
+            y_vec = y_vec * (1 - self.label_smoothing_rate) + self.label_smoothing_rate / self.target_dim
         return self.train_data[idx], y_vec
 
 
@@ -277,7 +272,8 @@ class KvsSampleDataset(torch.utils.data.Dataset):
 
         y_idx = torch.cat((torch.LongTensor(y), negative_idx), 0)
         y_vec = torch.cat(
-            (torch.ones(num_positive_class), torch.zeros(num_negative_class)), 0
+            (torch.ones(num_positive_class) - self.label_smoothing_rate,
+             torch.zeros(num_negative_class) + self.label_smoothing_rate), 0
         )
         return x, y_idx, y_vec
 
