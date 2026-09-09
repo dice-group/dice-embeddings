@@ -43,15 +43,5 @@ the available splits, without concatenating them or sending copies to processes.
 The existing filter dictionaries and pickle filenames are preserved. Evaluation
 accepts both the ready dictionaries and futures from older preprocessing code.
 
-To inspect private worker memory without training or rerunning link-prediction
-benchmarks:
-
-```bash
-python benchmarks/dataloader_memory.py --dataset KvsAll --start-method fork \
-  --pairs 200000 --workers 2 --output Experiments/dataloader-memory.json
-```
-
-The probe also supports `AllvsAll`, `KvsSample`, `BPE`, `Strict`, and `FSDP`, and
-available multiprocessing start methods. It reports USS (private memory);
-summing worker RSS would count shared pages repeatedly. Worker processes,
-prefetched batches, and per-batch calculations still require memory.
+Worker processes, prefetched batches, and per-batch calculations still require
+memory.
