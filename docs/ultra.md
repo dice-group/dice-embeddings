@@ -2,7 +2,8 @@
 
 [Official repository](https://github.com/DeepGraphLearning/ULTRA) · [Paper (ICLR 2024)](https://openreview.net/forum?id=jVEoydFOl9)
 
-ULTRA is a graph-conditioned link predictor implemented in pure PyTorch. It supports
+ULTRA is a graph-conditioned link predictor using PyTorch with an optional fused
+Triton inference kernel. It supports
 training, fine-tuning, and zero-shot inference with the official `ultra_3g.pth`,
 `ultra_4g.pth`, and `ultra_50g.pth` [checkpoints](https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90/ckpts).
 
@@ -52,6 +53,9 @@ head_scores = kge.predict_missing_head_entity("relation_r", "entity_b")
 
 Keep `ultra_graph.pt` alongside the model, configuration, and vocabulary files
 when moving an experiment. ULTRA needs the graph to score queries.
+
+See [KGFM inference performance](kgfm_inference.md) for fused CUDA message passing,
+relation caching, query reuse, and latency/memory benchmarks.
 
 For direct model use, import `ULTRA` from `dicee.models`, load weights with
 `load_pretrained(path)`, and attach indexed training triples with `set_graph(...)`.

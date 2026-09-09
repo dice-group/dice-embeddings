@@ -112,12 +112,14 @@ class TRIX(TRIXBase):
     Explicit reciprocal DICE queries use that same convention.
     """
     name = "TRIX"
+    deterministic_inference = True
 
     def __init__(self, args):
         super().__init__(args)
         self.relation_model = RelationReasoner(self.dim, 3, entity_feedback=True)
         self.entity_model_1 = EntityReasoner(self.dim, 2)
         self.entity_model_2 = EntityReasoner(self.dim, 4)
+        self.set_inference_backend(args.get('graph_inference_backend', 'auto'))
 
     def _reason(self, heads, relations, query_relations, edges):
         num_entities, _ = self._require_graph()
@@ -158,6 +160,7 @@ class TRIXRelation(TRIXBase, RelationGraphKGE):
         self.relation_model = nn.ModuleList([RelationReasoner(self.dim, 2) for _ in range(3)])
         self.entity_model = nn.ModuleList([EntityReasoner(self.dim, 2, self.dim) for _ in range(3)])
         self.mlp = nn.Sequential(nn.Linear(self.dim, self.dim), nn.ReLU(), nn.Linear(self.dim, 1))
+        self.set_inference_backend(args.get('graph_inference_backend', 'auto'))
 
     def _relation_score(self, pairs, candidates, edges):
         num_entities, _ = self._require_graph()

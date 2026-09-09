@@ -41,6 +41,11 @@ class WalkGraph:
     def __post_init__(self):
         self.edge_index = self.edge_index.detach().cpu()
         self.edge_type = self.edge_type.detach().cpu()
+        # Stable grouping preserves the original per-relation member order and
+        # therefore every RNG draw, while avoiding R full graph scans per query.
+        order = self.edge_type.argsort(stable=True)
+        relation_counts = torch.bincount(self.edge_type, minlength=self.num_types).tolist()
+        self.relation_members = order.split(relation_counts)
         h, t = self.edge_index
         keys = torch.cat((h * self.num_nodes + t, t * self.num_nodes + h))
         order = keys.argsort()
@@ -120,8 +125,7 @@ class WalkGraph:
         # repeated random permutations, then shuffled/subsampled per query.
         per_type = (walk_num // self.num_types + 1) * refinements * batch
         indices = []
-        for relation in range(self.num_types):
-            members = (self.edge_type == relation).nonzero().flatten()
+        for members in self.relation_members:
             if len(members):
                 repeats = (per_type + len(members) - 1) // len(members)
                 selected = torch.cat([torch.randperm(len(members), generator=generator) for _ in range(repeats)])[:per_type]

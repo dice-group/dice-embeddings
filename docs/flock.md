@@ -109,6 +109,9 @@ sampling runs on CPU; learned sequence processing and pooling run on the model's
 device. Memory and runtime increase with walk count, length, query batch size,
 and ensemble size. The default model follows the published GRU, additive
 refinement, untied-parameter architecture without restarts or neighbor recording.
+Inference caches relation-edge lists and prefetches one CPU walk microbatch while
+CUDA scores the current one. See [KGFM inference performance](kgfm_inference.md)
+for controls, reproducibility guarantees, and benchmarks.
 
 ## Python use and experiment reloads
 

@@ -16,6 +16,7 @@ from ._filtering import (
     accumulate_bidirectional_hits,
     build_bpe_entity_index,
 )
+from ._graph_inference import GraphRankPlan
 from .utils import (
     ALL_HITS_RANGE,
     compute_metrics_from_ranks,
@@ -353,6 +354,8 @@ def evaluate_lp(
     tie_policy: str = "sort",
     tie_seed: int = 0,
     tie_generator: Optional[torch.Generator] = None,
+    graph_rank_plan: Optional[GraphRankPlan] = None,
+    reuse_graph_queries: bool = True,
 ) -> Dict[str, float]:
     """Evaluate link prediction with batched processing.
 
@@ -369,6 +372,9 @@ def evaluate_lp(
         chunk_size: Chunk size for entity scoring.
         tie_generator: Optional CPU generator to continue random ties across calls.
             When supplied, its state takes precedence over tie_seed.
+        graph_rank_plan: Optional whole-split plan shared across progress batches.
+        reuse_graph_queries: Reuse deterministic ULTRA/TRIX queries. Flock keeps
+            its original query and sampling order regardless of this option.
 
         tie_policy: How exact prediction ties are ranked: sort (legacy),
             optimistic, random, or pessimistic.
@@ -392,23 +398,36 @@ def evaluate_lp(
     reciprocal_ranks = []
     all_entities = torch.arange(0, num_entities).long()
 
+    if reuse_graph_queries and getattr(model, 'deterministic_inference', False):
+        graph_rank_plan = graph_rank_plan or GraphRankPlan(triple_idx)
+    else:
+        graph_rank_plan = None
+
     for batch_start in tqdm(range(0, len(triple_idx), batch_size), desc="Evaluating Batches"):
         batch_end = min(batch_start + batch_size, len(triple_idx))
         batch_triples = triple_idx[batch_start:batch_end]
         batch_size_current = len(batch_triples)
 
+        if graph_rank_plan is not None:
+            ranks = graph_rank_plan.rank(model, batch_triples, ranker, er_vocab, re_vocab, batch_size)
+            for tail_rank, head_rank in zip(ranks[::2], ranks[1::2]):
+                reciprocal_ranks.append(1.0 / head_rank + 1.0 / tail_rank)
+                accumulate_bidirectional_hits(hits, head_rank, tail_rank)
+            continue
+
         h_batch = torch.tensor([dp[0] for dp in batch_triples])
         r_batch = torch.tensor([dp[1] for dp in batch_triples])
         t_batch = torch.tensor([dp[2] for dp in batch_triples])
 
-        predictions_tails = torch.zeros(batch_size_current, num_entities)
-        predictions_heads = torch.zeros(batch_size_current, num_entities)
-
         if hasattr(model, "forward_k_vs_all_heads"):
-            predictions_tails = model.forward_k_vs_all(torch.stack((h_batch, r_batch), 1)).cpu()
-            predictions_heads = model.forward_k_vs_all_heads(torch.stack((r_batch, t_batch), 1)).cpu()
+            predictions_tails = model.forward_k_vs_all(torch.stack((h_batch, r_batch), 1))
+            predictions_heads = model.forward_k_vs_all_heads(torch.stack((r_batch, t_batch), 1))
+            if tie_policy == 'sort':
+                predictions_tails, predictions_heads = predictions_tails.cpu(), predictions_heads.cpu()
 
         else:
+            predictions_tails = torch.zeros(batch_size_current, num_entities)
+            predictions_heads = torch.zeros(batch_size_current, num_entities)
             # Embedding models score entity candidates in chunks.
             for chunk_start in range(0, num_entities, chunk_size):
                 chunk_end = min(chunk_start + chunk_size, num_entities)
@@ -434,6 +453,16 @@ def evaluate_lp(
                 preds_heads = model(x_heads).view(batch_size_current, chunk_size_current)
                 predictions_heads[:, chunk_start:chunk_end] = preds_heads
                 del x_heads
+
+        if tie_policy != 'sort':
+            scores = torch.stack((predictions_tails, predictions_heads), 1).flatten(0, 1)
+            targets = np.asarray(batch_triples)[:, [2, 0]].reshape(-1)
+            filters = [filt for h, r, t in batch_triples for filt in (er_vocab[(h, r)], re_vocab[(r, t)])]
+            ranks = ranker.rank_batch(scores, targets, filters)
+            for tail_rank, head_rank in zip(ranks[::2], ranks[1::2]):
+                reciprocal_ranks.append(1.0 / head_rank + 1.0 / tail_rank)
+                accumulate_bidirectional_hits(hits, head_rank, tail_rank)
+            continue
 
         # Compute filtered ranks
         for i in range(batch_size_current):

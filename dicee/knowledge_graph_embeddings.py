@@ -226,17 +226,15 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             r_batch = batch_tr[:, 1]
             B = t_batch.size(0)
 
-            # Generate triples (h, r, t) for this batch
-            h = head_entity.repeat(B).to(device)  # h: [h0, h1..., hN, h0, h1..., ... (B times)]
-            r = r_batch.repeat_interleave(H).to(device)
-            t = t_batch.repeat_interleave(H).to(device)
-            triples = torch.stack([h, r, t], dim=1)
-
             # Compute scores and store
             if hasattr(self.model, "forward_k_vs_all_heads"):
                 batch_scores = self.model.forward_k_vs_all_heads(
-                    torch.stack((r_batch, t_batch), 1).to(device), head_entity.to(device)).cpu()
+                    torch.stack((r_batch, t_batch), 1).to(device), head_entity.to(device))
             else:
+                h = head_entity.repeat(B).to(device)
+                r = r_batch.repeat_interleave(H).to(device)
+                t = t_batch.repeat_interleave(H).to(device)
+                triples = torch.stack([h, r, t], dim=1)
                 batch_scores = self.model(triples).view(B, H)
 
             if return_indices:

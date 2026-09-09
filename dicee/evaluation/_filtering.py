@@ -82,8 +82,7 @@ class FilteredRanker:
     def rank_batch(self, predictions: torch.Tensor, target_indices: Iterable[SupportsInt],
                    filter_indices_list: List[List[int]]) -> List[int]:
         if self.tie_policy != "sort":
-            return [self.rank(scores, target, filters) for scores, target, filters in
-                    zip(predictions, target_indices, filter_indices_list)]
+            return self.ranks_from_bounds(self.bounds_batch(predictions, target_indices, filter_indices_list))
 
         # Existing KvsAll/ensemble evaluators sorted whole batches. Keep that
         # operation intact, including its device-dependent ordering of ties.
@@ -96,6 +95,42 @@ class FilteredRanker:
         order = torch.sort(filtered, dim=1, descending=True).indices
         return [int(torch.where(row == int(target))[0].item()) + 1
                 for row, target in zip(order, target_indices)]
+
+    def bounds_batch(self, predictions, target_indices, filter_indices_list) -> List[Tuple[int, int]]:
+        """Compute optimistic ranks and tie counts together on the score device.
+
+        Only two integers per query leave the GPU. Sampling is deliberately
+        separate so grouped graph inference can restore original query order
+        before consuming the independent random-tie stream.
+        """
+        targets = torch.as_tensor(target_indices, device=predictions.device, dtype=torch.long)
+        if not len(targets):
+            return []
+        eligible = torch.ones_like(predictions, dtype=torch.bool)
+        rows, columns = [], []
+        for row, filters in enumerate(filter_indices_list):
+            columns.extend(filters)
+            rows.extend([row] * len(filters))
+        if columns:
+            eligible[torch.tensor(rows, device=predictions.device), torch.tensor(columns, device=predictions.device)] = False
+        eligible[torch.arange(len(targets), device=predictions.device), targets] = False
+        target_scores = predictions.gather(1, targets[:, None])
+        if target_scores.isnan().any() or (predictions.isnan() & eligible).any():
+            raise ValueError('Cannot rank NaN prediction scores')
+        better = ((predictions > target_scores) & eligible).sum(1) + 1
+        tied = ((predictions == target_scores) & eligible).sum(1)
+        return [(int(b), int(t)) for b, t in torch.stack((better, tied), 1).cpu().tolist()]
+
+    def ranks_from_bounds(self, bounds: Iterable[Tuple[int, int]]) -> List[int]:
+        ranks = []
+        for optimistic, tied in bounds:
+            if self.tie_policy == 'pessimistic':
+                ranks.append(optimistic + tied)
+            elif self.tie_policy == 'random' and tied:
+                ranks.append(optimistic + int(torch.randint(tied + 1, (), generator=self.generator)))
+            else:
+                ranks.append(optimistic)
+        return ranks
 
 
 def compute_filtered_rank(

@@ -33,6 +33,7 @@ from pathlib import Path
 import torch
 from torch import nn
 
+from ._fused_message import tensor_version
 from .base_model import BaseKGE
 
 
@@ -43,6 +44,7 @@ class GraphKGE(BaseKGE):
     config_prefix = 'graph'
     graph_filename = 'graph.pt'
     checkpoint_hint = 'all keys and shapes must match'
+    deterministic_inference = False
 
     def __init__(self, args):
         args = dict(args)
@@ -58,6 +60,35 @@ class GraphKGE(BaseKGE):
         for name in ('graph_triples', 'relation_id_map', 'edge_index', 'edge_type'):
             self.register_buffer(name, None, persistent=False)
         self.num_direct_relations = 0
+
+    def clear_inference_cache(self):
+        """Drop derived representations when graph, weights or device change."""
+
+    def set_inference_backend(self, backend):
+        if backend not in ('auto', 'torch', 'triton'):
+            raise ValueError('graph_inference_backend must be auto, torch, or triton')
+        self._inference_backend = backend
+        for module in self.modules():
+            if hasattr(module, 'inference_backend'):
+                module.inference_backend = backend
+        self.clear_inference_cache()
+        return self
+
+    def inference_token(self):
+        tensors = list(self.parameters()) + list(self.buffers())
+        if any(t.is_inference() for t in tensors):
+            return None
+        return (getattr(self, '_inference_backend', 'auto'), torch.is_autocast_enabled(self.device.type),
+                tuple((id(t), tensor_version(t), t.device, t.dtype) for t in tensors))
+
+    def train(self, mode=True):
+        if mode:
+            self.clear_inference_cache()
+        return super().train(mode)
+
+    def _apply(self, fn, recurse=True):
+        self.clear_inference_cache()
+        return super()._apply(fn, recurse=recurse)
 
     def _build_relation_graph(self):
         raise NotImplementedError
@@ -242,6 +273,17 @@ class GraphKGE(BaseKGE):
         candidates = torch.arange(num_entities, device=self.device) if target_entity_idx is None else target_entity_idx.to(device=self.device, dtype=torch.long)
         if candidates.ndim == 1:
             candidates = candidates.expand(len(x), -1)
+        if not self.training:
+            if x.numel() and (x.min() < 0 or x[:, 0].max() >= self.num_relations or x[:, 1].max() >= num_entities):
+                raise ValueError('Query IDs are outside the graph vocabulary')
+            if candidates.ndim != 2 or candidates.shape[0] != len(x):
+                raise ValueError('Candidate IDs must have shape [K] or [B, K]')
+            if candidates.numel() and (candidates.min() < 0 or candidates.max() >= num_entities):
+                raise ValueError('Candidate IDs are outside the graph vocabulary')
+            rels = self.relation_id_map[x[:, 0]]
+            inverse = (rels + self.num_direct_relations) % (2 * self.num_direct_relations)
+            return self._score(x[:, 1], inverse, candidates, rels % self.num_direct_relations,
+                               (self.edge_index, self.edge_type))
         triples = torch.stack((candidates, x[:, 0, None].expand_as(candidates), x[:, 1, None].expand_as(candidates)), -1)
         return self.forward_grouped(triples, head_prediction=True)
 

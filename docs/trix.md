@@ -3,7 +3,7 @@
 [Paper](https://arxiv.org/abs/2502.19512) ·
 [Pinned official implementation](https://github.com/yuchengz99/TRIX/tree/7596e14eefefe89e61396205a0550172cadeddb0)
 
-TRIX is implemented in pure PyTorch. The two separately
+TRIX uses PyTorch with an optional fused Triton inference kernel. The two separately
 trained official models are available as `TRIX` for entity prediction and
 `TRIXRelation` for relation prediction. DICE does not require PyG, torch-scatter,
 or a compiled graph extension to run either model.
@@ -81,8 +81,9 @@ matching the official implementation.
 CPU/single GPU native training and single-device Lightning are supported. BPE,
 distributed training, cross-validation, and static embedding export are rejected.
 Use `trix_query_batch_size` (default 8) to bound simultaneous queries. Message
-passing materializes edge messages in PyTorch; very large or dense graphs can use
-more memory than the upstream fused kernel. Relation-graph storage grows with the
+passing fuses edge messages on supported CUDA inference paths; the portable
+PyTorch fallback materializes them. See [inference performance](kgfm_inference.md)
+for backend controls and benchmarks. Relation-graph storage grows with the
 number of distinct incident-relation pairs per entity.
 
 ## Python inference and experiment reloads

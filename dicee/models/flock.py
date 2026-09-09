@@ -25,6 +25,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from concurrent.futures import ThreadPoolExecutor
+
 import torch
 from torch import nn
 
@@ -122,6 +124,7 @@ class FlockBase(GraphKGE):
         heads = args.get("flock_attention_heads", 4)
         self.test_samples = args.get("flock_test_samples", 1)
         self.seed = args.get("flock_seed")
+        self.prefetch_walks = args.get('flock_prefetch_walks', True)
         if min(self.dim, self.walk_num, self.refinements, layers, heads, self.test_samples) < 1 or self.walk_len < 2:
             raise ValueError("Flock dimensions/counts must be positive and walk_len must be at least 2")
         if self.dim % heads:
@@ -177,7 +180,7 @@ class FlockBase(GraphKGE):
         callers constructing training records must first remove target edges.
         """
         num_entities, _ = self._require_graph()
-        records = tuple(record.to(device=self.device, dtype=torch.long) for record in records)
+        records = tuple(record.to(device=self.device, dtype=torch.long, non_blocking=record.is_pinned()) for record in records)
         if len(records) != 7 or any(record.ndim != 4 or record.shape != records[0].shape for record in records):
             raise ValueError("Expected seven matching [T,B,S,L] walk records")
         steps, batch, samples, length = records[0].shape
@@ -222,10 +225,31 @@ class FlockBase(GraphKGE):
         if not len(heads) or not candidates.shape[1]:
             return self.node_init.new_empty((len(heads), candidates.shape[1]))
         repeats = 1 if self.training else self.test_samples
-        heads, query, candidates = (x.repeat_interleave(repeats, dim=0) for x in (heads, query, candidates))
+        if repeats > 1:
+            heads, query, candidates = (x.repeat_interleave(repeats, dim=0) for x in (heads, query, candidates))
         graph = self._walk_graph if not self.training else WalkGraph(edges[0], edges[1], num_entities, 2 * self.num_direct_relations)
         generator = self._generator()
         output = []
+        if self.prefetch_walks and not self.training and self.device.type == 'cuda' and len(heads) > self.query_batch_size:
+            # A single producer preserves sampling order and RNG consumption.
+            # Look ahead only one microbatch to bound pinned host memory.
+            cpu_heads = heads.cpu()
+            cpu_tails = query.cpu() if self.relation_prediction else None
+
+            def draw(start):
+                sl = slice(start, start + self.query_batch_size)
+                tails = cpu_tails[sl] if cpu_tails is not None else None
+                return tuple(record.pin_memory() for record in self._draw_walks(graph, cpu_heads[sl], tails, generator))
+
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                future = pool.submit(draw, 0)
+                for start in range(0, len(heads), self.query_batch_size):
+                    records = future.result()
+                    if start + self.query_batch_size < len(heads):
+                        future = pool.submit(draw, start + self.query_batch_size)
+                    sl = slice(start, start + self.query_batch_size)
+                    output.append(self.score_walks(heads[sl], query[sl], candidates[sl], records))
+            return torch.cat(output).view(-1, repeats, candidates.shape[1]).mean(1)
         for start in range(0, len(heads), self.query_batch_size):
             sl = slice(start, start + self.query_batch_size)
             tails = query[sl] if self.relation_prediction else None

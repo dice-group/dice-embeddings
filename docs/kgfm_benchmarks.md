@@ -26,6 +26,10 @@ ties at the displayed precision.
 
 ## Checkpoints and evaluation settings
 
+For current inference kernels, caching, query reuse, and latency/memory
+comparisons, see [KGFM inference performance](kgfm_inference.md). The result
+records below retain the code and settings with which they were measured.
+
 | Model | Official checkpoint | DICE guide |
 |---|---|---|
 | ULTRA-3g | [ultra_3g.pth](https://github.com/DeepGraphLearning/ULTRA/blob/427966ad8ed60420eef034063d44f3153addff90/ckpts/ultra_3g.pth) | [ULTRA](ultra.md) |

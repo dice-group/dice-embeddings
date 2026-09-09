@@ -24,6 +24,7 @@ sys.path.insert(0, str(ROOT))
 import torch
 
 from dicee.evaluation._filtering import TIE_POLICIES
+from dicee.evaluation._graph_inference import GraphRankPlan
 from dicee.evaluation.link_prediction import evaluate_lp
 from dicee.knowledge_graph import KG
 from dicee.models import TRIX, ULTRA, Flock
@@ -60,6 +61,10 @@ def main():
     parser.add_argument("--threads", type=int, default=4)
     parser.add_argument("--walk-num", type=int, default=128)
     parser.add_argument("--test-samples", type=int, default=1)
+    parser.add_argument('--inference-backend', choices=['auto', 'torch', 'triton'], default='auto')
+    parser.add_argument('--relation-cache-mb', type=int, default=64)
+    parser.add_argument('--reuse-queries', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--prefetch-walks', action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--tie-policy", choices=TIE_POLICIES, default="sort")
     parser.add_argument("--tie-seed", type=int, default=None,
@@ -70,6 +75,8 @@ def main():
         args.tie_seed = args.seed
     if min(args.batch_size, args.query_batch_size, args.threads, args.walk_num, args.test_samples) < 1:
         parser.error("Batch sizes, threads, and sampling counts must be positive")
+    if args.relation_cache_mb < 0:
+        parser.error('Relation cache size must be nonnegative')
     os.chdir(ROOT)
     torch.set_num_threads(args.threads)
     torch.manual_seed(args.seed)
@@ -127,7 +134,8 @@ def main():
     settings = dict(num_entities=kg.num_entities, num_relations=kg.num_relations,
                     **{f"{args.model.lower()}_query_batch_size": args.query_batch_size},
                     flock_walk_num=args.walk_num, flock_test_samples=args.test_samples,
-                    flock_seed=args.seed)
+                    flock_seed=args.seed, flock_prefetch_walks=args.prefetch_walks,
+                    graph_inference_backend=args.inference_backend, graph_relation_cache_mb=args.relation_cache_mb)
     model = MODELS[args.model](settings).load_pretrained(checkpoint)
     model.set_graph(kg.train_set).eval().requires_grad_(False)
     initial_weights = {key: value.clone() for key, value in model.state_dict().items()}
@@ -148,6 +156,8 @@ def main():
         if batches:
             tie_generator.set_state(torch.tensor(progress["tie_rng_state"], dtype=torch.uint8))
     completed = sum(batch["triples"] for batch in batches)
+    rank_plan = (GraphRankPlan(kg.test_set[completed:])
+                 if args.reuse_queries and getattr(model, 'deterministic_inference', False) else None)
     if device.type == "cuda":
         torch.cuda.synchronize(device)
         torch.cuda.reset_peak_memory_stats(device)
@@ -158,7 +168,8 @@ def main():
             batch_start = time.perf_counter()
             scores = evaluate_lp(model, triples, kg.num_entities, er_vocab, re_vocab,
                                  batch_size=args.batch_size, tie_policy=args.tie_policy,
-                                 tie_seed=args.tie_seed, tie_generator=tie_generator)
+                                 tie_seed=args.tie_seed, tie_generator=tie_generator,
+                                 graph_rank_plan=rank_plan, reuse_graph_queries=args.reuse_queries)
             if device.type == "cuda":
                 torch.cuda.synchronize(device)
             batches.append({"offset": offset, "triples": len(triples), "metrics": scores,
