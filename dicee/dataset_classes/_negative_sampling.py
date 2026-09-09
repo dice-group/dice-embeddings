@@ -10,8 +10,10 @@ from typing import List, Tuple
 import numpy as np
 import torch
 
+from ._storage import PairIndex, WorkerDataset
 
-class OnevsSample(torch.utils.data.Dataset):
+
+class OnevsSample(WorkerDataset):
     """Dataset for 1-vs-Sample training (dynamic multi-class with negatives).
 
     For every positive triple ``(h, r, t)`` the dataset draws
@@ -96,7 +98,7 @@ class OnevsSample(torch.utils.data.Dataset):
         return x, y_idx, y_vec
 
 
-class FixedNegSampleDataset(torch.utils.data.Dataset):
+class FixedNegSampleDataset(WorkerDataset):
     """Pre-computed (fixed) negative sampling dataset.
 
     At construction time every positive triple is paired with one random
@@ -208,7 +210,7 @@ class FixedNegSampleDataset(torch.utils.data.Dataset):
         return self.train_set[idx], self.labels[idx]
 
 
-class TriplePredictionDataset(torch.utils.data.Dataset):
+class TriplePredictionDataset(WorkerDataset):
     """Dataset for triple prediction with on-the-fly negative sampling.
 
     Each item is a single positive triple; the custom ``collate_fn``
@@ -330,22 +332,25 @@ class GroupedNegativeSamplingDataset(TriplePredictionDataset):
         if int(self.neg_sample_ratio) < 1:
             raise ValueError('Grouped negative sampling requires neg_ratio > 0')
         self.strict_negative_sampling = strict_negative_sampling
-        self.true_heads, self.true_tails = {}, {}
+        self.true_heads = self.true_tails = None
         if strict_negative_sampling:
-            for h, r, t in self.train_set:
-                self.true_heads.setdefault((int(r), int(t)), set()).add(int(h))
-                self.true_tails.setdefault((int(h), int(r)), set()).add(int(t))
+            self.true_heads = PairIndex.from_triples(self.train_set, columns=(1, 2, 0), unique=True)
+            self.true_tails = PairIndex.from_triples(self.train_set, unique=True)
 
     def collate_fn(self, batch):
         positive = torch.stack(batch)
         n, k = len(positive), int(self.neg_sample_ratio)
         triples = positive[:, None].repeat(1, k + 1, 1)
+        if self.strict_negative_sampling:
+            tail_rows = self.true_tails.find_rows(positive[:n // 2, :2].numpy())
+            head_rows = self.true_heads.find_rows(positive[n // 2:, 1:].numpy())
         for i, (h, r, t) in enumerate(positive.tolist()):
             position = 2 if i < n // 2 else 0
             if self.strict_negative_sampling:
-                forbidden = self.true_tails[(h, r)] if position == 2 else self.true_heads[(r, t)]
+                forbidden = (self.true_tails.targets[int(tail_rows[i])] if position == 2
+                             else self.true_heads.targets[int(head_rows[i - n // 2])])
                 candidates = torch.ones(int(self.num_entities), dtype=torch.bool)
-                candidates[list(forbidden)] = False
+                candidates[forbidden] = False
                 candidates = candidates.nonzero().flatten()
                 if not len(candidates):
                     raise ValueError(f'No valid negative candidates for training query {(h, r, t)}')

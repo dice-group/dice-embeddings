@@ -441,7 +441,8 @@ class SWAG(AbstractCallback):
         ensemble_eval_report = evaluate_ensemble_link_prediction_performance(
             models=sample_models,
             triples=trainer.dataset.test_set,
-            er_vocab=trainer.dataset.er_vocab.result(),
+            er_vocab=(trainer.dataset.er_vocab if isinstance(trainer.dataset.er_vocab, dict)
+                      else trainer.dataset.er_vocab.result()),
             weights=None,
             batch_size=trainer.num_training_batches,
             weighted_averaging=False, normalize_scores=False,

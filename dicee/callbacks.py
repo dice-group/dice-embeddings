@@ -829,7 +829,8 @@ class LRScheduler(AbstractCallback):
         ensemble_eval_report = evaluate_ensemble_link_prediction_performance(
             models=self.model_snapshots,
             triples=trainer.dataset.test_set,
-            er_vocab=trainer.dataset.er_vocab.result(),
+            er_vocab=(trainer.dataset.er_vocab if isinstance(trainer.dataset.er_vocab, dict)
+                      else trainer.dataset.er_vocab.result()),
             weights=self.ensemble_weights,
             batch_size=trainer.num_training_batches,
             weighted_averaging=self.weighted_ensemble,
