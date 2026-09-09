@@ -60,7 +60,7 @@ def preprocesses_input_args(args):
         args.apply_reciprical_or_noise = False
     else:
         raise KeyError(f'Unexpected input for scoring_technique \t{args.scoring_technique}')
-    if args.model == "TRIXRelation":
+    if args.model in ("TRIXRelation", "FlockRelation"):
         # Relation prediction ranks the supplied relation vocabulary. Inverses
         # are internal message-passing edges, not additional prediction labels.
         args.apply_reciprical_or_noise = False
@@ -71,7 +71,7 @@ def preprocesses_input_args(args):
                or getattr(args, "strict_negative_sampling", False)
                or getattr(args, "adversarial_temperature", None) is not None)
     if grouped:
-        if args.scoring_technique != "NegSample" or args.byte_pair_encoding or args.model in ("Shallom", "TRIXRelation"):
+        if args.scoring_technique != "NegSample" or args.byte_pair_encoding or args.model in ("Shallom", "TRIXRelation", "FlockRelation"):
             raise ValueError("Grouped/strict/adversarial sampling requires indexed NegSample entity prediction")
         if args.trainer not in ("torchCPUTrainer", "PL"):
             raise ValueError("Grouped sampling currently supports native CPU/single GPU and Lightning trainers")
@@ -80,7 +80,7 @@ def preprocesses_input_args(args):
         temperature = getattr(args, "adversarial_temperature", None)
         if temperature is not None and (not np.isfinite(temperature) or temperature < 0):
             raise ValueError("adversarial_temperature must be finite and nonnegative")
-    if args.model in ("ULTRA", "TRIX", "TRIXRelation"):
+    if args.model in ("ULTRA", "TRIX", "TRIXRelation", "Flock", "FlockRelation"):
         if args.trainer not in ("torchCPUTrainer", "PL"):
             raise ValueError(f"{args.model} currently supports CPU/single GPU native and Lightning trainers")
         if args.byte_pair_encoding or args.num_folds_for_cv or args.save_embeddings_as_csv:
@@ -94,8 +94,8 @@ def preprocesses_input_args(args):
             raise ValueError(f"{args.model} uses internal layer normalization; set normalization=None")
         if args.scoring_technique not in ("NegSample", "FixedNegSample", "KvsAll", "1vsAll", "1vsSample", "KvsSample"):
             raise ValueError(f"Unsupported {args.model} scoring technique")
-    if args.model == "TRIXRelation" and args.scoring_technique != "KvsAll":
-        raise ValueError("TRIXRelation training/evaluation requires scoring_technique=KvsAll")
+    if args.model in ("TRIXRelation", "FlockRelation") and args.scoring_technique != "KvsAll":
+        raise ValueError(f"{args.model} training/evaluation requires scoring_technique=KvsAll")
     sanity_checking_with_arguments(args)
     sanity_check_callback_args(args)
     if args.model == 'Shallom':

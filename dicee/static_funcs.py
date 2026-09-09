@@ -27,6 +27,7 @@ from lightning.pytorch.utilities.rank_zero import rank_zero_only
 from .models import AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ, DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, MuRE, OMult, Pyke, QMult, RotatE, Shallom, TransE, TransH
 from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
+from .models.flock import Flock, FlockRelation
 from .models.fsdp_models import FSDPShardedEntityModel, create_fsdp_sharded_model_class
 from .models.graph_model import GraphKGE
 from .models.pykeen_models import PykeenKGE
@@ -39,6 +40,8 @@ logger = logging.getLogger(__name__)
 # Model registry mapping model names to their classes and labelling types
 MODEL_REGISTRY: Dict[str, Tuple[Type, str]] = {
     'ULTRA': (ULTRA, 'EntityPrediction'),
+    'Flock': (Flock, 'EntityPrediction'),
+    'FlockRelation': (FlockRelation, 'RelationPrediction'),
     'TRIX': (TRIX, 'EntityPrediction'),
     'TRIXRelation': (TRIXRelation, 'RelationPrediction'),
     'Shallom': (Shallom, 'RelationPrediction'),

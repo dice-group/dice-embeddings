@@ -10,3 +10,5 @@ from .dualE import DualE # noqa
 
 from .ultra import ULTRA # noqa
 from .trix import TRIX, TRIXRelation # noqa
+
+from .flock import Flock, FlockRelation # noqa

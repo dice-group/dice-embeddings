@@ -41,6 +41,16 @@ class Namespace(argparse.Namespace):
         self.trix_checkpoint: Optional[str] = None
         self.trix_dim: int = 32
         self.trix_query_batch_size: int = 8
+        self.flock_checkpoint: Optional[str] = None
+        self.flock_dim: int = 64
+        self.flock_walk_num: int = 128
+        self.flock_walk_len: int = 128
+        self.flock_refinements: int = 6
+        self.flock_num_layers: int = 1
+        self.flock_attention_heads: int = 4
+        self.flock_test_samples: int = 1
+        self.flock_query_batch_size: int = 1
+        self.flock_seed: Optional[int] = None
         self.grouped_negative_sampling: bool = False
         self.strict_negative_sampling: bool = False
         self.adversarial_temperature: Optional[float] = None

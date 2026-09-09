@@ -125,7 +125,7 @@ def initialize_trainer(
         # Fall back to CPU when CUDA is unavailable or its context is broken.
         # _disable_cuda_in_process() was already called above when needed.
         _default_accelerator = "cpu" if not torch.cuda.is_available() else "auto"
-        trainer = pl.Trainer(devices=kwargs.get("devices", 1 if args.model in ("ULTRA", "TRIX", "TRIXRelation") else "auto"), accelerator=kwargs.get("accelerator", _default_accelerator),
+        trainer = pl.Trainer(devices=kwargs.get("devices", 1 if args.model in ("ULTRA", "TRIX", "TRIXRelation", "Flock", "FlockRelation") else "auto"), accelerator=kwargs.get("accelerator", _default_accelerator),
                           strategy=kwargs.get("strategy", "auto"),
                           num_nodes=kwargs.get("num_nodes", 1),
                           precision=kwargs.get("precision", None),

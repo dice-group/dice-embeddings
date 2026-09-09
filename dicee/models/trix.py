@@ -10,7 +10,7 @@ from collections import defaultdict
 import torch
 from torch import nn
 
-from .graph_model import GraphKGE
+from .graph_model import GraphKGE, RelationGraphKGE
 from .ultra import RelationalConv
 
 UPSTREAM_COMMIT = "7596e14eefefe89e61396205a0550172cadeddb0"
@@ -142,7 +142,7 @@ class TRIX(TRIXBase):
         return torch.cat(output) if output else next(self.parameters()).new_empty((0, candidates.shape[1]))
 
 
-class TRIXRelation(TRIXBase):
+class TRIXRelation(TRIXBase, RelationGraphKGE):
     """Relation predictor compatible with official ``relation_prediction.pth``.
 
     Pairs are (head, tail); triples and grouped relation corruptions use DICE's
@@ -176,57 +176,3 @@ class TRIXRelation(TRIXBase):
             features = rels.gather(1, candidates[sl, :, None].expand(-1, -1, self.dim))
             output.append(self.mlp(features).squeeze(-1))
         return torch.cat(output) if output else next(self.parameters()).new_empty((0, candidates.shape[1]))
-
-    def forward_grouped(self, triples, head_prediction=None):
-        if head_prediction is not None:
-            raise ValueError("TRIXRelation groups must corrupt relations, with fixed head and tail")
-        triples = self._convert(triples)
-        if not (triples[..., [0, 2]] == triples[:, :1, [0, 2]]).all():
-            raise ValueError("TRIXRelation groups must share both endpoints")
-        return self._relation_score(triples[:, 0, [0, 2]], triples[..., 1], self._training_edges(targets=triples))
-
-    def forward_triples(self, x):
-        triples = self._convert(x)
-        pairs, inverse = triples[:, [0, 2]].unique(dim=0, return_inverse=True)
-        edges = self._training_edges(targets=triples)
-        scores = self._relation_score(pairs, self.relation_id_map.expand(len(pairs), -1), edges)
-        # Scores are in external vocabulary order, so gather with original IDs.
-        return scores[inverse, x[:, 1].to(self.device, dtype=torch.long)]
-
-    def forward_k_vs_sample(self, x, target_entity_idx):
-        """Score relation candidates [K] or [B,K] for (head, tail) pairs."""
-        self._require_graph()
-        pairs = x.to(device=self.device, dtype=torch.long)
-        if pairs.ndim != 2 or pairs.shape[1] != 2:
-            raise ValueError("Relation queries must have shape [B, 2] in (head, tail) order")
-        if pairs.numel() and (pairs.min() < 0 or pairs.max() >= self.num_entities):
-            raise ValueError("Query IDs are outside the graph vocabulary")
-        candidates = target_entity_idx.to(device=self.device, dtype=torch.long)
-        if candidates.ndim == 1:
-            candidates = candidates.expand(len(pairs), -1)
-        if candidates.ndim != 2 or candidates.shape[0] != len(pairs):
-            raise ValueError("Candidate IDs must have shape [K] or [B, K]")
-        if candidates.numel() and (candidates.min() < 0 or candidates.max() >= self.num_relations):
-            raise ValueError("Candidate IDs are outside the graph vocabulary")
-        targets = None
-        if self.training:
-            keys = self.graph_triples[:, 0] * self.num_entities + self.graph_triples[:, 2]
-            query_keys = pairs[:, 0] * self.num_entities + pairs[:, 1]
-            targets = self.graph_triples[torch.isin(keys, query_keys)]
-        return self._relation_score(pairs, self.relation_id_map[candidates], self._training_edges(targets=targets))
-
-    def forward_k_vs_all(self, x):
-        self._require_graph()
-        return self.forward_k_vs_sample(x, torch.arange(self.num_relations, device=self.device))
-
-    forward_k_vs_all_relations = forward_k_vs_all
-
-    def forward_k_vs_all_heads(self, x, target_entity_idx=None):
-        self._require_graph()
-        x = x.to(self.device, dtype=torch.long)
-        candidates = (torch.arange(self.num_entities, device=self.device) if target_entity_idx is None
-                      else target_entity_idx.to(self.device, dtype=torch.long))
-        if candidates.ndim == 1:
-            candidates = candidates.expand(len(x), -1)
-        triples = torch.stack((candidates, x[:, 0, None].expand_as(candidates), x[:, 1, None].expand_as(candidates)), -1)
-        return self.forward_triples(triples.reshape(-1, 3)).reshape(candidates.shape)

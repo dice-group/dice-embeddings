@@ -647,6 +647,34 @@ compatibility, and reproducible verification against the reference implementatio
 
 </details>
 
+[Flock](docs/flock.md) adds random-walk-based entity and relation prediction,
+with both official checkpoints supported in pure PyTorch. Scores and gradients
+are verified against the official models on identical recorded walks.
+
+<details>
+<summary>Flock checkpoint downloads and inference</summary>
+
+```bash
+mkdir -p checkpoints/flock
+wget -P checkpoints/flock https://raw.githubusercontent.com/jw9730/flock/f35103d25a78bdf4075de5c673a51de4979aa4d7/checkpoints/flock_entity.pth
+wget -P checkpoints/flock https://raw.githubusercontent.com/jw9730/flock/f35103d25a78bdf4075de5c673a51de4979aa4d7/checkpoints/flock_relation.pth
+
+python -m dicee --model Flock --dataset_dir KGs/UMLS \
+  --flock_checkpoint checkpoints/flock/flock_entity.pth --num_epochs 0 \
+  --trainer torchCPUTrainer --scoring_technique NegSample \
+  --batch_size 2 --eval_model test
+
+python -m dicee --model FlockRelation --dataset_dir KGs/UMLS \
+  --flock_checkpoint checkpoints/flock/flock_relation.pth --num_epochs 0 \
+  --trainer torchCPUTrainer --scoring_technique KvsAll \
+  --batch_size 2 --eval_model test
+```
+
+Flock is stochastic in evaluation mode. The [Flock guide](docs/flock.md) explains
+sampling budgets, reproducibility, training, and verification against upstream.
+
+</details>
+
 ## Link Prediction Benchmarks
 
 In the below, we provide a brief overview of the link prediction results. Results are sorted in descending order of the size of the respective dataset.
