@@ -193,6 +193,11 @@ class Execute:
         self.args.num_tokens = kg.num_tokens
         self.args.max_length_subword_tokens = kg.max_length_subword_tokens
         self.args.ordered_bpe_entities = kg.ordered_bpe_entities
+        # Full training triples (as a numpy array), needed by graph-based
+        # encoders (e.g. CompGCN / CliffordCompGCN) that require the entire
+        # message-passing graph at model-construction time rather than
+        # per-batch indices.
+        self.args.train_set = kg.train_set
 
         self.report['num_train_triples'] = len(kg.train_set)
         self.report['num_entities'] = kg.num_entities

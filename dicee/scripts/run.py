@@ -43,13 +43,18 @@ def get_default_arguments(description=None):
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
                                  "Pykeen_TransE", "Pykeen_TransF", "Pykeen_TransH",
-                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx","LFMult", "DeCaL", "FullDeCaL"],
+                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx","LFMult", "DeCaL", "FullDeCaL",
+                                 "CompGCN", "CliffordCompGCN", "FullCliffordGNN"],
                         help="Available knowledge graph embedding models. "
                              "To use other knowledge graph embedding models available in python, e.g.,"
                              "**Pykeen_BoxE** and add this into choices")
     parser.add_argument('--optim', type=str, default='Adopt',
                         help='An optimizer',
                         choices=['Adam', 'AdamW', 'SGD', "NAdam", "Adagrad", "ASGD", "Adopt", "Muon"])
+    parser.add_argument('--num_gcn_layers', type=int, default=1,
+                        help='Number of message-passing layers for --model CompGCN / CliffordCompGCN.')
+    parser.add_argument('--composition', type=str, default='corr', choices=['sub', 'mult', 'corr'],
+                        help='Vector composition operator for --model CompGCN (ignored by CliffordCompGCN).')
     parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')

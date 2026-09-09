@@ -1450,10 +1450,54 @@ def _auto_n_from_dim(embedding_dim: int, min_re: int = 4) -> int:
         dim=256 → n=6, d=64, re=4
     """
     import math
-    n = max(1, int(math.log2(embedding_dim)) - int(math.log2(min_re)))
+    n = max(1, int(math.log2(embedding_dim))- int(math.log2(min_re)))
     while embedding_dim % (1 << n) != 0:
         n -= 1
     return n
+
+
+def clifford_geometric_product(h: torch.Tensor, r: torch.Tensor, coeff_table: torch.Tensor,
+                                K_table: torch.Tensor, d: int, re: int) -> torch.Tensor:
+    """Shared, reusable batched Clifford geometric product ``z = h ⊛ r``.
+
+    This is the single canonical implementation of the geometric product
+    used by :class:`FullDeCaL` and reused verbatim by other Clifford-valued
+    models (e.g. ``CliffordCompGCN``) so the multiplication logic is never
+    duplicated.
+
+    Parameters
+    ----------
+    h, r : torch.Tensor
+        Shape ``(B, d, re)`` — blade-decomposed multivectors (``d = 2^n``
+        blades, ``re`` real components per blade).
+    coeff_table : torch.Tensor
+        Shape ``(d, d)`` — precomputed ``σ(I,J) · α[I∩J]`` structure
+        coefficients for the chosen signature ``Cl_{p,q,r}``.
+    K_table : torch.Tensor
+        Shape ``(d, d)`` long tensor — output blade index ``K = I △ J``.
+    d : int
+        Number of blades (``2^n``).
+    re : int
+        Per-blade embedding width.
+
+    Returns
+    -------
+    torch.Tensor
+        Shape ``(B, d, re)`` — the geometric product ``h ⊛ r``.
+    """
+    B = h.size(0)
+    hr = (torch.einsum('bie,bje->bije', h, r)
+          * coeff_table.unsqueeze(0).unsqueeze(-1))   # (B, d, d, re)
+
+    z       = torch.zeros(B, d, re, device=h.device, dtype=h.dtype)
+    K_flat  = K_table.reshape(-1)
+    hr_flat = hr.reshape(B, d * d, re)
+    z.scatter_add_(
+        1,
+        K_flat.unsqueeze(0).unsqueeze(-1).expand(B, -1, re),
+        hr_flat,
+    )
+    return z
 
 
 class FullDeCaL(BaseKGE):
@@ -1549,6 +1593,25 @@ class FullDeCaL(BaseKGE):
             coeff = sign_table * eta_blade[intersection_table]         # (d,d)
             self.register_buffer('_coeff_fixed', coeff)
 
+        # ── Per-blade learnable weights (grade-dampening) ─────────────────
+        # DeCaL zero-initialises its p/q/r_coefficients, making the model
+        # start as DistMult and gradually learn geometric structure.  Without
+        # an equivalent mechanism, FullDeCaL's initial score variance is
+        # O(d² · re^{3/2}), which causes vanishing gradients through softmax
+        # on large entity sets and prevents the model from learning at all.
+        #
+        # Solution: learnable per-blade weights w ∈ ℝ^d initialised to
+        #   w[grade-0 blade (scalar)] = 1   (DistMult term always active)
+        #   w[grade ≥ 1 blades]       = 0   (start zeroed, grow via gradient)
+        #
+        # This makes FullDeCaL = DistMult at init and gradually introduces
+        # the full geometric structure, exactly mirroring DeCaL's curriculum.
+        # When n=0 or n=1, d ≤ 2 and no grade-≥2 blades exist, so the
+        # behaviour is identical to DeCaL for those degenerate cases.
+        grade_of_blade = bits.sum(dim=1).long()          # (d,)  grade = |K|
+        blade_weights_init = (grade_of_blade == 0).float()  # 1 for scalar, 0 else
+        self.blade_weights = torch.nn.Parameter(blade_weights_init)   # (d,)
+
         mode_str = (
             f"auto (n={n}, d={d}, re={self.re}, η[{n}] learned via tanh)"
             if self._auto else
@@ -1584,23 +1647,29 @@ class FullDeCaL(BaseKGE):
         return emb.view(emb.size(0), self.d, self.re)
 
     def _geo_product(self, h: torch.Tensor, r: torch.Tensor) -> torch.Tensor:
-        """Batched geometric product z = h ⊛ r.  Returns (B, d, re)."""
-        B     = h.size(0)
-        d, re = self.d, self.re
+        """Batched geometric product z = h ⊛ r.  Returns (B, d, re).
+
+        The per-blade weights ``self.blade_weights`` are applied to both h and
+        r before the product, mirroring DeCaL's ``apply_coefficients`` pattern
+        (zero-initialised grade ≥ 1 coefficients).  This dampens higher-grade
+        contributions at initialisation so the model starts as DistMult and
+        gradually learns to exploit the full geometric structure.
+
+        For grade-0 only (n=0) or n=1 the weights are [1] or [1, 0], which
+        recovers exact DistMult / grade-1-augmented behaviour at init.
+
+        The actual batched blade-multiplication is delegated to the shared,
+        reusable :func:`clifford_geometric_product` helper so that other
+        models (e.g. ``CliffordCompGCN``) can perform the exact same
+        geometric product without duplicating this logic.
+        """
+        # Apply per-blade weights: h_K ← w_K · h_K, r_K ← w_K · r_K
+        # shape: blade_weights (d,) → (1, d, 1) for broadcasting
+        w = self.blade_weights.unsqueeze(0).unsqueeze(-1)  # (1, d, 1)
+        h = h * w
+        r = r * w
         coeff = self._coeff_table()   # (d, d)
-
-        hr = (torch.einsum('bie,bje->bije', h, r)
-              * coeff.unsqueeze(0).unsqueeze(-1))   # (B, d, d, re)
-
-        z       = torch.zeros(B, d, re, device=h.device, dtype=h.dtype)
-        K_flat  = self._K_table.reshape(-1)
-        hr_flat = hr.reshape(B, d * d, re)
-        z.scatter_add_(
-            1,
-            K_flat.unsqueeze(0).unsqueeze(-1).expand(B, -1, re),
-            hr_flat,
-        )
-        return z
+        return clifford_geometric_product(h, r, coeff, self._K_table, self.d, self.re)
 
     # ------------------------------------------------------------------ #
     #  KvsAll  –  (B, 2) → (B, |E|)                                      #

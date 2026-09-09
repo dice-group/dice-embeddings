@@ -24,7 +24,7 @@ import torch
 import torch.distributed as dist
 from lightning.pytorch.utilities.rank_zero import rank_zero_only
 
-from .models import AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ, DeCaL, DistMult, DualE, FullDeCaL, Keci, KeciTransformer, LFMult, MuRE, OMult, Pyke, QMult, RotatE, Shallom, TransE, TransH
+from .models import AConEx, AConvO, AConvQ, CKeci, CliffordCompGCN, CoKE, ComplEx, CompGCN, ConEx, ConvO, ConvQ, DeCaL, DistMult, DualE, FullCliffordGNN, FullDeCaL, Keci, KeciTransformer, LFMult, MuRE, OMult, Pyke, QMult, RotatE, Shallom, TransE, TransH
 from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
 from .models.fsdp_models import FSDPShardedEntityModel, create_fsdp_sharded_model_class
@@ -60,6 +60,9 @@ MODEL_REGISTRY: Dict[str, Tuple[Type, str]] = {
     'FullDeCaL': (FullDeCaL, 'EntityPrediction'),
     'DualE': (DualE, 'EntityPrediction'),
     'CoKE': (CoKE, 'EntityPrediction'),
+    'CompGCN': (CompGCN, 'EntityPrediction'),
+    'CliffordCompGCN': (CliffordCompGCN, 'EntityPrediction'),
+    'FullCliffordGNN': (FullCliffordGNN, 'EntityPrediction'),
 }
 
 def create_recipriocal_triples(df: pd.DataFrame) -> pd.DataFrame:
