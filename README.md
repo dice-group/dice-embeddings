@@ -741,7 +741,7 @@ ties at the displayed precision. Highlights update as the remaining runs finish.
 | YAGO3-10 | Flock | No | — | — | — | — |
 | FB15k-237 | ULTRA-3g | Yes | **0.3693** | **0.2718** | **0.4101** | **0.5620** |
 | FB15k-237 | TRIX | Yes | 0.3618 | 0.2649 | 0.3989 | 0.5546 |
-| FB15k-237 | Flock | Yes | — | — | — | — |
+| FB15k-237 | Flock | Yes | 0.3116 | 0.2215 | 0.3442 | 0.4912 |
 | WN18RR | ULTRA-3g | Yes | 0.3708 | 0.2934 | 0.3947 | 0.5354 |
 | WN18RR | TRIX | Yes | 0.5083 | 0.4608 | 0.5233 | 0.6064 |
 | WN18RR | Flock | Yes | **0.5303** | **0.4783** | **0.5482** | **0.6367** |
