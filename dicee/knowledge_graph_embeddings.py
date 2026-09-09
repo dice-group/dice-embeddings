@@ -7,6 +7,7 @@ import numpy as np
 import torch
 
 from .abstracts import BaseInteractiveKGE, BaseInteractiveTrainKGE, InteractiveQueryDecomposition
+from .evaluation._filtering import evaluation_tie_options
 from .evaluation.link_prediction import evaluate_lp
 from .static_funcs import load_pickle
 
@@ -133,18 +134,30 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             logger.info(f"{self.enc.decode(tokens)}\t {score}")
 
     # given a string, return is bpe encoded embeddings
-    def eval_lp_performance(self, dataset=List[Tuple[str, str, str]], filtered=True):
+    def eval_lp_performance(self, dataset=List[Tuple[str, str, str]], filtered=True,
+                            *, tie_policy=None, tie_seed=None):
+        """Evaluate head/tail ranks, inheriting saved tie settings unless overridden.
+
+        ``tie_policy`` accepts sort (legacy), optimistic, random, or pessimistic.
+        ``tie_seed`` seeds an independent random stream for each evaluation.
+        """
         if not isinstance(dataset, list) or len(dataset) == 0:
             raise TypeError("dataset must be a non-empty list of (head, relation, tail) triples")
+        tie_options = evaluation_tie_options(self.configs)
+        if tie_policy is not None:
+            tie_options["tie_policy"] = tie_policy
+        if tie_seed is not None:
+            tie_options["tie_seed"] = tie_seed
         idx_dataset = np.array(
             [(self.entity_to_idx[s], self.relation_to_idx[p], self.entity_to_idx[o]) for s, p, o in dataset])
         if filtered:
             return evaluate_lp(model=self.model, triple_idx=idx_dataset, num_entities=len(self.entity_to_idx),
                                er_vocab=load_pickle(self.path + '/er_vocab.p'),
-                               re_vocab=load_pickle(self.path + '/re_vocab.p'))
+                               re_vocab=load_pickle(self.path + '/re_vocab.p'), **tie_options)
         else:
             return evaluate_lp(model=self.model, triple_idx=idx_dataset, num_entities=len(self.entity_to_idx),
-                               er_vocab=None, re_vocab=None)
+                               er_vocab={(h, r): [] for h, r, _ in idx_dataset},
+                               re_vocab={(r, t): [] for _, r, t in idx_dataset}, **tie_options)
 
     def predict_missing_head_entity(self, relation: Union[List[str], str], tail_entity: Union[List[str], str],
                                     within=None, batch_size = 2, topk = 1, return_indices = False) -> Tuple:

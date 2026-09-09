@@ -115,6 +115,12 @@ class Namespace(argparse.Namespace):
         self.eval_model: str = "train_val_test"
         """ Evaluate trained model choices:["None", "train", "train_val", "train_val_test", "test"]"""
 
+        self.eval_tie_policy: str = "sort"
+        """Prediction ties: sort (legacy), optimistic, random, or pessimistic."""
+
+        self.eval_tie_seed: Optional[int] = None
+        """Independent random tie seed; None uses random_seed."""
+
         self.save_model_at_every_epoch: Optional[int] = None
         """ Not tested """
 

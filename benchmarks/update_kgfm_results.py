@@ -47,6 +47,8 @@ def main():
         result = json.loads(path.read_text())
         if result.get("status") != "complete":
             continue
+        if result["configuration"].get("tie_policy") not in ("sort", "DICE sort position"):
+            raise ValueError("This README table uses sort ties; publish other policies separately")
         metrics = result["metrics"]
         assert all(math.isfinite(metrics[key]) and 0 <= metrics[key] <= 1 for key in METRICS)
         assert metrics["H@1"] <= metrics["H@3"] <= metrics["H@10"]

@@ -23,6 +23,7 @@ sys.path.insert(0, str(ROOT))
 
 import torch
 
+from dicee.evaluation._filtering import TIE_POLICIES
 from dicee.evaluation.link_prediction import evaluate_lp
 from dicee.knowledge_graph import KG
 from dicee.models import TRIX, ULTRA, Flock
@@ -60,8 +61,13 @@ def main():
     parser.add_argument("--walk-num", type=int, default=128)
     parser.add_argument("--test-samples", type=int, default=1)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--tie-policy", choices=TIE_POLICIES, default="sort")
+    parser.add_argument("--tie-seed", type=int, default=None,
+                        help="Independent random tie seed; defaults to --seed")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    if args.tie_seed is None:
+        args.tie_seed = args.seed
     if min(args.batch_size, args.query_batch_size, args.threads, args.walk_num, args.test_samples) < 1:
         parser.error("Batch sizes, threads, and sampling counts must be positive")
     os.chdir(ROOT)
@@ -96,7 +102,7 @@ def main():
         "inference_edges": "train plus generated inverses, deduplicated",
         "filter_positives": ["train", "valid", "test"],
         "candidates": "all entities in the combined split vocabulary",
-        "directions": ["head", "tail"], "tie_policy": "DICE sort position",
+        "directions": ["head", "tail"], "tie_policy": args.tie_policy,
         "flock_walk_len": 128, "flock_refinements": 6,
     }
     config_path = output / "configuration.json"
@@ -134,7 +140,13 @@ def main():
         with (output / f"{name}.p").open("wb") as stream:
             pickle.dump(vocab, stream)
     progress_path = output / "progress.json"
-    batches = json.loads(progress_path.read_text())["batches"] if progress_path.exists() else []
+    progress = json.loads(progress_path.read_text()) if progress_path.exists() else {}
+    batches = progress.get("batches", [])
+    tie_generator = None
+    if args.tie_policy == "random":
+        tie_generator = torch.Generator(device="cpu").manual_seed(args.tie_seed)
+        if batches:
+            tie_generator.set_state(torch.tensor(progress["tie_rng_state"], dtype=torch.uint8))
     completed = sum(batch["triples"] for batch in batches)
     if device.type == "cuda":
         torch.cuda.synchronize(device)
@@ -145,13 +157,17 @@ def main():
             triples = kg.test_set[offset:offset + args.batch_size]
             batch_start = time.perf_counter()
             scores = evaluate_lp(model, triples, kg.num_entities, er_vocab, re_vocab,
-                                 batch_size=args.batch_size)
+                                 batch_size=args.batch_size, tie_policy=args.tie_policy,
+                                 tie_seed=args.tie_seed, tie_generator=tie_generator)
             if device.type == "cuda":
                 torch.cuda.synchronize(device)
             batches.append({"offset": offset, "triples": len(triples), "metrics": scores,
                             "seconds": time.perf_counter() - batch_start})
             completed += len(triples)
-            write_json(progress_path, {"completed": completed, "total": len(kg.test_set), "batches": batches})
+            progress = {"completed": completed, "total": len(kg.test_set), "batches": batches}
+            if tie_generator is not None:
+                progress["tie_rng_state"] = tie_generator.get_state().tolist()
+            write_json(progress_path, progress)
             print(f"PROGRESS {args.model} {args.dataset}: {completed}/{len(kg.test_set)}", flush=True)
     for key, value in model.state_dict().items():
         if not torch.equal(value.cpu(), initial_weights[key]):

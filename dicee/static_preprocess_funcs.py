@@ -6,6 +6,7 @@ from typing import Tuple
 
 import numpy as np
 
+from .evaluation._filtering import FilteredRanker, evaluation_tie_options
 from .sanity_checkers import sanity_check_callback_args, sanity_checking_with_arguments
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,7 @@ def timeit(func):
 
 def preprocesses_input_args(args):
     """ Sanity Checking in input arguments """
+    FilteredRanker(**evaluation_tie_options(args))
     # To update the default value of Trainer in pytorch-lightnings
     args.max_epochs = args.num_epochs
     args.min_epochs = args.num_epochs

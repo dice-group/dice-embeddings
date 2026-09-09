@@ -675,6 +675,39 @@ sampling budgets, reproducibility, training, and verification against upstream.
 
 </details>
 
+## Prediction tie strategies
+
+Set `--eval_tie_policy` when evaluating a model. Ties mean **exactly equal
+prediction scores**, before metric rounding. Known positive alternatives are
+filtered first; the query's correct answer remains a candidate.
+
+| Policy | Target rank within a tied group | Example: three candidates tied for first |
+|---|---|---|
+| `sort` (default) | Existing DICE `torch.sort` position | Implementation-dependent; not uniform random |
+| `optimistic` | Best possible rank | 1 |
+| `random` | Uniformly sampled integer rank | 1, 2, or 3 with equal probability |
+| `pessimistic` | Worst possible rank | 3 |
+
+For example, add `--eval_tie_policy random --eval_tie_seed 42` to a DICE
+command. In Python, set `args.eval_tie_policy = "pessimistic"` on a
+`dicee.config.Namespace`. The options apply to head/tail, reciprocal, relation,
+BPE, and ensemble evaluation. Loaded models also support
+`kge.eval_lp_performance(triples, tie_policy="random", tie_seed=42)`;
+without overrides they use the saved configuration. Standalone functions such
+as `dicee.evaluation.link_prediction.evaluate_lp` accept `tie_policy` and
+`tie_seed` keywords (defaults: `"sort"` and `0`).
+
+Random evaluation uses its own CPU generator and does not consume the model's
+or training's random stream. `eval_tie_seed` defaults to `random_seed`; each
+split evaluation restarts that stream. Reproducing random ranks requires the
+same scores, filters, seed, and query order. MRR and Hits are calculated from
+the sampled integer ranks, so random ties are not average-rank evaluation.
+
+The KGFM runner accepts `--tie-policy` and `--tie-seed` and saves the policy,
+seed, and random generator state for resumable runs. Use a new output directory
+when changing a run's settings. The table below retains its original `sort`
+policy; its publisher rejects results using a different tie policy.
+
 ## KGFM Link Prediction with Frozen Checkpoints
 
 This table covers **test-set entity prediction without fine-tuning** using the

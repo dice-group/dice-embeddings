@@ -22,6 +22,7 @@ from torch.optim.lr_scheduler import LambdaLR
 import dicee.models.base_model
 
 from .abstracts import AbstractCallback
+from .evaluation._filtering import evaluation_tie_options
 from .evaluation.ensemble import evaluate_ensemble_link_prediction_performance
 from .static_funcs import save_checkpoint_model, save_pickle
 
@@ -831,7 +832,8 @@ class LRScheduler(AbstractCallback):
             er_vocab=trainer.dataset.er_vocab.result(),
             weights=self.ensemble_weights,
             batch_size=trainer.num_training_batches,
-            weighted_averaging=self.weighted_ensemble
+            weighted_averaging=self.weighted_ensemble,
+            **evaluation_tie_options(model.args)
             )
         # Prepare a single dictionary with LR scheduling info and nested ensemble eval report
         self.ensemble_eval_report = {

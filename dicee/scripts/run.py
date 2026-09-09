@@ -1,6 +1,7 @@
 import argparse
 import json
 
+from dicee.evaluation._filtering import TIE_POLICIES
 from dicee.executer import ContinuousExecute, Execute
 
 
@@ -137,6 +138,11 @@ def get_default_arguments(description=None):
     parser.add_argument("--eval_model", type=str, default="train_val_test",
                         choices=["None", "train", "train_val", "train_val_test", "test", "val_test", "val", "train_test"],
                         help='Evaluating link prediction performance on data splits. ')
+    parser.add_argument("--eval_tie_policy", choices=TIE_POLICIES, default="sort",
+                        help="Prediction ties: legacy sort ordering, best rank (optimistic), "
+                             "uniform random tied rank, or worst rank (pessimistic).")
+    parser.add_argument("--eval_tie_seed", type=int, default=None,
+                        help="Seed for independent random tie-breaking; defaults to random_seed.")
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
                         help='At every X number of epochs model will be saved. If None, we save 4 times.')
     # Continual Learning

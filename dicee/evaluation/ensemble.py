@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import torch
 
+from ._filtering import FilteredRanker
 from .utils import (
     ALL_HITS_RANGE,
     compute_metrics_from_ranks_simple,
@@ -25,7 +26,10 @@ def evaluate_ensemble_link_prediction_performance(
     weights: Optional[List[float]] = None,
     batch_size: int = 512,
     weighted_averaging: bool = True,
-    normalize_scores: bool = True
+    normalize_scores: bool = True,
+    *,
+    tie_policy: str = "sort",
+    tie_seed: int = 0,
 ) -> Dict[str, float]:
     """Evaluate link prediction performance of an ensemble of KGE models.
 
@@ -45,6 +49,9 @@ def evaluate_ensemble_link_prediction_performance(
             If False, use simple mean.
         normalize_scores: If True, normalize scores to [0, 1] range per
             sample before averaging.
+        tie_policy: Exact prediction ties: sort (legacy), optimistic, random,
+            or pessimistic. Applied after combining model scores.
+        tie_seed: Independent random tie seed; reset on each evaluation call.
 
     Returns:
         Dictionary with H@1, H@3, H@10, and MRR metrics.
@@ -63,6 +70,7 @@ def evaluate_ensemble_link_prediction_performance(
         ... )
         >>> print(f"MRR: {results['MRR']:.4f}")
     """
+    ranker = FilteredRanker(tie_policy, tie_seed)
     num_triples = len(triples)
     ranks: List[int] = []
     hits_range = ALL_HITS_RANGE
@@ -108,21 +116,8 @@ def evaluate_ensemble_link_prediction_performance(
         else:
             avg_preds = torch.mean(preds_stack, dim=0)
 
-        # Apply filtering for each sample in batch
-        for j in range(data_batch.shape[0]):
-            id_e, id_r, id_e_target = data_batch[j]
-            filt = er_vocab.get((id_e, id_r), [])
-            target_value = avg_preds[j, id_e_target].item()
-
-            if len(filt) > 0:
-                avg_preds[j, filt] = -np.Inf
-            avg_preds[j, id_e_target] = target_value
-
-        # Compute ranks
-        _, sort_idxs = torch.sort(avg_preds, dim=1, descending=True)
-
-        for j in range(data_batch.shape[0]):
-            rank = torch.where(sort_idxs[j] == e2_idx[j])[0].item() + 1
+        filters = [er_vocab.get((h, r), []) for h, r, _ in data_batch]
+        for rank in ranker.rank_batch(avg_preds, e2_idx, filters):
             ranks.append(rank)
             update_hits(hits, rank, hits_range)
 
