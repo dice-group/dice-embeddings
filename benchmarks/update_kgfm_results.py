@@ -38,7 +38,7 @@ def main():
     args = parser.parse_args()
     readme_path = ROOT / "README.md"
     readme = readme_path.read_text()
-    before, remainder = readme.split("## KGFM Link Prediction with Frozen Checkpoints\n", 1)
+    before, remainder = readme.split("## KGFM Link Prediction\n", 1)
     section, after = remainder.split("## Link Prediction Benchmarks\n", 1)
     records = ROOT / "benchmarks/results/kgfm-zero-shot"
     records.mkdir(parents=True, exist_ok=True)
@@ -67,7 +67,7 @@ def main():
         (records / f'{result["dataset"]}-{result["model"]}.json').write_text(json.dumps(result, indent=2) + "\n")
         updated += 1
     section = bold_best_metrics(section)
-    readme_path.write_text(before + "## KGFM Link Prediction with Frozen Checkpoints\n" + section
+    readme_path.write_text(before + "## KGFM Link Prediction\n" + section
                            + "## Link Prediction Benchmarks\n" + after)
     print(f"Published {updated} completed KGFM results; original benchmark section unchanged.")
 
