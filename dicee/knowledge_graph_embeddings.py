@@ -186,7 +186,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
         Highest K scores and entities
         """
-        if self.all_have_inverse and not hasattr(self.model, "forward_k_vs_all_heads"):
+        if self.all_have_inverse and within is None and not hasattr(self.model, "forward_k_vs_all_heads"):
             if isinstance(relation, str):
                 relation = [f"{relation}_inverse"]
             else:
@@ -201,7 +201,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         else:
             tail_entity = torch.LongTensor([self.entity_to_idx[tail_entity]])
 
-        head_entity = torch.arange(0, len(self.entity_to_idx))
+        head_entity = (torch.arange(len(self.entity_to_idx)) if within is None
+                       else torch.tensor([self.entity_to_idx[e] for e in within], dtype=torch.long))
         # Generate all (tail, relation) pairs
         tr_pairs = torch.cartesian_prod(tail_entity, relation)  # Shape: (num_tr_pairs, 2)
         num_tr_pairs = tr_pairs.size(0)
@@ -242,7 +243,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
                 # Store top-k scores and indices
                 topk_scores, topk_idxs = torch.topk(batch_scores, topk, dim=1)
                 scores[i:i + batch_size_tr, :] = topk_scores
-                indices[i:i + batch_size_tr, :] = topk_idxs
+                indices[i:i + batch_size_tr, :] = head_entity[topk_idxs.cpu()]
             else:
                 # Store all scores
                 start_idx = i * H
@@ -1462,4 +1463,3 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
                 normalization_params=self.literal_dataset.normalization_params,
             )
         return predictions
-

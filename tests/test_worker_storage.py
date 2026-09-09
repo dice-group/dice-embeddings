@@ -63,7 +63,7 @@ def test_pair_lookup_avoids_integer_product_overflow():
 
 @pytest.mark.parametrize('kind', ['KvsAll', 'Relation', 'AllvsAll'])
 @pytest.mark.parametrize('smoothing', [0., 0.1])
-def test_dense_labels_and_pair_order_are_unchanged(kind, smoothing):
+def test_dense_labels_and_pair_order(kind, smoothing):
     if kind == 'AllvsAll':
         dataset = AllvsAll(FACTS, range(7), range(3), label_smoothing_rate=smoothing)
         keys = [(h, r) for h in range(7) for r in range(3)]
@@ -79,7 +79,7 @@ def test_dense_labels_and_pair_order_are_unchanged(kind, smoothing):
         expected = torch.zeros(3 if kind == 'Relation' else 7)
         expected[targets] = 1
         if smoothing:
-            expected = expected * (1 - smoothing) + 1 / len(expected)
+            expected = expected * (1 - smoothing) + smoothing / len(expected)
         x, labels = dataset[i]
         assert x.tolist() == list(key)
         assert torch.equal(labels, expected)

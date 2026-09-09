@@ -113,7 +113,7 @@ class KvsAll(WorkerDataset):
         y_vec[self.train_target[idx]] = 1.0
 
         if self.label_smoothing_rate:
-            y_vec = y_vec * (1 - self.label_smoothing_rate) + (1 / y_vec.size(0))
+            y_vec = y_vec * (1 - self.label_smoothing_rate) + self.label_smoothing_rate / self.target_dim
         return self.train_data[idx], y_vec
 
 
@@ -176,7 +176,7 @@ class AllvsAll(WorkerDataset):
             y_vec[self.train_target[idx]] = 1.0
 
         if self.label_smoothing_rate:
-            y_vec = y_vec * (1 - self.label_smoothing_rate) + (1 / y_vec.size(0))
+            y_vec = y_vec * (1 - self.label_smoothing_rate) + self.label_smoothing_rate / self.target_dim
         return self.train_data[idx], y_vec
 
 
@@ -246,7 +246,8 @@ class KvsSampleDataset(WorkerDataset):
 
         y_idx = torch.cat((y, negative_idx), 0)
         y_vec = torch.cat(
-            (torch.ones(num_positive_class), torch.zeros(num_negative_class)), 0
+            (torch.ones(num_positive_class) - self.label_smoothing_rate,
+             torch.zeros(num_negative_class) + self.label_smoothing_rate), 0
         )
         return x, y_idx, y_vec
 

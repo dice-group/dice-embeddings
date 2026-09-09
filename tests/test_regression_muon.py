@@ -76,12 +76,9 @@ class TestRegressionMuon:
         decal_test_mrr = decal_result["Test"]["MRR"]
         print(f"\nKeci  (p=0,q=0)      Test MRR: {keci_test_mrr:.4f}")
         print(f"DeCaL (p=0,q=0,r=0)  Test MRR: {decal_test_mrr:.4f}")
-        winner = "DeCaL" if decal_test_mrr > keci_test_mrr else "Keci"
-        print(f"Winner: {winner}")
-
         assert keci_test_mrr > 0.0, f"Keci Test MRR should be > 0, got {keci_test_mrr}"
         assert decal_test_mrr > 0.0, f"DeCaL Test MRR should be > 0, got {decal_test_mrr}"
-        assert keci_test_mrr > decal_test_mrr, (
-            f"Keci (p=0,q=0) expected to outperform DeCaL (p=0,q=0,r=0) with Muon, "
-            f"but got Keci={keci_test_mrr:.4f} <= DeCaL={decal_test_mrr:.4f}"
+        assert keci_test_mrr == pytest.approx(decal_test_mrr), (
+            f"Keci (p=0,q=0) and DeCaL (p=0,q=0,r=0) should have matching Test MRR with Muon, "
+            f"but got Keci={keci_test_mrr:.4f} and DeCaL={decal_test_mrr:.4f}"
         )
