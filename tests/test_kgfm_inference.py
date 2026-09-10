@@ -171,6 +171,49 @@ def test_relation_cache_respects_memory_limit_and_weight_reload():
         torch.testing.assert_close(actual, expected)
 
 
+@pytest.mark.parametrize('cls', [ULTRA, TRIX])
+@pytest.mark.parametrize('backend_name', ['legacy', '', 'cuda.matmul', 'mkldnn.matmul', 'cudnn.conv', 'cudnn.rnn'])
+def test_relation_cache_tracks_backend_precision(cls, backend_name, monkeypatch):
+    if backend_name == 'legacy':
+        backend = torch.backends.cuda.matmul
+        if hasattr(backend, 'fp32_precision'):
+            pytest.skip('Legacy precision fallback is only used on older PyTorch')
+        attribute, initial, changed = 'allow_tf32', False, True
+    else:
+        backend = torch.backends
+        for name in backend_name.split('.') if backend_name else []:
+            backend = getattr(backend, name, None)
+        if not hasattr(backend, 'fp32_precision'):
+            pytest.skip('Backend-specific precision settings require newer PyTorch')
+
+        # New precision settings can make the legacy getters raise, even on CPU.
+        def legacy_getter():
+            raise AssertionError('Cache validation must use backend-specific precision settings')
+
+        monkeypatch.setattr(torch, 'get_float32_matmul_precision', legacy_getter)
+        attribute, initial, changed = 'fp32_precision', 'bf16' if backend_name == 'mkldnn.matmul' else 'ieee', 'tf32'
+    monkeypatch.setattr(backend, attribute, initial)
+    facts = torch.tensor([[0, 0, 1], [1, 1, 2], [2, 0, 0]])
+    model = cls(dict(num_entities=4, num_relations=2, ultra_dim=8, trix_dim=8,
+                     ultra_num_layers=2)).set_graph(facts).eval()
+    stage = model.relation_model if cls is ULTRA else model.relation_model.layers_hh[0]
+    calls = []
+    handle = stage.register_forward_hook(lambda *args: calls.append(1))
+    with torch.no_grad():
+        expected = model(facts[:, :2])
+        assert calls
+        calls.clear()
+        torch.testing.assert_close(model(facts[:, :2]), expected)
+        assert not calls
+        # The cache must be recomputed when either backend changes precision.
+        setattr(backend, attribute, changed)
+        actual = model(facts[:, :2])
+        assert calls
+        model.clear_inference_cache()
+        torch.testing.assert_close(actual, model(facts[:, :2]))
+    handle.remove()
+
+
 @CUDA
 def test_loaded_frozen_inference_uses_kernel_without_disabling_global_grad(monkeypatch):
     pytest.importorskip('triton')

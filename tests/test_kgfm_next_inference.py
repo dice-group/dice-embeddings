@@ -14,15 +14,20 @@ FACTS = torch.tensor([[0, 0, 1], [0, 0, 2], [1, 1, 2], [2, 0, 3], [3, 1, 0]])
 
 
 @pytest.fixture(autouse=True)
-def small_thread_pool():
+def small_thread_pool(monkeypatch):
     previous = torch.get_num_threads()
-    matmul_tf32, cudnn_tf32 = torch.backends.cuda.matmul.allow_tf32, torch.backends.cudnn.allow_tf32
-    torch.set_num_threads(2)
-    torch.backends.cuda.matmul.allow_tf32 = False
-    torch.backends.cudnn.allow_tf32 = False
-    yield
-    torch.set_num_threads(previous)
-    torch.backends.cuda.matmul.allow_tf32, torch.backends.cudnn.allow_tf32 = matmul_tf32, cudnn_tf32
+    if hasattr(torch.backends.cuda.matmul, 'fp32_precision'):
+        for backend in (torch.backends.cuda.matmul, torch.backends.mkldnn.matmul,
+                        torch.backends.cudnn.conv, torch.backends.cudnn.rnn):
+            monkeypatch.setattr(backend, 'fp32_precision', 'ieee')
+    else:
+        monkeypatch.setattr(torch.backends.cuda.matmul, 'allow_tf32', False)
+        monkeypatch.setattr(torch.backends.cudnn, 'allow_tf32', False)
+    try:
+        torch.set_num_threads(2)
+        yield
+    finally:
+        torch.set_num_threads(previous)
 
 
 @pytest.mark.parametrize('cls,cache_name', [(ULTRA, '_projection_cache'), (TRIX, '_initial_cache')])

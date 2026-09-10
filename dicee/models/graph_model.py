@@ -34,6 +34,7 @@ import torch
 from torch import nn
 
 from ._fused_message import tensor_version
+from ._inference import float32_precision_token
 from .base_model import BaseKGE
 
 
@@ -80,7 +81,7 @@ class GraphKGE(BaseKGE):
             return None
         return (getattr(self, '_inference_backend', 'auto'), torch.is_autocast_enabled(self.device.type),
                 torch.are_deterministic_algorithms_enabled(),
-                torch.get_float32_matmul_precision(), torch.backends.cudnn.allow_tf32,
+                float32_precision_token(),
                 tuple(getattr(m, 'inference_compile', False) for m in self.modules() if hasattr(m, 'inference_backend')),
                 tuple((id(t), tensor_version(t), t.device, t.dtype) for t in tensors))
 

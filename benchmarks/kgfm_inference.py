@@ -45,8 +45,14 @@ def worker(args):
 
     torch.set_num_threads(args.threads)
     torch.manual_seed(42)
-    torch.backends.cuda.matmul.allow_tf32 = False
-    torch.backends.cudnn.allow_tf32 = False
+    if hasattr(torch.backends.cuda.matmul, 'fp32_precision'):
+        torch.backends.cuda.matmul.fp32_precision = 'ieee'
+        torch.backends.mkldnn.matmul.fp32_precision = 'ieee'
+        torch.backends.cudnn.conv.fp32_precision = 'ieee'
+        torch.backends.cudnn.rnn.fp32_precision = 'ieee'
+    else:
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
     directory = args.indexed_data
     metadata = json.loads((directory / 'result.json').read_text())
     facts = np.load(directory / 'train_set.npy')

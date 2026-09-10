@@ -85,8 +85,14 @@ def main():
     os.chdir(ROOT)
     torch.set_num_threads(args.threads)
     torch.manual_seed(args.seed)
-    torch.backends.cuda.matmul.allow_tf32 = False
-    torch.backends.cudnn.allow_tf32 = False
+    if hasattr(torch.backends.cuda.matmul, 'fp32_precision'):
+        torch.backends.cuda.matmul.fp32_precision = 'ieee'
+        torch.backends.mkldnn.matmul.fp32_precision = 'ieee'
+        torch.backends.cudnn.conv.fp32_precision = 'ieee'
+        torch.backends.cudnn.rnn.fp32_precision = 'ieee'
+    else:
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
     torch.backends.cudnn.benchmark = False
     device = torch.device(args.device)
     if device.type == "cuda" and not torch.cuda.is_available():
