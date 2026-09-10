@@ -110,8 +110,8 @@ device. Memory and runtime increase with walk count, length, query batch size,
 and ensemble size. The default model follows the published GRU, additive
 refinement, untied-parameter architecture without restarts or neighbor recording.
 Inference caches relation-edge lists and prefetches one CPU walk microbatch while
-CUDA scores the current one. See [KGFM inference performance](kgfm_inference.md)
-for controls, reproducibility guarantees, and benchmarks.
+CUDA scores the current one. See [KGFM inference speed comparison](kgfm_inference.md)
+for timings against the official implementation.
 
 ## Python use and experiment reloads
 

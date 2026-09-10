@@ -27,8 +27,8 @@ ties at the displayed precision.
 
 ## Checkpoints and evaluation settings
 
-For current inference kernels, caching, query reuse, and latency/memory
-comparisons, see [KGFM inference performance](kgfm_inference.md). Local result
+For timings against the official implementations, see the
+[KGFM inference speed comparison](kgfm_inference.md). Local result
 records retain the code and settings with which they were measured.
 
 | Model | Official checkpoint | DICE guide |

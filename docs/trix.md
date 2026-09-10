@@ -82,8 +82,8 @@ CPU/single GPU native training and single-device Lightning are supported. BPE,
 distributed training, cross-validation, and static embedding export are rejected.
 Use `trix_query_batch_size` (default 8) to bound simultaneous queries. Message
 passing fuses edge messages on supported CUDA inference paths; the portable
-PyTorch fallback materializes them. See [inference performance](kgfm_inference.md)
-for backend controls and benchmarks. Relation-graph storage grows with the
+PyTorch fallback materializes them. See the [inference speed comparison](kgfm_inference.md)
+for timings against the official implementation. Relation-graph storage grows with the
 number of distinct incident-relation pairs per entity.
 
 ## Python inference and experiment reloads

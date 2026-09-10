@@ -54,8 +54,8 @@ head_scores = kge.predict_missing_head_entity("relation_r", "entity_b")
 Keep `ultra_graph.pt` alongside the model, configuration, and vocabulary files
 when moving an experiment. ULTRA needs the graph to score queries.
 
-See [KGFM inference performance](kgfm_inference.md) for fused CUDA message passing,
-relation caching, query reuse, and latency/memory benchmarks.
+See [KGFM inference speed comparison](kgfm_inference.md) for timings against the
+official implementation.
 
 For direct model use, import `ULTRA` from `dicee.models`, load weights with
 `load_pretrained(path)`, and attach indexed training triples with `set_graph(...)`.
