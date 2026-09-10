@@ -725,6 +725,20 @@ Tie strategy: **pessimistic** (worst rank among exactly equal scores after filte
 
 </details>
 
+### Inference speed
+
+Warm all-entity inference speedup over the authors’ official implementations:
+RTX 4070 Ti SUPER, float32, matched query batches, and five-repeat medians on sampled test queries.
+
+| Dataset | ULTRA-3g | TRIX | Flock* |
+|---|---:|---:|---:|
+| FB15k-237 | 3.66× | 31.75× | 2.64× |
+| WN18RR | 1.15× | 18.71× | 1.83× |
+| YAGO3-10 | 7.44× | 35.38× | 8.61× |
+
+\* Flock includes independently sampled walks at the same budget; identical-walk neural speedups are **1.23–2.01×**.
+YAGO3-10 Flock timings varied more. See the [full comparison and validation](docs/kgfm_inference.md).
+
 ## Link Prediction Benchmarks
 
 In the below, we provide a brief overview of the link prediction results. Results are sorted in descending order of the size of the respective dataset.
