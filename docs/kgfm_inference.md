@@ -100,4 +100,4 @@ python benchmarks/kgfm_upstream.py --model ULTRA \
 
 Use the table’s batch sizes for the other pairs. For Flock, use `--queries 32
 --query-batch-size 1 --walk-num 128 --replay-queries 8`. All generated JSON,
-score tensors, and walk records stay in ignored `Experiments/` directories.
+score tensors, and walk records land in the `Experiments/` directories.
