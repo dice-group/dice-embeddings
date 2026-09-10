@@ -105,6 +105,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">._filtering</span><span class="w"> </span><span class="kn">import</span> <span class="n">FilteredRanker</span><span class="p">,</span> <span class="n">evaluation_tie_options</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.link_prediction</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_bpe_lp</span><span class="p">,</span> <span class="n">evaluate_lp</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ALL_HITS_RANGE</span><span class="p">,</span>
@@ -164,6 +165,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">domain_constraints_per_rel</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">range_constraints_per_rel</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="c1"># Validate early, including programmatic/loaded configurations.</span>
+        <span class="n">FilteredRanker</span><span class="p">(</span><span class="o">**</span><span class="n">evaluation_tie_options</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span> <span class="o">=</span> <span class="kc">False</span>
 
@@ -391,21 +394,24 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Train'</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_bpe_lp</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">ordered_bpe_entities</span><span class="p">,</span>
                 <span class="n">er_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span> <span class="n">re_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span><span class="p">,</span>
-                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on NegSample BPE Train set'</span>
+                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on NegSample BPE Train set'</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">evaluation_tie_options</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="s1">'val'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">and</span> <span class="n">valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Val'</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_bpe_lp</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">valid_set</span><span class="p">,</span> <span class="n">ordered_bpe_entities</span><span class="p">,</span>
                 <span class="n">er_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span> <span class="n">re_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span><span class="p">,</span>
-                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on NegSample BPE Valid set'</span>
+                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on NegSample BPE Valid set'</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">evaluation_tie_options</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">'test'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">'Test'</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_bpe_lp</span><span class="p">(</span>
                 <span class="n">trained_model</span><span class="p">,</span> <span class="n">test_set</span><span class="p">,</span> <span class="n">ordered_bpe_entities</span><span class="p">,</span>
                 <span class="n">er_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span> <span class="n">re_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span><span class="p">,</span>
-                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on NegSample BPE Test set'</span>
+                <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">'Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on NegSample BPE Test set'</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">evaluation_tie_options</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
             <span class="p">)</span></div>
 
 
@@ -564,6 +570,7 @@
         <span class="n">hits_range</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]:</span>
 <span class="w">        </span><span class="sd">"""Evaluate relation prediction task."""</span>
+        <span class="n">ranker</span> <span class="o">=</span> <span class="n">FilteredRanker</span><span class="p">(</span><span class="o">**</span><span class="n">evaluation_tie_options</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
         <span class="n">ranks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">hits</span> <span class="o">=</span> <span class="n">create_hits_dict</span><span class="p">(</span><span class="n">hits_range</span><span class="p">)</span>
 
@@ -574,16 +581,8 @@
 
             <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">forward_k_vs_all</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">e1_idx_e2_idx</span><span class="p">)</span>
 
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-                <span class="n">filt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span><span class="p">[(</span><span class="n">data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">2</span><span class="p">])]</span>
-                <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">r_idx</span><span class="p">[</span><span class="n">j</span><span class="p">]]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-                <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">filt</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
-                <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">r_idx</span><span class="p">[</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="n">target_value</span>
-
-            <span class="n">_</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-                <span class="n">rank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">r_idx</span><span class="p">[</span><span class="n">j</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">filters</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span><span class="p">[(</span><span class="n">h</span><span class="p">,</span> <span class="n">t</span><span class="p">)]</span> <span class="k">for</span> <span class="n">h</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">data_batch</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">rank</span> <span class="ow">in</span> <span class="n">ranker</span><span class="o">.</span><span class="n">rank_batch</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">r_idx</span><span class="p">,</span> <span class="n">filters</span><span class="p">):</span>
                 <span class="n">ranks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
                 <span class="n">update_hits</span><span class="p">(</span><span class="n">hits</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">hits_range</span><span class="p">)</span>
 
@@ -597,6 +596,7 @@
         <span class="n">hits_range</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]]:</span>
 <span class="w">        </span><span class="sd">"""Evaluate entity prediction task."""</span>
+        <span class="n">ranker</span> <span class="o">=</span> <span class="n">FilteredRanker</span><span class="p">(</span><span class="o">**</span><span class="n">evaluation_tie_options</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
         <span class="n">ranks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">hits</span> <span class="o">=</span> <span class="n">create_hits_dict</span><span class="p">(</span><span class="n">hits_range</span><span class="p">)</span>
 
@@ -608,21 +608,14 @@
             <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
                 <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">e1_idx_r_idx</span><span class="p">)</span>
 
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-                <span class="n">id_e</span><span class="p">,</span> <span class="n">id_r</span><span class="p">,</span> <span class="n">id_e_target</span> <span class="o">=</span> <span class="n">data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
-                <span class="n">filt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">[(</span><span class="n">id_e</span><span class="p">,</span> <span class="n">id_r</span><span class="p">)]</span>
-                <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-                <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">filt</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
-
+            <span class="n">filters</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">id_e</span><span class="p">,</span> <span class="n">id_r</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">data_batch</span><span class="p">:</span>
+                <span class="n">filt</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">[(</span><span class="n">id_e</span><span class="p">,</span> <span class="n">id_r</span><span class="p">)])</span>
                 <span class="k">if</span> <span class="s1">'constraint'</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
-                    <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">range_constraints_per_rel</span><span class="p">[</span><span class="n">data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+                    <span class="n">filt</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">range_constraints_per_rel</span><span class="p">[</span><span class="n">id_r</span><span class="p">])</span>
+                <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filt</span><span class="p">)</span>
 
-                <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
-
-            <span class="n">_</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-                <span class="n">rank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">e2_idx</span><span class="p">[</span><span class="n">j</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">rank</span> <span class="ow">in</span> <span class="n">ranker</span><span class="o">.</span><span class="n">rank_batch</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">e2_idx</span><span class="p">,</span> <span class="n">filters</span><span class="p">):</span>
                 <span class="n">ranks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
                 <span class="n">update_hits</span><span class="p">(</span><span class="n">hits</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">hits_range</span><span class="p">)</span>
 
@@ -693,6 +686,7 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Dictionary with H@1, H@3, H@10, and MRR metrics.</span>
 <span class="sd">        """</span>
+        <span class="n">ranker</span> <span class="o">=</span> <span class="n">FilteredRanker</span><span class="p">(</span><span class="o">**</span><span class="n">evaluation_tie_options</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
         <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
         <span class="n">num_triples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span>
         <span class="n">ranks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -712,24 +706,15 @@
             <span class="n">bpe_hr</span> <span class="o">=</span> <span class="n">torch_batch_bpe_triple</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">:]</span>
             <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">bpe_hr</span><span class="p">)</span>
 
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">predictions</span><span class="p">)):</span>
-                <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">str_data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
-                <span class="n">id_e_target</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">str_to_bpe_entity_to_idx</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
-                <span class="n">filt_idx_entities</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">targets</span><span class="p">,</span> <span class="n">filters</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">str_data_batch</span><span class="p">:</span>
+                <span class="n">targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">str_to_bpe_entity_to_idx</span><span class="p">[</span><span class="n">t</span><span class="p">])</span>
+                <span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">([</span>
                     <span class="n">model</span><span class="o">.</span><span class="n">str_to_bpe_entity_to_idx</span><span class="p">[</span><span class="n">_</span><span class="p">]</span>
                     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">[(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">)]</span>
-                <span class="p">]</span>
-                <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-                <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">filt_idx_entities</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
-                <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
+                <span class="p">])</span>
 
-            <span class="n">_</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">predictions</span><span class="p">)):</span>
-                <span class="n">t</span> <span class="o">=</span> <span class="n">str_data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
-                <span class="n">rank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
-                    <span class="n">sort_idxs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">str_to_bpe_entity_to_idx</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
-                <span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">rank</span> <span class="ow">in</span> <span class="n">ranker</span><span class="o">.</span><span class="n">rank_batch</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">filters</span><span class="p">):</span>
                 <span class="n">ranks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
                 <span class="n">update_hits</span><span class="p">(</span><span class="n">hits</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">hits_range</span><span class="p">)</span>
 
@@ -766,7 +751,8 @@
             <span class="n">num_entities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span>
             <span class="n">er_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span>
             <span class="n">re_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span><span class="p">,</span>
-            <span class="n">info</span><span class="o">=</span><span class="n">info</span>
+            <span class="n">info</span><span class="o">=</span><span class="n">info</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">evaluation_tie_options</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
         <span class="p">)</span></div>
 
 

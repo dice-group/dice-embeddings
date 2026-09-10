@@ -1,0 +1,30 @@
+dicee.models.sampled_loss
+=========================
+
+.. py:module:: dicee.models.sampled_loss
+
+.. autoapi-nested-parse::
+
+   Reusable loss for positive-first groups of negative samples.
+
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   dicee.models.sampled_loss.grouped_adversarial_bce
+
+
+Module Contents
+---------------
+
+.. py:function:: grouped_adversarial_bce(logits: torch.Tensor, targets: torch.Tensor, temperature: float) -> torch.Tensor
+
+   Balance the positive against a weighted negative group (ULTRA convention).
+
+   Positive temperature uses detached softmax(logits / temperature); zero uses
+   uniform negative weights. This intentionally differs from ordinary mean BCE.
+
+

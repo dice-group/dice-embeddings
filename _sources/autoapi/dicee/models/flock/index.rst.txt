@@ -1,0 +1,418 @@
+dicee.models.flock
+==================
+
+.. py:module:: dicee.models.flock
+
+.. autoapi-nested-parse::
+
+   Pure PyTorch Flock, compatible with both official jw9730/flock checkpoints.
+
+   Architecture adapted from https://github.com/jw9730/flock at UPSTREAM_COMMIT.
+   See docs/flock.md for random-walk and numerical parity details.
+
+   MIT License
+
+   Copyright (c) 2025 Jinwoo Kim
+
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of this software and associated documentation files (the "Software"), to deal
+   in the Software without restriction, including without limitation the rights
+   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   copies of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
+
+   The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.models.flock.UPSTREAM_COMMIT
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   dicee.models.flock.RMSNorm
+   dicee.models.flock.FeedForward
+   dicee.models.flock.BidirectionalGRU
+   dicee.models.flock.FlockBase
+   dicee.models.flock.Flock
+   dicee.models.flock.FlockRelation
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   dicee.models.flock.consensus
+
+
+Module Contents
+---------------
+
+.. py:data:: UPSTREAM_COMMIT
+   :value: 'f35103d25a78bdf4075de5c673a51de4979aa4d7'
+
+
+.. py:class:: RMSNorm(dim, eps=1e-05)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: eps
+      :value: 1e-05
+
+
+
+   .. py:attribute:: inference_backend
+      :value: 'auto'
+
+
+
+   .. py:attribute:: weight
+
+
+   .. py:method:: forward(x)
+
+
+.. py:class:: FeedForward(dim)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: w1
+
+
+   .. py:attribute:: w2
+
+
+   .. py:attribute:: w3
+
+
+   .. py:method:: forward(x)
+
+
+.. py:class:: BidirectionalGRU(dim, layers)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: gru_norm
+
+
+   .. py:attribute:: gru
+
+
+   .. py:attribute:: gru_out
+
+
+   .. py:attribute:: ffn_norm
+
+
+   .. py:attribute:: feed_forward
+
+
+   .. py:method:: forward(x)
+
+
+.. py:function:: consensus(x, logits, ids, num_ids)
+
+   Stable multihead softmax pooling over all occurrences of each graph ID.
+
+
+.. py:class:: FlockBase(args)
+
+   Bases: :py:obj:`dicee.models.graph_model.GraphKGE`
+
+
+   Shared graph lifecycle and entity-scoring interfaces for graph foundation models.
+
+
+   .. py:attribute:: config_prefix
+      :value: 'flock'
+
+
+
+   .. py:attribute:: graph_filename
+      :value: 'flock_graph.pt'
+
+
+
+   .. py:attribute:: relation_prediction
+      :value: False
+
+
+
+   .. py:attribute:: checkpoint_hint
+      :value: 'official Flock requires dim=64, walk_len=128, refinements=6, num_layers=1, attention_heads=4...
+
+
+
+   .. py:attribute:: emb_anon_node
+      :type:  torch.nn.ModuleList
+
+
+   .. py:attribute:: emb_anon_type
+      :type:  torch.nn.ModuleList
+
+
+   .. py:attribute:: emb_restart
+      :type:  torch.nn.ModuleList
+
+
+   .. py:attribute:: emb_neighbor
+      :type:  torch.nn.ModuleList
+
+
+   .. py:attribute:: emb_direction
+      :type:  torch.nn.ModuleList
+
+
+   .. py:attribute:: emb_head_is_query
+      :type:  torch.nn.ModuleList
+
+
+   .. py:attribute:: emb_tail_is_query
+      :type:  torch.nn.ModuleList
+
+
+   .. py:attribute:: emb_node_is_query
+      :type:  torch.nn.ModuleList
+
+
+   .. py:attribute:: emb_type_is_query
+      :type:  torch.nn.ModuleList
+
+
+   .. py:attribute:: from_node
+      :type:  torch.nn.ModuleList
+
+
+   .. py:attribute:: from_type
+      :type:  torch.nn.ModuleList
+
+
+   .. py:attribute:: to_node
+      :type:  torch.nn.ModuleList
+
+
+   .. py:attribute:: to_type
+      :type:  torch.nn.ModuleList
+
+
+   .. py:attribute:: node_logit
+      :type:  torch.nn.ModuleList
+
+
+   .. py:attribute:: type_logit
+      :type:  torch.nn.ModuleList
+
+
+   .. py:attribute:: dim
+
+
+   .. py:attribute:: walk_num
+
+
+   .. py:attribute:: walk_len
+
+
+   .. py:attribute:: refinements
+
+
+   .. py:attribute:: test_samples
+
+
+   .. py:attribute:: seed
+
+
+   .. py:attribute:: prefetch_walks
+
+
+   .. py:attribute:: compact_state
+
+
+   .. py:attribute:: compile_sampler
+
+
+   .. py:attribute:: pack_walks
+
+
+   .. py:attribute:: node_init
+
+
+   .. py:attribute:: type_init
+
+
+   .. py:attribute:: net
+
+
+   .. py:attribute:: head
+
+
+   .. py:method:: sample_walks(heads, tails=None, edges=None, generator=None)
+
+      Sample official-format records; IDs use the attached graph vocabulary.
+
+      Returns (nodes, anonymous nodes, restarts, neighbors, relations,
+      anonymous relations, directions), each shaped [T,B,S,L]. Anonymous
+      names start at 1; no-relation markers are 2*R and L+1 respectively.
+
+
+
+   .. py:method:: score_walks(heads, query, candidates, records)
+
+      Score fixed walks for parity/replay; query/candidates use internal IDs.
+
+      Entity mode: query=relations, candidates=tails. Relation mode:
+      query=tails, candidates=relations. This scores the supplied records;
+      callers constructing training records must first remove target edges.
+
+
+
+.. py:class:: Flock(args)
+
+   Bases: :py:obj:`FlockBase`
+
+
+   Entity-prediction Flock with official ``flock_entity.pth`` parameters.
+
+
+   .. py:attribute:: name
+      :value: 'Flock'
+
+
+
+.. py:class:: FlockRelation(args)
+
+   Bases: :py:obj:`FlockBase`, :py:obj:`dicee.models.graph_model.RelationGraphKGE`
+
+
+   Relation-prediction Flock with official ``flock_relation.pth`` parameters.
+
+
+   .. py:attribute:: name
+      :value: 'FlockRelation'
+
+
+
+   .. py:attribute:: relation_prediction
+      :value: True
+
+
+

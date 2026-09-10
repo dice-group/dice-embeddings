@@ -48,7 +48,13 @@ Module Contents
    .. py:method:: generate(h='', r='')
 
 
-   .. py:method:: eval_lp_performance(dataset=List[Tuple[str, str, str]], filtered=True)
+   .. py:method:: eval_lp_performance(dataset=List[Tuple[str, str, str]], filtered=True, *, tie_policy=None, tie_seed=None)
+
+      Evaluate head/tail ranks, inheriting saved tie settings unless overridden.
+
+      ``tie_policy`` accepts sort (legacy), optimistic, random, or pessimistic.
+      ``tie_seed`` seeds an independent random stream for each evaluation.
+
 
 
    .. py:method:: predict_missing_head_entity(relation: Union[List[str], str], tail_entity: Union[List[str], str], within=None, batch_size=2, topk=1, return_indices=False) -> Tuple

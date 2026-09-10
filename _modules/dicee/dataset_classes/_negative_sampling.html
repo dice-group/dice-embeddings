@@ -100,10 +100,12 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">._storage</span><span class="w"> </span><span class="kn">import</span> <span class="n">PairIndex</span><span class="p">,</span> <span class="n">WorkerDataset</span>
+
 
 <div class="viewcode-block" id="OnevsSample">
 <a class="viewcode-back" href="../../../autoapi/dicee/dataset_classes/index.html#dicee.dataset_classes.OnevsSample">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">OnevsSample</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OnevsSample</span><span class="p">(</span><span class="n">WorkerDataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Dataset for 1-vs-Sample training (dynamic multi-class with negatives).</span>
 
 <span class="sd">    For every positive triple ``(h, r, t)`` the dataset draws</span>
@@ -197,7 +199,7 @@
 
 <div class="viewcode-block" id="FixedNegSampleDataset">
 <a class="viewcode-back" href="../../../autoapi/dicee/dataset_classes/index.html#dicee.dataset_classes.FixedNegSampleDataset">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">FixedNegSampleDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FixedNegSampleDataset</span><span class="p">(</span><span class="n">WorkerDataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Pre-computed (fixed) negative sampling dataset.</span>
 
 <span class="sd">    At construction time every positive triple is paired with one random</span>
@@ -318,7 +320,7 @@
 
 <div class="viewcode-block" id="TriplePredictionDataset">
 <a class="viewcode-back" href="../../../autoapi/dicee/dataset_classes/index.html#dicee.dataset_classes.TriplePredictionDataset">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">TriplePredictionDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TriplePredictionDataset</span><span class="p">(</span><span class="n">WorkerDataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""Dataset for triple prediction with on-the-fly negative sampling.</span>
 
 <span class="sd">    Each item is a single positive triple; the custom ``collate_fn``</span>
@@ -436,6 +438,53 @@
         <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">label</span></div>
 </div>
 
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">GroupedNegativeSamplingDataset</span><span class="p">(</span><span class="n">TriplePredictionDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Positive-first negative groups reusable by any indexed triple scorer.</span>
+
+<span class="sd">    Strict filtering uses training facts only. Negative candidates are drawn</span>
+<span class="sd">    with replacement, so even dense queries can request many negatives.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">strict_negative_sampling</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neg_sample_ratio</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'Grouped negative sampling requires neg_ratio &gt; 0'</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strict_negative_sampling</span> <span class="o">=</span> <span class="n">strict_negative_sampling</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">true_heads</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">true_tails</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">strict_negative_sampling</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">true_heads</span> <span class="o">=</span> <span class="n">PairIndex</span><span class="o">.</span><span class="n">from_triples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">true_tails</span> <span class="o">=</span> <span class="n">PairIndex</span><span class="o">.</span><span class="n">from_triples</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">collate_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+        <span class="n">positive</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">k</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">positive</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neg_sample_ratio</span><span class="p">)</span>
+        <span class="n">triples</span> <span class="o">=</span> <span class="n">positive</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strict_negative_sampling</span><span class="p">:</span>
+            <span class="n">true_tails</span><span class="p">,</span> <span class="n">true_heads</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">true_tails</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">true_heads</span>
+            <span class="k">assert</span> <span class="n">true_tails</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">true_heads</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="n">tail_targets</span><span class="p">,</span> <span class="n">head_targets</span> <span class="o">=</span> <span class="n">true_tails</span><span class="o">.</span><span class="n">targets</span><span class="p">,</span> <span class="n">true_heads</span><span class="o">.</span><span class="n">targets</span>
+            <span class="n">tail_rows</span> <span class="o">=</span> <span class="n">true_tails</span><span class="o">.</span><span class="n">find_rows</span><span class="p">(</span><span class="n">positive</span><span class="p">[:</span><span class="n">n</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+            <span class="n">head_rows</span> <span class="o">=</span> <span class="n">true_heads</span><span class="o">.</span><span class="n">find_rows</span><span class="p">(</span><span class="n">positive</span><span class="p">[</span><span class="n">n</span> <span class="o">//</span> <span class="mi">2</span><span class="p">:,</span> <span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">positive</span><span class="o">.</span><span class="n">tolist</span><span class="p">()):</span>
+            <span class="n">position</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span> <span class="o">//</span> <span class="mi">2</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">strict_negative_sampling</span><span class="p">:</span>
+                <span class="n">forbidden</span> <span class="o">=</span> <span class="p">(</span><span class="n">tail_targets</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">tail_rows</span><span class="p">[</span><span class="n">i</span><span class="p">])]</span> <span class="k">if</span> <span class="n">position</span> <span class="o">==</span> <span class="mi">2</span>
+                             <span class="k">else</span> <span class="n">head_targets</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">head_rows</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="n">n</span> <span class="o">//</span> <span class="mi">2</span><span class="p">])])</span>
+                <span class="n">candidates</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+                <span class="n">candidates</span><span class="p">[</span><span class="n">forbidden</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">candidates</span> <span class="o">=</span> <span class="n">candidates</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'No valid negative candidates for training query </span><span class="si">{</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+                <span class="n">negative</span> <span class="o">=</span> <span class="n">candidates</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">),</span> <span class="p">(</span><span class="n">k</span><span class="p">,))]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">negative</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">),</span> <span class="p">(</span><span class="n">k</span><span class="p">,))</span>
+            <span class="n">triples</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">:,</span> <span class="n">position</span><span class="p">]</span> <span class="o">=</span> <span class="n">negative</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">targets</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_smoothing_rate</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_smoothing_rate</span>
+        <span class="k">return</span> <span class="n">triples</span><span class="p">,</span> <span class="n">targets</span>
 </pre></div>
 
            </div>

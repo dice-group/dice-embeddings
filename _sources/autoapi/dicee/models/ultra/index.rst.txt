@@ -1,0 +1,258 @@
+dicee.models.ultra
+==================
+
+.. py:module:: dicee.models.ultra
+
+.. autoapi-nested-parse::
+
+   Pure PyTorch ULTRA, compatible with DeepGraphLearning/ULTRA link predictors.
+
+   Architecture and graph construction adapted from
+   https://github.com/DeepGraphLearning/ULTRA at commit
+   427966ad8ed60420eef034063d44f3153addff90. Reference fixtures and the grouped
+   sampling and adversarial loss implementations also follow this upstream work.
+   Graphs are runtime context, excluded from the transferable state dictionary.
+
+   MIT License
+
+   Copyright (c) 2023 MilaGraph
+
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of this software and associated documentation files (the "Software"), to deal
+   in the Software without restriction, including without limitation the rights
+   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   copies of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
+
+   The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.models.ultra.UPSTREAM_COMMIT
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   dicee.models.ultra.RelationalConv
+   dicee.models.ultra.RelNBFNet
+   dicee.models.ultra.EntityNBFNet
+   dicee.models.ultra.ULTRA
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   dicee.models.ultra.build_relation_graph
+
+
+Module Contents
+---------------
+
+.. py:data:: UPSTREAM_COMMIT
+   :value: '427966ad8ed60420eef034063d44f3153addff90'
+
+
+.. py:class:: RelationalConv(dim, project_relations=False)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   ULTRA's DistMult/sum convolution, including the boundary message.
+
+
+   .. py:attribute:: inference_backend
+      :value: 'auto'
+
+
+
+   .. py:attribute:: inference_compile
+      :value: False
+
+
+
+   .. py:attribute:: layer_norm
+
+
+   .. py:attribute:: linear
+
+
+   .. py:method:: forward(states, boundary, edge_index, edge_type, relations=None, *, projected=None, residual=False, constant_relations=None)
+
+
+.. py:class:: RelNBFNet(dim=64, num_layers=6)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: layers
+
+
+   .. py:attribute:: dim
+      :value: 64
+
+
+
+   .. py:method:: forward(edge_index, edge_type, num_relations, query)
+
+
+.. py:class:: EntityNBFNet(dim=64, num_layers=6)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: layers
+
+
+   .. py:attribute:: mlp
+
+
+   .. py:method:: forward(edge_index, edge_type, num_entities, relations, heads, rels, tails, projections=None)
+
+
+.. py:function:: build_relation_graph(edge_index, edge_type, num_entities, num_relations)
+
+   Binary support of the hh, tt, ht, th incidence products, in upstream order.
+
+
+.. py:class:: ULTRA(args)
+
+   Bases: :py:obj:`dicee.models.graph_model.GraphKGE`
+
+
+   Pure PyTorch ULTRA with the official state dictionary and DICE triple order.
+
+
+   .. py:attribute:: name
+      :value: 'ULTRA'
+
+
+
+   .. py:attribute:: config_prefix
+      :value: 'ultra'
+
+
+
+   .. py:attribute:: graph_filename
+      :value: 'ultra_graph.pt'
+
+
+
+   .. py:attribute:: checkpoint_hint
+      :value: 'official ULTRA requires ultra_dim=64, ultra_num_layers=6; all keys and shapes must match'
+
+
+
+   .. py:attribute:: deterministic_inference
+      :value: True
+
+
+
+   .. py:attribute:: dim
+
+
+   .. py:attribute:: num_layers
+
+
+   .. py:attribute:: relation_model
+
+
+   .. py:attribute:: entity_model
+
+
+   .. py:attribute:: relation_cache_mb
+
+
+   .. py:attribute:: projection_cache_mb
+
+
+   .. py:method:: clear_inference_cache()
+
+      Drop derived representations when graph, weights or device change.
+
+
+

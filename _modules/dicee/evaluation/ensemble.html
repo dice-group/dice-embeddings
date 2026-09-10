@@ -99,6 +99,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">._filtering</span><span class="w"> </span><span class="kn">import</span> <span class="n">FilteredRanker</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">ALL_HITS_RANGE</span><span class="p">,</span>
     <span class="n">compute_metrics_from_ranks_simple</span><span class="p">,</span>
@@ -117,7 +118,10 @@
     <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">512</span><span class="p">,</span>
     <span class="n">weighted_averaging</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">normalize_scores</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">normalize_scores</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">tie_policy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"sort"</span><span class="p">,</span>
+    <span class="n">tie_seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Evaluate link prediction performance of an ensemble of KGE models.</span>
 
@@ -137,6 +141,9 @@
 <span class="sd">            If False, use simple mean.</span>
 <span class="sd">        normalize_scores: If True, normalize scores to [0, 1] range per</span>
 <span class="sd">            sample before averaging.</span>
+<span class="sd">        tie_policy: Exact prediction ties: sort (legacy), optimistic, random,</span>
+<span class="sd">            or pessimistic. Applied after combining model scores.</span>
+<span class="sd">        tie_seed: Independent random tie seed; reset on each evaluation call.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Dictionary with H@1, H@3, H@10, and MRR metrics.</span>
@@ -155,6 +162,7 @@
 <span class="sd">        ... )</span>
 <span class="sd">        &gt;&gt;&gt; print(f"MRR: {results['MRR']:.4f}")</span>
 <span class="sd">    """</span>
+    <span class="n">ranker</span> <span class="o">=</span> <span class="n">FilteredRanker</span><span class="p">(</span><span class="n">tie_policy</span><span class="p">,</span> <span class="n">tie_seed</span><span class="p">)</span>
     <span class="n">num_triples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span>
     <span class="n">ranks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">hits_range</span> <span class="o">=</span> <span class="n">ALL_HITS_RANGE</span>
@@ -200,21 +208,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">avg_preds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">preds_stack</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="c1"># Apply filtering for each sample in batch</span>
-        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-            <span class="n">id_e</span><span class="p">,</span> <span class="n">id_r</span><span class="p">,</span> <span class="n">id_e_target</span> <span class="o">=</span> <span class="n">data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
-            <span class="n">filt</span> <span class="o">=</span> <span class="n">er_vocab</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">id_e</span><span class="p">,</span> <span class="n">id_r</span><span class="p">),</span> <span class="p">[])</span>
-            <span class="n">target_value</span> <span class="o">=</span> <span class="n">avg_preds</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">filt</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">avg_preds</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">filt</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
-            <span class="n">avg_preds</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
-
-        <span class="c1"># Compute ranks</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">avg_preds</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
-            <span class="n">rank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">e2_idx</span><span class="p">[</span><span class="n">j</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">filters</span> <span class="o">=</span> <span class="p">[</span><span class="n">er_vocab</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">),</span> <span class="p">[])</span> <span class="k">for</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">data_batch</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">rank</span> <span class="ow">in</span> <span class="n">ranker</span><span class="o">.</span><span class="n">rank_batch</span><span class="p">(</span><span class="n">avg_preds</span><span class="p">,</span> <span class="n">e2_idx</span><span class="p">,</span> <span class="n">filters</span><span class="p">):</span>
             <span class="n">ranks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
             <span class="n">update_hits</span><span class="p">(</span><span class="n">hits</span><span class="p">,</span> <span class="n">rank</span><span class="p">,</span> <span class="n">hits_range</span><span class="p">)</span>
 

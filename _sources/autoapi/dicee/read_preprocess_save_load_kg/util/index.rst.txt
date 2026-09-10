@@ -28,6 +28,7 @@ Functions
    dicee.read_preprocess_save_load_kg.util.fetch_worker
    dicee.read_preprocess_save_load_kg.util.read_from_triple_store_with_polars
    dicee.read_preprocess_save_load_kg.util.read_from_triple_store_with_pandas
+   dicee.read_preprocess_save_load_kg.util.get_filter_vocabs
    dicee.read_preprocess_save_load_kg.util.get_er_vocab
    dicee.read_preprocess_save_load_kg.util.get_re_vocab
    dicee.read_preprocess_save_load_kg.util.get_ee_vocab
@@ -160,6 +161,14 @@ Module Contents
 .. py:function:: read_from_triple_store_with_pandas(endpoint: str = None)
 
    Read triples from triple store into pandas dataframe
+
+
+.. py:function:: get_filter_vocabs(data, directory=None)
+
+   Build all evaluation filters in one pass without copying the input splits.
+
+   Keep the existing defaultdict/list format and pickle filenames so saved
+   checkpoints and evaluation APIs remain compatible.
 
 
 .. py:function:: get_er_vocab(data, file_path: str = None)

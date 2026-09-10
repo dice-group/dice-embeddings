@@ -1,0 +1,403 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.models.trix &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../../../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dicee.models.trix</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dicee.models.trix</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Pure PyTorch TRIX entity and relation prediction.</span>
+
+<span class="sd">Reimplementation of Zhang et al., https://arxiv.org/abs/2502.19512, verified</span>
+<span class="sd">against https://github.com/yuchengz99/TRIX at UPSTREAM_COMMIT. The module names,</span>
+<span class="sd">update schedule, binary entity-labelled relation edges, and fused convolution</span>
+<span class="sd">direction follow the released code/checkpoints (see docs/trix.md).</span>
+<span class="sd">"""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span><span class="p">,</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">cast</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">._inference</span><span class="w"> </span><span class="kn">import</span> <span class="n">candidate_features</span><span class="p">,</span> <span class="n">candidate_slice</span><span class="p">,</span> <span class="n">conditioned_linear</span><span class="p">,</span> <span class="n">conditioned_score</span><span class="p">,</span> <span class="n">inference_only</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.graph_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">GraphKGE</span><span class="p">,</span> <span class="n">RelationGraphKGE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.ultra</span><span class="w"> </span><span class="kn">import</span> <span class="n">RelationalConv</span>
+
+<span class="n">UPSTREAM_COMMIT</span> <span class="o">=</span> <span class="s2">"7596e14eefefe89e61396205a0550172cadeddb0"</span>
+<span class="n">INTERACTIONS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"hh"</span><span class="p">,</span> <span class="s2">"ht"</span><span class="p">,</span> <span class="s2">"th"</span><span class="p">,</span> <span class="s2">"tt"</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="build_relation_graph">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/trix/index.html#dicee.models.build_relation_graph">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_relation_graph</span><span class="p">(</span><span class="n">edge_index</span><span class="p">,</span> <span class="n">edge_type</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">,</span> <span class="n">num_relations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Sparse (relation, relation, shared entity) edges in official role order.</span>
+
+<span class="sd">    Repeated incidences have binary support. hh/tt exclude equal relations;</span>
+<span class="sd">    ht/th include them. Distinct shared entities remain distinct edges.</span>
+<span class="sd">    No dense entity-by-relation-by-relation tensor is materialized.</span>
+<span class="sd">    """</span>
+    <span class="n">heads</span><span class="p">,</span> <span class="n">tails</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">),</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">t</span><span class="p">),</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">edge_index</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">edge_type</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()):</span>
+        <span class="n">heads</span><span class="p">[</span><span class="n">h</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">tails</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">role</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">"hh"</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">heads</span><span class="p">),</span> <span class="p">(</span><span class="s2">"ht"</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">tails</span><span class="p">),</span>
+                              <span class="p">(</span><span class="s2">"th"</span><span class="p">,</span> <span class="n">tails</span><span class="p">,</span> <span class="n">heads</span><span class="p">),</span> <span class="p">(</span><span class="s2">"tt"</span><span class="p">,</span> <span class="n">tails</span><span class="p">,</span> <span class="n">tails</span><span class="p">)):</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="p">[(</span><span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">entity</span><span class="p">)</span> <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">left</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">&amp;</span> <span class="n">right</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                 <span class="k">for</span> <span class="n">r1</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">left</span><span class="p">[</span><span class="n">entity</span><span class="p">])</span> <span class="k">for</span> <span class="n">r2</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">right</span><span class="p">[</span><span class="n">entity</span><span class="p">])</span>
+                 <span class="k">if</span> <span class="n">role</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"ht"</span><span class="p">,</span> <span class="s2">"th"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">r1</span> <span class="o">!=</span> <span class="n">r2</span><span class="p">]</span>
+        <span class="n">triples</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">edges</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">edge_index</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="n">result</span><span class="p">[</span><span class="n">role</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">triples</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">contiguous</span><span class="p">(),</span> <span class="n">triples</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">contiguous</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+
+<div class="viewcode-block" id="EntityReasoner">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/trix/index.html#dicee.models.EntityReasoner">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EntityReasoner</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">output_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span><span class="n">RelationalConv</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">project_relations</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">)])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">dim</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">dim</span><span class="p">),</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">dim</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">))</span>
+
+<div class="viewcode-block" id="EntityReasoner.features">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/trix/index.html#dicee.models.EntityReasoner.features">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">features</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">,</span> <span class="n">relations</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">rels</span><span class="p">,</span> <span class="n">states</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tails</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">candidates</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">tails</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">relations</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">heads</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">heads</span><span class="o">.</span><span class="n">device</span><span class="p">),</span> <span class="n">rels</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">relations</span><span class="o">.</span><span class="n">new_ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">heads</span><span class="p">),</span> <span class="n">relations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">boundary</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">heads</span><span class="p">),</span> <span class="n">num_entities</span><span class="p">,</span> <span class="n">query</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">heads</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">heads</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">boundary</span><span class="p">[</span><span class="n">batch</span><span class="p">,</span> <span class="n">heads</span><span class="p">]</span> <span class="o">=</span> <span class="n">query</span>
+        <span class="k">if</span> <span class="n">tails</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Addition is essential for h == t, where the two labels cancel.</span>
+            <span class="n">boundary</span><span class="p">[</span><span class="n">batch</span><span class="p">,</span> <span class="n">tails</span><span class="p">]</span> <span class="o">-=</span> <span class="n">query</span>
+        <span class="n">hidden</span> <span class="o">=</span> <span class="n">boundary</span> <span class="k">if</span> <span class="n">states</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">states</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+            <span class="n">hidden</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span><span class="n">hidden</span><span class="p">,</span> <span class="n">boundary</span><span class="p">,</span> <span class="o">*</span><span class="n">edges</span><span class="p">,</span> <span class="n">relations</span><span class="p">,</span> <span class="n">residual</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">candidates</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">hidden</span> <span class="o">=</span> <span class="n">candidate_features</span><span class="p">(</span><span class="n">hidden</span><span class="p">,</span> <span class="n">candidates</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">split</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">hidden</span><span class="p">,</span> <span class="n">query</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">hidden</span><span class="p">,</span> <span class="n">query</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">hidden</span><span class="p">)),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="RelationReasoner">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/trix/index.html#dicee.models.RelationReasoner">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RelationReasoner</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">num_layers</span><span class="p">,</span> <span class="n">entity_feedback</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">entity_feedback</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">node_mlp</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">INTERACTIONS</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"layers_"</span> <span class="o">+</span> <span class="n">role</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">RelationalConv</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="n">project_relations</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_layers</span><span class="p">)]))</span>
+
+<div class="viewcode-block" id="RelationReasoner.step">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/trix/index.html#dicee.models.RelationReasoner.step">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">states</span><span class="p">,</span> <span class="n">boundary</span><span class="p">,</span> <span class="n">graph</span><span class="p">,</span> <span class="n">entities</span><span class="p">,</span> <span class="n">constant_relations</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"layers_"</span> <span class="o">+</span> <span class="n">role</span><span class="p">)[</span><span class="n">index</span><span class="p">](</span><span class="n">states</span><span class="p">,</span> <span class="n">boundary</span><span class="p">,</span> <span class="o">*</span><span class="n">graph</span><span class="p">[</span><span class="n">role</span><span class="p">],</span> <span class="n">entities</span><span class="p">,</span>
+                                                        <span class="n">constant_relations</span><span class="o">=</span><span class="n">constant_relations</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">INTERACTIONS</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">messages</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">messages</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">messages</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="n">states</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TRIXBase">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/trix/index.html#dicee.models.TRIXBase">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TRIXBase</span><span class="p">(</span><span class="n">GraphKGE</span><span class="p">):</span>
+    <span class="n">config_prefix</span> <span class="o">=</span> <span class="s2">"trix"</span>
+    <span class="n">graph_filename</span> <span class="o">=</span> <span class="s2">"trix_graph.pt"</span>
+    <span class="n">checkpoint_hint</span> <span class="o">=</span> <span class="s2">"use the matching entity/relation checkpoint with trix_dim=32; all keys and shapes must match"</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"trix_dim"</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"TRIX dimension must be positive"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">INTERACTIONS</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"rel_edge_index_"</span> <span class="o">+</span> <span class="n">role</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">persistent</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"rel_edge_type_"</span> <span class="o">+</span> <span class="n">role</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">persistent</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">relation_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">role</span><span class="p">:</span> <span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"rel_edge_index_"</span> <span class="o">+</span> <span class="n">role</span><span class="p">),</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"rel_edge_type_"</span> <span class="o">+</span> <span class="n">role</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">INTERACTIONS</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_relation_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_inference_cache</span><span class="p">()</span>
+        <span class="n">graph</span> <span class="o">=</span> <span class="n">build_relation_graph</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edge_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_direct_relations</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">role</span><span class="p">,</span> <span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">types</span><span class="p">)</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"rel_edge_index_"</span> <span class="o">+</span> <span class="n">role</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"rel_edge_type_"</span> <span class="o">+</span> <span class="n">role</span><span class="p">,</span> <span class="n">types</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="TRIX">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/trix/index.html#dicee.models.TRIX">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TRIX</span><span class="p">(</span><span class="n">TRIXBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Entity predictor compatible with official ``entity_prediction.pth``.</span>
+
+<span class="sd">    DICE order is (head, relation, tail). Head corruption retains the original</span>
+<span class="sd">    relation seed, then uses the inverse relation for both entity reasoners.</span>
+<span class="sd">    Explicit reciprocal DICE queries use that same convention.</span>
+<span class="sd">    """</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">"TRIX"</span>
+    <span class="n">deterministic_inference</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relation_model</span> <span class="o">=</span> <span class="n">RelationReasoner</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">entity_feedback</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_model_1</span> <span class="o">=</span> <span class="n">EntityReasoner</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_model_2</span> <span class="o">=</span> <span class="n">EntityReasoner</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relation_cache_mb</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'graph_relation_cache_mb'</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_cache_mb</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">'graph_relation_cache_mb must be nonnegative'</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_inference_backend</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'graph_inference_backend'</span><span class="p">,</span> <span class="s1">'auto'</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">RelationalConv</span><span class="p">):</span>
+                <span class="n">module</span><span class="o">.</span><span class="n">inference_compile</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'graph_inference_compile'</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TRIX.clear_inference_cache">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/trix/index.html#dicee.models.TRIX.clear_inference_cache">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_inference_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initial_cache</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initial_cache_token</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_first_relation_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_relations</span><span class="p">):</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+        <span class="n">boundary</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">query_relations</span><span class="p">),</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_direct_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="n">boundary</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">query_relations</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">query_relations</span><span class="o">.</span><span class="n">device</span><span class="p">),</span> <span class="n">query_relations</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># All entities initially have the same label. Project a single label</span>
+        <span class="c1"># per query and broadcast it *after* the MLP, retaining the graph layout.</span>
+        <span class="n">entities</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">new_ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">query_relations</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_model</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">boundary</span><span class="p">,</span> <span class="n">boundary</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_graph</span><span class="p">,</span> <span class="n">entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_cached_initial_relations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_relations</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">query_relations</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">inference_only</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">capacity</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_cache_mb</span> <span class="o">*</span> <span class="mi">2</span><span class="o">**</span><span class="mi">20</span><span class="p">)</span> <span class="o">//</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_direct_relations</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">*</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span><span class="o">.</span><span class="n">element_size</span><span class="p">())</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">capacity</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initial_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_token</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">token</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">token</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_cache_token</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initial_cache</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initial_cache_token</span> <span class="o">=</span> <span class="n">token</span>
+        <span class="n">ids</span> <span class="o">=</span> <span class="n">query_relations</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">q</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">ids</span> <span class="k">if</span> <span class="n">q</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_cache</span><span class="p">))</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">{</span><span class="n">q</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_cache</span><span class="p">[</span><span class="n">q</span><span class="p">]</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span> <span class="k">if</span> <span class="n">q</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initial_cache</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">missing</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_batch_size</span><span class="p">):</span>
+            <span class="n">keys</span> <span class="o">=</span> <span class="n">missing</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">start</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_batch_size</span><span class="p">]</span>
+            <span class="n">hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_first_relation_step</span><span class="p">(</span><span class="n">query_relations</span><span class="o">.</span><span class="n">new_tensor</span><span class="p">(</span><span class="n">keys</span><span class="p">))</span>
+            <span class="n">values</span><span class="o">.</span><span class="n">update</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">clone</span><span class="p">())</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">hidden</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">ids</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initial_cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initial_cache</span><span class="o">.</span><span class="n">move_to_end</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_initial_cache</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">capacity</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initial_cache</span><span class="o">.</span><span class="n">popitem</span><span class="p">(</span><span class="n">last</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">values</span><span class="p">,</span> <span class="n">ids</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_reason</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">relations</span><span class="p">,</span> <span class="n">query_relations</span><span class="p">,</span> <span class="n">edges</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">num_entities</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require_graph</span><span class="p">()</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">initial</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">inference_only</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_first_relation_step</span><span class="p">(</span><span class="n">query_relations</span><span class="p">)</span> <span class="k">if</span> <span class="n">initial</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">initial</span>
+            <span class="n">features</span><span class="p">,</span> <span class="n">query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_model_1</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">edges</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">,</span> <span class="n">hidden</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">relations</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">entities</span> <span class="o">=</span> <span class="n">conditioned_linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_model</span><span class="o">.</span><span class="n">node_mlp</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+            <span class="n">boundary</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">heads</span><span class="p">),</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_direct_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+            <span class="n">boundary</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">heads</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">heads</span><span class="o">.</span><span class="n">device</span><span class="p">),</span> <span class="n">query_relations</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="n">hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_model</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">hidden</span><span class="p">,</span> <span class="n">boundary</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_graph</span><span class="p">,</span> <span class="n">entities</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">hidden</span>
+        <span class="n">entities</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">new_ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">heads</span><span class="p">),</span> <span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="n">boundary</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">heads</span><span class="p">),</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_direct_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+        <span class="n">boundary</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">heads</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">heads</span><span class="o">.</span><span class="n">device</span><span class="p">),</span> <span class="n">query_relations</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">hidden</span> <span class="o">=</span> <span class="n">boundary</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_model</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">hidden</span><span class="p">,</span> <span class="n">boundary</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_graph</span><span class="p">,</span> <span class="n">entities</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_model_1</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">edges</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">hidden</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">relations</span><span class="p">)</span>
+                <span class="n">entities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_model</span><span class="o">.</span><span class="n">node_mlp</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">hidden</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">relations</span><span class="p">,</span> <span class="n">candidates</span><span class="p">,</span> <span class="n">query_relations</span><span class="p">,</span> <span class="n">edges</span><span class="p">):</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">cached</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_initial_relations</span><span class="p">(</span><span class="n">query_relations</span><span class="p">)</span>
+        <span class="n">split</span> <span class="o">=</span> <span class="n">inference_only</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">heads</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_batch_size</span><span class="p">):</span>
+            <span class="n">sl</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">start</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_batch_size</span><span class="p">)</span>
+            <span class="n">initial</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">cached</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">q</span><span class="p">]</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">cached</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">sl</span><span class="p">]])</span> <span class="k">if</span> <span class="n">cached</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">rels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reason</span><span class="p">(</span><span class="n">heads</span><span class="p">[</span><span class="n">sl</span><span class="p">],</span> <span class="n">relations</span><span class="p">[</span><span class="n">sl</span><span class="p">],</span> <span class="n">query_relations</span><span class="p">[</span><span class="n">sl</span><span class="p">],</span> <span class="n">edges</span><span class="p">,</span> <span class="n">initial</span><span class="p">)</span>
+            <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_model_2</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">edges</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">rels</span><span class="p">,</span> <span class="n">heads</span><span class="p">[</span><span class="n">sl</span><span class="p">],</span> <span class="n">relations</span><span class="p">[</span><span class="n">sl</span><span class="p">],</span>
+                                                    <span class="n">candidates</span><span class="o">=</span><span class="n">candidate_slice</span><span class="p">(</span><span class="n">candidates</span><span class="p">,</span> <span class="n">sl</span><span class="p">),</span> <span class="n">split</span><span class="o">=</span><span class="n">split</span><span class="p">)</span>
+            <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">conditioned_score</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_model_2</span><span class="o">.</span><span class="n">mlp</span><span class="p">,</span> <span class="o">*</span><span class="n">features</span><span class="p">)</span> <span class="k">if</span> <span class="n">split</span> <span class="k">else</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">entity_model_2</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="n">features</span><span class="p">))</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">output</span><span class="p">)</span> <span class="k">if</span> <span class="n">output</span> <span class="k">else</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span><span class="o">.</span><span class="n">new_empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">candidates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span></div>
+
+
+
+<div class="viewcode-block" id="TRIXRelation">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/trix/index.html#dicee.models.TRIXRelation">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TRIXRelation</span><span class="p">(</span><span class="n">TRIXBase</span><span class="p">,</span> <span class="n">RelationGraphKGE</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Relation predictor compatible with official ``relation_prediction.pth``.</span>
+
+<span class="sd">    Pairs are (head, tail); triples and grouped relation corruptions use DICE's</span>
+<span class="sd">    (head, relation, tail) order. One reasoning pass scores every relation for a</span>
+<span class="sd">    given pair, including external inverse IDs when present in the vocabulary.</span>
+<span class="sd">    """</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">"TRIXRelation"</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relation_model</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span><span class="n">RelationReasoner</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_model</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span><span class="n">EntityReasoner</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">),</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(),</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_inference_backend</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'graph_inference_backend'</span><span class="p">,</span> <span class="s1">'auto'</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">RelationalConv</span><span class="p">):</span>
+                <span class="n">module</span><span class="o">.</span><span class="n">inference_compile</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'graph_inference_compile'</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_relation_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pairs</span><span class="p">,</span> <span class="n">candidates</span><span class="p">,</span> <span class="n">edges</span><span class="p">):</span>
+        <span class="n">num_entities</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_require_graph</span><span class="p">()</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">split</span> <span class="o">=</span> <span class="n">inference_only</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pairs</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_batch_size</span><span class="p">):</span>
+            <span class="n">sl</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">start</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_batch_size</span><span class="p">)</span>
+            <span class="n">heads</span><span class="p">,</span> <span class="n">tails</span> <span class="o">=</span> <span class="n">pairs</span><span class="p">[</span><span class="n">sl</span><span class="p">]</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">rels</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span><span class="o">.</span><span class="n">new_ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">heads</span><span class="p">),</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_direct_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+            <span class="n">boundary</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">rels</span><span class="p">)</span>
+            <span class="n">entities</span> <span class="o">=</span> <span class="n">rels</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">heads</span><span class="p">),</span> <span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span>
+            <span class="n">batch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">heads</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">heads</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">entities</span><span class="p">[</span><span class="n">batch</span><span class="p">,</span> <span class="n">heads</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">entities</span><span class="p">[</span><span class="n">batch</span><span class="p">,</span> <span class="n">tails</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">entity_layer</span><span class="p">,</span> <span class="n">relation_layer</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_model</span><span class="p">):</span>
+                <span class="n">entity_model</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">EntityReasoner</span><span class="p">,</span> <span class="n">entity_layer</span><span class="p">)</span>
+                <span class="n">relation_model</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">RelationReasoner</span><span class="p">,</span> <span class="n">relation_layer</span><span class="p">)</span>
+                <span class="n">features</span> <span class="o">=</span> <span class="n">entity_model</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">edges</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">rels</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">entities</span><span class="p">,</span> <span class="n">tails</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="n">split</span><span class="p">)</span>
+                <span class="n">entities</span> <span class="o">=</span> <span class="n">conditioned_score</span><span class="p">(</span><span class="n">entity_model</span><span class="o">.</span><span class="n">mlp</span><span class="p">,</span> <span class="o">*</span><span class="n">features</span><span class="p">)</span> <span class="k">if</span> <span class="n">split</span> <span class="k">else</span> <span class="n">entity_model</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+                    <span class="n">rels</span> <span class="o">=</span> <span class="n">relation_model</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">rels</span><span class="p">,</span> <span class="n">boundary</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_graph</span><span class="p">,</span> <span class="n">entities</span><span class="p">)</span>
+            <span class="n">features</span> <span class="o">=</span> <span class="n">rels</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">candidates</span><span class="p">[</span><span class="n">sl</span><span class="p">,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
+            <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="n">features</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">output</span><span class="p">)</span> <span class="k">if</span> <span class="n">output</span> <span class="k">else</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span><span class="o">.</span><span class="n">new_empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">candidates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

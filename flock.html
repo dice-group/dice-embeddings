@@ -1,0 +1,367 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flock in DICE &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=c6726a90"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Flock in DICE</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/flock.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="flock-in-dice">
+<h1>Flock in DICE<a class="headerlink" href="#flock-in-dice" title="Link to this heading"></a></h1>
+<p><a class="reference external" href="https://arxiv.org/abs/2510.01510">Paper</a> ·
+<a class="reference external" href="https://github.com/jw9730/flock/tree/f35103d25a78bdf4075de5c673a51de4979aa4d7">Pinned official implementation</a></p>
+<p>Flock learns node and relation representations by encoding anonymous random walks
+with bidirectional GRUs and pooling their outputs with learned attention. DICE
+provides <code class="docutils literal notranslate"><span class="pre">Flock</span></code> for entity prediction and <code class="docutils literal notranslate"><span class="pre">FlockRelation</span></code> for relation prediction,
+using the graph, training, and reload interfaces established for
+<a class="reference internal" href="ultra.html"><span class="std std-doc">ULTRA</span></a> and <a class="reference internal" href="trix.html"><span class="std std-doc">TRIX</span></a>. Both official checkpoints load without
+renaming or dropping parameters. Only PyTorch is needed to run these models;
+PyG, torch-scatter, and the compiled graph-walker package are needed only when
+regenerating reference fixtures.</p>
+<section id="checkpoints-and-zero-shot-evaluation">
+<h2>Checkpoints and zero-shot evaluation<a class="headerlink" href="#checkpoints-and-zero-shot-evaluation" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span>checkpoints/flock
+wget<span class="w"> </span>-P<span class="w"> </span>checkpoints/flock<span class="w"> </span>https://raw.githubusercontent.com/jw9730/flock/f35103d25a78bdf4075de5c673a51de4979aa4d7/checkpoints/flock_entity.pth
+wget<span class="w"> </span>-P<span class="w"> </span>checkpoints/flock<span class="w"> </span>https://raw.githubusercontent.com/jw9730/flock/f35103d25a78bdf4075de5c673a51de4979aa4d7/checkpoints/flock_relation.pth
+
+python<span class="w"> </span>-m<span class="w"> </span>dicee<span class="w"> </span>--model<span class="w"> </span>Flock<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--flock_checkpoint<span class="w"> </span>checkpoints/flock/flock_entity.pth<span class="w"> </span>--num_epochs<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--trainer<span class="w"> </span>torchCPUTrainer<span class="w"> </span>--scoring_technique<span class="w"> </span>NegSample<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--batch_size<span class="w"> </span><span class="m">2</span><span class="w"> </span>--eval_model<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--path_to_store_single_run<span class="w"> </span>Experiments/flock-entity
+
+python<span class="w"> </span>-m<span class="w"> </span>dicee<span class="w"> </span>--model<span class="w"> </span>FlockRelation<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--flock_checkpoint<span class="w"> </span>checkpoints/flock/flock_relation.pth<span class="w"> </span>--num_epochs<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--trainer<span class="w"> </span>torchCPUTrainer<span class="w"> </span>--scoring_technique<span class="w"> </span>KvsAll<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--batch_size<span class="w"> </span><span class="m">2</span><span class="w"> </span>--eval_model<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--path_to_store_single_run<span class="w"> </span>Experiments/flock-relation
+</pre></div>
+</div>
+<p>The directory contains <code class="docutils literal notranslate"><span class="pre">train.txt</span></code>, <code class="docutils literal notranslate"><span class="pre">test.txt</span></code>, and optionally <code class="docutils literal notranslate"><span class="pre">valid.txt</span></code> in
+<code class="docutils literal notranslate"><span class="pre">(head,</span> <span class="pre">relation,</span> <span class="pre">tail)</span></code> order. Message passing and walks use training facts only.
+Validation and test facts are used for filtered evaluation. Relation prediction
+ranks the supplied relation vocabulary; generated inverse relations stay internal
+to the graph.</p>
+<p><code class="docutils literal notranslate"><span class="pre">--flock_checkpoint</span></code> accepts the official <code class="docutils literal notranslate"><span class="pre">{&quot;model&quot;:</span> <span class="pre">...,</span> <span class="pre">&quot;optimizer&quot;:</span> <span class="pre">...}</span></code>
+checkpoint or a bare state dictionary. Keys and shapes are checked before loading;
+using the checkpoint for the wrong task raises an architecture mismatch error.
+Fine-tuning starts with a new optimizer.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Setting</p></th>
+<th class="head text-right"><p>Default</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">flock_dim</span></code></p></td>
+<td class="text-right"><p>64</p></td>
+<td><p>Hidden dimension</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">flock_walk_len</span></code></p></td>
+<td class="text-right"><p>128</p></td>
+<td><p>Recorded positions per walk, including its starting node</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">flock_refinements</span></code></p></td>
+<td class="text-right"><p>6</p></td>
+<td><p>GRU and pooling refinement rounds</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">flock_num_layers</span></code></p></td>
+<td class="text-right"><p>1</p></td>
+<td><p>Layers in each bidirectional GRU</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">flock_attention_heads</span></code></p></td>
+<td class="text-right"><p>4</p></td>
+<td><p>Attention pooling heads</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">flock_walk_num</span></code></p></td>
+<td class="text-right"><p>128</p></td>
+<td><p>Base walk count per query and refinement</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">flock_test_samples</span></code></p></td>
+<td class="text-right"><p>1</p></td>
+<td><p>Stochastic predictions whose logits are averaged at inference</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">flock_query_batch_size</span></code></p></td>
+<td class="text-right"><p>1</p></td>
+<td><p>Maximum simultaneous queries, including ensemble samples</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">flock_seed</span></code></p></td>
+<td class="text-right"><p>unset</p></td>
+<td><p>Optional seed for repeatable sampling on the same call</p></td>
+</tr>
+</tbody>
+</table>
+<p>The first five settings determine checkpoint shapes; leave them at their defaults
+for the published weights. Walk count, ensemble size, query batch size, and seed
+can be changed with those weights. Generic <code class="docutils literal notranslate"><span class="pre">embedding_dim</span></code> does not control Flock.
+For a quick CPU check, add <code class="docutils literal notranslate"><span class="pre">--flock_walk_num</span> <span class="pre">2</span></code>; this reduces walk coverage.</p>
+<p>Flock is stochastic even in evaluation mode. Fresh calls normally draw fresh
+walks. <code class="docutils literal notranslate"><span class="pre">--flock_seed</span> <span class="pre">42</span></code> makes repeated calls with the same graph, inputs, and
+batching reproducible. Leave it unset during training to draw new walks on every
+step. Changing query ordering, grouping, or chunk size can change sampled walks.
+The sampler uses PyTorch’s CPU RNG, which produces different draws from the
+upstream C++ per-walk MT19937 generator for a given seed.</p>
+<p>The authors’ evaluation scripts use graph-specific walk counts and ensemble
+sizes. DICE exposes these as explicit settings; it does not automatically choose
+their per-dataset configuration. For example, <code class="docutils literal notranslate"><span class="pre">--flock_walk_num</span> <span class="pre">128</span> <span class="pre">--flock_test_samples</span> <span class="pre">16</span></code> selects that published inference configuration’s sampling
+budget. Training always uses a single stochastic prediction per query.</p>
+</section>
+<section id="training-and-fine-tuning">
+<h2>Training and fine-tuning<a class="headerlink" href="#training-and-fine-tuning" title="Link to this heading"></a></h2>
+<p>Entity prediction supports <code class="docutils literal notranslate"><span class="pre">NegSample</span></code>, <code class="docutils literal notranslate"><span class="pre">FixedNegSample</span></code>, <code class="docutils literal notranslate"><span class="pre">KvsAll</span></code>, <code class="docutils literal notranslate"><span class="pre">1vsAll</span></code>,
+<code class="docutils literal notranslate"><span class="pre">1vsSample</span></code>, and <code class="docutils literal notranslate"><span class="pre">KvsSample</span></code>. Grouped strict negatives and adversarial BCE use the
+same facilities as ULTRA and TRIX:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>dicee<span class="w"> </span>--model<span class="w"> </span>Flock<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--trainer<span class="w"> </span>torchCPUTrainer<span class="w"> </span>--scoring_technique<span class="w"> </span>NegSample<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--strict_negative_sampling<span class="w"> </span>--adversarial_temperature<span class="w"> </span><span class="m">1</span><span class="w"> </span>--neg_ratio<span class="w"> </span><span class="m">64</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--flock_walk_num<span class="w"> </span><span class="m">16</span><span class="w"> </span>--batch_size<span class="w"> </span><span class="m">2</span><span class="w"> </span>--num_epochs<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--optim<span class="w"> </span>AdamW<span class="w"> </span>--lr<span class="w"> </span><span class="m">0</span>.0005<span class="w"> </span>--weight_decay<span class="w"> </span><span class="m">0</span>.01
+
+python<span class="w"> </span>-m<span class="w"> </span>dicee<span class="w"> </span>--model<span class="w"> </span>FlockRelation<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--trainer<span class="w"> </span>torchCPUTrainer<span class="w"> </span>--scoring_technique<span class="w"> </span>KvsAll<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--flock_walk_num<span class="w"> </span><span class="m">16</span><span class="w"> </span>--batch_size<span class="w"> </span><span class="m">2</span><span class="w"> </span>--num_epochs<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--optim<span class="w"> </span>AdamW<span class="w"> </span>--lr<span class="w"> </span><span class="m">0</span>.0005
+</pre></div>
+</div>
+<p>Add the matching <code class="docutils literal notranslate"><span class="pre">--flock_checkpoint</span></code> to fine-tune. Relation prediction uses
+DICE’s all-relation BCE training pipeline. Its Python model also accepts groups
+of relation corruptions, but the CLI does not reproduce the authors’ sampled
+multi-graph relation-pretraining procedure.</p>
+<p>Training removes supervised facts and their inverses <strong>before sampling walks</strong>.
+Pair-query objectives remove all known positive answers for each query. Unlike
+TRIX, Flock has no separate relation graph through which masked facts remain
+visible. If masking empties the graph, DICE supplies isolated-node walks with
+no-relation markers; this extends upstream handling to tiny training graphs.</p>
+<p>Native CPU/single GPU and single-device Lightning are supported. BPE, distributed
+training, cross-validation, and static embedding export are rejected. Walk
+sampling runs on CPU; learned sequence processing and pooling run on the model’s
+device. Memory and runtime increase with walk count, length, query batch size,
+and ensemble size. The default model follows the published GRU, additive
+refinement, untied-parameter architecture without restarts or neighbor recording.
+Inference caches relation-edge lists and prefetches one CPU walk microbatch while
+CUDA scores the current one. See <a class="reference internal" href="kgfm_inference.html"><span class="std std-doc">KGFM inference speed comparison</span></a>
+for timings against the official implementation.</p>
+</section>
+<section id="python-use-and-experiment-reloads">
+<h2>Python use and experiment reloads<a class="headerlink" href="#python-use-and-experiment-reloads" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dicee.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Flock</span><span class="p">,</span> <span class="n">FlockRelation</span>
+
+<span class="n">facts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+<span class="n">args</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">num_entities</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">num_relations</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">flock_walk_num</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">flock_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">entity_model</span> <span class="o">=</span> <span class="n">Flock</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">load_pretrained</span><span class="p">(</span><span class="s2">"checkpoints/flock/flock_entity.pth"</span><span class="p">)</span>
+<span class="n">relation_model</span> <span class="o">=</span> <span class="n">FlockRelation</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">load_pretrained</span><span class="p">(</span><span class="s2">"checkpoints/flock/flock_relation.pth"</span><span class="p">)</span>
+<span class="n">entity_model</span><span class="o">.</span><span class="n">set_graph</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="n">relation_model</span><span class="o">.</span><span class="n">set_graph</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+<span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+    <span class="n">triples</span> <span class="o">=</span> <span class="n">entity_model</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]))</span>
+    <span class="n">tails</span> <span class="o">=</span> <span class="n">entity_model</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]))</span>  <span class="c1"># (head, relation)</span>
+    <span class="n">heads</span> <span class="o">=</span> <span class="n">entity_model</span><span class="o">.</span><span class="n">forward_k_vs_all_heads</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]))</span>
+    <span class="n">relations</span> <span class="o">=</span> <span class="n">relation_model</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]))</span>  <span class="c1"># (head, tail)</span>
+</pre></div>
+</div>
+<p>Scores are logits. Always call <code class="docutils literal notranslate"><span class="pre">.eval()</span></code> for inference; training mode hides target
+edges. All triples and negative groups use DICE’s <code class="docutils literal notranslate"><span class="pre">(head,</span> <span class="pre">relation,</span> <span class="pre">tail)</span></code> order,
+while upstream uses <code class="docutils literal notranslate"><span class="pre">(head,</span> <span class="pre">tail,</span> <span class="pre">relation)</span></code>. Use the explicit head-prediction
+method for missing heads. It conditions on the converted inverse relation,
+matching Flock’s official behavior.</p>
+<p><code class="docutils literal notranslate"><span class="pre">set_graph()</span></code> adds inverse edges, deduplicates facts, and rebuilds walk context.
+If the external vocabulary already contains inverse IDs, provide
+<code class="docutils literal notranslate"><span class="pre">inverse_relations={direct_id:</span> <span class="pre">inverse_id}</span></code>. Reattach a different graph with new
+<code class="docutils literal notranslate"><span class="pre">num_entities</span></code> and <code class="docutils literal notranslate"><span class="pre">num_relations</span></code> to transfer the same pretrained parameters.
+The sampler retains distinct direct/inverse relation IDs, as the released code
+does; it does not collapse them during anonymization or query marking.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dicee</span><span class="w"> </span><span class="kn">import</span> <span class="n">KGE</span>
+
+<span class="n">entity_kge</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"Experiments/flock-entity"</span><span class="p">)</span>
+<span class="n">relation_kge</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"Experiments/flock-relation"</span><span class="p">)</span>
+<span class="c1"># Replace names with entries from your dataset.</span>
+<span class="n">tails</span> <span class="o">=</span> <span class="n">entity_kge</span><span class="o">.</span><span class="n">predict_missing_tail_entity</span><span class="p">(</span><span class="s2">"entity_a"</span><span class="p">,</span> <span class="s2">"relation_r"</span><span class="p">)</span>
+<span class="n">heads</span> <span class="o">=</span> <span class="n">entity_kge</span><span class="o">.</span><span class="n">predict_missing_head_entity</span><span class="p">(</span><span class="s2">"relation_r"</span><span class="p">,</span> <span class="s2">"entity_b"</span><span class="p">)</span>
+<span class="n">relations</span> <span class="o">=</span> <span class="n">relation_kge</span><span class="o">.</span><span class="n">predict_missing_relations</span><span class="p">(</span><span class="s2">"entity_a"</span><span class="p">,</span> <span class="s2">"entity_b"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Keep <code class="docutils literal notranslate"><span class="pre">flock_graph.pt</span></code> beside the weights, configuration, and vocabularies when
+moving an experiment. Model state dictionaries contain transferable parameters;
+graph context is saved separately and rebuilt on reload, including for checkpoint
+averaging. Walk RNG state is not saved in the graph artifact.</p>
+</section>
+<section id="verification-against-the-official-implementation">
+<h2>Verification against the official implementation<a class="headerlink" href="#verification-against-the-official-implementation" title="Link to this heading"></a></h2>
+<p>Reference fixtures were generated at the pinned commit above using the unmodified
+official entity and relation models plus the compiled graph-walker implementation.
+The generator records the sampled walks and masked graphs without changing the
+model’s computation. DICE then replays those walks through its own model and
+compares predictions and every parameter gradient.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Official checkpoint</p></th>
+<th class="head text-right"><p>Parameters</p></th>
+<th class="head text-right"><p>Maximum score error</p></th>
+<th class="head text-right"><p>Maximum gradient error</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">flock_entity.pth</span></code></p></td>
+<td class="text-right"><p>801,969</p></td>
+<td class="text-right"><p>0</p></td>
+<td class="text-right"><p>0</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">flock_relation.pth</span></code></p></td>
+<td class="text-right"><p>810,289</p></td>
+<td class="text-right"><p>0</p></td>
+<td class="text-right"><p>0</p></td>
+</tr>
+</tbody>
+</table>
+<p>These are CPU float32 comparisons <strong>on identical recorded walks</strong>, using the
+published dimensions and two base walks per refinement on the fixture graph.
+They cover entity head/tail scores, relation scores, and training. Exact equality
+on these fixtures is not a claim that independently sampled predictions coincide
+or that DICE reproduces the paper’s benchmark metrics.</p>
+<p>Separate tests compare anonymization exactly and first-step, non-backtracking,
+edge-type, and direction distributions statistically against the compiled walker.
+The released parser uses a boolean queue for directions, so self-loop marker <code class="docutils literal notranslate"><span class="pre">2</span></code>
+is emitted as <code class="docutils literal notranslate"><span class="pre">1</span></code>; DICE preserves that checkpoint convention. Tests also cover
+isolated nodes, parallel relations, empty masked graphs, permutation equivariance
+with correspondingly renamed walks, stochastic averaging, CUDA, inverse-ID
+mapping, checkpoint errors, training objectives, and experiment reloads.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Offline fixtures and integration checks; no upstream dependencies required.</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_flock.py<span class="w"> </span>tests/test_trix.py<span class="w"> </span>tests/test_ultra.py<span class="w"> </span>-q
+
+<span class="c1"># Include both published Flock checkpoints, verified by SHA-256.</span>
+<span class="nv">FLOCK_CHECKPOINT_DIR</span><span class="o">=</span>checkpoints/flock<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_flock.py<span class="w"> </span>-q
+</pre></div>
+</div>
+<p>To regenerate fixtures, create an isolated environment with PyTorch, PyG 2.4.0,
+a matching torch-scatter build, easydict, pybind11, and the pinned repository’s
+<code class="docutils literal notranslate"><span class="pre">graph-walker</span></code> package. Run the tasks in separate processes because the official
+packages have the same import name:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">PYTHONPATH</span><span class="o">=</span>/path/to/flock/src_entity<span class="w"> </span>python<span class="w"> </span>tests/fixtures/flock/generate_reference.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>/path/to/flock<span class="w"> </span>tests/fixtures/flock<span class="w"> </span>entity
+<span class="nv">PYTHONPATH</span><span class="o">=</span>/path/to/flock/src_relation<span class="w"> </span>python<span class="w"> </span>tests/fixtures/flock/generate_reference.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>/path/to/flock<span class="w"> </span>tests/fixtures/flock<span class="w"> </span>relation
+</pre></div>
+</div>
+<p>The generator checks the revision and verifies that tracked model/walker source
+files are unmodified. For custom replay, <code class="docutils literal notranslate"><span class="pre">sample_walks()</span></code> returns seven record
+tensors shaped <code class="docutils literal notranslate"><span class="pre">[refinements,</span> <span class="pre">batch,</span> <span class="pre">walks,</span> <span class="pre">length]</span></code>; <code class="docutils literal notranslate"><span class="pre">score_walks()</span></code> consumes
+these with <strong>internal</strong> relation IDs. Its docstring specifies the marker values
+and query layout. Training callers supplying their own records must remove target
+facts before constructing them.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

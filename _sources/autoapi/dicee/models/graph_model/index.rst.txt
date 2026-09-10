@@ -1,0 +1,302 @@
+dicee.models.graph_model
+========================
+
+.. py:module:: dicee.models.graph_model
+
+.. autoapi-nested-parse::
+
+   Shared graph-conditioned model support, extracted from the DICE ULTRA implementation.
+
+   Architecture and graph construction adapted from
+   https://github.com/DeepGraphLearning/ULTRA at commit
+   427966ad8ed60420eef034063d44f3153addff90. Reference fixtures and the grouped
+   sampling and adversarial loss implementations also follow this upstream work.
+   Graphs are runtime context, excluded from the transferable state dictionary.
+
+   MIT License
+
+   Copyright (c) 2023 MilaGraph
+
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of this software and associated documentation files (the "Software"), to deal
+   in the Software without restriction, including without limitation the rights
+   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   copies of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
+
+   The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   dicee.models.graph_model.GraphKGE
+   dicee.models.graph_model.RelationGraphKGE
+
+
+Module Contents
+---------------
+
+.. py:class:: GraphKGE(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Shared graph lifecycle and entity-scoring interfaces for graph foundation models.
+
+
+   .. py:attribute:: name
+      :value: 'GraphKGE'
+
+
+
+   .. py:attribute:: config_prefix
+      :value: 'graph'
+
+
+
+   .. py:attribute:: graph_filename
+      :value: 'graph.pt'
+
+
+
+   .. py:attribute:: checkpoint_hint
+      :value: 'all keys and shapes must match'
+
+
+
+   .. py:attribute:: deterministic_inference
+      :value: False
+
+
+
+   .. py:attribute:: query_batch_size
+
+
+   .. py:attribute:: num_direct_relations
+      :value: 0
+
+
+
+   .. py:method:: clear_inference_cache()
+
+      Drop derived representations when graph, weights or device change.
+
+
+
+   .. py:method:: set_inference_backend(backend)
+
+
+   .. py:method:: inference_token()
+
+
+   .. py:method:: train(mode=True)
+
+      Set the module in training mode.
+
+      This has an effect only on certain modules. See the documentation of
+      particular modules for details of their behaviors in training/evaluation
+      mode, i.e., whether they are affected, e.g. :class:`Dropout`, :class:`BatchNorm`,
+      etc.
+
+      :param mode: whether to set training mode (``True``) or evaluation
+                   mode (``False``). Default: ``True``.
+      :type mode: bool
+
+      :returns: self
+      :rtype: Module
+
+
+
+   .. py:method:: init_entity_embeddings(embedding_dim=None)
+
+      Create (or re-create) the entity embedding table.
+
+      This is the single place that honours :attr:`defer_large_embeddings`:
+      when entity rows are sharded across FSDP ranks the table must stay
+      ``None`` until the trainer allocates the sharded adapter.  Subclasses
+      that need an entity table of a non-default width must call this method
+      instead of assigning ``self.entity_embeddings`` directly, so the
+      deferral is never silently undone.
+
+      :param embedding_dim: Width of the table.  Defaults to :attr:`embedding_dim`.
+      :type embedding_dim: Optional[int]
+
+
+
+   .. py:method:: init_relation_embeddings(embedding_dim=None)
+
+      Create (or re-create) the relation embedding table.
+
+      Relation tables are never deferred - they are small enough to be
+      replicated on every rank.
+
+      :param embedding_dim: Width of the table.  Defaults to :attr:`embedding_dim`.
+      :type embedding_dim: Optional[int]
+
+
+
+   .. py:method:: get_embeddings()
+      :abstractmethod:
+
+
+      Return the entity and relation embedding matrices as numpy arrays.
+
+      :returns: * **entity_embeddings** (*numpy.ndarray*) -- Shape ``(num_entities, embedding_dim)``.
+                * **relation_embeddings** (*numpy.ndarray*) -- Shape ``(num_relations, embedding_dim)``.
+
+
+
+   .. py:method:: set_graph(triples, num_entities=None, num_relations=None, inverse_relations=None)
+
+      Attach training facts; inverse_relations maps direct DICE IDs to inverse IDs.
+
+      Without a mapping every supplied relation is treated as a direct relation.
+      Repeated facts and explicitly supplied inverse facts are deduplicated.
+
+
+
+   .. py:method:: save_graph(path)
+
+
+   .. py:method:: load_graph(path)
+
+
+   .. py:method:: load_pretrained(path)
+
+
+   .. py:method:: forward_grouped(triples, head_prediction=None)
+
+
+   .. py:method:: forward_triples(x)
+
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: forward_k_vs_sample(x, target_entity_idx)
+
+      Score a ``(head, relation)`` batch against a sampled subset of entities.
+
+      Used by ``KvsSample`` and ``1vsSample`` datasets.  Sub-classes that
+      support sample-based labelling must override this method.
+
+      :returns: Shape ``(batch_size, k)`` score matrix where *k* is the number
+                of sampled target entities.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: forward_k_vs_all(x)
+
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: forward_k_vs_all_heads(x, target_entity_idx=None)
+
+      Score head candidates for DICE pairs (relation, tail).
+
+
+
+   .. py:method:: forward(x, y_idx=None)
+
+      Route the forward pass to the appropriate scoring method.
+
+      Inspects the shape and type of *x* to decide which low-level scorer
+      to call:
+
+      * Tuple ``(x, y_idx)``   → :meth:`forward_k_vs_sample`
+      * ``(batch, 3)`` tensor  → :meth:`forward_triples`
+      * ``(batch, 2)`` tensor  → :meth:`forward_k_vs_all`
+      * BPE triple tensor      → :meth:`forward_byte_pair_encoded_triple`
+      * BPE pair tensor        → :meth:`forward_byte_pair_encoded_k_vs_all`
+
+      :param x: Either a plain index tensor or a ``(triple_idx, target_idx)``
+                tuple for sample-based labelling.
+      :type x: torch.LongTensor or Tuple[torch.LongTensor, torch.LongTensor]
+      :param y_idx: Target entity indices used by :meth:`forward_k_vs_sample`.
+                    Ignored when *x* is a plain tensor.
+      :type y_idx: torch.LongTensor, optional
+
+      :returns: Score tensor whose shape depends on the selected scorer.
+      :rtype: torch.FloatTensor
+
+
+
+.. py:class:: RelationGraphKGE(args)
+
+   Bases: :py:obj:`GraphKGE`
+
+
+   Shared relation prediction API with (head, tail) query pairs.
+
+
+   .. py:method:: forward_grouped(triples, head_prediction=None)
+
+
+   .. py:method:: forward_triples(x)
+
+      Score a batch of ``(head, relation, tail)`` index triples.
+
+      :param x: Shape ``(batch_size, 3)`` integer tensor where each row is
+                ``[head_idx, relation_idx, tail_idx]``.
+      :type x: torch.LongTensor
+
+      :returns: Shape ``(batch_size,)`` triple scores.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:method:: forward_k_vs_sample(x, target_entity_idx)
+
+      Score relation candidates [K] or [B,K] for (head, tail) pairs.
+
+
+
+   .. py:method:: forward_k_vs_all(x)
+
+      Score a ``(head, relation)`` batch against every entity.
+
+      Sub-classes must override this method.  The default implementation
+      raises ``ValueError`` to make missing overrides obvious at runtime.
+
+      :returns: Shape ``(batch_size, num_entities)`` score matrix.
+      :rtype: torch.FloatTensor
+
+
+
+   .. py:attribute:: forward_k_vs_all_relations
+
+
+   .. py:method:: forward_k_vs_all_heads(x, target_entity_idx=None)
+
+      Score head candidates for DICE pairs (relation, tail).
+
+
+

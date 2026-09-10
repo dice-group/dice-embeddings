@@ -153,6 +153,15 @@ Module Contents
    .. py:method:: init_dataset() -> torch.utils.data.Dataset
 
 
+   .. py:method:: prepare_graph_model(model, knowledge_graph)
+
+      Attach only training facts, preserving the indexed external vocabulary.
+
+
+
+   .. py:attribute:: prepare_ultra
+
+
    .. py:method:: start(knowledge_graph: Union[dicee.knowledge_graph.KG, numpy.memmap]) -> Tuple[dicee.models.base_model.BaseKGE, str]
 
       Start the training

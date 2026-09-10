@@ -1,0 +1,248 @@
+dicee.models.trix
+=================
+
+.. py:module:: dicee.models.trix
+
+.. autoapi-nested-parse::
+
+   Pure PyTorch TRIX entity and relation prediction.
+
+   Reimplementation of Zhang et al., https://arxiv.org/abs/2502.19512, verified
+   against https://github.com/yuchengz99/TRIX at UPSTREAM_COMMIT. The module names,
+   update schedule, binary entity-labelled relation edges, and fused convolution
+   direction follow the released code/checkpoints (see docs/trix.md).
+
+
+
+Attributes
+----------
+
+.. autoapisummary::
+
+   dicee.models.trix.UPSTREAM_COMMIT
+   dicee.models.trix.INTERACTIONS
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   dicee.models.trix.EntityReasoner
+   dicee.models.trix.RelationReasoner
+   dicee.models.trix.TRIXBase
+   dicee.models.trix.TRIX
+   dicee.models.trix.TRIXRelation
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   dicee.models.trix.build_relation_graph
+
+
+Module Contents
+---------------
+
+.. py:data:: UPSTREAM_COMMIT
+   :value: '7596e14eefefe89e61396205a0550172cadeddb0'
+
+
+.. py:data:: INTERACTIONS
+   :value: ('hh', 'ht', 'th', 'tt')
+
+
+.. py:function:: build_relation_graph(edge_index, edge_type, num_entities, num_relations)
+
+   Sparse (relation, relation, shared entity) edges in official role order.
+
+   Repeated incidences have binary support. hh/tt exclude equal relations;
+   ht/th include them. Distinct shared entities remain distinct edges.
+   No dense entity-by-relation-by-relation tensor is materialized.
+
+
+.. py:class:: EntityReasoner(dim, num_layers, output_dim=1)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: layers
+
+
+   .. py:attribute:: mlp
+
+
+   .. py:method:: features(edges, num_entities, relations, heads, rels, states=None, tails=None, candidates=None, split=False)
+
+
+.. py:class:: RelationReasoner(dim, num_layers, entity_feedback=False)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:method:: step(index, states, boundary, graph, entities, constant_relations=None)
+
+
+.. py:class:: TRIXBase(args)
+
+   Bases: :py:obj:`dicee.models.graph_model.GraphKGE`
+
+
+   Shared graph lifecycle and entity-scoring interfaces for graph foundation models.
+
+
+   .. py:attribute:: config_prefix
+      :value: 'trix'
+
+
+
+   .. py:attribute:: graph_filename
+      :value: 'trix_graph.pt'
+
+
+
+   .. py:attribute:: checkpoint_hint
+      :value: 'use the matching entity/relation checkpoint with trix_dim=32; all keys and shapes must match'
+
+
+
+   .. py:attribute:: dim
+
+
+   .. py:property:: relation_graph
+
+
+.. py:class:: TRIX(args)
+
+   Bases: :py:obj:`TRIXBase`
+
+
+   Entity predictor compatible with official ``entity_prediction.pth``.
+
+   DICE order is (head, relation, tail). Head corruption retains the original
+   relation seed, then uses the inverse relation for both entity reasoners.
+   Explicit reciprocal DICE queries use that same convention.
+
+
+   .. py:attribute:: name
+      :value: 'TRIX'
+
+
+
+   .. py:attribute:: deterministic_inference
+      :value: True
+
+
+
+   .. py:attribute:: relation_model
+
+
+   .. py:attribute:: entity_model_1
+
+
+   .. py:attribute:: entity_model_2
+
+
+   .. py:attribute:: relation_cache_mb
+
+
+   .. py:method:: clear_inference_cache()
+
+      Drop derived representations when graph, weights or device change.
+
+
+
+.. py:class:: TRIXRelation(args)
+
+   Bases: :py:obj:`TRIXBase`, :py:obj:`dicee.models.graph_model.RelationGraphKGE`
+
+
+   Relation predictor compatible with official ``relation_prediction.pth``.
+
+   Pairs are (head, tail); triples and grouped relation corruptions use DICE's
+   (head, relation, tail) order. One reasoning pass scores every relation for a
+   given pair, including external inverse IDs when present in the vocabulary.
+
+
+   .. py:attribute:: name
+      :value: 'TRIXRelation'
+
+
+
+   .. py:attribute:: relation_model
+
+
+   .. py:attribute:: entity_model
+
+
+   .. py:attribute:: mlp
+
+

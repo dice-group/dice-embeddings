@@ -54,7 +54,7 @@ Package Contents
 
 .. py:class:: BPE_NegativeSamplingDataset(train_set: torch.LongTensor, ordered_shaped_bpe_entities: torch.LongTensor, neg_ratio: int)
 
-   Bases: :py:obj:`torch.utils.data.Dataset`
+   Bases: :py:obj:`dicee.dataset_classes._storage.WorkerDataset`
 
 
    Dataset for negative sampling with byte-pair encoded triples.
@@ -96,7 +96,7 @@ Package Contents
 
 .. py:class:: MultiClassClassificationDataset(subword_units: numpy.ndarray, block_size: int = 8)
 
-   Bases: :py:obj:`torch.utils.data.Dataset`
+   Bases: :py:obj:`dicee.dataset_classes._storage.WorkerDataset`
 
 
    Dataset for autoregressive multi-class classification on sub-word units.
@@ -132,9 +132,9 @@ Package Contents
    .. py:method:: __getitem__(idx)
 
 
-.. py:class:: MultiLabelDataset(train_set: torch.LongTensor, train_indices_target: torch.LongTensor, target_dim: int, torch_ordered_shaped_bpe_entities: torch.LongTensor)
+.. py:class:: MultiLabelDataset(train_set: torch.LongTensor, train_indices_target, target_dim: int, torch_ordered_shaped_bpe_entities: torch.LongTensor)
 
-   Bases: :py:obj:`torch.utils.data.Dataset`
+   Bases: :py:obj:`dicee.dataset_classes._storage.WorkerDataset`
 
 
    Multi-label dataset for BPE-based KvsAll / AllvsAll training.
@@ -145,7 +145,7 @@ Package Contents
    :param train_set: BPE-encoded input pairs of shape ``(N, 2, token_length)``.
    :type train_set: torch.LongTensor
    :param train_indices_target: Per-sample lists of positive target entity indices.
-   :type train_indices_target: torch.LongTensor
+   :type train_indices_target: sequence of integer sequences or RaggedIndices
    :param target_dim: Dimensionality of the target vector (number of entities).
    :type target_dim: int
    :param torch_ordered_shaped_bpe_entities: Ordered BPE entity representations.
@@ -178,7 +178,7 @@ Package Contents
    .. py:method:: __getitem__(idx)
 
 
-.. py:function:: construct_dataset(*, train_set: Union[numpy.ndarray, list], valid_set=None, test_set=None, ordered_bpe_entities=None, train_target_indices=None, target_dim: int = None, entity_to_idx: dict, relation_to_idx: dict, form_of_labelling: str, scoring_technique: str, neg_ratio: int, label_smoothing_rate: float, byte_pair_encoding=None, block_size: int = None, seed: int = None, sort_train_set: bool = True) -> torch.utils.data.Dataset
+.. py:function:: construct_dataset(*, train_set: Union[numpy.ndarray, list], valid_set=None, test_set=None, ordered_bpe_entities=None, train_target_indices=None, target_dim: int = None, entity_to_idx: dict, relation_to_idx: dict, form_of_labelling: str, scoring_technique: str, neg_ratio: int, label_smoothing_rate: float, byte_pair_encoding=None, block_size: int = None, seed: int = None, sort_train_set: bool = True, grouped_negative_sampling: bool = False, strict_negative_sampling: bool = False, adversarial_temperature: float | None = None) -> torch.utils.data.Dataset
 
    Build the appropriate dataset for the given training configuration.
 
@@ -208,7 +208,7 @@ Package Contents
 
 .. py:class:: AllvsAll(train_set_idx: numpy.ndarray, entity_idxs, relation_idxs, label_smoothing_rate=0.0)
 
-   Bases: :py:obj:`torch.utils.data.Dataset`
+   Bases: :py:obj:`dicee.dataset_classes._storage.WorkerDataset`
 
 
    Dataset for AllvsAll training (multi-label, exhaustive).
@@ -228,13 +228,11 @@ Package Contents
 
 
    .. py:attribute:: train_data
-      :value: None
-
+      :type:  torch.Tensor
 
 
    .. py:attribute:: train_target
-      :value: None
-
+      :type:  dicee.dataset_classes._storage.RaggedIndices
 
 
    .. py:attribute:: label_smoothing_rate
@@ -256,7 +254,7 @@ Package Contents
 
 .. py:class:: FSDP1vsSampleDataset(train_set_idx: numpy.ndarray, entity_idxs, relation_idxs, form, neg_ratio=None, label_smoothing_rate: float = 0.0)
 
-   Bases: :py:obj:`torch.utils.data.Dataset`
+   Bases: :py:obj:`dicee.dataset_classes._storage.WorkerDataset`
 
 
    Positive-triple dataset for FSDP 1vsSample training with true-negative sampling.
@@ -307,7 +305,7 @@ Package Contents
 
 .. py:class:: KvsAll(train_set_idx: numpy.ndarray, entity_idxs, relation_idxs, form, store=None, label_smoothing_rate: float = 0.0)
 
-   Bases: :py:obj:`torch.utils.data.Dataset`
+   Bases: :py:obj:`dicee.dataset_classes._storage.WorkerDataset`
 
 
    Dataset for KvsAll training (multi-label).
@@ -330,13 +328,11 @@ Package Contents
 
 
    .. py:attribute:: train_data
-      :value: None
-
+      :type:  torch.Tensor
 
 
    .. py:attribute:: train_target
-      :value: None
-
+      :type:  dicee.dataset_classes._storage.RaggedIndices
 
 
    .. py:attribute:: label_smoothing_rate
@@ -355,7 +351,7 @@ Package Contents
 
 .. py:class:: KvsSampleDataset(train_set_idx: numpy.ndarray, entity_idxs, relation_idxs, form, store=None, neg_ratio=None, label_smoothing_rate: float = 0.0)
 
-   Bases: :py:obj:`torch.utils.data.Dataset`
+   Bases: :py:obj:`dicee.dataset_classes._storage.WorkerDataset`
 
 
    Dataset for KvsSample training (dynamic multi-label).
@@ -378,13 +374,11 @@ Package Contents
 
 
    .. py:attribute:: train_data
-      :value: None
-
+      :type:  torch.Tensor
 
 
    .. py:attribute:: train_target
-      :value: None
-
+      :type:  dicee.dataset_classes._storage.RaggedIndices
 
 
    .. py:attribute:: neg_ratio
@@ -414,7 +408,7 @@ Package Contents
 
 .. py:class:: OnevsAllDataset(train_set_idx: numpy.ndarray, entity_idxs)
 
-   Bases: :py:obj:`torch.utils.data.Dataset`
+   Bases: :py:obj:`dicee.dataset_classes._storage.WorkerDataset`
 
 
    Dataset for the 1-vs-All training strategy (multi-class).
@@ -540,7 +534,7 @@ Package Contents
 
 .. py:class:: FixedNegSampleDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0, seed: int = None)
 
-   Bases: :py:obj:`torch.utils.data.Dataset`
+   Bases: :py:obj:`dicee.dataset_classes._storage.WorkerDataset`
 
 
    Pre-computed (fixed) negative sampling dataset.
@@ -605,7 +599,7 @@ Package Contents
 
 .. py:class:: OnevsSample(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0)
 
-   Bases: :py:obj:`torch.utils.data.Dataset`
+   Bases: :py:obj:`dicee.dataset_classes._storage.WorkerDataset`
 
 
    Dataset for 1-vs-Sample training (dynamic multi-class with negatives).
@@ -656,7 +650,7 @@ Package Contents
 
 .. py:class:: TriplePredictionDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0, seed: int = None, sort_train_set: bool = True)
 
-   Bases: :py:obj:`torch.utils.data.Dataset`
+   Bases: :py:obj:`dicee.dataset_classes._storage.WorkerDataset`
 
 
    Dataset for triple prediction with on-the-fly negative sampling.

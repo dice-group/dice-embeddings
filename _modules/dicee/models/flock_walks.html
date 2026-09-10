@@ -1,0 +1,310 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.models.flock_walks &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../../../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dicee.models.flock_walks</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dicee.models.flock_walks</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Flock's non-backtracking walk and recording protocol in PyTorch.</span>
+
+<span class="sd">Semantics follow jw9730/flock at f35103d25a78bdf4075de5c673a51de4979aa4d7.</span>
+<span class="sd">The RNG is PyTorch's CPU generator, not the reference C++ per-walk MT19937.</span>
+<span class="sd">Walk records can be supplied explicitly to compare neural computations exactly.</span>
+<span class="sd">"""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">lru_cache</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_walk_nodes</span><span class="p">(</span><span class="n">prefix</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">counts</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+                <span class="n">offsets</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">num_nodes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">generator</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Generator</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="n">walks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">),</span> <span class="n">length</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+    <span class="n">walks</span><span class="p">[:,</span> <span class="p">:</span><span class="n">prefix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">prefix</span>
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">prefix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">length</span><span class="p">):</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="n">walks</span><span class="p">[:,</span> <span class="n">step</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">degree</span> <span class="o">=</span> <span class="n">counts</span><span class="p">[</span><span class="n">current</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">):</span>
+            <span class="n">walks</span><span class="p">[:,</span> <span class="n">step</span><span class="p">]</span> <span class="o">=</span> <span class="n">current</span>
+            <span class="k">continue</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">offsets</span><span class="p">[</span><span class="n">current</span><span class="p">]</span>
+        <span class="n">excluded</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+        <span class="n">previous_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">current</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">step</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">previous_key</span> <span class="o">=</span> <span class="n">current</span> <span class="o">*</span> <span class="n">num_nodes</span> <span class="o">+</span> <span class="n">walks</span><span class="p">[:,</span> <span class="n">step</span> <span class="o">-</span> <span class="mi">2</span><span class="p">]</span>
+            <span class="n">previous_index</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">previous_key</span><span class="p">)</span><span class="o">.</span><span class="n">clamp_max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">excluded</span> <span class="o">=</span> <span class="p">(</span><span class="n">keys</span><span class="p">[</span><span class="n">previous_index</span><span class="p">]</span> <span class="o">==</span> <span class="n">previous_key</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">degree</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">choice</span> <span class="o">=</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">current</span><span class="p">)],</span> <span class="n">generator</span><span class="o">=</span><span class="n">generator</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">degree</span> <span class="o">-</span> <span class="n">excluded</span><span class="o">.</span><span class="n">long</span><span class="p">()))</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+        <span class="n">choice</span> <span class="o">+=</span> <span class="p">(</span><span class="n">excluded</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">choice</span> <span class="o">&gt;=</span> <span class="n">previous_index</span> <span class="o">-</span> <span class="n">start</span><span class="p">))</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+        <span class="n">following</span> <span class="o">=</span> <span class="n">keys</span><span class="p">[(</span><span class="n">start</span> <span class="o">+</span> <span class="n">choice</span><span class="p">)</span><span class="o">.</span><span class="n">clamp_max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">%</span> <span class="n">num_nodes</span>
+        <span class="n">walks</span><span class="p">[:,</span> <span class="n">step</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">degree</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">following</span><span class="p">,</span> <span class="n">current</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">walks</span>
+
+
+<div class="viewcode-block" id="compiled_walk_nodes">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/flock_walks/index.html#dicee.models.flock_walks.compiled_walk_nodes">[docs]</a>
+<span class="nd">@lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">compiled_walk_nodes</span><span class="p">():</span>
+    <span class="c1"># Script only the CPU transition loop. Torch's CPU Generator and the exact</span>
+    <span class="c1"># order/shapes of random draws remain unchanged.</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">script</span><span class="p">(</span><span class="n">_walk_nodes</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="anonymize">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/flock_walks/index.html#dicee.models.flock_walks.anonymize">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">anonymize</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">missing_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">missing_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Assign 1-based names in order of discovery, independently in each row."""</span>
+    <span class="n">rows</span><span class="p">,</span> <span class="n">length</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">if</span> <span class="n">rows</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">values</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+    <span class="n">width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">values</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="p">(</span><span class="n">values</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">rows</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">width</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="n">unique</span><span class="p">,</span> <span class="n">inverse</span> <span class="o">=</span> <span class="n">keys</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">return_inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">positions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">length</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">first</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">unique</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
+    <span class="n">first</span><span class="o">.</span><span class="n">scatter_reduce_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">inverse</span><span class="p">,</span> <span class="n">positions</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">reduce</span><span class="o">=</span><span class="s2">"amin"</span><span class="p">)</span>
+    <span class="n">first</span> <span class="o">=</span> <span class="n">first</span><span class="p">[</span><span class="n">inverse</span><span class="p">]</span><span class="o">.</span><span class="n">view_as</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">discoveries</span> <span class="o">=</span> <span class="n">first</span> <span class="o">==</span> <span class="n">positions</span>
+    <span class="k">if</span> <span class="n">missing_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">discoveries</span> <span class="o">&amp;=</span> <span class="n">values</span> <span class="o">!=</span> <span class="n">missing_id</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">discoveries</span><span class="o">.</span><span class="n">long</span><span class="p">()</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">first</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">missing_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="n">names</span><span class="o">.</span><span class="n">masked_fill</span><span class="p">(</span><span class="n">values</span> <span class="o">==</span> <span class="n">missing_id</span><span class="p">,</span> <span class="n">missing_name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">names</span></div>
+
+
+
+<div class="viewcode-block" id="WalkGraph">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/flock_walks/index.html#dicee.models.flock_walks.WalkGraph">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WalkGraph</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""CPU CSR context, kept outside a model's transferable parameters."""</span>
+    <span class="n">edge_index</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+    <span class="n">edge_type</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+    <span class="n">num_nodes</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">num_types</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">compile_sampler</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="WalkGraph.__post_init__">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/flock_walks/index.html#dicee.models.flock_walks.WalkGraph.__post_init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edge_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_index</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edge_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_type</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+        <span class="c1"># Stable grouping preserves the original per-relation member order and</span>
+        <span class="c1"># therefore every RNG draw, while avoiding R full graph scans per query.</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_type</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">stable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">relation_counts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edge_type</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_types</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relation_members</span> <span class="o">=</span> <span class="n">order</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">relation_counts</span><span class="p">)</span>
+        <span class="n">h</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_index</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">h</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_nodes</span> <span class="o">+</span> <span class="n">t</span><span class="p">,</span> <span class="n">t</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_nodes</span> <span class="o">+</span> <span class="n">h</span><span class="p">))</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="n">keys</span><span class="o">.</span><span class="n">argsort</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type_keys</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_counts</span> <span class="o">=</span> <span class="n">keys</span><span class="p">[</span><span class="n">order</span><span class="p">]</span><span class="o">.</span><span class="n">unique_consecutive</span><span class="p">(</span><span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type_offsets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_counts</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_counts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">types</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_type</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">2</span><span class="p">)[</span><span class="n">order</span><span class="p">]</span>
+        <span class="c1"># The released C++ parser stores directions in queue&lt;bool&gt;, so its</span>
+        <span class="c1"># intended loop marker 2 is actually emitted as 1. Preserve that value.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">directions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(((</span><span class="n">h</span> <span class="o">==</span> <span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">long</span><span class="p">(),</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">t</span><span class="p">)))[</span><span class="n">order</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adjacency</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">remove_loops</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+            <span class="n">adjacency_keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_keys</span>
+            <span class="k">if</span> <span class="n">remove_loops</span><span class="p">:</span>
+                <span class="n">adjacency_keys</span> <span class="o">=</span> <span class="n">adjacency_keys</span><span class="p">[</span><span class="n">adjacency_keys</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_nodes</span> <span class="o">!=</span> <span class="n">adjacency_keys</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_nodes</span><span class="p">]</span>
+            <span class="n">counts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">adjacency_keys</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_nodes</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_nodes</span><span class="p">)</span>
+            <span class="n">offsets</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">counts</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">adjacency</span><span class="p">[</span><span class="n">remove_loops</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">adjacency_keys</span><span class="p">,</span> <span class="n">counts</span><span class="p">,</span> <span class="n">offsets</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WalkGraph.walk">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/flock_walks/index.html#dicee.models.flock_walks.WalkGraph.walk">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">walk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">remove_loops</span><span class="p">,</span> <span class="n">generator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">prefix_types</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Sample uniform neighbors, then a uniform typed edge in either direction."""</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">keys</span><span class="p">,</span> <span class="n">counts</span><span class="p">,</span> <span class="n">offsets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adjacency</span><span class="p">[</span><span class="n">remove_loops</span><span class="p">]</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">compiled_walk_nodes</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compile_sampler</span> <span class="k">else</span> <span class="n">_walk_nodes</span>
+        <span class="n">walks</span> <span class="o">=</span> <span class="n">sample</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="n">counts</span><span class="p">,</span> <span class="n">offsets</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_nodes</span><span class="p">,</span> <span class="n">generator</span><span class="p">)</span>
+        <span class="n">types</span><span class="p">,</span> <span class="n">directions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_types</span><span class="p">(</span><span class="n">walks</span><span class="p">,</span> <span class="n">generator</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">prefix_types</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">types</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">prefix_types</span>
+            <span class="n">directions</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="n">anonymize</span><span class="p">(</span><span class="n">walks</span><span class="p">)</span>
+        <span class="n">type_names</span> <span class="o">=</span> <span class="n">anonymize</span><span class="p">(</span><span class="n">types</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_types</span><span class="p">,</span> <span class="n">length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">zeros</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">walks</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">walks</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">zeros</span><span class="p">,</span> <span class="n">zeros</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span> <span class="n">types</span><span class="p">,</span> <span class="n">type_names</span><span class="p">,</span> <span class="n">directions</span></div>
+
+
+<div class="viewcode-block" id="WalkGraph.parse_types">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/flock_walks/index.html#dicee.models.flock_walks.WalkGraph.parse_types">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_types</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">walks</span><span class="p">,</span> <span class="n">generator</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">types</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">walks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_types</span><span class="p">)</span>
+        <span class="n">directions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">walks</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type_keys</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">types</span><span class="p">,</span> <span class="n">directions</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="n">walks</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_nodes</span> <span class="o">+</span> <span class="n">walks</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type_keys</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span><span class="o">.</span><span class="n">clamp_max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type_keys</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_keys</span><span class="p">[</span><span class="n">groups</span><span class="p">]</span> <span class="o">==</span> <span class="n">keys</span>
+        <span class="n">choices</span> <span class="o">=</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">keys</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">generator</span><span class="o">=</span><span class="n">generator</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_counts</span><span class="p">[</span><span class="n">groups</span><span class="p">])</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">type_offsets</span><span class="p">[</span><span class="n">groups</span><span class="p">]</span> <span class="o">+</span> <span class="n">choices</span>
+        <span class="n">types</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">valid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">types</span><span class="p">[</span><span class="n">indices</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_types</span><span class="p">)</span>
+        <span class="n">directions</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">valid</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">directions</span><span class="p">[</span><span class="n">indices</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">types</span><span class="p">,</span> <span class="n">directions</span></div>
+
+
+<div class="viewcode-block" id="WalkGraph.sample">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/flock_walks/index.html#dicee.models.flock_walks.WalkGraph.sample">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">heads</span><span class="p">,</span> <span class="n">tails</span><span class="p">,</span> <span class="n">walk_num</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">refinements</span><span class="p">,</span> <span class="n">generator</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Return seven official-format records of shape [T,B,3N or 4N,L]."""</span>
+        <span class="n">heads</span> <span class="o">=</span> <span class="n">heads</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+        <span class="n">batch</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">heads</span><span class="p">)</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">tails</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">3</span>
+        <span class="n">starts</span> <span class="o">=</span> <span class="p">[</span><span class="n">heads</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">walk_num</span> <span class="o">*</span> <span class="n">refinements</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">tails</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">starts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tails</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">walk_num</span> <span class="o">*</span> <span class="n">refinements</span><span class="p">))</span>
+        <span class="n">starts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_nodes</span><span class="p">,</span> <span class="p">(</span><span class="n">walk_num</span> <span class="o">*</span> <span class="n">refinements</span> <span class="o">*</span> <span class="n">batch</span><span class="p">,),</span> <span class="n">generator</span><span class="o">=</span><span class="n">generator</span><span class="p">))</span>
+        <span class="n">node_records</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">starts</span><span class="p">),</span> <span class="n">length</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="n">generator</span><span class="p">)</span>
+
+        <span class="c1"># Balanced per-relation edge prefixes, sampled without replacement in</span>
+        <span class="c1"># repeated random permutations, then shuffled/subsampled per query.</span>
+        <span class="n">per_type</span> <span class="o">=</span> <span class="p">(</span><span class="n">walk_num</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_types</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">refinements</span> <span class="o">*</span> <span class="n">batch</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">members</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_members</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">members</span><span class="p">):</span>
+                <span class="n">repeats</span> <span class="o">=</span> <span class="p">(</span><span class="n">per_type</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">members</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="n">members</span><span class="p">)</span>
+                <span class="n">selected</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">members</span><span class="p">),</span> <span class="n">generator</span><span class="o">=</span><span class="n">generator</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">repeats</span><span class="p">)])[:</span><span class="n">per_type</span><span class="p">]</span>
+                <span class="n">indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">members</span><span class="p">[</span><span class="n">selected</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">indices</span><span class="p">:</span>
+            <span class="n">selected</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+            <span class="n">edge_records</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">edge_index</span><span class="p">[:,</span> <span class="n">selected</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">generator</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_type</span><span class="p">[</span><span class="n">selected</span><span class="p">])</span>
+            <span class="n">actual</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span> <span class="o">//</span> <span class="p">(</span><span class="n">refinements</span> <span class="o">*</span> <span class="n">batch</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># A masked training graph can be empty. There are no typed prefixes;</span>
+            <span class="c1"># use isolated-node records with the no-type marker in this case.</span>
+            <span class="n">edge_records</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">record</span><span class="p">[:</span><span class="n">walk_num</span> <span class="o">*</span> <span class="n">refinements</span> <span class="o">*</span> <span class="n">batch</span><span class="p">]</span> <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">node_records</span><span class="p">)</span>
+            <span class="n">actual</span> <span class="o">=</span> <span class="n">walk_num</span>
+        <span class="n">permutations</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">refinements</span> <span class="o">*</span> <span class="n">batch</span><span class="p">,</span> <span class="n">actual</span><span class="p">,</span> <span class="n">generator</span><span class="o">=</span><span class="n">generator</span><span class="p">)</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">permutations</span> <span class="o">=</span> <span class="n">permutations</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">refinements</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">actual</span><span class="p">)</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">permutations</span> <span class="o">=</span> <span class="n">permutations</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">edges</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">node_records</span><span class="p">,</span> <span class="n">edge_records</span><span class="p">):</span>
+            <span class="n">nodes</span> <span class="o">=</span> <span class="n">nodes</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">groups</span> <span class="o">*</span> <span class="n">walk_num</span><span class="p">,</span> <span class="n">refinements</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
+            <span class="n">edges</span> <span class="o">=</span> <span class="n">edges</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">actual</span><span class="p">,</span> <span class="n">refinements</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">permutations</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">actual</span> <span class="o">&lt;</span> <span class="n">walk_num</span><span class="p">:</span>
+                <span class="n">edges</span> <span class="o">=</span> <span class="n">edges</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">walk_num</span> <span class="o">//</span> <span class="n">actual</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">output</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">nodes</span><span class="p">,</span> <span class="n">edges</span><span class="p">[:</span><span class="n">walk_num</span><span class="p">]))</span><span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">())</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">output</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

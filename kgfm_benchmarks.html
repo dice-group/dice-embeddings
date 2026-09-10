@@ -1,0 +1,478 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KGFM evaluation protocol &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=c6726a90"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">KGFM evaluation protocol</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/kgfm_benchmarks.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="kgfm-evaluation-protocol">
+<h1>KGFM evaluation protocol<a class="headerlink" href="#kgfm-evaluation-protocol" title="Link to this heading"></a></h1>
+<p>The <span class="xref myst">README table</span> covers <strong>test-set entity prediction without fine-tuning</strong> using the
+authors’ released checkpoints. The inference graph contains only the target
+dataset’s training triples and their inverse edges. Validation and test triples
+are excluded from the inference graph. We rank all entities for both head and
+tail prediction, filtering other known positives from train, validation, and
+test while retaining the query’s correct answer.</p>
+<p>All three checkpoints below were pretrained on FB15k-237, WN18RR, and CoDEx
+Medium. Results on datasets outside that mixture measure zero-shot transfer;
+rows marked <strong>Yes</strong> measure frozen inference on a graph used in pretraining.
+The pretraining mixtures are documented in the official
+<a class="reference external" href="https://github.com/DeepGraphLearning/ULTRA/blob/427966ad8ed60420eef034063d44f3153addff90/config/transductive/pretrain_3g.yaml">ULTRA</a>,
+<a class="reference external" href="https://github.com/yuchengz99/TRIX/blob/7596e14eefefe89e61396205a0550172cadeddb0/config/pretrain_entity.yaml">TRIX</a>,
+and <a class="reference external" href="https://github.com/jw9730/flock/blob/f35103d25a78bdf4075de5c673a51de4979aa4d7/src_entity/config/pretrain_3g.yaml">Flock</a> configurations.</p>
+<p><strong>Measured in DICE:</strong> populated rows are completed evaluations of the full test
+set. <code class="docutils literal notranslate"><span class="pre">—</span></code> means the evaluation has not completed, not zero. Exact metrics,
+checkpoint/split hashes, source hashes, hardware, and configurations are saved
+locally in each run’s output directory under <code class="docutils literal notranslate"><span class="pre">Experiments/</span></code>. Generated JSON
+reports are excluded from version control. The existing link
+prediction benchmark results remain in their separate section.</p>
+<p><strong>Bold</strong> marks the best completed result for each dataset and metric, including
+ties at the displayed precision.</p>
+<section id="checkpoints-and-evaluation-settings">
+<h2>Checkpoints and evaluation settings<a class="headerlink" href="#checkpoints-and-evaluation-settings" title="Link to this heading"></a></h2>
+<p>For timings against the official implementations, see the
+<a class="reference internal" href="kgfm_inference.html"><span class="std std-doc">KGFM inference speed comparison</span></a>. Local result
+records retain the code and settings with which they were measured.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Model</p></th>
+<th class="head"><p>Official checkpoint</p></th>
+<th class="head"><p>DICE guide</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ULTRA-3g</p></td>
+<td><p><a class="reference external" href="https://github.com/DeepGraphLearning/ULTRA/blob/427966ad8ed60420eef034063d44f3153addff90/ckpts/ultra_3g.pth">ultra_3g.pth</a></p></td>
+<td><p><a class="reference internal" href="ultra.html"><span class="std std-doc">ULTRA</span></a></p></td>
+</tr>
+<tr class="row-odd"><td><p>TRIX</p></td>
+<td><p><a class="reference external" href="https://github.com/yuchengz99/TRIX/blob/7596e14eefefe89e61396205a0550172cadeddb0/entity_prediction.pth">entity_prediction.pth</a></p></td>
+<td><p><a class="reference internal" href="trix.html"><span class="std std-doc">TRIX</span></a></p></td>
+</tr>
+<tr class="row-even"><td><p>Flock</p></td>
+<td><p><a class="reference external" href="https://github.com/jw9730/flock/blob/f35103d25a78bdf4075de5c673a51de4979aa4d7/checkpoints/flock_entity.pth">flock_entity.pth</a></p></td>
+<td><p><a class="reference internal" href="flock.html"><span class="std std-doc">Flock</span></a></p></td>
+</tr>
+</tbody>
+</table>
+<p>The <a class="reference download internal" download="" href="_downloads/8e5af96dc73f944baae037f47f42800f/kgfm_zero_shot.py"><span class="xref download myst">benchmark runner</span></a> uses DICE’s existing dataset
+loader and filtered ranking function, with an explicit inference device and no
+training or optimizer. It verifies that checkpoint weights remain unchanged and
+saves progress after each evaluation batch. Repeating an identical invocation
+resumes it; a completed run returns its saved result. Use a new output directory
+for a fresh run or changed settings.</p>
+<p>The initial ULTRA/TRIX UMLS and Countries runs used an AMD Ryzen 7 7800X3D CPU;
+Flock and the larger graph runs use an NVIDIA GeForce RTX 4070 Ti SUPER GPU.
+Flock samples walks on CPU and executes its neural network on GPU. Runs use four
+PyTorch CPU threads, float32, and 128 test triples per evaluation batch (8 for
+the initial ULTRA/TRIX UMLS configuration). Query
+batch sizes are recorded per run to bound memory use. GPU runner invocations
+disable TF32. Some GPU runs overlap, so recorded wall times are operational
+measurements rather than a controlled comparison of model speed.</p>
+<p>Download the checkpoints using the links above, then run, for example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>benchmarks/kgfm_zero_shot.py<span class="w"> </span>--model<span class="w"> </span>Flock<span class="w"> </span>--dataset<span class="w"> </span>UMLS<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--device<span class="w"> </span>cuda:0<span class="w"> </span>--query-batch-size<span class="w"> </span><span class="m">1</span><span class="w"> </span>--batch-size<span class="w"> </span><span class="m">128</span><span class="w"> </span>--threads<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--walk-num<span class="w"> </span><span class="m">128</span><span class="w"> </span>--test-samples<span class="w"> </span><span class="m">1</span><span class="w"> </span>--seed<span class="w"> </span><span class="m">42</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>Experiments/kgfm-zero-shot/UMLS/Flock
+
+python<span class="w"> </span>benchmarks/kgfm_zero_shot.py<span class="w"> </span>--model<span class="w"> </span>ULTRA<span class="w"> </span>--dataset<span class="w"> </span>WN18RR<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--device<span class="w"> </span>cuda:0<span class="w"> </span>--query-batch-size<span class="w"> </span><span class="m">8</span><span class="w"> </span>--batch-size<span class="w"> </span><span class="m">128</span><span class="w"> </span>--threads<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>Experiments/kgfm-zero-shot/WN18RR/ULTRA
+
+python<span class="w"> </span>benchmarks/kgfm_zero_shot.py<span class="w"> </span>--model<span class="w"> </span>TRIX<span class="w"> </span>--dataset<span class="w"> </span>WN18RR<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--device<span class="w"> </span>cuda:0<span class="w"> </span>--query-batch-size<span class="w"> </span><span class="m">4</span><span class="w"> </span>--batch-size<span class="w"> </span><span class="m">128</span><span class="w"> </span>--threads<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>Experiments/kgfm-zero-shot/WN18RR/TRIX
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">--device</span> <span class="pre">cpu</span></code> for CPU evaluation. Keep the original <code class="docutils literal notranslate"><span class="pre">train.txt</span></code>, <code class="docutils literal notranslate"><span class="pre">valid.txt</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">test.txt</span></code> splits. Evaluation ranks all entities with the existing DICE
+evaluator. The original runs used <code class="docutils literal notranslate"><span class="pre">sort</span></code> tie handling; the current README reports
+the <a class="reference internal" href="#pessimistic-rerun-2026-09-10">pessimistic rerun</a>. The earlier CLI
+runs used <code class="docutils literal notranslate"><span class="pre">--num_epochs</span> <span class="pre">0</span> <span class="pre">--scoring_technique</span> <span class="pre">NegSample</span> <span class="pre">--eval_model</span> <span class="pre">test</span></code>;
+<code class="docutils literal notranslate"><span class="pre">NegSample</span></code> selects head-and-tail evaluation, which still ranks all entities.</p>
+<p>Flock’s initial setting uses a single sampling seed and one prediction per query,
+with 128 base walks of length 128 per refinement and six refinements. This is a
+single-run result, not a mean across seeds or a reproduction of the authors’
+dataset-specific inference ensembles. Record query ordering and batching with
+the sampling settings, since they affect the walks drawn. See the
+<a class="reference internal" href="flock.html#checkpoints-and-zero-shot-evaluation"><span class="std std-ref">Flock sampling notes</span></a>.</p>
+<p>The runner saves <code class="docutils literal notranslate"><span class="pre">configuration.json</span></code>, <code class="docutils literal notranslate"><span class="pre">command.txt</span></code>, <code class="docutils literal notranslate"><span class="pre">progress.json</span></code>,
+<code class="docutils literal notranslate"><span class="pre">eval_report.json</span></code>, and <code class="docutils literal notranslate"><span class="pre">result.json</span></code> alongside indexed splits and vocabularies.
+The two initial CLI UMLS runs retain their original configurations and reports;
+their saved model tensors were checked against the released checkpoint tensors.
+To add a result, retain the completed run in the ignored <code class="docutils literal notranslate"><span class="pre">Experiments/</span></code>
+directory and update the corresponding README row, including bold highlights
+for the best metrics. Do not commit generated benchmark JSON files.</p>
+</section>
+<section id="prediction-tie-strategies">
+<h2>Prediction tie strategies<a class="headerlink" href="#prediction-tie-strategies" title="Link to this heading"></a></h2>
+<p>Set <code class="docutils literal notranslate"><span class="pre">--eval_tie_policy</span></code> when evaluating a model. Ties mean <strong>exactly equal
+prediction scores</strong>, before metric rounding. Known positive alternatives are
+filtered first; the query’s correct answer remains a candidate.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Policy</p></th>
+<th class="head"><p>Target rank within a tied group</p></th>
+<th class="head"><p>Example: three candidates tied for first</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sort</span></code> (default)</p></td>
+<td><p>Existing DICE <code class="docutils literal notranslate"><span class="pre">torch.sort</span></code> position</p></td>
+<td><p>Implementation-dependent; not uniform random</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">optimistic</span></code></p></td>
+<td><p>Best possible rank</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">random</span></code></p></td>
+<td><p>Uniformly sampled integer rank</p></td>
+<td><p>1, 2, or 3 with equal probability</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pessimistic</span></code></p></td>
+<td><p>Worst possible rank</p></td>
+<td><p>3</p></td>
+</tr>
+</tbody>
+</table>
+<p>For example, add <code class="docutils literal notranslate"><span class="pre">--eval_tie_policy</span> <span class="pre">random</span> <span class="pre">--eval_tie_seed</span> <span class="pre">42</span></code> to a DICE
+command. In Python, set <code class="docutils literal notranslate"><span class="pre">args.eval_tie_policy</span> <span class="pre">=</span> <span class="pre">&quot;pessimistic&quot;</span></code> on a
+<code class="docutils literal notranslate"><span class="pre">dicee.config.Namespace</span></code>. The options apply to head/tail, reciprocal, relation,
+BPE, and ensemble evaluation. Loaded models also support
+<code class="docutils literal notranslate"><span class="pre">kge.eval_lp_performance(triples,</span> <span class="pre">tie_policy=&quot;random&quot;,</span> <span class="pre">tie_seed=42)</span></code>;
+without overrides they use the saved configuration. Standalone functions such
+as <code class="docutils literal notranslate"><span class="pre">dicee.evaluation.link_prediction.evaluate_lp</span></code> accept <code class="docutils literal notranslate"><span class="pre">tie_policy</span></code> and
+<code class="docutils literal notranslate"><span class="pre">tie_seed</span></code> keywords (defaults: <code class="docutils literal notranslate"><span class="pre">&quot;sort&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">0</span></code>).</p>
+<p>Random evaluation uses its own CPU generator and does not consume the model’s
+or training’s random stream. <code class="docutils literal notranslate"><span class="pre">eval_tie_seed</span></code> defaults to <code class="docutils literal notranslate"><span class="pre">random_seed</span></code>; each
+split evaluation restarts that stream. Reproducing random ranks requires the
+same scores, filters, seed, and query order. MRR and Hits are calculated from
+the sampled integer ranks, so random ties are not average-rank evaluation.</p>
+<p>The KGFM runner accepts <code class="docutils literal notranslate"><span class="pre">--tie-policy</span></code> and <code class="docutils literal notranslate"><span class="pre">--tie-seed</span></code> and saves the policy,
+seed, and random generator state for resumable runs. Use a new output directory
+when changing a run’s settings. The README table uses <code class="docutils literal notranslate"><span class="pre">pessimistic</span></code>; the
+comparison below preserves the original <code class="docutils literal notranslate"><span class="pre">sort</span></code> MRR values.</p>
+</section>
+<section id="pessimistic-rerun-2026-09-10">
+<h2>Pessimistic rerun (2026-09-10)<a class="headerlink" href="#pessimistic-rerun-2026-09-10" title="Link to this heading"></a></h2>
+<p>The README table reports a full rerun of all 21 model/dataset pairs with
+<code class="docutils literal notranslate"><span class="pre">--tie-policy</span> <span class="pre">pessimistic</span></code>. A target receives the worst position among exactly
+equal scores after filtering other known positives. The original <code class="docutils literal notranslate"><span class="pre">sort</span></code> MRR
+values are retained below for comparison.</p>
+<p>The rerun uses the same released checkpoint files and dataset splits, verified
+by SHA-256 against the original runs. All weights remain unchanged. Runs use
+PyTorch 2.5.1, float32 with TF32 disabled, four CPU threads, and the optimized
+inference implementation. CUDA runs use Triton 3.1.0 through the <code class="docutils literal notranslate"><span class="pre">auto</span></code> backend,
+including fused message passing and ranking where applicable. Inference caches,
+query reuse for ULTRA/TRIX, and Flock’s compact state, scripted sampler, packed
+transfers, and prefetching are enabled; optional dense-update compilation is off.</p>
+<p>The device and query microbatch size match each original run:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Dataset</p></th>
+<th class="head"><p>ULTRA-3g device / query batch</p></th>
+<th class="head"><p>TRIX device / query batch</p></th>
+<th class="head"><p>Flock device / query batch</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Countries-S1 / S2 / S3</p></td>
+<td><p>CPU / 8</p></td>
+<td><p>CPU / 8</p></td>
+<td><p>CUDA / 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>UMLS</p></td>
+<td><p>CPU / 8</p></td>
+<td><p>CPU / 8</p></td>
+<td><p>CUDA / 1</p></td>
+</tr>
+<tr class="row-even"><td><p>WN18RR</p></td>
+<td><p>CUDA / 8</p></td>
+<td><p>CUDA / 4</p></td>
+<td><p>CUDA / 1</p></td>
+</tr>
+<tr class="row-odd"><td><p>YAGO3-10</p></td>
+<td><p>CUDA / 2</p></td>
+<td><p>CUDA / 2</p></td>
+<td><p>CUDA / 1</p></td>
+</tr>
+<tr class="row-even"><td><p>FB15k-237</p></td>
+<td><p>CUDA / 4</p></td>
+<td><p>CUDA / 2</p></td>
+<td><p>CUDA / 1</p></td>
+</tr>
+</tbody>
+</table>
+<p>Evaluation batches contain 128 test triples and use seed 42, except the initial
+ULTRA/TRIX UMLS configuration, which uses batches of 8 and seed 1. Flock retains
+128 base walks, length 128, six refinements, and one prediction per query.
+Keeping Flock’s batch boundaries preserves its sampled walks.</p>
+<p>For example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>benchmarks/kgfm_zero_shot.py<span class="w"> </span>--model<span class="w"> </span>Flock<span class="w"> </span>--dataset<span class="w"> </span>WN18RR<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--device<span class="w"> </span>cuda:0<span class="w"> </span>--query-batch-size<span class="w"> </span><span class="m">1</span><span class="w"> </span>--batch-size<span class="w"> </span><span class="m">128</span><span class="w"> </span>--threads<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--walk-num<span class="w"> </span><span class="m">128</span><span class="w"> </span>--test-samples<span class="w"> </span><span class="m">1</span><span class="w"> </span>--seed<span class="w"> </span><span class="m">42</span><span class="w"> </span>--tie-policy<span class="w"> </span>pessimistic<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>Experiments/kgfm-pessimistic-20260910/WN18RR/Flock
+</pre></div>
+</div>
+<p>The following differences compare the rerun against the original README run.
+The original run predates the inference optimizations, so these differences
+are not a strict isolation of tie handling: floating-point reduction order can
+also affect close scores. Each local record retains its exact source hashes
+and settings. Values are rounded to six decimals in this comparison and four
+in the README. Differences are calculated before rounding.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Dataset</p></th>
+<th class="head"><p>Model</p></th>
+<th class="head text-right"><p>Original sort MRR</p></th>
+<th class="head text-right"><p>Pessimistic MRR</p></th>
+<th class="head text-right"><p>Difference</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>YAGO3-10</p></td>
+<td><p>ULTRA-3g</p></td>
+<td class="text-right"><p>0.479963</p></td>
+<td class="text-right"><p>0.479930</p></td>
+<td class="text-right"><p>-0.000033</p></td>
+</tr>
+<tr class="row-odd"><td><p>YAGO3-10</p></td>
+<td><p>TRIX</p></td>
+<td class="text-right"><p>0.409400</p></td>
+<td class="text-right"><p>0.409393</p></td>
+<td class="text-right"><p>-0.000007</p></td>
+</tr>
+<tr class="row-even"><td><p>YAGO3-10</p></td>
+<td><p>Flock</p></td>
+<td class="text-right"><p>0.399830</p></td>
+<td class="text-right"><p>0.399828</p></td>
+<td class="text-right"><p>-0.000001</p></td>
+</tr>
+<tr class="row-odd"><td><p>FB15k-237</p></td>
+<td><p>ULTRA-3g</p></td>
+<td class="text-right"><p>0.369266</p></td>
+<td class="text-right"><p>0.369259</p></td>
+<td class="text-right"><p>-0.000007</p></td>
+</tr>
+<tr class="row-even"><td><p>FB15k-237</p></td>
+<td><p>TRIX</p></td>
+<td class="text-right"><p>0.361815</p></td>
+<td class="text-right"><p>0.361814</p></td>
+<td class="text-right"><p>-0.000001</p></td>
+</tr>
+<tr class="row-odd"><td><p>FB15k-237</p></td>
+<td><p>Flock</p></td>
+<td class="text-right"><p>0.311554</p></td>
+<td class="text-right"><p>0.311553</p></td>
+<td class="text-right"><p>-0.000001</p></td>
+</tr>
+<tr class="row-even"><td><p>WN18RR</p></td>
+<td><p>ULTRA-3g</p></td>
+<td class="text-right"><p>0.370754</p></td>
+<td class="text-right"><p>0.369149</p></td>
+<td class="text-right"><p>-0.001604</p></td>
+</tr>
+<tr class="row-odd"><td><p>WN18RR</p></td>
+<td><p>TRIX</p></td>
+<td class="text-right"><p>0.508263</p></td>
+<td class="text-right"><p>0.506535</p></td>
+<td class="text-right"><p>-0.001728</p></td>
+</tr>
+<tr class="row-even"><td><p>WN18RR</p></td>
+<td><p>Flock</p></td>
+<td class="text-right"><p>0.530301</p></td>
+<td class="text-right"><p>0.530276</p></td>
+<td class="text-right"><p>-0.000025</p></td>
+</tr>
+<tr class="row-odd"><td><p>UMLS</p></td>
+<td><p>ULTRA-3g</p></td>
+<td class="text-right"><p>0.696007</p></td>
+<td class="text-right"><p>0.696007</p></td>
+<td class="text-right"><p>0.000000</p></td>
+</tr>
+<tr class="row-even"><td><p>UMLS</p></td>
+<td><p>TRIX</p></td>
+<td class="text-right"><p>0.725622</p></td>
+<td class="text-right"><p>0.725622</p></td>
+<td class="text-right"><p>0.000000</p></td>
+</tr>
+<tr class="row-odd"><td><p>UMLS</p></td>
+<td><p>Flock</p></td>
+<td class="text-right"><p>0.776795</p></td>
+<td class="text-right"><p>0.776795</p></td>
+<td class="text-right"><p>0.000000</p></td>
+</tr>
+<tr class="row-even"><td><p>Countries-S1</p></td>
+<td><p>ULTRA-3g</p></td>
+<td class="text-right"><p>0.937500</p></td>
+<td class="text-right"><p>0.937500</p></td>
+<td class="text-right"><p>0.000000</p></td>
+</tr>
+<tr class="row-odd"><td><p>Countries-S1</p></td>
+<td><p>TRIX</p></td>
+<td class="text-right"><p>0.927083</p></td>
+<td class="text-right"><p>0.927083</p></td>
+<td class="text-right"><p>0.000000</p></td>
+</tr>
+<tr class="row-even"><td><p>Countries-S1</p></td>
+<td><p>Flock</p></td>
+<td class="text-right"><p>0.927083</p></td>
+<td class="text-right"><p>0.927083</p></td>
+<td class="text-right"><p>0.000000</p></td>
+</tr>
+<tr class="row-odd"><td><p>Countries-S2</p></td>
+<td><p>ULTRA-3g</p></td>
+<td class="text-right"><p>0.871528</p></td>
+<td class="text-right"><p>0.871528</p></td>
+<td class="text-right"><p>0.000000</p></td>
+</tr>
+<tr class="row-even"><td><p>Countries-S2</p></td>
+<td><p>TRIX</p></td>
+<td class="text-right"><p>0.885417</p></td>
+<td class="text-right"><p>0.885417</p></td>
+<td class="text-right"><p>0.000000</p></td>
+</tr>
+<tr class="row-odd"><td><p>Countries-S2</p></td>
+<td><p>Flock</p></td>
+<td class="text-right"><p>0.885417</p></td>
+<td class="text-right"><p>0.885417</p></td>
+<td class="text-right"><p>0.000000</p></td>
+</tr>
+<tr class="row-even"><td><p>Countries-S3</p></td>
+<td><p>ULTRA-3g</p></td>
+<td class="text-right"><p>0.235401</p></td>
+<td class="text-right"><p>0.235401</p></td>
+<td class="text-right"><p>0.000000</p></td>
+</tr>
+<tr class="row-odd"><td><p>Countries-S3</p></td>
+<td><p>TRIX</p></td>
+<td class="text-right"><p>0.362490</p></td>
+<td class="text-right"><p>0.362490</p></td>
+<td class="text-right"><p>0.000000</p></td>
+</tr>
+<tr class="row-even"><td><p>Countries-S3</p></td>
+<td><p>Flock</p></td>
+<td class="text-right"><p>0.253328</p></td>
+<td class="text-right"><p>0.253328</p></td>
+<td class="text-right"><p>0.000000</p></td>
+</tr>
+</tbody>
+</table>
+<p>All result records, progress files, and indexed datasets remain in the ignored
+<code class="docutils literal notranslate"><span class="pre">Experiments/kgfm-pessimistic-20260910/</span></code> directory. Generated benchmark JSON
+files are not committed.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

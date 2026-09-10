@@ -1,0 +1,87 @@
+dicee.models.flock_walks
+========================
+
+.. py:module:: dicee.models.flock_walks
+
+.. autoapi-nested-parse::
+
+   Flock's non-backtracking walk and recording protocol in PyTorch.
+
+   Semantics follow jw9730/flock at f35103d25a78bdf4075de5c673a51de4979aa4d7.
+   The RNG is PyTorch's CPU generator, not the reference C++ per-walk MT19937.
+   Walk records can be supplied explicitly to compare neural computations exactly.
+
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   dicee.models.flock_walks.WalkGraph
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   dicee.models.flock_walks.compiled_walk_nodes
+   dicee.models.flock_walks.anonymize
+
+
+Module Contents
+---------------
+
+.. py:function:: compiled_walk_nodes()
+
+.. py:function:: anonymize(values, missing_id=None, missing_name=None)
+
+   Assign 1-based names in order of discovery, independently in each row.
+
+
+.. py:class:: WalkGraph
+
+   CPU CSR context, kept outside a model's transferable parameters.
+
+
+   .. py:attribute:: edge_index
+      :type:  torch.Tensor
+
+
+   .. py:attribute:: edge_type
+      :type:  torch.Tensor
+
+
+   .. py:attribute:: num_nodes
+      :type:  int
+
+
+   .. py:attribute:: num_types
+      :type:  int
+
+
+   .. py:attribute:: compile_sampler
+      :type:  bool
+      :value: True
+
+
+
+   .. py:method:: __post_init__()
+
+
+   .. py:method:: walk(prefix, length, remove_loops, generator=None, prefix_types=None)
+
+      Sample uniform neighbors, then a uniform typed edge in either direction.
+
+
+
+   .. py:method:: parse_types(walks, generator=None)
+
+
+   .. py:method:: sample(heads, tails, walk_num, length, refinements, generator=None)
+
+      Return seven official-format records of shape [T,B,3N or 4N,L].
+
+
+

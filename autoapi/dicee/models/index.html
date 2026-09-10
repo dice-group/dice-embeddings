@@ -86,15 +86,21 @@
 <li class="toctree-l5"><a class="reference internal" href="complex/index.html">dicee.models.complex</a></li>
 <li class="toctree-l5"><a class="reference internal" href="dualE/index.html">dicee.models.dualE</a></li>
 <li class="toctree-l5"><a class="reference internal" href="ensemble/index.html">dicee.models.ensemble</a></li>
+<li class="toctree-l5"><a class="reference internal" href="flock/index.html">dicee.models.flock</a></li>
+<li class="toctree-l5"><a class="reference internal" href="flock_walks/index.html">dicee.models.flock_walks</a></li>
 <li class="toctree-l5"><a class="reference internal" href="fsdp_models/index.html">dicee.models.fsdp_models</a></li>
 <li class="toctree-l5"><a class="reference internal" href="function_space/index.html">dicee.models.function_space</a></li>
+<li class="toctree-l5"><a class="reference internal" href="graph_model/index.html">dicee.models.graph_model</a></li>
 <li class="toctree-l5"><a class="reference internal" href="literal/index.html">dicee.models.literal</a></li>
 <li class="toctree-l5"><a class="reference internal" href="octonion/index.html">dicee.models.octonion</a></li>
 <li class="toctree-l5"><a class="reference internal" href="pykeen_models/index.html">dicee.models.pykeen_models</a></li>
 <li class="toctree-l5"><a class="reference internal" href="quaternion/index.html">dicee.models.quaternion</a></li>
 <li class="toctree-l5"><a class="reference internal" href="real/index.html">dicee.models.real</a></li>
+<li class="toctree-l5"><a class="reference internal" href="sampled_loss/index.html">dicee.models.sampled_loss</a></li>
 <li class="toctree-l5"><a class="reference internal" href="static_funcs/index.html">dicee.models.static_funcs</a></li>
 <li class="toctree-l5"><a class="reference internal" href="transformers/index.html">dicee.models.transformers</a></li>
+<li class="toctree-l5"><a class="reference internal" href="trix/index.html">dicee.models.trix</a></li>
+<li class="toctree-l5"><a class="reference internal" href="ultra/index.html">dicee.models.ultra</a></li>
 </ul>
 </li>
 <li class="toctree-l4"><a class="reference internal" href="#attributes">Attributes</a></li>
@@ -109,6 +115,8 @@
 </li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.models.logger"><code class="docutils literal notranslate"><span class="pre">logger</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.models.BaseKGELightning"><code class="docutils literal notranslate"><span class="pre">BaseKGELightning</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.BaseKGELightning.args"><code class="docutils literal notranslate"><span class="pre">BaseKGELightning.args</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.BaseKGELightning.loss"><code class="docutils literal notranslate"><span class="pre">BaseKGELightning.loss</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.BaseKGELightning.training_step_outputs"><code class="docutils literal notranslate"><span class="pre">BaseKGELightning.training_step_outputs</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.BaseKGELightning.mem_of_model"><code class="docutils literal notranslate"><span class="pre">BaseKGELightning.mem_of_model()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.BaseKGELightning.training_step"><code class="docutils literal notranslate"><span class="pre">BaseKGELightning.training_step()</span></code></a></li>
@@ -839,6 +847,47 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.DualE.T"><code class="docutils literal notranslate"><span class="pre">DualE.T()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.models.ULTRA"><code class="docutils literal notranslate"><span class="pre">ULTRA</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.ULTRA.name"><code class="docutils literal notranslate"><span class="pre">ULTRA.name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.ULTRA.config_prefix"><code class="docutils literal notranslate"><span class="pre">ULTRA.config_prefix</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.ULTRA.graph_filename"><code class="docutils literal notranslate"><span class="pre">ULTRA.graph_filename</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.ULTRA.checkpoint_hint"><code class="docutils literal notranslate"><span class="pre">ULTRA.checkpoint_hint</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.ULTRA.deterministic_inference"><code class="docutils literal notranslate"><span class="pre">ULTRA.deterministic_inference</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.ULTRA.dim"><code class="docutils literal notranslate"><span class="pre">ULTRA.dim</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.ULTRA.num_layers"><code class="docutils literal notranslate"><span class="pre">ULTRA.num_layers</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.ULTRA.relation_model"><code class="docutils literal notranslate"><span class="pre">ULTRA.relation_model</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.ULTRA.entity_model"><code class="docutils literal notranslate"><span class="pre">ULTRA.entity_model</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.ULTRA.relation_cache_mb"><code class="docutils literal notranslate"><span class="pre">ULTRA.relation_cache_mb</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.ULTRA.projection_cache_mb"><code class="docutils literal notranslate"><span class="pre">ULTRA.projection_cache_mb</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.ULTRA.clear_inference_cache"><code class="docutils literal notranslate"><span class="pre">ULTRA.clear_inference_cache()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.models.TRIX"><code class="docutils literal notranslate"><span class="pre">TRIX</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.TRIX.name"><code class="docutils literal notranslate"><span class="pre">TRIX.name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.TRIX.deterministic_inference"><code class="docutils literal notranslate"><span class="pre">TRIX.deterministic_inference</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.TRIX.relation_model"><code class="docutils literal notranslate"><span class="pre">TRIX.relation_model</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.TRIX.entity_model_1"><code class="docutils literal notranslate"><span class="pre">TRIX.entity_model_1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.TRIX.entity_model_2"><code class="docutils literal notranslate"><span class="pre">TRIX.entity_model_2</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.TRIX.relation_cache_mb"><code class="docutils literal notranslate"><span class="pre">TRIX.relation_cache_mb</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.TRIX.clear_inference_cache"><code class="docutils literal notranslate"><span class="pre">TRIX.clear_inference_cache()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.models.TRIXRelation"><code class="docutils literal notranslate"><span class="pre">TRIXRelation</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.TRIXRelation.name"><code class="docutils literal notranslate"><span class="pre">TRIXRelation.name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.TRIXRelation.relation_model"><code class="docutils literal notranslate"><span class="pre">TRIXRelation.relation_model</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.TRIXRelation.entity_model"><code class="docutils literal notranslate"><span class="pre">TRIXRelation.entity_model</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.TRIXRelation.mlp"><code class="docutils literal notranslate"><span class="pre">TRIXRelation.mlp</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.models.Flock"><code class="docutils literal notranslate"><span class="pre">Flock</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.Flock.name"><code class="docutils literal notranslate"><span class="pre">Flock.name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.models.FlockRelation"><code class="docutils literal notranslate"><span class="pre">FlockRelation</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.FlockRelation.name"><code class="docutils literal notranslate"><span class="pre">FlockRelation.name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.FlockRelation.relation_prediction"><code class="docutils literal notranslate"><span class="pre">FlockRelation.relation_prediction</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -898,15 +947,21 @@
 <li class="toctree-l1"><a class="reference internal" href="complex/index.html">dicee.models.complex</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dualE/index.html">dicee.models.dualE</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ensemble/index.html">dicee.models.ensemble</a></li>
+<li class="toctree-l1"><a class="reference internal" href="flock/index.html">dicee.models.flock</a></li>
+<li class="toctree-l1"><a class="reference internal" href="flock_walks/index.html">dicee.models.flock_walks</a></li>
 <li class="toctree-l1"><a class="reference internal" href="fsdp_models/index.html">dicee.models.fsdp_models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="function_space/index.html">dicee.models.function_space</a></li>
+<li class="toctree-l1"><a class="reference internal" href="graph_model/index.html">dicee.models.graph_model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="literal/index.html">dicee.models.literal</a></li>
 <li class="toctree-l1"><a class="reference internal" href="octonion/index.html">dicee.models.octonion</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pykeen_models/index.html">dicee.models.pykeen_models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quaternion/index.html">dicee.models.quaternion</a></li>
 <li class="toctree-l1"><a class="reference internal" href="real/index.html">dicee.models.real</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sampled_loss/index.html">dicee.models.sampled_loss</a></li>
 <li class="toctree-l1"><a class="reference internal" href="static_funcs/index.html">dicee.models.static_funcs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="transformers/index.html">dicee.models.transformers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trix/index.html">dicee.models.trix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ultra/index.html">dicee.models.ultra</a></li>
 </ul>
 </div>
 </section>
@@ -1055,6 +1110,21 @@
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.DualE" title="dicee.models.DualE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DualE</span></code></a></p></td>
 <td><p>Dual Quaternion Knowledge Graph Embeddings (<a class="reference external" href="https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657">https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657</a>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.ULTRA" title="dicee.models.ULTRA"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ULTRA</span></code></a></p></td>
+<td><p>Pure PyTorch ULTRA with the official state dictionary and DICE triple order.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.TRIX" title="dicee.models.TRIX"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TRIX</span></code></a></p></td>
+<td><p>Entity predictor compatible with official <code class="docutils literal notranslate"><span class="pre">entity_prediction.pth</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.TRIXRelation" title="dicee.models.TRIXRelation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TRIXRelation</span></code></a></p></td>
+<td><p>Relation predictor compatible with official <code class="docutils literal notranslate"><span class="pre">relation_prediction.pth</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.Flock" title="dicee.models.Flock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flock</span></code></a></p></td>
+<td><p>Entity-prediction Flock with official <code class="docutils literal notranslate"><span class="pre">flock_entity.pth</span></code> parameters.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.FlockRelation" title="dicee.models.FlockRelation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlockRelation</span></code></a></p></td>
+<td><p>Relation-prediction Flock with official <code class="docutils literal notranslate"><span class="pre">flock_relation.pth</span></code> parameters.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1298,6 +1368,16 @@ Default: None</p>
 for reporting model size.  All concrete KGE models should extend
 <a class="reference internal" href="#id250" title="dicee.models.BaseKGE"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseKGE</span></code></a> rather than this class directly.</p>
 <dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.BaseKGELightning.args">
+<span class="sig-name descname"><span class="pre">args</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#dicee.models.BaseKGELightning.args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.BaseKGELightning.loss">
+<span class="sig-name descname"><span class="pre">loss</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.Module</span></span><a class="headerlink" href="#dicee.models.BaseKGELightning.loss" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.BaseKGELightning.training_step_outputs">
 <span class="sig-name descname"><span class="pre">training_step_outputs</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></span><a class="headerlink" href="#dicee.models.BaseKGELightning.training_step_outputs" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -1333,7 +1413,7 @@ sample-based labelling.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.BaseKGELightning.loss_function">
-<span class="sig-name descname"><span class="pre">loss_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yhat_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGELightning.loss_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.BaseKGELightning.loss_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">loss_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yhat_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGELightning.loss_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.BaseKGELightning.loss_function" title="Link to this definition"></a></dt>
 <dd><p>Compute the loss between model predictions and targets.</p>
 <p>Delegates to <code class="docutils literal notranslate"><span class="pre">self.loss</span></code> which is configured in
 <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseKGE.__init__</span></code> based on the scoring technique
@@ -1561,12 +1641,12 @@ Required keys: <code class="docutils literal notranslate"><span class="pre">embe
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.BaseKGE.num_entities">
-<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.BaseKGE.num_entities" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.BaseKGE.num_entities" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.models.BaseKGE.num_relations">
-<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.BaseKGE.num_relations" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#dicee.models.BaseKGE.num_relations" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -1783,7 +1863,7 @@ that minimal <code class="docutils literal notranslate"><span class="pre">args</
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.BaseKGE.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.BaseKGE.forward" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.BaseKGE.forward" title="Link to this definition"></a></dt>
 <dd><p>Route the forward pass to the appropriate scoring method.</p>
 <p>Inspects the shape and type of <em>x</em> to decide which low-level scorer
 to call:</p>
@@ -2081,12 +2161,12 @@ Required keys: <code class="docutils literal notranslate"><span class="pre">embe
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id7">
-<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id8">
-<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -2303,7 +2383,7 @@ that minimal <code class="docutils literal notranslate"><span class="pre">args</
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id40">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id40" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id40" title="Link to this definition"></a></dt>
 <dd><p>Route the forward pass to the appropriate scoring method.</p>
 <p>Inspects the shape and type of <em>x</em> to decide which low-level scorer
 to call:</p>
@@ -3192,12 +3272,12 @@ Required keys: <code class="docutils literal notranslate"><span class="pre">embe
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id60">
-<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id60" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id60" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id61">
-<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id61" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id61" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -3414,7 +3494,7 @@ that minimal <code class="docutils literal notranslate"><span class="pre">args</
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id93">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id93" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id93" title="Link to this definition"></a></dt>
 <dd><p>Route the forward pass to the appropriate scoring method.</p>
 <p>Inspects the shape and type of <em>x</em> to decide which low-level scorer
 to call:</p>
@@ -4014,12 +4094,12 @@ Required keys: <code class="docutils literal notranslate"><span class="pre">embe
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id105">
-<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id105" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id105" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id106">
-<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id106" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id106" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -4236,7 +4316,7 @@ that minimal <code class="docutils literal notranslate"><span class="pre">args</
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id138">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id138" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id138" title="Link to this definition"></a></dt>
 <dd><p>Route the forward pass to the appropriate scoring method.</p>
 <p>Inspects the shape and type of <em>x</em> to decide which low-level scorer
 to call:</p>
@@ -4764,12 +4844,12 @@ Required keys: <code class="docutils literal notranslate"><span class="pre">embe
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id154">
-<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id154" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id154" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id155">
-<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id155" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id155" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -4986,7 +5066,7 @@ that minimal <code class="docutils literal notranslate"><span class="pre">args</
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id187">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id187" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id187" title="Link to this definition"></a></dt>
 <dd><p>Route the forward pass to the appropriate scoring method.</p>
 <p>Inspects the shape and type of <em>x</em> to decide which low-level scorer
 to call:</p>
@@ -6100,12 +6180,12 @@ Required keys: <code class="docutils literal notranslate"><span class="pre">embe
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id207">
-<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id207" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id207" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id208">
-<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id208" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id208" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -6322,7 +6402,7 @@ that minimal <code class="docutils literal notranslate"><span class="pre">args</
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id240">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id240" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id240" title="Link to this definition"></a></dt>
 <dd><p>Route the forward pass to the appropriate scoring method.</p>
 <p>Inspects the shape and type of <em>x</em> to decide which low-level scorer
 to call:</p>
@@ -6652,12 +6732,12 @@ Required keys: <code class="docutils literal notranslate"><span class="pre">embe
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id253">
-<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id253" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_entities</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id253" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id254">
-<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id254" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">num_relations</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#id254" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -6874,7 +6954,7 @@ that minimal <code class="docutils literal notranslate"><span class="pre">args</
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id286">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id286" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id286" title="Link to this definition"></a></dt>
 <dd><p>Route the forward pass to the appropriate scoring method.</p>
 <p>Inspects the shape and type of <em>x</em> to decide which low-level scorer
 to call:</p>
@@ -7558,6 +7638,179 @@ it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  a
 <p>Input: Tensor with shape (nxm)
 Output: Tensor with shape (mxn)</p>
 </dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.ULTRA">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">ULTRA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/ultra.html#ULTRA"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ULTRA" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="graph_model/index.html#dicee.models.graph_model.GraphKGE" title="dicee.models.graph_model.GraphKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.graph_model.GraphKGE</span></code></a></p>
+<p>Pure PyTorch ULTRA with the official state dictionary and DICE triple order.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.ULTRA.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ULTRA'</span></span><a class="headerlink" href="#dicee.models.ULTRA.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.ULTRA.config_prefix">
+<span class="sig-name descname"><span class="pre">config_prefix</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ultra'</span></span><a class="headerlink" href="#dicee.models.ULTRA.config_prefix" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.ULTRA.graph_filename">
+<span class="sig-name descname"><span class="pre">graph_filename</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ultra_graph.pt'</span></span><a class="headerlink" href="#dicee.models.ULTRA.graph_filename" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.ULTRA.checkpoint_hint">
+<span class="sig-name descname"><span class="pre">checkpoint_hint</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'official</span> <span class="pre">ULTRA</span> <span class="pre">requires</span> <span class="pre">ultra_dim=64,</span> <span class="pre">ultra_num_layers=6;</span> <span class="pre">all</span> <span class="pre">keys</span> <span class="pre">and</span> <span class="pre">shapes</span> <span class="pre">must</span> <span class="pre">match'</span></span><a class="headerlink" href="#dicee.models.ULTRA.checkpoint_hint" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.ULTRA.deterministic_inference">
+<span class="sig-name descname"><span class="pre">deterministic_inference</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#dicee.models.ULTRA.deterministic_inference" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.ULTRA.dim">
+<span class="sig-name descname"><span class="pre">dim</span></span><a class="headerlink" href="#dicee.models.ULTRA.dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.ULTRA.num_layers">
+<span class="sig-name descname"><span class="pre">num_layers</span></span><a class="headerlink" href="#dicee.models.ULTRA.num_layers" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.ULTRA.relation_model">
+<span class="sig-name descname"><span class="pre">relation_model</span></span><a class="headerlink" href="#dicee.models.ULTRA.relation_model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.ULTRA.entity_model">
+<span class="sig-name descname"><span class="pre">entity_model</span></span><a class="headerlink" href="#dicee.models.ULTRA.entity_model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.ULTRA.relation_cache_mb">
+<span class="sig-name descname"><span class="pre">relation_cache_mb</span></span><a class="headerlink" href="#dicee.models.ULTRA.relation_cache_mb" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.ULTRA.projection_cache_mb">
+<span class="sig-name descname"><span class="pre">projection_cache_mb</span></span><a class="headerlink" href="#dicee.models.ULTRA.projection_cache_mb" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.ULTRA.clear_inference_cache">
+<span class="sig-name descname"><span class="pre">clear_inference_cache</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/ultra.html#ULTRA.clear_inference_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.ULTRA.clear_inference_cache" title="Link to this definition"></a></dt>
+<dd><p>Drop derived representations when graph, weights or device change.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.TRIX">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">TRIX</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/trix.html#TRIX"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.TRIX" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">TRIXBase</span></code></p>
+<p>Entity predictor compatible with official <code class="docutils literal notranslate"><span class="pre">entity_prediction.pth</span></code>.</p>
+<p>DICE order is (head, relation, tail). Head corruption retains the original
+relation seed, then uses the inverse relation for both entity reasoners.
+Explicit reciprocal DICE queries use that same convention.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.TRIX.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'TRIX'</span></span><a class="headerlink" href="#dicee.models.TRIX.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.TRIX.deterministic_inference">
+<span class="sig-name descname"><span class="pre">deterministic_inference</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#dicee.models.TRIX.deterministic_inference" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.TRIX.relation_model">
+<span class="sig-name descname"><span class="pre">relation_model</span></span><a class="headerlink" href="#dicee.models.TRIX.relation_model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.TRIX.entity_model_1">
+<span class="sig-name descname"><span class="pre">entity_model_1</span></span><a class="headerlink" href="#dicee.models.TRIX.entity_model_1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.TRIX.entity_model_2">
+<span class="sig-name descname"><span class="pre">entity_model_2</span></span><a class="headerlink" href="#dicee.models.TRIX.entity_model_2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.TRIX.relation_cache_mb">
+<span class="sig-name descname"><span class="pre">relation_cache_mb</span></span><a class="headerlink" href="#dicee.models.TRIX.relation_cache_mb" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.TRIX.clear_inference_cache">
+<span class="sig-name descname"><span class="pre">clear_inference_cache</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/trix.html#TRIX.clear_inference_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.TRIX.clear_inference_cache" title="Link to this definition"></a></dt>
+<dd><p>Drop derived representations when graph, weights or device change.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.TRIXRelation">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">TRIXRelation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/trix.html#TRIXRelation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.TRIXRelation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">TRIXBase</span></code>, <a class="reference internal" href="graph_model/index.html#dicee.models.graph_model.RelationGraphKGE" title="dicee.models.graph_model.RelationGraphKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.graph_model.RelationGraphKGE</span></code></a></p>
+<p>Relation predictor compatible with official <code class="docutils literal notranslate"><span class="pre">relation_prediction.pth</span></code>.</p>
+<p>Pairs are (head, tail); triples and grouped relation corruptions use DICE’s
+(head, relation, tail) order. One reasoning pass scores every relation for a
+given pair, including external inverse IDs when present in the vocabulary.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.TRIXRelation.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'TRIXRelation'</span></span><a class="headerlink" href="#dicee.models.TRIXRelation.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.TRIXRelation.relation_model">
+<span class="sig-name descname"><span class="pre">relation_model</span></span><a class="headerlink" href="#dicee.models.TRIXRelation.relation_model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.TRIXRelation.entity_model">
+<span class="sig-name descname"><span class="pre">entity_model</span></span><a class="headerlink" href="#dicee.models.TRIXRelation.entity_model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.TRIXRelation.mlp">
+<span class="sig-name descname"><span class="pre">mlp</span></span><a class="headerlink" href="#dicee.models.TRIXRelation.mlp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.Flock">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">Flock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/flock.html#Flock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.Flock" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">FlockBase</span></code></p>
+<p>Entity-prediction Flock with official <code class="docutils literal notranslate"><span class="pre">flock_entity.pth</span></code> parameters.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.Flock.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Flock'</span></span><a class="headerlink" href="#dicee.models.Flock.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.FlockRelation">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">FlockRelation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/flock.html#FlockRelation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.FlockRelation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">FlockBase</span></code>, <a class="reference internal" href="graph_model/index.html#dicee.models.graph_model.RelationGraphKGE" title="dicee.models.graph_model.RelationGraphKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.graph_model.RelationGraphKGE</span></code></a></p>
+<p>Relation-prediction Flock with official <code class="docutils literal notranslate"><span class="pre">flock_relation.pth</span></code> parameters.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.FlockRelation.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'FlockRelation'</span></span><a class="headerlink" href="#dicee.models.FlockRelation.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.FlockRelation.relation_prediction">
+<span class="sig-name descname"><span class="pre">relation_prediction</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#dicee.models.FlockRelation.relation_prediction" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 

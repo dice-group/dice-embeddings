@@ -23,7 +23,7 @@ Functions
 Module Contents
 ---------------
 
-.. py:function:: evaluate_ensemble_link_prediction_performance(models: List, triples, er_vocab: Dict[Tuple, List], weights: Optional[List[float]] = None, batch_size: int = 512, weighted_averaging: bool = True, normalize_scores: bool = True) -> Dict[str, float]
+.. py:function:: evaluate_ensemble_link_prediction_performance(models: List, triples, er_vocab: Dict[Tuple, List], weights: Optional[List[float]] = None, batch_size: int = 512, weighted_averaging: bool = True, normalize_scores: bool = True, *, tie_policy: str = 'sort', tie_seed: int = 0) -> Dict[str, float]
 
    Evaluate link prediction performance of an ensemble of KGE models.
 
@@ -42,6 +42,9 @@ Module Contents
                               If False, use simple mean.
    :param normalize_scores: If True, normalize scores to [0, 1] range per
                             sample before averaging.
+   :param tie_policy: Exact prediction ties: sort (legacy), optimistic, random,
+                      or pessimistic. Applied after combining model scores.
+   :param tie_seed: Independent random tie seed; reset on each evaluation call.
 
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 

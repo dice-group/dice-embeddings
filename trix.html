@@ -1,0 +1,314 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TRIX in DICE &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=c6726a90"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">TRIX in DICE</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/trix.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="trix-in-dice">
+<h1>TRIX in DICE<a class="headerlink" href="#trix-in-dice" title="Link to this heading"></a></h1>
+<p><a class="reference external" href="https://arxiv.org/abs/2502.19512">Paper</a> ·
+<a class="reference external" href="https://github.com/yuchengz99/TRIX/tree/7596e14eefefe89e61396205a0550172cadeddb0">Pinned official implementation</a></p>
+<p>TRIX uses PyTorch with an optional fused Triton inference kernel. The two separately
+trained official models are available as <code class="docutils literal notranslate"><span class="pre">TRIX</span></code> for entity prediction and
+<code class="docutils literal notranslate"><span class="pre">TRIXRelation</span></code> for relation prediction. DICE does not require PyG, torch-scatter,
+or a compiled graph extension to run either model.</p>
+<section id="download-and-evaluate-the-official-checkpoints">
+<h2>Download and evaluate the official checkpoints<a class="headerlink" href="#download-and-evaluate-the-official-checkpoints" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span>checkpoints/trix
+wget<span class="w"> </span>-P<span class="w"> </span>checkpoints/trix<span class="w"> </span>https://raw.githubusercontent.com/yuchengz99/TRIX/7596e14eefefe89e61396205a0550172cadeddb0/entity_prediction.pth
+wget<span class="w"> </span>-P<span class="w"> </span>checkpoints/trix<span class="w"> </span>https://raw.githubusercontent.com/yuchengz99/TRIX/7596e14eefefe89e61396205a0550172cadeddb0/relation_prediction.pth
+
+<span class="c1"># Zero-shot head and tail prediction.</span>
+python<span class="w"> </span>-m<span class="w"> </span>dicee<span class="w"> </span>--model<span class="w"> </span>TRIX<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--trix_checkpoint<span class="w"> </span>checkpoints/trix/entity_prediction.pth<span class="w"> </span>--num_epochs<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--trainer<span class="w"> </span>torchCPUTrainer<span class="w"> </span>--scoring_technique<span class="w"> </span>NegSample<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--batch_size<span class="w"> </span><span class="m">8</span><span class="w"> </span>--eval_model<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--path_to_store_single_run<span class="w"> </span>Experiments/trix-entity
+
+<span class="c1"># Zero-shot relation prediction, scoring all relations together for each pair.</span>
+python<span class="w"> </span>-m<span class="w"> </span>dicee<span class="w"> </span>--model<span class="w"> </span>TRIXRelation<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--trix_checkpoint<span class="w"> </span>checkpoints/trix/relation_prediction.pth<span class="w"> </span>--num_epochs<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--trainer<span class="w"> </span>torchCPUTrainer<span class="w"> </span>--scoring_technique<span class="w"> </span>KvsAll<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--batch_size<span class="w"> </span><span class="m">8</span><span class="w"> </span>--eval_model<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--path_to_store_single_run<span class="w"> </span>Experiments/trix-relation
+</pre></div>
+</div>
+<p>The dataset directory contains <code class="docutils literal notranslate"><span class="pre">train.txt</span></code> and <code class="docutils literal notranslate"><span class="pre">test.txt</span></code>, with an optional
+<code class="docutils literal notranslate"><span class="pre">valid.txt</span></code>, in <code class="docutils literal notranslate"><span class="pre">(head,</span> <span class="pre">relation,</span> <span class="pre">tail)</span></code> order. Only training facts form the
+message-passing graph. Validation and test facts contribute to filtered
+evaluation. <code class="docutils literal notranslate"><span class="pre">TRIXRelation</span></code> keeps generated inverses internal to the graph; its
+prediction labels are the relations supplied in the dataset.</p>
+<p><code class="docutils literal notranslate"><span class="pre">load_pretrained()</span></code> accepts the official <code class="docutils literal notranslate"><span class="pre">{&quot;model&quot;:</span> <span class="pre">state,</span> <span class="pre">&quot;optimizer&quot;:</span> <span class="pre">...}</span></code>
+checkpoint or a bare state dictionary. Every parameter name and shape must match;
+passing the checkpoint for the other task raises an architecture mismatch error.
+The optimizer state is not restored when fine-tuning.</p>
+<p>Both default architectures use <code class="docutils literal notranslate"><span class="pre">trix_dim=32</span></code>. The generic <code class="docutils literal notranslate"><span class="pre">embedding_dim</span></code> option
+does not change them. <code class="docutils literal notranslate"><span class="pre">trix_dim</span></code> can be changed for scratch training, while layer
+counts and convolution settings follow the published models. Other architectures
+are not automatically inferred from checkpoints.</p>
+</section>
+<section id="train-or-fine-tune">
+<h2>Train or fine-tune<a class="headerlink" href="#train-or-fine-tune" title="Link to this heading"></a></h2>
+<p>Entity prediction supports the same DICE objectives as ULTRA: <code class="docutils literal notranslate"><span class="pre">NegSample</span></code>,
+<code class="docutils literal notranslate"><span class="pre">FixedNegSample</span></code>, <code class="docutils literal notranslate"><span class="pre">KvsAll</span></code>, <code class="docutils literal notranslate"><span class="pre">1vsAll</span></code>, <code class="docutils literal notranslate"><span class="pre">1vsSample</span></code>, and <code class="docutils literal notranslate"><span class="pre">KvsSample</span></code>. To use grouped
+head/tail corruptions, strict negatives, and the upstream adversarial BCE objective:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>dicee<span class="w"> </span>--model<span class="w"> </span>TRIX<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--trainer<span class="w"> </span>torchCPUTrainer<span class="w"> </span>--scoring_technique<span class="w"> </span>NegSample<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--strict_negative_sampling<span class="w"> </span>--adversarial_temperature<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--neg_ratio<span class="w"> </span><span class="m">64</span><span class="w"> </span>--optim<span class="w"> </span>AdamW<span class="w"> </span>--lr<span class="w"> </span><span class="m">0</span>.0005<span class="w"> </span>--batch_size<span class="w"> </span><span class="m">8</span><span class="w"> </span>--num_epochs<span class="w"> </span><span class="m">10</span>
+</pre></div>
+</div>
+<p>For relation prediction, DICE’s training/evaluation pipeline uses <code class="docutils literal notranslate"><span class="pre">KvsAll</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>dicee<span class="w"> </span>--model<span class="w"> </span>TRIXRelation<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--trainer<span class="w"> </span>torchCPUTrainer<span class="w"> </span>--scoring_technique<span class="w"> </span>KvsAll<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--optim<span class="w"> </span>AdamW<span class="w"> </span>--lr<span class="w"> </span><span class="m">0</span>.0005<span class="w"> </span>--batch_size<span class="w"> </span><span class="m">8</span><span class="w"> </span>--num_epochs<span class="w"> </span><span class="m">10</span>
+</pre></div>
+</div>
+<p>Add <code class="docutils literal notranslate"><span class="pre">--trix_checkpoint</span></code> with the matching checkpoint to fine-tune. The relation
+model also supports grouped relation corruptions through its direct Python API;
+the CLI uses DICE’s all-relation BCE objective rather than the paper’s sampled
+pretraining procedure. This integration does not reproduce the multi-graph
+pretraining run or claim to reproduce the paper’s benchmark results.</p>
+<p>Training removes supervised facts and their inverses from every entity reasoning
+stage. For pair queries, all observed positive answers to those queries are hidden.
+The entity-labelled relation graph remains constructed from all training facts,
+matching the official implementation.</p>
+<p>CPU/single GPU native training and single-device Lightning are supported. BPE,
+distributed training, cross-validation, and static embedding export are rejected.
+Use <code class="docutils literal notranslate"><span class="pre">trix_query_batch_size</span></code> (default 8) to bound simultaneous queries. Message
+passing fuses edge messages on supported CUDA inference paths; the portable
+PyTorch fallback materializes them. See the <a class="reference internal" href="kgfm_inference.html"><span class="std std-doc">inference speed comparison</span></a>
+for timings against the official implementation. Relation-graph storage grows with the
+number of distinct incident-relation pairs per entity.</p>
+</section>
+<section id="python-inference-and-experiment-reloads">
+<h2>Python inference and experiment reloads<a class="headerlink" href="#python-inference-and-experiment-reloads" title="Link to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dicee.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">TRIX</span><span class="p">,</span> <span class="n">TRIXRelation</span>
+
+<span class="n">facts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+<span class="n">args</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">num_entities</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">num_relations</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">entity_model</span> <span class="o">=</span> <span class="n">TRIX</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">load_pretrained</span><span class="p">(</span><span class="s2">"checkpoints/trix/entity_prediction.pth"</span><span class="p">)</span>
+<span class="n">entity_model</span><span class="o">.</span><span class="n">set_graph</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="n">relation_model</span> <span class="o">=</span> <span class="n">TRIXRelation</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">load_pretrained</span><span class="p">(</span><span class="s2">"checkpoints/trix/relation_prediction.pth"</span><span class="p">)</span>
+<span class="n">relation_model</span><span class="o">.</span><span class="n">set_graph</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+    <span class="n">triple_score</span> <span class="o">=</span> <span class="n">entity_model</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]))</span>
+    <span class="n">tail_scores</span> <span class="o">=</span> <span class="n">entity_model</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]))</span>       <span class="c1"># (head, relation)</span>
+    <span class="n">head_scores</span> <span class="o">=</span> <span class="n">entity_model</span><span class="o">.</span><span class="n">forward_k_vs_all_heads</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]))</span>
+    <span class="n">relation_scores</span> <span class="o">=</span> <span class="n">relation_model</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]))</span> <span class="c1"># (head, tail)</span>
+</pre></div>
+</div>
+<p>Call <code class="docutils literal notranslate"><span class="pre">.eval()</span></code> for inference: modules start in training mode, where target edges
+are hidden. Scores are logits. Entity-model pairs use <code class="docutils literal notranslate"><span class="pre">(head,</span> <span class="pre">relation)</span></code>, explicit
+head queries use <code class="docutils literal notranslate"><span class="pre">(relation,</span> <span class="pre">tail)</span></code>, and relation-model pairs use <code class="docutils literal notranslate"><span class="pre">(head,</span> <span class="pre">tail)</span></code>.
+All triples and <code class="docutils literal notranslate"><span class="pre">[batch,</span> <span class="pre">candidates,</span> <span class="pre">3]</span></code> groups use DICE’s <code class="docutils literal notranslate"><span class="pre">(head,</span> <span class="pre">relation,</span> <span class="pre">tail)</span></code>
+order, whereas the upstream code uses <code class="docutils literal notranslate"><span class="pre">(head,</span> <span class="pre">tail,</span> <span class="pre">relation)</span></code>.</p>
+<p>Entity-model groups must share a relation and one uncorrupted endpoint. Use
+<code class="docutils literal notranslate"><span class="pre">forward_grouped(groups,</span> <span class="pre">head_prediction=True)</span></code> when head corruption cannot be
+inferred (for example, a single candidate). Relation-model groups share both
+endpoints. Flat entity triples always denote independent tail-oriented queries;
+use the explicit head method when predicting missing heads.</p>
+<p><code class="docutils literal notranslate"><span class="pre">set_graph()</span></code> internally adds inverse edges and deduplicates facts. For a vocabulary
+already containing explicit inverse IDs, provide <code class="docutils literal notranslate"><span class="pre">inverse_relations={direct_id:</span> <span class="pre">inverse_id}</span></code>. IDs may be interleaved. Reattaching a graph with different entity and
+relation counts transfers the same parameters without resizing embedding tables.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dicee</span><span class="w"> </span><span class="kn">import</span> <span class="n">KGE</span>
+
+<span class="n">entity_kge</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"Experiments/trix-entity"</span><span class="p">)</span>
+<span class="n">relation_kge</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">"Experiments/trix-relation"</span><span class="p">)</span>
+<span class="c1"># Substitute names from your dataset.</span>
+<span class="n">tails</span> <span class="o">=</span> <span class="n">entity_kge</span><span class="o">.</span><span class="n">predict_missing_tail_entity</span><span class="p">(</span><span class="s2">"entity_a"</span><span class="p">,</span> <span class="s2">"relation_r"</span><span class="p">)</span>
+<span class="n">heads</span> <span class="o">=</span> <span class="n">entity_kge</span><span class="o">.</span><span class="n">predict_missing_head_entity</span><span class="p">(</span><span class="s2">"relation_r"</span><span class="p">,</span> <span class="s2">"entity_b"</span><span class="p">)</span>
+<span class="n">relations</span> <span class="o">=</span> <span class="n">relation_kge</span><span class="o">.</span><span class="n">predict_missing_relations</span><span class="p">(</span><span class="s2">"entity_a"</span><span class="p">,</span> <span class="s2">"entity_b"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Keep <code class="docutils literal notranslate"><span class="pre">trix_graph.pt</span></code> beside the weights, configuration, and vocabularies when
+moving an experiment. Graph context is excluded from the transferable model state
+dictionary and restored separately, including for checkpoint averaging.</p>
+</section>
+<section id="compatibility-details-and-verification">
+<h2>Compatibility details and verification<a class="headerlink" href="#compatibility-details-and-verification" title="Link to this heading"></a></h2>
+<p>The released code determines checkpoint behavior where it differs from the paper’s
+general equations or source comments:</p>
+<ul class="simple">
+<li><p>Relation edges retain the shared entity as their edge type. Incidences have
+binary support; <code class="docutils literal notranslate"><span class="pre">hh</span></code>/<code class="docutils literal notranslate"><span class="pre">tt</span></code> omit equal-relation loops, and <code class="docutils literal notranslate"><span class="pre">ht</span></code>/<code class="docutils literal notranslate"><span class="pre">th</span></code> retain them.</p></li>
+<li><p>Each of the four interaction families has its own DistMult/sum convolution,
+relation projection, layer normalization, and ReLU. Their outputs are summed
+before adding a residual. Boundary messages are included at each layer.</p></li>
+<li><p>The fused kernel aggregates from <code class="docutils literal notranslate"><span class="pre">edge_index[1]</span></code> into <code class="docutils literal notranslate"><span class="pre">edge_index[0]</span></code>.</p></li>
+<li><p>Entity prediction uses three relation layers. After the first, a two-layer
+entity reasoner feeds its projected features back into relation reasoning.
+A separate four-layer entity reasoner produces the final scores. Initial entity
+features for the first relation layer are ones. The intermediate entity scorer’s
+unused MLP parameters are retained for strict checkpoint compatibility.</p></li>
+<li><p>Head corruption seeds the relation reasoner with the original direct relation,
+then uses the inverse relation in both entity reasoners. DICE reciprocal queries
+preserve this conditioning.</p></li>
+<li><p>Relation prediction runs three rounds of two entity layers followed by two
+relation layers. Head/tail labels are +1/-1 (they cancel for a self-query), and
+relation boundary features are ones.</p></li>
+</ul>
+<p>The fixtures were generated by the <strong>unmodified official models and compiled
+CPU rspmm kernel</strong>, at the pinned commit above. The generator imports no DICE
+model. Both randomly initialized small models and the actual published checkpoints
+are checked, including all parameter gradients (and unused parameters).</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Official checkpoint</p></th>
+<th class="head text-right"><p>Parameters</p></th>
+<th class="head text-right"><p>Maximum inference-logit error</p></th>
+<th class="head text-right"><p>Maximum gradient error</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">entity_prediction.pth</span></code></p></td>
+<td class="text-right"><p>87,138</p></td>
+<td class="text-right"><p>9.54e-7</p></td>
+<td class="text-right"><p>3.82e-6</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">relation_prediction.pth</span></code></p></td>
+<td class="text-right"><p>147,489</p></td>
+<td class="text-right"><p>3.82e-6</p></td>
+<td class="text-right"><p>7.63e-6</p></td>
+</tr>
+</tbody>
+</table>
+<p>These are CPU float32 errors on the committed fixture graph, which includes
+cycles, parallel relations, repeated incidences, a self-loop, and an isolated
+entity. Tests use <code class="docutils literal notranslate"><span class="pre">atol=1e-5</span></code>, <code class="docutils literal notranslate"><span class="pre">rtol=1e-4</span></code> and also check CUDA scoring/backprop,
+permutation equivariance, graph replacement, inverse mapping, training-edge
+removal, checkpoint validation, and end-to-end DICE save/reload.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Offline fixtures and DICE integration; no upstream packages required.</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_trix.py<span class="w"> </span>tests/test_ultra.py<span class="w"> </span>-q
+
+<span class="c1"># Include the two actual official checkpoints; their SHA-256 hashes are checked.</span>
+<span class="nv">TRIX_CHECKPOINT_DIR</span><span class="o">=</span>checkpoints/trix<span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/test_trix.py<span class="w"> </span>-q
+</pre></div>
+</div>
+<p>To regenerate fixtures in an isolated reference environment, install PyTorch 2.5.1,
+PyG 2.4.0, a matching torch-scatter 2.1.2 build, easydict, and ninja. Check out
+the pinned TRIX commit, then run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="s1">''</span><span class="w"> </span><span class="nv">MAX_JOBS</span><span class="o">=</span><span class="m">2</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span>/path/to/TRIX/src<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>python<span class="w"> </span>tests/fixtures/trix/generate_reference.py<span class="w"> </span>/path/to/TRIX<span class="w"> </span>tests/fixtures/trix
+</pre></div>
+</div>
+<p>The generator verifies the checkout revision and that tracked <code class="docutils literal notranslate"><span class="pre">src</span></code> files are
+unmodified. Fixture hashes identify the exact official checkpoint files used.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

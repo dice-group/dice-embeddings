@@ -192,6 +192,8 @@
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.initialize_or_load_model"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.initialize_or_load_model()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.init_dataloader"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.init_dataloader()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.init_dataset"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.init_dataset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.prepare_graph_model"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.prepare_graph_model()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.prepare_ultra"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.prepare_ultra</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.start"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.start()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.k_fold_cross_validation"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.k_fold_cross_validation()</span></code></a></li>
 </ul>
@@ -601,8 +603,11 @@ many nodes are involved. Skips if memmap already exists.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.KGE.eval_lp_performance">
-<span class="sig-name descname"><span class="pre">eval_lp_performance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">List[Tuple[str,</span> <span class="pre">str,</span> <span class="pre">str]]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filtered</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.KGE.eval_lp_performance" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">eval_lp_performance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">List[Tuple[str,</span> <span class="pre">str,</span> <span class="pre">str]]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filtered</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">tie_policy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tie_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.KGE.eval_lp_performance" title="Link to this definition"></a></dt>
+<dd><p>Evaluate head/tail ranks, inheriting saved tie settings unless overridden.</p>
+<p><code class="docutils literal notranslate"><span class="pre">tie_policy</span></code> accepts sort (legacy), optimistic, random, or pessimistic.
+<code class="docutils literal notranslate"><span class="pre">tie_seed</span></code> seeds an independent random stream for each evaluation.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.KGE.predict_missing_head_entity">
@@ -1158,6 +1163,17 @@ and getting queries and answers in return
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.DICE_Trainer.init_dataset">
 <span class="sig-name descname"><span class="pre">init_dataset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.utils.data.Dataset</span></span></span><a class="headerlink" href="#dicee.DICE_Trainer.init_dataset" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.DICE_Trainer.prepare_graph_model">
+<span class="sig-name descname"><span class="pre">prepare_graph_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">knowledge_graph</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.DICE_Trainer.prepare_graph_model" title="Link to this definition"></a></dt>
+<dd><p>Attach only training facts, preserving the indexed external vocabulary.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DICE_Trainer.prepare_ultra">
+<span class="sig-name descname"><span class="pre">prepare_ultra</span></span><a class="headerlink" href="#dicee.DICE_Trainer.prepare_ultra" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">

@@ -105,8 +105,8 @@
 <h2>Current Status<a class="headerlink" href="#current-status" title="Link to this heading"></a></h2>
 <p><strong>mypy Results:</strong></p>
 <ul class="simple">
-<li><p><strong>Total errors</strong>: 1358 type issues across 47 files (<code class="docutils literal notranslate"><span class="pre">mypy</span> <span class="pre">dicee/</span> <span class="pre">--config-file=pyproject.toml</span></code>)</p></li>
-<li><p><strong>CI status</strong>: Non-blocking (<code class="docutils literal notranslate"><span class="pre">continue-on-error:</span> <span class="pre">true</span></code> in <code class="docutils literal notranslate"><span class="pre">.github/workflows/github-actions-python-package.yml</span></code>) — errors are visible in CI logs but don’t fail the build</p></li>
+<li><p><strong>CI error budget</strong>: 1367 type issues, recorded in <code class="docutils literal notranslate"><span class="pre">.github/mypy-baseline.txt</span></code>. Run <code class="docutils literal notranslate"><span class="pre">mypy</span> <span class="pre">dicee/</span> <span class="pre">--config-file=pyproject.toml</span></code> to measure the current count.</p></li>
+<li><p><strong>CI status</strong>: The mypy step blocks the build when its error count exceeds that budget. Existing errors are printed in the log even when the step passes; lint and runtime tests are separate checks.</p></li>
 <li><p><strong>Coverage</strong>: partial; growing gradually per the tiers below</p></li>
 </ul>
 </section>
@@ -187,7 +187,7 @@
 <section id="phase-1-foundation-this-pr">
 <h3>Phase 1: Foundation (This PR)<a class="headerlink" href="#phase-1-foundation-this-pr" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p>[ ] Make mypy blocking in CI (still <code class="docutils literal notranslate"><span class="pre">continue-on-error:</span> <span class="pre">true</span></code>; blocking now would fail the build on 1358 pre-existing errors)</p></li>
+<li><p>[x] Enforce a mypy error-count budget in CI while existing typing issues are fixed</p></li>
 <li><p>[x] Create this roadmap</p></li>
 <li><p>[x] Fix config.py Optional types (quick win)</p></li>
 <li><p>[ ] Add py.typed marker to package</p></li>

@@ -30,7 +30,7 @@ Functions
 Module Contents
 ---------------
 
-.. py:function:: evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info: str = 'Eval Starts') -> Dict[str, float]
+.. py:function:: evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info: str = 'Eval Starts', *, tie_policy: str = 'sort', tie_seed: int = 0) -> Dict[str, float]
 
    Evaluate link prediction with BPE-encoded entities.
 
@@ -40,11 +40,14 @@ Module Contents
    :param er_vocab: Mapping for tail filtering.
    :param re_vocab: Mapping for head filtering.
    :param info: Description to print.
+   :param tie_policy: How exact prediction ties are ranked: sort (legacy),
+                      optimistic, random, or pessimistic.
+   :param tie_seed: Independent random tie seed; reset on each evaluation call.
 
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 
 
-.. py:function:: evaluate_lp(model, triple_idx, num_entities: int, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info: str = 'Eval Starts', batch_size: int = 128, chunk_size: int = 1000) -> Dict[str, float]
+.. py:function:: evaluate_lp(model, triple_idx, num_entities: int, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info: str = 'Eval Starts', batch_size: int = 128, chunk_size: int = 1000, *, tie_policy: str = 'sort', tie_seed: int = 0, tie_generator: Optional[torch.Generator] = None, graph_rank_plan: Optional[dicee.evaluation._graph_inference.GraphRankPlan] = None, reuse_graph_queries: bool = True) -> Dict[str, float]
 
    Evaluate link prediction with batched processing.
 
@@ -58,6 +61,14 @@ Module Contents
    :param info: Description to print.
    :param batch_size: Batch size for triple processing.
    :param chunk_size: Chunk size for entity scoring.
+   :param tie_generator: Optional CPU generator to continue random ties across calls.
+                         When supplied, its state takes precedence over tie_seed.
+   :param graph_rank_plan: Optional whole-split plan shared across progress batches.
+   :param reuse_graph_queries: Reuse deterministic ULTRA/TRIX queries. Flock keeps
+                               its original query and sampling order regardless of this option.
+   :param tie_policy: How exact prediction ties are ranked: sort (legacy),
+                      optimistic, random, or pessimistic.
+   :param tie_seed: Independent random tie seed; reset on each evaluation call.
 
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 

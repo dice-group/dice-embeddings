@@ -1,0 +1,472 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.models.trix &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="dicee.models.ultra" href="../ultra/index.html" />
+    <link rel="prev" title="dicee.models.transformers" href="../transformers/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../../../../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">dicee</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../__main__/index.html">dicee.__main__</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstracts/index.html">dicee.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../analyse_experiments/index.html">dicee.analyse_experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../callbacks/index.html">dicee.callbacks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../config/index.html">dicee.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../dataset_classes/index.html">dicee.dataset_classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../eval_static_funcs/index.html">dicee.eval_static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../evaluation/index.html">dicee.evaluation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../evaluator/index.html">dicee.evaluator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../executer/index.html">dicee.executer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html">dicee.models</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="../adopt/index.html">dicee.models.adopt</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../base_model/index.html">dicee.models.base_model</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../clifford/index.html">dicee.models.clifford</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../complex/index.html">dicee.models.complex</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../dualE/index.html">dicee.models.dualE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../ensemble/index.html">dicee.models.ensemble</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../flock/index.html">dicee.models.flock</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../flock_walks/index.html">dicee.models.flock_walks</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../fsdp_models/index.html">dicee.models.fsdp_models</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../function_space/index.html">dicee.models.function_space</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../graph_model/index.html">dicee.models.graph_model</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../literal/index.html">dicee.models.literal</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../octonion/index.html">dicee.models.octonion</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../pykeen_models/index.html">dicee.models.pykeen_models</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../quaternion/index.html">dicee.models.quaternion</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../real/index.html">dicee.models.real</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../sampled_loss/index.html">dicee.models.sampled_loss</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../static_funcs/index.html">dicee.models.static_funcs</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../transformers/index.html">dicee.models.transformers</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">dicee.models.trix</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#attributes">Attributes</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="../ultra/index.html">dicee.models.ultra</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#functions">Functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../query_generator/index.html">dicee.query_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sanity_checkers/index.html">dicee.sanity_checkers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../scripts/index.html">dicee.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../static_funcs/index.html">dicee.static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../static_funcs_training/index.html">dicee.static_funcs_training</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../static_preprocess_funcs/index.html">dicee.static_preprocess_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../trainer/index.html">dicee.trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../weight_averaging/index.html">dicee.weight_averaging</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#classes">Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">dicee</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">dicee.models</a></li>
+      <li class="breadcrumb-item active">dicee.models.trix</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/autoapi/dicee/models/trix/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-dicee.models.trix">
+<span id="dicee-models-trix"></span><h1>dicee.models.trix<a class="headerlink" href="#module-dicee.models.trix" title="Link to this heading"></a></h1>
+<p>Pure PyTorch TRIX entity and relation prediction.</p>
+<p>Reimplementation of Zhang et al., <a class="reference external" href="https://arxiv.org/abs/2502.19512">https://arxiv.org/abs/2502.19512</a>, verified
+against <a class="reference external" href="https://github.com/yuchengz99/TRIX">https://github.com/yuchengz99/TRIX</a> at UPSTREAM_COMMIT. The module names,
+update schedule, binary entity-labelled relation edges, and fused convolution
+direction follow the released code/checkpoints (see docs/trix.md).</p>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.trix.UPSTREAM_COMMIT" title="dicee.models.trix.UPSTREAM_COMMIT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UPSTREAM_COMMIT</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.trix.INTERACTIONS" title="dicee.models.trix.INTERACTIONS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">INTERACTIONS</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.trix.EntityReasoner" title="dicee.models.trix.EntityReasoner"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EntityReasoner</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.trix.RelationReasoner" title="dicee.models.trix.RelationReasoner"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RelationReasoner</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.trix.TRIXBase" title="dicee.models.trix.TRIXBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TRIXBase</span></code></a></p></td>
+<td><p>Shared graph lifecycle and entity-scoring interfaces for graph foundation models.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.trix.TRIX" title="dicee.models.trix.TRIX"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TRIX</span></code></a></p></td>
+<td><p>Entity predictor compatible with official <code class="docutils literal notranslate"><span class="pre">entity_prediction.pth</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.trix.TRIXRelation" title="dicee.models.trix.TRIXRelation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TRIXRelation</span></code></a></p></td>
+<td><p>Relation predictor compatible with official <code class="docutils literal notranslate"><span class="pre">relation_prediction.pth</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.trix.build_relation_graph" title="dicee.models.trix.build_relation_graph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_relation_graph</span></code></a>(edge_index, edge_type, ...)</p></td>
+<td><p>Sparse (relation, relation, shared entity) edges in official role order.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="dicee.models.trix.UPSTREAM_COMMIT">
+<span class="sig-prename descclassname"><span class="pre">dicee.models.trix.</span></span><span class="sig-name descname"><span class="pre">UPSTREAM_COMMIT</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'7596e14eefefe89e61396205a0550172cadeddb0'</span></span><a class="headerlink" href="#dicee.models.trix.UPSTREAM_COMMIT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="dicee.models.trix.INTERACTIONS">
+<span class="sig-prename descclassname"><span class="pre">dicee.models.trix.</span></span><span class="sig-name descname"><span class="pre">INTERACTIONS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('hh',</span> <span class="pre">'ht',</span> <span class="pre">'th',</span> <span class="pre">'tt')</span></span><a class="headerlink" href="#dicee.models.trix.INTERACTIONS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.models.trix.build_relation_graph">
+<span class="sig-prename descclassname"><span class="pre">dicee.models.trix.</span></span><span class="sig-name descname"><span class="pre">build_relation_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_entities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_relations</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/trix.html#build_relation_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.trix.build_relation_graph" title="Link to this definition"></a></dt>
+<dd><p>Sparse (relation, relation, shared entity) edges in official role order.</p>
+<p>Repeated incidences have binary support. hh/tt exclude equal relations;
+ht/th include them. Distinct shared entities remain distinct edges.
+No dense entity-by-relation-by-relation tensor is materialized.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.trix.EntityReasoner">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.trix.</span></span><span class="sig-name descname"><span class="pre">EntityReasoner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_layers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/trix.html#EntityReasoner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.trix.EntityReasoner" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
+evaluation mode.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.trix.EntityReasoner.layers">
+<span class="sig-name descname"><span class="pre">layers</span></span><a class="headerlink" href="#dicee.models.trix.EntityReasoner.layers" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.trix.EntityReasoner.mlp">
+<span class="sig-name descname"><span class="pre">mlp</span></span><a class="headerlink" href="#dicee.models.trix.EntityReasoner.mlp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.trix.EntityReasoner.features">
+<span class="sig-name descname"><span class="pre">features</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edges</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_entities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">states</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tails</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">candidates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/trix.html#EntityReasoner.features"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.trix.EntityReasoner.features" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.trix.RelationReasoner">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.trix.</span></span><span class="sig-name descname"><span class="pre">RelationReasoner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_layers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity_feedback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/trix.html#RelationReasoner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.trix.RelationReasoner" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
+evaluation mode.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.trix.RelationReasoner.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">states</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constant_relations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/trix.html#RelationReasoner.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.trix.RelationReasoner.step" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIXBase">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.trix.</span></span><span class="sig-name descname"><span class="pre">TRIXBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/trix.html#TRIXBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.trix.TRIXBase" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../graph_model/index.html#dicee.models.graph_model.GraphKGE" title="dicee.models.graph_model.GraphKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.graph_model.GraphKGE</span></code></a></p>
+<p>Shared graph lifecycle and entity-scoring interfaces for graph foundation models.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIXBase.config_prefix">
+<span class="sig-name descname"><span class="pre">config_prefix</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'trix'</span></span><a class="headerlink" href="#dicee.models.trix.TRIXBase.config_prefix" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIXBase.graph_filename">
+<span class="sig-name descname"><span class="pre">graph_filename</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'trix_graph.pt'</span></span><a class="headerlink" href="#dicee.models.trix.TRIXBase.graph_filename" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIXBase.checkpoint_hint">
+<span class="sig-name descname"><span class="pre">checkpoint_hint</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'use</span> <span class="pre">the</span> <span class="pre">matching</span> <span class="pre">entity/relation</span> <span class="pre">checkpoint</span> <span class="pre">with</span> <span class="pre">trix_dim=32;</span> <span class="pre">all</span> <span class="pre">keys</span> <span class="pre">and</span> <span class="pre">shapes</span> <span class="pre">must</span> <span class="pre">match'</span></span><a class="headerlink" href="#dicee.models.trix.TRIXBase.checkpoint_hint" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIXBase.dim">
+<span class="sig-name descname"><span class="pre">dim</span></span><a class="headerlink" href="#dicee.models.trix.TRIXBase.dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIXBase.relation_graph">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">relation_graph</span></span><a class="headerlink" href="#dicee.models.trix.TRIXBase.relation_graph" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIX">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.trix.</span></span><span class="sig-name descname"><span class="pre">TRIX</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/trix.html#TRIX"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.trix.TRIX" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dicee.models.trix.TRIXBase" title="dicee.models.trix.TRIXBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TRIXBase</span></code></a></p>
+<p>Entity predictor compatible with official <code class="docutils literal notranslate"><span class="pre">entity_prediction.pth</span></code>.</p>
+<p>DICE order is (head, relation, tail). Head corruption retains the original
+relation seed, then uses the inverse relation for both entity reasoners.
+Explicit reciprocal DICE queries use that same convention.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIX.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'TRIX'</span></span><a class="headerlink" href="#dicee.models.trix.TRIX.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIX.deterministic_inference">
+<span class="sig-name descname"><span class="pre">deterministic_inference</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#dicee.models.trix.TRIX.deterministic_inference" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIX.relation_model">
+<span class="sig-name descname"><span class="pre">relation_model</span></span><a class="headerlink" href="#dicee.models.trix.TRIX.relation_model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIX.entity_model_1">
+<span class="sig-name descname"><span class="pre">entity_model_1</span></span><a class="headerlink" href="#dicee.models.trix.TRIX.entity_model_1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIX.entity_model_2">
+<span class="sig-name descname"><span class="pre">entity_model_2</span></span><a class="headerlink" href="#dicee.models.trix.TRIX.entity_model_2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIX.relation_cache_mb">
+<span class="sig-name descname"><span class="pre">relation_cache_mb</span></span><a class="headerlink" href="#dicee.models.trix.TRIX.relation_cache_mb" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIX.clear_inference_cache">
+<span class="sig-name descname"><span class="pre">clear_inference_cache</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/trix.html#TRIX.clear_inference_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.trix.TRIX.clear_inference_cache" title="Link to this definition"></a></dt>
+<dd><p>Drop derived representations when graph, weights or device change.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIXRelation">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.trix.</span></span><span class="sig-name descname"><span class="pre">TRIXRelation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/trix.html#TRIXRelation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.trix.TRIXRelation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dicee.models.trix.TRIXBase" title="dicee.models.trix.TRIXBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TRIXBase</span></code></a>, <a class="reference internal" href="../graph_model/index.html#dicee.models.graph_model.RelationGraphKGE" title="dicee.models.graph_model.RelationGraphKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.graph_model.RelationGraphKGE</span></code></a></p>
+<p>Relation predictor compatible with official <code class="docutils literal notranslate"><span class="pre">relation_prediction.pth</span></code>.</p>
+<p>Pairs are (head, tail); triples and grouped relation corruptions use DICE’s
+(head, relation, tail) order. One reasoning pass scores every relation for a
+given pair, including external inverse IDs when present in the vocabulary.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIXRelation.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'TRIXRelation'</span></span><a class="headerlink" href="#dicee.models.trix.TRIXRelation.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIXRelation.relation_model">
+<span class="sig-name descname"><span class="pre">relation_model</span></span><a class="headerlink" href="#dicee.models.trix.TRIXRelation.relation_model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIXRelation.entity_model">
+<span class="sig-name descname"><span class="pre">entity_model</span></span><a class="headerlink" href="#dicee.models.trix.TRIXRelation.entity_model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.trix.TRIXRelation.mlp">
+<span class="sig-name descname"><span class="pre">mlp</span></span><a class="headerlink" href="#dicee.models.trix.TRIXRelation.mlp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../transformers/index.html" class="btn btn-neutral float-left" title="dicee.models.transformers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../ultra/index.html" class="btn btn-neutral float-right" title="dicee.models.ultra" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

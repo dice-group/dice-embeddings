@@ -81,6 +81,174 @@ Module Contents
       An endpoint of a triple store.
 
 
+   .. py:attribute:: ultra_checkpoint
+      :type:  Optional[str]
+      :value: None
+
+
+
+   .. py:attribute:: ultra_dim
+      :type:  int
+      :value: 64
+
+
+
+   .. py:attribute:: ultra_num_layers
+      :type:  int
+      :value: 6
+
+
+
+   .. py:attribute:: ultra_query_batch_size
+      :type:  int
+      :value: 8
+
+
+
+   .. py:attribute:: trix_checkpoint
+      :type:  Optional[str]
+      :value: None
+
+
+
+   .. py:attribute:: trix_dim
+      :type:  int
+      :value: 32
+
+
+
+   .. py:attribute:: trix_query_batch_size
+      :type:  int
+      :value: 8
+
+
+
+   .. py:attribute:: flock_checkpoint
+      :type:  Optional[str]
+      :value: None
+
+
+
+   .. py:attribute:: flock_dim
+      :type:  int
+      :value: 64
+
+
+
+   .. py:attribute:: flock_walk_num
+      :type:  int
+      :value: 128
+
+
+
+   .. py:attribute:: flock_walk_len
+      :type:  int
+      :value: 128
+
+
+
+   .. py:attribute:: flock_refinements
+      :type:  int
+      :value: 6
+
+
+
+   .. py:attribute:: flock_num_layers
+      :type:  int
+      :value: 1
+
+
+
+   .. py:attribute:: flock_attention_heads
+      :type:  int
+      :value: 4
+
+
+
+   .. py:attribute:: flock_test_samples
+      :type:  int
+      :value: 1
+
+
+
+   .. py:attribute:: flock_query_batch_size
+      :type:  int
+      :value: 1
+
+
+
+   .. py:attribute:: flock_seed
+      :type:  Optional[int]
+      :value: None
+
+
+
+   .. py:attribute:: flock_prefetch_walks
+      :type:  bool
+      :value: True
+
+
+
+   .. py:attribute:: flock_compact_state
+      :type:  bool
+      :value: True
+
+
+
+   .. py:attribute:: flock_compile_sampler
+      :type:  bool
+      :value: True
+
+
+
+   .. py:attribute:: flock_pack_walks
+      :type:  bool
+      :value: True
+
+
+
+   .. py:attribute:: graph_inference_backend
+      :type:  str
+      :value: 'auto'
+
+
+
+   .. py:attribute:: graph_relation_cache_mb
+      :type:  int
+      :value: 64
+
+
+
+   .. py:attribute:: graph_projection_cache_mb
+      :type:  int
+      :value: 64
+
+
+
+   .. py:attribute:: graph_inference_compile
+      :type:  bool
+      :value: False
+
+
+
+   .. py:attribute:: grouped_negative_sampling
+      :type:  bool
+      :value: False
+
+
+
+   .. py:attribute:: strict_negative_sampling
+      :type:  bool
+      :value: False
+
+
+
+   .. py:attribute:: adversarial_temperature
+      :type:  Optional[float]
+      :value: None
+
+
+
    .. py:attribute:: model
       :type:  str
       :value: 'Keci'
@@ -243,6 +411,24 @@ Module Contents
       ["None", "train", "train_val", "train_val_test", "test"]
 
       :type: Evaluate trained model choices
+
+
+   .. py:attribute:: eval_tie_policy
+      :type:  str
+      :value: 'sort'
+
+
+      sort (legacy), optimistic, random, or pessimistic.
+
+      :type: Prediction ties
+
+
+   .. py:attribute:: eval_tie_seed
+      :type:  Optional[int]
+      :value: None
+
+
+      Independent random tie seed; None uses random_seed.
 
 
    .. py:attribute:: save_model_at_every_epoch

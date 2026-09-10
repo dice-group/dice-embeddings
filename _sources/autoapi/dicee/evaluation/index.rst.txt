@@ -66,7 +66,7 @@ Functions
 Package Contents
 ----------------
 
-.. py:function:: evaluate_ensemble_link_prediction_performance(models: List, triples, er_vocab: Dict[Tuple, List], weights: Optional[List[float]] = None, batch_size: int = 512, weighted_averaging: bool = True, normalize_scores: bool = True) -> Dict[str, float]
+.. py:function:: evaluate_ensemble_link_prediction_performance(models: List, triples, er_vocab: Dict[Tuple, List], weights: Optional[List[float]] = None, batch_size: int = 512, weighted_averaging: bool = True, normalize_scores: bool = True, *, tie_policy: str = 'sort', tie_seed: int = 0) -> Dict[str, float]
 
    Evaluate link prediction performance of an ensemble of KGE models.
 
@@ -85,6 +85,9 @@ Package Contents
                               If False, use simple mean.
    :param normalize_scores: If True, normalize scores to [0, 1] range per
                             sample before averaging.
+   :param tie_policy: Exact prediction ties: sort (legacy), optimistic, random,
+                      or pessimistic. Applied after combining model scores.
+   :param tie_seed: Independent random tie seed; reset on each evaluation call.
 
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 
@@ -339,7 +342,7 @@ Package Contents
 
 
 
-.. py:function:: evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info: str = 'Eval Starts') -> Dict[str, float]
+.. py:function:: evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info: str = 'Eval Starts', *, tie_policy: str = 'sort', tie_seed: int = 0) -> Dict[str, float]
 
    Evaluate link prediction with BPE-encoded entities.
 
@@ -349,11 +352,14 @@ Package Contents
    :param er_vocab: Mapping for tail filtering.
    :param re_vocab: Mapping for head filtering.
    :param info: Description to print.
+   :param tie_policy: How exact prediction ties are ranked: sort (legacy),
+                      optimistic, random, or pessimistic.
+   :param tie_seed: Independent random tie seed; reset on each evaluation call.
 
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 
 
-.. py:function:: evaluate_link_prediction_performance(model, triples, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List]) -> Dict[str, float]
+.. py:function:: evaluate_link_prediction_performance(model, triples, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], *, tie_policy: str = 'sort', tie_seed: int = 0) -> Dict[str, float]
 
    Evaluate link prediction performance with head and tail prediction.
 
@@ -364,11 +370,14 @@ Package Contents
    :param triples: Test triples as list of (head, relation, tail) strings.
    :param er_vocab: Mapping (entity, relation) -> list of valid tail entities.
    :param re_vocab: Mapping (relation, entity) -> list of valid head entities.
+   :param tie_policy: How exact prediction ties are ranked: sort (legacy),
+                      optimistic, random, or pessimistic.
+   :param tie_seed: Independent random tie seed; reset on each evaluation call.
 
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 
 
-.. py:function:: evaluate_link_prediction_performance_with_bpe(model, within_entities: List[str], triples: List[Tuple[str]], er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List]) -> Dict[str, float]
+.. py:function:: evaluate_link_prediction_performance_with_bpe(model, within_entities: List[str], triples: List[Tuple[str]], er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], *, tie_policy: str = 'sort', tie_seed: int = 0) -> Dict[str, float]
 
    Evaluate link prediction with BPE encoding (head and tail).
 
@@ -377,11 +386,14 @@ Package Contents
    :param triples: Test triples as list of (head, relation, tail) tuples.
    :param er_vocab: Mapping (entity, relation) -> list of valid tail entities.
    :param re_vocab: Mapping (relation, entity) -> list of valid head entities.
+   :param tie_policy: How exact prediction ties are ranked: sort (legacy),
+                      optimistic, random, or pessimistic.
+   :param tie_seed: Independent random tie seed; reset on each evaluation call.
 
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 
 
-.. py:function:: evaluate_link_prediction_performance_with_bpe_reciprocals(model, within_entities: List[str], triples: List[List[str]], er_vocab: Dict[Tuple, List]) -> Dict[str, float]
+.. py:function:: evaluate_link_prediction_performance_with_bpe_reciprocals(model, within_entities: List[str], triples: List[List[str]], er_vocab: Dict[Tuple, List], *, tie_policy: str = 'sort', tie_seed: int = 0) -> Dict[str, float]
 
    Evaluate link prediction with BPE encoding and reciprocals.
 
@@ -389,11 +401,14 @@ Package Contents
    :param within_entities: List of entities to evaluate within.
    :param triples: Test triples as list of [head, relation, tail] strings.
    :param er_vocab: Mapping (entity, relation) -> list of valid tail entities.
+   :param tie_policy: How exact prediction ties are ranked: sort (legacy),
+                      optimistic, random, or pessimistic.
+   :param tie_seed: Independent random tie seed; reset on each evaluation call.
 
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 
 
-.. py:function:: evaluate_link_prediction_performance_with_reciprocals(model, triples, er_vocab: Dict[Tuple, List]) -> Dict[str, float]
+.. py:function:: evaluate_link_prediction_performance_with_reciprocals(model, triples, er_vocab: Dict[Tuple, List], *, tie_policy: str = 'sort', tie_seed: int = 0) -> Dict[str, float]
 
    Evaluate link prediction with reciprocal relations.
 
@@ -403,11 +418,14 @@ Package Contents
    :param model: KGE model wrapper.
    :param triples: Test triples as list of (head, relation, tail) strings.
    :param er_vocab: Mapping (entity, relation) -> list of valid tail entities.
+   :param tie_policy: How exact prediction ties are ranked: sort (legacy),
+                      optimistic, random, or pessimistic.
+   :param tie_seed: Independent random tie seed; reset on each evaluation call.
 
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 
 
-.. py:function:: evaluate_lp(model, triple_idx, num_entities: int, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info: str = 'Eval Starts', batch_size: int = 128, chunk_size: int = 1000) -> Dict[str, float]
+.. py:function:: evaluate_lp(model, triple_idx, num_entities: int, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info: str = 'Eval Starts', batch_size: int = 128, chunk_size: int = 1000, *, tie_policy: str = 'sort', tie_seed: int = 0, tie_generator: Optional[torch.Generator] = None, graph_rank_plan: Optional[dicee.evaluation._graph_inference.GraphRankPlan] = None, reuse_graph_queries: bool = True) -> Dict[str, float]
 
    Evaluate link prediction with batched processing.
 
@@ -421,11 +439,19 @@ Package Contents
    :param info: Description to print.
    :param batch_size: Batch size for triple processing.
    :param chunk_size: Chunk size for entity scoring.
+   :param tie_generator: Optional CPU generator to continue random ties across calls.
+                         When supplied, its state takes precedence over tie_seed.
+   :param graph_rank_plan: Optional whole-split plan shared across progress batches.
+   :param reuse_graph_queries: Reuse deterministic ULTRA/TRIX queries. Flock keeps
+                               its original query and sampling order regardless of this option.
+   :param tie_policy: How exact prediction ties are ranked: sort (legacy),
+                      optimistic, random, or pessimistic.
+   :param tie_seed: Independent random tie seed; reset on each evaluation call.
 
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 
 
-.. py:function:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], er_vocab: Optional[Dict] = None, batch_size: Optional[int] = None, func_triple_to_bpe_representation: Optional[Callable] = None, str_to_bpe_entity_to_idx: Optional[Dict] = None) -> Dict[str, float]
+.. py:function:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], er_vocab: Optional[Dict] = None, batch_size: Optional[int] = None, func_triple_to_bpe_representation: Optional[Callable] = None, str_to_bpe_entity_to_idx: Optional[Dict] = None, *, tie_policy: str = 'sort', tie_seed: int = 0) -> Dict[str, float]
 
    Evaluate BPE link prediction with KvsAll scoring.
 
@@ -435,6 +461,9 @@ Package Contents
    :param batch_size: Batch size for processing.
    :param func_triple_to_bpe_representation: Function to convert triples to BPE.
    :param str_to_bpe_entity_to_idx: Mapping from string entities to BPE indices.
+   :param tie_policy: How exact prediction ties are ranked: sort (legacy),
+                      optimistic, random, or pessimistic.
+   :param tie_seed: Independent random tie seed; reset on each evaluation call.
 
    :returns: Dictionary with H@1, H@3, H@10, and MRR metrics.
 

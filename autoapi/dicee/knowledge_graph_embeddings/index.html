@@ -210,8 +210,11 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.knowledge_graph_embeddings.KGE.eval_lp_performance">
-<span class="sig-name descname"><span class="pre">eval_lp_performance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">List[Tuple[str,</span> <span class="pre">str,</span> <span class="pre">str]]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filtered</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.knowledge_graph_embeddings.KGE.eval_lp_performance" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">eval_lp_performance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">List[Tuple[str,</span> <span class="pre">str,</span> <span class="pre">str]]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filtered</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">tie_policy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tie_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.knowledge_graph_embeddings.KGE.eval_lp_performance" title="Link to this definition"></a></dt>
+<dd><p>Evaluate head/tail ranks, inheriting saved tie settings unless overridden.</p>
+<p><code class="docutils literal notranslate"><span class="pre">tie_policy</span></code> accepts sort (legacy), optimistic, random, or pessimistic.
+<code class="docutils literal notranslate"><span class="pre">tie_seed</span></code> seeds an independent random stream for each evaluation.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.knowledge_graph_embeddings.KGE.predict_missing_head_entity">

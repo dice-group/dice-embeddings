@@ -1,0 +1,307 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KGFM inference speed comparison &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=c6726a90"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">KGFM inference speed comparison</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/kgfm_inference.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="kgfm-inference-speed-comparison">
+<h1>KGFM inference speed comparison<a class="headerlink" href="#kgfm-inference-speed-comparison" title="Link to this heading"></a></h1>
+<p>Measured on 2026-09-10 against the authors’ pinned official implementations:
+<a class="reference external" href="https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90">ULTRA</a>,
+<a class="reference external" href="https://github.com/yuchengz99/TRIX/tree/7596e14eefefe89e61396205a0550172cadeddb0">TRIX</a>, and
+<a class="reference external" href="https://github.com/jw9730/flock/tree/f35103d25a78bdf4075de5c673a51de4979aa4d7">Flock</a>.
+DICE model code: <a class="reference external" href="https://github.com/dice-group/dice-embeddings/tree/c567fc5e5273a1501e8af01db9ae26c9956e9eb0/dicee/models">c567fc5e</a>.</p>
+<p>Warm inference times are <strong>milliseconds per directional query</strong>, scoring every entity.
+Speedup = official time / DICE time; values below 1 mean DICE is slower.
+Memory is peak allocated CUDA MiB, official → DICE.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Dataset</p></th>
+<th class="head"><p>Model</p></th>
+<th class="head text-right"><p>Query batch</p></th>
+<th class="head text-right"><p>Official ms/query</p></th>
+<th class="head text-right"><p>DICE ms/query</p></th>
+<th class="head text-right"><p>Speedup</p></th>
+<th class="head text-right"><p>CUDA MiB</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>FB15k-237</p></td>
+<td><p>ULTRA-3g</p></td>
+<td class="text-right"><p>4</p></td>
+<td class="text-right"><p>6.92</p></td>
+<td class="text-right"><p>1.89</p></td>
+<td class="text-right"><p>3.66×</p></td>
+<td class="text-right"><p>202 → 202</p></td>
+</tr>
+<tr class="row-odd"><td><p>FB15k-237</p></td>
+<td><p>TRIX</p></td>
+<td class="text-right"><p>2</p></td>
+<td class="text-right"><p>121.88</p></td>
+<td class="text-right"><p>3.84</p></td>
+<td class="text-right"><p>31.75×</p></td>
+<td class="text-right"><p>421 → 427</p></td>
+</tr>
+<tr class="row-even"><td><p>FB15k-237</p></td>
+<td><p>Flock*</p></td>
+<td class="text-right"><p>1</p></td>
+<td class="text-right"><p>216.53</p></td>
+<td class="text-right"><p>82.09</p></td>
+<td class="text-right"><p>2.64×</p></td>
+<td class="text-right"><p>453 → 462</p></td>
+</tr>
+<tr class="row-odd"><td><p>WN18RR</p></td>
+<td><p>ULTRA-3g</p></td>
+<td class="text-right"><p>8</p></td>
+<td class="text-right"><p>4.28</p></td>
+<td class="text-right"><p>3.72</p></td>
+<td class="text-right"><p>1.15×</p></td>
+<td class="text-right"><p>869 → 541</p></td>
+</tr>
+<tr class="row-even"><td><p>WN18RR</p></td>
+<td><p>TRIX†</p></td>
+<td class="text-right"><p>4</p></td>
+<td class="text-right"><p>76.35</p></td>
+<td class="text-right"><p>4.08</p></td>
+<td class="text-right"><p>18.71×</p></td>
+<td class="text-right"><p>289 → 244</p></td>
+</tr>
+<tr class="row-odd"><td><p>WN18RR</p></td>
+<td><p>Flock*</p></td>
+<td class="text-right"><p>1</p></td>
+<td class="text-right"><p>83.51</p></td>
+<td class="text-right"><p>45.52</p></td>
+<td class="text-right"><p>1.83×</p></td>
+<td class="text-right"><p>458 → 459</p></td>
+</tr>
+<tr class="row-even"><td><p>YAGO3-10</p></td>
+<td><p>ULTRA-3g†</p></td>
+<td class="text-right"><p>2</p></td>
+<td class="text-right"><p>128.53</p></td>
+<td class="text-right"><p>17.28</p></td>
+<td class="text-right"><p>7.44×</p></td>
+<td class="text-right"><p>856 → 631</p></td>
+</tr>
+<tr class="row-odd"><td><p>YAGO3-10</p></td>
+<td><p>TRIX†</p></td>
+<td class="text-right"><p>2</p></td>
+<td class="text-right"><p>747.51</p></td>
+<td class="text-right"><p>21.13</p></td>
+<td class="text-right"><p>35.38×</p></td>
+<td class="text-right"><p>710 → 689</p></td>
+</tr>
+<tr class="row-even"><td><p>YAGO3-10</p></td>
+<td><p>Flock*</p></td>
+<td class="text-right"><p>1</p></td>
+<td class="text-right"><p>564.18</p></td>
+<td class="text-right"><p>65.52</p></td>
+<td class="text-right"><p>8.61×</p></td>
+<td class="text-right"><p>548 → 591</p></td>
+</tr>
+</tbody>
+</table>
+<p>* Flock uses independently sampled walks; see the identical-walk comparison below.
+† Score validation required the untimed float64 cross-check described below.</p>
+<section id="what-was-measured">
+<h2>What was measured<a class="headerlink" href="#what-was-measured" title="Link to this heading"></a></h2>
+<p>Each pair uses the same <a class="reference internal" href="kgfm_benchmarks.html#checkpoints-and-evaluation-settings"><span class="std std-ref">released checkpoint</span></a>, complete training graph plus
+inverse edges, entity vocabulary, selected queries, and query batch size.
+The workload contains 128 randomly selected test triples for ULTRA/TRIX and
+32 for Flock (selection seed 42), with both head and tail prediction.
+These are sampled inference workloads, not full-test evaluation timings or
+a search for each implementation’s best batch size.</p>
+<p>Hardware: RTX 4070 Ti SUPER (16 GiB), Ryzen 7 7800X3D. Both implementations
+use PyTorch 2.5.1 with CUDA 12.4, float32, TF32 disabled, and four PyTorch
+CPU threads. The official Flock walker retains its native thread pool.
+Official ULTRA/TRIX use their compiled CUDA <code class="docutils literal notranslate"><span class="pre">rspmm</span></code> kernels.
+Runs execute sequentially in fresh processes, with two warmups and five
+timed repetitions on the same graph and queries; DICE’s inference caches
+are warm. The table reports medians. CUDA is synchronized around
+each timing. Other CUDA compute jobs are rejected; the desktop compositor
+remains active and is recorded.</p>
+<p>Timings include candidate construction, model inference, and Flock walk
+sampling/transfers. Dataset loading, graph construction, and ranking are
+excluded. Checkpoint/split/source hashes, timing samples, first-forward
+latency, and memory measurements are saved locally by the runner.</p>
+<p>ULTRA/TRIX checks use <code class="docutils literal notranslate"><span class="pre">atol=2e-4,</span> <span class="pre">rtol=2e-4</span></code> for all-entity scores. When
+float32 scores differ beyond that tolerance, the runner additionally checks
+the official model in float64. It accepts the comparison only if DICE is
+within the original tolerance of float64 and has lower mean error. For all
+six ULTRA/TRIX pairs, float32 pessimistic hit rates match and MRR differs
+by at most <code class="docutils literal notranslate"><span class="pre">1e-6</span></code>. The float64 diagnostic is not timed; hardcoded float32
+query factories are promoted alongside the model weights and boundaries.</p>
+</section>
+<section id="flock-on-identical-walks">
+<h2>Flock on identical walks<a class="headerlink" href="#flock-on-identical-walks" title="Link to this heading"></a></h2>
+<p>Flock uses 128 base walks, length 128, six refinements, and one prediction
+per query. Its native samplers use different random generators, so matching
+seeds does not produce identical predictions. The main table measures each
+complete implementation at the same budget; it does not establish equal
+prediction quality.</p>
+<p>For a direct neural comparison, both models replay the official sampler’s
+exact records for eight of the selected test triples. Records are already
+on the GPU, so these timings exclude sampling and transfers.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Dataset</p></th>
+<th class="head text-right"><p>Official ms/query</p></th>
+<th class="head text-right"><p>DICE ms/query</p></th>
+<th class="head text-right"><p>Neural speedup</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>FB15k-237</p></td>
+<td class="text-right"><p>35.05</p></td>
+<td class="text-right"><p>28.46</p></td>
+<td class="text-right"><p>1.23×</p></td>
+</tr>
+<tr class="row-odd"><td><p>WN18RR</p></td>
+<td class="text-right"><p>39.99</p></td>
+<td class="text-right"><p>32.64</p></td>
+<td class="text-right"><p>1.23×</p></td>
+</tr>
+<tr class="row-even"><td><p>YAGO3-10</p></td>
+<td class="text-right"><p>105.48</p></td>
+<td class="text-right"><p>52.60</p></td>
+<td class="text-right"><p>2.01×</p></td>
+</tr>
+</tbody>
+</table>
+<p>Identical-walk scores pass the same tolerance (maximum absolute error
+<code class="docutils literal notranslate"><span class="pre">1.62e-05</span></code>); pessimistic filtered MRR and hit rates pass the checks above.</p>
+<p>YAGO3-10 Flock had higher timing variance: official native repeats ranged
+394–583 ms/query (DICE 65–67), and replay repeats ranged 76–170 ms/query
+(DICE 47–54). Treat its reported median speedups as approximate.</p>
+</section>
+<section id="reproduce">
+<h2>Reproduce<a class="headerlink" href="#reproduce" title="Link to this heading"></a></h2>
+<p>Use the pinned official checkout with PyTorch 2.5.1/CUDA 12.4, PyG 2.4.0,
+a matching GPU torch-scatter 2.1.2 wheel, easydict, ninja, and a CUDA compiler.
+Flock also needs its checkout’s compiled <code class="docutils literal notranslate"><span class="pre">graph-walker</span></code> package. Generate indexed
+splits with the <a class="reference internal" href="kgfm_benchmarks.html"><span class="std std-doc">zero-shot runner</span></a> first. Both workers
+use the interpreter running the benchmark. For example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>benchmarks/kgfm_upstream.py<span class="w"> </span>--model<span class="w"> </span>ULTRA<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--upstream-root<span class="w"> </span>/path/to/ULTRA<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--indexed-data<span class="w"> </span>Experiments/kgfm-pessimistic-20260910/FB15k-237/ULTRA<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--queries<span class="w"> </span><span class="m">128</span><span class="w"> </span>--query-batch-size<span class="w"> </span><span class="m">4</span><span class="w"> </span>--repeats<span class="w"> </span><span class="m">5</span><span class="w"> </span>--warmups<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--output<span class="w"> </span>Experiments/official-comparison/FB15k-237/ULTRA
+</pre></div>
+</div>
+<p>Use the table’s batch sizes for the other pairs. For Flock, use <code class="docutils literal notranslate"><span class="pre">--queries</span> <span class="pre">32</span> <span class="pre">--query-batch-size</span> <span class="pre">1</span> <span class="pre">--walk-num</span> <span class="pre">128</span> <span class="pre">--replay-queries</span> <span class="pre">8</span></code>. All generated JSON,
+score tensors, and walk records land in the <code class="docutils literal notranslate"><span class="pre">Experiments/</span></code> directories.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

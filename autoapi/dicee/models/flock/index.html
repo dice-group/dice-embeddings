@@ -1,0 +1,678 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.models.flock &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="dicee.models.flock_walks" href="../flock_walks/index.html" />
+    <link rel="prev" title="dicee.models.ensemble" href="../ensemble/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../../../../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">dicee</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../__main__/index.html">dicee.__main__</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../abstracts/index.html">dicee.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../analyse_experiments/index.html">dicee.analyse_experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../callbacks/index.html">dicee.callbacks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../config/index.html">dicee.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../dataset_classes/index.html">dicee.dataset_classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../eval_static_funcs/index.html">dicee.eval_static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../evaluation/index.html">dicee.evaluation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../evaluator/index.html">dicee.evaluator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../executer/index.html">dicee.executer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html">dicee.models</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l5"><a class="reference internal" href="../adopt/index.html">dicee.models.adopt</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../base_model/index.html">dicee.models.base_model</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../clifford/index.html">dicee.models.clifford</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../complex/index.html">dicee.models.complex</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../dualE/index.html">dicee.models.dualE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../ensemble/index.html">dicee.models.ensemble</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">dicee.models.flock</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#attributes">Attributes</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="../flock_walks/index.html">dicee.models.flock_walks</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../fsdp_models/index.html">dicee.models.fsdp_models</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../function_space/index.html">dicee.models.function_space</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../graph_model/index.html">dicee.models.graph_model</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../literal/index.html">dicee.models.literal</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../octonion/index.html">dicee.models.octonion</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../pykeen_models/index.html">dicee.models.pykeen_models</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../quaternion/index.html">dicee.models.quaternion</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../real/index.html">dicee.models.real</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../sampled_loss/index.html">dicee.models.sampled_loss</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../static_funcs/index.html">dicee.models.static_funcs</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../transformers/index.html">dicee.models.transformers</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../trix/index.html">dicee.models.trix</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../ultra/index.html">dicee.models.ultra</a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#functions">Functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../query_generator/index.html">dicee.query_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../sanity_checkers/index.html">dicee.sanity_checkers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../scripts/index.html">dicee.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../static_funcs/index.html">dicee.static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../static_funcs_training/index.html">dicee.static_funcs_training</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../static_preprocess_funcs/index.html">dicee.static_preprocess_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../trainer/index.html">dicee.trainer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../weight_averaging/index.html">dicee.weight_averaging</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#classes">Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">dicee</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">dicee.models</a></li>
+      <li class="breadcrumb-item active">dicee.models.flock</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/autoapi/dicee/models/flock/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-dicee.models.flock">
+<span id="dicee-models-flock"></span><h1>dicee.models.flock<a class="headerlink" href="#module-dicee.models.flock" title="Link to this heading"></a></h1>
+<p>Pure PyTorch Flock, compatible with both official jw9730/flock checkpoints.</p>
+<p>Architecture adapted from <a class="reference external" href="https://github.com/jw9730/flock">https://github.com/jw9730/flock</a> at UPSTREAM_COMMIT.
+See docs/flock.md for random-walk and numerical parity details.</p>
+<p>MIT License</p>
+<p>Copyright (c) 2025 Jinwoo Kim</p>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the “Software”), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:</p>
+<p>The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.</p>
+<p>THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</p>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.flock.UPSTREAM_COMMIT" title="dicee.models.flock.UPSTREAM_COMMIT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UPSTREAM_COMMIT</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.flock.RMSNorm" title="dicee.models.flock.RMSNorm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RMSNorm</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.flock.FeedForward" title="dicee.models.flock.FeedForward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FeedForward</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.flock.BidirectionalGRU" title="dicee.models.flock.BidirectionalGRU"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BidirectionalGRU</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.flock.FlockBase" title="dicee.models.flock.FlockBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlockBase</span></code></a></p></td>
+<td><p>Shared graph lifecycle and entity-scoring interfaces for graph foundation models.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.flock.Flock" title="dicee.models.flock.Flock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flock</span></code></a></p></td>
+<td><p>Entity-prediction Flock with official <code class="docutils literal notranslate"><span class="pre">flock_entity.pth</span></code> parameters.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.flock.FlockRelation" title="dicee.models.flock.FlockRelation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlockRelation</span></code></a></p></td>
+<td><p>Relation-prediction Flock with official <code class="docutils literal notranslate"><span class="pre">flock_relation.pth</span></code> parameters.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.flock.consensus" title="dicee.models.flock.consensus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">consensus</span></code></a>(x, logits, ids, num_ids)</p></td>
+<td><p>Stable multihead softmax pooling over all occurrences of each graph ID.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="dicee.models.flock.UPSTREAM_COMMIT">
+<span class="sig-prename descclassname"><span class="pre">dicee.models.flock.</span></span><span class="sig-name descname"><span class="pre">UPSTREAM_COMMIT</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'f35103d25a78bdf4075de5c673a51de4979aa4d7'</span></span><a class="headerlink" href="#dicee.models.flock.UPSTREAM_COMMIT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.flock.RMSNorm">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.flock.</span></span><span class="sig-name descname"><span class="pre">RMSNorm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/flock.html#RMSNorm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.flock.RMSNorm" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
+evaluation mode.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.RMSNorm.eps">
+<span class="sig-name descname"><span class="pre">eps</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1e-05</span></span><a class="headerlink" href="#dicee.models.flock.RMSNorm.eps" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.RMSNorm.inference_backend">
+<span class="sig-name descname"><span class="pre">inference_backend</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'auto'</span></span><a class="headerlink" href="#dicee.models.flock.RMSNorm.inference_backend" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.RMSNorm.weight">
+<span class="sig-name descname"><span class="pre">weight</span></span><a class="headerlink" href="#dicee.models.flock.RMSNorm.weight" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.flock.RMSNorm.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/flock.html#RMSNorm.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.flock.RMSNorm.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.flock.FeedForward">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.flock.</span></span><span class="sig-name descname"><span class="pre">FeedForward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/flock.html#FeedForward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.flock.FeedForward" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
+evaluation mode.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FeedForward.w1">
+<span class="sig-name descname"><span class="pre">w1</span></span><a class="headerlink" href="#dicee.models.flock.FeedForward.w1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FeedForward.w2">
+<span class="sig-name descname"><span class="pre">w2</span></span><a class="headerlink" href="#dicee.models.flock.FeedForward.w2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FeedForward.w3">
+<span class="sig-name descname"><span class="pre">w3</span></span><a class="headerlink" href="#dicee.models.flock.FeedForward.w3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.flock.FeedForward.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/flock.html#FeedForward.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.flock.FeedForward.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.flock.BidirectionalGRU">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.flock.</span></span><span class="sig-name descname"><span class="pre">BidirectionalGRU</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layers</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/flock.html#BidirectionalGRU"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.flock.BidirectionalGRU" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing them to be nested in
+a tree structure. You can assign the submodules as regular attributes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Submodules assigned in this way will be registered, and will also have their
+parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
+evaluation mode.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.BidirectionalGRU.gru_norm">
+<span class="sig-name descname"><span class="pre">gru_norm</span></span><a class="headerlink" href="#dicee.models.flock.BidirectionalGRU.gru_norm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.BidirectionalGRU.gru">
+<span class="sig-name descname"><span class="pre">gru</span></span><a class="headerlink" href="#dicee.models.flock.BidirectionalGRU.gru" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.BidirectionalGRU.gru_out">
+<span class="sig-name descname"><span class="pre">gru_out</span></span><a class="headerlink" href="#dicee.models.flock.BidirectionalGRU.gru_out" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.BidirectionalGRU.ffn_norm">
+<span class="sig-name descname"><span class="pre">ffn_norm</span></span><a class="headerlink" href="#dicee.models.flock.BidirectionalGRU.ffn_norm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.BidirectionalGRU.feed_forward">
+<span class="sig-name descname"><span class="pre">feed_forward</span></span><a class="headerlink" href="#dicee.models.flock.BidirectionalGRU.feed_forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.flock.BidirectionalGRU.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/flock.html#BidirectionalGRU.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.flock.BidirectionalGRU.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.models.flock.consensus">
+<span class="sig-prename descclassname"><span class="pre">dicee.models.flock.</span></span><span class="sig-name descname"><span class="pre">consensus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logits</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ids</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_ids</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/flock.html#consensus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.flock.consensus" title="Link to this definition"></a></dt>
+<dd><p>Stable multihead softmax pooling over all occurrences of each graph ID.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.flock.</span></span><span class="sig-name descname"><span class="pre">FlockBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/flock.html#FlockBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.flock.FlockBase" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../graph_model/index.html#dicee.models.graph_model.GraphKGE" title="dicee.models.graph_model.GraphKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.graph_model.GraphKGE</span></code></a></p>
+<p>Shared graph lifecycle and entity-scoring interfaces for graph foundation models.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.config_prefix">
+<span class="sig-name descname"><span class="pre">config_prefix</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'flock'</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.config_prefix" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.graph_filename">
+<span class="sig-name descname"><span class="pre">graph_filename</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'flock_graph.pt'</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.graph_filename" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.relation_prediction">
+<span class="sig-name descname"><span class="pre">relation_prediction</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.relation_prediction" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.checkpoint_hint">
+<span class="sig-name descname"><span class="pre">checkpoint_hint</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'official</span> <span class="pre">Flock</span> <span class="pre">requires</span> <span class="pre">dim=64,</span> <span class="pre">walk_len=128,</span> <span class="pre">refinements=6,</span> <span class="pre">num_layers=1,</span> <span class="pre">attention_heads=4...</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.checkpoint_hint" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.emb_anon_node">
+<span class="sig-name descname"><span class="pre">emb_anon_node</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.ModuleList</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.emb_anon_node" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.emb_anon_type">
+<span class="sig-name descname"><span class="pre">emb_anon_type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.ModuleList</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.emb_anon_type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.emb_restart">
+<span class="sig-name descname"><span class="pre">emb_restart</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.ModuleList</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.emb_restart" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.emb_neighbor">
+<span class="sig-name descname"><span class="pre">emb_neighbor</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.ModuleList</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.emb_neighbor" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.emb_direction">
+<span class="sig-name descname"><span class="pre">emb_direction</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.ModuleList</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.emb_direction" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.emb_head_is_query">
+<span class="sig-name descname"><span class="pre">emb_head_is_query</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.ModuleList</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.emb_head_is_query" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.emb_tail_is_query">
+<span class="sig-name descname"><span class="pre">emb_tail_is_query</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.ModuleList</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.emb_tail_is_query" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.emb_node_is_query">
+<span class="sig-name descname"><span class="pre">emb_node_is_query</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.ModuleList</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.emb_node_is_query" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.emb_type_is_query">
+<span class="sig-name descname"><span class="pre">emb_type_is_query</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.ModuleList</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.emb_type_is_query" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.from_node">
+<span class="sig-name descname"><span class="pre">from_node</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.ModuleList</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.from_node" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.from_type">
+<span class="sig-name descname"><span class="pre">from_type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.ModuleList</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.from_type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.to_node">
+<span class="sig-name descname"><span class="pre">to_node</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.ModuleList</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.to_node" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.to_type">
+<span class="sig-name descname"><span class="pre">to_type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.ModuleList</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.to_type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.node_logit">
+<span class="sig-name descname"><span class="pre">node_logit</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.ModuleList</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.node_logit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.type_logit">
+<span class="sig-name descname"><span class="pre">type_logit</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">torch.nn.ModuleList</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.type_logit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.dim">
+<span class="sig-name descname"><span class="pre">dim</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.walk_num">
+<span class="sig-name descname"><span class="pre">walk_num</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.walk_num" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.walk_len">
+<span class="sig-name descname"><span class="pre">walk_len</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.walk_len" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.refinements">
+<span class="sig-name descname"><span class="pre">refinements</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.refinements" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.test_samples">
+<span class="sig-name descname"><span class="pre">test_samples</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.test_samples" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.seed" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.prefetch_walks">
+<span class="sig-name descname"><span class="pre">prefetch_walks</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.prefetch_walks" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.compact_state">
+<span class="sig-name descname"><span class="pre">compact_state</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.compact_state" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.compile_sampler">
+<span class="sig-name descname"><span class="pre">compile_sampler</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.compile_sampler" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.pack_walks">
+<span class="sig-name descname"><span class="pre">pack_walks</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.pack_walks" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.node_init">
+<span class="sig-name descname"><span class="pre">node_init</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.node_init" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.type_init">
+<span class="sig-name descname"><span class="pre">type_init</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.type_init" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.net">
+<span class="sig-name descname"><span class="pre">net</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.net" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.head">
+<span class="sig-name descname"><span class="pre">head</span></span><a class="headerlink" href="#dicee.models.flock.FlockBase.head" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.sample_walks">
+<span class="sig-name descname"><span class="pre">sample_walks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">heads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tails</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">generator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/flock.html#FlockBase.sample_walks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.flock.FlockBase.sample_walks" title="Link to this definition"></a></dt>
+<dd><p>Sample official-format records; IDs use the attached graph vocabulary.</p>
+<p>Returns (nodes, anonymous nodes, restarts, neighbors, relations,
+anonymous relations, directions), each shaped [T,B,S,L]. Anonymous
+names start at 1; no-relation markers are 2*R and L+1 respectively.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockBase.score_walks">
+<span class="sig-name descname"><span class="pre">score_walks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">heads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">candidates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">records</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/flock.html#FlockBase.score_walks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.flock.FlockBase.score_walks" title="Link to this definition"></a></dt>
+<dd><p>Score fixed walks for parity/replay; query/candidates use internal IDs.</p>
+<p>Entity mode: query=relations, candidates=tails. Relation mode:
+query=tails, candidates=relations. This scores the supplied records;
+callers constructing training records must first remove target edges.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.flock.Flock">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.flock.</span></span><span class="sig-name descname"><span class="pre">Flock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/flock.html#Flock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.flock.Flock" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dicee.models.flock.FlockBase" title="dicee.models.flock.FlockBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlockBase</span></code></a></p>
+<p>Entity-prediction Flock with official <code class="docutils literal notranslate"><span class="pre">flock_entity.pth</span></code> parameters.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.Flock.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Flock'</span></span><a class="headerlink" href="#dicee.models.flock.Flock.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockRelation">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.models.flock.</span></span><span class="sig-name descname"><span class="pre">FlockRelation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/flock.html#FlockRelation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.flock.FlockRelation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dicee.models.flock.FlockBase" title="dicee.models.flock.FlockBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FlockBase</span></code></a>, <a class="reference internal" href="../graph_model/index.html#dicee.models.graph_model.RelationGraphKGE" title="dicee.models.graph_model.RelationGraphKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.graph_model.RelationGraphKGE</span></code></a></p>
+<p>Relation-prediction Flock with official <code class="docutils literal notranslate"><span class="pre">flock_relation.pth</span></code> parameters.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockRelation.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'FlockRelation'</span></span><a class="headerlink" href="#dicee.models.flock.FlockRelation.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.flock.FlockRelation.relation_prediction">
+<span class="sig-name descname"><span class="pre">relation_prediction</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#dicee.models.flock.FlockRelation.relation_prediction" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../ensemble/index.html" class="btn btn-neutral float-left" title="dicee.models.ensemble" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../flock_walks/index.html" class="btn btn-neutral float-right" title="dicee.models.flock_walks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
