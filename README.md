@@ -691,7 +691,7 @@ Set `--eval_tie_policy` to rank exactly equal scores after filtering; `--eval_ti
 Test-set entity prediction with released checkpoints and no fine-tuning, using
 training triples plus inverse edges as the inference graph and filtered head/tail
 ranking over all entities; see the [protocol and checkpoints](docs/kgfm_benchmarks.md).
-Detailed result records are generated locally by the benchmark runner.
+Tie strategy: **pessimistic** (worst rank among exactly equal scores after filtering).
 
 <details>
 <summary>Show results</summary>
@@ -701,14 +701,14 @@ Detailed result records are generated locally by the benchmark runner.
 
 | Dataset | Model | Target graph used in pretraining? | MRR | Hits@1 | Hits@3 | Hits@10 |
 |---|---|:---:|---:|---:|---:|---:|
-| YAGO3-10 | ULTRA-3g | No | **0.4800** | **0.3832** | **0.5347** | **0.6583** |
-| YAGO3-10 | TRIX | No | 0.4094 | 0.3024 | 0.4574 | 0.6266 |
+| YAGO3-10 | ULTRA-3g | No | **0.4799** | **0.3832** | **0.5346** | **0.6583** |
+| YAGO3-10 | TRIX | No | 0.4094 | 0.3024 | 0.4574 | 0.6265 |
 | YAGO3-10 | Flock | No | 0.3998 | 0.3092 | 0.4526 | 0.5636 |
 | FB15k-237 | ULTRA-3g | Yes | **0.3693** | **0.2718** | **0.4101** | **0.5620** |
 | FB15k-237 | TRIX | Yes | 0.3618 | 0.2649 | 0.3989 | 0.5546 |
 | FB15k-237 | Flock | Yes | 0.3116 | 0.2215 | 0.3442 | 0.4912 |
-| WN18RR | ULTRA-3g | Yes | 0.3708 | 0.2934 | 0.3947 | 0.5354 |
-| WN18RR | TRIX | Yes | 0.5083 | 0.4608 | 0.5233 | 0.6064 |
+| WN18RR | ULTRA-3g | Yes | 0.3691 | 0.2924 | 0.3923 | 0.5329 |
+| WN18RR | TRIX | Yes | 0.5065 | 0.4592 | 0.5217 | 0.6040 |
 | WN18RR | Flock | Yes | **0.5303** | **0.4783** | **0.5482** | **0.6367** |
 | UMLS | ULTRA-3g | No | 0.6960 | 0.5983 | 0.7474 | 0.8956 |
 | UMLS | TRIX | No | 0.7256 | 0.6430 | 0.7632 | 0.8986 |

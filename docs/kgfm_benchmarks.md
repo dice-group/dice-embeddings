@@ -47,7 +47,8 @@ for a fresh run or changed settings.
 The initial ULTRA/TRIX UMLS and Countries runs used an AMD Ryzen 7 7800X3D CPU;
 Flock and the larger graph runs use an NVIDIA GeForce RTX 4070 Ti SUPER GPU.
 Flock samples walks on CPU and executes its neural network on GPU. Runs use four
-PyTorch CPU threads, float32, and 128 test triples per evaluation batch. Query
+PyTorch CPU threads, float32, and 128 test triples per evaluation batch (8 for
+the initial ULTRA/TRIX UMLS configuration). Query
 batch sizes are recorded per run to bound memory use. GPU runner invocations
 disable TF32. Some GPU runs overlap, so recorded wall times are operational
 measurements rather than a controlled comparison of model speed.
@@ -71,7 +72,8 @@ python benchmarks/kgfm_zero_shot.py --model TRIX --dataset WN18RR \
 
 Use `--device cpu` for CPU evaluation. Keep the original `train.txt`, `valid.txt`,
 and `test.txt` splits. Evaluation ranks all entities with the existing DICE
-evaluator, including its sort-position handling of tied scores. The earlier CLI
+evaluator. The original runs used `sort` tie handling; the current README reports
+the [pessimistic rerun](#pessimistic-rerun-2026-09-10). The earlier CLI
 runs used `--num_epochs 0 --scoring_technique NegSample --eval_model test`;
 `NegSample` selects head-and-tail evaluation, which still ranks all entities.
 
@@ -120,5 +122,79 @@ the sampled integer ranks, so random ties are not average-rank evaluation.
 
 The KGFM runner accepts `--tie-policy` and `--tie-seed` and saves the policy,
 seed, and random generator state for resumable runs. Use a new output directory
-when changing a run's settings. The README table retains its original `sort`
-policy; report results using other tie policies separately.
+when changing a run's settings. The README table uses `pessimistic`; the
+comparison below preserves the original `sort` MRR values.
+
+## Pessimistic rerun (2026-09-10)
+
+The README table reports a full rerun of all 21 model/dataset pairs with
+`--tie-policy pessimistic`. A target receives the worst position among exactly
+equal scores after filtering other known positives. The original `sort` MRR
+values are retained below for comparison.
+
+The rerun uses the same released checkpoint files and dataset splits, verified
+by SHA-256 against the original runs. All weights remain unchanged. Runs use
+PyTorch 2.5.1, float32 with TF32 disabled, four CPU threads, and the optimized
+inference implementation. CUDA runs use Triton 3.1.0 through the `auto` backend,
+including fused message passing and ranking where applicable. Inference caches,
+query reuse for ULTRA/TRIX, and Flock's compact state, scripted sampler, packed
+transfers, and prefetching are enabled; optional dense-update compilation is off.
+
+The device and query microbatch size match each original run:
+
+| Dataset | ULTRA-3g device / query batch | TRIX device / query batch | Flock device / query batch |
+|---|---|---|---|
+| Countries-S1 / S2 / S3 | CPU / 8 | CPU / 8 | CUDA / 1 |
+| UMLS | CPU / 8 | CPU / 8 | CUDA / 1 |
+| WN18RR | CUDA / 8 | CUDA / 4 | CUDA / 1 |
+| YAGO3-10 | CUDA / 2 | CUDA / 2 | CUDA / 1 |
+| FB15k-237 | CUDA / 4 | CUDA / 2 | CUDA / 1 |
+
+Evaluation batches contain 128 test triples and use seed 42, except the initial
+ULTRA/TRIX UMLS configuration, which uses batches of 8 and seed 1. Flock retains
+128 base walks, length 128, six refinements, and one prediction per query.
+Keeping Flock's batch boundaries preserves its sampled walks.
+
+For example:
+
+```bash
+python benchmarks/kgfm_zero_shot.py --model Flock --dataset WN18RR \
+  --device cuda:0 --query-batch-size 1 --batch-size 128 --threads 4 \
+  --walk-num 128 --test-samples 1 --seed 42 --tie-policy pessimistic \
+  --output Experiments/kgfm-pessimistic-20260910/WN18RR/Flock
+```
+
+The following differences compare the rerun against the original README run.
+The original run predates the inference optimizations, so these differences
+are not a strict isolation of tie handling: floating-point reduction order can
+also affect close scores. Each local record retains its exact source hashes
+and settings. Values are rounded to six decimals in this comparison and four
+in the README. Differences are calculated before rounding.
+
+| Dataset | Model | Original sort MRR | Pessimistic MRR | Difference |
+|---|---|---:|---:|---:|
+| YAGO3-10 | ULTRA-3g | 0.479963 | 0.479930 | -0.000033 |
+| YAGO3-10 | TRIX | 0.409400 | 0.409393 | -0.000007 |
+| YAGO3-10 | Flock | 0.399830 | 0.399828 | -0.000001 |
+| FB15k-237 | ULTRA-3g | 0.369266 | 0.369259 | -0.000007 |
+| FB15k-237 | TRIX | 0.361815 | 0.361814 | -0.000001 |
+| FB15k-237 | Flock | 0.311554 | 0.311553 | -0.000001 |
+| WN18RR | ULTRA-3g | 0.370754 | 0.369149 | -0.001604 |
+| WN18RR | TRIX | 0.508263 | 0.506535 | -0.001728 |
+| WN18RR | Flock | 0.530301 | 0.530276 | -0.000025 |
+| UMLS | ULTRA-3g | 0.696007 | 0.696007 | 0.000000 |
+| UMLS | TRIX | 0.725622 | 0.725622 | 0.000000 |
+| UMLS | Flock | 0.776795 | 0.776795 | 0.000000 |
+| Countries-S1 | ULTRA-3g | 0.937500 | 0.937500 | 0.000000 |
+| Countries-S1 | TRIX | 0.927083 | 0.927083 | 0.000000 |
+| Countries-S1 | Flock | 0.927083 | 0.927083 | 0.000000 |
+| Countries-S2 | ULTRA-3g | 0.871528 | 0.871528 | 0.000000 |
+| Countries-S2 | TRIX | 0.885417 | 0.885417 | 0.000000 |
+| Countries-S2 | Flock | 0.885417 | 0.885417 | 0.000000 |
+| Countries-S3 | ULTRA-3g | 0.235401 | 0.235401 | 0.000000 |
+| Countries-S3 | TRIX | 0.362490 | 0.362490 | 0.000000 |
+| Countries-S3 | Flock | 0.253328 | 0.253328 | 0.000000 |
+
+All result records, progress files, and indexed datasets remain in the ignored
+`Experiments/kgfm-pessimistic-20260910/` directory. Generated benchmark JSON
+files are not committed.
