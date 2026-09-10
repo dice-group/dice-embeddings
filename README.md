@@ -685,8 +685,7 @@ Tie strategy: **pessimistic** (worst rank among exactly equal scores after filte
 <details>
 <summary>Show results</summary>
 
-**Bold** marks the best result per dataset and metric (including displayed ties);
-`—` means pending, and **Yes** marks target graphs used in pretraining.
+**Bold** marks the best result per dataset and metric, **Yes** marks target graphs used in pretraining.
 
 | Dataset | Model | Target graph used in pretraining? | MRR | Hits@1 | Hits@3 | Hits@10 |
 |---|---|:---:|---:|---:|---:|---:|
