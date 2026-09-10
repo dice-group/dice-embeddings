@@ -76,7 +76,7 @@ def construct_dataset(
     form_of_labelling : str
         ``'EntityPrediction'`` or ``'RelationPrediction'``.
     scoring_technique : str
-        One of ``'NegSample'``, ``'FixedNegSample'``, ``'1vsAll'``, ``'1vsSample'``, ``'KvsAll'``,
+        One of ``'NegSample'``, ``'NegSampleMargin'``, ``'FixedNegSample'``, ``'1vsAll'``, ``'1vsSample'``, ``'KvsAll'``,
         ``'AllvsAll'``, ``'KvsSample'``.
     neg_ratio : int
         Negative sample ratio.
@@ -122,7 +122,7 @@ def construct_dataset(
         train_set = MultiClassClassificationDataset(
             train_set, block_size=block_size
         )
-    elif scoring_technique == "NegSample":
+    elif scoring_technique in ("NegSample", "NegSampleMargin"):
         train_set = TriplePredictionDataset(
             train_set=train_set,
             num_entities=len(entity_to_idx),

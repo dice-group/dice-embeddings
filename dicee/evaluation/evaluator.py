@@ -174,7 +174,7 @@ class Evaluator:
                     trained_model=trained_model,
                     form_of_labelling=form_of_labelling
                 )
-        elif self.args.scoring_technique in ['NegSample', 'FixedNegSample']:
+        elif self.args.scoring_technique in ['NegSample', 'NegSampleMargin', 'FixedNegSample']:
             self.eval_rank_of_head_and_tail_entity(
                 train_set=dataset.train_set,
                 valid_set=dataset.valid_set,
@@ -659,7 +659,7 @@ class Evaluator:
 
         train_set, valid_set, test_set = self._load_indexed_datasets()
 
-        if self.args.scoring_technique in ['NegSample', 'FixedNegSample']:
+        if self.args.scoring_technique in ['NegSample', 'NegSampleMargin', 'FixedNegSample']:
             self.eval_rank_of_head_and_tail_entity(
                 train_set=train_set,
                 valid_set=valid_set,
@@ -704,7 +704,7 @@ class Evaluator:
         """
         self.vocab_preparation(dataset)
 
-        if self.args.scoring_technique == 'NegSample':
+        if self.args.scoring_technique in ('NegSample', 'NegSampleMargin'):
             return self.evaluate_lp(
                 trained_model, triple_idx,
                 info=f'Evaluate {trained_model.name} on a given dataset'

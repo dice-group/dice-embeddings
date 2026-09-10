@@ -130,7 +130,8 @@ class Namespace(argparse.Namespace):
         """Number of slices in the generated feature map by convolution."""
 
         self.margin: float = 4.0
-        """Margin used by margin-based scoring functions (e.g. TransE, TransH, RotatE)"""
+        """Margin used by margin-based scoring functions (e.g. TransE, TransH, RotatE), and by
+        torch.nn.MarginRankingLoss when scoring_technique='NegSampleMargin'"""
 
         self.p: int = 0
         "P parameter of Clifford Embeddings"
