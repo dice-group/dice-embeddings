@@ -18,7 +18,7 @@ from ._bpe import (
     MultiLabelDataset,
 )
 from ._label_based import AllvsAll, FSDP1vsSampleDataset, KvsAll, KvsSampleDataset, OnevsAllDataset
-from ._negative_sampling import FixedNegSampleDataset, OnevsSample, TriplePredictionDataset
+from ._negative_sampling import FixedNegSampleDataset, GroupedNegativeSamplingDataset, OnevsSample, TriplePredictionDataset
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +64,9 @@ def construct_dataset(
     block_size: int = None,
     seed: int = None,
     sort_train_set: bool = True,
+    grouped_negative_sampling: bool = False,
+    strict_negative_sampling: bool = False,
+    adversarial_temperature: float | None = None,
 ) -> torch.utils.data.Dataset:
     """Build the appropriate dataset for the given training configuration.
 
@@ -87,6 +90,14 @@ def construct_dataset(
     -------
     torch.utils.data.Dataset
     """
+    grouped = grouped_negative_sampling or strict_negative_sampling or adversarial_temperature is not None
+    if grouped:
+        if scoring_technique != "NegSample" or byte_pair_encoding or form_of_labelling != "EntityPrediction":
+            raise ValueError("Grouped/strict/adversarial sampling requires indexed NegSample entity prediction")
+        return GroupedNegativeSamplingDataset(
+            train_set=train_set, num_entities=len(entity_to_idx), num_relations=len(relation_to_idx),
+            neg_sample_ratio=neg_ratio, label_smoothing_rate=label_smoothing_rate,
+            seed=seed, sort_train_set=sort_train_set, strict_negative_sampling=strict_negative_sampling)
     if (
         ordered_bpe_entities
         and byte_pair_encoding

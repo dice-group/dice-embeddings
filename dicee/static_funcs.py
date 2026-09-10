@@ -27,14 +27,23 @@ from lightning.pytorch.utilities.rank_zero import rank_zero_only
 from .models import AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ, DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, MuRE, OMult, Pyke, QMult, RotatE, Shallom, TransE, TransH
 from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
+from .models.flock import Flock, FlockRelation
 from .models.fsdp_models import FSDPShardedEntityModel, create_fsdp_sharded_model_class
+from .models.graph_model import GraphKGE
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
+from .models.trix import TRIX, TRIXRelation
+from .models.ultra import ULTRA
 
 logger = logging.getLogger(__name__)
 
 # Model registry mapping model names to their classes and labelling types
 MODEL_REGISTRY: Dict[str, Tuple[Type, str]] = {
+    'ULTRA': (ULTRA, 'EntityPrediction'),
+    'Flock': (Flock, 'EntityPrediction'),
+    'FlockRelation': (FlockRelation, 'RelationPrediction'),
+    'TRIX': (TRIX, 'EntityPrediction'),
+    'TRIXRelation': (TRIXRelation, 'RelationPrediction'),
     'Shallom': (Shallom, 'RelationPrediction'),
     'ConEx': (ConEx, 'EntityPrediction'),
     'AConEx': (AConEx, 'EntityPrediction'),
@@ -362,6 +371,8 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
         model.load_state_dict(weights.state_dict())
     else:
         model.load_state_dict(weights)
+    if isinstance(model, GraphKGE):
+        model.load_graph(os.path.join(path_of_experiment_folder, model.graph_filename))
     # (6) Set it into eval model.
     for parameter in model.parameters():
         parameter.requires_grad = False
@@ -429,6 +440,8 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, Tuple[
     model, _ = intialize_model(configs, for_inference=True)
     # (4.3) Put (3) into their places
     model.load_state_dict(weights, strict=True)
+    if isinstance(model, GraphKGE):
+        model.load_graph(os.path.join(path_of_experiment_folder, model.graph_filename))
     # (6) Set it into eval model.
     logger.info('Setting Eval mode & requires_grad params to False')
     for parameter in model.parameters():
@@ -498,6 +511,8 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
     assert isinstance(model_name, str)
     assert len(model_name) > 1
     save_checkpoint_model(model=trained_model, path=full_storage_path + f'/{model_name}.pt')
+    if isinstance(trained_model, GraphKGE):
+        trained_model.save_graph(os.path.join(full_storage_path, trained_model.graph_filename))
 
     if save_embeddings_as_csv:
         entity_emb, relation_ebm = trained_model.get_embeddings()

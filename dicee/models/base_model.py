@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 import lightning as pl
 import numpy as np
@@ -20,6 +20,9 @@ class BaseKGELightning(pl.LightningModule):
     for reporting model size.  All concrete KGE models should extend
     :class:`BaseKGE` rather than this class directly.
     """
+
+    args: Dict[str, Any]
+    loss: nn.Module
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -80,7 +83,7 @@ class BaseKGELightning(pl.LightningModule):
                      logger=False)
         return loss_batch
 
-    def loss_function(self, yhat_batch: torch.FloatTensor, y_batch: torch.FloatTensor) -> torch.FloatTensor:
+    def loss_function(self, yhat_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor:
         """Compute the loss between model predictions and targets.
 
         Delegates to ``self.loss`` which is configured in
@@ -100,7 +103,11 @@ class BaseKGELightning(pl.LightningModule):
         torch.FloatTensor
             Scalar loss value.
         """
-        return self.loss(yhat_batch, y_batch)
+        temperature = self.args.get("adversarial_temperature")
+        if temperature is not None:
+            from .sampled_loss import grouped_adversarial_bce
+            return grouped_adversarial_bce(yhat_batch, y_batch, temperature)
+        return cast(torch.Tensor, self.loss(yhat_batch, y_batch))
 
     def on_train_epoch_end(self, *args, **kwargs):
         if len(args) >= 1:
@@ -209,8 +216,8 @@ class BaseKGE(BaseKGELightning):
         super().__init__()
         self.args = args
         self.embedding_dim = None
-        self.num_entities = None
-        self.num_relations = None
+        self.num_entities: Optional[int] = None
+        self.num_relations: Optional[int] = None
         self.num_tokens = None
         self.learning_rate = None
         self.apply_unit_norm = None
@@ -449,7 +456,7 @@ class BaseKGE(BaseKGELightning):
             self.optimizer_name = IdentityClass
 
     def forward(self, x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]],
-                y_idx: torch.LongTensor = None) -> torch.FloatTensor:
+                y_idx: Optional[torch.LongTensor] = None) -> torch.Tensor:
         """Route the forward pass to the appropriate scoring method.
 
         Inspects the shape and type of *x* to decide which low-level scorer
@@ -479,6 +486,9 @@ class BaseKGE(BaseKGELightning):
             x, y_idx = x
             return self.forward_k_vs_sample(x=x, target_entity_idx=y_idx)
         else:
+            if not self.byte_pair_encoding and x.ndim == 3 and x.shape[-1] == 3:
+                flat_triples = cast(torch.LongTensor, x.reshape(-1, 3))
+                return self.forward_triples(flat_triples).reshape(x.shape[:2])
             shape_info = x.shape
             if len(shape_info) == 2:
                 batch_size, dim = x.shape

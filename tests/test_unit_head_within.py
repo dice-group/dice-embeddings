@@ -13,15 +13,27 @@ class HeadScorer:
         return triples[:, 0].float()
 
 
+class GraphHeadScorer:
+    device = 'cpu'
+
+    def __call__(self, triples):
+        raise AssertionError('Graph models must use their native head-scoring path')
+
+    def forward_k_vs_all_heads(self, queries, candidates):
+        assert queries[:, 0].eq(0).all()
+        return candidates.float().expand(len(queries), -1)
+
+
+@pytest.mark.parametrize('model_class', [HeadScorer, GraphHeadScorer])
 @pytest.mark.parametrize('inverse', [False, True])
 @pytest.mark.parametrize('within', [['a'], ['c', 'a'], ['a', 'c'], None])
-def test_head_candidate_restriction(inverse, within):
+def test_head_candidate_restriction(model_class, inverse, within):
     kge = SimpleNamespace(
-        all_have_inverse=inverse, model=HeadScorer(),
+        all_have_inverse=inverse, model=model_class(),
         entity_to_idx={'a': 0, 'b': 1, 'c': 2}, relation_to_idx={'r': 0},
         idx_to_entity={0: 'a', 1: 'b', 2: 'c'},
     )
-    if inverse and within is None:
+    if model_class is HeadScorer and inverse and within is None:
         kge.predict_missing_tail_entity = lambda *args: 'inverse path'
         assert KGE.predict_missing_head_entity(kge, 'r', 'a') == 'inverse path'
         return

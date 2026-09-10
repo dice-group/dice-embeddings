@@ -5,6 +5,7 @@ import os
 import pickle
 import time
 from collections import defaultdict
+from itertools import chain
 from multiprocessing import Process, cpu_count
 from typing import Tuple
 
@@ -380,6 +381,23 @@ def read_from_triple_store_with_pandas(endpoint: str = None):
     return pd.DataFrame(data=triples, index=None, columns=["subject", "relation", "object"], dtype=str)
 
 
+def get_filter_vocabs(data, directory=None):
+    """Build all evaluation filters in one pass without copying the input splits.
+
+    Keep the existing defaultdict/list format and pickle filenames so saved
+    checkpoints and evaluation APIs remain compatible.
+    """
+    er_vocab, re_vocab, ee_vocab = defaultdict(list), defaultdict(list), defaultdict(list)
+    for h, r, t in data:
+        er_vocab[(h, r)].append(t)
+        re_vocab[(r, t)].append(h)
+        ee_vocab[(h, t)].append(r)
+    if directory is not None:
+        for name, vocab in (("er_vocab", er_vocab), ("re_vocab", re_vocab), ("ee_vocab", ee_vocab)):
+            save_pickle(data=vocab, file_path=os.path.join(directory, name + '.p'))
+    return er_vocab, re_vocab, ee_vocab
+
+
 def get_er_vocab(data, file_path: str = None):
     # head entity and relation
     er_vocab = defaultdict(list)
@@ -490,17 +508,12 @@ def load_with_pandas(self) -> None:
         self.kg.test_set = None
 
     if self.kg.eval_model:
-        if self.kg.valid_set is not None and self.kg.test_set is not None:
-            # 16. Create a bijection mapping from subject-relation pairs to tail entities.
-            data = np.concatenate([self.kg.train_set, self.kg.valid_set, self.kg.test_set])
-        else:
-            data = self.kg.train_set
+        data = chain.from_iterable(split for split in
+                                   (self.kg.train_set, self.kg.valid_set, self.kg.test_set)
+                                   if split is not None)
         logger.info('[7 / 4] Creating er,re, and ee type vocabulary for evaluation...')
         start_time = time.time()
-        self.kg.er_vocab = get_er_vocab(data)
-        self.kg.re_vocab = get_re_vocab(data)
-        # 17. Create a bijection mapping from subject-object pairs to relations.
-        self.kg.ee_vocab = get_ee_vocab(data)
+        self.kg.er_vocab, self.kg.re_vocab, self.kg.ee_vocab = get_filter_vocabs(data)
         self.kg.domain_constraints_per_rel, self.kg.range_constraints_per_rel = create_constraints(
             self.kg.train_set)
         logger.info(f'Done !\t{time.time() - start_time:.3f} seconds')

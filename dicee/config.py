@@ -34,6 +34,35 @@ class Namespace(argparse.Namespace):
         self.sparql_endpoint = None
         "An endpoint of a triple store."
 
+        self.ultra_checkpoint: Optional[str] = None
+        self.ultra_dim: int = 64
+        self.ultra_num_layers: int = 6
+        self.ultra_query_batch_size: int = 8
+        self.trix_checkpoint: Optional[str] = None
+        self.trix_dim: int = 32
+        self.trix_query_batch_size: int = 8
+        self.flock_checkpoint: Optional[str] = None
+        self.flock_dim: int = 64
+        self.flock_walk_num: int = 128
+        self.flock_walk_len: int = 128
+        self.flock_refinements: int = 6
+        self.flock_num_layers: int = 1
+        self.flock_attention_heads: int = 4
+        self.flock_test_samples: int = 1
+        self.flock_query_batch_size: int = 1
+        self.flock_seed: Optional[int] = None
+        self.flock_prefetch_walks: bool = True
+        self.flock_compact_state: bool = True
+        self.flock_compile_sampler: bool = True
+        self.flock_pack_walks: bool = True
+        self.graph_inference_backend: str = 'auto'
+        self.graph_relation_cache_mb: int = 64
+        self.graph_projection_cache_mb: int = 64
+        self.graph_inference_compile: bool = False
+        self.grouped_negative_sampling: bool = False
+        self.strict_negative_sampling: bool = False
+        self.adversarial_temperature: Optional[float] = None
+
         self.model: str = "Keci"
         "KGE model"
 
@@ -93,6 +122,12 @@ class Namespace(argparse.Namespace):
 
         self.eval_model: str = "train_val_test"
         """ Evaluate trained model choices:["None", "train", "train_val", "train_val_test", "test"]"""
+
+        self.eval_tie_policy: str = "sort"
+        """Prediction ties: sort (legacy), optimistic, random, or pessimistic."""
+
+        self.eval_tie_seed: Optional[int] = None
+        """Independent random tie seed; None uses random_seed."""
 
         self.save_model_at_every_epoch: Optional[int] = None
         """ Not tested """

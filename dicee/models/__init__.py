@@ -7,3 +7,8 @@ from .clifford import Keci, CKeci, DeCaL, KeciTransformer # noqa
 from .pykeen_models import * # noqa
 from .function_space import * # noqa
 from .dualE import DualE # noqa
+
+from .ultra import ULTRA # noqa
+from .trix import TRIX, TRIXRelation # noqa
+
+from .flock import Flock, FlockRelation # noqa

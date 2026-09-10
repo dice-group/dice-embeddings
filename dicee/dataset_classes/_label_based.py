@@ -10,12 +10,12 @@ import logging
 import numpy as np
 import torch
 
-from ..static_preprocess_funcs import mapping_from_first_two_cols_to_third
+from ._storage import PairIndex, RaggedIndices, WorkerDataset
 
 logger = logging.getLogger(__name__)
 
 
-class OnevsAllDataset(torch.utils.data.Dataset):
+class OnevsAllDataset(WorkerDataset):
     """Dataset for the 1-vs-All training strategy (multi-class).
 
     Each sample is a ``(head, relation)`` pair with a one-hot target vector
@@ -52,7 +52,7 @@ class OnevsAllDataset(torch.utils.data.Dataset):
         return triple[:2], y_vec
 
 
-class KvsAll(torch.utils.data.Dataset):
+class KvsAll(WorkerDataset):
     """Dataset for KvsAll training (multi-label).
 
     D := {(x, y)_i}_{i=1}^{N} where
@@ -86,42 +86,23 @@ class KvsAll(torch.utils.data.Dataset):
         super().__init__()
         assert len(train_set_idx) > 0
         assert isinstance(train_set_idx, (np.memmap, np.ndarray))
-        self.train_data = None
-        self.train_target = None
+        self.train_data: torch.Tensor
+        self.train_target: RaggedIndices
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.collate_fn = None
 
-        if store is None:
-            store = dict()
-            if form == "RelationPrediction":
-                self.target_dim = len(relation_idxs)
-                for s_idx, p_idx, o_idx in train_set_idx:
-                    store.setdefault((s_idx, o_idx), list()).append(p_idx)
-                # Sort keys to ensure order-independent training
-                store = dict(sorted(store.items()))
-            elif form == "EntityPrediction":
-                self.target_dim = len(entity_idxs)
-                # mapping_from_first_two_cols_to_third already returns sorted dict
-                store = mapping_from_first_two_cols_to_third(train_set_idx)
-            else:
-                raise NotImplementedError
+        if store is not None:
+            raise ValueError("A prebuilt store is not supported")
+        if form == "RelationPrediction":
+            self.target_dim = len(relation_idxs)
+            index = PairIndex.from_triples(train_set_idx, columns=(0, 2, 1))
+        elif form == "EntityPrediction":
+            self.target_dim = len(entity_idxs)
+            index = PairIndex.from_triples(train_set_idx)
         else:
-            raise ValueError()
-        assert len(store) > 0
-
-        self.train_data = torch.LongTensor(list(store.keys()))
-
-        if sum(len(i) for i in store.values()) == len(store):
-            self.train_target = np.array(list(store.values()))
-            try:
-                assert isinstance(self.train_target[0], np.ndarray)
-            except (IndexError, AssertionError):
-                logger.error(self.train_target)
-                exit(1)
-        else:
-            self.train_target = list(store.values())
-            assert isinstance(self.train_target[0], list)
-        del store
+            raise NotImplementedError(form)
+        self.train_data = index.keys
+        self.train_target = index.targets
 
     def __len__(self):
         assert len(self.train_data) == len(self.train_target)
@@ -136,7 +117,7 @@ class KvsAll(torch.utils.data.Dataset):
         return self.train_data[idx], y_vec
 
 
-class AllvsAll(torch.utils.data.Dataset):
+class AllvsAll(WorkerDataset):
     """Dataset for AllvsAll training (multi-label, exhaustive).
 
     Extends the ``KvsAll`` idea: every *possible* ``(entity, relation)``
@@ -165,27 +146,24 @@ class AllvsAll(torch.utils.data.Dataset):
         super().__init__()
         assert len(train_set_idx) > 0
         assert isinstance(train_set_idx, (np.memmap, np.ndarray))
-        self.train_data = None
-        self.train_target = None
+        self.train_data: torch.Tensor
+        self.train_target: RaggedIndices
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.collate_fn = None
 
         self.target_dim = len(entity_idxs)
-        # mapping_from_first_two_cols_to_third already returns sorted dict
-        store = mapping_from_first_two_cols_to_third(train_set_idx)
-        logger.info(f"Number of unique pairs: {len(store)}")
-        for i in range(len(entity_idxs)):
-            for j in range(len(relation_idxs)):
-                if store.get((i, j), None) is None:
-                    store[(i, j)] = list()
-        logger.info(f"Number of unique augmented pairs: {len(store)}")
-        # Re-sort after adding new keys to maintain consistent ordering
-        store = dict(sorted(store.items()))
-        assert len(store) > 0
-        self.train_data = torch.LongTensor(list(store.keys()))
-
-        self.train_target = list(store.values())
-        del store
+        index = PairIndex.from_triples(train_set_idx)
+        num_relations = len(relation_idxs)
+        num_pairs = self.target_dim * num_relations
+        pair_ids = np.arange(num_pairs, dtype=np.int64)
+        self.train_data = torch.from_numpy(np.column_stack((pair_ids // num_relations,
+                                                           pair_ids % num_relations)))
+        lengths = np.zeros(num_pairs, dtype=np.int64)
+        keys = index.keys.numpy()
+        lengths[keys[:, 0] * num_relations + keys[:, 1]] = np.diff(index.targets.offsets.numpy())
+        offsets = np.r_[0, lengths.cumsum()]
+        self.train_target = RaggedIndices(index.targets.values, offsets)
+        logger.info("Number of unique augmented pairs: %s", num_pairs)
 
     def __len__(self):
         assert len(self.train_data) == len(self.train_target)
@@ -202,7 +180,7 @@ class AllvsAll(torch.utils.data.Dataset):
         return self.train_data[idx], y_vec
 
 
-class KvsSampleDataset(torch.utils.data.Dataset):
+class KvsSampleDataset(WorkerDataset):
     """Dataset for KvsSample training (dynamic multi-label).
 
     Like ``KvsAll`` but sub-samples the target vector at each access to keep
@@ -238,20 +216,16 @@ class KvsSampleDataset(torch.utils.data.Dataset):
         assert len(train_set_idx) > 0
         assert isinstance(train_set_idx, np.ndarray)
         assert neg_ratio is not None
-        self.train_data = None
-        self.train_target = None
+        self.train_data: torch.Tensor
+        self.train_target: RaggedIndices
         self.neg_ratio = neg_ratio
         self.num_entities = len(entity_idxs)
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.collate_fn = None
-        store = mapping_from_first_two_cols_to_third(train_set_idx)
-        assert len(store) > 0
-        self.train_data = torch.LongTensor(list(store.keys()))
-        self.train_target = list(store.values())
-        self.max_num_of_classes = (
-            max(len(i) for i in self.train_target) + self.neg_ratio
-        )
-        del store
+        index = PairIndex.from_triples(train_set_idx)
+        self.train_data = index.keys
+        self.train_target = index.targets
+        self.max_num_of_classes = self.train_target.max_length + self.neg_ratio
 
     def __len__(self):
         return len(self.train_data)
@@ -270,7 +244,7 @@ class KvsSampleDataset(torch.utils.data.Dataset):
             weights, num_samples=num_negative_class, replacement=True
         )
 
-        y_idx = torch.cat((torch.LongTensor(y), negative_idx), 0)
+        y_idx = torch.cat((y, negative_idx), 0)
         y_vec = torch.cat(
             (torch.ones(num_positive_class) - self.label_smoothing_rate,
              torch.zeros(num_negative_class) + self.label_smoothing_rate), 0
@@ -278,7 +252,7 @@ class KvsSampleDataset(torch.utils.data.Dataset):
         return x, y_idx, y_vec
 
 
-class FSDP1vsSampleDataset(torch.utils.data.Dataset):
+class FSDP1vsSampleDataset(WorkerDataset):
     """Positive-triple dataset for FSDP 1vsSample training with true-negative sampling.
 
     Each dataset item is a single positive triple (h, r, t).  The collate_fn
@@ -312,29 +286,14 @@ class FSDP1vsSampleDataset(torch.utils.data.Dataset):
         self.neg_ratio = neg_ratio
         self.label_smoothing_rate = label_smoothing_rate
 
-        # Build er_vocab: (h_idx, r_idx) -> sorted list of positive tail indices
-        er_vocab = mapping_from_first_two_cols_to_third(train_set_idx)
-
-        # Fixed row width: same formula as KvsSample
-        self.max_num_of_classes = max(len(v) for v in er_vocab.values()) + neg_ratio
-        self.num_negatives = self.max_num_of_classes - 1  # 1 slot taken by the positive
-
-        # Build padded positive table for vectorised index remapping.
-        # Sentinel = num_entities (valid IDs are [0, num_entities-1]).
-        # Rows where the pad fires (negs >= num_entities) never exist after remapping,
-        # so the sentinel is naturally a no-op in the increment loop.
-        max_pos = max(len(v) for v in er_vocab.values())
-        self._pos_table = np.full(
-            (len(er_vocab), max_pos),
-            fill_value=self.num_entities,
-            dtype=np.int32,
-        )
-        self._pair_to_id: dict = {}
-        for i, (pair, tails) in enumerate(er_vocab.items()):
-            self._pair_to_id[pair] = i
-            sorted_tails = sorted(tails)
-            self._pos_table[i, :len(sorted_tails)] = sorted_tails
-        self._max_pos = max_pos
+        # Index remapping requires sorted, distinct positives. Keep the table
+        # ragged so a high-degree query does not pad every other query in the KG.
+        self._positive_index = PairIndex.from_triples(train_set_idx, unique=True)
+        # Preserve the old batch width even if duplicate input triples exist;
+        # exclusion itself uses distinct positives for correct index remapping.
+        max_pos = self._positive_index.max_input_count
+        self.max_num_of_classes = max_pos + neg_ratio
+        self.num_negatives = self.max_num_of_classes - 1
 
         self.collate_fn = self._collate
 
@@ -354,19 +313,12 @@ class FSDP1vsSampleDataset(torch.utils.data.Dataset):
         """
         triples = np.stack([t.numpy() for t in batch])   # (B, 3)
         B = triples.shape[0]
-        h, r, pos_t = triples[:, 0], triples[:, 1], triples[:, 2]
+        pos_t = triples[:, 2]
 
-        # Python loop only for dict lookups (trivial body, ~100 ns/item)
-        pair_ids = np.array(
-            [self._pair_to_id.get((int(h[i]), int(r[i])), 0) for i in range(B)],
-            dtype=np.int32,
-        )
-
-        # Padded positive table for this batch: (B, max_pos)
-        pos_pad = self._pos_table[pair_ids].astype(np.int64)   # sentinel = num_entities
-
-        # Per-item actual positive count (non-sentinel entries)
-        k_per_item = np.sum(pos_pad < self.num_entities, axis=1)   # (B,)
+        pair_ids = self._positive_index.find_rows(triples[:, :2])
+        pos_pad, k_per_item = self._positive_index.targets.padded_rows(pair_ids, self.num_entities)
+        if self.num_negatives and np.any(k_per_item >= self.num_entities):
+            raise ValueError("No valid negative candidates for a training query")
 
         # Sample negatives from reduced range [0, num_entities - k_i) per item
         upper = (self.num_entities - k_per_item).astype(np.float64)  # (B,)
@@ -376,7 +328,7 @@ class FSDP1vsSampleDataset(torch.utils.data.Dataset):
 
         # Index remapping: for each positive p (sorted), increment every neg >= p.
         # Sentinel comparisons (neg >= num_entities) are always False — no-op.
-        for j in range(self._max_pos):
+        for j in range(pos_pad.shape[1]):
             negs += negs >= pos_pad[:, j : j + 1]
 
         source = torch.from_numpy(triples[:, :2].astype(np.int64))

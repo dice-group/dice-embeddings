@@ -1,6 +1,7 @@
 import argparse
 import json
 
+from dicee.evaluation._filtering import TIE_POLICIES
 from dicee.executer import ContinuousExecute, Execute
 
 
@@ -34,10 +35,38 @@ def get_default_arguments(description=None):
     parser.add_argument("--reuse_existing_run_dir", action="store_true",
                         help="If set, reuse the existing path_to_store_single_run directory if it exists. "
                              "If not set, the directory will be deleted and recreated if it exists.")
+    parser.add_argument("--ultra_checkpoint", default=None, help="Official ULTRA checkpoint path")
+    parser.add_argument("--ultra_dim", type=int, default=64)
+    parser.add_argument("--ultra_num_layers", type=int, default=6)
+    parser.add_argument("--ultra_query_batch_size", type=int, default=8)
+    parser.add_argument("--trix_checkpoint", default=None, help="Official TRIX entity/relation checkpoint path")
+    parser.add_argument("--trix_dim", type=int, default=32)
+    parser.add_argument("--trix_query_batch_size", type=int, default=8)
+    parser.add_argument("--flock_checkpoint", default=None, help="Official Flock entity/relation checkpoint path")
+    parser.add_argument("--flock_dim", type=int, default=64)
+    parser.add_argument("--flock_walk_num", type=int, default=128)
+    parser.add_argument("--flock_walk_len", type=int, default=128)
+    parser.add_argument("--flock_refinements", type=int, default=6)
+    parser.add_argument("--flock_num_layers", type=int, default=1)
+    parser.add_argument("--flock_attention_heads", type=int, default=4)
+    parser.add_argument("--flock_test_samples", type=int, default=1)
+    parser.add_argument("--flock_query_batch_size", type=int, default=1)
+    parser.add_argument("--flock_seed", type=int, default=None)
+    parser.add_argument('--flock_prefetch_walks', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--flock_compact_state', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--flock_compile_sampler', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--flock_pack_walks', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--graph_inference_backend', choices=['auto', 'torch', 'triton'], default='auto')
+    parser.add_argument('--graph_relation_cache_mb', type=int, default=64)
+    parser.add_argument('--graph_projection_cache_mb', type=int, default=64)
+    parser.add_argument('--graph_inference_compile', action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("--grouped_negative_sampling", action="store_true")
+    parser.add_argument("--strict_negative_sampling", action="store_true")
+    parser.add_argument("--adversarial_temperature", type=float, default=None)
     # Model related arguments
     parser.add_argument("--model", type=str,
                         default="Keci",
-                        choices=["ComplEx", "Keci", "KeciTransformer", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
+                        choices=["ULTRA", "TRIX", "TRIXRelation", "Flock", "FlockRelation", "ComplEx", "Keci", "KeciTransformer", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "MuRE", "TransH", "RotatE", "DualE",
                                  "BytE", "CoKE",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
@@ -117,6 +146,11 @@ def get_default_arguments(description=None):
     parser.add_argument("--eval_model", type=str, default="train_val_test",
                         choices=["None", "train", "train_val", "train_val_test", "test", "val_test", "val", "train_test"],
                         help='Evaluating link prediction performance on data splits. ')
+    parser.add_argument("--eval_tie_policy", choices=TIE_POLICIES, default="sort",
+                        help="Prediction ties: legacy sort ordering, best rank (optimistic), "
+                             "uniform random tied rank, or worst rank (pessimistic).")
+    parser.add_argument("--eval_tie_seed", type=int, default=None,
+                        help="Seed for independent random tie-breaking; defaults to random_seed.")
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
                         help='At every X number of epochs model will be saved. If None, we save 4 times.')
     # Continual Learning

@@ -588,9 +588,165 @@ keci.predict_topk(h=["Mongolia"], r=["isLocatedIn"], topk=3)
 
 </details>
 
+## Knowledge graph foundation models
+
+[ULTRA](docs/ultra.md) supports official pretrained checkpoints, zero-shot link prediction,
+fine-tuning, and native DICE training objectives using pure PyTorch.
+
+<details>
+<summary>ULTRA checkpoint downloads and inference</summary>
+
+Download any of the three official checkpoints:
+
+```bash
+wget -P checkpoints https://raw.githubusercontent.com/DeepGraphLearning/ULTRA/main/ckpts/ultra_3g.pth
+wget -P checkpoints https://raw.githubusercontent.com/DeepGraphLearning/ULTRA/main/ckpts/ultra_4g.pth
+wget -P checkpoints https://raw.githubusercontent.com/DeepGraphLearning/ULTRA/main/ckpts/ultra_50g.pth
+```
+
+Run zero-shot inference and filtered evaluation on the UMLS test set:
+
+```bash
+python -m dicee --model ULTRA --dataset_dir KGs/UMLS \
+  --ultra_checkpoint checkpoints/ultra_3g.pth --num_epochs 0 \
+  --trainer torchCPUTrainer --scoring_technique NegSample \
+  --batch_size 8 --eval_model test
+```
+
+Change `--ultra_checkpoint` to use another checkpoint and `--dataset_dir` to use
+your own graph with `train.txt` and `test.txt`. See the [ULTRA guide](docs/ultra.md)
+for training, fine-tuning, and prediction examples.
+
+</details>
+
+[TRIX](docs/trix.md) supports the official entity- and relation-prediction
+checkpoints, with pure PyTorch training, fine-tuning, and zero-shot inference.
+Its scores and gradients are verified against the official implementation.
+
+<details>
+<summary>TRIX checkpoint downloads and inference</summary>
+
+```bash
+mkdir -p checkpoints/trix
+wget -P checkpoints/trix https://raw.githubusercontent.com/yuchengz99/TRIX/7596e14eefefe89e61396205a0550172cadeddb0/entity_prediction.pth
+wget -P checkpoints/trix https://raw.githubusercontent.com/yuchengz99/TRIX/7596e14eefefe89e61396205a0550172cadeddb0/relation_prediction.pth
+
+python -m dicee --model TRIX --dataset_dir KGs/UMLS \
+  --trix_checkpoint checkpoints/trix/entity_prediction.pth --num_epochs 0 \
+  --trainer torchCPUTrainer --scoring_technique NegSample \
+  --batch_size 8 --eval_model test
+
+python -m dicee --model TRIXRelation --dataset_dir KGs/UMLS \
+  --trix_checkpoint checkpoints/trix/relation_prediction.pth --num_epochs 0 \
+  --trainer torchCPUTrainer --scoring_technique KvsAll \
+  --batch_size 8 --eval_model test
+```
+
+See the [TRIX guide](docs/trix.md) for Python inference, training, checkpoint
+compatibility, and reproducible verification against the reference implementation.
+
+</details>
+
+[Flock](docs/flock.md) adds random-walk-based entity and relation prediction,
+with both official checkpoints supported in pure PyTorch. Scores and gradients
+are verified against the official models on identical recorded walks.
+
+<details>
+<summary>Flock checkpoint downloads and inference</summary>
+
+```bash
+mkdir -p checkpoints/flock
+wget -P checkpoints/flock https://raw.githubusercontent.com/jw9730/flock/f35103d25a78bdf4075de5c673a51de4979aa4d7/checkpoints/flock_entity.pth
+wget -P checkpoints/flock https://raw.githubusercontent.com/jw9730/flock/f35103d25a78bdf4075de5c673a51de4979aa4d7/checkpoints/flock_relation.pth
+
+python -m dicee --model Flock --dataset_dir KGs/UMLS \
+  --flock_checkpoint checkpoints/flock/flock_entity.pth --num_epochs 0 \
+  --trainer torchCPUTrainer --scoring_technique NegSample \
+  --batch_size 2 --eval_model test
+
+python -m dicee --model FlockRelation --dataset_dir KGs/UMLS \
+  --flock_checkpoint checkpoints/flock/flock_relation.pth --num_epochs 0 \
+  --trainer torchCPUTrainer --scoring_technique KvsAll \
+  --batch_size 2 --eval_model test
+```
+
+Flock is stochastic in evaluation mode. The [Flock guide](docs/flock.md) explains
+sampling budgets, reproducibility, training, and verification against upstream.
+
+</details>
+
+## KGFM Link Prediction
+
+Test-set entity prediction with released checkpoints and no fine-tuning, using
+training triples plus inverse edges as the inference graph and filtered head/tail
+ranking over all entities; see the [protocol and checkpoints](docs/kgfm_benchmarks.md).
+Tie strategy: **pessimistic** (worst rank among exactly equal scores after filtering).
+
+<details>
+<summary>Show results</summary>
+
+**Bold** marks the best result per dataset and metric, **Yes** marks target graphs used in pretraining.
+
+| Dataset | Model | Target graph used in pretraining? | MRR | Hits@1 | Hits@3 | Hits@10 |
+|---|---|:---:|---:|---:|---:|---:|
+| YAGO3-10 | ULTRA-3g | No | **0.4799** | **0.3832** | **0.5346** | **0.6583** |
+| YAGO3-10 | TRIX | No | 0.4094 | 0.3024 | 0.4574 | 0.6265 |
+| YAGO3-10 | Flock | No | 0.3998 | 0.3092 | 0.4526 | 0.5636 |
+| FB15k-237 | ULTRA-3g | Yes | **0.3693** | **0.2718** | **0.4101** | **0.5620** |
+| FB15k-237 | TRIX | Yes | 0.3618 | 0.2649 | 0.3989 | 0.5546 |
+| FB15k-237 | Flock | Yes | 0.3116 | 0.2215 | 0.3442 | 0.4912 |
+| WN18RR | ULTRA-3g | Yes | 0.3691 | 0.2924 | 0.3923 | 0.5329 |
+| WN18RR | TRIX | Yes | 0.5065 | 0.4592 | 0.5217 | 0.6040 |
+| WN18RR | Flock | Yes | **0.5303** | **0.4783** | **0.5482** | **0.6367** |
+| UMLS | ULTRA-3g | No | 0.6960 | 0.5983 | 0.7474 | 0.8956 |
+| UMLS | TRIX | No | 0.7256 | 0.6430 | 0.7632 | 0.8986 |
+| UMLS | Flock | No | **0.7768** | **0.7005** | **0.8169** | **0.9244** |
+| Countries-S1 | ULTRA-3g | No | **0.9375** | **0.8750** | **1.0000** | **1.0000** |
+| Countries-S1 | TRIX | No | 0.9271 | 0.8542 | **1.0000** | **1.0000** |
+| Countries-S1 | Flock | No | 0.9271 | 0.8542 | **1.0000** | **1.0000** |
+| Countries-S2 | ULTRA-3g | No | 0.8715 | 0.7500 | **1.0000** | **1.0000** |
+| Countries-S2 | TRIX | No | **0.8854** | **0.7708** | **1.0000** | **1.0000** |
+| Countries-S2 | Flock | No | **0.8854** | **0.7708** | **1.0000** | **1.0000** |
+| Countries-S3 | ULTRA-3g | No | 0.2354 | **0.0625** | 0.2917 | 0.6458 |
+| Countries-S3 | TRIX | No | **0.3625** | **0.0625** | **0.5833** | **0.8958** |
+| Countries-S3 | Flock | No | 0.2533 | 0.0208 | 0.4583 | 0.5000 |
+
+</details>
+
+<details>
+<summary>Inference speed</summary>
+
+Warm all-entity inference speedup over the authors’ official implementations:
+RTX 4070 Ti SUPER, float32, matched query batches, and five-repeat medians on sampled test queries.
+
+| Dataset | ULTRA-3g | TRIX | Flock* |
+|---|---:|---:|---:|
+| FB15k-237 | 3.66× | 31.75× | 2.64× |
+| WN18RR | 1.15× | 18.71× | 1.83× |
+| YAGO3-10 | 7.44× | 35.38× | 8.61× |
+
+\* Flock includes independently sampled walks at the same budget; identical-walk neural speedups are **1.23–2.01×**.
+YAGO3-10 Flock timings varied more. See the [full comparison and validation](docs/kgfm_inference.md).
+
+</details>
+
 ## Link Prediction Benchmarks
 
 In the below, we provide a brief overview of the link prediction results. Results are sorted in descending order of the size of the respective dataset.
+
+<details>
+<summary>Tie handling</summary>
+
+| Policy | Target rank within a tied group | Example: three candidates tied for first |
+|---|---|---|
+| `sort` (default) | Position in the sorted score list; ties follow the sorting routine’s order | 1, 2, or 3 according to that order |
+| `optimistic` | Best possible rank | 1 |
+| `random` | Uniformly sampled integer rank | 1, 2, or 3 with equal probability |
+| `pessimistic` | Worst possible rank | 3 |
+
+Set `--eval_tie_policy` to rank exactly equal scores after filtering; `--eval_tie_seed` seeds `random` and defaults to `random_seed`.
+
+</details>
 
 #### YAGO3-10 ####
 

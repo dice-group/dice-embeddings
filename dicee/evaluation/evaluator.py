@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import torch
 
+from ._filtering import FilteredRanker, evaluation_tie_options
 from .link_prediction import evaluate_bpe_lp, evaluate_lp
 from .utils import (
     ALL_HITS_RANGE,
@@ -72,6 +73,8 @@ class Evaluator:
         self.domain_constraints_per_rel = None
         self.range_constraints_per_rel = None
         self.args = args
+        # Validate early, including programmatic/loaded configurations.
+        FilteredRanker(**evaluation_tie_options(args))
         self.report: Dict = {}
         self.during_training = False
 
@@ -288,21 +291,24 @@ class Evaluator:
             self.report['Train'] = evaluate_bpe_lp(
                 trained_model, train_set, ordered_bpe_entities,
                 er_vocab=self.er_vocab, re_vocab=self.re_vocab,
-                info=f'Evaluate {trained_model.name} on NegSample BPE Train set'
+                info=f'Evaluate {trained_model.name} on NegSample BPE Train set',
+                **evaluation_tie_options(self.args)
             )
 
         if 'val' in self.args.eval_model and valid_set is not None:
             self.report['Val'] = evaluate_bpe_lp(
                 trained_model, valid_set, ordered_bpe_entities,
                 er_vocab=self.er_vocab, re_vocab=self.re_vocab,
-                info=f'Evaluate {trained_model.name} on NegSample BPE Valid set'
+                info=f'Evaluate {trained_model.name} on NegSample BPE Valid set',
+                **evaluation_tie_options(self.args)
             )
 
         if test_set is not None and 'test' in self.args.eval_model:
             self.report['Test'] = evaluate_bpe_lp(
                 trained_model, test_set, ordered_bpe_entities,
                 er_vocab=self.er_vocab, re_vocab=self.re_vocab,
-                info=f'Evaluate {trained_model.name} on NegSample BPE Test set'
+                info=f'Evaluate {trained_model.name} on NegSample BPE Test set',
+                **evaluation_tie_options(self.args)
             )
 
     def eval_with_byte(
@@ -448,6 +454,7 @@ class Evaluator:
         hits_range: List[int]
     ) -> Tuple[List[int], Dict[int, List[float]]]:
         """Evaluate relation prediction task."""
+        ranker = FilteredRanker(**evaluation_tie_options(self.args))
         ranks: List[int] = []
         hits = create_hits_dict(hits_range)
 
@@ -458,16 +465,8 @@ class Evaluator:
 
             predictions = model.forward_k_vs_all(x=e1_idx_e2_idx)
 
-            for j in range(data_batch.shape[0]):
-                filt = self.ee_vocab[(data_batch[j][0], data_batch[j][2])]
-                target_value = predictions[j, r_idx[j]].item()
-                predictions[j, filt] = -np.Inf
-                predictions[j, r_idx[j]] = target_value
-
-            _, sort_idxs = torch.sort(predictions, dim=1, descending=True)
-
-            for j in range(data_batch.shape[0]):
-                rank = torch.where(sort_idxs[j] == r_idx[j])[0].item() + 1
+            filters = [self.ee_vocab[(h, t)] for h, _, t in data_batch]
+            for rank in ranker.rank_batch(predictions, r_idx, filters):
                 ranks.append(rank)
                 update_hits(hits, rank, hits_range)
 
@@ -481,6 +480,7 @@ class Evaluator:
         hits_range: List[int]
     ) -> Tuple[List[int], Dict[int, List[float]]]:
         """Evaluate entity prediction task."""
+        ranker = FilteredRanker(**evaluation_tie_options(self.args))
         ranks: List[int] = []
         hits = create_hits_dict(hits_range)
 
@@ -492,21 +492,14 @@ class Evaluator:
             with torch.no_grad():
                 predictions = model(e1_idx_r_idx)
 
-            for j in range(data_batch.shape[0]):
-                id_e, id_r, id_e_target = data_batch[j]
-                filt = self.er_vocab[(id_e, id_r)]
-                target_value = predictions[j, id_e_target].item()
-                predictions[j, filt] = -np.Inf
-
+            filters = []
+            for id_e, id_r, _ in data_batch:
+                filt = list(self.er_vocab[(id_e, id_r)])
                 if 'constraint' in self.args.eval_model:
-                    predictions[j, self.range_constraints_per_rel[data_batch[j, 1]]] = -np.Inf
+                    filt.extend(self.range_constraints_per_rel[id_r])
+                filters.append(filt)
 
-                predictions[j, id_e_target] = target_value
-
-            _, sort_idxs = torch.sort(predictions, dim=1, descending=True)
-
-            for j in range(data_batch.shape[0]):
-                rank = torch.where(sort_idxs[j] == e2_idx[j])[0].item() + 1
+            for rank in ranker.rank_batch(predictions, e2_idx, filters):
                 ranks.append(rank)
                 update_hits(hits, rank, hits_range)
 
@@ -572,6 +565,7 @@ class Evaluator:
         Returns:
             Dictionary with H@1, H@3, H@10, and MRR metrics.
         """
+        ranker = FilteredRanker(**evaluation_tie_options(self.args))
         model.eval()
         num_triples = len(triples)
         ranks: List[int] = []
@@ -591,24 +585,15 @@ class Evaluator:
             bpe_hr = torch_batch_bpe_triple[:, [0, 1], :]
             predictions = model(bpe_hr)
 
-            for j in range(len(predictions)):
-                h, r, t = str_data_batch[j]
-                id_e_target = model.str_to_bpe_entity_to_idx[t]
-                filt_idx_entities = [
+            targets, filters = [], []
+            for h, r, t in str_data_batch:
+                targets.append(model.str_to_bpe_entity_to_idx[t])
+                filters.append([
                     model.str_to_bpe_entity_to_idx[_]
                     for _ in self.er_vocab[(h, r)]
-                ]
-                target_value = predictions[j, id_e_target].item()
-                predictions[j, filt_idx_entities] = -np.Inf
-                predictions[j, id_e_target] = target_value
+                ])
 
-            _, sort_idxs = torch.sort(predictions, dim=1, descending=True)
-
-            for j in range(len(predictions)):
-                t = str_data_batch[j][2]
-                rank = torch.where(
-                    sort_idxs[j] == model.str_to_bpe_entity_to_idx[t]
-                )[0].item() + 1
+            for rank in ranker.rank_batch(predictions, targets, filters):
                 ranks.append(rank)
                 update_hits(hits, rank, hits_range)
 
@@ -642,7 +627,8 @@ class Evaluator:
             num_entities=self.num_entities,
             er_vocab=self.er_vocab,
             re_vocab=self.re_vocab,
-            info=info
+            info=info,
+            **evaluation_tie_options(self.args)
         )
 
     def dummy_eval(self, trained_model, form_of_labelling: str) -> None:

@@ -125,7 +125,7 @@ def initialize_trainer(
         # Fall back to CPU when CUDA is unavailable or its context is broken.
         # _disable_cuda_in_process() was already called above when needed.
         _default_accelerator = "cpu" if not torch.cuda.is_available() else "auto"
-        trainer = pl.Trainer(accelerator=kwargs.get("accelerator", _default_accelerator),
+        trainer = pl.Trainer(devices=kwargs.get("devices", 1 if args.model in ("ULTRA", "TRIX", "TRIXRelation", "Flock", "FlockRelation") else "auto"), accelerator=kwargs.get("accelerator", _default_accelerator),
                           strategy=kwargs.get("strategy", "auto"),
                           num_nodes=kwargs.get("num_nodes", 1),
                           precision=kwargs.get("precision", None),
@@ -285,6 +285,7 @@ class DICE_Trainer:
 
         self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
         model, form_of_labelling = self.initialize_or_load_model()
+        self.prepare_graph_model(model, knowledge_graph)
         # TODO: Here we need to load memory pag
         self.trainer.evaluator = self.evaluator
         self.trainer.dataset = knowledge_graph
@@ -343,6 +344,9 @@ class DICE_Trainer:
                                               relation_to_idx=self.trainer.dataset.relation_to_idx,
                                               form_of_labelling=self.trainer.form_of_labelling,
                                               scoring_technique=self.args.scoring_technique,
+                                              grouped_negative_sampling=getattr(self.args, "grouped_negative_sampling", False),
+                                              strict_negative_sampling=getattr(self.args, "strict_negative_sampling", False),
+                                              adversarial_temperature=getattr(self.args, "adversarial_temperature", None),
                                               neg_ratio=self.args.neg_ratio,
                                               label_smoothing_rate=self.args.label_smoothing_rate,
                                               byte_pair_encoding=self.args.byte_pair_encoding,
@@ -366,6 +370,9 @@ class DICE_Trainer:
                                               relation_to_idx=pd.read_csv(f"{path}/relation_to_idx.csv",index_col=0),
                                               form_of_labelling=self.trainer.form_of_labelling,
                                               scoring_technique=self.args.scoring_technique,
+                                              grouped_negative_sampling=getattr(self.args, "grouped_negative_sampling", False),
+                                              strict_negative_sampling=getattr(self.args, "strict_negative_sampling", False),
+                                              adversarial_temperature=getattr(self.args, "adversarial_temperature", None),
                                               neg_ratio=self.args.neg_ratio,
                                               label_smoothing_rate=self.args.label_smoothing_rate,
                                               byte_pair_encoding=self.args.byte_pair_encoding,
@@ -375,6 +382,39 @@ class DICE_Trainer:
 
 
         return train_dataset
+
+    def prepare_graph_model(self, model, knowledge_graph):
+        """Attach only training facts, preserving the indexed external vocabulary."""
+        from dicee.models.graph_model import GraphKGE
+        if not isinstance(model, GraphKGE):
+            return
+        raw_mapping: Union[dict, polars.DataFrame, pd.DataFrame, None]
+        if isinstance(knowledge_graph, KG):
+            triples = knowledge_graph.train_set
+            raw_mapping = knowledge_graph.relation_to_idx
+        else:
+            triples = knowledge_graph
+            raw_mapping = pd.read_csv(os.path.join(self.storage_path, "relation_to_idx.csv"), index_col=0)
+        if isinstance(raw_mapping, polars.DataFrame):
+            mapping = {row["relation"]: int(row["index"]) for row in raw_mapping.iter_rows(named=True)}
+        elif isinstance(raw_mapping, pd.DataFrame):
+            mapping = {name: int(idx) for idx, name in raw_mapping["relation"].items()}
+        elif raw_mapping is not None:
+            mapping = raw_mapping
+        else:
+            raise ValueError("Graph models require an indexed relation vocabulary")
+        # Reciprocal preprocessing appends the suffix; pair only names that
+        # actually have their base relation in this vocabulary.
+        inverse = {int(idx): int(mapping[name + "_inverse"]) for name, idx in mapping.items()
+                   if name + "_inverse" in mapping and not name.endswith("_inverse")
+                   and self.args.apply_reciprical_or_noise and self.args.eval_model is not None}
+        model.set_graph(triples, self.args.num_entities, self.args.num_relations, inverse)
+        checkpoint = getattr(self.args, f"{model.config_prefix}_checkpoint", None)
+        if checkpoint and not self.is_continual_training:
+            model.load_pretrained(checkpoint)
+
+    # Retain the original helper for downstream ULTRA callers.
+    prepare_ultra = prepare_graph_model
 
     def start(self, knowledge_graph: Union[KG,np.memmap]) -> Tuple[BaseKGE, str]:
         """
@@ -393,10 +433,15 @@ class DICE_Trainer:
             self.trainer: Union[TensorParallel, TorchTrainer, TorchDDPTrainer, TorchFSDPTrainer, pl.Trainer]
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
             model, form_of_labelling = self.initialize_or_load_model()
+            self.prepare_graph_model(model, knowledge_graph)
             self.trainer.evaluator = self.evaluator
             self.trainer.dataset = knowledge_graph
             self.trainer.form_of_labelling = form_of_labelling
             # TODO: Later, maybe we should write a callback to save the models in disk
+
+            if self.args.num_epochs == 0:
+                model.eval()
+                return model, form_of_labelling
 
             if isinstance(self.trainer, TensorParallel):
                 assert isinstance(model, EnsembleKGE), type(model)
