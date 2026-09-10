@@ -35,8 +35,8 @@ def csr_layout(edge_index, edge_type, num_nodes):
 
 def fused_distmult_sum(states, boundary, edge_index, edge_type, relations, backend='auto'):
     """Return a fused update, or None when the portable implementation is needed."""
-    supported = (states.is_cuda and states.dtype == torch.float32
-                 and relations.dtype == states.dtype and boundary.dtype == states.dtype
+    supported = (states.is_cuda and states.dtype in (torch.float32, torch.float16, torch.bfloat16)
+                 and relations.dtype in (torch.float32, torch.float16, torch.bfloat16) and boundary.dtype == states.dtype
                  and (not torch.is_grad_enabled() or not any(x.requires_grad for x in (states, boundary, relations)))
                  and states.shape[-1] <= 128)
     if backend == 'torch' or not supported:
@@ -49,3 +49,15 @@ def fused_distmult_sum(states, boundary, edge_index, edge_type, relations, backe
         return None
     with torch.cuda.device(states.device):
         return distmult_sum(states, boundary, relations, csr_layout(edge_index, edge_type, states.shape[1]))
+
+
+def fused_norm_relu(value, states, norm, residual, backend='auto'):
+    if (backend == 'torch' or not value.is_cuda or value.dtype != torch.float32 or states.dtype != value.dtype
+            or not value.is_contiguous() or not states.is_contiguous() or value.shape[-1] > 128):
+        return None
+    try:
+        from ._triton_message import norm_relu
+    except ImportError:
+        return None
+    with torch.cuda.device(value.device):
+        return norm_relu(value, states, norm.weight, norm.bias, norm.eps, residual)

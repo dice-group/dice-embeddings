@@ -63,6 +63,11 @@ def main():
     parser.add_argument("--test-samples", type=int, default=1)
     parser.add_argument('--inference-backend', choices=['auto', 'torch', 'triton'], default='auto')
     parser.add_argument('--relation-cache-mb', type=int, default=64)
+    parser.add_argument('--projection-cache-mb', type=int, default=64)
+    parser.add_argument('--compile-inference', action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument('--compact-state', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--compile-sampler', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--pack-walks', action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument('--reuse-queries', action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument('--prefetch-walks', action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--seed", type=int, default=42)
@@ -75,8 +80,8 @@ def main():
         args.tie_seed = args.seed
     if min(args.batch_size, args.query_batch_size, args.threads, args.walk_num, args.test_samples) < 1:
         parser.error("Batch sizes, threads, and sampling counts must be positive")
-    if args.relation_cache_mb < 0:
-        parser.error('Relation cache size must be nonnegative')
+    if min(args.relation_cache_mb, args.projection_cache_mb) < 0:
+        parser.error('Graph cache sizes must be nonnegative')
     os.chdir(ROOT)
     torch.set_num_threads(args.threads)
     torch.manual_seed(args.seed)
@@ -135,7 +140,10 @@ def main():
                     **{f"{args.model.lower()}_query_batch_size": args.query_batch_size},
                     flock_walk_num=args.walk_num, flock_test_samples=args.test_samples,
                     flock_seed=args.seed, flock_prefetch_walks=args.prefetch_walks,
-                    graph_inference_backend=args.inference_backend, graph_relation_cache_mb=args.relation_cache_mb)
+                    graph_inference_backend=args.inference_backend, graph_relation_cache_mb=args.relation_cache_mb,
+                    graph_projection_cache_mb=args.projection_cache_mb, graph_inference_compile=args.compile_inference,
+                    flock_compact_state=args.compact_state, flock_compile_sampler=args.compile_sampler,
+                    flock_pack_walks=args.pack_walks)
     model = MODELS[args.model](settings).load_pretrained(checkpoint)
     model.set_graph(kg.train_set).eval().requires_grad_(False)
     initial_weights = {key: value.clone() for key, value in model.state_dict().items()}

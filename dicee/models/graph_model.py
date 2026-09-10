@@ -79,6 +79,9 @@ class GraphKGE(BaseKGE):
         if any(t.is_inference() for t in tensors):
             return None
         return (getattr(self, '_inference_backend', 'auto'), torch.is_autocast_enabled(self.device.type),
+                torch.are_deterministic_algorithms_enabled(),
+                torch.get_float32_matmul_precision(), torch.backends.cudnn.allow_tf32,
+                tuple(getattr(m, 'inference_compile', False) for m in self.modules() if hasattr(m, 'inference_backend')),
                 tuple((id(t), tensor_version(t), t.device, t.dtype) for t in tensors))
 
     def train(self, mode=True):
@@ -245,32 +248,39 @@ class GraphKGE(BaseKGE):
 
     def forward_k_vs_sample(self, x, target_entity_idx):
         self._require_graph()
-        x = x.to(device=self.device, dtype=torch.long)
+        x = x.to(dtype=torch.long)
         if x.ndim != 2 or x.shape[1] != 2:
             raise ValueError('Tail queries must have shape [B, 2] in (head, relation) order')
         if x.numel() and (x.min() < 0 or x[:, 0].max() >= self.num_entities or x[:, 1].max() >= self.num_relations):
             raise ValueError('Query IDs are outside the graph vocabulary')
+        x = x.to(device=self.device)
         queries = torch.stack((x[:, 0], self.relation_id_map[x[:, 1]]), dim=1)
-        candidates = target_entity_idx.to(device=self.device, dtype=torch.long)
+        candidates = target_entity_idx.to(dtype=torch.long)
         if candidates.ndim == 1:
             candidates = candidates.expand(len(x), -1)
         if candidates.ndim != 2 or candidates.shape[0] != len(x):
             raise ValueError('Candidate IDs must have shape [K] or [B, K]')
-        if candidates.numel() and (candidates.min() < 0 or candidates.max() >= self.num_entities):
+        all_entities = getattr(target_entity_idx, '_dicee_all_entities', False)
+        if not all_entities and candidates.numel() and (candidates.min() < 0 or candidates.max() >= self.num_entities):
             raise ValueError('Candidate IDs are outside the graph vocabulary')
+        candidates = candidates.to(device=self.device)
+        if all_entities:
+            candidates._dicee_all_entities = True
         return self._score(queries[:, 0], queries[:, 1], candidates, queries[:, 1] % self.num_direct_relations, self._training_edges(queries=queries))
 
     def forward_k_vs_all(self, x):
         num_entities, _ = self._require_graph()
-        return self.forward_k_vs_sample(x, torch.arange(num_entities, device=self.device).expand(len(x), -1))
+        candidates = torch.arange(num_entities, device=self.device).expand(len(x), -1)
+        candidates._dicee_all_entities = True
+        return self.forward_k_vs_sample(x, candidates)
 
     def forward_k_vs_all_heads(self, x, target_entity_idx=None):
         """Score head candidates for DICE pairs (relation, tail)."""
         num_entities, _ = self._require_graph()
-        x = x.to(device=self.device, dtype=torch.long)
+        x = x.to(dtype=torch.long)
         if x.ndim != 2 or x.shape[1] != 2:
             raise ValueError('Head queries must have shape [B, 2] in (relation, tail) order')
-        candidates = torch.arange(num_entities, device=self.device) if target_entity_idx is None else target_entity_idx.to(device=self.device, dtype=torch.long)
+        candidates = torch.arange(num_entities, device=self.device) if target_entity_idx is None else target_entity_idx.to(dtype=torch.long)
         if candidates.ndim == 1:
             candidates = candidates.expand(len(x), -1)
         if not self.training:
@@ -278,12 +288,16 @@ class GraphKGE(BaseKGE):
                 raise ValueError('Query IDs are outside the graph vocabulary')
             if candidates.ndim != 2 or candidates.shape[0] != len(x):
                 raise ValueError('Candidate IDs must have shape [K] or [B, K]')
-            if candidates.numel() and (candidates.min() < 0 or candidates.max() >= num_entities):
+            if target_entity_idx is not None and candidates.numel() and (candidates.min() < 0 or candidates.max() >= num_entities):
                 raise ValueError('Candidate IDs are outside the graph vocabulary')
+            x, candidates = x.to(self.device), candidates.to(self.device)
+            if target_entity_idx is None:
+                candidates._dicee_all_entities = True
             rels = self.relation_id_map[x[:, 0]]
             inverse = (rels + self.num_direct_relations) % (2 * self.num_direct_relations)
             return self._score(x[:, 1], inverse, candidates, rels % self.num_direct_relations,
                                (self.edge_index, self.edge_type))
+        x, candidates = x.to(self.device), candidates.to(self.device)
         triples = torch.stack((candidates, x[:, 0, None].expand_as(candidates), x[:, 1, None].expand_as(candidates)), -1)
         return self.forward_grouped(triples, head_prediction=True)
 

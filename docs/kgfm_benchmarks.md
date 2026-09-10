@@ -18,7 +18,8 @@ and [Flock](https://github.com/jw9730/flock/blob/f35103d25a78bdf4075de5c673a51de
 **Measured in DICE:** populated rows are completed evaluations of the full test
 set. `—` means the evaluation has not completed, not zero. Exact metrics,
 checkpoint/split hashes, source hashes, hardware, and configurations are saved
-in the [result records](../benchmarks/results/kgfm-zero-shot). The existing link
+locally in each run's output directory under `Experiments/`. Generated JSON
+reports are excluded from version control. The existing link
 prediction benchmark results remain in their separate section.
 
 **Bold** marks the best completed result for each dataset and metric, including
@@ -27,8 +28,8 @@ ties at the displayed precision.
 ## Checkpoints and evaluation settings
 
 For current inference kernels, caching, query reuse, and latency/memory
-comparisons, see [KGFM inference performance](kgfm_inference.md). The result
-records below retain the code and settings with which they were measured.
+comparisons, see [KGFM inference performance](kgfm_inference.md). Local result
+records retain the code and settings with which they were measured.
 
 | Model | Official checkpoint | DICE guide |
 |---|---|---|
@@ -85,9 +86,9 @@ The runner saves `configuration.json`, `command.txt`, `progress.json`,
 `eval_report.json`, and `result.json` alongside indexed splits and vocabularies.
 The two initial CLI UMLS runs retain their original configurations and reports;
 their saved model tensors were checked against the released checkpoint tensors.
-To add a result, copy the completed `result.json` to
-`benchmarks/results/kgfm-zero-shot/<dataset>-<model>.json` and update the
-corresponding README row, including bold highlights for the best metrics.
+To add a result, retain the completed run in the ignored `Experiments/`
+directory and update the corresponding README row, including bold highlights
+for the best metrics. Do not commit generated benchmark JSON files.
 
 ## Prediction tie strategies
 

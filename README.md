@@ -690,8 +690,8 @@ Set `--eval_tie_policy` to rank exactly equal scores after filtering; `--eval_ti
 
 Test-set entity prediction with released checkpoints and no fine-tuning, using
 training triples plus inverse edges as the inference graph and filtered head/tail
-ranking over all entities; see the [protocol and checkpoints](docs/kgfm_benchmarks.md)
-and [exact results](benchmarks/results/kgfm-zero-shot).
+ranking over all entities; see the [protocol and checkpoints](docs/kgfm_benchmarks.md).
+Detailed result records are generated locally by the benchmark runner.
 
 <details>
 <summary>Show results</summary>

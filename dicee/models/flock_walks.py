@@ -5,8 +5,41 @@ The RNG is PyTorch's CPU generator, not the reference C++ per-walk MT19937.
 Walk records can be supplied explicitly to compare neural computations exactly.
 """
 from dataclasses import dataclass
+from functools import lru_cache
+from typing import Optional
 
 import torch
+
+
+def _walk_nodes(prefix: torch.Tensor, length: int, keys: torch.Tensor, counts: torch.Tensor,
+                offsets: torch.Tensor, num_nodes: int, generator: Optional[torch.Generator] = None):
+    walks = torch.empty((len(prefix), length), dtype=torch.long)
+    walks[:, :prefix.shape[1]] = prefix
+    for step in range(prefix.shape[1], length):
+        current = walks[:, step - 1]
+        degree = counts[current]
+        if not len(keys):
+            walks[:, step] = current
+            continue
+        start = offsets[current]
+        excluded = torch.zeros_like(current, dtype=torch.bool)
+        previous_index = torch.zeros_like(current)
+        if step >= 2:
+            previous_key = current * num_nodes + walks[:, step - 2]
+            previous_index = torch.searchsorted(keys, previous_key).clamp_max(len(keys) - 1)
+            excluded = (keys[previous_index] == previous_key) & (degree > 1)
+        choice = (torch.rand([len(current)], generator=generator) * (degree - excluded.long())).long()
+        choice += (excluded & (choice >= previous_index - start)).long()
+        following = keys[(start + choice).clamp_max(len(keys) - 1)] % num_nodes
+        walks[:, step] = torch.where(degree > 0, following, current)
+    return walks
+
+
+@lru_cache(maxsize=1)
+def compiled_walk_nodes():
+    # Script only the CPU transition loop. Torch's CPU Generator and the exact
+    # order/shapes of random draws remain unchanged.
+    return torch.jit.script(_walk_nodes)
 
 
 def anonymize(values, missing_id=None, missing_name=None):
@@ -37,6 +70,7 @@ class WalkGraph:
     edge_type: torch.Tensor
     num_nodes: int
     num_types: int
+    compile_sampler: bool = True
 
     def __post_init__(self):
         self.edge_index = self.edge_index.detach().cpu()
@@ -67,26 +101,9 @@ class WalkGraph:
     def walk(self, prefix, length, remove_loops, generator=None, prefix_types=None):
         """Sample uniform neighbors, then a uniform typed edge in either direction."""
         prefix = prefix.cpu().reshape(len(prefix), -1)
-        walks = torch.empty(len(prefix), length, dtype=torch.long)
-        walks[:, :prefix.shape[1]] = prefix
         keys, counts, offsets = self.adjacency[remove_loops]
-        for step in range(prefix.shape[1], length):
-            current = walks[:, step - 1]
-            degree = counts[current]
-            if not len(keys):
-                walks[:, step] = current
-                continue
-            start = offsets[current]
-            excluded = torch.zeros_like(current, dtype=torch.bool)
-            previous_index = torch.zeros_like(current)
-            if step >= 2:
-                previous_key = current * self.num_nodes + walks[:, step - 2]
-                previous_index = torch.searchsorted(keys, previous_key).clamp_max(len(keys) - 1)
-                excluded = (keys[previous_index] == previous_key) & (degree > 1)
-            choice = (torch.rand(len(current), generator=generator) * (degree - excluded.long())).long()
-            choice += (excluded & (choice >= previous_index - start)).long()
-            following = keys[(start + choice).clamp_max(len(keys) - 1)] % self.num_nodes
-            walks[:, step] = torch.where(degree > 0, following, current)
+        sample = compiled_walk_nodes() if self.compile_sampler else _walk_nodes
+        walks = sample(prefix, length, keys, counts, offsets, self.num_nodes, generator)
         types, directions = self.parse_types(walks, generator)
         if prefix_types is not None:
             types[:, 1] = prefix_types

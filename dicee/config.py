@@ -52,8 +52,13 @@ class Namespace(argparse.Namespace):
         self.flock_query_batch_size: int = 1
         self.flock_seed: Optional[int] = None
         self.flock_prefetch_walks: bool = True
+        self.flock_compact_state: bool = True
+        self.flock_compile_sampler: bool = True
+        self.flock_pack_walks: bool = True
         self.graph_inference_backend: str = 'auto'
         self.graph_relation_cache_mb: int = 64
+        self.graph_projection_cache_mb: int = 64
+        self.graph_inference_compile: bool = False
         self.grouped_negative_sampling: bool = False
         self.strict_negative_sampling: bool = False
         self.adversarial_temperature: Optional[float] = None

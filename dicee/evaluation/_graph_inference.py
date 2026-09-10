@@ -56,8 +56,7 @@ class GraphRankPlan:
                         values = [(ranker.rank(scores[i], target, filt), 0)
                                   for (i, target, _), filt in zip(chunk, filters)]
                     else:
-                        indices = torch.tensor([i for i, _, _ in chunk], device=scores.device)
-                        values = ranker.bounds_batch(scores.index_select(0, indices), targets, filters)
+                        values = ranker.bounds_batch(scores, targets, filters, row_indices=[i for i, _, _ in chunk])
                     for (_, target, key), value in zip(chunk, values):
                         self.cache[key][target] = value
         bounds = [self.cache[key][target] for key, target in wanted]

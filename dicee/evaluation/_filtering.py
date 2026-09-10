@@ -96,13 +96,22 @@ class FilteredRanker:
         return [int(torch.where(row == int(target))[0].item()) + 1
                 for row, target in zip(order, target_indices)]
 
-    def bounds_batch(self, predictions, target_indices, filter_indices_list) -> List[Tuple[int, int]]:
+    def bounds_batch(self, predictions, target_indices, filter_indices_list, row_indices=None) -> List[Tuple[int, int]]:
         """Compute optimistic ranks and tie counts together on the score device.
 
         Only two integers per query leave the GPU. Sampling is deliberately
         separate so grouped graph inference can restore original query order
         before consuming the independent random-tie stream.
         """
+        if predictions.is_cuda and predictions.dtype in (torch.float32, torch.float16, torch.bfloat16):
+            try:
+                from ._triton_ranking import bounds
+            except ImportError:
+                pass
+            else:
+                return bounds(predictions, target_indices, filter_indices_list, row_indices)
+        if row_indices is not None:
+            predictions = predictions.index_select(0, torch.as_tensor(row_indices, device=predictions.device, dtype=torch.long))
         targets = torch.as_tensor(target_indices, device=predictions.device, dtype=torch.long)
         if not len(targets):
             return []

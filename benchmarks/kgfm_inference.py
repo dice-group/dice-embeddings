@@ -7,6 +7,7 @@ is reported separately from warm steady-state inference and evaluation.
 import argparse
 import hashlib
 import json
+import shutil
 import statistics
 import subprocess
 import sys
@@ -20,6 +21,18 @@ CHECKPOINTS = {'ULTRA': 'ultra_3g.pth', 'TRIX': 'trix/entity_prediction.pth', 'F
 def digest(path):
     with path.open('rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def inference_arguments(args):
+    arguments = []
+    for key in ['model', 'device', 'query_batch_size', 'batch_size', 'queries', 'repeats', 'warmups', 'threads', 'tie_policy',
+                'dtype', 'inference_backend', 'relation_cache_mb', 'projection_cache_mb']:
+        arguments.extend(['--' + key.replace('_', '-'), str(getattr(args, key))])
+    for key in ['compile_inference', 'compact_state', 'compile_sampler', 'pack_walks']:
+        arguments.append('--' + ('' if getattr(args, key) else 'no-') + key.replace('_', '-'))
+    if args.profile:
+        arguments.append('--profile')
+    return arguments
 
 
 def worker(args):
@@ -48,12 +61,24 @@ def worker(args):
     checkpoint = ROOT / 'checkpoints' / CHECKPOINTS[args.model]
     settings = dict(num_entities=metadata['num_entities'], num_relations=metadata['num_relations'],
                     **{args.model.lower() + '_query_batch_size': args.query_batch_size},
-                    flock_walk_num=128, flock_test_samples=1, flock_seed=42)
+                    flock_walk_num=128, flock_test_samples=1, flock_seed=42,
+                    graph_inference_backend=args.inference_backend, graph_relation_cache_mb=args.relation_cache_mb,
+                    graph_projection_cache_mb=args.projection_cache_mb, graph_inference_compile=args.compile_inference,
+                    flock_compact_state=args.compact_state, flock_compile_sampler=args.compile_sampler,
+                    flock_pack_walks=args.pack_walks)
     cls = {'ULTRA': ULTRA, 'TRIX': TRIX, 'Flock': Flock}[args.model]
     begin = time.perf_counter()
     model = cls(settings).load_pretrained(checkpoint).set_graph(facts).eval().requires_grad_(False).to(device=args.device, dtype=getattr(torch, args.dtype))
     setup_seconds = time.perf_counter() - begin
     query = torch.as_tensor(triples.astype(np.int64))
+    gpu_processes = None
+    if args.device.startswith('cuda'):
+        gpu_processes = 'unavailable'
+        if shutil.which('nvidia-smi'):
+            process_query = subprocess.run(['nvidia-smi', '--query-compute-apps=pid,process_name,used_memory', '--format=csv'],
+                                           text=True, capture_output=True)
+            if process_query.returncode == 0:
+                gpu_processes = process_query.stdout.strip()
 
     def synchronize():
         if args.device.startswith('cuda'):
@@ -97,6 +122,16 @@ def worker(args):
             elapsed, metrics = timed(lambda: evaluate_lp(model, triples, metadata['num_entities'], er, re,
                                                          batch_size=args.batch_size, tie_policy=args.tie_policy, tie_seed=42))
             evaluation.append(elapsed)
+        if args.profile:
+            activities = [torch.profiler.ProfilerActivity.CPU]
+            if args.device.startswith('cuda'):
+                activities.append(torch.profiler.ProfilerActivity.CUDA)
+            with torch.profiler.profile(activities=activities, record_shapes=True, profile_memory=True) as profile:
+                predict()
+                synchronize()
+            profile.export_chrome_trace(str(args.output.with_suffix('.trace.json')))
+            args.output.with_suffix('.profile.txt').write_text(profile.key_averages().table(
+                sort_by='self_cuda_time_total' if args.device.startswith('cuda') else 'self_cpu_time_total', row_limit=30))
     torch.save(scores, args.output.with_suffix('.pt'))
     sources = {str(p.relative_to(args.source_root)): digest(p) for p in sorted((args.source_root / 'dicee').rglob('*.py'))}
     report = dict(model=args.model, dataset=metadata['dataset'], test_triples=len(triples), ranked_queries=2 * len(triples),
@@ -108,7 +143,8 @@ def worker(args):
                   repeats=args.repeats, warmups=args.warmups, setup_seconds=setup_seconds, cold_forward_seconds=cold,
                   forward_seconds=timings, median_forward_seconds=statistics.median(timings),
                   evaluation_seconds=evaluation, median_evaluation_seconds=statistics.median(evaluation),
-                  queries_per_second=2*len(triples)/statistics.median(timings), peak_cuda_allocated_mib=peak, metrics=metrics)
+                  queries_per_second=2*len(triples)/statistics.median(timings), peak_cuda_allocated_mib=peak, metrics=metrics,
+                  gpu_processes_at_start=gpu_processes)
     args.output.write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps({key: report[key] for key in ['model', 'dataset', 'median_forward_seconds', 'queries_per_second',
                                                 'median_evaluation_seconds', 'peak_cuda_allocated_mib', 'metrics']}), flush=True)
@@ -121,6 +157,7 @@ def main():
     parser.add_argument('--model', choices=CHECKPOINTS, required=True)
     parser.add_argument('--device', default='cuda:0')
     parser.add_argument('--query-batch-size', type=int, default=4)
+    parser.add_argument('--sweep-batch-sizes', type=int, nargs='+', help='Compare ULTRA/TRIX microbatch sizes without changing precision')
     parser.add_argument('--batch-size', type=int, default=128)
     parser.add_argument('--queries', type=int, default=128)
     parser.add_argument('--repeats', type=int, default=3)
@@ -130,11 +167,62 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--source-root', type=Path, default=ROOT, help=argparse.SUPPRESS)
     parser.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)
-    parser.add_argument('--dtype', choices=['float32', 'float64'], default='float32', help=argparse.SUPPRESS)
+    parser.add_argument('--dtype', choices=['float32', 'float64', 'float16', 'bfloat16'], default='float32')
+    parser.add_argument('--inference-backend', choices=['auto', 'torch', 'triton'], default='auto')
+    parser.add_argument('--relation-cache-mb', type=int, default=64)
+    parser.add_argument('--projection-cache-mb', type=int, default=64)
+    parser.add_argument('--compile-inference', action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument('--compact-state', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--compile-sampler', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--pack-walks', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--profile', action='store_true')
     parser.add_argument('--scores-only', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args()
     if min(args.query_batch_size, args.batch_size, args.queries, args.repeats, args.threads) < 1 or args.warmups < 0:
         parser.error('Counts must be positive; warmups may be zero')
+    if min(args.relation_cache_mb, args.projection_cache_mb) < 0:
+        parser.error('Cache sizes must be nonnegative')
+    if args.sweep_batch_sizes:
+        if args.model == 'Flock':
+            parser.error('Flock batching changes its walks; use fixed-walk replay to compare neural batching')
+        if min(args.sweep_batch_sizes) < 1 or args.worker:
+            parser.error('Sweep sizes must be positive and sweeps must run in the parent process')
+        import torch
+        sizes = list(dict.fromkeys(args.sweep_batch_sizes))
+        base_command = ['--indexed-data', str(args.indexed_data.resolve()), *inference_arguments(args)]
+        if args.reference_root:
+            base_command.extend(['--reference-root', str(args.reference_root.resolve())])
+        args.output.mkdir(parents=True, exist_ok=True)
+        records, reference_scores, reference_metrics = [], None, None
+        for size in sizes:
+            directory = args.output / ('batch-' + str(size))
+            command = [sys.executable, str(Path(__file__).resolve()), *base_command,
+                       '--query-batch-size', str(size), '--output', str(directory)]
+            run = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            (args.output / ('batch-' + str(size) + '.log')).write_text(run.stdout)
+            if run.returncode:
+                if 'CUDA out of memory' in run.stdout:
+                    records.append(dict(batch_size=size, scores_close=False, metrics_close=False, error='CUDA out of memory'))
+                    continue
+                raise subprocess.CalledProcessError(run.returncode, command, output=run.stdout)
+            result = json.loads((directory / 'optimized.json').read_text())
+            scores = torch.load(directory / 'optimized.pt', weights_only=True)
+            if reference_scores is None:
+                reference_scores, reference_metrics = scores, result['metrics']
+            parity = torch.allclose(scores, reference_scores, atol=2e-4, rtol=2e-4)
+            metrics_close = all(abs(result['metrics'][key] - value) <= (1e-6 if key == 'MRR' else 0)
+                                for key, value in reference_metrics.items())
+            records.append(dict(batch_size=size, queries_per_second=result['queries_per_second'],
+                                peak_cuda_allocated_mib=result['peak_cuda_allocated_mib'], scores_close=parity,
+                                metrics_close=metrics_close))
+        eligible = [record for record in records if record['scores_close'] and record['metrics_close']]
+        report = dict(results=records, recommended_batch_size=(max(eligible, key=lambda r: r['queries_per_second'])['batch_size']
+                                                               if eligible else None))
+        (args.output / 'sweep.json').write_text(json.dumps(report, indent=2) + '\n')
+        print(json.dumps(report), flush=True)
+        if not eligible:
+            raise RuntimeError('No batch size passed memory and numerical validation; inspect sweep.json and batch logs')
+        return
     if args.worker:
         worker(args)
         return
@@ -144,8 +232,7 @@ def main():
         output = args.output / (label + '.json')
         command = [sys.executable, str(Path(__file__).resolve()), '--worker', '--source-root', str(source.resolve()),
                    '--indexed-data', str(args.indexed_data.resolve()), '--output', str(output.resolve())]
-        for key in ['model', 'device', 'query_batch_size', 'batch_size', 'queries', 'repeats', 'warmups', 'threads', 'tie_policy']:
-            command.extend(['--' + key.replace('_', '-'), str(getattr(args, key))])
+        command.extend(inference_arguments(args))
         subprocess.run(command, check=True)
         report[label] = json.loads(output.read_text())
     if args.reference_root:
@@ -159,8 +246,10 @@ def main():
                                     evaluation_speedup=report['reference']['median_evaluation_seconds']/report['optimized']['median_evaluation_seconds'],
                                     max_absolute_score_error=delta.max().item(), mean_absolute_score_error=delta.mean().item(),
                                     scores_close=score_parity, atol=2e-4, rtol=2e-4, metric_deltas=metric_deltas)
-        report['comparison']['validated'] = score_parity
-        if not score_parity and args.model in ('ULTRA', 'TRIX'):
+        metrics_close = all(abs(delta) <= (1e-6 if key == 'MRR' else 0) for key, delta in metric_deltas.items())
+        report['comparison']['metrics_close'] = metrics_close
+        report['comparison']['validated'] = score_parity and metrics_close
+        if not score_parity and args.model in ('ULTRA', 'TRIX') and args.dtype == 'float32':
             # Large float32 sums in the old scatter kernel can be less accurate
             # than the fused tree reduction. Resolve that case against the old
             # implementation in float64, without relaxing the score tolerance.
