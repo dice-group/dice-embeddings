@@ -29,6 +29,19 @@ def test_filtered_tie_bounds(policy, expected):
     assert torch.equal(scores, original)
 
 
+@pytest.mark.parametrize('dtype', [np.uint8, np.uint16, np.uint32, np.uint64, np.int32, np.int64])
+def test_cpu_batched_bounds_accept_numpy_filter_ids(dtype):
+    # KG vocabularies retain NumPy's compact unsigned entity IDs. They must
+    # become integer indices, never byte masks or unsupported unsigned tensors.
+    scores = torch.tensor([[9., 7., 7., 7., 6., 7.], [1., 1., 2., 1., 1., 0.]])
+    targets = np.array([2, 0], dtype=dtype)
+    filters = [list(np.array([0, 1, 2, 1], dtype=dtype)), list(np.array([0, 2, 4], dtype=dtype))]
+    ranker = FilteredRanker('pessimistic')
+    assert ranker.bounds_batch(scores, targets, filters) == [(1, 2), (1, 2)]
+    assert ranker.rank_batch(scores, targets, filters) == [3, 3]
+    assert ranker.bounds_batch(scores, targets, filters, row_indices=[0, 1]) == [(1, 2), (1, 2)]
+
+
 @pytest.mark.parametrize('policy', TIE_POLICIES)
 def test_unique_scores_keep_same_rank(policy):
     assert compute_filtered_rank(torch.tensor([4., 3., 2., 1.]), 2, [0, 2],

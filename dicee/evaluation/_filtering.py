@@ -121,7 +121,8 @@ class FilteredRanker:
             columns.extend(filters)
             rows.extend([row] * len(filters))
         if columns:
-            eligible[torch.tensor(rows, device=predictions.device), torch.tensor(columns, device=predictions.device)] = False
+            eligible[torch.tensor(rows, device=predictions.device, dtype=torch.long),
+                     torch.tensor(columns, device=predictions.device, dtype=torch.long)] = False
         eligible[torch.arange(len(targets), device=predictions.device), targets] = False
         target_scores = predictions.gather(1, targets[:, None])
         if target_scores.isnan().any() or (predictions.isnan() & eligible).any():
