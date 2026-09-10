@@ -675,17 +675,6 @@ sampling budgets, reproducibility, training, and verification against upstream.
 
 </details>
 
-## Prediction tie strategies
-
-| Policy | Target rank within a tied group | Example: three candidates tied for first |
-|---|---|---|
-| `sort` (default) | Existing DICE `torch.sort` position | Implementation-dependent; not uniform random |
-| `optimistic` | Best possible rank | 1 |
-| `random` | Uniformly sampled integer rank | 1, 2, or 3 with equal probability |
-| `pessimistic` | Worst possible rank | 3 |
-
-Set `--eval_tie_policy` to rank exactly equal scores after filtering; `--eval_tie_seed` seeds `random` and defaults to `random_seed`.
-
 ## KGFM Link Prediction
 
 Test-set entity prediction with released checkpoints and no fine-tuning, using
@@ -725,7 +714,8 @@ Tie strategy: **pessimistic** (worst rank among exactly equal scores after filte
 
 </details>
 
-### Inference speed
+<details>
+<summary>Inference speed</summary>
 
 Warm all-entity inference speedup over the authors’ official implementations:
 RTX 4070 Ti SUPER, float32, matched query batches, and five-repeat medians on sampled test queries.
@@ -739,9 +729,25 @@ RTX 4070 Ti SUPER, float32, matched query batches, and five-repeat medians on sa
 \* Flock includes independently sampled walks at the same budget; identical-walk neural speedups are **1.23–2.01×**.
 YAGO3-10 Flock timings varied more. See the [full comparison and validation](docs/kgfm_inference.md).
 
+</details>
+
 ## Link Prediction Benchmarks
 
 In the below, we provide a brief overview of the link prediction results. Results are sorted in descending order of the size of the respective dataset.
+
+<details>
+<summary>Tie handling</summary>
+
+| Policy | Target rank within a tied group | Example: three candidates tied for first |
+|---|---|---|
+| `sort` (default) | Position in the sorted score list; ties follow the sorting routine’s order | 1, 2, or 3 according to that order |
+| `optimistic` | Best possible rank | 1 |
+| `random` | Uniformly sampled integer rank | 1, 2, or 3 with equal probability |
+| `pessimistic` | Worst possible rank | 3 |
+
+Set `--eval_tie_policy` to rank exactly equal scores after filtering; `--eval_tie_seed` seeds `random` and defaults to `random_seed`.
+
+</details>
 
 #### YAGO3-10 ####
 
