@@ -31,8 +31,15 @@ jobs:
         pip install -e .[docs] --extra-index-url https://download.pytorch.org/whl/cpu
     - name: Prepare required software
       run: |
+        # Docs do not need Chrome; its repository can have inconsistent indexes.
+        for source in /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+          if [ -f "$source" ] && grep -qE 'https?://dl\.google\.com/linux/chrome(-stable)?/deb' "$source"; then
+            sudo rm -- "$source"
+          fi
+        done
         # epstopdf & dot & noto-fonts
-        sudo apt update && sudo apt install texlive-font-utils graphviz fonts-noto\
+        sudo apt-get update
+        sudo apt-get install --yes texlive-font-utils graphviz fonts-noto
 
     - name: Build docs
       run: |

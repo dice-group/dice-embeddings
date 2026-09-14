@@ -181,6 +181,8 @@ cython_debug/
 .cursorindexingignore
 KGs/
 Experiments/
+# Benchmark reports are local artifacts, not repository content.
+/benchmarks/**/*.json
 checkpoints/
 *.zip
 Literal_KGs/

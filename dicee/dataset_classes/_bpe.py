@@ -9,8 +9,10 @@ from typing import List, Tuple
 import numpy as np
 import torch
 
+from ._storage import RaggedIndices, WorkerDataset
 
-class BPE_NegativeSamplingDataset(torch.utils.data.Dataset):
+
+class BPE_NegativeSamplingDataset(WorkerDataset):
     """Dataset for negative sampling with byte-pair encoded triples.
 
     Each sample is a BPE-encoded triple. The custom ``collate_fn`` constructs
@@ -111,7 +113,7 @@ class BPE_NegativeSamplingDataset(torch.utils.data.Dataset):
         return bpe_triple, label
 
 
-class MultiLabelDataset(torch.utils.data.Dataset):
+class MultiLabelDataset(WorkerDataset):
     """Multi-label dataset for BPE-based KvsAll / AllvsAll training.
 
     Each sample is a BPE-encoded ``(head, relation)`` pair together with a
@@ -121,7 +123,7 @@ class MultiLabelDataset(torch.utils.data.Dataset):
     ----------
     train_set : torch.LongTensor
         BPE-encoded input pairs of shape ``(N, 2, token_length)``.
-    train_indices_target : torch.LongTensor
+    train_indices_target : sequence of integer sequences or RaggedIndices
         Per-sample lists of positive target entity indices.
     target_dim : int
         Dimensionality of the target vector (number of entities).
@@ -132,7 +134,7 @@ class MultiLabelDataset(torch.utils.data.Dataset):
     def __init__(
         self,
         train_set: torch.LongTensor,
-        train_indices_target: torch.LongTensor,
+        train_indices_target,
         target_dim: int,
         torch_ordered_shaped_bpe_entities: torch.LongTensor,
     ):
@@ -140,7 +142,7 @@ class MultiLabelDataset(torch.utils.data.Dataset):
         assert len(train_set) == len(train_indices_target)
         assert target_dim > 0
         self.train_set = train_set
-        self.train_indices_target = train_indices_target
+        self.train_indices_target = RaggedIndices.from_rows(train_indices_target)
         self.target_dim = target_dim
         self.num_datapoints = len(self.train_set)
         self.torch_ordered_shaped_bpe_entities = torch_ordered_shaped_bpe_entities
@@ -160,7 +162,7 @@ class MultiLabelDataset(torch.utils.data.Dataset):
         return self.train_set[idx], y_vec
 
 
-class MultiClassClassificationDataset(torch.utils.data.Dataset):
+class MultiClassClassificationDataset(WorkerDataset):
     """Dataset for autoregressive multi-class classification on sub-word units.
 
     Splits a flat sequence of sub-word token ids into overlapping windows of

@@ -10,6 +10,7 @@ from torch._dynamo.eval_frame import OptimizedModule
 from dicee.models.ensemble import EnsembleKGE
 
 from .abstracts import AbstractCallback
+from .evaluation._filtering import evaluation_tie_options
 from .evaluation.ensemble import evaluate_ensemble_link_prediction_performance
 
 
@@ -440,10 +441,12 @@ class SWAG(AbstractCallback):
         ensemble_eval_report = evaluate_ensemble_link_prediction_performance(
             models=sample_models,
             triples=trainer.dataset.test_set,
-            er_vocab=trainer.dataset.er_vocab.result(),
+            er_vocab=(trainer.dataset.er_vocab if isinstance(trainer.dataset.er_vocab, dict)
+                      else trainer.dataset.er_vocab.result()),
             weights=None,
             batch_size=trainer.num_training_batches,
-            weighted_averaging=False, normalize_scores= False)
+            weighted_averaging=False, normalize_scores=False,
+            **evaluation_tie_options(model.args))
 
         ensemble_eval_report_path = os.path.join(model.args["full_storage_path"], "swag_eval_report.json")
         # Write the dictionary to the JSON file

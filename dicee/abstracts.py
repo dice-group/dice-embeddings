@@ -446,6 +446,8 @@ class BaseInteractiveKGE:
                         [self.dummy_id for _ in range(self.configs["max_length_subword_tokens"] - len(t_encode[i]))])
             return self.model.token_embeddings(torch.LongTensor(t_encode)).flatten(1)
         else:
+            if not hasattr(self.model, "entity_embeddings"):
+                raise NotImplementedError("This model has query-conditioned representations, not static entity embeddings")
             return self.model.entity_embeddings(torch.LongTensor([self.entity_to_idx[i] for i in items]))
 
     def get_relation_embeddings(self, items: List[str]) -> torch.FloatTensor:
@@ -461,6 +463,8 @@ class BaseInteractiveKGE:
         torch.FloatTensor
             Shape ``(len(items), embedding_dim)``.
         """
+        if not hasattr(self.model, "relation_embeddings"):
+            raise NotImplementedError("This model has query-conditioned representations, not static relation embeddings")
         return self.model.relation_embeddings(torch.LongTensor([self.relation_to_idx[i] for i in items]))
 
     def construct_input_and_output(self, head_entity: List[str], relation: List[str], tail_entity: List[str],

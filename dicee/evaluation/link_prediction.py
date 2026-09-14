@@ -12,10 +12,11 @@ import torch
 from tqdm import tqdm
 
 from ._filtering import (
+    FilteredRanker,
     accumulate_bidirectional_hits,
     build_bpe_entity_index,
-    compute_filtered_rank,
 )
+from ._graph_inference import GraphRankPlan
 from .utils import (
     ALL_HITS_RANGE,
     compute_metrics_from_ranks,
@@ -32,7 +33,10 @@ def evaluate_link_prediction_performance(
     model,
     triples,
     er_vocab: Dict[Tuple, List],
-    re_vocab: Dict[Tuple, List]
+    re_vocab: Dict[Tuple, List],
+    *,
+    tie_policy: str = "sort",
+    tie_seed: int = 0,
 ) -> Dict[str, float]:
     """Evaluate link prediction performance with head and tail prediction.
 
@@ -45,9 +49,14 @@ def evaluate_link_prediction_performance(
         er_vocab: Mapping (entity, relation) -> list of valid tail entities.
         re_vocab: Mapping (relation, entity) -> list of valid head entities.
 
+        tie_policy: How exact prediction ties are ranked: sort (legacy),
+            optimistic, random, or pessimistic.
+        tie_seed: Independent random tie seed; reset on each evaluation call.
+
     Returns:
         Dictionary with H@1, H@3, H@10, and MRR metrics.
     """
+    ranker = FilteredRanker(tie_policy, tie_seed)
     model.model.eval()
     hits = {}
     reciprocal_ranks = []
@@ -78,15 +87,18 @@ def evaluate_link_prediction_performance(
             torch.tensor(r).repeat(num_entities,),
             torch.tensor(t).repeat(num_entities)
         ), dim=1)
-        predictions_heads = model.model.forward_triples(x)
+        if hasattr(model.model, "forward_k_vs_all_heads"):
+            predictions_heads = model.model.forward_k_vs_all_heads(torch.tensor([[r, t]])).flatten().cpu()
+        else:
+            predictions_heads = model.model.forward_triples(x)
         del x
 
         # Compute filtered ranks
         filt_tails = [model.entity_to_idx[i] for i in er_vocab[(str_h, str_r)]]
         filt_heads = [model.entity_to_idx[i] for i in re_vocab[(str_r, str_t)]]
 
-        filt_tail_entity_rank = compute_filtered_rank(predictions_tails, t, filt_tails)
-        filt_head_entity_rank = compute_filtered_rank(predictions_heads, h, filt_heads)
+        filt_tail_entity_rank = ranker.rank(predictions_tails, t, filt_tails)
+        filt_head_entity_rank = ranker.rank(predictions_heads, h, filt_heads)
 
         rr = 1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
         reciprocal_ranks.append(rr)
@@ -106,7 +118,10 @@ def evaluate_link_prediction_performance(
 def evaluate_link_prediction_performance_with_reciprocals(
     model,
     triples,
-    er_vocab: Dict[Tuple, List]
+    er_vocab: Dict[Tuple, List],
+    *,
+    tie_policy: str = "sort",
+    tie_seed: int = 0,
 ) -> Dict[str, float]:
     """Evaluate link prediction with reciprocal relations.
 
@@ -118,9 +133,14 @@ def evaluate_link_prediction_performance_with_reciprocals(
         triples: Test triples as list of (head, relation, tail) strings.
         er_vocab: Mapping (entity, relation) -> list of valid tail entities.
 
+        tie_policy: How exact prediction ties are ranked: sort (legacy),
+            optimistic, random, or pessimistic.
+        tie_seed: Independent random tie seed; reset on each evaluation call.
+
     Returns:
         Dictionary with H@1, H@3, H@10, and MRR metrics.
     """
+    ranker = FilteredRanker(tie_policy, tie_seed)
     model.model.eval()
     entity_to_idx = model.entity_to_idx
     relation_to_idx = model.relation_to_idx
@@ -147,7 +167,7 @@ def evaluate_link_prediction_performance_with_reciprocals(
             id_e_target = data_batch[j, 2]
             filt = [entity_to_idx[_] for _ in er_vocab[(str_h, str_r)]]
 
-            rank = compute_filtered_rank(predictions[j], id_e_target, filt)
+            rank = ranker.rank(predictions[j], id_e_target, filt)
             ranks.append(rank)
             update_hits(hits, rank, hits_range)
 
@@ -159,7 +179,10 @@ def evaluate_link_prediction_performance_with_bpe_reciprocals(
     model,
     within_entities: List[str],
     triples: List[List[str]],
-    er_vocab: Dict[Tuple, List]
+    er_vocab: Dict[Tuple, List],
+    *,
+    tie_policy: str = "sort",
+    tie_seed: int = 0,
 ) -> Dict[str, float]:
     """Evaluate link prediction with BPE encoding and reciprocals.
 
@@ -169,9 +192,14 @@ def evaluate_link_prediction_performance_with_bpe_reciprocals(
         triples: Test triples as list of [head, relation, tail] strings.
         er_vocab: Mapping (entity, relation) -> list of valid tail entities.
 
+        tie_policy: How exact prediction ties are ranked: sort (legacy),
+            optimistic, random, or pessimistic.
+        tie_seed: Independent random tie seed; reset on each evaluation call.
+
     Returns:
         Dictionary with H@1, H@3, H@10, and MRR metrics.
     """
+    ranker = FilteredRanker(tie_policy, tie_seed)
     triples = np.array(triples)
     model.model.eval()
     entity_to_idx = {ent: id_ for id_, ent in enumerate(within_entities)}
@@ -204,7 +232,7 @@ def evaluate_link_prediction_performance_with_bpe_reciprocals(
             id_e_target = entity_to_idx[str_t]
             filt = [entity_to_idx[_] for _ in er_vocab[(str_h, str_r)]]
 
-            rank = compute_filtered_rank(predictions[j], id_e_target, filt)
+            rank = ranker.rank(predictions[j], id_e_target, filt)
             ranks.append(rank)
             update_hits(hits, rank, hits_range)
 
@@ -217,7 +245,10 @@ def evaluate_link_prediction_performance_with_bpe(
     within_entities: List[str],
     triples: List[Tuple[str]],
     er_vocab: Dict[Tuple, List],
-    re_vocab: Dict[Tuple, List]
+    re_vocab: Dict[Tuple, List],
+    *,
+    tie_policy: str = "sort",
+    tie_seed: int = 0,
 ) -> Dict[str, float]:
     """Evaluate link prediction with BPE encoding (head and tail).
 
@@ -228,9 +259,14 @@ def evaluate_link_prediction_performance_with_bpe(
         er_vocab: Mapping (entity, relation) -> list of valid tail entities.
         re_vocab: Mapping (relation, entity) -> list of valid head entities.
 
+        tie_policy: How exact prediction ties are ranked: sort (legacy),
+            optimistic, random, or pessimistic.
+        tie_seed: Independent random tie seed; reset on each evaluation call.
+
     Returns:
         Dictionary with H@1, H@3, H@10, and MRR metrics.
     """
+    ranker = FilteredRanker(tie_policy, tie_seed)
     assert isinstance(triples, list)
     assert len(triples[0]) == 3
     model.model.eval()
@@ -288,8 +324,8 @@ def evaluate_link_prediction_performance_with_bpe(
             for i in re_vocab[(str_r, str_t)]
         ]
 
-        filt_tail_entity_rank = compute_filtered_rank(predictions_tails, idx_bpe_t, filt_tails)
-        filt_head_entity_rank = compute_filtered_rank(predictions_heads, idx_bpe_h, filt_heads)
+        filt_tail_entity_rank = ranker.rank(predictions_tails, idx_bpe_t, filt_tails)
+        filt_head_entity_rank = ranker.rank(predictions_heads, idx_bpe_h, filt_heads)
 
         rr = 1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
         reciprocal_ranks.append(rr)
@@ -313,7 +349,13 @@ def evaluate_lp(
     re_vocab: Dict[Tuple, List],
     info: str = 'Eval Starts',
     batch_size: int = 128,
-    chunk_size: int = 1000
+    chunk_size: int = 1000,
+    *,
+    tie_policy: str = "sort",
+    tie_seed: int = 0,
+    tie_generator: Optional[torch.Generator] = None,
+    graph_rank_plan: Optional[GraphRankPlan] = None,
+    reuse_graph_queries: bool = True,
 ) -> Dict[str, float]:
     """Evaluate link prediction with batched processing.
 
@@ -328,10 +370,20 @@ def evaluate_lp(
         info: Description to print.
         batch_size: Batch size for triple processing.
         chunk_size: Chunk size for entity scoring.
+        tie_generator: Optional CPU generator to continue random ties across calls.
+            When supplied, its state takes precedence over tie_seed.
+        graph_rank_plan: Optional whole-split plan shared across progress batches.
+        reuse_graph_queries: Reuse deterministic ULTRA/TRIX queries. Flock keeps
+            its original query and sampling order regardless of this option.
+
+        tie_policy: How exact prediction ties are ranked: sort (legacy),
+            optimistic, random, or pessimistic.
+        tie_seed: Independent random tie seed; reset on each evaluation call.
 
     Returns:
         Dictionary with H@1, H@3, H@10, and MRR metrics.
     """
+    ranker = FilteredRanker(tie_policy, tie_seed, generator=tie_generator)
     assert model is not None, "Model must be provided"
     assert triple_idx is not None, "triple_idx must be provided"
     assert num_entities is not None, "num_entities must be provided"
@@ -346,43 +398,71 @@ def evaluate_lp(
     reciprocal_ranks = []
     all_entities = torch.arange(0, num_entities).long()
 
+    if reuse_graph_queries and getattr(model, 'deterministic_inference', False):
+        graph_rank_plan = graph_rank_plan or GraphRankPlan(triple_idx)
+    else:
+        graph_rank_plan = None
+
     for batch_start in tqdm(range(0, len(triple_idx), batch_size), desc="Evaluating Batches"):
         batch_end = min(batch_start + batch_size, len(triple_idx))
         batch_triples = triple_idx[batch_start:batch_end]
         batch_size_current = len(batch_triples)
 
+        if graph_rank_plan is not None:
+            ranks = graph_rank_plan.rank(model, batch_triples, ranker, er_vocab, re_vocab, batch_size)
+            for tail_rank, head_rank in zip(ranks[::2], ranks[1::2]):
+                reciprocal_ranks.append(1.0 / head_rank + 1.0 / tail_rank)
+                accumulate_bidirectional_hits(hits, head_rank, tail_rank)
+            continue
+
         h_batch = torch.tensor([dp[0] for dp in batch_triples])
         r_batch = torch.tensor([dp[1] for dp in batch_triples])
         t_batch = torch.tensor([dp[2] for dp in batch_triples])
 
-        predictions_tails = torch.zeros(batch_size_current, num_entities)
-        predictions_heads = torch.zeros(batch_size_current, num_entities)
+        if hasattr(model, "forward_k_vs_all_heads"):
+            predictions_tails = model.forward_k_vs_all(torch.stack((h_batch, r_batch), 1))
+            predictions_heads = model.forward_k_vs_all_heads(torch.stack((r_batch, t_batch), 1))
+            if tie_policy == 'sort':
+                predictions_tails, predictions_heads = predictions_tails.cpu(), predictions_heads.cpu()
 
-        # Process entities in chunks
-        for chunk_start in range(0, num_entities, chunk_size):
-            chunk_end = min(chunk_start + chunk_size, num_entities)
-            entities_chunk = all_entities[chunk_start:chunk_end]
-            chunk_size_current = entities_chunk.size(0)
+        else:
+            predictions_tails = torch.zeros(batch_size_current, num_entities)
+            predictions_heads = torch.zeros(batch_size_current, num_entities)
+            # Embedding models score entity candidates in chunks.
+            for chunk_start in range(0, num_entities, chunk_size):
+                chunk_end = min(chunk_start + chunk_size, num_entities)
+                entities_chunk = all_entities[chunk_start:chunk_end]
+                chunk_size_current = entities_chunk.size(0)
 
-            # Tail prediction
-            x_tails = torch.stack((
-                h_batch.repeat_interleave(chunk_size_current),
-                r_batch.repeat_interleave(chunk_size_current),
-                entities_chunk.repeat(batch_size_current)
-            ), dim=1)
-            preds_tails = model(x_tails).view(batch_size_current, chunk_size_current)
-            predictions_tails[:, chunk_start:chunk_end] = preds_tails
-            del x_tails
+                # Tail prediction
+                x_tails = torch.stack((
+                    h_batch.repeat_interleave(chunk_size_current),
+                    r_batch.repeat_interleave(chunk_size_current),
+                    entities_chunk.repeat(batch_size_current)
+                ), dim=1)
+                preds_tails = model(x_tails).view(batch_size_current, chunk_size_current)
+                predictions_tails[:, chunk_start:chunk_end] = preds_tails
+                del x_tails
 
-            # Head prediction
-            x_heads = torch.stack((
-                entities_chunk.repeat(batch_size_current),
-                r_batch.repeat_interleave(chunk_size_current),
-                t_batch.repeat_interleave(chunk_size_current)
-            ), dim=1)
-            preds_heads = model(x_heads).view(batch_size_current, chunk_size_current)
-            predictions_heads[:, chunk_start:chunk_end] = preds_heads
-            del x_heads
+                # Head prediction
+                x_heads = torch.stack((
+                    entities_chunk.repeat(batch_size_current),
+                    r_batch.repeat_interleave(chunk_size_current),
+                    t_batch.repeat_interleave(chunk_size_current)
+                ), dim=1)
+                preds_heads = model(x_heads).view(batch_size_current, chunk_size_current)
+                predictions_heads[:, chunk_start:chunk_end] = preds_heads
+                del x_heads
+
+        if tie_policy != 'sort':
+            scores = torch.stack((predictions_tails, predictions_heads), 1).flatten(0, 1)
+            targets = np.asarray(batch_triples)[:, [2, 0]].reshape(-1)
+            filters = [filt for h, r, t in batch_triples for filt in (er_vocab[(h, r)], re_vocab[(r, t)])]
+            ranks = ranker.rank_batch(scores, targets, filters)
+            for tail_rank, head_rank in zip(ranks[::2], ranks[1::2]):
+                reciprocal_ranks.append(1.0 / head_rank + 1.0 / tail_rank)
+                accumulate_bidirectional_hits(hits, head_rank, tail_rank)
+            continue
 
         # Compute filtered ranks
         for i in range(batch_size_current):
@@ -394,8 +474,8 @@ def evaluate_lp(
             filt_tails = list(set(er_vocab[(h, r)]) - {t})
             filt_heads = list(set(re_vocab[(r, t)]) - {h})
 
-            filt_tail_entity_rank = compute_filtered_rank(predictions_tails[i], t, filt_tails)
-            filt_head_entity_rank = compute_filtered_rank(predictions_heads[i], h, filt_heads)
+            filt_tail_entity_rank = ranker.rank(predictions_tails[i], t, filt_tails)
+            filt_head_entity_rank = ranker.rank(predictions_heads[i], h, filt_heads)
 
             rr = 1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
             reciprocal_ranks.append(rr)
@@ -420,7 +500,10 @@ def evaluate_bpe_lp(
     all_bpe_shaped_entities,
     er_vocab: Dict[Tuple, List],
     re_vocab: Dict[Tuple, List],
-    info: str = 'Eval Starts'
+    info: str = 'Eval Starts',
+    *,
+    tie_policy: str = "sort",
+    tie_seed: int = 0,
 ) -> Dict[str, float]:
     """Evaluate link prediction with BPE-encoded entities.
 
@@ -432,9 +515,14 @@ def evaluate_bpe_lp(
         re_vocab: Mapping for head filtering.
         info: Description to print.
 
+        tie_policy: How exact prediction ties are ranked: sort (legacy),
+            optimistic, random, or pessimistic.
+        tie_seed: Independent random tie seed; reset on each evaluation call.
+
     Returns:
         Dictionary with H@1, H@3, H@10, and MRR metrics.
     """
+    ranker = FilteredRanker(tie_policy, tie_seed)
     assert isinstance(triple_idx, list)
     assert isinstance(triple_idx[0], tuple)
     assert len(triple_idx[0]) == 3
@@ -478,8 +566,8 @@ def evaluate_bpe_lp(
         filt_tails = [bpe_entity_to_idx[i] for i in er_vocab[(bpe_h, bpe_r)]]
         filt_heads = [bpe_entity_to_idx[i] for i in re_vocab[(bpe_r, bpe_t)]]
 
-        filt_tail_entity_rank = compute_filtered_rank(predictions_tails, idx_bpe_t, filt_tails)
-        filt_head_entity_rank = compute_filtered_rank(predictions_heads, idx_bpe_h, filt_heads)
+        filt_tail_entity_rank = ranker.rank(predictions_tails, idx_bpe_t, filt_tails)
+        filt_head_entity_rank = ranker.rank(predictions_heads, idx_bpe_h, filt_heads)
 
         rr = 1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
         reciprocal_ranks.append(rr)
@@ -504,7 +592,10 @@ def evaluate_lp_bpe_k_vs_all(
     er_vocab: Optional[Dict] = None,
     batch_size: Optional[int] = None,
     func_triple_to_bpe_representation: Optional[Callable] = None,
-    str_to_bpe_entity_to_idx: Optional[Dict] = None
+    str_to_bpe_entity_to_idx: Optional[Dict] = None,
+    *,
+    tie_policy: str = "sort",
+    tie_seed: int = 0,
 ) -> Dict[str, float]:
     """Evaluate BPE link prediction with KvsAll scoring.
 
@@ -516,12 +607,17 @@ def evaluate_lp_bpe_k_vs_all(
         func_triple_to_bpe_representation: Function to convert triples to BPE.
         str_to_bpe_entity_to_idx: Mapping from string entities to BPE indices.
 
+        tie_policy: How exact prediction ties are ranked: sort (legacy),
+            optimistic, random, or pessimistic.
+        tie_seed: Independent random tie seed; reset on each evaluation call.
+
     Returns:
         Dictionary with H@1, H@3, H@10, and MRR metrics.
 
     Raises:
         ValueError: If batch_size is not provided.
     """
+    ranker = FilteredRanker(tie_policy, tie_seed)
     if batch_size is None:
         raise ValueError("batch_size must be provided")
 
@@ -545,7 +641,7 @@ def evaluate_lp_bpe_k_vs_all(
             id_e_target = str_to_bpe_entity_to_idx[t]
             filt_idx_entities = [str_to_bpe_entity_to_idx[_] for _ in er_vocab[(h, r)]]
 
-            rank = compute_filtered_rank(predictions[j], id_e_target, filt_idx_entities)
+            rank = ranker.rank(predictions[j], id_e_target, filt_idx_entities)
             ranks.append(rank)
             update_hits(hits, rank, hits_range)
 

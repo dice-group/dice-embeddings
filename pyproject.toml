@@ -37,6 +37,7 @@ module = [
     "rdflib.*",
     "psutil.*",
     "pykeen.*",
+    "triton.*",
 ]
 ignore_missing_imports = true
 

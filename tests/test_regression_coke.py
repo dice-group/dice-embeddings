@@ -77,7 +77,9 @@ class TestRegressionCoKE:
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
-        assert 0.50 >= result['Val']['H@1'] >= 0.30
+        # Shared embedding initialization changed in 37c3b1ad.
+        # Verified baseline: validation H@1 ~0.54 with seed 0.
+        assert 0.50 <= result['Val']['H@1'] <= 0.58
         assert result['Val']['H@10'] >= result['Val']['H@3'] >= result['Val']['H@1']
 
     @pytest.mark.filterwarnings('ignore::UserWarning')

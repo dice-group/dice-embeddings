@@ -1,4 +1,3 @@
-import concurrent
 import logging
 from typing import List, Tuple, Union
 
@@ -8,7 +7,7 @@ import polars as pl
 
 from dicee.static_funcs import numpy_data_type_changer
 
-from .util import apply_reciprocal_or_noise, dataset_sanity_checking, get_ee_vocab, get_er_vocab, get_re_vocab, pandas_dataframe_indexer, polars_dataframe_indexer, timeit
+from .util import apply_reciprocal_or_noise, dataset_sanity_checking, get_filter_vocabs, pandas_dataframe_indexer, polars_dataframe_indexer, timeit
 
 logger = logging.getLogger(__name__)
 
@@ -43,24 +42,10 @@ class PreprocessKG:
             raise KeyError(f'{self.kg.backend} not found')
 
         if self.kg.eval_model:
-            if self.kg.byte_pair_encoding:
-                data = []
-                data.extend(self.kg.raw_train_set.values.tolist())
-                if self.kg.raw_valid_set is not None:
-                    data.extend(self.kg.raw_valid_set.values.tolist())
-                if self.kg.raw_test_set is not None:
-                    data.extend(self.kg.raw_test_set.values.tolist())
-            else:
-                if isinstance(self.kg.valid_set, np.ndarray) and isinstance(self.kg.test_set, np.ndarray):
-                    data = np.concatenate([self.kg.train_set, self.kg.valid_set, self.kg.test_set])
-                else:
-                    data = self.kg.train_set
-            logger.info('Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...')
-            # We need to benchmark the benefits of using futures  ?
-            executor = concurrent.futures.ProcessPoolExecutor()
-            self.kg.er_vocab = executor.submit(get_er_vocab, data, self.kg.path_for_serialization + '/er_vocab.p')
-            self.kg.re_vocab = executor.submit(get_re_vocab, data, self.kg.path_for_serialization + '/re_vocab.p')
-            self.kg.ee_vocab = executor.submit(get_ee_vocab, data, self.kg.path_for_serialization + '/ee_vocab.p')
+            logger.info('Build er-vocab, re-vocab, and ee-vocab in one streaming pass...')
+            self.kg.er_vocab, self.kg.re_vocab, self.kg.ee_vocab = get_filter_vocabs(
+                self._evaluation_triples(), self.kg.path_for_serialization
+            )
 
         if not isinstance(self.kg.raw_train_set, (pd.DataFrame, pl.DataFrame)):
             raise TypeError(f"raw_train_set must be a pandas or polars DataFrame, got {type(self.kg.raw_train_set)}")
@@ -130,6 +115,9 @@ class PreprocessKG:
                     f" Scoring technique {self.self.kg.training_technique} with BPE not implemented")
             if self.kg.max_length_subword_tokens is None and self.kg.byte_pair_encoding:
                 self.kg.max_length_subword_tokens = len(self.kg.train_set[0][0])
+            if self.kg.train_target_indices is not None:
+                from dicee.dataset_classes._storage import RaggedIndices
+                self.kg.train_target_indices = RaggedIndices.from_rows(self.kg.train_target_indices)
         elif self.kg.byte_pair_encoding:
             space_token = self.kg.enc.encode(" ")[0]
             end_token = self.kg.enc.encode(".")[0]
@@ -144,6 +132,22 @@ class PreprocessKG:
             self.kg.raw_valid_set = None
             self.kg.raw_test_set = None
 
+
+    def _evaluation_triples(self):
+        """Iterate available splits without a concatenated array or Python list."""
+        names = ('raw_train_set', 'raw_valid_set', 'raw_test_set') if self.kg.byte_pair_encoding else (
+            'train_set', 'valid_set', 'test_set'
+        )
+        for name in names:
+            split = getattr(self.kg, name)
+            if split is None:
+                continue
+            if isinstance(split, pd.DataFrame):
+                yield from split.itertuples(index=False, name=None)
+            elif isinstance(split, pl.DataFrame):
+                yield from split.iter_rows()
+            else:
+                yield from split
 
     @staticmethod
     def __replace_values_df(df: pd.DataFrame = None, f=None) -> Union[

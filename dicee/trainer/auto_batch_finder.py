@@ -78,12 +78,12 @@ def find_good_batch_size(
                     f"Runtime: {rt:.3f}s\t"
                     f"Batch Size: {batch_size}"
                 )
-                history.append((batch_size, rt))
 
                 # Stay below 90 % to avoid the illegal-memory-access bug:
                 # https://github.com/pytorch/pytorch/issues/21819
                 if pct_used > 0.9:
                     return history, False
+                history.append((batch_size, rt))
                 if batch_size < training_dataset_size:
                     batch_size += int(batch_size / delta)
                 else:
@@ -109,8 +109,9 @@ def find_good_batch_size(
         if completed:
             batch_size, batch_rt = full_history[-1]
         else:
-            assert len(full_history) > 2, "GPU memory error on the very first batch"
-            batch_size, batch_rt = full_history[-2]
+            if not full_history:
+                raise RuntimeError("No batch size fits within the GPU memory limit")
+            batch_size, batch_rt = full_history[-1]
             break
 
         if batch_size >= training_dataset_size:

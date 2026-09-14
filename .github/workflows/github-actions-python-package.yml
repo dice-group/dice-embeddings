@@ -25,7 +25,7 @@ jobs:
         run: |
           ruff check dicee/ --line-length=200
       
-      - name: Type check with mypy (ratchet: error count must not increase)
+      - name: "Type check with mypy (ratchet: error count must not increase)"
         run: |
           # See docs/TYPING_ROADMAP.md for the type hints enforcement strategy.
           # The codebase isn't fully typed yet, so mypy isn't blocking on every

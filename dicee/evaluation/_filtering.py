@@ -4,17 +4,154 @@ This module provides low-level helper functions for filtered ranking,
 extracting common patterns shared across multiple evaluation functions.
 """
 
-from typing import Dict, List, Tuple
+from collections.abc import Iterable, Mapping
+from typing import Dict, List, Optional, SupportsInt, Tuple
 
 import numpy as np
 import torch
+
+TIE_POLICIES = ("sort", "optimistic", "random", "pessimistic")
+
+
+def evaluation_tie_options(args) -> Dict:
+    """Read evaluation options, including configurations saved before tie policies."""
+    settings = args if isinstance(args, Mapping) else vars(args)
+    seed = settings.get("eval_tie_seed")
+    return {
+        "tie_policy": settings.get("eval_tie_policy", "sort"),
+        "tie_seed": settings.get("random_seed", 0) if seed is None else seed,
+    }
+
+
+class FilteredRanker:
+    """One evaluation's tie policy and independent CPU random stream.
+
+    Ties use exact score equality. Random ranks are uniform integers between
+    the optimistic and pessimistic ranks, inclusive. Recreate this object for
+    each evaluation to replay its random stream without changing model RNGs.
+    A supplied generator allows callers to continue the stream across chunks.
+    """
+
+    def __init__(self, tie_policy: str = "sort", tie_seed: int = 0,
+                 generator: Optional[torch.Generator] = None):
+        if tie_policy not in TIE_POLICIES:
+            raise ValueError(f"Unknown tie policy {tie_policy!r}; choose from {TIE_POLICIES}")
+        self.tie_policy = tie_policy
+        self.generator = generator
+        if tie_policy == "random":
+            if generator is None:
+                self.generator = torch.Generator(device="cpu").manual_seed(tie_seed)
+            elif generator.device.type != "cpu":
+                raise ValueError("Tie-breaking requires a CPU torch.Generator")
+
+    def rank(self, predictions: torch.Tensor, target_idx: SupportsInt,
+             filter_indices: Iterable[int], exclude_target: bool = True) -> int:
+        target_idx = int(target_idx)
+        filtered = predictions.clone()
+        filters = set(filter_indices)
+        if exclude_target:
+            filters.discard(target_idx)
+        if filters:
+            filtered[list(filters)] = -np.Inf
+
+        if self.tie_policy == "sort":
+            # Preserve DICE's original per-vector torch.sort ordering.
+            order = torch.sort(filtered, descending=True).indices
+            return int(torch.where(order == target_idx)[0].item()) + 1
+
+        # An explicit mask also excludes filtered candidates when the target
+        # itself has score -Inf. Masking scores alone would count false ties.
+        eligible = torch.ones_like(predictions, dtype=torch.bool)
+        if filters:
+            eligible[list(filters)] = False
+        eligible[target_idx] = False
+        other_scores = filtered[eligible]
+        target_score = filtered[target_idx]
+        if torch.isnan(target_score) or torch.isnan(other_scores).any():
+            raise ValueError("Cannot rank NaN prediction scores")
+        optimistic = 1 + int((other_scores > target_score).sum().item())
+        if self.tie_policy == "optimistic":
+            return optimistic
+        tied = int((other_scores == target_score).sum().item())
+        if self.tie_policy == "pessimistic":
+            return optimistic + tied
+        if tied == 0:
+            return optimistic
+        return optimistic + int(torch.randint(tied + 1, (), generator=self.generator).item())
+
+    def rank_batch(self, predictions: torch.Tensor, target_indices: Iterable[SupportsInt],
+                   filter_indices_list: List[List[int]]) -> List[int]:
+        if self.tie_policy != "sort":
+            return self.ranks_from_bounds(self.bounds_batch(predictions, target_indices, filter_indices_list))
+
+        # Existing KvsAll/ensemble evaluators sorted whole batches. Keep that
+        # operation intact, including its device-dependent ordering of ties.
+        filtered = predictions.clone()
+        for i, (target, filters) in enumerate(zip(target_indices, filter_indices_list)):
+            target = int(target)
+            if len(filters):
+                filtered[i, list(filters)] = -np.Inf
+            filtered[i, target] = predictions[i, target]
+        order = torch.sort(filtered, dim=1, descending=True).indices
+        return [int(torch.where(row == int(target))[0].item()) + 1
+                for row, target in zip(order, target_indices)]
+
+    def bounds_batch(self, predictions, target_indices, filter_indices_list, row_indices=None) -> List[Tuple[int, int]]:
+        """Compute optimistic ranks and tie counts together on the score device.
+
+        Only two integers per query leave the GPU. Sampling is deliberately
+        separate so grouped graph inference can restore original query order
+        before consuming the independent random-tie stream.
+        """
+        if predictions.is_cuda and predictions.dtype in (torch.float32, torch.float16, torch.bfloat16):
+            try:
+                from ._triton_ranking import bounds
+            except ImportError:
+                pass
+            else:
+                return bounds(predictions, target_indices, filter_indices_list, row_indices)
+        if row_indices is not None:
+            predictions = predictions.index_select(0, torch.as_tensor(row_indices, device=predictions.device, dtype=torch.long))
+        targets = torch.as_tensor(target_indices, device=predictions.device, dtype=torch.long)
+        if not len(targets):
+            return []
+        eligible = torch.ones_like(predictions, dtype=torch.bool)
+        rows, columns = [], []
+        for row, filters in enumerate(filter_indices_list):
+            columns.extend(filters)
+            rows.extend([row] * len(filters))
+        if columns:
+            eligible[torch.tensor(rows, device=predictions.device, dtype=torch.long),
+                     torch.tensor(columns, device=predictions.device, dtype=torch.long)] = False
+        eligible[torch.arange(len(targets), device=predictions.device), targets] = False
+        target_scores = predictions.gather(1, targets[:, None])
+        if target_scores.isnan().any() or (predictions.isnan() & eligible).any():
+            raise ValueError('Cannot rank NaN prediction scores')
+        better = ((predictions > target_scores) & eligible).sum(1) + 1
+        tied = ((predictions == target_scores) & eligible).sum(1)
+        return [(int(b), int(t)) for b, t in torch.stack((better, tied), 1).cpu().tolist()]
+
+    def ranks_from_bounds(self, bounds: Iterable[Tuple[int, int]]) -> List[int]:
+        ranks = []
+        for optimistic, tied in bounds:
+            if self.tie_policy == 'pessimistic':
+                ranks.append(optimistic + tied)
+            elif self.tie_policy == 'random' and tied:
+                ranks.append(optimistic + int(torch.randint(tied + 1, (), generator=self.generator)))
+            else:
+                ranks.append(optimistic)
+        return ranks
 
 
 def compute_filtered_rank(
     predictions: torch.Tensor,
     target_idx: int,
     filter_indices: List[int],
-    exclude_target: bool = True
+    exclude_target: bool = True,
+    *,
+    tie_policy: str = "sort",
+    tie_seed: int = 0,
+    generator: Optional[torch.Generator] = None,
 ) -> int:
     """Compute filtered rank for a single prediction vector.
 
@@ -26,6 +163,9 @@ def compute_filtered_rank(
         target_idx: Index of the target entity to rank.
         filter_indices: Indices of entities to filter out (set to -Inf).
         exclude_target: If True, exclude target from filter_indices.
+        tie_policy: 'sort' (legacy), 'optimistic', 'random', or 'pessimistic'.
+        tie_seed: Seed for random ties when no generator is supplied.
+        generator: Optional CPU generator shared across successive queries.
 
     Returns:
         1-indexed rank of the target entity (1 = best rank).
@@ -35,34 +175,19 @@ def compute_filtered_rank(
         >>> compute_filtered_rank(predictions, target_idx=2, filter_indices=[1, 2])
         1  # After filtering out index 1, target at index 2 ranks first
     """
-    # Clone to avoid modifying input
-    filtered_preds = predictions.clone()
-
-    # Apply filtering
-    if exclude_target:
-        filter_set = set(filter_indices) - {target_idx}
-    else:
-        filter_set = set(filter_indices)
-
-    if filter_set:
-        filtered_preds[list(filter_set)] = -np.Inf
-
-    # Restore target value only if it wasn't intentionally filtered
-    if exclude_target or target_idx not in filter_indices:
-        target_value = predictions[target_idx].item()
-        filtered_preds[target_idx] = target_value
-
-    # Sort and find rank
-    _, sort_idxs = torch.sort(filtered_preds, descending=True)
-    rank = np.where(sort_idxs.detach().cpu().numpy() == target_idx)[0][0]
-
-    return rank + 1  # 1-indexed
+    return FilteredRanker(tie_policy, tie_seed, generator).rank(
+        predictions, target_idx, filter_indices, exclude_target
+    )
 
 
 def compute_filtered_rank_batch(
     predictions: torch.Tensor,
     target_indices: torch.Tensor,
-    filter_indices_list: List[List[int]]
+    filter_indices_list: List[List[int]],
+    *,
+    tie_policy: str = "sort",
+    tie_seed: int = 0,
+    generator: Optional[torch.Generator] = None,
 ) -> List[int]:
     """Compute filtered ranks for a batch of predictions.
 
@@ -70,6 +195,9 @@ def compute_filtered_rank_batch(
         predictions: (batch_size, num_entities) tensor of scores.
         target_indices: (batch_size,) tensor of target entity indices.
         filter_indices_list: List of filter index lists, one per batch item.
+        tie_policy: 'sort' (legacy), 'optimistic', 'random', or 'pessimistic'.
+        tie_seed: Seed for random ties when no generator is supplied.
+        generator: Optional CPU generator shared across successive batches.
 
     Returns:
         List of 1-indexed ranks, one per batch item.
@@ -81,26 +209,17 @@ def compute_filtered_rank_batch(
         >>> compute_filtered_rank_batch(predictions, targets, filters)
         [1, 2]
     """
-    batch_size = predictions.shape[0]
-    ranks = []
-
-    for i in range(batch_size):
-        rank = compute_filtered_rank(
-            predictions[i],
-            target_indices[i].item(),
-            filter_indices_list[i],
-            exclude_target=True
-        )
-        ranks.append(rank)
-
-    return ranks
+    ranker = FilteredRanker(tie_policy, tie_seed, generator)
+    # Preserve the original helper's per-vector sorting for the default policy.
+    return [ranker.rank(scores, target, filters) for scores, target, filters in
+            zip(predictions, target_indices, filter_indices_list)]
 
 
 def accumulate_bidirectional_hits(
     hits_dict: Dict[int, List],
     head_rank: int,
     tail_rank: int,
-    hits_range: List[int] = None
+    hits_range: Optional[List[int]] = None
 ) -> None:
     """Accumulate hits@k for bidirectional prediction (head + tail).
 

@@ -10,8 +10,10 @@ from typing import List, Tuple
 import numpy as np
 import torch
 
+from ._storage import PairIndex, WorkerDataset
 
-class OnevsSample(torch.utils.data.Dataset):
+
+class OnevsSample(WorkerDataset):
     """Dataset for 1-vs-Sample training (dynamic multi-class with negatives).
 
     For every positive triple ``(h, r, t)`` the dataset draws
@@ -96,7 +98,7 @@ class OnevsSample(torch.utils.data.Dataset):
         return x, y_idx, y_vec
 
 
-class FixedNegSampleDataset(torch.utils.data.Dataset):
+class FixedNegSampleDataset(WorkerDataset):
     """Pre-computed (fixed) negative sampling dataset.
 
     At construction time every positive triple is paired with one random
@@ -208,7 +210,7 @@ class FixedNegSampleDataset(torch.utils.data.Dataset):
         return self.train_set[idx], self.labels[idx]
 
 
-class TriplePredictionDataset(torch.utils.data.Dataset):
+class TriplePredictionDataset(WorkerDataset):
     """Dataset for triple prediction with on-the-fly negative sampling.
 
     Each item is a single positive triple; the custom ``collate_fn``
@@ -316,3 +318,50 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
             label = torch.cat((label, label_tail_corr), 0)
 
         return x, label
+
+
+class GroupedNegativeSamplingDataset(TriplePredictionDataset):
+    """Positive-first negative groups reusable by any indexed triple scorer.
+
+    Strict filtering uses training facts only. Negative candidates are drawn
+    with replacement, so even dense queries can request many negatives.
+    """
+
+    def __init__(self, *args, strict_negative_sampling=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        if int(self.neg_sample_ratio) < 1:
+            raise ValueError('Grouped negative sampling requires neg_ratio > 0')
+        self.strict_negative_sampling = strict_negative_sampling
+        self.true_heads = self.true_tails = None
+        if strict_negative_sampling:
+            self.true_heads = PairIndex.from_triples(self.train_set, columns=(1, 2, 0), unique=True)
+            self.true_tails = PairIndex.from_triples(self.train_set, unique=True)
+
+    def collate_fn(self, batch):
+        positive = torch.stack(batch)
+        n, k = len(positive), int(self.neg_sample_ratio)
+        triples = positive[:, None].repeat(1, k + 1, 1)
+        if self.strict_negative_sampling:
+            true_tails, true_heads = self.true_tails, self.true_heads
+            assert true_tails is not None and true_heads is not None
+            tail_targets, head_targets = true_tails.targets, true_heads.targets
+            tail_rows = true_tails.find_rows(positive[:n // 2, :2].numpy())
+            head_rows = true_heads.find_rows(positive[n // 2:, 1:].numpy())
+        for i, (h, r, t) in enumerate(positive.tolist()):
+            position = 2 if i < n // 2 else 0
+            if self.strict_negative_sampling:
+                forbidden = (tail_targets[int(tail_rows[i])] if position == 2
+                             else head_targets[int(head_rows[i - n // 2])])
+                candidates = torch.ones(int(self.num_entities), dtype=torch.bool)
+                candidates[forbidden] = False
+                candidates = candidates.nonzero().flatten()
+                if not len(candidates):
+                    raise ValueError(f'No valid negative candidates for training query {(h, r, t)}')
+                negative = candidates[torch.randint(len(candidates), (k,))]
+            else:
+                negative = torch.randint(int(self.num_entities), (k,))
+            triples[i, 1:, position] = negative
+        targets = torch.zeros(n, k + 1)
+        targets[:, 0] = 1
+        targets = targets * (1 - 2 * self.label_smoothing_rate) + self.label_smoothing_rate
+        return triples, targets

@@ -13,8 +13,8 @@ Type hints improve:
 ## Current Status
 
 **mypy Results:**
-- **Total errors**: 1358 type issues across 47 files (`mypy dicee/ --config-file=pyproject.toml`)
-- **CI status**: Non-blocking (`continue-on-error: true` in `.github/workflows/github-actions-python-package.yml`) — errors are visible in CI logs but don't fail the build
+- **CI error budget**: 1367 type issues, recorded in `.github/mypy-baseline.txt`. Run `mypy dicee/ --config-file=pyproject.toml` to measure the current count.
+- **CI status**: The mypy step blocks the build when its error count exceeds that budget. Existing errors are printed in the log even when the step passes; lint and runtime tests are separate checks.
 - **Coverage**: partial; growing gradually per the tiers below
 
 ## Priority Tiers
@@ -66,7 +66,7 @@ Ad-hoc utilities and optional features. Type hints optional.
 ## Implementation Strategy
 
 ### Phase 1: Foundation (This PR)
-- [ ] Make mypy blocking in CI (still `continue-on-error: true`; blocking now would fail the build on 1358 pre-existing errors)
+- [x] Enforce a mypy error-count budget in CI while existing typing issues are fixed
 - [x] Create this roadmap
 - [x] Fix config.py Optional types (quick win)
 - [ ] Add py.typed marker to package
