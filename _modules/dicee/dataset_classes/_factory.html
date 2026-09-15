@@ -174,7 +174,7 @@
 <span class="sd">    form_of_labelling : str</span>
 <span class="sd">        ``'EntityPrediction'`` or ``'RelationPrediction'``.</span>
 <span class="sd">    scoring_technique : str</span>
-<span class="sd">        One of ``'NegSample'``, ``'FixedNegSample'``, ``'1vsAll'``, ``'1vsSample'``, ``'KvsAll'``,</span>
+<span class="sd">        One of ``'NegSample'``, ``'NegSampleMargin'``, ``'FixedNegSample'``, ``'1vsAll'``, ``'1vsSample'``, ``'KvsAll'``,</span>
 <span class="sd">        ``'AllvsAll'``, ``'KvsSample'``.</span>
 <span class="sd">    neg_ratio : int</span>
 <span class="sd">        Negative sample ratio.</span>
@@ -228,7 +228,7 @@
         <span class="n">train_set</span> <span class="o">=</span> <span class="n">MultiClassClassificationDataset</span><span class="p">(</span>
             <span class="n">train_set</span><span class="p">,</span> <span class="n">block_size</span><span class="o">=</span><span class="n">block_size</span>
         <span class="p">)</span>
-    <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s2">"NegSample"</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"NegSample"</span><span class="p">,</span> <span class="s2">"NegSampleMargin"</span><span class="p">):</span>
         <span class="n">train_set</span> <span class="o">=</span> <span class="n">TriplePredictionDataset</span><span class="p">(</span>
             <span class="n">train_set</span><span class="o">=</span><span class="n">train_set</span><span class="p">,</span>
             <span class="n">num_entities</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">entity_to_idx</span><span class="p">),</span>

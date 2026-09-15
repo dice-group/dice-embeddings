@@ -190,7 +190,7 @@ Package Contents
    :type relation_to_idx: dict
    :param form_of_labelling: ``'EntityPrediction'`` or ``'RelationPrediction'``.
    :type form_of_labelling: str
-   :param scoring_technique: One of ``'NegSample'``, ``'FixedNegSample'``, ``'1vsAll'``, ``'1vsSample'``, ``'KvsAll'``,
+   :param scoring_technique: One of ``'NegSample'``, ``'NegSampleMargin'``, ``'FixedNegSample'``, ``'1vsAll'``, ``'1vsSample'``, ``'KvsAll'``,
                              ``'AllvsAll'``, ``'KvsSample'``.
    :type scoring_technique: str
    :param neg_ratio: Negative sample ratio.

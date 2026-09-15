@@ -269,7 +269,13 @@ Required keys: <code class="docutils literal notranslate"><span class="pre">embe
 <p>Delegates to <code class="docutils literal notranslate"><span class="pre">self.loss</span></code> which is configured in
 <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseKGE.__init__</span></code> based on the scoring technique
 (<code class="docutils literal notranslate"><span class="pre">BCEWithLogitsLoss</span></code> for entity/relation prediction,
-<code class="docutils literal notranslate"><span class="pre">CrossEntropyLoss</span></code> for classification).</p>
+<code class="docutils literal notranslate"><span class="pre">CrossEntropyLoss</span></code> for classification, <code class="docutils literal notranslate"><span class="pre">MarginRankingLoss</span></code>
+for <code class="docutils literal notranslate"><span class="pre">scoring_technique='NegSampleMargin'</span></code>).</p>
+<p>For <code class="docutils literal notranslate"><span class="pre">NegSampleMargin</span></code>, <em>yhat_batch</em>/<em>y_batch</em> still arrive in the
+flat <code class="docutils literal notranslate"><span class="pre">NegSample</span></code> layout (positives first, followed by
+<code class="docutils literal notranslate"><span class="pre">neg_ratio</span></code> tiled blocks of negatives, row-aligned by triple).
+This method splits that flat batch into positive/negative score
+pairs before delegating to <code class="docutils literal notranslate"><span class="pre">MarginRankingLoss</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

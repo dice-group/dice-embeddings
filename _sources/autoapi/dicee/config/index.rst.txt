@@ -519,7 +519,8 @@ Module Contents
       :value: 4.0
 
 
-      Margin used by margin-based scoring functions (e.g. TransE, TransH, RotatE)
+      Margin used by margin-based scoring functions (e.g. TransE, TransH, RotatE), and by
+      torch.nn.MarginRankingLoss when scoring_technique='NegSampleMargin'
 
 
    .. py:attribute:: p

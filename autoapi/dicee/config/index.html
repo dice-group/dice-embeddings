@@ -650,7 +650,8 @@ checkpoint messages are logged at INFO; set to WARNING or higher to silence them
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.margin">
 <span class="sig-name descname"><span class="pre">margin</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4.0</span></span><a class="headerlink" href="#dicee.config.Namespace.margin" title="Link to this definition"></a></dt>
-<dd><p>Margin used by margin-based scoring functions (e.g. TransE, TransH, RotatE)</p>
+<dd><p>Margin used by margin-based scoring functions (e.g. TransE, TransH, RotatE), and by
+torch.nn.MarginRankingLoss when scoring_technique=’NegSampleMargin’</p>
 </dd></dl>
 
 <dl class="py attribute">

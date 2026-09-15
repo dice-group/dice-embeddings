@@ -96,7 +96,14 @@ Module Contents
       Delegates to ``self.loss`` which is configured in
       :class:`BaseKGE.__init__` based on the scoring technique
       (``BCEWithLogitsLoss`` for entity/relation prediction,
-      ``CrossEntropyLoss`` for classification).
+      ``CrossEntropyLoss`` for classification, ``MarginRankingLoss``
+      for ``scoring_technique='NegSampleMargin'``).
+
+      For ``NegSampleMargin``, *yhat_batch*/*y_batch* still arrive in the
+      flat ``NegSample`` layout (positives first, followed by
+      ``neg_ratio`` tiled blocks of negatives, row-aligned by triple).
+      This method splits that flat batch into positive/negative score
+      pairs before delegating to ``MarginRankingLoss``.
 
       :param yhat_batch: Model output scores, shape ``(batch_size, *)``.
       :type yhat_batch: torch.FloatTensor
