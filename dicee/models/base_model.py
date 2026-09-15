@@ -7,6 +7,19 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from dicee.losses.custom_losses import (
+    ACLS,
+    AdaptiveLabelRelaxationLoss,
+    AdaptiveLabelSmoothingLoss,
+    AggregatedLSandLR,
+    CombinedAdaptiveLSandAdaptiveLR,
+    CombinedLSandLR,
+    ConfidenceBasedAdaptiveLabelRelaxationLoss,
+    DefaultBCELoss,
+    LabelRelaxationLoss,
+    LabelSmoothingLoss,
+)
+
 from .adopt import ADOPT
 
 logger = logging.getLogger(__name__)
@@ -285,6 +298,27 @@ class BaseKGE(BaseKGELightning):
         else:
             self.init_entity_embeddings()
             self.init_relation_embeddings()
+
+        if self.args.get("loss_fn") == "LS":
+            self.loss = LabelSmoothingLoss(smoothness_ratio=self.args.get("label_smoothing_rate", 0.0))
+        if self.args.get("loss_fn") == "LRLoss":
+            self.loss = LabelRelaxationLoss(alpha=self.args.get("label_relaxation_alpha", 0.1))
+        if self.args.get("loss_fn") == "BCELoss":
+            self.loss = DefaultBCELoss()
+        if self.args.get("loss_fn") == "CombinedLSandLR":
+            self.loss = CombinedLSandLR(smoothness_ratio=self.args.get("label_smoothing_rate", 0.0), alpha=self.args.get("label_relaxation_alpha", 0.1))
+        if self.args.get("loss_fn") == "AdaptiveLabelSmoothingLoss":
+            self.loss = AdaptiveLabelSmoothingLoss()
+        if self.args.get("loss_fn") == "AdaptiveLabelRelaxationLoss":
+            self.loss = AdaptiveLabelRelaxationLoss()
+        if self.args.get("loss_fn") == "ConfidenceBasedAdaptiveLabelRelaxationLoss":
+            self.loss = ConfidenceBasedAdaptiveLabelRelaxationLoss()
+        if self.args.get("loss_fn") == "CombinedAdaptiveLSandAdaptiveLR":
+            self.loss = CombinedAdaptiveLSandAdaptiveLR()
+        if self.args.get("loss_fn") == "AggregatedLSandLR":
+            self.loss = AggregatedLSandLR()
+        if self.args.get("loss_fn") == "ACLS":
+            self.loss = ACLS()
 
     def init_entity_embeddings(self, embedding_dim: Optional[int] = None) -> None:
         """Create (or re-create) the entity embedding table.
