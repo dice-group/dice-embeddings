@@ -1,12 +1,20 @@
-"""Coverage sweep: every dicee model (native and PyKEEN-wrapped), except Pyke
-and Shallom, must be trainable with scoring_technique='NegSampleMargin'.
+"""Coverage sweep: every dicee model (native and PyKEEN-wrapped), except Pyke,
+Shallom, and the graph/walk-based foundation models, must be trainable with
+scoring_technique='NegSampleMargin'.
 
-Pyke and Shallom are excluded on purpose:
+Excluded on purpose:
 - Shallom is a RelationPrediction-only model; its forward_triples delegates
   through forward_k_vs_all and indexes the full (batch, batch) relation-score
   matrix rather than gathering per-row scores, so NegSample-family techniques
   do not produce a correctly shaped batch for it.
 - Pyke is excluded per project convention (not covered by this sweep).
+- ULTRA, TRIX, TRIXRelation, Flock, and FlockRelation only support the
+  scoring techniques validated in static_preprocess_funcs.py (KvsAll and, for
+  the entity-prediction variants, NegSample/FixedNegSample/1vsAll/1vsSample/
+  KvsSample). Their forward_triples loops over unique (head, relation)
+  queries one at a time, re-sampling random walks per query; NegSampleMargin's
+  doubled per-batch triple count makes that loop prohibitively slow/memory
+  heavy. Support for NegSampleMargin on these models is tracked separately.
 """
 import pytest
 
@@ -14,7 +22,7 @@ from dicee.config import Namespace
 from dicee.executer import Execute
 from dicee.static_funcs import MODEL_REGISTRY
 
-EXCLUDED_MODELS = {"Shallom", "Pyke"}
+EXCLUDED_MODELS = {"Shallom", "Pyke", "ULTRA", "TRIX", "TRIXRelation", "Flock", "FlockRelation"}
 
 NATIVE_MODELS = sorted(set(MODEL_REGISTRY) - EXCLUDED_MODELS - {"BytE"})
 
