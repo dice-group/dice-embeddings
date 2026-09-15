@@ -330,6 +330,49 @@ class TestLossFunction:
         assert torch.isfinite(loss)
 
 
+class TestAdversarialTemperatureLossFunction:
+    """Regression coverage for the adversarial_temperature branch of
+    BaseKGE.loss_function, which was previously unreachable dead code
+    (placed after an unconditional `return self.loss(...)`), silently
+    falling back to plain BCE instead of grouped_adversarial_bce.
+    """
+
+    def _make_grouped_batch(self, batch_size=3, k=4):
+        # (positive, k negatives) per row, matching
+        # GroupedNegativeSamplingDataset.collate_fn's output shape.
+        yhat = torch.randn(batch_size, k + 1)
+        y = torch.zeros(batch_size, k + 1)
+        y[:, 0] = 1.0
+        return yhat, y
+
+    def test_adversarial_temperature_routes_to_grouped_loss(self):
+        model = _make_distmult(scoring_technique="NegSample")
+        model.args["adversarial_temperature"] = 1.0
+        yhat, y = self._make_grouped_batch()
+        loss = model.loss_function(yhat, y)
+        assert loss.shape == torch.Size([])
+        assert torch.isfinite(loss)
+
+    def test_adversarial_temperature_validates_via_grouped_loss(self):
+        """An invalid temperature should surface grouped_adversarial_bce's own
+        validation error, proving the call actually reaches that function
+        instead of silently falling through to self.loss."""
+        model = _make_distmult(scoring_technique="NegSample")
+        model.args["adversarial_temperature"] = -1.0
+        yhat, y = self._make_grouped_batch()
+        with pytest.raises(ValueError, match="adversarial_temperature"):
+            model.loss_function(yhat, y)
+
+    def test_no_adversarial_temperature_uses_plain_loss(self):
+        model = _make_distmult()
+        assert model.args.get("adversarial_temperature") is None
+        yhat = torch.randn(4, 10)
+        y = torch.randint(0, 2, (4, 10)).float()
+        loss = model.loss_function(yhat, y)
+        assert loss.shape == torch.Size([])
+        assert torch.isfinite(loss)
+
+
 # ---------------------------------------------------------------------------
 # DistMult scoring functions
 # ---------------------------------------------------------------------------

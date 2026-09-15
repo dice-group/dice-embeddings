@@ -111,6 +111,13 @@ class BaseKGELightning(pl.LightningModule):
         This method splits that flat batch into positive/negative score
         pairs before delegating to ``MarginRankingLoss``.
 
+        When ``adversarial_temperature`` is set (grouped/strict negative
+        sampling), *yhat_batch*/*y_batch* instead arrive as ``(batch,
+        1 + neg_ratio)`` groups with the positive in column 0, produced by
+        :class:`~dicee.dataset_classes._negative_sampling.GroupedNegativeSamplingDataset`.
+        This delegates to :func:`~dicee.models.sampled_loss.grouped_adversarial_bce`
+        instead of ``self.loss``.
+
         Parameters
         ----------
         yhat_batch : torch.FloatTensor
@@ -130,8 +137,7 @@ class BaseKGELightning(pl.LightningModule):
             neg_ratio = neg_scores.numel() // pos_scores.numel()
             pos_scores = pos_scores.repeat(neg_ratio)
             target = torch.ones_like(pos_scores)
-            return self.loss(pos_scores, neg_scores, target)
-        return self.loss(yhat_batch, y_batch)
+            return cast(torch.Tensor, self.loss(pos_scores, neg_scores, target))
         temperature = self.args.get("adversarial_temperature")
         if temperature is not None:
             from .sampled_loss import grouped_adversarial_bce
